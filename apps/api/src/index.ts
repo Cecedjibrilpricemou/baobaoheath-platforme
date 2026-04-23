@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import 'dotenv/config';
 import { setupSwagger } from './config/swagger';
+import patientRoutes from './routes/patient.routes';
 
 // ─── Import des routes ────────────────────────────────────
 import authRoutes from './routes/auth.routes';
@@ -34,6 +35,7 @@ setupSwagger(app);
 
 // ─── Routes API v1 ────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/patients', patientRoutes);
 
 // ─── Route 404 ────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
