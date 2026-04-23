@@ -1,0 +1,14 @@
+{
+  "name": "@baobaoheath/shared-types",
+  "version": "1.0.0",
+  "description": "Types TypeScript partages BaoBaoHealth",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/config/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Les 18 modeles seront ajoutes ici dans la prochaine etape
