@@ -145,6 +145,102 @@ export const swaggerDocument = {
           utilisateur: { $ref: '#/components/schemas/Utilisateur' },
         },
       },
+      // ─── Consultations ─────────────────────────────────
+      CreateConsultationDto: {
+        type: 'object',
+        required: ['idPatient', 'motifPrincipal'],
+        properties: {
+          idPatient: { type: 'string', example: 'clxxx123' },
+          motifPrincipal: { type: 'string', example: 'Fièvre et maux de tête' },
+          symptomes: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['Fièvre', 'Céphalées', 'Frissons'],
+          },
+        },
+      },
+      VitalsDto: {
+        type: 'object',
+        properties: {
+          temperature: { type: 'number', example: 38.5, description: '°C — alerte si > 39.5' },
+          poidsKg: { type: 'number', example: 65.5 },
+          tailleCm: { type: 'number', example: 170 },
+          perimetreBrachial: { type: 'number', example: 125, description: 'mm' },
+          tensionSystolique: { type: 'integer', example: 120, description: 'mmHg' },
+          tensionDiastolique: { type: 'integer', example: 80, description: 'mmHg' },
+          frequenceCardiaque: { type: 'integer', example: 75, description: 'bpm' },
+          frequenceRespiratoire: { type: 'integer', example: 18, description: 'resp/min' },
+          spo2: { type: 'number', example: 98, description: '% — alerte si < 95' },
+          glycemie: { type: 'number', example: 1.1, description: 'g/L — alerte si > 3' },
+        },
+      },
+      DiagnosticDto: {
+        type: 'object',
+        required: ['libelle', 'source'],
+        properties: {
+          libelle: { type: 'string', example: 'Paludisme simple' },
+          codeIcd11: { type: 'string', example: '1F40' },
+          typeDiagnostic: {
+            type: 'string',
+            enum: ['PRINCIPAL', 'DIFFERENTIEL', 'SECONDAIRE'],
+            default: 'PRINCIPAL',
+          },
+          severite: {
+            type: 'string',
+            enum: ['LEGER', 'MODERE', 'SEVERE', 'CRITIQUE'],
+          },
+          source: {
+            type: 'string',
+            enum: ['IA_LOCALE', 'IA_CLAUDE', 'MEDECIN', 'ASC'],
+          },
+        },
+      },
+      OrdonnanceDto: {
+        type: 'object',
+        required: ['idMedicament', 'posologie', 'frequence', 'dureeJours'],
+        properties: {
+          idMedicament: { type: 'string', example: 'clxxx456' },
+          posologie: { type: 'string', example: '1 comprimé matin et soir' },
+          frequence: { type: 'string', example: '2 fois par jour pendant 3 jours' },
+          dureeJours: { type: 'integer', example: 3 },
+          instructions: { type: 'string', example: 'Prendre avec de la nourriture' },
+        },
+      },
+      ReferralDto: {
+        type: 'object',
+        required: ['idStructureCible', 'urgence', 'resumeClinique'],
+        properties: {
+          idStructureCible: { type: 'string', example: 'clxxx789' },
+          urgence: {
+            type: 'string',
+            enum: ['ROUTINE', 'URGENT', 'URGENCE_VITALE'],
+            example: 'URGENT',
+          },
+          resumeClinique: {
+            type: 'string',
+            example: 'Patient avec paludisme grave — fièvre > 39.5°C + convulsions',
+          },
+        },
+      },
+      Consultation: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          statut: {
+            type: 'string',
+            enum: ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE', 'REFERENCEE'],
+          },
+          motifPrincipal: { type: 'string' },
+          symptomes: { type: 'array', items: { type: 'string' } },
+          notesAsc: { type: 'string' },
+          protocoleUtilise: { type: 'string' },
+          confianceIa: { type: 'number' },
+          resumeIa: { type: 'string' },
+          consulteeLE: { type: 'string', format: 'date-time' },
+          patient: { $ref: '#/components/schemas/PatientProfile' },
+          constantes: { $ref: '#/components/schemas/VitalsDto' },
+        },
+      },
     },
   },
   paths: {
@@ -478,6 +574,215 @@ export const swaggerDocument = {
         responses: {
           200: { description: 'Patient trouvé' },
           404: { description: 'Patient non trouvé' },
+        },
+      },
+    },
+    // ─── CONSULTATIONS ────────────────────────────────────
+    '/api/v1/consultations': {
+      get: {
+        tags: ['Consultations'],
+        summary: 'Liste des consultations',
+        description: 'Retourne la liste paginée des consultations — ASC, Médecin, Admin',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'idPatient', in: 'query', schema: { type: 'string' } },
+          { name: 'idAsc', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'Liste récupérée' },
+          401: { description: 'Non authentifié' },
+          403: { description: 'Accès refusé' },
+        },
+      },
+      post: {
+        tags: ['Consultations'],
+        summary: 'Ouvrir une nouvelle consultation',
+        description: 'Crée une nouvelle consultation — accessible ASC uniquement',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CreateConsultationDto' },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Consultation créée',
+            content: {
+              'application/json': {
+                schema: {
+                  allOf: [
+                    { $ref: '#/components/schemas/ApiResponse' },
+                    { properties: { data: { $ref: '#/components/schemas/Consultation' } } },
+                  ],
+                },
+              },
+            },
+          },
+          400: { description: 'Données invalides' },
+          403: { description: 'Profil ASC non trouvé' },
+        },
+      },
+    },
+    '/api/v1/consultations/{id}': {
+      get: {
+        tags: ['Consultations'],
+        summary: "Détail d'une consultation",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'Consultation trouvée' },
+          404: { description: 'Consultation non trouvée' },
+        },
+      },
+      put: {
+        tags: ['Consultations'],
+        summary: 'Mettre à jour une consultation',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  motifPrincipal: { type: 'string' },
+                  symptomes: { type: 'array', items: { type: 'string' } },
+                  notesAsc: { type: 'string' },
+                  protocoleUtilise: { type: 'string' },
+                  confianceIa: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Consultation mise à jour' },
+          400: { description: 'Données invalides ou consultation terminée' },
+        },
+      },
+    },
+    '/api/v1/consultations/{id}/vitals': {
+      post: {
+        tags: ['Consultations'],
+        summary: 'Saisir les constantes vitales',
+        description: 'Enregistre les constantes vitales et déclenche les alertes automatiques',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/VitalsDto' },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Constantes enregistrées — alertes calculées automatiquement' },
+          400: { description: 'Consultation non trouvée' },
+        },
+      },
+    },
+    '/api/v1/consultations/{id}/complete': {
+      post: {
+        tags: ['Consultations'],
+        summary: 'Clôturer une consultation',
+        description: 'Change le statut de la consultation à TERMINEE',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'Consultation clôturée' },
+          400: { description: 'Consultation déjà terminée' },
+        },
+      },
+    },
+    '/api/v1/consultations/{id}/diagnostics': {
+      get: {
+        tags: ['Consultations'],
+        summary: 'Liste des diagnostics',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'Diagnostics récupérés' },
+        },
+      },
+      post: {
+        tags: ['Consultations'],
+        summary: 'Ajouter un diagnostic',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/DiagnosticDto' },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Diagnostic ajouté' },
+          400: { description: 'Données invalides' },
+        },
+      },
+    },
+    '/api/v1/consultations/{id}/ordonnances': {
+      post: {
+        tags: ['Consultations'],
+        summary: 'Ajouter une ordonnance',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/OrdonnanceDto' },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Ordonnance ajoutée' },
+          400: { description: 'Médicament non trouvé' },
+        },
+      },
+    },
+    '/api/v1/consultations/{id}/referral': {
+      post: {
+        tags: ['Consultations'],
+        summary: 'Créer un référencement',
+        description: 'Transfère le patient vers une structure de santé supérieure',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ReferralDto' },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Référencement créé' },
+          400: { description: 'Référencement déjà existant ou structure non trouvée' },
         },
       },
     },

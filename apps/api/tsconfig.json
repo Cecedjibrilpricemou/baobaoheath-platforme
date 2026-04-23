@@ -1,9 +1,18 @@
 {
-    "extends": "../../tsconfig.base.json",
-    "compilerOptions": {
-      "outDir": "./dist",
-      "rootDir": "./src"
-    },
-    "include": ["src/**/*", "prisma.config.ts"],
-    "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
-  }
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/**/*",
+    "prisma.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

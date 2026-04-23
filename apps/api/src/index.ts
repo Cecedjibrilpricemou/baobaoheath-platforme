@@ -2,11 +2,14 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import 'dotenv/config';
-import { setupSwagger } from './config/swagger';
-import patientRoutes from './routes/patient.routes';
 
 // ─── Import des routes ────────────────────────────────────
 import authRoutes from './routes/auth.routes';
+import patientRoutes from './routes/patient.routes';
+import consultationRoutes from './routes/consultation.routes';
+
+// ─── Import Swagger ───────────────────────────────────────
+import { setupSwagger } from './config/swagger';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -30,12 +33,14 @@ app.get('/health', (_req: Request, res: Response) => {
     environment: process.env.NODE_ENV ?? 'development',
   });
 });
+
 // ─── Documentation Swagger ────────────────────────────────
 setupSwagger(app);
 
 // ─── Routes API v1 ────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
+app.use('/api/v1/consultations', consultationRoutes);
 
 // ─── Route 404 ────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
