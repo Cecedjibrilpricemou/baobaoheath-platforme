@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../src/config/generated/client"
 }
 
@@ -7,4 +7,448 @@ datasource db {
   provider = "postgresql"
 }
 
-// Les 18 modeles seront ajoutes ici dans la prochaine etape
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum Role {
+  PATIENT
+  ASC
+  ASC_SUPERVISOR
+  MEDECIN
+  PHARMACIEN
+  ADMIN_STRUCTURE
+  ADMIN_REGIONAL
+  ADMIN_NATIONAL
+  SUPER_ADMIN
+}
+
+enum EncounterStatus {
+  PLANIFIEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+  REFERENCEE
+}
+
+enum ReferralStatus {
+  EN_ATTENTE
+  ACCEPTE
+  REFUSE
+  COMPLETE
+}
+
+enum InvoiceStatus {
+  EN_ATTENTE
+  PAYEE
+  PARTIELLE
+  ANNULEE
+  REMBOURSEE
+}
+
+enum Urgence {
+  ROUTINE
+  URGENT
+  URGENCE_VITALE
+}
+
+enum TypeStructure {
+  POSTE
+  CENTRE
+  HOPITAL_PREF
+  HOPITAL_REG
+  CHU
+  CLINIQUE
+}
+
+enum StatutOrdonnance {
+  EN_ATTENTE
+  DELIVREE
+  EXPIREE
+  ANNULEE
+}
+
+// ─── DOMAINE 1 — UTILISATEURS & ACCES ────────────────────
+
+model Utilisateur {
+  id                String    @id @default(cuid())
+  telephone         String    @unique
+  email             String?   @unique
+  motDePasseHash    String
+  role              Role
+  prenom            String
+  nom               String
+  langue            String    @default("fr")
+  photoUrl          String?
+  estActif          Boolean   @default(true)
+  twoFaActive       Boolean   @default(false)
+  twoFaSecret       String?
+  derniereConnexion DateTime?
+  creeLe            DateTime  @default(now())
+  modifieLe         DateTime  @updatedAt
+
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id])
+
+  patientProfile       PatientProfile?
+  ascProfile           AscProfile?
+  sessions             Session[]
+  auditLogs            JournalAudit[]
+  messagesEnvoyes      Message[]       @relation("Expediteur")
+  messagesRecus        Message[]       @relation("Destinataire")
+  consultationsSigne   Consultation[]  @relation("MedecinValideur")
+  ordonnancesSigne     Ordonnance[]    @relation("MedecinSignataire")
+  vaccinsAdministres   Vaccination[]
+  referencementsValide Referencement[] @relation("MedecinValideurRef")
+
+  @@map("utilisateurs")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  refreshToken String   @unique
+  expireLe     DateTime
+  ipAdresse    String?
+  userAgent    String?
+  creeLe       DateTime @default(now())
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model JournalAudit {
+  id          String   @id @default(cuid())
+  action      String
+  ressource   String
+  idRessource String?
+  ipAdresse   String?
+  userAgent   String?
+  metadonnees Json?
+  creeLe      DateTime @default(now())
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  @@map("journal_audit")
+}
+
+// ─── DOMAINE 2 — ACTEURS DE SANTE ────────────────────────
+
+model StructureSante {
+  id          String        @id @default(cuid())
+  nom         String
+  type        TypeStructure
+  prefecture  String
+  adresse     String?
+  latitude    Float?
+  longitude   Float?
+  telephone   String?
+  photoUrl    String?
+  estActive   Boolean       @default(true)
+  creeLe      DateTime      @default(now())
+
+  utilisateurs         Utilisateur[]
+  ascProfiles          AscProfile[]
+  referencementsSource Referencement[] @relation("StructureSource")
+  referencementsCible  Referencement[] @relation("StructureCible")
+
+  @@map("structures")
+}
+
+model PatientProfile {
+  id                 String   @id @default(cuid())
+  qrCode             String   @unique @default(cuid())
+  dateNaissance      DateTime
+  sexe               String
+  groupeSanguin      String?
+  allergies          String[]
+  maladiesChroniques String[]
+  prefecture         String
+  sousPrefecture     String?
+  village            String?
+  latitude           Float?
+  longitude          Float?
+  photoUrl           String?
+  urgenceNom         String?
+  urgenceTelephone   String?
+  creeLe             DateTime @default(now())
+  modifieLe          DateTime @updatedAt
+
+  idUtilisateur String      @unique
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  consultations Consultation[]
+  vaccinations  Vaccination[]
+  factures      Facture[]
+  rendezVous    RendezVous[]
+
+  @@map("patients")
+}
+
+model AscProfile {
+  id                  String   @id @default(cuid())
+  zoneCouverture      Json?
+  numeroCertification String?
+  photoUrl            String?
+  creeLe              DateTime @default(now())
+
+  idUtilisateur String      @unique
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  idSuperviseur String?
+  superviseur   AscProfile?  @relation("Supervision", fields: [idSuperviseur], references: [id])
+  supervises    AscProfile[] @relation("Supervision")
+
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id])
+
+  consultations Consultation[]
+  stocks        Stock[]
+  rendezVous    RendezVous[]
+
+  @@map("profils_asc")
+}
+
+// ─── DOMAINE 3 — ACTES MEDICAUX ──────────────────────────
+
+model Consultation {
+  id               String          @id @default(cuid())
+  statut           EncounterStatus @default(EN_COURS)
+  motifPrincipal   String
+  symptomes        String[]
+  protocoleUtilise String?
+  confianceIa      Float?
+  resumeIa         String?
+  notesAsc         String?
+  notesMedecin     String?
+  piecesJointes    String[]
+  signeLe          DateTime?
+  consulteeLE      DateTime        @default(now())
+  creeLe           DateTime        @default(now())
+  modifieLe        DateTime        @updatedAt
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idAsc String?
+  asc   AscProfile? @relation(fields: [idAsc], references: [id])
+
+  idMedecinValideur String?
+  medecinValideur   Utilisateur? @relation("MedecinValideur", fields: [idMedecinValideur], references: [id])
+
+  constantes    ConstantesVitales?
+  diagnostics   Diagnostic[]
+  ordonnances   Ordonnance[]
+  referencement Referencement?
+  facture       Facture?
+  rendezVous    RendezVous?
+  messages      Message[]
+
+  @@map("consultations")
+}
+
+model ConstantesVitales {
+  id                    String   @id @default(cuid())
+  temperature           Float?
+  poidsKg               Float?
+  tailleCm              Float?
+  perimetreBrachial     Float?
+  tensionSystolique     Int?
+  tensionDiastolique    Int?
+  frequenceCardiaque    Int?
+  frequenceRespiratoire Int?
+  spo2                  Float?
+  glycemie              Float?
+  alertes               String[]
+  mesureLe              DateTime @default(now())
+
+  idConsultation String       @unique
+  consultation   Consultation @relation(fields: [idConsultation], references: [id], onDelete: Cascade)
+
+  @@map("constantes_vitales")
+}
+
+model Diagnostic {
+  id             String   @id @default(cuid())
+  libelle        String
+  codeIcd11      String?
+  typeDiagnostic String   @default("PRINCIPAL")
+  severite       String?
+  statutClinique String   @default("ACTIF")
+  source         String
+  creeLe         DateTime @default(now())
+
+  idConsultation String
+  consultation   Consultation @relation(fields: [idConsultation], references: [id], onDelete: Cascade)
+
+  @@map("diagnostics")
+}
+
+model Medicament {
+  id               String   @id @default(cuid())
+  dci              String
+  nomCommercial    String?
+  forme            String
+  dosage           String
+  categorie        String?
+  imageUrl         String?
+  listeEssentielle Boolean  @default(false)
+  estActif         Boolean  @default(true)
+
+  ordonnances Ordonnance[]
+  stocks      Stock[]
+
+  @@map("medicaments")
+}
+
+model Ordonnance {
+  id           String           @id @default(cuid())
+  posologie    String
+  frequence    String
+  dureeJours   Int
+  instructions String?
+  statut       StatutOrdonnance @default(EN_ATTENTE)
+  urlDocument  String?
+  signeLe      DateTime?
+  creeLe       DateTime         @default(now())
+
+  idConsultation String
+  consultation   Consultation @relation(fields: [idConsultation], references: [id], onDelete: Cascade)
+
+  idMedicament String
+  medicament   Medicament @relation(fields: [idMedicament], references: [id])
+
+  signePar   String?
+  signataire Utilisateur? @relation("MedecinSignataire", fields: [signePar], references: [id])
+
+  @@map("ordonnances")
+}
+
+model Vaccination {
+  id              String    @id @default(cuid())
+  vaccinNom       String
+  codeEpi         String?
+  numeroLot       String?
+  siteInjection   String?
+  reaction        String?
+  urlCertificat   String?
+  dateProchaineD  DateTime?
+  administreLe    DateTime  @default(now())
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idAdministrePar String
+  administrePar   Utilisateur @relation(fields: [idAdministrePar], references: [id])
+
+  @@map("vaccinations")
+}
+
+// ─── DOMAINE 4 — COORDINATION ────────────────────────────
+
+model RendezVous {
+  id        String   @id @default(cuid())
+  statut    String   @default("PLANIFIE")
+  motif     String?
+  prevuLe   DateTime
+  rappel24h Boolean  @default(false)
+  rappel2h  Boolean  @default(false)
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idAsc String
+  asc   AscProfile @relation(fields: [idAsc], references: [id])
+
+  idConsultation String?       @unique
+  consultation   Consultation? @relation(fields: [idConsultation], references: [id])
+
+  @@map("rendez_vous")
+}
+
+model Referencement {
+  id             String         @id @default(cuid())
+  urgence        Urgence        @default(ROUTINE)
+  statut         ReferralStatus @default(EN_ATTENTE)
+  resumeClinique String
+  motifRefus     String?
+  urlDocument    String?
+  creeLe         DateTime       @default(now())
+  reponduLe      DateTime?
+
+  idConsultation String       @unique
+  consultation   Consultation @relation(fields: [idConsultation], references: [id], onDelete: Cascade)
+
+  idStructureSource String?
+  structureSource   StructureSante? @relation("StructureSource", fields: [idStructureSource], references: [id])
+
+  idStructureCible String
+  structureCible   StructureSante @relation("StructureCible", fields: [idStructureCible], references: [id])
+
+  idMedecinValideur String?
+  medecinValideur   Utilisateur? @relation("MedecinValideurRef", fields: [idMedecinValideur], references: [id])
+
+  @@map("referencements")
+}
+
+model Message {
+  id       String    @id @default(cuid())
+  contenu  String
+  lu       Boolean   @default(false)
+  luLe     DateTime?
+  envoyeLe DateTime  @default(now())
+
+  idExpediteur String
+  expediteur   Utilisateur @relation("Expediteur", fields: [idExpediteur], references: [id], onDelete: Restrict)
+
+  idDestinataire String
+  destinataire   Utilisateur @relation("Destinataire", fields: [idDestinataire], references: [id], onDelete: Restrict)
+
+  idConsultation String?
+  consultation   Consultation? @relation(fields: [idConsultation], references: [id])
+
+  @@map("messages")
+}
+
+// ─── DOMAINE 5 — GESTION OPERATIONNELLE ──────────────────
+
+model Stock {
+  id             String    @id @default(cuid())
+  quantite       Int       @default(0)
+  seuilAlerte    Int       @default(10)
+  unite          String
+  datePeremption DateTime?
+  modifieLe      DateTime  @updatedAt
+
+  idAsc String
+  asc   AscProfile @relation(fields: [idAsc], references: [id], onDelete: Restrict)
+
+  idMedicament String
+  medicament   Medicament @relation(fields: [idMedicament], references: [id])
+
+  @@unique([idAsc, idMedicament])
+  @@map("stocks")
+}
+
+model Facture {
+  id                 String        @id @default(cuid())
+  montantGnf         Int
+  statut             InvoiceStatus @default(EN_ATTENTE)
+  modePaiement       String?
+  referenceOperateur String?       @unique
+  numeroOperateur    String?
+  urlRecu            String?
+  payeeLe            DateTime?
+  creeLe             DateTime      @default(now())
+  modifieLe          DateTime      @updatedAt
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idConsultation String?       @unique
+  consultation   Consultation? @relation(fields: [idConsultation], references: [id])
+
+  @@map("factures")
+}

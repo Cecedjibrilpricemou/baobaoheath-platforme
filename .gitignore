@@ -22,3 +22,5 @@ coverage/
 tmp/
 temp/
 *.tmp
+apps/api/src/config/generated/
+apps/api/.env
