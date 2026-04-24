@@ -7,6 +7,7 @@ import 'dotenv/config';
 import authRoutes from './routes/auth.routes';
 import patientRoutes from './routes/patient.routes';
 import consultationRoutes from './routes/consultation.routes';
+import ascRoutes from './routes/asc.routes';
 
 // ─── Import Swagger ───────────────────────────────────────
 import { setupSwagger } from './config/swagger';
@@ -22,6 +23,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
 
 // ─── Route de santé ───────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
@@ -41,6 +43,7 @@ setupSwagger(app);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/consultations', consultationRoutes);
+app.use('/api/v1/asc', ascRoutes);
 
 // ─── Route 404 ────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

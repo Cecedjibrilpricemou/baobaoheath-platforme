@@ -241,6 +241,86 @@ export const swaggerDocument = {
           constantes: { $ref: '#/components/schemas/VitalsDto' },
         },
       },
+      // ─── ASC ───────────────────────────────────────────
+      CreateStockDto: {
+        type: 'object',
+        required: ['idMedicament', 'quantite', 'unite'],
+        properties: {
+          idMedicament: { type: 'string', example: 'clxxx123' },
+          quantite: { type: 'integer', example: 50 },
+          unite: { type: 'string', example: 'comprimés' },
+          seuilAlerte: { type: 'integer', example: 10, description: 'Alerte si quantite <= seuil' },
+          datePeremption: { type: 'string', format: 'date', example: '2027-06-30' },
+        },
+      },
+      UpdateStockDto: {
+        type: 'object',
+        required: ['quantite', 'unite'],
+        properties: {
+          quantite: { type: 'integer', example: 35 },
+          unite: { type: 'string', example: 'comprimés' },
+          seuilAlerte: { type: 'integer', example: 10 },
+          datePeremption: { type: 'string', format: 'date', example: '2027-06-30' },
+        },
+      },
+      Stock: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          quantite: { type: 'integer' },
+          seuilAlerte: { type: 'integer' },
+          unite: { type: 'string' },
+          datePeremption: { type: 'string', format: 'date-time' },
+          enAlerte: { type: 'boolean', description: 'true si quantite <= seuilAlerte' },
+          modifieLe: { type: 'string', format: 'date-time' },
+          medicament: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              dci: { type: 'string' },
+              nomCommercial: { type: 'string' },
+              forme: { type: 'string' },
+              dosage: { type: 'string' },
+            },
+          },
+        },
+      },
+      RapportMensuel: {
+        type: 'object',
+        properties: {
+          periode: {
+            type: 'object',
+            properties: {
+              mois: { type: 'integer' },
+              annee: { type: 'integer' },
+              debut: { type: 'string', format: 'date-time' },
+              fin: { type: 'string', format: 'date-time' },
+            },
+          },
+          statistiques: {
+            type: 'object',
+            properties: {
+              totalConsultations: { type: 'integer' },
+              consultationsTerminees: { type: 'integer' },
+              totalReferences: { type: 'integer' },
+              totalVaccinations: { type: 'integer' },
+              totalRendezVous: { type: 'integer' },
+              rendezVousHonores: { type: 'integer' },
+            },
+          },
+          topDiagnostics: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                libelle: { type: 'string' },
+                count: { type: 'integer' },
+              },
+            },
+          },
+          alertesStock: { type: 'integer' },
+        },
+      },
     },
   },
   paths: {
@@ -783,6 +863,195 @@ export const swaggerDocument = {
         responses: {
           201: { description: 'Référencement créé' },
           400: { description: 'Référencement déjà existant ou structure non trouvée' },
+        },
+      },
+    },
+    // ─── ASC ──────────────────────────────────────────────
+    '/api/v1/asc/me': {
+      get: {
+        tags: ['ASC'],
+        summary: "Profil ASC connecté",
+        description: "Retourne le profil complet de l'ASC connecté",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Profil récupéré' },
+          404: { description: 'Profil ASC non trouvé' },
+        },
+      },
+      put: {
+        tags: ['ASC'],
+        summary: 'Mettre à jour le profil ASC',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  numeroCertification: { type: 'string' },
+                  photoUrl: { type: 'string' },
+                  zoneCouverture: {
+                    type: 'object',
+                    properties: {
+                      prefecture: { type: 'string' },
+                      sousPrefectures: { type: 'array', items: { type: 'string' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Profil mis à jour' },
+          400: { description: 'Données invalides' },
+        },
+      },
+    },
+    '/api/v1/asc/patients': {
+      get: {
+        tags: ['ASC'],
+        summary: 'Patients de la zone ASC',
+        description: "Retourne la liste des patients vus par cet ASC",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Liste récupérée' },
+          404: { description: 'Profil ASC non trouvé' },
+        },
+      },
+    },
+    '/api/v1/asc/planning': {
+      get: {
+        tags: ['ASC'],
+        summary: "Planning de l'ASC",
+        description: "Retourne les rendez-vous à venir de l'ASC",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Planning récupéré' },
+          404: { description: 'Profil ASC non trouvé' },
+        },
+      },
+    },
+    '/api/v1/asc/stocks': {
+      get: {
+        tags: ['ASC'],
+        summary: 'Inventaire des stocks',
+        description: "Retourne les stocks de médicaments de l'ASC",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          {
+            name: 'seuilAlerte',
+            in: 'query',
+            schema: { type: 'boolean' },
+            description: 'Filtrer uniquement les stocks en alerte',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Stocks récupérés',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Stock' } },
+                    meta: {
+                      type: 'object',
+                      properties: {
+                        total: { type: 'integer' },
+                        page: { type: 'integer' },
+                        alertes: { type: 'integer', description: 'Nombre de stocks en alerte' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ['ASC'],
+        summary: "Créer un stock",
+        description: "Ajoute un médicament à l'inventaire de l'ASC",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CreateStockDto' },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Stock créé' },
+          400: { description: 'Stock déjà existant ou médicament non trouvé' },
+        },
+      },
+    },
+    '/api/v1/asc/stocks/{id}': {
+      put: {
+        tags: ['ASC'],
+        summary: 'Mettre à jour un stock',
+        description: "Met à jour la quantité et les informations d'un stock",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateStockDto' },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Stock mis à jour' },
+          400: { description: 'Stock non trouvé ou accès refusé' },
+        },
+      },
+    },
+    '/api/v1/asc/rapport': {
+      get: {
+        tags: ['ASC'],
+        summary: 'Rapport mensuel',
+        description: "Retourne le rapport d'activité mensuel de l'ASC",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'mois',
+            in: 'query',
+            required: true,
+            schema: { type: 'integer', minimum: 1, maximum: 12 },
+            example: 4,
+          },
+          {
+            name: 'annee',
+            in: 'query',
+            required: true,
+            schema: { type: 'integer' },
+            example: 2026,
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Rapport généré',
+            content: {
+              'application/json': {
+                schema: {
+                  allOf: [
+                    { $ref: '#/components/schemas/ApiResponse' },
+                    { properties: { data: { $ref: '#/components/schemas/RapportMensuel' } } },
+                  ],
+                },
+              },
+            },
+          },
+          400: { description: 'Paramètres mois et annee requis' },
         },
       },
     },
