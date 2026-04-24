@@ -1,7 +1,6 @@
 import { Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
 
-// ─── Définition OpenAPI 3.0 ───────────────────────────────
 export const swaggerDocument = {
   openapi: '3.0.0',
   info: {
@@ -43,25 +42,13 @@ export const swaggerDocument = {
         type: 'object',
         required: ['telephone', 'motDePasse', 'prenom', 'nom'],
         properties: {
-          telephone: {
-            type: 'string',
-            example: '+224621000000',
-            description: 'Numéro de téléphone guinéen',
-          },
-          motDePasse: {
-            type: 'string',
-            example: 'MotDePasse123!',
-            description: 'Minimum 8 caractères',
-          },
+          telephone: { type: 'string', example: '+224621000000', description: 'Numéro de téléphone guinéen' },
+          motDePasse: { type: 'string', example: 'MotDePasse123!', description: 'Minimum 8 caractères' },
           prenom: { type: 'string', example: 'Mamadou' },
           nom: { type: 'string', example: 'Diallo' },
           role: {
             type: 'string',
-            enum: [
-              'PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN',
-              'PHARMACIEN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL',
-              'ADMIN_NATIONAL', 'SUPER_ADMIN',
-            ],
+            enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
             default: 'PATIENT',
           },
         },
@@ -111,16 +98,8 @@ export const swaggerDocument = {
           sousPrefecture: { type: 'string', example: 'Matam' },
           village: { type: 'string', example: 'Kipé' },
           groupeSanguin: { type: 'string', example: 'O+' },
-          allergies: {
-            type: 'array',
-            items: { type: 'string' },
-            example: ['Pénicilline'],
-          },
-          maladiesChroniques: {
-            type: 'array',
-            items: { type: 'string' },
-            example: ['Diabète'],
-          },
+          allergies: { type: 'array', items: { type: 'string' }, example: ['Pénicilline'] },
+          maladiesChroniques: { type: 'array', items: { type: 'string' }, example: ['Diabète'] },
           urgenceNom: { type: 'string', example: 'Ibrahima Camara' },
           urgenceTelephone: { type: 'string', example: '+224622000000' },
         },
@@ -152,11 +131,7 @@ export const swaggerDocument = {
         properties: {
           idPatient: { type: 'string', example: 'clxxx123' },
           motifPrincipal: { type: 'string', example: 'Fièvre et maux de tête' },
-          symptomes: {
-            type: 'array',
-            items: { type: 'string' },
-            example: ['Fièvre', 'Céphalées', 'Frissons'],
-          },
+          symptomes: { type: 'array', items: { type: 'string' }, example: ['Fièvre', 'Céphalées', 'Frissons'] },
         },
       },
       VitalsDto: {
@@ -180,19 +155,9 @@ export const swaggerDocument = {
         properties: {
           libelle: { type: 'string', example: 'Paludisme simple' },
           codeIcd11: { type: 'string', example: '1F40' },
-          typeDiagnostic: {
-            type: 'string',
-            enum: ['PRINCIPAL', 'DIFFERENTIEL', 'SECONDAIRE'],
-            default: 'PRINCIPAL',
-          },
-          severite: {
-            type: 'string',
-            enum: ['LEGER', 'MODERE', 'SEVERE', 'CRITIQUE'],
-          },
-          source: {
-            type: 'string',
-            enum: ['IA_LOCALE', 'IA_CLAUDE', 'MEDECIN', 'ASC'],
-          },
+          typeDiagnostic: { type: 'string', enum: ['PRINCIPAL', 'DIFFERENTIEL', 'SECONDAIRE'], default: 'PRINCIPAL' },
+          severite: { type: 'string', enum: ['LEGER', 'MODERE', 'SEVERE', 'CRITIQUE'] },
+          source: { type: 'string', enum: ['IA_LOCALE', 'IA_CLAUDE', 'MEDECIN', 'ASC'] },
         },
       },
       OrdonnanceDto: {
@@ -211,25 +176,15 @@ export const swaggerDocument = {
         required: ['idStructureCible', 'urgence', 'resumeClinique'],
         properties: {
           idStructureCible: { type: 'string', example: 'clxxx789' },
-          urgence: {
-            type: 'string',
-            enum: ['ROUTINE', 'URGENT', 'URGENCE_VITALE'],
-            example: 'URGENT',
-          },
-          resumeClinique: {
-            type: 'string',
-            example: 'Patient avec paludisme grave — fièvre > 39.5°C + convulsions',
-          },
+          urgence: { type: 'string', enum: ['ROUTINE', 'URGENT', 'URGENCE_VITALE'], example: 'URGENT' },
+          resumeClinique: { type: 'string', example: 'Patient avec paludisme grave — fièvre > 39.5°C + convulsions' },
         },
       },
       Consultation: {
         type: 'object',
         properties: {
           id: { type: 'string' },
-          statut: {
-            type: 'string',
-            enum: ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE', 'REFERENCEE'],
-          },
+          statut: { type: 'string', enum: ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE', 'REFERENCEE'] },
           motifPrincipal: { type: 'string' },
           symptomes: { type: 'array', items: { type: 'string' } },
           notesAsc: { type: 'string' },
@@ -321,6 +276,42 @@ export const swaggerDocument = {
           alertesStock: { type: 'integer' },
         },
       },
+      // ─── Médecin ───────────────────────────────────────
+      ValiderConsultationDto: {
+        type: 'object',
+        required: ['notesMedecin'],
+        properties: {
+          notesMedecin: { type: 'string', example: 'Diagnostic confirmé — paludisme simple traité correctement' },
+          idOrdonnances: { type: 'array', items: { type: 'string' }, description: 'IDs des ordonnances à signer' },
+        },
+      },
+      RepondreReferencementDto: {
+        type: 'object',
+        required: ['statut'],
+        properties: {
+          statut: { type: 'string', enum: ['ACCEPTE', 'REFUSE'], example: 'ACCEPTE' },
+          motifRefus: { type: 'string', example: 'Capacité insuffisante — redirectionner vers CHU' },
+        },
+      },
+      SendMessageDto: {
+        type: 'object',
+        required: ['idDestinataire', 'contenu'],
+        properties: {
+          idDestinataire: { type: 'string', example: 'clxxx123' },
+          contenu: { type: 'string', example: 'Bonjour, veuillez surveiller la tension artérielle du patient.' },
+          idConsultation: { type: 'string', description: 'Optionnel — lier le message à une consultation' },
+        },
+      },
+      DashboardStats: {
+        type: 'object',
+        properties: {
+          consultationsValidees: { type: 'integer' },
+          consultationsEnAttente: { type: 'integer' },
+          referencementsEnAttente: { type: 'integer' },
+          messagesNonLus: { type: 'integer' },
+          structure: { type: 'object' },
+        },
+      },
     },
   },
   paths: {
@@ -332,23 +323,14 @@ export const swaggerDocument = {
         description: 'Enregistre un nouvel utilisateur et retourne une paire de tokens JWT',
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/RegisterDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/RegisterDto' } } },
         },
         responses: {
           201: {
             description: 'Compte créé avec succès',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/TokenPair' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] },
               },
             },
           },
@@ -363,23 +345,14 @@ export const swaggerDocument = {
         description: 'Authentifie un utilisateur et retourne une paire de tokens JWT',
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/LoginDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/LoginDto' } } },
         },
         responses: {
           200: {
             description: 'Connexion réussie',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/TokenPair' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] },
               },
             },
           },
@@ -396,13 +369,7 @@ export const swaggerDocument = {
           required: true,
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                required: ['refreshToken'],
-                properties: {
-                  refreshToken: { type: 'string' },
-                },
-              },
+              schema: { type: 'object', required: ['refreshToken'], properties: { refreshToken: { type: 'string' } } },
             },
           },
         },
@@ -411,12 +378,7 @@ export const swaggerDocument = {
             description: 'Tokens renouvelés',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/TokenPair' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] },
               },
             },
           },
@@ -447,12 +409,7 @@ export const swaggerDocument = {
             description: 'Profil récupéré',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/Utilisateur' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Utilisateur' } } }] },
               },
             },
           },
@@ -469,11 +426,7 @@ export const swaggerDocument = {
         description: 'Enregistre un nouveau patient et retourne une paire de tokens JWT',
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/CreatePatientDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/CreatePatientDto' } } },
         },
         responses: {
           201: {
@@ -483,17 +436,7 @@ export const swaggerDocument = {
                 schema: {
                   allOf: [
                     { $ref: '#/components/schemas/ApiResponse' },
-                    {
-                      properties: {
-                        data: {
-                          type: 'object',
-                          properties: {
-                            tokenPair: { $ref: '#/components/schemas/TokenPair' },
-                            patient: { $ref: '#/components/schemas/PatientProfile' },
-                          },
-                        },
-                      },
-                    },
+                    { properties: { data: { type: 'object', properties: { tokenPair: { $ref: '#/components/schemas/TokenPair' }, patient: { $ref: '#/components/schemas/PatientProfile' } } } } },
                   ],
                 },
               },
@@ -511,12 +454,7 @@ export const swaggerDocument = {
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
           { name: 'prefecture', in: 'query', schema: { type: 'string' } },
-          {
-            name: 'search',
-            in: 'query',
-            schema: { type: 'string' },
-            description: 'Recherche par nom, prénom ou téléphone',
-          },
+          { name: 'search', in: 'query', schema: { type: 'string' }, description: 'Recherche par nom, prénom ou téléphone' },
         ],
         responses: {
           200: {
@@ -527,19 +465,8 @@ export const swaggerDocument = {
                   type: 'object',
                   properties: {
                     success: { type: 'boolean' },
-                    data: {
-                      type: 'array',
-                      items: { $ref: '#/components/schemas/PatientProfile' },
-                    },
-                    meta: {
-                      type: 'object',
-                      properties: {
-                        total: { type: 'integer' },
-                        page: { type: 'integer' },
-                        limit: { type: 'integer' },
-                        totalPages: { type: 'integer' },
-                      },
-                    },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/PatientProfile' } },
+                    meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' }, totalPages: { type: 'integer' } } },
                   },
                 },
               },
@@ -561,12 +488,7 @@ export const swaggerDocument = {
             description: 'Profil récupéré',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/PatientProfile' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/PatientProfile' } } }] },
               },
             },
           },
@@ -585,11 +507,8 @@ export const swaggerDocument = {
               schema: {
                 type: 'object',
                 properties: {
-                  prenom: { type: 'string' },
-                  nom: { type: 'string' },
-                  email: { type: 'string' },
-                  langue: { type: 'string', enum: ['fr', 'pu', 'ml'] },
-                  photoUrl: { type: 'string' },
+                  prenom: { type: 'string' }, nom: { type: 'string' }, email: { type: 'string' },
+                  langue: { type: 'string', enum: ['fr', 'pu', 'ml'] }, photoUrl: { type: 'string' },
                   groupeSanguin: { type: 'string' },
                   allergies: { type: 'array', items: { type: 'string' } },
                   maladiesChroniques: { type: 'array', items: { type: 'string' } },
@@ -623,14 +542,7 @@ export const swaggerDocument = {
         summary: 'Rechercher par QR Code',
         description: 'Retourne le profil patient correspondant au QR Code scanné',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'qrCode',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'qrCode', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'Patient trouvé' },
           404: { description: 'Patient non trouvé' },
@@ -643,14 +555,7 @@ export const swaggerDocument = {
         summary: "Détail d'un patient par ID",
         description: "Retourne le profil complet d'un patient — accessible ASC et Médecin",
         security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'Patient trouvé' },
           404: { description: 'Patient non trouvé' },
@@ -683,23 +588,14 @@ export const swaggerDocument = {
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/CreateConsultationDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateConsultationDto' } } },
         },
         responses: {
           201: {
             description: 'Consultation créée',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/Consultation' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Consultation' } } }] },
               },
             },
           },
@@ -713,9 +609,7 @@ export const swaggerDocument = {
         tags: ['Consultations'],
         summary: "Détail d'une consultation",
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'Consultation trouvée' },
           404: { description: 'Consultation non trouvée' },
@@ -725,20 +619,15 @@ export const swaggerDocument = {
         tags: ['Consultations'],
         summary: 'Mettre à jour une consultation',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           content: {
             'application/json': {
               schema: {
                 type: 'object',
                 properties: {
-                  motifPrincipal: { type: 'string' },
-                  symptomes: { type: 'array', items: { type: 'string' } },
-                  notesAsc: { type: 'string' },
-                  protocoleUtilise: { type: 'string' },
-                  confianceIa: { type: 'number' },
+                  motifPrincipal: { type: 'string' }, symptomes: { type: 'array', items: { type: 'string' } },
+                  notesAsc: { type: 'string' }, protocoleUtilise: { type: 'string' }, confianceIa: { type: 'number' },
                 },
               },
             },
@@ -756,16 +645,10 @@ export const swaggerDocument = {
         summary: 'Saisir les constantes vitales',
         description: 'Enregistre les constantes vitales et déclenche les alertes automatiques',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/VitalsDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/VitalsDto' } } },
         },
         responses: {
           200: { description: 'Constantes enregistrées — alertes calculées automatiquement' },
@@ -779,9 +662,7 @@ export const swaggerDocument = {
         summary: 'Clôturer une consultation',
         description: 'Change le statut de la consultation à TERMINEE',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'Consultation clôturée' },
           400: { description: 'Consultation déjà terminée' },
@@ -793,27 +674,17 @@ export const swaggerDocument = {
         tags: ['Consultations'],
         summary: 'Liste des diagnostics',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
-        responses: {
-          200: { description: 'Diagnostics récupérés' },
-        },
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { 200: { description: 'Diagnostics récupérés' } },
       },
       post: {
         tags: ['Consultations'],
         summary: 'Ajouter un diagnostic',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/DiagnosticDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/DiagnosticDto' } } },
         },
         responses: {
           201: { description: 'Diagnostic ajouté' },
@@ -826,16 +697,10 @@ export const swaggerDocument = {
         tags: ['Consultations'],
         summary: 'Ajouter une ordonnance',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/OrdonnanceDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } },
         },
         responses: {
           201: { description: 'Ordonnance ajoutée' },
@@ -849,16 +714,10 @@ export const swaggerDocument = {
         summary: 'Créer un référencement',
         description: 'Transfère le patient vers une structure de santé supérieure',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ReferralDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ReferralDto' } } },
         },
         responses: {
           201: { description: 'Référencement créé' },
@@ -941,12 +800,7 @@ export const swaggerDocument = {
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
-          {
-            name: 'seuilAlerte',
-            in: 'query',
-            schema: { type: 'boolean' },
-            description: 'Filtrer uniquement les stocks en alerte',
-          },
+          { name: 'seuilAlerte', in: 'query', schema: { type: 'boolean' }, description: 'Filtrer uniquement les stocks en alerte' },
         ],
         responses: {
           200: {
@@ -958,14 +812,7 @@ export const swaggerDocument = {
                   properties: {
                     success: { type: 'boolean' },
                     data: { type: 'array', items: { $ref: '#/components/schemas/Stock' } },
-                    meta: {
-                      type: 'object',
-                      properties: {
-                        total: { type: 'integer' },
-                        page: { type: 'integer' },
-                        alertes: { type: 'integer', description: 'Nombre de stocks en alerte' },
-                      },
-                    },
+                    meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, alertes: { type: 'integer' } } },
                   },
                 },
               },
@@ -980,11 +827,7 @@ export const swaggerDocument = {
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/CreateStockDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateStockDto' } } },
         },
         responses: {
           201: { description: 'Stock créé' },
@@ -998,16 +841,10 @@ export const swaggerDocument = {
         summary: 'Mettre à jour un stock',
         description: "Met à jour la quantité et les informations d'un stock",
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/UpdateStockDto' },
-            },
-          },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateStockDto' } } },
         },
         responses: {
           200: { description: 'Stock mis à jour' },
@@ -1022,36 +859,145 @@ export const swaggerDocument = {
         description: "Retourne le rapport d'activité mensuel de l'ASC",
         security: [{ bearerAuth: [] }],
         parameters: [
-          {
-            name: 'mois',
-            in: 'query',
-            required: true,
-            schema: { type: 'integer', minimum: 1, maximum: 12 },
-            example: 4,
-          },
-          {
-            name: 'annee',
-            in: 'query',
-            required: true,
-            schema: { type: 'integer' },
-            example: 2026,
-          },
+          { name: 'mois', in: 'query', required: true, schema: { type: 'integer', minimum: 1, maximum: 12 }, example: 4 },
+          { name: 'annee', in: 'query', required: true, schema: { type: 'integer' }, example: 2026 },
         ],
         responses: {
           200: {
             description: 'Rapport généré',
             content: {
               'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    { properties: { data: { $ref: '#/components/schemas/RapportMensuel' } } },
-                  ],
-                },
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RapportMensuel' } } }] },
               },
             },
           },
           400: { description: 'Paramètres mois et annee requis' },
+        },
+      },
+    },
+    // ─── MEDECIN ──────────────────────────────────────────
+    '/api/v1/medecin/me': {
+      get: {
+        tags: ['Médecin'],
+        summary: 'Profil médecin connecté',
+        description: 'Retourne le profil complet du médecin connecté',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Profil récupéré' },
+          404: { description: 'Médecin non trouvé' },
+        },
+      },
+    },
+    '/api/v1/medecin/dashboard': {
+      get: {
+        tags: ['Médecin'],
+        summary: 'Dashboard statistiques',
+        description: 'Retourne les statistiques globales du médecin',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Statistiques récupérées',
+            content: {
+              'application/json': {
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/DashboardStats' } } }] },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/medecin/consultations': {
+      get: {
+        tags: ['Médecin'],
+        summary: 'Consultations à valider',
+        description: 'Retourne la liste des consultations terminées en attente de validation médicale',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'prefecture', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'Liste récupérée' },
+          401: { description: 'Non authentifié' },
+          403: { description: 'Accès refusé' },
+        },
+      },
+    },
+    '/api/v1/medecin/consultations/{id}/valider': {
+      put: {
+        tags: ['Médecin'],
+        summary: 'Valider une consultation',
+        description: 'Valide une consultation et signe les ordonnances sélectionnées',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ValiderConsultationDto' } } },
+        },
+        responses: {
+          200: { description: 'Consultation validée et ordonnances signées' },
+          400: { description: 'Consultation déjà validée ou non trouvée' },
+        },
+      },
+    },
+    '/api/v1/medecin/referencements': {
+      get: {
+        tags: ['Médecin'],
+        summary: 'Référencements à traiter',
+        description: 'Retourne les référencements en attente de réponse',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'ACCEPTE', 'REFUSE', 'COMPLETE'] } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: {
+          200: { description: 'Référencements récupérés' },
+          401: { description: 'Non authentifié' },
+        },
+      },
+    },
+    '/api/v1/medecin/referencements/{id}/repondre': {
+      put: {
+        tags: ['Médecin'],
+        summary: 'Répondre à un référencement',
+        description: 'Accepte ou refuse un référencement de patient',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/RepondreReferencementDto' } } },
+        },
+        responses: {
+          200: { description: 'Réponse enregistrée' },
+          400: { description: 'Référencement déjà traité ou motif manquant' },
+        },
+      },
+    },
+    '/api/v1/medecin/messages': {
+      get: {
+        tags: ['Médecin'],
+        summary: 'Récupérer les messages',
+        description: 'Retourne tous les messages envoyés et reçus — marque les messages comme lus',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Messages récupérés' },
+          401: { description: 'Non authentifié' },
+        },
+      },
+      post: {
+        tags: ['Médecin'],
+        summary: 'Envoyer un message',
+        description: 'Envoie un message à un ASC ou autre utilisateur',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/SendMessageDto' } } },
+        },
+        responses: {
+          201: { description: 'Message envoyé' },
+          400: { description: 'Destinataire non trouvé' },
         },
       },
     },

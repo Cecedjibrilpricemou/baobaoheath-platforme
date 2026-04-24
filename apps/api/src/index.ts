@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes';
 import patientRoutes from './routes/patient.routes';
 import consultationRoutes from './routes/consultation.routes';
 import ascRoutes from './routes/asc.routes';
+import medecinRoutes from './routes/medecin.routes';
 
 // ─── Import Swagger ───────────────────────────────────────
 import { setupSwagger } from './config/swagger';
@@ -44,6 +45,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/consultations', consultationRoutes);
 app.use('/api/v1/asc', ascRoutes);
+app.use('/api/v1/medecin', medecinRoutes);
 
 // ─── Route 404 ────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
