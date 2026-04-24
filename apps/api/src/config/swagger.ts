@@ -312,6 +312,54 @@ export const swaggerDocument = {
           structure: { type: 'object' },
         },
       },
+      // ─── Paiements ─────────────────────────────────────
+      InitierPaiementDto: {
+        type: 'object',
+        required: ['idConsultation', 'montantGnf', 'modePaiement'],
+        properties: {
+          idConsultation: { type: 'string', example: 'clxxx123' },
+          montantGnf: { type: 'integer', example: 50000, description: 'Montant en Francs Guinéens' },
+          modePaiement: {
+            type: 'string',
+            enum: ['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES'],
+            example: 'ORANGE_MONEY',
+          },
+          numeroOperateur: {
+            type: 'string',
+            example: '+224621000000',
+            description: 'Requis pour Orange Money et MTN MoMo',
+          },
+        },
+      },
+      ConfirmerPaiementDto: {
+        type: 'object',
+        required: ['referenceOperateur'],
+        properties: {
+          referenceOperateur: {
+            type: 'string',
+            example: 'OM-1745678901234-5678',
+            description: 'Référence de transaction retournée par l\'opérateur',
+          },
+        },
+      },
+      Facture: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          montantGnf: { type: 'integer', description: 'Montant en Francs Guinéens' },
+          statut: {
+            type: 'string',
+            enum: ['EN_ATTENTE', 'PAYEE', 'PARTIELLE', 'ANNULEE', 'REMBOURSEE'],
+          },
+          modePaiement: { type: 'string', enum: ['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES'] },
+          referenceOperateur: { type: 'string' },
+          numeroOperateur: { type: 'string' },
+          payeeLe: { type: 'string', format: 'date-time' },
+          creeLe: { type: 'string', format: 'date-time' },
+          patient: { $ref: '#/components/schemas/PatientProfile' },
+          consultation: { $ref: '#/components/schemas/Consultation' },
+        },
+      },
     },
   },
   paths: {
@@ -998,6 +1046,113 @@ export const swaggerDocument = {
         responses: {
           201: { description: 'Message envoyé' },
           400: { description: 'Destinataire non trouvé' },
+        },
+      },
+    },
+    // ─── PAIEMENTS ────────────────────────────────────────
+    '/api/v1/paiements': {
+      post: {
+        tags: ['Paiements'],
+        summary: 'Initier un paiement',
+        description: 'Crée une facture et initie un paiement Orange Money, MTN MoMo ou Espèces',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/InitierPaiementDto' } } },
+        },
+        responses: {
+          201: {
+            description: 'Paiement initié — référence opérateur générée',
+            content: {
+              'application/json': {
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Facture' } } }] },
+              },
+            },
+          },
+          400: { description: 'Facture déjà existante ou numéro opérateur manquant' },
+          403: { description: 'Accès refusé — ce n\'est pas votre consultation' },
+        },
+      },
+    },
+    '/api/v1/paiements/historique': {
+      get: {
+        tags: ['Paiements'],
+        summary: 'Historique des paiements',
+        description: 'Retourne l\'historique paginé des paiements du patient connecté',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'PAYEE', 'PARTIELLE', 'ANNULEE', 'REMBOURSEE'] } },
+          { name: 'modePaiement', in: 'query', schema: { type: 'string', enum: ['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES'] } },
+        ],
+        responses: {
+          200: {
+            description: 'Historique récupéré',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Facture' } },
+                    meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' }, totalPages: { type: 'integer' } } },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: 'Profil patient non trouvé' },
+        },
+      },
+    },
+    '/api/v1/paiements/{id}/statut': {
+      get: {
+        tags: ['Paiements'],
+        summary: 'Statut d\'un paiement',
+        description: 'Retourne le statut actuel d\'une facture',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: {
+            description: 'Statut récupéré',
+            content: {
+              'application/json': {
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Facture' } } }] },
+              },
+            },
+          },
+          404: { description: 'Facture non trouvée' },
+        },
+      },
+    },
+    '/api/v1/paiements/{id}/confirmer': {
+      post: {
+        tags: ['Paiements'],
+        summary: 'Confirmer un paiement',
+        description: 'Confirme un paiement — accessible Admin Structure et Pharmacien',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ConfirmerPaiementDto' } } },
+        },
+        responses: {
+          200: { description: 'Paiement confirmé' },
+          400: { description: 'Facture déjà payée ou non trouvée' },
+        },
+      },
+    },
+    '/api/v1/paiements/{id}/annuler': {
+      post: {
+        tags: ['Paiements'],
+        summary: 'Annuler un paiement',
+        description: 'Annule une facture en attente — accessible Patient uniquement',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Paiement annulé' },
+          400: { description: 'Impossible d\'annuler une facture déjà payée' },
         },
       },
     },
