@@ -1,0 +1,56 @@
+import { Router } from 'express';
+import {
+  administrerVaccinController,
+  getCarnetVaccinalController,
+  getMonCarnetVaccinalController,
+  updateVaccinationController,
+  getRappelsVaccinationController,
+  getStatsVaccinationController,
+} from '../controllers/vaccination.controller';
+import { authenticate } from '../middlewares/auth.middleware';
+import { requireRole } from '../middlewares/rbac.middleware';
+
+const router = Router();
+
+// ─── Tous les endpoints nécessitent authentification ─────
+router.use(authenticate);
+
+// ─── Routes Patient ───────────────────────────────────────
+router.get(
+  '/me',
+  requireRole('PATIENT'),
+  getMonCarnetVaccinalController
+);
+
+// ─── Routes ASC / Médecin ─────────────────────────────────
+router.post(
+  '/',
+  requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN'),
+  administrerVaccinController
+);
+
+router.get(
+  '/rappels',
+  requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'ADMIN_STRUCTURE'),
+  getRappelsVaccinationController
+);
+
+router.get(
+  '/stats',
+  requireRole('ASC_SUPERVISOR', 'MEDECIN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL'),
+  getStatsVaccinationController
+);
+
+router.get(
+  '/patient/:id',
+  requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN'),
+  getCarnetVaccinalController
+);
+
+router.put(
+  '/:id',
+  requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN'),
+  updateVaccinationController
+);
+
+export default router;

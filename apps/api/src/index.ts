@@ -10,6 +10,7 @@ import consultationRoutes from './routes/consultation.routes';
 import ascRoutes from './routes/asc.routes';
 import medecinRoutes from './routes/medecin.routes';
 import paiementRoutes from './routes/paiement.routes';
+import vaccinationRoutes from './routes/vaccination.routes';
 
 // ─── Import Swagger ───────────────────────────────────────
 import { setupSwagger } from './config/swagger';
@@ -48,6 +49,7 @@ app.use('/api/v1/consultations', consultationRoutes);
 app.use('/api/v1/asc', ascRoutes);
 app.use('/api/v1/medecin', medecinRoutes);
 app.use('/api/v1/paiements', paiementRoutes);
+app.use('/api/v1/vaccinations', vaccinationRoutes);
 
 // ─── Route 404 ────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
