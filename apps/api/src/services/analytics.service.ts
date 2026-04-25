@@ -1,0 +1,348 @@
+import { prisma } from '../config/prisma';
+import {
+    AnalyticsFilters,
+    HeatmapFilters,
+    AlerteEpidemique,
+    ExportFilters,
+} from '../types/analytics.types';
+
+// ─── Dashboard général — statistiques globales ────────────
+export async function getDashboardGlobal(filters: AnalyticsFilters) {
+    const where = buildDateWhere(filters);
+
+    const [
+        totalPatients,
+        totalConsultations,
+        totalVaccinations,
+        totalReferencements,
+        consultationsParStatut,
+        topPathologies,
+        totalAsc,
+    ] = await Promise.all([
+        prisma.patientProfile.count({
+            where: filters.prefecture ? { prefecture: filters.prefecture } : {},
+        }),
+        prisma.consultation.count({ where }),
+        prisma.vaccination.count({
+            where: filters.debut || filters.fin
+                ? { administreLe: buildPeriodFilter(filters) }
+                : {},
+        }),
+        prisma.referencement.count({
+            where: filters.debut || filters.fin
+                ? { creeLe: buildPeriodFilter(filters) }
+                : {},
+        }),
+        prisma.consultation.groupBy({
+            by: ['statut'],
+            _count: { statut: true },
+            where,
+        }),
+        prisma.diagnostic.groupBy({
+            by: ['libelle'],
+            _count: { libelle: true },
+            orderBy: { _count: { libelle: 'desc' } },
+            take: 10,
+        }),
+        prisma.ascProfile.count(),
+    ]);
+
+    return {
+        kpis: {
+            totalPatients,
+            totalConsultations,
+            totalVaccinations,
+            totalReferencements,
+            totalAsc,
+        },
+        consultationsParStatut: consultationsParStatut.map((c) => ({
+            statut: c.statut,
+            count: c._count.statut,
+        })),
+        topPathologies: topPathologies.map((d) => ({
+            pathologie: d.libelle,
+            count: d._count.libelle,
+        })),
+    };
+}
+
+// ─── Données cartographiques (Heatmap) ───────────────────
+export async function getHeatmapData(filters: HeatmapFilters) {
+    const whereConsultation: any = {};
+
+    if (filters.debut || filters.fin) {
+        whereConsultation.consulteeLE = buildPeriodFilter(filters);
+    }
+
+    if (filters.pathologie) {
+        whereConsultation.diagnostics = {
+            some: {
+                libelle: { contains: filters.pathologie, mode: 'insensitive' },
+            },
+        };
+    }
+
+    const consultations = await prisma.consultation.findMany({
+        where: whereConsultation,
+        include: {
+            patient: {
+                select: {
+                    prefecture: true,
+                    sousPrefecture: true,
+                    latitude: true,
+                    longitude: true,
+                },
+            },
+            diagnostics: {
+                select: { libelle: true },
+            },
+        },
+    });
+
+    const parPrefecture: Record<string, {
+        prefecture: string;
+        count: number;
+        pathologies: Record<string, number>;
+        latitude?: number;
+        longitude?: number;
+    }> = {};
+
+    consultations.forEach((c) => {
+        const pref = c.patient.prefecture;
+        if (!parPrefecture[pref]) {
+            parPrefecture[pref] = {
+                prefecture: pref,
+                count: 0,
+                pathologies: {},
+                latitude: c.patient.latitude ?? undefined,
+                longitude: c.patient.longitude ?? undefined,
+            };
+        }
+        parPrefecture[pref].count++;
+        c.diagnostics.forEach((d) => {
+            parPrefecture[pref].pathologies[d.libelle] =
+                (parPrefecture[pref].pathologies[d.libelle] ?? 0) + 1;
+        });
+    });
+
+    return Object.values(parPrefecture);
+}
+
+// ─── Alertes épidémiques ──────────────────────────────────
+export async function getAlertesEpidemiques(): Promise<AlerteEpidemique[]> {
+    const ilyA30Jours = new Date();
+    ilyA30Jours.setDate(ilyA30Jours.getDate() - 30);
+
+    const diagnostics = await prisma.diagnostic.findMany({
+        where: {
+            creeLe: { gte: ilyA30Jours },
+        },
+        include: {
+            consultation: {
+                include: {
+                    patient: { select: { prefecture: true } },
+                },
+            },
+        },
+    });
+
+    const compteurs: Record<string, Record<string, number>> = {};
+    diagnostics.forEach((d) => {
+        const pathologie = d.libelle;
+        const prefecture = d.consultation.patient.prefecture;
+        if (!compteurs[pathologie]) compteurs[pathologie] = {};
+        compteurs[pathologie][prefecture] =
+            (compteurs[pathologie][prefecture] ?? 0) + 1;
+    });
+
+    const alertes: AlerteEpidemique[] = [];
+    const SEUILS: Record<string, number> = {
+        'Paludisme': 20,
+        'Choléra': 5,
+        'Méningite': 3,
+        'Rougeole': 5,
+        'Fièvre jaune': 2,
+    };
+
+    Object.entries(compteurs).forEach(([pathologie, prefectures]) => {
+        const seuil = SEUILS[pathologie] ?? 15;
+        Object.entries(prefectures).forEach(([prefecture, nombre]) => {
+            if (nombre >= seuil * 0.7) {
+                alertes.push({
+                    pathologie,
+                    prefecture,
+                    nombre,
+                    seuil,
+                    niveau:
+                        nombre >= seuil * 1.5
+                            ? 'URGENCE'
+                            : nombre >= seuil
+                                ? 'ALERTE'
+                                : 'ATTENTION',
+                    dateDetection: new Date(),
+                });
+            }
+        });
+    });
+
+    return alertes.sort((a, b) => {
+        const ordre = { URGENCE: 0, ALERTE: 1, ATTENTION: 2 };
+        return ordre[a.niveau] - ordre[b.niveau];
+    });
+}
+
+// ─── Taux de couverture vaccinale ─────────────────────────
+export async function getCouvertureVaccinale(filters: AnalyticsFilters) {
+    const wherePatient = filters.prefecture
+        ? { prefecture: filters.prefecture }
+        : {};
+
+    const [totalPatients, vaccinations] = await Promise.all([
+        prisma.patientProfile.count({ where: wherePatient }),
+        prisma.vaccination.findMany({
+            where: filters.prefecture
+                ? { patient: { prefecture: filters.prefecture } }
+                : {},
+            select: { vaccinNom: true, idPatient: true },
+        }),
+    ]);
+
+    const parVaccin: Record<string, Set<string>> = {};
+    vaccinations.forEach((v) => {
+        if (!parVaccin[v.vaccinNom]) parVaccin[v.vaccinNom] = new Set();
+        parVaccin[v.vaccinNom].add(v.idPatient);
+    });
+
+    const couverture = Object.entries(parVaccin).map(([vaccin, patients]) => ({
+        vaccin,
+        patientsVaccines: patients.size,
+        totalPatients,
+        tauxCouverture:
+            totalPatients > 0
+                ? Math.round((patients.size / totalPatients) * 100)
+                : 0,
+    }));
+
+    return {
+        totalPatients,
+        couverture: couverture.sort((a, b) => b.tauxCouverture - a.tauxCouverture),
+        prefecture: filters.prefecture ?? 'toutes',
+    };
+}
+
+// ─── Tendances temporelles ────────────────────────────────
+export async function getTendances(filters: AnalyticsFilters) {
+    const moisCount = 6;
+    const tendances = [];
+
+    for (let i = moisCount - 1; i >= 0; i--) {
+        const debut = new Date();
+        debut.setMonth(debut.getMonth() - i);
+        debut.setDate(1);
+        debut.setHours(0, 0, 0, 0);
+
+        const fin = new Date(debut);
+        fin.setMonth(fin.getMonth() + 1);
+        fin.setDate(0);
+        fin.setHours(23, 59, 59, 999);
+
+        const whereBase = {
+            ...(filters.prefecture && {
+                patient: { prefecture: filters.prefecture },
+            }),
+        };
+
+        const [consultations, vaccinations, referencements] = await Promise.all([
+            prisma.consultation.count({
+                where: { ...whereBase, consulteeLE: { gte: debut, lte: fin } },
+            }),
+            prisma.vaccination.count({
+                where: {
+                    ...(filters.prefecture && { patient: { prefecture: filters.prefecture } }),
+                    administreLe: { gte: debut, lte: fin },
+                },
+            }),
+            prisma.referencement.count({
+                where: { creeLe: { gte: debut, lte: fin } },
+            }),
+        ]);
+
+        tendances.push({
+            mois: debut.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
+            consultations,
+            vaccinations,
+            referencements,
+        });
+    }
+
+    return tendances;
+}
+
+// ─── Export données DHIS2 / CSV ───────────────────────────
+export async function exporterDonnees(filters: ExportFilters) {
+    const where = {
+        ...(filters.prefecture && {
+            patient: { prefecture: filters.prefecture },
+        }),
+        ...(filters.debut || filters.fin
+            ? { consulteeLE: buildPeriodFilter(filters) }
+            : {}),
+    };
+
+    const consultations = await prisma.consultation.findMany({
+        where,
+        include: {
+            patient: {
+                include: {
+                    utilisateur: { select: { prenom: true, nom: true } },
+                },
+            },
+            diagnostics: true,
+            constantes: true,
+        },
+        orderBy: { consulteeLE: 'desc' },
+    });
+
+    if (filters.format === 'CSV') {
+        const lignes = [
+            'Date,Patient,Prefecture,Motif,Diagnostics,Temperature,SpO2,Statut',
+            ...consultations.map((c) => [
+                c.consulteeLE.toISOString().split('T')[0],
+                `${c.patient.utilisateur.prenom} ${c.patient.utilisateur.nom}`,
+                c.patient.prefecture,
+                c.motifPrincipal,
+                c.diagnostics.map((d) => d.libelle).join(' | '),
+                c.constantes?.temperature ?? '',
+                c.constantes?.spo2 ?? '',
+                c.statut,
+            ].join(',')),
+        ].join('\n');
+
+        return { format: 'CSV', contenu: lignes, total: consultations.length };
+    }
+
+    return {
+        format: 'JSON',
+        contenu: consultations,
+        total: consultations.length,
+    };
+}
+
+// ─── Helpers ──────────────────────────────────────────────
+function buildDateWhere(filters: AnalyticsFilters) {
+    const where: any = {};
+    if (filters.prefecture) {
+        where.patient = { prefecture: filters.prefecture };
+    }
+    if (filters.debut || filters.fin) {
+        where.consulteeLE = buildPeriodFilter(filters);
+    }
+    return where;
+}
+
+function buildPeriodFilter(filters: { debut?: string; fin?: string }) {
+    const periode: any = {};
+    if (filters.debut) periode.gte = new Date(filters.debut);
+    if (filters.fin) periode.lte = new Date(filters.fin);
+    return periode;
+}

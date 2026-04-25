@@ -352,7 +352,6 @@ export const swaggerDocument = {
           parPrefecture: { type: 'string' },
         },
       },
-      // ─── Notifications ─────────────────────────────────
       SendSmsDto: {
         type: 'object',
         required: ['telephone', 'message'],
@@ -372,7 +371,7 @@ export const swaggerDocument = {
       SmsResult: {
         type: 'object',
         properties: {
-          messageId: { type: 'string', example: 'AT-1745678901234-5678', description: 'ID de message Africa\'s Talking' },
+          messageId: { type: 'string', example: 'AT-1745678901234-5678', description: "ID de message Africa's Talking" },
           statut: { type: 'string', example: 'ENVOYE' },
         },
       },
@@ -397,6 +396,105 @@ export const swaggerDocument = {
               vaccinations: { type: 'array', items: { type: 'string' } },
             },
           },
+        },
+      },
+      // ─── Analytics ─────────────────────────────────────
+      DashboardGlobal: {
+        type: 'object',
+        properties: {
+          kpis: {
+            type: 'object',
+            properties: {
+              totalPatients: { type: 'integer' },
+              totalConsultations: { type: 'integer' },
+              totalVaccinations: { type: 'integer' },
+              totalReferencements: { type: 'integer' },
+              totalAsc: { type: 'integer' },
+            },
+          },
+          consultationsParStatut: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                statut: { type: 'string' },
+                count: { type: 'integer' },
+              },
+            },
+          },
+          topPathologies: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                pathologie: { type: 'string' },
+                count: { type: 'integer' },
+              },
+            },
+          },
+        },
+      },
+      HeatmapData: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            prefecture: { type: 'string' },
+            count: { type: 'integer' },
+            pathologies: { type: 'object', additionalProperties: { type: 'integer' } },
+            latitude: { type: 'number' },
+            longitude: { type: 'number' },
+          },
+        },
+      },
+      AlerteEpidemique: {
+        type: 'object',
+        properties: {
+          pathologie: { type: 'string', example: 'Paludisme' },
+          prefecture: { type: 'string', example: 'Conakry' },
+          nombre: { type: 'integer', example: 25 },
+          seuil: { type: 'integer', example: 20 },
+          niveau: { type: 'string', enum: ['ATTENTION', 'ALERTE', 'URGENCE'], example: 'ALERTE' },
+          dateDetection: { type: 'string', format: 'date-time' },
+        },
+      },
+      CouvertureVaccinale: {
+        type: 'object',
+        properties: {
+          totalPatients: { type: 'integer' },
+          couverture: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                vaccin: { type: 'string' },
+                patientsVaccines: { type: 'integer' },
+                totalPatients: { type: 'integer' },
+                tauxCouverture: { type: 'integer', description: 'Pourcentage 0-100' },
+              },
+            },
+          },
+          prefecture: { type: 'string' },
+        },
+      },
+      TendanceMensuelle: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            mois: { type: 'string', example: 'avr. 2026' },
+            consultations: { type: 'integer' },
+            vaccinations: { type: 'integer' },
+            referencements: { type: 'integer' },
+          },
+        },
+      },
+      ExportData: {
+        type: 'object',
+        properties: {
+          format: { type: 'string', enum: ['JSON', 'CSV'] },
+          total: { type: 'integer' },
+          contenu: { type: 'object', description: 'Données JSON ou texte CSV selon le format choisi' },
         },
       },
     },
@@ -595,112 +693,145 @@ export const swaggerDocument = {
     },
     // ─── NOTIFICATIONS ────────────────────────────────────
     '/api/v1/notifications/sms': {
-      post: {
-        tags: ['Notifications'],
-        summary: 'Envoyer un SMS personnalisé',
-        description: 'Envoie un SMS à un numéro spécifique — accessible Admin uniquement',
-        security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendSmsDto' } } } },
-        responses: {
-          200: { description: 'SMS envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
-          400: { description: 'Numéro ou message invalide' },
-          403: { description: 'Accès refusé — Admin requis' },
-        },
-      },
+      post: { tags: ['Notifications'], summary: 'Envoyer un SMS personnalisé', description: 'Envoie un SMS à un numéro spécifique — accessible Admin uniquement', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendSmsDto' } } } }, responses: { 200: { description: 'SMS envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Numéro ou message invalide' }, 403: { description: 'Accès refusé — Admin requis' } } },
     },
     '/api/v1/notifications/sms/masse': {
-      post: {
-        tags: ['Notifications'],
-        summary: 'SMS en masse par préfecture',
-        description: 'Envoie un SMS à tous les patients d\'une préfecture — accessible Admin Régional et National',
+      post: { tags: ['Notifications'], summary: 'SMS en masse par préfecture', description: "Envoie un SMS à tous les patients d'une préfecture — accessible Admin Régional et National", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SmsMasseDto' } } } }, responses: { 200: { description: 'SMS envoyés en masse', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsMasseResult' } } }] } } } }, 400: { description: 'Prefecture ou message manquant' }, 403: { description: 'Accès refusé' } } },
+    },
+    '/api/v1/notifications/rappel/rendez-vous/{id}': {
+      post: { tags: ['Notifications'], summary: 'Envoyer rappel de rendez-vous', description: 'Envoie un SMS de rappel au patient pour son rendez-vous — accessible ASC', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du rendez-vous' }], responses: { 200: { description: 'Rappel envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Rendez-vous non trouvé' } } },
+    },
+    '/api/v1/notifications/rappel/vaccination/{id}': {
+      post: { tags: ['Notifications'], summary: 'Envoyer rappel de vaccination', description: 'Envoie un SMS de rappel pour un prochain rappel vaccinal — accessible ASC et Médecin', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la vaccination' }], responses: { 200: { description: 'Rappel vaccinal envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Vaccination non trouvée' } } },
+    },
+    '/api/v1/notifications/alerte/stock/{id}': {
+      post: { tags: ['Notifications'], summary: 'Envoyer alerte stock critique', description: "Envoie un SMS d'alerte à l'ASC pour un stock en dessous du seuil", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du stock' }], responses: { 200: { description: 'Alerte stock envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Stock non trouvé' } } },
+    },
+    '/api/v1/notifications/referencement/{id}': {
+      post: { tags: ['Notifications'], summary: "Notifier le patient d'un référencement", description: "Envoie un SMS au patient pour l'informer de l'acceptation ou du refus de son référencement", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du référencement' }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['statut'], properties: { statut: { type: 'string', enum: ['ACCEPTE', 'REFUSE'], example: 'ACCEPTE' } } } } } }, responses: { 200: { description: 'Notification envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Statut invalide ou référencement non trouvé' } } },
+    },
+    '/api/v1/notifications/rappels/verifier': {
+      get: { tags: ['Notifications'], summary: 'Vérifier les rappels à envoyer', description: 'Retourne la liste des rendez-vous et vaccinations nécessitant un rappel — utile pour les CRON jobs', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Rappels identifiés', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RappelsResult' } } }] } } } }, 403: { description: 'Accès refusé — Admin requis' } } },
+    },
+    // ─── ANALYTICS ────────────────────────────────────────
+    '/api/v1/analytics/dashboard': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Dashboard épidémiologique global',
+        description: 'Retourne les KPIs globaux, consultations par statut et top pathologies — accessible Médecin, Admin',
         security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SmsMasseDto' } } } },
+        parameters: [
+          { name: 'prefecture', in: 'query', schema: { type: 'string' }, description: 'Filtrer par préfecture' },
+          { name: 'debut', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-01-01' },
+          { name: 'fin', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-12-31' },
+        ],
         responses: {
-          200: { description: 'SMS envoyés en masse', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsMasseResult' } } }] } } } },
-          400: { description: 'Prefecture ou message manquant' },
+          200: {
+            description: 'Dashboard récupéré',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/DashboardGlobal' } } }] } } },
+          },
           403: { description: 'Accès refusé' },
         },
       },
     },
-    '/api/v1/notifications/rappel/rendez-vous/{id}': {
-      post: {
-        tags: ['Notifications'],
-        summary: 'Envoyer rappel de rendez-vous',
-        description: 'Envoie un SMS de rappel au patient pour son rendez-vous — accessible ASC',
+    '/api/v1/analytics/heatmap': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Données cartographiques heatmap',
+        description: 'Retourne les données géographiques des consultations par préfecture pour la carte épidémiologique',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du rendez-vous' }],
+        parameters: [
+          { name: 'pathologie', in: 'query', schema: { type: 'string' }, description: 'Filtrer par pathologie', example: 'Paludisme' },
+          { name: 'debut', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-01-01' },
+          { name: 'fin', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-12-31' },
+        ],
         responses: {
-          200: { description: 'Rappel envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
-          400: { description: 'Rendez-vous non trouvé' },
+          200: {
+            description: 'Données heatmap récupérées',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/HeatmapData' } } }] } } },
+          },
+          403: { description: 'Accès refusé' },
         },
       },
     },
-    '/api/v1/notifications/rappel/vaccination/{id}': {
-      post: {
-        tags: ['Notifications'],
-        summary: 'Envoyer rappel de vaccination',
-        description: 'Envoie un SMS de rappel pour un prochain rappel vaccinal — accessible ASC et Médecin',
+    '/api/v1/analytics/alertes': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Alertes épidémiques actives',
+        description: 'Détecte automatiquement les pathologies dépassant les seuils sur les 30 derniers jours — triées par niveau URGENCE > ALERTE > ATTENTION',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la vaccination' }],
         responses: {
-          200: { description: 'Rappel vaccinal envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
-          400: { description: 'Vaccination non trouvée' },
-        },
-      },
-    },
-    '/api/v1/notifications/alerte/stock/{id}': {
-      post: {
-        tags: ['Notifications'],
-        summary: 'Envoyer alerte stock critique',
-        description: 'Envoie un SMS d\'alerte à l\'ASC pour un stock en dessous du seuil',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du stock' }],
-        responses: {
-          200: { description: 'Alerte stock envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
-          400: { description: 'Stock non trouvé' },
-        },
-      },
-    },
-    '/api/v1/notifications/referencement/{id}': {
-      post: {
-        tags: ['Notifications'],
-        summary: 'Notifier le patient d\'un référencement',
-        description: 'Envoie un SMS au patient pour l\'informer de l\'acceptation ou du refus de son référencement',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du référencement' }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['statut'],
-                properties: {
-                  statut: { type: 'string', enum: ['ACCEPTE', 'REFUSE'], example: 'ACCEPTE' },
+          200: {
+            description: 'Alertes récupérées',
+            content: {
+              'application/json': {
+                schema: {
+                  allOf: [
+                    { $ref: '#/components/schemas/ApiResponse' },
+                    { properties: { data: { type: 'array', items: { $ref: '#/components/schemas/AlerteEpidemique' } } } },
+                  ],
                 },
               },
             },
           },
-        },
-        responses: {
-          200: { description: 'Notification envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
-          400: { description: 'Statut invalide ou référencement non trouvé' },
+          403: { description: 'Accès refusé' },
         },
       },
     },
-    '/api/v1/notifications/rappels/verifier': {
+    '/api/v1/analytics/vaccinations/couverture': {
       get: {
-        tags: ['Notifications'],
-        summary: 'Vérifier les rappels à envoyer',
-        description: 'Retourne la liste des rendez-vous et vaccinations nécessitant un rappel — utile pour les CRON jobs',
+        tags: ['Analytics'],
+        summary: 'Taux de couverture vaccinale',
+        description: 'Retourne le taux de couverture vaccinale par vaccin — utile pour les rapports ONG et Ministère de la Santé',
         security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'prefecture', in: 'query', schema: { type: 'string' }, description: 'Filtrer par préfecture' },
+        ],
         responses: {
           200: {
-            description: 'Rappels identifiés',
+            description: 'Couverture vaccinale récupérée',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/CouvertureVaccinale' } } }] } } },
+          },
+          403: { description: 'Accès refusé' },
+        },
+      },
+    },
+    '/api/v1/analytics/tendances': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Tendances sur 6 mois',
+        description: 'Retourne les tendances mensuelles des consultations, vaccinations et référencements sur les 6 derniers mois',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'prefecture', in: 'query', schema: { type: 'string' }, description: 'Filtrer par préfecture' },
+        ],
+        responses: {
+          200: {
+            description: 'Tendances récupérées',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TendanceMensuelle' } } }] } } },
+          },
+          403: { description: 'Accès refusé' },
+        },
+      },
+    },
+    '/api/v1/analytics/export': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Exporter les données (DHIS2 / CSV)',
+        description: 'Exporte les données de consultation au format JSON ou CSV — compatible DHIS2. Accessible Admin uniquement',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'format', in: 'query', schema: { type: 'string', enum: ['JSON', 'CSV'], default: 'JSON' }, description: 'Format d\'export' },
+          { name: 'debut', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-01-01' },
+          { name: 'fin', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-12-31' },
+          { name: 'prefecture', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'Export généré — CSV retourné en téléchargement, JSON en body',
             content: {
-              'application/json': {
-                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RappelsResult' } } }] },
-              },
+              'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/ExportData' } } }] } },
+              'text/csv': { schema: { type: 'string', description: 'Fichier CSV téléchargeable' } },
             },
           },
           403: { description: 'Accès refusé — Admin requis' },
