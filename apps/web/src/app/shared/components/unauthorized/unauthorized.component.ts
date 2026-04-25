@@ -2,7 +2,7 @@
 // Rôle : page affichée quand un utilisateur tente d'accéder
 // à une route pour laquelle il n'a pas le rôle requis.
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -28,6 +28,7 @@ import { Router } from '@angular/router';
   `]
 })
 export class UnauthorizedComponent {
+  // inject() disponible dans Angular 14+ — remplace le constructeur classique
   private router = inject(Router);
 
   goBack() {

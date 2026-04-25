@@ -1,0 +1,120 @@
+<!-- features/auth/login/login.component.html -->
+<!-- Page de connexion BaoBaoHealth -->
+<!-- Design : split screen — illustration gauche, formulaire droite -->
+
+<div class="login-wrapper">
+
+  <!-- ── Panneau gauche : branding BaoBaoHealth ──────────────────── -->
+  <div class="login-left">
+    <div class="login-left__content">
+
+      <!-- Logo + nom -->
+      <div class="login-left__logo">
+        <span class="login-left__logo-icon">🌳</span>
+        <span class="login-left__logo-text">BaoBaoHealth</span>
+      </div>
+
+      <!-- Slogan -->
+      <h1 class="login-left__title">
+        La santé numérique<br>pour la Guinée
+      </h1>
+      <p class="login-left__subtitle">
+        Connectez patients, agents de santé<br>et médecins en un seul endroit.
+      </p>
+
+      <!-- Stats rapides -->
+      <div class="login-left__stats">
+        <div class="stat-item">
+          <span class="stat-value">9</span>
+          <span class="stat-label">Modules</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">62</span>
+          <span class="stat-label">Routes API</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">8</span>
+          <span class="stat-label">Rôles</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Panneau droit : formulaire de connexion ─────────────────── -->
+  <div class="login-right">
+    <div class="login-form-container">
+
+      <!-- En-tête formulaire -->
+      <div class="login-form__header">
+        <h2 class="login-form__title">Connexion</h2>
+        <p class="login-form__desc">Entrez vos identifiants pour accéder à votre espace</p>
+      </div>
+
+      <!-- Message d'erreur global -->
+      @if (errorMessage()) {
+      <div class="login-form__error">
+        <i class="pi pi-exclamation-circle"></i>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      }
+
+      <!-- Formulaire -->
+      <form class="login-form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
+
+        <!-- Champ téléphone -->
+        <div class="form-group">
+          <label class="form-label" for="telephone">
+            <i class="pi pi-phone"></i>
+            Numéro de téléphone
+          </label>
+          <input id="telephone" type="tel" class="form-input" placeholder="Ex: 620 00 00 00"
+            [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel"
+            [class.form-input--error]="errorMessage()" />
+        </div>
+
+        <!-- Champ mot de passe -->
+        <div class="form-group">
+          <label class="form-label" for="motDePasse">
+            <i class="pi pi-lock"></i>
+            Mot de passe
+          </label>
+          <div class="form-input-wrapper">
+            <input id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
+              class="form-input form-input--with-icon" placeholder="Votre mot de passe"
+              [(ngModel)]="formData.motDePasse" name="motDePasse" required autocomplete="current-password"
+              [class.form-input--error]="errorMessage()" />
+            <!-- Toggle affichage mot de passe — aria-label + sr-only pour accessibilité -->
+            <button type="button" class="form-input-toggle" (click)="togglePassword()"
+              aria-label="Afficher ou masquer le mot de passe">
+              <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              <span class="sr-only">Afficher ou masquer le mot de passe</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bouton de connexion -->
+        <button type="submit" class="btn-primary" [disabled]="isLoading()">
+          @if (isLoading()) {
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Connexion en cours...</span>
+          } @else {
+          <i class="pi pi-sign-in"></i>
+          <span>Se connecter</span>
+          }
+        </button>
+
+      </form>
+
+      <!-- Lien vers register -->
+      <div class="login-form__footer">
+        <span>Pas encore de compte ?</span>
+        <a routerLink="/auth/register" class="login-form__link">
+          Créer un compte
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>

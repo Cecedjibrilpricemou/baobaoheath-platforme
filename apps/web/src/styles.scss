@@ -1,1 +1,89 @@
+// Imports PrimeNG — PrimeIcons + PrimeFlex
+@import 'primeicons/primeicons.css';
+@import 'primeflex/primeflex.css';
 /* You can add global styles to this file, and also import other style files */
+// src/styles.scss
+// Fichier de styles global BaoBaoHealth
+// Importe PrimeNG + définit les variables CSS globales de l'app
+
+// ── Variables globales BaoBaoHealth ────────────────────────────────────
+:root {
+  // Couleurs principales
+  --bb-primary: #2D7D46; // Vert baobab — couleur principale
+  --bb-primary-dark: #1E5C32; // Vert foncé — hover, focus
+  --bb-primary-light: #E8F5ED; // Vert très clair — backgrounds
+  --bb-secondary: #F4A228; // Orange Guinée — accentuation
+  --bb-danger: #E53E3E; // Rouge — erreurs, alertes critiques
+  --bb-success: #38A169; // Vert succès — confirmations
+  --bb-warning: #D69E2E; // Jaune — avertissements
+  --bb-info: #3182CE; // Bleu — informations
+
+  // Neutres
+  --bb-white: #FFFFFF;
+  --bb-gray-50: #F9FAFB;
+  --bb-gray-100: #F3F4F6;
+  --bb-gray-200: #E5E7EB;
+  --bb-gray-400: #9CA3AF;
+  --bb-gray-600: #4B5563;
+  --bb-gray-900: #111827;
+
+  // Typographie
+  --bb-font: 'Inter', 'Segoe UI', sans-serif;
+  --bb-font-size: 14px;
+
+  // Layout
+  --bb-radius: 8px;
+  --bb-radius-lg: 12px;
+  --bb-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --bb-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+
+  // Sidebar
+  --bb-sidebar-width: 260px;
+}
+
+// ── Reset de base ───────────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--bb-font);
+  font-size: var(--bb-font-size);
+  color: var(--bb-gray-900);
+  background-color: var(--bb-gray-50);
+  -webkit-font-smoothing: antialiased;
+}
+
+// ── Utilitaires globaux ─────────────────────────────────────────────────
+.bb-card {
+  background: var(--bb-white);
+  border-radius: var(--bb-radius-lg);
+  box-shadow: var(--bb-shadow);
+  padding: 1.5rem;
+}
+
+.bb-badge-success {
+  background: var(--bb-primary-light);
+  color: var(--bb-primary-dark);
+}
+
+.bb-badge-danger {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.bb-badge-warning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.bb-badge-info {
+  background: #DBEAFE;
+  color: #1E40AF;
+}

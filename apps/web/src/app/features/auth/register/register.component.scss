@@ -1,0 +1,300 @@
+// features/auth/register/register.component.scss
+// Styles de la page d'inscription BaoBaoHealth
+// Design : formulaire centré sur fond gris clair, card blanche
+
+// ── Wrapper principal ───────────────────────────────────────────────────
+.register-wrapper {
+    min-height: 100vh;
+    background: var(--bb-gray-100);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  
+  // ── En-tête : logo + titre ──────────────────────────────────────────────
+  .register-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  
+    &__logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+  
+    &__logo-icon {
+      font-size: 2rem;
+    }
+  
+    &__logo-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--bb-primary);
+      letter-spacing: -0.3px;
+    }
+  
+    &__title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--bb-gray-900);
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.4px;
+    }
+  
+    &__desc {
+      font-size: 0.875rem;
+      color: var(--bb-gray-400);
+    }
+  }
+  
+  // ── Card formulaire ─────────────────────────────────────────────────────
+  .register-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--bb-white);
+    border-radius: var(--bb-radius-lg);
+    box-shadow: var(--bb-shadow-lg);
+    padding: 2rem;
+  }
+  
+  // ── Alertes erreur / succès ─────────────────────────────────────────────
+  .form-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--bb-radius);
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+  
+    i { font-size: 1rem; flex-shrink: 0; }
+  
+    // Variante erreur
+    &--error {
+      background: #FEE2E2;
+      border: 1px solid #FECACA;
+      color: #991B1B;
+    }
+  
+    // Variante succès
+    &--success {
+      background: var(--bb-primary-light);
+      border: 1px solid #BBF7D0;
+      color: var(--bb-primary-dark);
+    }
+  }
+  
+  // ── Section label de groupe ─────────────────────────────────────────────
+  .form-section {
+    margin-bottom: 1.25rem;
+  
+    &__label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--bb-gray-600);
+      margin-bottom: 0.75rem;
+  
+      i { font-size: 0.875rem; color: var(--bb-primary); }
+    }
+  }
+  
+  // ── Grid de sélection de rôle ───────────────────────────────────────────
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  
+  // Card rôle cliquable
+  .role-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.875rem 0.5rem;
+    border: 1.5px solid var(--bb-gray-200);
+    border-radius: var(--bb-radius);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.1s;
+    background: var(--bb-gray-50);
+  
+    &:hover {
+      border-color: var(--bb-primary);
+      background: var(--bb-primary-light);
+      transform: translateY(-1px);
+    }
+  
+    // État actif — rôle sélectionné
+    &--active {
+      border-color: var(--bb-primary);
+      background: var(--bb-primary-light);
+      box-shadow: 0 0 0 3px rgba(45, 125, 70, 0.15);
+    }
+  
+    &__icon {
+      font-size: 1.25rem;
+      color: var(--bb-primary);
+    }
+  
+    &__label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--bb-gray-600);
+      text-align: center;
+      line-height: 1.2;
+    }
+  }
+  
+  // ── Ligne avec deux champs côte à côte ─────────────────────────────────
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  // ── Groupe label + input ────────────────────────────────────────────────
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--bb-gray-600);
+  
+    i { font-size: 0.875rem; color: var(--bb-primary); }
+  }
+  
+  // Input de base
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--bb-gray-200);
+    border-radius: var(--bb-radius);
+    font-size: 0.9rem;
+    font-family: var(--bb-font);
+    color: var(--bb-gray-900);
+    background: var(--bb-gray-50);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+  
+    &::placeholder { color: var(--bb-gray-400); }
+  
+    &:focus {
+      border-color: var(--bb-primary);
+      background: var(--bb-white);
+      box-shadow: 0 0 0 3px rgba(45, 125, 70, 0.1);
+    }
+  
+    // Input avec bouton toggle à droite
+    &--with-icon { padding-right: 3rem; }
+  }
+  
+  // Wrapper input + toggle
+  .form-input-wrapper {
+    position: relative;
+  }
+  
+  // Bouton toggle mot de passe
+  .form-input-toggle {
+    position: absolute;
+    right: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--bb-gray-400);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  
+    &:hover { color: var(--bb-primary); }
+    i { font-size: 1rem; }
+  }
+  
+  // ── Bouton principal ────────────────────────────────────────────────────
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.875rem;
+    margin-top: 0.25rem;
+    background: var(--bb-primary);
+    color: var(--bb-white);
+    border: none;
+    border-radius: var(--bb-radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: var(--bb-font);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(45, 125, 70, 0.3);
+  
+    &:hover:not(:disabled) {
+      background: var(--bb-primary-dark);
+      box-shadow: 0 6px 16px rgba(45, 125, 70, 0.4);
+      transform: translateY(-1px);
+    }
+  
+    &:active:not(:disabled) { transform: translateY(0); }
+  
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+  
+    i { font-size: 1rem; }
+  }
+  
+  // ── Footer : lien login ─────────────────────────────────────────────────
+  .register-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--bb-gray-400);
+  
+    &__link {
+      color: var(--bb-primary);
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.2s;
+  
+      &:hover {
+        color: var(--bb-primary-dark);
+        text-decoration: underline;
+      }
+    }
+  }
+  
+  // ── Responsive mobile ───────────────────────────────────────────────────
+  @media (max-width: 480px) {
+    .register-card { padding: 1.5rem; }
+  
+    // Les 4 rôles passent en 2x2 sur mobile
+    .role-grid { grid-template-columns: repeat(2, 1fr); }
+  
+    // Nom + prénom empilés sur mobile
+    .form-row { grid-template-columns: 1fr; }
+  }
