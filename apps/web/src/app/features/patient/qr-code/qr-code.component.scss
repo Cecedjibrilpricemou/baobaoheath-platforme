@@ -1,0 +1,449 @@
+// features/patient/qr-code/qr-code.component.scss
+// Page QR Code patient BaoBaoHealth
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep: #0D2B1A;
+$forest-mid: #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light: #F0FAF4;
+$text-dark: #071610;
+$text-mid: #2D5240;
+$text-muted: #4A6B5A;
+$border: #D8E8DC;
+$white: #ffffff;
+
+// ── Page wrapper ────────────────────────────────────────────────────────
+.qr-page {
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background: #F4F7F5;
+    padding: 32px;
+    max-width: 800px;
+    margin: 0 auto;
+
+    @media (max-width: 768px) {
+        padding: 20px 16px;
+    }
+}
+
+// ── HEADER ──────────────────────────────────────────────────────────────
+.qr-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+
+    &__title {
+        font-family: 'Sora', sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        color: $text-dark;
+        letter-spacing: -0.4px;
+    }
+}
+
+// Bouton retour
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    background: $white;
+    color: $text-mid;
+    border: 1.5px solid $border;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    flex-shrink: 0;
+
+    &:hover {
+        background: $forest-light;
+        border-color: $forest-bright;
+        color: $forest-mid;
+    }
+
+    i {
+        font-size: 12px;
+    }
+}
+
+// ── LOADING ──────────────────────────────────────────────────────────────
+.loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px;
+    color: $text-muted;
+    font-size: 15px;
+
+    i {
+        font-size: 24px;
+    }
+}
+
+// ── ALERTE ───────────────────────────────────────────────────────────────
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 20px;
+
+    &--error {
+        background: #FEE2E2;
+        border: 1px solid #FECACA;
+        color: #991B1B;
+    }
+}
+
+// ── CONTENU ──────────────────────────────────────────────────────────────
+.qr-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+
+    @media (max-width: 700px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+// ── CARD QR CODE ─────────────────────────────────────────────────────────
+.qr-card {
+    background: $white;
+    border-radius: 24px;
+    padding: 28px;
+    border: 1px solid $border;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+
+    // En-tête
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+    }
+
+    &__avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, $forest-mid, $forest-bright);
+        color: $white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Sora', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(26, 92, 53, 0.25);
+    }
+
+    &__name {
+        font-family: 'Sora', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: $text-dark;
+        margin-bottom: 2px;
+    }
+
+    &__role {
+        font-size: 12px;
+        color: $text-muted;
+        font-weight: 500;
+    }
+
+    &__info {
+        flex: 1;
+    }
+}
+
+// ── QR CODE FRAME ────────────────────────────────────────────────────────
+.qr-code-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.qr-code-frame {
+    position: relative;
+    padding: 16px;
+    background: $white;
+    border: 2px solid $forest-deep;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(13, 43, 26, 0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    // Coins décoratifs
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-color: $forest-bright;
+        border-style: solid;
+    }
+
+    &::before {
+        top: -2px;
+        left: -2px;
+        border-width: 3px 0 0 3px;
+        border-radius: 20px 0 0 0;
+    }
+
+    &::after {
+        bottom: -2px;
+        right: -2px;
+        border-width: 0 3px 3px 0;
+        border-radius: 0 0 20px 0;
+    }
+}
+
+.qr-code-img {
+    width: 200px;
+    height: 200px;
+    display: block;
+    border-radius: 8px;
+}
+
+// Logo centré sur le QR Code
+.qr-code-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    background: $white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border: 2px solid $border;
+    pointer-events: none;
+}
+
+// Placeholder si pas de QR Code
+.qr-code-placeholder {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: $forest-light;
+    border-radius: 12px;
+    color: $text-muted;
+
+    i {
+        font-size: 48px;
+        opacity: 0.4;
+    }
+
+    p {
+        font-size: 13px;
+        font-weight: 500;
+    }
+}
+
+// ── CODE TEXTE ───────────────────────────────────────────────────────────
+.qr-code-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 12px 16px;
+    background: $forest-light;
+    border-radius: 12px;
+    border: 1px solid $border;
+
+    &__label {
+        font-size: 10px;
+        font-weight: 600;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    &__value {
+        font-family: 'Sora', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: $forest-deep;
+        letter-spacing: 1px;
+        word-break: break-all;
+        text-align: center;
+    }
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────
+.qr-actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.qr-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s, box-shadow 0.2s;
+
+    &--primary {
+        background: $forest-deep;
+        color: $white;
+
+        &:hover {
+            background: $forest-mid;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(13, 43, 26, 0.25);
+        }
+    }
+
+    &--secondary {
+        background: $forest-light;
+        color: $forest-mid;
+        border: 1.5px solid $border;
+
+        &:hover {
+            border-color: $forest-bright;
+            transform: translateY(-1px);
+        }
+    }
+
+    i {
+        font-size: 14px;
+    }
+}
+
+// ── CARD INFOS ───────────────────────────────────────────────────────────
+.qr-info-card {
+    background: $white;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid $border;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    &__title {
+        font-family: 'Sora', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: $text-dark;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid $border;
+
+        i {
+            color: $forest-bright;
+            font-size: 15px;
+        }
+    }
+}
+
+// Liste infos
+.qr-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.qr-info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #F8FAF9;
+    border-radius: 10px;
+    border: 1px solid $border;
+
+    &__label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        flex-shrink: 0;
+
+        i {
+            font-size: 12px;
+            color: $forest-bright;
+        }
+    }
+
+    &__value {
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-dark;
+        text-align: right;
+
+        // Groupe sanguin — rouge
+        &--blood {
+            background: #FEE2E2;
+            color: #991B1B;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-family: 'Sora', sans-serif;
+            font-weight: 700;
+        }
+    }
+}
+
+// ── NOTE SÉCURITÉ ────────────────────────────────────────────────────────
+.qr-security-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    background: #FFF4E6;
+    border: 1px solid #FFE0B2;
+    border-radius: 12px;
+    margin-top: 4px;
+
+    i {
+        font-size: 16px;
+        color: #C4650A;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    p {
+        font-size: 12px;
+        color: #7A4010;
+        line-height: 1.6;
+        font-weight: 500;
+    }
+}

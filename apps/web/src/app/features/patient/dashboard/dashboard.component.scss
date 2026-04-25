@@ -1,0 +1,515 @@
+// features/patient/dashboard/dashboard.component.scss
+// Dashboard patient BaoBaoHealth — Layout sidebar + contenu principal
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep: #0D2B1A;
+$forest-mid: #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light: #F0FAF4;
+$cream: #F5F3EE;
+$text-dark: #071610;
+$text-mid: #2D5240;
+$text-muted: #4A6B5A;
+$border: #D8E8DC;
+$white: #ffffff;
+$blue-light: #EBF4FF;
+
+// ── Dashboard wrapper ───────────────────────────────────────────────────
+.dashboard {
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background: #F4F7F5;
+    padding: 32px;
+
+    @media (max-width: 768px) {
+        padding: 20px 16px;
+    }
+}
+
+// ── HEADER ──────────────────────────────────────────────────────────────
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    &__left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    // Avatar initiales
+    &__avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, $forest-mid, $forest-bright);
+        color: $white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Sora', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(26, 92, 53, 0.3);
+    }
+
+    &__title {
+        font-family: 'Sora', sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        color: $text-dark;
+        letter-spacing: -0.4px;
+        margin-bottom: 2px;
+    }
+
+    &__sub {
+        font-size: 13px;
+        color: $text-muted;
+        font-weight: 400;
+        text-transform: capitalize;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+}
+
+// Bouton QR Code
+.btn-qr {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: $forest-deep;
+    color: $white;
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+
+    &:hover {
+        background: $forest-mid;
+        transform: translateY(-1px);
+    }
+
+    i {
+        font-size: 14px;
+    }
+}
+
+// Bouton profil
+.btn-profil {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: $white;
+    color: $text-dark;
+    border: 1.5px solid $border;
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+
+    &:hover {
+        border-color: $forest-bright;
+        background: $forest-light;
+        color: $forest-mid;
+    }
+
+    i {
+        font-size: 14px;
+    }
+}
+
+// ── STATS GRID ──────────────────────────────────────────────────────────
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.stat-card {
+    background: $white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid $border;
+    transition: box-shadow 0.2s, transform 0.2s;
+
+    &:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    // Icône colorée
+    &__icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        i {
+            font-size: 20px;
+        }
+
+        &--green {
+            background: $forest-light;
+            color: $forest-mid;
+        }
+
+        &--blue {
+            background: #EBF4FF;
+            color: #1A6BB5;
+        }
+
+        &--orange {
+            background: #FFF4E6;
+            color: #C4650A;
+        }
+
+        &--purple {
+            background: #F3EEFF;
+            color: #6B3FA0;
+        }
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    &__value {
+        font-family: 'Sora', sans-serif;
+        font-size: 24px;
+        font-weight: 800;
+        color: $text-dark;
+        line-height: 1;
+    }
+
+    &__label {
+        font-size: 12px;
+        color: $text-muted;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+}
+
+// ── CONTENU PRINCIPAL ───────────────────────────────────────────────────
+.dashboard-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+// ── SECTIONS ────────────────────────────────────────────────────────────
+.dashboard-section {
+    background: $white;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid $border;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: $text-dark;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+        font-size: 15px;
+        color: $forest-bright;
+    }
+}
+
+.section-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: $forest-mid;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+
+    &:hover {
+        color: $forest-deep;
+    }
+
+    i {
+        font-size: 11px;
+    }
+}
+
+// ── ÉTATS LOADING / EMPTY ───────────────────────────────────────────────
+.loading-state,
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 10px;
+    color: $text-muted;
+
+    i {
+        font-size: 28px;
+        opacity: 0.5;
+    }
+
+    p {
+        font-size: 14px;
+        font-weight: 500;
+    }
+}
+
+// ── LISTE CONSULTATIONS ─────────────────────────────────────────────────
+.consultations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.consultation-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #F8FAF9;
+    border: 1px solid $border;
+    transition: background 0.2s;
+
+    &:hover {
+        background: $forest-light;
+    }
+
+    &__date {
+        flex-shrink: 0;
+    }
+
+    &__day {
+        font-size: 12px;
+        font-weight: 600;
+        color: $text-mid;
+        white-space: nowrap;
+    }
+
+    &__body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    &__motif {
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-dark;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__asc {
+        font-size: 12px;
+        color: $text-muted;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        i {
+            font-size: 11px;
+        }
+    }
+
+    &__statut {
+        flex-shrink: 0;
+    }
+}
+
+// ── BADGES STATUT ───────────────────────────────────────────────────────
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &--success {
+        background: $forest-light;
+        color: $forest-mid;
+    }
+
+    &--warning {
+        background: #FFF4E6;
+        color: #C4650A;
+    }
+
+    &--info {
+        background: #EBF4FF;
+        color: #1A6BB5;
+    }
+
+    &--danger {
+        background: #FEE2E2;
+        color: #991B1B;
+    }
+
+    &--purple {
+        background: #F3EEFF;
+        color: #6B3FA0;
+    }
+
+    &--default {
+        background: #F3F4F6;
+        color: #4B5563;
+    }
+}
+
+// ── LISTE VACCINATIONS ──────────────────────────────────────────────────
+.vaccinations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.vaccination-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #F8FAF9;
+    border: 1px solid $border;
+
+    &__dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: $forest-bright;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 3px rgba(62, 187, 112, 0.2);
+    }
+
+    &__body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    &__nom {
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-dark;
+    }
+
+    &__date {
+        font-size: 12px;
+        color: $text-muted;
+    }
+
+    &__rappel {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #C4650A;
+        background: #FFF4E6;
+        padding: 4px 8px;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+
+        i {
+            font-size: 11px;
+        }
+    }
+}
+
+// ── ACTIONS RAPIDES ─────────────────────────────────────────────────────
+.quick-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+    padding-top: 16px;
+    border-top: 1px solid $border;
+}
+
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    background: $forest-light;
+    border: 1.5px solid $border;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: $forest-mid;
+    text-decoration: none;
+    transition: all 0.2s;
+    flex: 1;
+    justify-content: center;
+
+    &:hover {
+        background: $forest-deep;
+        color: $white;
+        border-color: $forest-deep;
+        transform: translateY(-1px);
+    }
+
+    i {
+        font-size: 14px;
+    }
+}
