@@ -1,141 +1,177 @@
 <!-- features/auth/register/register.component.html -->
-<!-- Page d'inscription BaoBaoHealth -->
-<!-- Design : formulaire centré avec sélection de rôle par cards -->
+<!-- Design : card split — formes décoratives gauche + formulaire droite -->
 
-<div class="register-wrapper">
-
-    <!-- ── En-tête : logo + titre ──────────────────────────────────────── -->
-    <div class="register-header">
-        <div class="register-header__logo">
-            <span class="register-header__logo-icon">🌳</span>
-            <span class="register-header__logo-text">BaoBaoHealth</span>
-        </div>
-        <h2 class="register-header__title">Créer un compte</h2>
-        <p class="register-header__desc">
-            Rejoignez la plateforme de santé numérique de la Guinée
-        </p>
-    </div>
-
-    <!-- ── Formulaire principal ────────────────────────────────────────── -->
+<div class="register-page">
     <div class="register-card">
 
-        <!-- Message d'erreur -->
-        @if (errorMessage()) {
-        <div class="form-alert form-alert--error">
-            <i class="pi pi-exclamation-circle"></i>
-            <span>{{ errorMessage() }}</span>
-        </div>
-        }
+        <!-- ── Panneau gauche décoratif ──────────────────────────────────── -->
+        <div class="register-left">
 
-        <!-- Message de succès -->
-        @if (successMessage()) {
-        <div class="form-alert form-alert--success">
-            <i class="pi pi-check-circle"></i>
-            <span>{{ successMessage() }}</span>
-        </div>
-        }
+            <!-- Formes décoratives -->
+            <div class="deco deco--circle-lg"></div>
+            <div class="deco deco--circle-md"></div>
+            <div class="deco deco--circle-sm"></div>
 
-        <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+            <!-- Contenu gauche -->
+            <div class="register-left__content">
+                <div class="register-left__logo">
+                    <span class="register-left__logo-icon">🌳</span>
+                    <span class="register-left__logo-name">BaoBaoHealth</span>
+                </div>
+                <h1 class="register-left__title">Rejoignez<br>nous</h1>
+                <p class="register-left__sub">
+                    Créez votre compte et accédez à la plateforme de santé numérique de la Guinée.
+                </p>
 
-            <!-- ── Sélection du rôle ── -->
-            <div class="form-section">
-                <label class="form-section__label">
-                    <i class="pi pi-id-card"></i>
-                    Je suis un(e)...
-                </label>
-                <div class="role-grid">
-                    @for (role of rolesDisponibles; track role.value) {
-                    <div class="role-card" [class.role-card--active]="formData.role === role.value"
-                        (click)="selectRole(role.value)">
-                        <i [class]="'pi ' + role.icon + ' role-card__icon'"></i>
-                        <span class="role-card__label">{{ role.label }}</span>
+                <!-- Rôles disponibles -->
+                <div class="register-left__roles">
+                    <div class="role-badge">
+                        <i class="pi pi-user"></i> Patient
                     </div>
-                    }
+                    <div class="role-badge">
+                        <i class="pi pi-heart"></i> Agent ASC
+                    </div>
+                    <div class="role-badge">
+                        <i class="pi pi-plus-circle"></i> Médecin
+                    </div>
+                    <div class="role-badge">
+                        <i class="pi pi-box"></i> Pharmacien
+                    </div>
                 </div>
             </div>
 
-            <!-- ── Nom + Prénom ── -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="nom">
-                        <i class="pi pi-user"></i> Nom
-                    </label>
-                    <input id="nom" type="text" class="form-input" placeholder="Ex: Diallo" [(ngModel)]="formData.nom"
-                        name="nom" required autocomplete="family-name" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="prenom">
-                        <i class="pi pi-user"></i> Prénom
-                    </label>
-                    <input id="prenom" type="text" class="form-input" placeholder="Ex: Mamadou"
-                        [(ngModel)]="formData.prenom" name="prenom" required autocomplete="given-name" />
-                </div>
-            </div>
+        </div>
 
-            <!-- ── Téléphone ── -->
-            <div class="form-group">
-                <label class="form-label" for="telephone">
-                    <i class="pi pi-phone"></i> Numéro de téléphone
-                </label>
-                <input id="telephone" type="tel" class="form-input" placeholder="Ex: 620 00 00 00"
-                    [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel" />
-            </div>
+        <!-- ── Panneau droit : formulaire ───────────────────────────────── -->
+        <div class="register-right">
+            <div class="register-form-wrap">
 
-            <!-- ── Mot de passe ── -->
-            <div class="form-group">
-                <label class="form-label" for="motDePasse">
-                    <i class="pi pi-lock"></i> Mot de passe
-                </label>
-                <div class="form-input-wrapper">
-                    <input id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
-                        class="form-input form-input--with-icon" placeholder="Minimum 6 caractères"
-                        [(ngModel)]="formData.motDePasse" name="motDePasse" required autocomplete="new-password" />
-                    <!-- Toggle mot de passe — aria-label + sr-only pour accessibilité -->
-                    <button type="button" class="form-input-toggle" (click)="togglePassword()"
-                        aria-label="Afficher ou masquer le mot de passe">
-                        <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
-                        <span class="sr-only">Afficher ou masquer le mot de passe</span>
-                    </button>
+                <h2 class="register-form__title">Créer un compte</h2>
+                <p class="register-form__sub">Tous les champs sont obligatoires</p>
+
+                <!-- Erreur -->
+                @if (errorMessage()) {
+                <div class="form-alert form-alert--error">
+                    <i class="pi pi-exclamation-circle"></i>
+                    <span>{{ errorMessage() }}</span>
                 </div>
-            </div>
-
-            <!-- ── Confirmation mot de passe ── -->
-            <div class="form-group">
-                <label class="form-label" for="confirmMotDePasse">
-                    <i class="pi pi-lock"></i> Confirmer le mot de passe
-                </label>
-                <div class="form-input-wrapper">
-                    <input id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
-                        class="form-input form-input--with-icon" placeholder="Répétez votre mot de passe"
-                        [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required autocomplete="new-password" />
-                    <!-- Toggle confirmation — aria-label + sr-only pour accessibilité -->
-                    <button type="button" class="form-input-toggle" (click)="toggleConfirmPassword()"
-                        aria-label="Afficher ou masquer la confirmation du mot de passe">
-                        <i [class]="showConfirmPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
-                        <span class="sr-only">Afficher ou masquer la confirmation du mot de passe</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- ── Bouton soumettre ── -->
-            <button type="submit" class="btn-primary" [disabled]="isLoading()">
-                @if (isLoading()) {
-                <i class="pi pi-spin pi-spinner"></i>
-                <span>Création en cours...</span>
-                } @else {
-                <i class="pi pi-user-plus"></i>
-                <span>Créer mon compte</span>
                 }
-            </button>
 
-        </form>
+                <!-- Succès -->
+                @if (successMessage()) {
+                <div class="form-alert form-alert--success">
+                    <i class="pi pi-check-circle"></i>
+                    <span>{{ successMessage() }}</span>
+                </div>
+                }
 
-        <!-- Lien vers login -->
-        <div class="register-footer">
-            <span>Déjà un compte ?</span>
-            <a routerLink="/auth/login" class="register-footer__link">
-                Se connecter
-            </a>
+                <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+
+                    <!-- ── Sélection rôle ── -->
+                    <div class="field-wrap">
+                        <label class="field-label">Je suis un(e)...</label>
+                        <div class="role-chips">
+                            @for (role of rolesDisponibles; track role.value) {
+                            <button type="button" class="role-chip"
+                                [class.role-chip--active]="formData.role === role.value"
+                                (click)="selectRole(role.value)">
+                                <i [class]="'pi ' + role.icon"></i>
+                                <span>{{ role.label }}</span>
+                            </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- ── Nom + Prénom ── -->
+                    <div class="form-row">
+                        <div class="field-wrap">
+                            <label class="field-label" for="nom">Nom</label>
+                            <div class="field-box">
+                                <div class="field-icon"><i class="pi pi-user"></i></div>
+                                <input id="nom" type="text" class="field-input" placeholder="Ex: Diallo"
+                                    [(ngModel)]="formData.nom" name="nom" required autocomplete="family-name" />
+                            </div>
+                        </div>
+
+                        <div class="field-wrap">
+                            <label class="field-label" for="prenom">Prénom</label>
+                            <div class="field-box">
+                                <div class="field-icon"><i class="pi pi-user"></i></div>
+                                <input id="prenom" type="text" class="field-input" placeholder="Ex: Mamadou"
+                                    [(ngModel)]="formData.prenom" name="prenom" required autocomplete="given-name" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Téléphone ── -->
+                    <div class="field-wrap">
+                        <label class="field-label" for="telephone">Téléphone</label>
+                        <div class="field-box">
+                            <div class="field-icon"><i class="pi pi-phone"></i></div>
+                            <input id="telephone" type="tel" class="field-input" placeholder="Ex: 620 00 00 00"
+                                [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel" />
+                        </div>
+                    </div>
+
+                    <!-- ── Mot de passe ── -->
+                    <div class="field-wrap">
+                        <label class="field-label" for="motDePasse">Mot de passe</label>
+                        <div class="field-box">
+                            <div class="field-icon"><i class="pi pi-lock"></i></div>
+                            <input id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
+                                class="field-input field-input--padded" placeholder="Minimum 6 caractères"
+                                [(ngModel)]="formData.motDePasse" name="motDePasse" required
+                                autocomplete="new-password" />
+                            <button type="button" class="field-toggle" (click)="togglePassword()"
+                                aria-label="Afficher ou masquer le mot de passe">
+                                <span class="toggle-label">{{ showPassword() ? 'CACHER' : 'VOIR' }}</span>
+                                <span class="sr-only">Afficher ou masquer le mot de passe</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Confirmation ── -->
+                    <div class="field-wrap">
+                        <label class="field-label" for="confirmMotDePasse">Confirmer</label>
+                        <div class="field-box">
+                            <div class="field-icon"><i class="pi pi-lock"></i></div>
+                            <input id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
+                                class="field-input field-input--padded" placeholder="Répétez votre mot de passe"
+                                [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
+                                autocomplete="new-password" />
+                            <button type="button" class="field-toggle" (click)="toggleConfirmPassword()"
+                                aria-label="Afficher ou masquer la confirmation">
+                                <span class="toggle-label">{{ showConfirmPassword() ? 'CACHER' : 'VOIR' }}</span>
+                                <span class="sr-only">Afficher ou masquer la confirmation</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Bouton ── -->
+                    <button type="submit" class="btn-submit" [disabled]="isLoading()">
+                        @if (isLoading()) {
+                        <i class="pi pi-spin pi-spinner"></i>
+                        <span>Création en cours...</span>
+                        } @else {
+                        <span>Créer mon compte</span>
+                        }
+                    </button>
+
+                    <!-- Séparateur -->
+                    <div class="separator">
+                        <span class="separator__line"></span>
+                        <span class="separator__text">ou</span>
+                        <span class="separator__line"></span>
+                    </div>
+
+                    <!-- Lien login -->
+                    <a routerLink="/auth/login" class="btn-outline">
+                        Déjà un compte ? Se connecter
+                    </a>
+
+                </form>
+
+            </div>
         </div>
 
     </div>

@@ -1,300 +1,475 @@
 // features/auth/register/register.component.scss
-// Styles de la page d'inscription BaoBaoHealth
-// Design : formulaire centré sur fond gris clair, card blanche
+// Design : card split — formes décoratives gauche + formulaire droite
 
-// ── Wrapper principal ───────────────────────────────────────────────────
-.register-wrapper {
-    min-height: 100vh;
-    background: var(--bb-gray-100);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep: #0D2B1A;
+$forest-mid: #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light: #F0FAF4;
+$text-dark: #0D2B1A;
+$text-mid: #4A6859;
+$text-muted: #9AA8A0;
+$border: #E8EFEB;
+$white: #ffffff;
+
+// ── Page : fond dégradé plein écran ────────────────────────────────────
+.register-page {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0D2B1A 0%, #1A5C35 50%, #0D3320 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+// ── Card principale split ───────────────────────────────────────────────
+.register-card {
+  width: 100%;
+  max-width: 960px;
+  background: $white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    min-height: 600px;
   }
-  
-  // ── En-tête : logo + titre ──────────────────────────────────────────────
-  .register-header {
-    text-align: center;
-    margin-bottom: 1.5rem;
-  
-    &__logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      margin-bottom: 1rem;
-    }
-  
-    &__logo-icon {
-      font-size: 2rem;
-    }
-  
-    &__logo-text {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--bb-primary);
-      letter-spacing: -0.3px;
-    }
-  
-    &__title {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--bb-gray-900);
-      margin-bottom: 0.4rem;
-      letter-spacing: -0.4px;
-    }
-  
-    &__desc {
-      font-size: 0.875rem;
-      color: var(--bb-gray-400);
-    }
+}
+
+// ── Panneau gauche décoratif ────────────────────────────────────────────
+.register-left {
+  background: linear-gradient(145deg, #0D2B1A 0%, #1A5C35 60%, #0F3D22 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  min-height: 220px;
+
+  @media (min-width: 768px) {
+    width: 42%;
+    flex-shrink: 0;
+    min-height: auto;
   }
-  
-  // ── Card formulaire ─────────────────────────────────────────────────────
-  .register-card {
-    width: 100%;
-    max-width: 520px;
-    background: var(--bb-white);
-    border-radius: var(--bb-radius-lg);
-    box-shadow: var(--bb-shadow-lg);
-    padding: 2rem;
+}
+
+// Formes décoratives
+.deco {
+  position: absolute;
+  border-radius: 50%;
+
+  &--circle-lg {
+    width: 320px;
+    height: 320px;
+    bottom: -130px;
+    right: -90px;
+    background: rgba(62, 187, 112, 0.1);
+    border: 1px solid rgba(62, 187, 112, 0.15);
   }
-  
-  // ── Alertes erreur / succès ─────────────────────────────────────────────
-  .form-alert {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.875rem 1rem;
-    border-radius: var(--bb-radius);
-    font-size: 0.875rem;
-    margin-bottom: 1.25rem;
-  
-    i { font-size: 1rem; flex-shrink: 0; }
-  
-    // Variante erreur
-    &--error {
-      background: #FEE2E2;
-      border: 1px solid #FECACA;
-      color: #991B1B;
-    }
-  
-    // Variante succès
-    &--success {
-      background: var(--bb-primary-light);
-      border: 1px solid #BBF7D0;
-      color: var(--bb-primary-dark);
-    }
+
+  &--circle-md {
+    width: 190px;
+    height: 190px;
+    top: -70px;
+    left: -55px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
   }
-  
-  // ── Section label de groupe ─────────────────────────────────────────────
-  .form-section {
-    margin-bottom: 1.25rem;
-  
-    &__label {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--bb-gray-600);
-      margin-bottom: 0.75rem;
-  
-      i { font-size: 0.875rem; color: var(--bb-primary); }
-    }
-  }
-  
-  // ── Grid de sélection de rôle ───────────────────────────────────────────
-  .role-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-  }
-  
-  // Card rôle cliquable
-  .role-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.875rem 0.5rem;
-    border: 1.5px solid var(--bb-gray-200);
-    border-radius: var(--bb-radius);
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.1s;
-    background: var(--bb-gray-50);
-  
-    &:hover {
-      border-color: var(--bb-primary);
-      background: var(--bb-primary-light);
-      transform: translateY(-1px);
-    }
-  
-    // État actif — rôle sélectionné
-    &--active {
-      border-color: var(--bb-primary);
-      background: var(--bb-primary-light);
-      box-shadow: 0 0 0 3px rgba(45, 125, 70, 0.15);
-    }
-  
-    &__icon {
-      font-size: 1.25rem;
-      color: var(--bb-primary);
-    }
-  
-    &__label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--bb-gray-600);
-      text-align: center;
-      line-height: 1.2;
-    }
-  }
-  
-  // ── Ligne avec deux champs côte à côte ─────────────────────────────────
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  
-  // ── Groupe label + input ────────────────────────────────────────────────
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-  }
-  
-  .form-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--bb-gray-600);
-  
-    i { font-size: 0.875rem; color: var(--bb-primary); }
-  }
-  
-  // Input de base
-  .form-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1.5px solid var(--bb-gray-200);
-    border-radius: var(--bb-radius);
-    font-size: 0.9rem;
-    font-family: var(--bb-font);
-    color: var(--bb-gray-900);
-    background: var(--bb-gray-50);
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    outline: none;
-  
-    &::placeholder { color: var(--bb-gray-400); }
-  
-    &:focus {
-      border-color: var(--bb-primary);
-      background: var(--bb-white);
-      box-shadow: 0 0 0 3px rgba(45, 125, 70, 0.1);
-    }
-  
-    // Input avec bouton toggle à droite
-    &--with-icon { padding-right: 3rem; }
-  }
-  
-  // Wrapper input + toggle
-  .form-input-wrapper {
-    position: relative;
-  }
-  
-  // Bouton toggle mot de passe
-  .form-input-toggle {
-    position: absolute;
-    right: 0.875rem;
+
+  &--circle-sm {
+    width: 110px;
+    height: 110px;
     top: 50%;
+    right: 20px;
     transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--bb-gray-400);
-    padding: 0;
-    display: flex;
-    align-items: center;
-    transition: color 0.2s;
-  
-    &:hover { color: var(--bb-primary); }
-    i { font-size: 1rem; }
+    background: rgba(62, 187, 112, 0.07);
+    border: 1px solid rgba(62, 187, 112, 0.18);
   }
-  
-  // ── Bouton principal ────────────────────────────────────────────────────
-  .btn-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.875rem;
-    margin-top: 0.25rem;
-    background: var(--bb-primary);
-    color: var(--bb-white);
-    border: none;
-    border-radius: var(--bb-radius);
-    font-size: 0.95rem;
+}
+
+// Contenu panneau gauche
+.register-left__content {
+  position: relative;
+  z-index: 1;
+  color: $white;
+  text-align: center;
+
+  @media (min-width: 768px) {
+    text-align: left;
+  }
+}
+
+// Logo
+.register-left__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+
+  @media (min-width: 768px) {
+    justify-content: flex-start;
+  }
+
+  &-icon {
+    font-size: 22px;
+  }
+
+  &-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: $white;
+    letter-spacing: -0.3px;
+  }
+}
+
+// Titre gauche
+.register-left__title {
+  font-family: 'Sora', sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  color: $white;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+
+  @media (max-width: 767px) {
+    font-size: 26px;
+
+    br {
+      display: none;
+    }
+  }
+}
+
+// Sous-titre gauche
+.register-left__sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin-bottom: 24px;
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+// Badges rôles dans le panneau gauche
+.register-left__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+
+  @media (min-width: 768px) {
+    justify-content: flex-start;
+  }
+}
+
+.role-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: rgba(62, 187, 112, 0.15);
+  border: 1px solid rgba(62, 187, 112, 0.25);
+  font-size: 11px;
+  font-weight: 600;
+  color: $forest-bright;
+
+  i {
+    font-size: 11px;
+  }
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+// ── Panneau droit : formulaire ──────────────────────────────────────────
+.register-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 32px;
+  background: $white;
+  overflow-y: auto;
+}
+
+.register-form-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+// Titre formulaire
+.register-form__title {
+  font-family: 'Sora', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: $text-dark;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.register-form__sub {
+  font-size: 13px;
+  color: $text-muted;
+  margin-bottom: 24px;
+}
+
+// ── Alertes ─────────────────────────────────────────────────────────────
+.form-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 18px;
+
+  i {
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  &--error {
+    background: #FEE2E2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+  }
+
+  &--success {
+    background: $forest-light;
+    border: 1px solid #BBF7D0;
+    color: $forest-deep;
+  }
+}
+
+// ── Chips rôles ─────────────────────────────────────────────────────────
+.role-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.role-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 100px;
+  border: 1.5px solid $border;
+  background: $forest-light;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: $text-mid;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  i {
+    font-size: 12px;
+  }
+
+  &:hover {
+    border-color: $forest-bright;
+    color: $forest-mid;
+  }
+
+  &--active {
+    background: $forest-deep;
+    border-color: $forest-deep;
+    color: $forest-bright;
     font-weight: 600;
-    font-family: var(--bb-font);
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-    box-shadow: 0 4px 12px rgba(45, 125, 70, 0.3);
-  
-    &:hover:not(:disabled) {
-      background: var(--bb-primary-dark);
-      box-shadow: 0 6px 16px rgba(45, 125, 70, 0.4);
-      transform: translateY(-1px);
-    }
-  
-    &:active:not(:disabled) { transform: translateY(0); }
-  
-    &:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
-    }
-  
-    i { font-size: 1rem; }
-  }
-  
-  // ── Footer : lien login ─────────────────────────────────────────────────
-  .register-footer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-    font-size: 0.875rem;
-    color: var(--bb-gray-400);
-  
-    &__link {
-      color: var(--bb-primary);
-      font-weight: 600;
-      text-decoration: none;
-      transition: color 0.2s;
-  
-      &:hover {
-        color: var(--bb-primary-dark);
-        text-decoration: underline;
-      }
+
+    i {
+      color: $forest-bright;
     }
   }
-  
-  // ── Responsive mobile ───────────────────────────────────────────────────
-  @media (max-width: 480px) {
-    .register-card { padding: 1.5rem; }
-  
-    // Les 4 rôles passent en 2x2 sur mobile
-    .role-grid { grid-template-columns: repeat(2, 1fr); }
-  
-    // Nom + prénom empilés sur mobile
-    .form-row { grid-template-columns: 1fr; }
+}
+
+// ── Ligne deux champs ───────────────────────────────────────────────────
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 400px) {
+    grid-template-columns: 1fr;
   }
+}
+
+// ── Champs ──────────────────────────────────────────────────────────────
+.field-wrap {
+  margin-bottom: 12px;
+}
+
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-mid;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 6px;
+}
+
+.field-box {
+  display: flex;
+  align-items: center;
+  background: $forest-light;
+  border: 1.5px solid $border;
+  border-radius: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  position: relative;
+
+  &:focus-within {
+    border-color: $forest-bright;
+    box-shadow: 0 0 0 4px rgba(62, 187, 112, 0.12);
+    background: $white;
+  }
+}
+
+.field-icon {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $forest-bright;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.field-input {
+  flex: 1;
+  padding: 12px 10px 12px 0;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: $text-dark;
+  outline: none;
+
+  &::placeholder {
+    color: $text-muted;
+  }
+
+  &--padded {
+    padding-right: 52px;
+  }
+}
+
+// Toggle VOIR/CACHER
+.field-toggle {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-label {
+  font-family: 'Sora', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: $forest-mid;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $forest-deep;
+  }
+}
+
+// ── Bouton principal ────────────────────────────────────────────────────
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background: $forest-deep;
+  color: $white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover:not(:disabled) {
+    background: $forest-mid;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(13, 43, 26, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ── Séparateur ──────────────────────────────────────────────────────────
+.separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+
+  &__line {
+    flex: 1;
+    height: 1px;
+    background: $border;
+  }
+
+  &__text {
+    font-size: 12px;
+    color: $text-muted;
+    font-weight: 500;
+  }
+}
+
+// ── Bouton outline login ────────────────────────────────────────────────
+.btn-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px;
+  border: 1.5px solid $border;
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-dark;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+
+  &:hover {
+    border-color: $forest-bright;
+    background: $forest-light;
+    color: $forest-mid;
+  }
+}

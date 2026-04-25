@@ -1,0 +1,702 @@
+// features/landing/landing.component.scss
+// Landing page BaoBaoHealth — Design premium vert forêt + dégradés bleus sections claires
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep:   #0D2B1A;
+$forest-mid:    #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light:  #F0FAF4;
+$cream:         #F5F3EE;
+$text-dark:     #071610;
+$text-mid:      #2D5240;
+$text-muted:    #4A6B5A;
+$border:        #D8E8DC;
+$white:         #ffffff;
+
+// Dégradé bleu clair pour les sections claires
+$blue-light-grad: linear-gradient(145deg, #EBF4FF 0%, #F0F7FF 40%, #E8F2FF 100%);
+
+// ── Reset local ─────────────────────────────────────────────────────────
+.landing {
+  font-family: 'DM Sans', sans-serif;
+  color: $text-dark;
+  background: $white;
+  overflow-x: hidden;
+}
+
+// ── NAVBAR ──────────────────────────────────────────────────────────────
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 68px;
+  background: $white;
+  border-bottom: 1px solid $border;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 20px rgba(0,0,0,0.06);
+
+  @media (max-width: 480px) { padding: 0 20px; }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__logo-icon {
+    width: 36px; height: 36px;
+    background: $forest-light;
+    border: 1.5px solid rgba(62,187,112,0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  &__logo-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: $forest-deep;
+    letter-spacing: -0.3px;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__login {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-mid;
+    text-decoration: none;
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+    &:hover {
+      background: $forest-light;
+      color: $forest-mid;
+      border-color: $border;
+    }
+  }
+
+  &__register {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: $white;
+    text-decoration: none;
+    padding: 10px 22px;
+    background: $forest-deep;
+    border-radius: 10px;
+    border: 1.5px solid $forest-deep;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    letter-spacing: 0.2px;
+
+    &:hover {
+      background: $forest-mid;
+      border-color: $forest-mid;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(13,43,26,0.25);
+    }
+  }
+}
+
+// ── HERO ────────────────────────────────────────────────────────────────
+.hero {
+  background: linear-gradient(145deg, $forest-deep 0%, $forest-mid 55%, #0F3D22 100%);
+  padding: 80px 40px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  min-height: 90vh;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    padding: 60px 24px;
+    min-height: auto;
+    gap: 40px;
+  }
+
+  @media (max-width: 480px) { padding: 40px 20px; }
+}
+
+// Formes décoratives hero
+.hero-deco {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+
+  &--1 {
+    width: 600px; height: 600px;
+    top: -200px; right: -150px;
+    background: rgba(62,187,112,0.06);
+    border: 1px solid rgba(62,187,112,0.1);
+  }
+
+  &--2 {
+    width: 300px; height: 300px;
+    bottom: -100px; left: -80px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  &--3 {
+    width: 150px; height: 150px;
+    top: 40%; left: 40%;
+    background: rgba(62,187,112,0.04);
+    border: 1px solid rgba(62,187,112,0.08);
+  }
+}
+
+// Contenu hero gauche
+.hero__content {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  max-width: 580px;
+
+  @media (max-width: 1024px) {
+    max-width: 100%;
+    text-align: center;
+  }
+}
+
+// Badge hero
+.hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(62,187,112,0.15);
+  border: 1px solid rgba(62,187,112,0.3);
+  border-radius: 100px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+
+.hero__badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: $forest-bright;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+// Titre hero
+.hero__title {
+  font-family: 'Sora', sans-serif;
+  font-size: 56px;
+  font-weight: 800;
+  color: $white;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) { font-size: 38px; }
+  @media (max-width: 480px) { font-size: 30px; }
+}
+
+.hero__title-accent { color: $forest-bright; }
+
+// Description hero
+.hero__desc {
+  font-size: 16px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.7;
+  margin-bottom: 36px;
+  max-width: 480px;
+  font-weight: 400;
+
+  @media (max-width: 1024px) { margin: 0 auto 36px; }
+}
+
+// Boutons hero
+.hero__actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+
+  @media (max-width: 1024px) { justify-content: center; }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 28px;
+  background: $forest-bright;
+  color: $forest-deep;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  letter-spacing: 0.2px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(62,187,112,0.35);
+  }
+
+  &--lg { padding: 18px 36px; font-size: 16px; }
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 28px;
+  background: rgba(255,255,255,0.12);
+  color: $white;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  &--lg { padding: 18px 36px; font-size: 16px; }
+}
+
+// Stats hero
+.hero__stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+
+  @media (max-width: 1024px) { justify-content: center; }
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__value {
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: $white;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 500;
+  }
+}
+
+// ── Visual hero droite ───────────────────────────────────────────────────
+.hero__visual {
+  position: relative;
+  z-index: 1;
+  width: 360px;
+  flex-shrink: 0;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+    max-width: 360px;
+  }
+}
+
+// Cards flottantes illustration
+.hero-card {
+  background: rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 24px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 16px;
+  padding: 20px;
+  color: $white;
+
+  &--main { margin-bottom: 12px; }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  &__avatar {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: $forest-bright;
+    color: $forest-deep;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: $white;
+  }
+
+  &__role {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 400;
+  }
+
+  &__badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: $forest-bright;
+    background: rgba(62,187,112,0.15);
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(62,187,112,0.3);
+  }
+
+  &__stats { display: flex; }
+
+  &__stat {
+    flex: 1;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    &:last-child { border-right: none; }
+  }
+
+  &__stat-val {
+    display: block;
+    font-family: 'Sora', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: $white;
+    line-height: 1;
+  }
+
+  &__stat-lbl {
+    font-size: 10px;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 2px;
+    display: block;
+    font-weight: 500;
+  }
+
+  &--notif {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    background: rgba(62,187,112,0.15);
+    border-color: rgba(62,187,112,0.3);
+    font-weight: 500;
+
+    i { color: $forest-bright; font-size: 16px; flex-shrink: 0; }
+  }
+
+  &--stat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+
+    &-icon { font-size: 28px; }
+
+    &-val {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: $forest-bright;
+      line-height: 1;
+    }
+
+    &-lbl {
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+    }
+  }
+}
+
+// ── FEATURES — fond dégradé bleu clair ──────────────────────────────────
+.features {
+  padding: 100px 40px;
+  background: $blue-light-grad;
+
+  @media (max-width: 768px) { padding: 60px 20px; }
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.section-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  color: $text-dark;
+  letter-spacing: -0.8px;
+  margin-bottom: 12px;
+
+  @media (max-width: 480px) { font-size: 26px; }
+  &--light { color: $white; }
+}
+
+.section-sub {
+  font-size: 16px;
+  color: $text-muted;
+  line-height: 1.6;
+  font-weight: 500;
+
+  &--light { color: rgba(255,255,255,0.8); }
+}
+
+// Grille features
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 600px)  { grid-template-columns: 1fr; }
+}
+
+.feature-card {
+  padding: 32px 28px;
+  border: 1.5px solid rgba(255,255,255,0.8);
+  border-radius: 20px;
+  background: $white;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+
+  // Accent vert en haut au hover
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $forest-bright, $forest-mid);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  &:hover {
+    border-color: $forest-bright;
+    box-shadow: 0 12px 40px rgba(62,187,112,0.15);
+    transform: translateY(-6px);
+
+    &::before { opacity: 1; }
+  }
+
+  &__icon {
+    font-size: 36px;
+    margin-bottom: 20px;
+    display: block;
+    line-height: 1;
+  }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: $text-dark;
+    margin-bottom: 10px;
+    letter-spacing: -0.3px;
+  }
+
+  &__desc {
+    font-size: 14px;
+    color: $text-muted;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+}
+
+// ── ROLES ────────────────────────────────────────────────────────────────
+.roles {
+  background: linear-gradient(145deg, $forest-deep 0%, $forest-mid 60%, #0F3D22 100%);
+  padding: 100px 40px;
+
+  @media (max-width: 768px) { padding: 60px 20px; }
+
+  &__inner { max-width: 1100px; margin: 0 auto; }
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px)  { grid-template-columns: 1fr; }
+}
+
+.role-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+
+  &:hover {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(62,187,112,0.5);
+    transform: translateY(-4px);
+  }
+
+  &__icon {
+    font-size: 36px;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: $white;
+    margin-bottom: 8px;
+  }
+
+  &__desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+    font-weight: 400;
+  }
+}
+
+// ── CTA — fond dégradé bleu clair ────────────────────────────────────────
+.cta {
+  padding: 100px 40px;
+  background: $blue-light-grad;
+  text-align: center;
+
+  @media (max-width: 768px) { padding: 60px 20px; }
+
+  &__inner { max-width: 600px; margin: 0 auto; }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: $text-dark;
+    letter-spacing: -0.8px;
+    margin-bottom: 12px;
+
+    @media (max-width: 480px) { font-size: 26px; }
+  }
+
+  &__sub {
+    font-size: 16px;
+    color: $text-muted;
+    margin-bottom: 36px;
+    font-weight: 500;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+.cta .btn-primary {
+  background: $forest-deep;
+  color: $white;
+
+  &:hover { box-shadow: 0 12px 32px rgba(13,43,26,0.3); }
+}
+
+.cta .btn-ghost {
+  background: $white;
+  color: $text-dark;
+  border-color: $border;
+  font-weight: 600;
+
+  &:hover {
+    background: $forest-light;
+    border-color: $forest-bright;
+    color: $forest-mid;
+  }
+}
+
+// ── FOOTER ───────────────────────────────────────────────────────────────
+.footer {
+  padding: 32px 40px;
+  background: $forest-deep;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+  }
+
+  &__logo-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: $white;
+  }
+
+  &__copy {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 400;
+  }
+}
