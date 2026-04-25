@@ -28,7 +28,6 @@ export const swaggerDocument = {
       },
     },
     schemas: {
-      // ─── Réponse standard ──────────────────────────────
       ApiResponse: {
         type: 'object',
         properties: {
@@ -37,7 +36,6 @@ export const swaggerDocument = {
           error: { type: 'string' },
         },
       },
-      // ─── Auth ──────────────────────────────────────────
       RegisterDto: {
         type: 'object',
         required: ['telephone', 'motDePasse', 'prenom', 'nom'],
@@ -46,11 +44,7 @@ export const swaggerDocument = {
           motDePasse: { type: 'string', example: 'MotDePasse123!', description: 'Minimum 8 caractères' },
           prenom: { type: 'string', example: 'Mamadou' },
           nom: { type: 'string', example: 'Diallo' },
-          role: {
-            type: 'string',
-            enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
-            default: 'PATIENT',
-          },
+          role: { type: 'string', enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'], default: 'PATIENT' },
         },
       },
       LoginDto: {
@@ -83,7 +77,6 @@ export const swaggerDocument = {
           creeLe: { type: 'string', format: 'date-time' },
         },
       },
-      // ─── Patients ──────────────────────────────────────
       CreatePatientDto: {
         type: 'object',
         required: ['telephone', 'motDePasse', 'prenom', 'nom', 'dateNaissance', 'sexe', 'prefecture'],
@@ -124,7 +117,6 @@ export const swaggerDocument = {
           utilisateur: { $ref: '#/components/schemas/Utilisateur' },
         },
       },
-      // ─── Consultations ─────────────────────────────────
       CreateConsultationDto: {
         type: 'object',
         required: ['idPatient', 'motifPrincipal'],
@@ -196,7 +188,6 @@ export const swaggerDocument = {
           constantes: { $ref: '#/components/schemas/VitalsDto' },
         },
       },
-      // ─── ASC ───────────────────────────────────────────
       CreateStockDto: {
         type: 'object',
         required: ['idMedicament', 'quantite', 'unite'],
@@ -243,40 +234,12 @@ export const swaggerDocument = {
       RapportMensuel: {
         type: 'object',
         properties: {
-          periode: {
-            type: 'object',
-            properties: {
-              mois: { type: 'integer' },
-              annee: { type: 'integer' },
-              debut: { type: 'string', format: 'date-time' },
-              fin: { type: 'string', format: 'date-time' },
-            },
-          },
-          statistiques: {
-            type: 'object',
-            properties: {
-              totalConsultations: { type: 'integer' },
-              consultationsTerminees: { type: 'integer' },
-              totalReferences: { type: 'integer' },
-              totalVaccinations: { type: 'integer' },
-              totalRendezVous: { type: 'integer' },
-              rendezVousHonores: { type: 'integer' },
-            },
-          },
-          topDiagnostics: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                libelle: { type: 'string' },
-                count: { type: 'integer' },
-              },
-            },
-          },
+          periode: { type: 'object', properties: { mois: { type: 'integer' }, annee: { type: 'integer' }, debut: { type: 'string', format: 'date-time' }, fin: { type: 'string', format: 'date-time' } } },
+          statistiques: { type: 'object', properties: { totalConsultations: { type: 'integer' }, consultationsTerminees: { type: 'integer' }, totalReferences: { type: 'integer' }, totalVaccinations: { type: 'integer' }, totalRendezVous: { type: 'integer' }, rendezVousHonores: { type: 'integer' } } },
+          topDiagnostics: { type: 'array', items: { type: 'object', properties: { libelle: { type: 'string' }, count: { type: 'integer' } } } },
           alertesStock: { type: 'integer' },
         },
       },
-      // ─── Médecin ───────────────────────────────────────
       ValiderConsultationDto: {
         type: 'object',
         required: ['notesMedecin'],
@@ -312,7 +275,6 @@ export const swaggerDocument = {
           structure: { type: 'object' },
         },
       },
-      // ─── Paiements ─────────────────────────────────────
       InitierPaiementDto: {
         type: 'object',
         required: ['idConsultation', 'montantGnf', 'modePaiement'],
@@ -345,7 +307,6 @@ export const swaggerDocument = {
           consultation: { $ref: '#/components/schemas/Consultation' },
         },
       },
-      // ─── Vaccinations ──────────────────────────────────
       CreateVaccinationDto: {
         type: 'object',
         required: ['idPatient', 'vaccinNom'],
@@ -362,7 +323,7 @@ export const swaggerDocument = {
       UpdateVaccinationDto: {
         type: 'object',
         properties: {
-          reaction: { type: 'string', example: 'Légère rougeur au site d\'injection' },
+          reaction: { type: 'string', example: "Légère rougeur au site d'injection" },
           urlCertificat: { type: 'string', example: 'https://s3.amazonaws.com/baobao/certificats/vaccin-123.pdf' },
           dateProchaineD: { type: 'string', format: 'date', example: '2026-07-15' },
         },
@@ -380,31 +341,62 @@ export const swaggerDocument = {
           dateProchaineD: { type: 'string', format: 'date-time' },
           administreLe: { type: 'string', format: 'date-time' },
           patient: { $ref: '#/components/schemas/PatientProfile' },
-          administrePar: {
-            type: 'object',
-            properties: {
-              prenom: { type: 'string' },
-              nom: { type: 'string' },
-              role: { type: 'string' },
-            },
-          },
+          administrePar: { type: 'object', properties: { prenom: { type: 'string' }, nom: { type: 'string' }, role: { type: 'string' } } },
         },
       },
       StatsVaccination: {
         type: 'object',
         properties: {
           totalAdministrees: { type: 'integer' },
-          topVaccins: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                vaccinNom: { type: 'string' },
-                count: { type: 'integer' },
-              },
+          topVaccins: { type: 'array', items: { type: 'object', properties: { vaccinNom: { type: 'string' }, count: { type: 'integer' } } } },
+          parPrefecture: { type: 'string' },
+        },
+      },
+      // ─── Notifications ─────────────────────────────────
+      SendSmsDto: {
+        type: 'object',
+        required: ['telephone', 'message'],
+        properties: {
+          telephone: { type: 'string', example: '+224621000000', description: 'Numéro de téléphone destinataire' },
+          message: { type: 'string', example: 'BaoBaoHealth: Votre rendez-vous est demain à 9h00.', description: 'Contenu du SMS (max 160 caractères)' },
+        },
+      },
+      SmsMasseDto: {
+        type: 'object',
+        required: ['prefecture', 'message'],
+        properties: {
+          prefecture: { type: 'string', example: 'Conakry', description: 'Préfecture cible pour envoi en masse' },
+          message: { type: 'string', example: 'BaoBaoHealth: Campagne de vaccination contre la rougeole — rendez-vous ce samedi.', description: 'Message à envoyer à tous les patients de la préfecture' },
+        },
+      },
+      SmsResult: {
+        type: 'object',
+        properties: {
+          messageId: { type: 'string', example: 'AT-1745678901234-5678', description: 'ID de message Africa\'s Talking' },
+          statut: { type: 'string', example: 'ENVOYE' },
+        },
+      },
+      SmsMasseResult: {
+        type: 'object',
+        properties: {
+          total: { type: 'integer', description: 'Nombre total de patients dans la préfecture' },
+          envoyes: { type: 'integer', description: 'Nombre de SMS envoyés avec succès' },
+          echoues: { type: 'integer', description: 'Nombre de SMS en échec' },
+          prefecture: { type: 'string' },
+        },
+      },
+      RappelsResult: {
+        type: 'object',
+        properties: {
+          rendezVousARappeler: { type: 'integer', description: 'Nombre de RDV à rappeler demain' },
+          vaccinationsARappeler: { type: 'integer', description: 'Nombre de vaccinations dues dans 7 jours' },
+          ids: {
+            type: 'object',
+            properties: {
+              rendezVous: { type: 'array', items: { type: 'string' } },
+              vaccinations: { type: 'array', items: { type: 'string' } },
             },
           },
-          parPrefecture: { type: 'string' },
         },
       },
     },
@@ -427,7 +419,6 @@ export const swaggerDocument = {
       post: {
         tags: ['Authentification'],
         summary: 'Se connecter',
-        description: 'Authentifie un utilisateur et retourne une paire de tokens JWT',
         requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/LoginDto' } } } },
         responses: {
           200: { description: 'Connexion réussie', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] } } } },
@@ -439,7 +430,6 @@ export const swaggerDocument = {
       post: {
         tags: ['Authentification'],
         summary: 'Renouveler les tokens',
-        description: 'Génère une nouvelle paire de tokens à partir du refresh token',
         requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['refreshToken'], properties: { refreshToken: { type: 'string' } } } } } },
         responses: {
           200: { description: 'Tokens renouvelés', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] } } } },
@@ -448,19 +438,12 @@ export const swaggerDocument = {
       },
     },
     '/api/v1/auth/logout': {
-      post: {
-        tags: ['Authentification'],
-        summary: 'Se déconnecter',
-        description: "Révoque la session active de l'utilisateur",
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Déconnexion réussie' }, 401: { description: 'Token manquant ou invalide' } },
-      },
+      post: { tags: ['Authentification'], summary: 'Se déconnecter', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Déconnexion réussie' }, 401: { description: 'Token manquant ou invalide' } } },
     },
     '/api/v1/auth/me': {
       get: {
         tags: ['Authentification'],
         summary: "Profil de l'utilisateur connecté",
-        description: "Retourne les informations de l'utilisateur authentifié",
         security: [{ bearerAuth: [] }],
         responses: {
           200: { description: 'Profil récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Utilisateur' } } }] } } } },
@@ -474,7 +457,6 @@ export const swaggerDocument = {
       post: {
         tags: ['Patients'],
         summary: 'Créer un compte patient',
-        description: 'Enregistre un nouveau patient et retourne une paire de tokens JWT',
         requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreatePatientDto' } } } },
         responses: {
           201: { description: 'Patient créé avec succès', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { tokenPair: { $ref: '#/components/schemas/TokenPair' }, patient: { $ref: '#/components/schemas/PatientProfile' } } } } }] } } } },
@@ -484,467 +466,244 @@ export const swaggerDocument = {
       get: {
         tags: ['Patients'],
         summary: 'Liste des patients',
-        description: 'Retourne la liste paginée des patients — accessible ASC, Médecin, Admin',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
           { name: 'prefecture', in: 'query', schema: { type: 'string' } },
-          { name: 'search', in: 'query', schema: { type: 'string' }, description: 'Recherche par nom, prénom ou téléphone' },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
         ],
+        responses: { 200: { description: 'Liste récupérée' }, 401: { description: 'Non authentifié' }, 403: { description: 'Accès refusé' } },
+      },
+    },
+    '/api/v1/patients/me': {
+      get: { tags: ['Patients'], summary: 'Mon profil patient', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Profil récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/PatientProfile' } } }] } } } }, 401: { description: 'Non authentifié' }, 404: { description: 'Profil non trouvé' } } },
+      put: { tags: ['Patients'], summary: 'Mettre à jour mon profil', security: [{ bearerAuth: [] }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { prenom: { type: 'string' }, nom: { type: 'string' }, email: { type: 'string' }, langue: { type: 'string', enum: ['fr', 'pu', 'ml'] }, photoUrl: { type: 'string' }, groupeSanguin: { type: 'string' }, allergies: { type: 'array', items: { type: 'string' } }, maladiesChroniques: { type: 'array', items: { type: 'string' } } } } } } }, responses: { 200: { description: 'Profil mis à jour' }, 401: { description: 'Non authentifié' } } },
+    },
+    '/api/v1/patients/me/export': {
+      get: { tags: ['Patients'], summary: 'Exporter mon dossier médical', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Dossier exporté' }, 401: { description: 'Non authentifié' }, 404: { description: 'Patient non trouvé' } } },
+    },
+    '/api/v1/patients/qr/{qrCode}': {
+      get: { tags: ['Patients'], summary: 'Rechercher par QR Code', security: [{ bearerAuth: [] }], parameters: [{ name: 'qrCode', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Patient trouvé' }, 404: { description: 'Patient non trouvé' } } },
+    },
+    '/api/v1/patients/{id}': {
+      get: { tags: ['Patients'], summary: "Détail d'un patient par ID", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Patient trouvé' }, 404: { description: 'Patient non trouvé' } } },
+    },
+    // ─── CONSULTATIONS ────────────────────────────────────
+    '/api/v1/consultations': {
+      get: { tags: ['Consultations'], summary: 'Liste des consultations', security: [{ bearerAuth: [] }], parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }, { name: 'idPatient', in: 'query', schema: { type: 'string' } }, { name: 'idAsc', in: 'query', schema: { type: 'string' } }], responses: { 200: { description: 'Liste récupérée' }, 401: { description: 'Non authentifié' }, 403: { description: 'Accès refusé' } } },
+      post: { tags: ['Consultations'], summary: 'Ouvrir une nouvelle consultation', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateConsultationDto' } } } }, responses: { 201: { description: 'Consultation créée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Consultation' } } }] } } } }, 400: { description: 'Données invalides' }, 403: { description: 'Profil ASC non trouvé' } } },
+    },
+    '/api/v1/consultations/{id}': {
+      get: { tags: ['Consultations'], summary: "Détail d'une consultation", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Consultation trouvée' }, 404: { description: 'Consultation non trouvée' } } },
+      put: { tags: ['Consultations'], summary: 'Mettre à jour une consultation', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { motifPrincipal: { type: 'string' }, symptomes: { type: 'array', items: { type: 'string' } }, notesAsc: { type: 'string' }, protocoleUtilise: { type: 'string' }, confianceIa: { type: 'number' } } } } } }, responses: { 200: { description: 'Consultation mise à jour' }, 400: { description: 'Données invalides ou consultation terminée' } } },
+    },
+    '/api/v1/consultations/{id}/vitals': {
+      post: { tags: ['Consultations'], summary: 'Saisir les constantes vitales', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/VitalsDto' } } } }, responses: { 200: { description: 'Constantes enregistrées' }, 400: { description: 'Consultation non trouvée' } } },
+    },
+    '/api/v1/consultations/{id}/complete': {
+      post: { tags: ['Consultations'], summary: 'Clôturer une consultation', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Consultation clôturée' }, 400: { description: 'Consultation déjà terminée' } } },
+    },
+    '/api/v1/consultations/{id}/diagnostics': {
+      get: { tags: ['Consultations'], summary: 'Liste des diagnostics', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Diagnostics récupérés' } } },
+      post: { tags: ['Consultations'], summary: 'Ajouter un diagnostic', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/DiagnosticDto' } } } }, responses: { 201: { description: 'Diagnostic ajouté' }, 400: { description: 'Données invalides' } } },
+    },
+    '/api/v1/consultations/{id}/ordonnances': {
+      post: { tags: ['Consultations'], summary: 'Ajouter une ordonnance', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } } }, responses: { 201: { description: 'Ordonnance ajoutée' }, 400: { description: 'Médicament non trouvé' } } },
+    },
+    '/api/v1/consultations/{id}/referral': {
+      post: { tags: ['Consultations'], summary: 'Créer un référencement', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ReferralDto' } } } }, responses: { 201: { description: 'Référencement créé' }, 400: { description: 'Référencement déjà existant ou structure non trouvée' } } },
+    },
+    // ─── ASC ──────────────────────────────────────────────
+    '/api/v1/asc/me': {
+      get: { tags: ['ASC'], summary: 'Profil ASC connecté', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Profil récupéré' }, 404: { description: 'Profil ASC non trouvé' } } },
+      put: { tags: ['ASC'], summary: 'Mettre à jour le profil ASC', security: [{ bearerAuth: [] }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { numeroCertification: { type: 'string' }, photoUrl: { type: 'string' }, zoneCouverture: { type: 'object', properties: { prefecture: { type: 'string' }, sousPrefectures: { type: 'array', items: { type: 'string' } } } } } } } } }, responses: { 200: { description: 'Profil mis à jour' }, 400: { description: 'Données invalides' } } },
+    },
+    '/api/v1/asc/patients': {
+      get: { tags: ['ASC'], summary: 'Patients de la zone ASC', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Liste récupérée' }, 404: { description: 'Profil ASC non trouvé' } } },
+    },
+    '/api/v1/asc/planning': {
+      get: { tags: ['ASC'], summary: "Planning de l'ASC", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Planning récupéré' }, 404: { description: 'Profil ASC non trouvé' } } },
+    },
+    '/api/v1/asc/stocks': {
+      get: { tags: ['ASC'], summary: 'Inventaire des stocks', security: [{ bearerAuth: [] }], parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }, { name: 'seuilAlerte', in: 'query', schema: { type: 'boolean' } }], responses: { 200: { description: 'Stocks récupérés' } } },
+      post: { tags: ['ASC'], summary: 'Créer un stock', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateStockDto' } } } }, responses: { 201: { description: 'Stock créé' }, 400: { description: 'Stock déjà existant ou médicament non trouvé' } } },
+    },
+    '/api/v1/asc/stocks/{id}': {
+      put: { tags: ['ASC'], summary: 'Mettre à jour un stock', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateStockDto' } } } }, responses: { 200: { description: 'Stock mis à jour' }, 400: { description: 'Stock non trouvé ou accès refusé' } } },
+    },
+    '/api/v1/asc/rapport': {
+      get: { tags: ['ASC'], summary: 'Rapport mensuel', security: [{ bearerAuth: [] }], parameters: [{ name: 'mois', in: 'query', required: true, schema: { type: 'integer', minimum: 1, maximum: 12 }, example: 4 }, { name: 'annee', in: 'query', required: true, schema: { type: 'integer' }, example: 2026 }], responses: { 200: { description: 'Rapport généré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RapportMensuel' } } }] } } } }, 400: { description: 'Paramètres mois et annee requis' } } },
+    },
+    // ─── MEDECIN ──────────────────────────────────────────
+    '/api/v1/medecin/me': {
+      get: { tags: ['Médecin'], summary: 'Profil médecin connecté', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Profil récupéré' }, 404: { description: 'Médecin non trouvé' } } },
+    },
+    '/api/v1/medecin/dashboard': {
+      get: { tags: ['Médecin'], summary: 'Dashboard statistiques', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Statistiques récupérées', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/DashboardStats' } } }] } } } } } },
+    },
+    '/api/v1/medecin/consultations': {
+      get: { tags: ['Médecin'], summary: 'Consultations à valider', security: [{ bearerAuth: [] }], parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }, { name: 'prefecture', in: 'query', schema: { type: 'string' } }], responses: { 200: { description: 'Liste récupérée' }, 401: { description: 'Non authentifié' }, 403: { description: 'Accès refusé' } } },
+    },
+    '/api/v1/medecin/consultations/{id}/valider': {
+      put: { tags: ['Médecin'], summary: 'Valider une consultation', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ValiderConsultationDto' } } } }, responses: { 200: { description: 'Consultation validée' }, 400: { description: 'Consultation déjà validée ou non trouvée' } } },
+    },
+    '/api/v1/medecin/referencements': {
+      get: { tags: ['Médecin'], summary: 'Référencements à traiter', security: [{ bearerAuth: [] }], parameters: [{ name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'ACCEPTE', 'REFUSE', 'COMPLETE'] } }, { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }], responses: { 200: { description: 'Référencements récupérés' }, 401: { description: 'Non authentifié' } } },
+    },
+    '/api/v1/medecin/referencements/{id}/repondre': {
+      put: { tags: ['Médecin'], summary: 'Répondre à un référencement', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/RepondreReferencementDto' } } } }, responses: { 200: { description: 'Réponse enregistrée' }, 400: { description: 'Référencement déjà traité ou motif manquant' } } },
+    },
+    '/api/v1/medecin/messages': {
+      get: { tags: ['Médecin'], summary: 'Récupérer les messages', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Messages récupérés' }, 401: { description: 'Non authentifié' } } },
+      post: { tags: ['Médecin'], summary: 'Envoyer un message', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendMessageDto' } } } }, responses: { 201: { description: 'Message envoyé' }, 400: { description: 'Destinataire non trouvé' } } },
+    },
+    // ─── PAIEMENTS ────────────────────────────────────────
+    '/api/v1/paiements': {
+      post: { tags: ['Paiements'], summary: 'Initier un paiement', description: 'Crée une facture et initie un paiement Orange Money, MTN MoMo ou Espèces', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/InitierPaiementDto' } } } }, responses: { 201: { description: 'Paiement initié', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Facture' } } }] } } } }, 400: { description: 'Facture déjà existante ou numéro opérateur manquant' }, 403: { description: "Accès refusé — ce n'est pas votre consultation" } } },
+    },
+    '/api/v1/paiements/historique': {
+      get: { tags: ['Paiements'], summary: 'Historique des paiements', security: [{ bearerAuth: [] }], parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }, { name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'PAYEE', 'PARTIELLE', 'ANNULEE', 'REMBOURSEE'] } }, { name: 'modePaiement', in: 'query', schema: { type: 'string', enum: ['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES'] } }], responses: { 200: { description: 'Historique récupéré' }, 404: { description: 'Profil patient non trouvé' } } },
+    },
+    '/api/v1/paiements/{id}/statut': {
+      get: { tags: ['Paiements'], summary: "Statut d'un paiement", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Statut récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Facture' } } }] } } } }, 404: { description: 'Facture non trouvée' } } },
+    },
+    '/api/v1/paiements/{id}/confirmer': {
+      post: { tags: ['Paiements'], summary: 'Confirmer un paiement', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ConfirmerPaiementDto' } } } }, responses: { 200: { description: 'Paiement confirmé' }, 400: { description: 'Facture déjà payée ou non trouvée' } } },
+    },
+    '/api/v1/paiements/{id}/annuler': {
+      post: { tags: ['Paiements'], summary: 'Annuler un paiement', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Paiement annulé' }, 400: { description: "Impossible d'annuler une facture déjà payée" } } },
+    },
+    // ─── VACCINATIONS ─────────────────────────────────────
+    '/api/v1/vaccinations': {
+      post: { tags: ['Vaccinations'], summary: 'Administrer un vaccin', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateVaccinationDto' } } } }, responses: { 201: { description: 'Vaccination enregistrée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Vaccination' } } }] } } } }, 400: { description: 'Patient non trouvé' } } },
+    },
+    '/api/v1/vaccinations/me': {
+      get: { tags: ['Vaccinations'], summary: 'Mon carnet vaccinal', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Carnet vaccinal récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Vaccination' } } } }] } } } }, 404: { description: 'Profil patient non trouvé' } } },
+    },
+    '/api/v1/vaccinations/rappels': {
+      get: { tags: ['Vaccinations'], summary: 'Rappels de vaccination', security: [{ bearerAuth: [] }], parameters: [{ name: 'joursAvant', in: 'query', schema: { type: 'integer', default: 7 } }, { name: 'prefecture', in: 'query', schema: { type: 'string' } }], responses: { 200: { description: 'Rappels récupérés' } } },
+    },
+    '/api/v1/vaccinations/stats': {
+      get: { tags: ['Vaccinations'], summary: 'Statistiques de vaccination', security: [{ bearerAuth: [] }], parameters: [{ name: 'prefecture', in: 'query', schema: { type: 'string' } }], responses: { 200: { description: 'Statistiques récupérées', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/StatsVaccination' } } }] } } } } } },
+    },
+    '/api/v1/vaccinations/patient/{id}': {
+      get: { tags: ['Vaccinations'], summary: "Carnet vaccinal d'un patient", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }, { name: 'vaccinNom', in: 'query', schema: { type: 'string' } }, { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } }], responses: { 200: { description: 'Carnet vaccinal récupéré' }, 404: { description: 'Patient non trouvé' } } },
+    },
+    '/api/v1/vaccinations/{id}': {
+      put: { tags: ['Vaccinations'], summary: 'Mettre à jour une vaccination', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateVaccinationDto' } } } }, responses: { 200: { description: 'Vaccination mise à jour' }, 400: { description: 'Vaccination non trouvée' } } },
+    },
+    // ─── NOTIFICATIONS ────────────────────────────────────
+    '/api/v1/notifications/sms': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Envoyer un SMS personnalisé',
+        description: 'Envoie un SMS à un numéro spécifique — accessible Admin uniquement',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendSmsDto' } } } },
         responses: {
-          200: { description: 'Liste récupérée' },
-          401: { description: 'Non authentifié' },
+          200: { description: 'SMS envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
+          400: { description: 'Numéro ou message invalide' },
+          403: { description: 'Accès refusé — Admin requis' },
+        },
+      },
+    },
+    '/api/v1/notifications/sms/masse': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'SMS en masse par préfecture',
+        description: 'Envoie un SMS à tous les patients d\'une préfecture — accessible Admin Régional et National',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SmsMasseDto' } } } },
+        responses: {
+          200: { description: 'SMS envoyés en masse', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsMasseResult' } } }] } } } },
+          400: { description: 'Prefecture ou message manquant' },
           403: { description: 'Accès refusé' },
         },
       },
     },
-    '/api/v1/patients/me': {
-      get: {
-        tags: ['Patients'],
-        summary: 'Mon profil patient',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: { description: 'Profil récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/PatientProfile' } } }] } } } },
-          401: { description: 'Non authentifié' },
-          404: { description: 'Profil non trouvé' },
-        },
-      },
-      put: {
-        tags: ['Patients'],
-        summary: 'Mettre à jour mon profil',
-        security: [{ bearerAuth: [] }],
-        requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { prenom: { type: 'string' }, nom: { type: 'string' }, email: { type: 'string' }, langue: { type: 'string', enum: ['fr', 'pu', 'ml'] }, photoUrl: { type: 'string' }, groupeSanguin: { type: 'string' }, allergies: { type: 'array', items: { type: 'string' } }, maladiesChroniques: { type: 'array', items: { type: 'string' } } } } } } },
-        responses: { 200: { description: 'Profil mis à jour' }, 401: { description: 'Non authentifié' } },
-      },
-    },
-    '/api/v1/patients/me/export': {
-      get: {
-        tags: ['Patients'],
-        summary: 'Exporter mon dossier médical',
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Dossier exporté' }, 401: { description: 'Non authentifié' }, 404: { description: 'Patient non trouvé' } },
-      },
-    },
-    '/api/v1/patients/qr/{qrCode}': {
-      get: {
-        tags: ['Patients'],
-        summary: 'Rechercher par QR Code',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'qrCode', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { 200: { description: 'Patient trouvé' }, 404: { description: 'Patient non trouvé' } },
-      },
-    },
-    '/api/v1/patients/{id}': {
-      get: {
-        tags: ['Patients'],
-        summary: "Détail d'un patient par ID",
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { 200: { description: 'Patient trouvé' }, 404: { description: 'Patient non trouvé' } },
-      },
-    },
-    // ─── CONSULTATIONS ────────────────────────────────────
-    '/api/v1/consultations': {
-      get: {
-        tags: ['Consultations'],
-        summary: 'Liste des consultations',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
-          { name: 'idPatient', in: 'query', schema: { type: 'string' } },
-          { name: 'idAsc', in: 'query', schema: { type: 'string' } },
-        ],
-        responses: { 200: { description: 'Liste récupérée' }, 401: { description: 'Non authentifié' }, 403: { description: 'Accès refusé' } },
-      },
+    '/api/v1/notifications/rappel/rendez-vous/{id}': {
       post: {
-        tags: ['Consultations'],
-        summary: 'Ouvrir une nouvelle consultation',
+        tags: ['Notifications'],
+        summary: 'Envoyer rappel de rendez-vous',
+        description: 'Envoie un SMS de rappel au patient pour son rendez-vous — accessible ASC',
         security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateConsultationDto' } } } },
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du rendez-vous' }],
         responses: {
-          201: { description: 'Consultation créée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Consultation' } } }] } } } },
-          400: { description: 'Données invalides' },
-          403: { description: 'Profil ASC non trouvé' },
+          200: { description: 'Rappel envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
+          400: { description: 'Rendez-vous non trouvé' },
         },
       },
     },
-    '/api/v1/consultations/{id}': {
-      get: {
-        tags: ['Consultations'],
-        summary: "Détail d'une consultation",
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { 200: { description: 'Consultation trouvée' }, 404: { description: 'Consultation non trouvée' } },
-      },
-      put: {
-        tags: ['Consultations'],
-        summary: 'Mettre à jour une consultation',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { motifPrincipal: { type: 'string' }, symptomes: { type: 'array', items: { type: 'string' } }, notesAsc: { type: 'string' }, protocoleUtilise: { type: 'string' }, confianceIa: { type: 'number' } } } } } },
-        responses: { 200: { description: 'Consultation mise à jour' }, 400: { description: 'Données invalides ou consultation terminée' } },
-      },
-    },
-    '/api/v1/consultations/{id}/vitals': {
+    '/api/v1/notifications/rappel/vaccination/{id}': {
       post: {
-        tags: ['Consultations'],
-        summary: 'Saisir les constantes vitales',
+        tags: ['Notifications'],
+        summary: 'Envoyer rappel de vaccination',
+        description: 'Envoie un SMS de rappel pour un prochain rappel vaccinal — accessible ASC et Médecin',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/VitalsDto' } } } },
-        responses: { 200: { description: 'Constantes enregistrées' }, 400: { description: 'Consultation non trouvée' } },
-      },
-    },
-    '/api/v1/consultations/{id}/complete': {
-      post: {
-        tags: ['Consultations'],
-        summary: 'Clôturer une consultation',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { 200: { description: 'Consultation clôturée' }, 400: { description: 'Consultation déjà terminée' } },
-      },
-    },
-    '/api/v1/consultations/{id}/diagnostics': {
-      get: {
-        tags: ['Consultations'],
-        summary: 'Liste des diagnostics',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { 200: { description: 'Diagnostics récupérés' } },
-      },
-      post: {
-        tags: ['Consultations'],
-        summary: 'Ajouter un diagnostic',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/DiagnosticDto' } } } },
-        responses: { 201: { description: 'Diagnostic ajouté' }, 400: { description: 'Données invalides' } },
-      },
-    },
-    '/api/v1/consultations/{id}/ordonnances': {
-      post: {
-        tags: ['Consultations'],
-        summary: 'Ajouter une ordonnance',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } } },
-        responses: { 201: { description: 'Ordonnance ajoutée' }, 400: { description: 'Médicament non trouvé' } },
-      },
-    },
-    '/api/v1/consultations/{id}/referral': {
-      post: {
-        tags: ['Consultations'],
-        summary: 'Créer un référencement',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ReferralDto' } } } },
-        responses: { 201: { description: 'Référencement créé' }, 400: { description: 'Référencement déjà existant ou structure non trouvée' } },
-      },
-    },
-    // ─── ASC ──────────────────────────────────────────────
-    '/api/v1/asc/me': {
-      get: {
-        tags: ['ASC'],
-        summary: "Profil ASC connecté",
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Profil récupéré' }, 404: { description: 'Profil ASC non trouvé' } },
-      },
-      put: {
-        tags: ['ASC'],
-        summary: 'Mettre à jour le profil ASC',
-        security: [{ bearerAuth: [] }],
-        requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { numeroCertification: { type: 'string' }, photoUrl: { type: 'string' }, zoneCouverture: { type: 'object', properties: { prefecture: { type: 'string' }, sousPrefectures: { type: 'array', items: { type: 'string' } } } } } } } } },
-        responses: { 200: { description: 'Profil mis à jour' }, 400: { description: 'Données invalides' } },
-      },
-    },
-    '/api/v1/asc/patients': {
-      get: {
-        tags: ['ASC'],
-        summary: 'Patients de la zone ASC',
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Liste récupérée' }, 404: { description: 'Profil ASC non trouvé' } },
-      },
-    },
-    '/api/v1/asc/planning': {
-      get: {
-        tags: ['ASC'],
-        summary: "Planning de l'ASC",
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Planning récupéré' }, 404: { description: 'Profil ASC non trouvé' } },
-      },
-    },
-    '/api/v1/asc/stocks': {
-      get: {
-        tags: ['ASC'],
-        summary: 'Inventaire des stocks',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
-          { name: 'seuilAlerte', in: 'query', schema: { type: 'boolean' } },
-        ],
-        responses: { 200: { description: 'Stocks récupérés' } },
-      },
-      post: {
-        tags: ['ASC'],
-        summary: "Créer un stock",
-        security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateStockDto' } } } },
-        responses: { 201: { description: 'Stock créé' }, 400: { description: 'Stock déjà existant ou médicament non trouvé' } },
-      },
-    },
-    '/api/v1/asc/stocks/{id}': {
-      put: {
-        tags: ['ASC'],
-        summary: 'Mettre à jour un stock',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateStockDto' } } } },
-        responses: { 200: { description: 'Stock mis à jour' }, 400: { description: 'Stock non trouvé ou accès refusé' } },
-      },
-    },
-    '/api/v1/asc/rapport': {
-      get: {
-        tags: ['ASC'],
-        summary: 'Rapport mensuel',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'mois', in: 'query', required: true, schema: { type: 'integer', minimum: 1, maximum: 12 }, example: 4 },
-          { name: 'annee', in: 'query', required: true, schema: { type: 'integer' }, example: 2026 },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la vaccination' }],
         responses: {
-          200: { description: 'Rapport généré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RapportMensuel' } } }] } } } },
-          400: { description: 'Paramètres mois et annee requis' },
-        },
-      },
-    },
-    // ─── MEDECIN ──────────────────────────────────────────
-    '/api/v1/medecin/me': {
-      get: {
-        tags: ['Médecin'],
-        summary: 'Profil médecin connecté',
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Profil récupéré' }, 404: { description: 'Médecin non trouvé' } },
-      },
-    },
-    '/api/v1/medecin/dashboard': {
-      get: {
-        tags: ['Médecin'],
-        summary: 'Dashboard statistiques',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: { description: 'Statistiques récupérées', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/DashboardStats' } } }] } } } },
-        },
-      },
-    },
-    '/api/v1/medecin/consultations': {
-      get: {
-        tags: ['Médecin'],
-        summary: 'Consultations à valider',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
-          { name: 'prefecture', in: 'query', schema: { type: 'string' } },
-        ],
-        responses: { 200: { description: 'Liste récupérée' }, 401: { description: 'Non authentifié' }, 403: { description: 'Accès refusé' } },
-      },
-    },
-    '/api/v1/medecin/consultations/{id}/valider': {
-      put: {
-        tags: ['Médecin'],
-        summary: 'Valider une consultation',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ValiderConsultationDto' } } } },
-        responses: { 200: { description: 'Consultation validée' }, 400: { description: 'Consultation déjà validée ou non trouvée' } },
-      },
-    },
-    '/api/v1/medecin/referencements': {
-      get: {
-        tags: ['Médecin'],
-        summary: 'Référencements à traiter',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'ACCEPTE', 'REFUSE', 'COMPLETE'] } },
-          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
-        ],
-        responses: { 200: { description: 'Référencements récupérés' }, 401: { description: 'Non authentifié' } },
-      },
-    },
-    '/api/v1/medecin/referencements/{id}/repondre': {
-      put: {
-        tags: ['Médecin'],
-        summary: 'Répondre à un référencement',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/RepondreReferencementDto' } } } },
-        responses: { 200: { description: 'Réponse enregistrée' }, 400: { description: 'Référencement déjà traité ou motif manquant' } },
-      },
-    },
-    '/api/v1/medecin/messages': {
-      get: {
-        tags: ['Médecin'],
-        summary: 'Récupérer les messages',
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Messages récupérés' }, 401: { description: 'Non authentifié' } },
-      },
-      post: {
-        tags: ['Médecin'],
-        summary: 'Envoyer un message',
-        security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendMessageDto' } } } },
-        responses: { 201: { description: 'Message envoyé' }, 400: { description: 'Destinataire non trouvé' } },
-      },
-    },
-    // ─── PAIEMENTS ────────────────────────────────────────
-    '/api/v1/paiements': {
-      post: {
-        tags: ['Paiements'],
-        summary: 'Initier un paiement',
-        description: 'Crée une facture et initie un paiement Orange Money, MTN MoMo ou Espèces',
-        security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/InitierPaiementDto' } } } },
-        responses: {
-          201: { description: 'Paiement initié', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Facture' } } }] } } } },
-          400: { description: 'Facture déjà existante ou numéro opérateur manquant' },
-          403: { description: "Accès refusé — ce n'est pas votre consultation" },
-        },
-      },
-    },
-    '/api/v1/paiements/historique': {
-      get: {
-        tags: ['Paiements'],
-        summary: 'Historique des paiements',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
-          { name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'PAYEE', 'PARTIELLE', 'ANNULEE', 'REMBOURSEE'] } },
-          { name: 'modePaiement', in: 'query', schema: { type: 'string', enum: ['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES'] } },
-        ],
-        responses: { 200: { description: 'Historique récupéré' }, 404: { description: 'Profil patient non trouvé' } },
-      },
-    },
-    '/api/v1/paiements/{id}/statut': {
-      get: {
-        tags: ['Paiements'],
-        summary: "Statut d'un paiement",
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: {
-          200: { description: 'Statut récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Facture' } } }] } } } },
-          404: { description: 'Facture non trouvée' },
-        },
-      },
-    },
-    '/api/v1/paiements/{id}/confirmer': {
-      post: {
-        tags: ['Paiements'],
-        summary: 'Confirmer un paiement',
-        description: 'Confirme un paiement — accessible Admin Structure et Pharmacien',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ConfirmerPaiementDto' } } } },
-        responses: { 200: { description: 'Paiement confirmé' }, 400: { description: 'Facture déjà payée ou non trouvée' } },
-      },
-    },
-    '/api/v1/paiements/{id}/annuler': {
-      post: {
-        tags: ['Paiements'],
-        summary: 'Annuler un paiement',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { 200: { description: 'Paiement annulé' }, 400: { description: "Impossible d'annuler une facture déjà payée" } },
-      },
-    },
-    // ─── VACCINATIONS ─────────────────────────────────────
-    '/api/v1/vaccinations': {
-      post: {
-        tags: ['Vaccinations'],
-        summary: 'Administrer un vaccin',
-        description: 'Enregistre une vaccination — accessible ASC et Médecin',
-        security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateVaccinationDto' } } } },
-        responses: {
-          201: { description: 'Vaccination enregistrée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/Vaccination' } } }] } } } },
-          400: { description: 'Patient non trouvé' },
-        },
-      },
-    },
-    '/api/v1/vaccinations/me': {
-      get: {
-        tags: ['Vaccinations'],
-        summary: 'Mon carnet vaccinal',
-        description: 'Retourne le carnet vaccinal complet du patient connecté',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: { description: 'Carnet vaccinal récupéré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Vaccination' } } } }] } } } },
-          404: { description: 'Profil patient non trouvé' },
-        },
-      },
-    },
-    '/api/v1/vaccinations/rappels': {
-      get: {
-        tags: ['Vaccinations'],
-        summary: 'Rappels de vaccination',
-        description: 'Retourne les patients ayant un rappel vaccinal à venir',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'joursAvant', in: 'query', schema: { type: 'integer', default: 7 }, description: 'Nombre de jours avant le rappel' },
-          { name: 'prefecture', in: 'query', schema: { type: 'string' } },
-        ],
-        responses: {
-          200: { description: 'Rappels récupérés', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Vaccination' } } } }] } } } },
-        },
-      },
-    },
-    '/api/v1/vaccinations/stats': {
-      get: {
-        tags: ['Vaccinations'],
-        summary: 'Statistiques de vaccination',
-        description: 'Retourne les statistiques de couverture vaccinale par vaccin',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'prefecture', in: 'query', schema: { type: 'string' }, description: 'Filtrer par préfecture' },
-        ],
-        responses: {
-          200: { description: 'Statistiques récupérées', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/StatsVaccination' } } }] } } } },
-        },
-      },
-    },
-    '/api/v1/vaccinations/patient/{id}': {
-      get: {
-        tags: ['Vaccinations'],
-        summary: "Carnet vaccinal d'un patient",
-        description: "Retourne le carnet vaccinal d'un patient — accessible ASC et Médecin",
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-          { name: 'vaccinNom', in: 'query', schema: { type: 'string' }, description: 'Filtrer par nom de vaccin' },
-          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
-        ],
-        responses: {
-          200: { description: 'Carnet vaccinal récupéré' },
-          404: { description: 'Patient non trouvé' },
-        },
-      },
-    },
-    '/api/v1/vaccinations/{id}': {
-      put: {
-        tags: ['Vaccinations'],
-        summary: 'Mettre à jour une vaccination',
-        description: 'Met à jour les informations d\'une vaccination — réaction, certificat, prochain rappel',
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateVaccinationDto' } } } },
-        responses: {
-          200: { description: 'Vaccination mise à jour' },
+          200: { description: 'Rappel vaccinal envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
           400: { description: 'Vaccination non trouvée' },
+        },
+      },
+    },
+    '/api/v1/notifications/alerte/stock/{id}': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Envoyer alerte stock critique',
+        description: 'Envoie un SMS d\'alerte à l\'ASC pour un stock en dessous du seuil',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du stock' }],
+        responses: {
+          200: { description: 'Alerte stock envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
+          400: { description: 'Stock non trouvé' },
+        },
+      },
+    },
+    '/api/v1/notifications/referencement/{id}': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Notifier le patient d\'un référencement',
+        description: 'Envoie un SMS au patient pour l\'informer de l\'acceptation ou du refus de son référencement',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du référencement' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['statut'],
+                properties: {
+                  statut: { type: 'string', enum: ['ACCEPTE', 'REFUSE'], example: 'ACCEPTE' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Notification envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } },
+          400: { description: 'Statut invalide ou référencement non trouvé' },
+        },
+      },
+    },
+    '/api/v1/notifications/rappels/verifier': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Vérifier les rappels à envoyer',
+        description: 'Retourne la liste des rendez-vous et vaccinations nécessitant un rappel — utile pour les CRON jobs',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Rappels identifiés',
+            content: {
+              'application/json': {
+                schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RappelsResult' } } }] },
+              },
+            },
+          },
+          403: { description: 'Accès refusé — Admin requis' },
         },
       },
     },
