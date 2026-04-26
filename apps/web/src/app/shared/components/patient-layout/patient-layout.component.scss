@@ -1,0 +1,292 @@
+// shared/components/patient-layout/patient-layout.component.scss
+// Layout patient — sidebar fixe + contenu principal
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep:   #0D2B1A;
+$forest-mid:    #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light:  #F0FAF4;
+$text-dark:     #071610;
+$text-mid:      #2D5240;
+$text-muted:    #4A6B5A;
+$border:        #D8E8DC;
+$white:         #ffffff;
+$sidebar-width: 260px;
+
+// ── Layout wrapper ───────────────────────────────────────────────────────
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F4F7F5;
+  font-family: 'DM Sans', sans-serif;
+}
+
+// Overlay mobile
+.layout__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 40;
+
+  @media (min-width: 1024px) { display: none; }
+}
+
+// ── SIDEBAR ──────────────────────────────────────────────────────────────
+.sidebar {
+  width: $sidebar-width;
+  background: $forest-deep;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 50;
+  transition: transform 0.3s ease;
+
+  // Caché sur mobile par défaut
+  @media (max-width: 1023px) {
+    transform: translateX(-100%);
+
+    &--open {
+      transform: translateX(0);
+    }
+  }
+
+  // Logo
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  &__logo-icon {
+    width: 36px; height: 36px;
+    background: rgba(62,187,112,0.2);
+    border: 1px solid rgba(62,187,112,0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  &__logo-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: $white;
+    letter-spacing: -0.3px;
+  }
+
+  // Profil
+  &__profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    margin: 12px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  &__avatar {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, $forest-mid, $forest-bright);
+    color: $white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__profile-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: $white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__profile-role {
+    font-size: 11px;
+    color: $forest-bright;
+    font-weight: 500;
+  }
+
+  // Navigation
+  &__nav {
+    flex: 1;
+    padding: 8px 12px;
+    overflow-y: auto;
+  }
+
+  &__nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 12px 8px 8px;
+  }
+
+  &__nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+
+    i { font-size: 16px; }
+
+    &:hover {
+      background: rgba(255,255,255,0.08);
+      color: $white;
+    }
+
+    // Actif
+    &--active {
+      background: rgba(62,187,112,0.15);
+      color: $forest-bright;
+      font-weight: 600;
+
+      i { color: $forest-bright; }
+
+      &::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        width: 3px; height: 24px;
+        background: $forest-bright;
+        border-radius: 3px 0 0 3px;
+      }
+    }
+  }
+
+  // Footer
+  &__footer {
+    padding: 16px 12px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  &__logout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    i { font-size: 16px; }
+
+    &:hover {
+      background: rgba(229,62,62,0.12);
+      color: #FC8181;
+    }
+  }
+}
+
+// ── CONTENU PRINCIPAL ────────────────────────────────────────────────────
+.layout__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
+  // Sur desktop — décalé de la sidebar
+  @media (min-width: 1024px) {
+    margin-left: $sidebar-width;
+  }
+}
+
+// ── TOPBAR MOBILE ────────────────────────────────────────────────────────
+.topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 60px;
+  background: $forest-deep;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+
+  // Visible seulement sur mobile
+  @media (max-width: 1023px) { display: flex; }
+
+  &__menu {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 10px;
+    color: $white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  &__logo-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: $white;
+  }
+
+  &__avatar {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, $forest-mid, $forest-bright);
+    color: $white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+// ── ZONE CONTENU ────────────────────────────────────────────────────────
+.layout__content {
+  flex: 1;
+  padding: 0;
+}

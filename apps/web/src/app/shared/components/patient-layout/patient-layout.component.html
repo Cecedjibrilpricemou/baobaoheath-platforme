@@ -1,0 +1,60 @@
+﻿<div class="layout" [class.layout--sidebar-open]="sidebarOpen()">
+
+  @if (sidebarOpen()) {
+    <div class="layout__overlay" (click)="closeSidebar()"></div>
+  }
+
+  <aside class="sidebar" [class.sidebar--open]="sidebarOpen()">
+
+    <div class="sidebar__logo">
+      <div class="sidebar__logo-icon">🌳</div>
+      <span class="sidebar__logo-name">BaoBaoHealth</span>
+    </div>
+
+    <div class="sidebar__profile">
+      <div class="sidebar__avatar">{{ getInitiales() }}</div>
+      <div class="sidebar__profile-info">
+        <span class="sidebar__profile-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+        <span class="sidebar__profile-role">Patient</span>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <p class="sidebar__nav-label">Navigation</p>
+      @for (item of navItems; track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="sidebar__nav-item--active" class="sidebar__nav-item" (click)="closeSidebar()">
+          <i [class]="'pi ' + item.icon"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar__footer">
+      <button class="sidebar__logout" (click)="logout()">
+        <i class="pi pi-sign-out"></i>
+        <span>Déconnexion</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <main class="layout__main">
+
+    <div class="topbar">
+      <button class="topbar__menu" (click)="toggleSidebar()">
+        <i class="pi pi-bars"></i>
+      </button>
+      <div class="topbar__logo">
+        <span>🌳</span>
+        <span class="topbar__logo-name">BaoBaoHealth</span>
+      </div>
+      <div class="topbar__avatar">{{ getInitiales() }}</div>
+    </div>
+
+    <div class="layout__content">
+      <router-outlet />
+    </div>
+
+  </main>
+
+</div>

@@ -16,14 +16,51 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
 
   const motDePasseHash = await hashPassword(dto.motDePasse);
 
-  const utilisateur = await prisma.utilisateur.create({
-    data: {
-      telephone: dto.telephone,
-      motDePasseHash,
-      prenom: dto.prenom,
-      nom: dto.nom,
-      role: dto.role ?? Role.PATIENT,
-    },
+  const utilisateur = await prisma.$transaction(async (tx) => {
+    const user = await tx.utilisateur.create({
+      data: {
+        telephone: dto.telephone,
+        motDePasseHash,
+        prenom: dto.prenom,
+        nom: dto.nom,
+        role: dto.role ?? Role.PATIENT,
+      },
+    });
+
+    const role = dto.role ?? Role.PATIENT;
+
+    if (role === Role.PATIENT) {
+      await tx.patientProfile.create({
+        data: {
+          idUtilisateur: user.id,
+          dateNaissance: new Date('2000-01-01'),
+          sexe: 'M',
+          prefecture: 'Conakry',
+        },
+      });
+    }
+
+    if (role === Role.ASC || role === Role.ASC_SUPERVISOR) {
+      await tx.ascProfile.create({
+        data: {
+          idUtilisateur: user.id,
+          prefecture: 'Conakry',
+          zone: 'Zone par défaut',
+        },
+      });
+    }
+
+    if (role === Role.MEDECIN) {
+      await tx.medecinProfile.create({
+        data: {
+          idUtilisateur: user.id,
+          specialite: 'Médecine générale',
+          numerOrdre: `ORD-${Date.now()}`,
+        },
+      });
+    }
+
+    return user;
   });
 
   const sessionId = randomUUID();

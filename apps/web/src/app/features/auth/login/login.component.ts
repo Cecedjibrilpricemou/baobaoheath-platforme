@@ -42,31 +42,31 @@ export class LoginComponent {
 
     // Soumission du formulaire
     onSubmit() {
-        // Validation basique avant envoi
         if (!this.formData.telephone || !this.formData.motDePasse) {
-            this.errorMessage.set('Veuillez remplir tous les champs.');
-            return;
+          this.errorMessage.set('Veuillez remplir tous les champs.');
+          return;
         }
-
-        // Réinitialise l'erreur et active le loader
+      
         this.errorMessage.set('');
         this.isLoading.set(true);
-
+      
         this.authService.login(this.formData).subscribe({
-            next: (response) => {
-                this.isLoading.set(false);
-                // Redirige vers le bon dashboard selon le rôle de l'utilisateur
-                this.redirectByRole(response.user.role);
-            },
-            error: (err) => {
-                this.isLoading.set(false);
-                // Affiche le message d'erreur retourné par l'API ou un message générique
-                this.errorMessage.set(
-                    err?.error?.message ?? 'Identifiants incorrects. Veuillez réessayer.'
-                );
-            }
+          next: () => {
+            this.isLoading.set(false);
+            // Attend que le user soit chargé puis redirige
+            setTimeout(() => {
+              const role = this.authService.userRole() ?? 'PATIENT';
+              this.redirectByRole(role);
+            }, 500);
+          },
+          error: (err) => {
+            this.isLoading.set(false);
+            this.errorMessage.set(
+              err?.error?.error ?? err?.error?.message ?? 'Identifiants incorrects. Veuillez réessayer.'
+            );
+          }
         });
-    }
+      }
 
     // Redirige vers le dashboard correspondant au rôle connecté
     private redirectByRole(role: string) {

@@ -1,246 +1,274 @@
 <!-- features/patient/profil/profil.component.html -->
-<!-- Page profil patient BaoBaoHealth -->
+<!-- Page profil patient BaoBaoHealth — Design premium -->
 
 <div class="profil-page">
 
-    <!-- ── HEADER ──────────────────────────────────────────────────────── -->
-    <div class="profil-header">
-        <div class="profil-header__left">
-            <a routerLink="/patient/dashboard" class="btn-back">
-                <i class="pi pi-arrow-left"></i>
-                Retour
-            </a>
-            <h1 class="profil-header__title">Mon Profil</h1>
+    <!-- ── HERO HEADER ──────────────────────────────────────────────── -->
+    <div class="profil-hero">
+      <div class="profil-hero__deco profil-hero__deco--1"></div>
+      <div class="profil-hero__deco profil-hero__deco--2"></div>
+  
+      <div class="profil-hero__content">
+  
+        <!-- Avatar + infos principales -->
+        <div class="profil-hero__identity">
+          <div class="profil-hero__avatar">
+            <span class="profil-hero__avatar-initials">{{ getInitiales() }}</span>
+            <div class="profil-hero__avatar-badge">
+              <i class="pi pi-check"></i>
+            </div>
+          </div>
+          <div class="profil-hero__info">
+            <div class="profil-hero__role-badge">
+              <i class="pi pi-user"></i> Patient
+            </div>
+            <h1 class="profil-hero__name">
+              {{ profil()?.prenom || currentUser()?.prenom }}
+              {{ profil()?.nom || currentUser()?.nom }}
+            </h1>
+            <div class="profil-hero__details">
+              @if (profil()?.telephone || currentUser()?.telephone) {
+                <span class="profil-hero__detail">
+                  <i class="pi pi-phone"></i>
+                  {{ profil()?.telephone || currentUser()?.telephone }}
+                </span>
+              }
+              @if (profil()?.groupeSanguin) {
+                <span class="profil-hero__detail profil-hero__detail--blood">
+                  <i class="pi pi-heart-fill"></i>
+                  {{ profil()?.groupeSanguin }}
+                </span>
+              }
+            </div>
+          </div>
         </div>
-        <div class="profil-header__actions">
-            @if (!editMode()) {
-            <button class="btn-export" (click)="exportDossier()" [disabled]="isExporting()">
-                @if (isExporting()) {
+  
+        <!-- Actions -->
+        <div class="profil-hero__actions">
+          @if (!editMode()) {
+            <button class="hero-btn hero-btn--ghost" (click)="exportDossier()" [disabled]="isExporting()">
+              @if (isExporting()) {
                 <i class="pi pi-spin pi-spinner"></i>
-                } @else {
+              } @else {
                 <i class="pi pi-download"></i>
-                }
-                Exporter dossier
+              }
+              Exporter
             </button>
-            <button class="btn-edit" (click)="enableEdit()">
-                <i class="pi pi-pencil"></i>
-                Modifier
+            <button class="hero-btn hero-btn--primary" (click)="enableEdit()">
+              <i class="pi pi-pencil"></i>
+              Modifier
             </button>
-            } @else {
-            <button class="btn-cancel" (click)="cancelEdit()">
-                <i class="pi pi-times"></i>
-                Annuler
+          } @else {
+            <button class="hero-btn hero-btn--ghost" (click)="cancelEdit()">
+              <i class="pi pi-times"></i>
+              Annuler
             </button>
-            <button class="btn-save" (click)="saveProfil()" [disabled]="isSaving()">
-                @if (isSaving()) {
+            <button class="hero-btn hero-btn--save" (click)="saveProfil()" [disabled]="isSaving()">
+              @if (isSaving()) {
                 <i class="pi pi-spin pi-spinner"></i>
-                } @else {
+              } @else {
                 <i class="pi pi-check"></i>
-                }
-                Sauvegarder
+              }
+              Sauvegarder
             </button>
-            }
+          }
         </div>
+  
+      </div>
     </div>
-
-    <!-- ── ALERTES ──────────────────────────────────────────────────────── -->
-    @if (successMessage()) {
-    <div class="alert alert--success">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ successMessage() }}</span>
-    </div>
-    }
-
-    @if (errorMessage()) {
-    <div class="alert alert--error">
-        <i class="pi pi-exclamation-circle"></i>
-        <span>{{ errorMessage() }}</span>
-    </div>
-    }
-
-    <!-- ── LOADING ───────────────────────────────────────────────────────── -->
-    @if (isLoading()) {
-    <div class="loading-state">
-        <i class="pi pi-spin pi-spinner"></i>
-        <span>Chargement du profil...</span>
-    </div>
-    } @else {
-
-    <div class="profil-content">
-
-        <!-- ── CARTE IDENTITÉ ─────────────────────────────────────────── -->
-        <div class="profil-card profil-card--identity">
-            <div class="identity-avatar">
-                <span class="identity-avatar__initials">{{ getInitiales() }}</span>
-                <div class="identity-avatar__badge">
-                    <i class="pi pi-verified"></i>
-                </div>
-            </div>
-
-            <div class="identity-info">
-                <h2 class="identity-info__name">
-                    {{ profil()?.prenom }} {{ profil()?.nom }}
-                </h2>
-                <span class="identity-info__role">Patient</span>
-                <div class="identity-info__details">
-                    <div class="identity-detail">
-                        <i class="pi pi-phone"></i>
-                        <span>{{ profil()?.telephone }}</span>
-                    </div>
-                    @if (profil()?.dateNaissance) {
-                    <div class="identity-detail">
-                        <i class="pi pi-calendar"></i>
-                        <span>{{ formatDate(profil()?.dateNaissance) }}</span>
-                    </div>
-                    }
-                    @if (profil()?.adresse) {
-                    <div class="identity-detail">
-                        <i class="pi pi-map-marker"></i>
-                        <span>{{ profil()?.adresse }}</span>
-                    </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Groupe sanguin -->
-            @if (profil()?.groupeSanguin) {
-            <div class="blood-type">
-                <span class="blood-type__label">Groupe</span>
-                <span class="blood-type__value">{{ profil()?.groupeSanguin }}</span>
-            </div>
-            }
+  
+    <!-- ── BODY ─────────────────────────────────────────────────────── -->
+    <div class="profil-body">
+  
+      <!-- Alertes -->
+      @if (successMessage()) {
+        <div class="alert alert--success">
+          <i class="pi pi-check-circle"></i>
+          <span>{{ successMessage() }}</span>
         </div>
-
-        <!-- ── FORMULAIRE / INFOS ──────────────────────────────────────── -->
+      }
+  
+      @if (errorMessage()) {
+        <div class="alert alert--error">
+          <i class="pi pi-exclamation-circle"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+  
+      <!-- Loading -->
+      @if (isLoading()) {
+        <div class="loading-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Chargement du profil...</span>
+        </div>
+      } @else {
+  
         <div class="profil-grid">
-
-            <!-- Informations personnelles -->
-            <div class="profil-card">
-                <h3 class="profil-card__title">
-                    <i class="pi pi-user"></i>
-                    Informations personnelles
-                </h3>
-
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label class="form-field__label">Nom</label>
-                        @if (editMode()) {
-                        <input type="text" class="form-field__input" [(ngModel)]="formData.nom"
-                            placeholder="Votre nom" />
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.nom ?? '—' }}</span>
-                        }
-                    </div>
-
-                    <div class="form-field">
-                        <label class="form-field__label">Prénom</label>
-                        @if (editMode()) {
-                        <input type="text" class="form-field__input" [(ngModel)]="formData.prenom"
-                            placeholder="Votre prénom" />
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.prenom ?? '—' }}</span>
-                        }
-                    </div>
-
-                    <div class="form-field">
-                        <label class="form-field__label">Téléphone</label>
-                        @if (editMode()) {
-                        <input type="tel" class="form-field__input" [(ngModel)]="formData.telephone"
-                            placeholder="Numéro de téléphone" />
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.telephone ?? '—' }}</span>
-                        }
-                    </div>
-
-                    <div class="form-field">
-                        <label class="form-field__label">Date de naissance</label>
-                        @if (editMode()) {
-                        <input type="date" class="form-field__input" [(ngModel)]="formData.dateNaissance" />
-                        } @else {
-                        <span class="form-field__value">{{ formatDate(profil()?.dateNaissance) }}</span>
-                        }
-                    </div>
-
-                    <div class="form-field">
-                        <label class="form-field__label">Sexe</label>
-                        @if (editMode()) {
-                        <select class="form-field__input" [(ngModel)]="formData.sexe">
-                            <option value="">Sélectionner</option>
-                            <option value="M">Masculin</option>
-                            <option value="F">Féminin</option>
-                        </select>
-                        } @else {
-                        <span class="form-field__value">
-                            {{ profil()?.sexe === 'M' ? 'Masculin' : profil()?.sexe === 'F' ? 'Féminin' : '—' }}
-                        </span>
-                        }
-                    </div>
-
-                    <div class="form-field">
-                        <label class="form-field__label">Adresse</label>
-                        @if (editMode()) {
-                        <input type="text" class="form-field__input" [(ngModel)]="formData.adresse"
-                            placeholder="Votre adresse" />
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.adresse ?? '—' }}</span>
-                        }
-                    </div>
-                </div>
+  
+          <!-- ── Informations personnelles ── -->
+          <div class="profil-card">
+            <div class="profil-card__header">
+              <div class="profil-card__header-icon profil-card__header-icon--green">
+                <i class="pi pi-user"></i>
+              </div>
+              <h3 class="profil-card__title">Informations personnelles</h3>
             </div>
-
-            <!-- Informations médicales -->
-            <div class="profil-card">
-                <h3 class="profil-card__title">
-                    <i class="pi pi-heart"></i>
-                    Informations médicales
-                </h3>
-
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label class="form-field__label">Groupe sanguin</label>
-                        @if (editMode()) {
-                        <select class="form-field__input" [(ngModel)]="formData.groupeSanguin">
-                            <option value="">Sélectionner</option>
-                            <option value="A+">A+</option>
-                            <option value="A-">A-</option>
-                            <option value="B+">B+</option>
-                            <option value="B-">B-</option>
-                            <option value="AB+">AB+</option>
-                            <option value="AB-">AB-</option>
-                            <option value="O+">O+</option>
-                            <option value="O-">O-</option>
-                        </select>
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.groupeSanguin ?? '—' }}</span>
-                        }
-                    </div>
-
-                    <div class="form-field form-field--full">
-                        <label class="form-field__label">Allergies</label>
-                        @if (editMode()) {
-                        <textarea class="form-field__input form-field__input--textarea" [(ngModel)]="formData.allergies"
-                            placeholder="Listez vos allergies connues..." rows="3"></textarea>
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.allergies ?? '—' }}</span>
-                        }
-                    </div>
-
-                    <div class="form-field form-field--full">
-                        <label class="form-field__label">Antécédents médicaux</label>
-                        @if (editMode()) {
-                        <textarea class="form-field__input form-field__input--textarea"
-                            [(ngModel)]="formData.antecedents" placeholder="Antécédents médicaux importants..."
-                            rows="3"></textarea>
-                        } @else {
-                        <span class="form-field__value">{{ profil()?.antecedents ?? '—' }}</span>
-                        }
-                    </div>
-                </div>
+  
+            <div class="form-grid">
+  
+              <div class="form-field">
+                <label class="form-field__label">Nom</label>
+                @if (editMode()) {
+                  <input type="text" class="form-field__input" [(ngModel)]="formData.nom" placeholder="Votre nom" />
+                } @else {
+                  <span class="form-field__value">{{ profil()?.nom || currentUser()?.nom || '—' }}</span>
+                }
+              </div>
+  
+              <div class="form-field">
+                <label class="form-field__label">Prénom</label>
+                @if (editMode()) {
+                  <input type="text" class="form-field__input" [(ngModel)]="formData.prenom" placeholder="Votre prénom" />
+                } @else {
+                  <span class="form-field__value">{{ profil()?.prenom || currentUser()?.prenom || '—' }}</span>
+                }
+              </div>
+  
+              <div class="form-field">
+                <label class="form-field__label">Téléphone</label>
+                @if (editMode()) {
+                  <input type="tel" class="form-field__input" [(ngModel)]="formData.telephone" placeholder="Numéro de téléphone" />
+                } @else {
+                  <span class="form-field__value">{{ profil()?.telephone || currentUser()?.telephone || '—' }}</span>
+                }
+              </div>
+  
+              <div class="form-field">
+                <label class="form-field__label">Date de naissance</label>
+                @if (editMode()) {
+                  <input type="date" class="form-field__input" [(ngModel)]="formData.dateNaissance" />
+                } @else {
+                  <span class="form-field__value">{{ formatDate(profil()?.dateNaissance) }}</span>
+                }
+              </div>
+  
+              <div class="form-field">
+                <label class="form-field__label">Sexe</label>
+                @if (editMode()) {
+                  <select class="form-field__input" [(ngModel)]="formData.sexe">
+                    <option value="">Sélectionner</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                  </select>
+                } @else {
+                  <span class="form-field__value">
+                    {{ profil()?.sexe === 'M' ? 'Masculin' : profil()?.sexe === 'F' ? 'Féminin' : '—' }}
+                  </span>
+                }
+              </div>
+  
+              <div class="form-field">
+                <label class="form-field__label">Adresse</label>
+                @if (editMode()) {
+                  <input type="text" class="form-field__input" [(ngModel)]="formData.adresse" placeholder="Votre adresse" />
+                } @else {
+                  <span class="form-field__value">{{ profil()?.adresse || '—' }}</span>
+                }
+              </div>
+  
             </div>
-
+          </div>
+  
+          <!-- ── Informations médicales ── -->
+          <div class="profil-card">
+            <div class="profil-card__header">
+              <div class="profil-card__header-icon profil-card__header-icon--red">
+                <i class="pi pi-heart"></i>
+              </div>
+              <h3 class="profil-card__title">Informations médicales</h3>
+            </div>
+  
+            <div class="form-grid">
+  
+              <div class="form-field form-field--full">
+                <label class="form-field__label">Groupe sanguin</label>
+                @if (editMode()) {
+                  <select class="form-field__input" [(ngModel)]="formData.groupeSanguin">
+                    <option value="">Sélectionner</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                } @else {
+                  @if (profil()?.groupeSanguin) {
+                    <div class="blood-badge">
+                      <span class="blood-badge__value">{{ profil()?.groupeSanguin }}</span>
+                      <span class="blood-badge__label">Groupe sanguin</span>
+                    </div>
+                  } @else {
+                    <span class="form-field__value">—</span>
+                  }
+                }
+              </div>
+  
+              <div class="form-field form-field--full">
+                <label class="form-field__label">Allergies</label>
+                @if (editMode()) {
+                  <textarea
+                    class="form-field__input form-field__input--textarea"
+                    [(ngModel)]="formData.allergies"
+                    placeholder="Listez vos allergies..."
+                    rows="3"
+                  ></textarea>
+                } @else {
+                  <span class="form-field__value">{{ getAllergies() }}</span>
+                }
+              </div>
+  
+              <div class="form-field form-field--full">
+                <label class="form-field__label">Antécédents médicaux</label>
+                @if (editMode()) {
+                  <textarea
+                    class="form-field__input form-field__input--textarea"
+                    [(ngModel)]="formData.antecedents"
+                    placeholder="Antécédents médicaux importants..."
+                    rows="3"
+                  ></textarea>
+                } @else {
+                  <span class="form-field__value">{{ profil()?.antecedents || '—' }}</span>
+                }
+              </div>
+  
+            </div>
+          </div>
+  
         </div>
-
+  
+        <!-- ── Actions rapides ── -->
+        <div class="quick-actions">
+          <a routerLink="/patient/qr-code" class="quick-action">
+            <div class="quick-action__icon quick-action__icon--green">
+              <i class="pi pi-qrcode"></i>
+            </div>
+            <span class="quick-action__label">Mon QR Code</span>
+            <i class="pi pi-arrow-right quick-action__arrow"></i>
+          </a>
+          <a routerLink="/patient/dashboard" class="quick-action">
+            <div class="quick-action__icon quick-action__icon--blue">
+              <i class="pi pi-home"></i>
+            </div>
+            <span class="quick-action__label">Dashboard</span>
+            <i class="pi pi-arrow-right quick-action__arrow"></i>
+          </a>
+        </div>
+  
+      }
+  
     </div>
-    }
-
-</div>
+  
+  </div>
