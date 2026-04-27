@@ -1,419 +1,338 @@
 // features/auth/login/login.component.scss
-// Design : card split glassmorphism — formes décoratives + formulaire
-
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-// ── Variables ───────────────────────────────────────────────────────────
-$forest-deep: #0D2B1A;
-$forest-mid: #1A5C35;
-$forest-bright: #3EBB70;
-$forest-light: #F0FAF4;
-$cream: #F5F3EE;
-$text-dark: #0D2B1A;
-$text-mid: #4A6859;
-$text-muted: #9AA8A0;
-$border: #E8EFEB;
-$white: #ffffff;
-
-// ── Page : fond dégradé plein écran ────────────────────────────────────
+// ── PAGE ─────────────────────────────────────────────────────────
 .login-page {
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #0D2B1A 0%, #1A5C35 50%, #0D3320 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
+  min-height: 100vh;
+  background: linear-gradient(150deg, var(--bb-deep) 0%, var(--bb-mid) 55%, #0E3521 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
 }
 
-// ── Card principale split ───────────────────────────────────────────────
+// ── CARD SPLIT ───────────────────────────────────────────────────
 .login-card {
-    width: 100%;
-    max-width: 900px;
-    background: $white;
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.2);
-    display: flex;
+  width: 100%;
+  max-width: 900px;
+  background: var(--bb-surface-0);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  transition: background var(--bb-transition);
+
+  @media (min-width: 768px) {
+    flex-direction: row;
     min-height: 540px;
-
-    // Mobile — colonne
-    flex-direction: column;
-
-    // Desktop — ligne
-    @media (min-width: 768px) {
-        flex-direction: row;
-    }
+  }
 }
 
-// ── Panneau gauche décoratif ────────────────────────────────────────────
+// ── PANNEAU GAUCHE ───────────────────────────────────────────────
 .login-left {
-    background: linear-gradient(145deg, #0D2B1A 0%, #1A5C35 60%, #0F3D22 100%);
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 32px;
+  background: linear-gradient(150deg, var(--bb-deep) 0%, var(--bb-mid) 65%, #0E3521 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px 28px;
+  min-height: 200px;
 
-    // Mobile — hauteur fixe
-    min-height: 200px;
+  @media (min-width: 768px) {
+    width: 42%;
+    flex-shrink: 0;
+    min-height: auto;
+    align-items: flex-start;
+  }
 
-    // Desktop — 45% de la largeur
-    @media (min-width: 768px) {
-        width: 45%;
-        flex-shrink: 0;
-        min-height: auto;
-    }
-}
-
-// Formes décoratives — cercles géométriques
-.deco {
+  // Formes décoratives
+  &__deco {
     position: absolute;
     border-radius: 50%;
-    background: rgba(62, 187, 112, 0.12);
-    border: 1px solid rgba(62, 187, 112, 0.15);
+    pointer-events: none;
 
-    &--circle-lg {
-        width: 300px;
-        height: 300px;
-        bottom: -120px;
-        right: -80px;
+    &--1 {
+      width: 300px; height: 300px;
+      bottom: -120px; right: -80px;
+      background: rgba(62, 187, 112, 0.07);
+      border: 1px solid rgba(62, 187, 112, 0.12);
     }
-
-    &--circle-md {
-        width: 180px;
-        height: 180px;
-        top: -60px;
-        left: -50px;
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+    &--2 {
+      width: 160px; height: 160px;
+      top: -60px; left: -50px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
-
-    &--circle-sm {
-        width: 100px;
-        height: 100px;
-        top: 50%;
-        right: 24px;
-        transform: translateY(-50%);
-        background: rgba(62, 187, 112, 0.08);
-        border-color: rgba(62, 187, 112, 0.2);
+    &--3 {
+      width: 80px; height: 80px;
+      top: 50%; right: 24px;
+      transform: translateY(-50%);
+      background: rgba(62, 187, 112, 0.06);
+      border: 1px solid rgba(62, 187, 112, 0.14);
     }
-}
+  }
 
-// Contenu panneau gauche
-.login-left__content {
+  &__content {
     position: relative;
     z-index: 1;
-    color: $white;
+    color: #FFFFFF;
     text-align: center;
+    @media (min-width: 768px) { text-align: left; }
+  }
 
-    @media (min-width: 768px) {
-        text-align: left;
-    }
-}
-
-// Logo
-.login-left__logo {
+  &__logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 24px;
-
-    @media (min-width: 768px) {
-        justify-content: flex-start;
-    }
+    gap: 10px;
+    margin-bottom: 28px;
+    @media (min-width: 768px) { justify-content: flex-start; }
 
     &-icon {
-        font-size: 24px;
+      width: 38px; height: 38px;
+      background: rgba(62, 187, 112, 0.16);
+      border: 1px solid rgba(62, 187, 112, 0.3);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
     }
 
     &-name {
-        font-family: 'Sora', sans-serif;
-        font-size: 16px;
-        font-weight: 700;
-        color: $white;
-        letter-spacing: -0.3px;
+      font-family: var(--bb-font-display);
+      font-size: 16px; font-weight: 700;
+      color: #FFFFFF; letter-spacing: -0.2px;
     }
-}
+  }
 
-// Titre gauche
-.login-left__title {
-    font-family: 'Sora', sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    color: $white;
-    letter-spacing: -1px;
-    line-height: 1;
-    margin-bottom: 14px;
+  &__title {
+    font-family: var(--bb-font-display);
+    font-size: 36px; font-weight: 800;
+    color: #FFFFFF; letter-spacing: -1px;
+    line-height: 1.05; margin-bottom: 14px;
     text-transform: uppercase;
+    @media (max-width: 767px) { font-size: 28px; }
+  }
 
-    @media (max-width: 767px) {
-        font-size: 28px;
-    }
-}
-
-// Sous-titre gauche
-.login-left__sub {
+  &__sub {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.6;
-    margin-bottom: 28px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.65; margin-bottom: 32px;
+    max-width: 240px;
+    @media (max-width: 767px) { display: none; }
+  }
 
-    @media (max-width: 767px) {
-        display: none;
-    }
-}
-
-// Stats
-.login-left__stats {
+  &__stats {
     display: flex;
-    gap: 20px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: var(--bb-radius-lg);
+    padding: 14px 8px;
+    @media (max-width: 767px) { display: none; }
+  }
+
+  &__controls {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
     justify-content: center;
-
-    @media (min-width: 768px) {
-        justify-content: flex-start;
-    }
+    @media (min-width: 768px) { justify-content: flex-start; }
+  }
 }
 
-.stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+.login-stat {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+  padding: 0 12px;
 
-    @media (min-width: 768px) {
-        align-items: flex-start;
-    }
+  & + & { border-left: 1px solid rgba(255, 255, 255, 0.1); }
 
-    &__num {
-        font-family: 'Sora', sans-serif;
-        font-size: 22px;
-        font-weight: 800;
-        color: $forest-bright;
-        line-height: 1;
-    }
-
-    &__lbl {
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.5);
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-    }
+  &__num {
+    font-family: var(--bb-font-display);
+    font-size: 22px; font-weight: 800;
+    color: var(--bb-bright); line-height: 1;
+  }
+  &__lbl {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
 }
 
-// ── Panneau droit : formulaire ──────────────────────────────────────────
+// Boutons thème/langue en bas gauche
+.ctrl-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--bb-radius-pill);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--bb-font-display);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  transition: background var(--bb-transition);
+  &:hover { background: rgba(255, 255, 255, 0.14); }
+  i { font-size: 12px; }
+}
+
+// ── PANNEAU DROIT — FORMULAIRE ───────────────────────────────────
 .login-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 32px;
-    background: $white;
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 44px 36px;
+  background: var(--bb-surface-0);
+  transition: background var(--bb-transition);
 }
 
 .login-form-wrap {
-    width: 100%;
-    max-width: 340px;
+  width: 100%;
+  max-width: 340px;
 }
 
-// Titre formulaire
 .login-form__title {
-    font-family: 'Sora', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
-    color: $text-dark;
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
+  font-family: var(--bb-font-display);
+  font-size: 26px; font-weight: 800;
+  color: var(--bb-text-primary);
+  letter-spacing: -0.5px; margin-bottom: 4px;
 }
 
 .login-form__sub {
-    font-size: 13px;
-    color: $text-muted;
-    margin-bottom: 28px;
+  font-size: 13.5px;
+  color: var(--bb-text-muted);
+  margin-bottom: 28px;
 }
 
-// Footer formulaire
 .login-form__footer {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 12px;
-    color: $text-muted;
+  text-align: center; margin-top: 24px;
+  font-size: 11px; color: var(--bb-text-muted);
 }
 
-// ── Alerte erreur ───────────────────────────────────────────────────────
-.form-alert {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    margin-bottom: 20px;
-    background: #FEE2E2;
-    border: 1px solid #FECACA;
-    color: #991B1B;
+// ── CHAMPS ───────────────────────────────────────────────────────
+.form-field-wrap { margin-bottom: 16px; }
+
+.form-label {
+  display: block; margin-bottom: 6px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--bb-text-secondary);
 }
 
-// ── Champs ──────────────────────────────────────────────────────────────
-.field-wrap {
-    margin-bottom: 14px;
+// InputGroup override
+.p-inputgroup {
+  border-radius: var(--bb-radius) !important;
+  overflow: hidden;
+  border: 1.5px solid var(--bb-border) !important;
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+
+  &:focus-within {
+    border-color: var(--bb-bright) !important;
+    box-shadow: 0 0 0 3px rgba(62, 187, 112, 0.15) !important;
+  }
+
+  .p-inputgroup-addon {
+    background: var(--bb-surface-2) !important;
+    border: none !important;
+    color: var(--bb-primary) !important;
+    padding: 0 12px;
+    border-right: 1px solid var(--bb-border) !important;
+  }
+
+  input.p-inputtext {
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--bb-surface-1) !important;
+    color: var(--bb-text-primary) !important;
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+
+    &::placeholder { color: var(--bb-text-muted) !important; }
+  }
 }
 
-// Boîte input
-.field-box {
-    display: flex;
-    align-items: center;
-    background: $forest-light;
-    border: 1.5px solid $border;
-    border-radius: 12px;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    position: relative;
-
-    &:focus-within {
-        border-color: $forest-bright;
-        box-shadow: 0 0 0 4px rgba(62, 187, 112, 0.12);
-        background: $white;
-    }
-
-    &--error {
-        border-color: #FECACA;
-        background: #FFF5F5;
-    }
-}
-
-// Icône gauche
-.field-icon {
-    width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: $forest-bright;
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-// Input
-.field-input {
-    flex: 1;
-    padding: 14px 12px 14px 0;
-    border: none;
-    background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    color: $text-dark;
-    outline: none;
-
-    &::placeholder {
-        color: $text-muted;
-    }
-
-    &--padded {
-        padding-right: 56px;
-    }
-}
-
-// Toggle VOIR/CACHER
-.field-toggle {
-    position: absolute;
-    right: 12px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 6px;
-    display: flex;
-    align-items: center;
+// Toggle mot de passe
+.toggle-btn {
+  background: var(--bb-surface-2) !important;
+  border: none !important;
+  border-left: 1px solid var(--bb-border) !important;
+  cursor: pointer;
+  padding: 0 12px !important;
+  transition: background var(--bb-transition);
+  &:hover { background: var(--bb-surface-1) !important; }
 }
 
 .toggle-label {
-    font-family: 'Sora', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: $forest-mid;
-    letter-spacing: 0.5px;
-    transition: color 0.2s;
-
-    &:hover {
-        color: $forest-deep;
-    }
+  font-family: var(--bb-font-display);
+  font-size: 10px; font-weight: 700;
+  color: var(--bb-text-muted);
+  letter-spacing: 0.4px;
 }
 
-// ── Bouton principal ────────────────────────────────────────────────────
-.btn-submit {
-    width: 100%;
-    padding: 15px;
-    background: $forest-deep;
-    color: $white;
-    border: none;
-    border-radius: 12px;
-    font-family: 'Sora', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+// ── BOUTON SUBMIT ────────────────────────────────────────────────
+.login-submit-btn {
+  width: 100% !important;
+  margin-top: 8px;
+  padding: 12px !important;
+  font-family: var(--bb-font-display) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  background: var(--bb-deep) !important;
+  border-color: var(--bb-deep) !important;
+  border-radius: var(--bb-radius) !important;
+  transition: all var(--bb-transition) !important;
+  justify-content: center;
 
-    &:hover:not(:disabled) {
-        background: $forest-mid;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(13, 43, 26, 0.3);
-    }
+  &:hover:not(:disabled) {
+    background: var(--bb-primary) !important;
+    border-color: var(--bb-primary) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(11, 38, 24, 0.28) !important;
+  }
 
-    &:active:not(:disabled) {
-        transform: translateY(0);
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
+  &:disabled { opacity: 0.55 !important; }
 }
 
-// ── Séparateur ──────────────────────────────────────────────────────────
-.separator {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 20px 0;
+// ── SÉPARATEUR ───────────────────────────────────────────────────
+.form-separator {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0;
 
-    &__line {
-        flex: 1;
-        height: 1px;
-        background: $border;
-    }
-
-    &__text {
-        font-size: 12px;
-        color: $text-muted;
-        font-weight: 500;
-    }
+  &__line { flex: 1; height: 1px; background: var(--bb-border); }
+  &__text { font-size: 11px; color: var(--bb-text-muted); font-weight: 500; }
 }
 
-// ── Bouton outline register ─────────────────────────────────────────────
-.btn-outline {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 14px;
-    border: 1.5px solid $border;
-    border-radius: 12px;
-    font-family: 'Sora', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: $text-dark;
-    text-decoration: none;
-    transition: border-color 0.2s, background 0.2s, color 0.2s;
+// ── LIEN REGISTER ────────────────────────────────────────────────
+.register-link {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 12px;
+  border: 1.5px solid var(--bb-border);
+  border-radius: var(--bb-radius);
+  font-family: var(--bb-font-display);
+  font-size: 13px; font-weight: 600;
+  color: var(--bb-text-secondary);
+  text-decoration: none;
+  transition: all var(--bb-transition);
+  background: transparent;
 
-    &:hover {
-        border-color: $forest-bright;
-        background: $forest-light;
-        color: $forest-mid;
-    }
+  &:hover {
+    border-color: var(--bb-bright);
+    background: var(--bb-surface-2);
+    color: var(--bb-primary);
+  }
+}
+
+// ── ALERTE ───────────────────────────────────────────────────────
+.bb-alert {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: var(--bb-radius);
+  font-size: 13px; margin-bottom: 20px;
+  border: 1px solid transparent;
+  i { font-size: 15px; flex-shrink: 0; }
+
+  &--error {
+    background: var(--bb-danger-bg);
+    border-color: var(--bb-danger-border);
+    color: var(--bb-danger);
+  }
 }

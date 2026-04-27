@@ -1,7 +1,6 @@
-<!-- shared/components/patient-layout/patient-layout.component.html -->
+<!-- shared/components/asc-layout/asc-layout.component.html -->
 <div class="bb-layout" [class.bb-layout--sidebar-open]="sidebarOpen()">
 
-  <!-- Overlay mobile -->
   @if (sidebarOpen()) {
     <div class="bb-layout__overlay" (click)="closeSidebar()"></div>
   }
@@ -31,24 +30,21 @@
   <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
   <aside class="bb-sidebar" [class.bb-sidebar--open]="sidebarOpen()" role="navigation">
 
-    <!-- Logo -->
     <div class="bb-sidebar__logo">
       <div class="bb-sidebar__logo-icon">🌳</div>
       <span class="bb-sidebar__logo-name">{{ 'APP.NAME' | translate }}</span>
     </div>
 
-    <!-- Profil utilisateur -->
     <div class="bb-sidebar__profile">
-      <div class="bb-sidebar__avatar" aria-hidden="true">{{ getInitiales() }}</div>
+      <div class="bb-sidebar__avatar">{{ getInitiales() }}</div>
       <div class="bb-sidebar__profile-info">
         <span class="bb-sidebar__profile-name">
           {{ currentUser()?.prenom }} {{ currentUser()?.nom }}
         </span>
-        <span class="bb-sidebar__profile-role">{{ 'PATIENT.ROLE' | translate }}</span>
+        <span class="bb-sidebar__profile-role">{{ 'ASC.ROLE' | translate }}</span>
       </div>
     </div>
 
-    <!-- Navigation -->
     <nav class="bb-sidebar__nav" aria-label="{{ 'COMMON.NAVIGATION' | translate }}">
       <p class="bb-sidebar__nav-label">{{ 'COMMON.NAVIGATION' | translate }}</p>
       @for (item of navItems; track item.route) {
@@ -64,7 +60,6 @@
       }
     </nav>
 
-    <!-- Footer sidebar -->
     <div class="bb-sidebar__footer">
       <button class="bb-sidebar__footer-btn" (click)="toggleTheme()">
         <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
@@ -84,14 +79,12 @@
 
   <!-- ── ZONE PRINCIPALE ──────────────────────────────────────── -->
   <main class="bb-layout__main">
-
-    <!-- Topbar mobile -->
     <header class="bb-topbar">
       <button class="bb-topbar__menu" (click)="toggleSidebar()" aria-label="Menu">
         <i class="pi pi-bars"></i>
       </button>
       <div class="bb-topbar__logo">
-        <span aria-hidden="true">🌳</span>
+        <span>🌳</span>
         <span class="bb-topbar__logo-name">{{ 'APP.NAME' | translate }}</span>
       </div>
       <div class="bb-topbar__right">
@@ -101,13 +94,11 @@
         <button class="bb-topbar__icon-btn bb-topbar__lang" (click)="toggleLang()">
           {{ 'COMMON.LANG_TOGGLE' | translate }}
         </button>
-        <div class="bb-topbar__avatar" aria-hidden="true">{{ getInitiales() }}</div>
+        <div class="bb-topbar__avatar">{{ getInitiales() }}</div>
       </div>
     </header>
-
     <div class="bb-layout__content">
       <router-outlet></router-outlet>
     </div>
-
   </main>
 </div>

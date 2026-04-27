@@ -1,136 +1,153 @@
 <!-- features/auth/login/login.component.html -->
-<!-- Design : card split — formes décoratives gauche + formulaire droite -->
+<!-- Design split — panneau gauche décoratif + formulaire PrimeNG droite -->
 
 <div class="login-page">
   <div class="login-card">
 
-    <!-- ── Panneau gauche décoratif ──────────────────────────────────── -->
+    <!-- ── Panneau gauche ──────────────────────────────────────── -->
     <div class="login-left">
+      <div class="login-left__deco login-left__deco--1"></div>
+      <div class="login-left__deco login-left__deco--2"></div>
+      <div class="login-left__deco login-left__deco--3"></div>
 
-      <!-- Formes décoratives -->
-      <div class="deco deco--circle-lg"></div>
-      <div class="deco deco--circle-md"></div>
-      <div class="deco deco--circle-sm"></div>
-
-      <!-- Contenu gauche -->
       <div class="login-left__content">
+        <!-- Logo -->
         <div class="login-left__logo">
-          <span class="login-left__logo-icon">🌳</span>
-          <span class="login-left__logo-name">BaoBaoHealth</span>
+          <div class="login-left__logo-icon">🌳</div>
+          <span class="login-left__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
-        <h1 class="login-left__title">Bienvenue</h1>
-        <p class="login-left__sub">
-          La plateforme de santé numérique de la Guinée — patients, agents et médecins connectés.
-        </p>
+
+        <!-- Titre -->
+        <h1 class="login-left__title">{{ 'AUTH.LOGIN.WELCOME_TITLE' | translate }}</h1>
+        <p class="login-left__sub">{{ 'AUTH.LOGIN.WELCOME_SUBTITLE' | translate }}</p>
+
+        <!-- Stats -->
         <div class="login-left__stats">
-          <div class="stat">
-            <span class="stat__num">9</span>
-            <span class="stat__lbl">Modules</span>
+          <div class="login-stat">
+            <span class="login-stat__num">9</span>
+            <span class="login-stat__lbl">{{ 'AUTH.LOGIN.STAT_MODULES' | translate }}</span>
           </div>
-          <div class="stat">
-            <span class="stat__num">62</span>
-            <span class="stat__lbl">Routes</span>
+          <div class="login-stat">
+            <span class="login-stat__num">62</span>
+            <span class="login-stat__lbl">{{ 'AUTH.LOGIN.STAT_ROUTES' | translate }}</span>
           </div>
-          <div class="stat">
-            <span class="stat__num">8</span>
-            <span class="stat__lbl">Rôles</span>
+          <div class="login-stat">
+            <span class="login-stat__num">8</span>
+            <span class="login-stat__lbl">{{ 'AUTH.LOGIN.STAT_ROLES' | translate }}</span>
           </div>
         </div>
       </div>
 
+      <!-- Contrôles thème/langue -->
+      <div class="login-left__controls">
+        <button class="ctrl-btn" (click)="toggleTheme()" [title]="'COMMON.DARK_MODE' | translate">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
+        <button class="ctrl-btn" (click)="toggleLang()">
+          <i class="pi pi-globe"></i>
+          <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
+        </button>
+      </div>
     </div>
 
-    <!-- ── Panneau droit : formulaire ───────────────────────────────── -->
+    <!-- ── Panneau droit — formulaire ─────────────────────────── -->
     <div class="login-right">
-
       <div class="login-form-wrap">
-        <h2 class="login-form__title">Connexion</h2>
-        <p class="login-form__sub">Accédez à votre espace personnel</p>
 
-        <!-- Erreur -->
+        <h2 class="login-form__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h2>
+        <p class="login-form__sub">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
+
+        <!-- Alerte erreur -->
         @if (errorMessage()) {
-          <div class="form-alert">
+          <div class="bb-alert bb-alert--error">
             <i class="pi pi-exclamation-circle"></i>
             <span>{{ errorMessage() }}</span>
           </div>
         }
 
-        <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+        <form (ngSubmit)="onSubmit()" #loginForm="ngForm" novalidate>
 
           <!-- Téléphone -->
-          <div class="field-wrap">
-            <div class="field-box" [class.field-box--error]="errorMessage()">
-              <div class="field-icon">
+          <div class="form-field-wrap">
+            <label class="form-label" for="telephone">
+              {{ 'AUTH.LOGIN.PHONE' | translate }}
+            </label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon">
                 <i class="pi pi-phone"></i>
-              </div>
+              </span>
               <input
+                pInputText
+                id="telephone"
                 type="tel"
-                class="field-input"
-                placeholder="Numéro de téléphone"
+                [placeholder]="'AUTH.LOGIN.PHONE_PLACEHOLDER' | translate"
                 [(ngModel)]="formData.telephone"
                 name="telephone"
                 required
                 autocomplete="tel"
+                class="w-full"
               />
             </div>
           </div>
 
           <!-- Mot de passe -->
-          <div class="field-wrap">
-            <div class="field-box" [class.field-box--error]="errorMessage()">
-              <div class="field-icon">
+          <div class="form-field-wrap">
+            <label class="form-label" for="motDePasse">
+              {{ 'AUTH.LOGIN.PASSWORD' | translate }}
+            </label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon">
                 <i class="pi pi-lock"></i>
-              </div>
+              </span>
               <input
+                pInputText
+                id="motDePasse"
                 [type]="showPassword() ? 'text' : 'password'"
-                class="field-input field-input--padded"
-                placeholder="Mot de passe"
+                [placeholder]="'AUTH.LOGIN.PASSWORD' | translate"
                 [(ngModel)]="formData.motDePasse"
                 name="motDePasse"
                 required
                 autocomplete="current-password"
+                class="w-full"
               />
               <button
                 type="button"
-                class="field-toggle"
+                class="p-inputgroup-addon toggle-btn"
                 (click)="togglePassword()"
-                aria-label="Afficher ou masquer le mot de passe"
+                [attr.aria-label]="'AUTH.LOGIN.SHOW' | translate"
               >
                 <span class="toggle-label">
-                  {{ showPassword() ? 'CACHER' : 'VOIR' }}
+                  {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
                 </span>
-                <span class="sr-only">Afficher ou masquer le mot de passe</span>
               </button>
             </div>
           </div>
 
-          <!-- Bouton -->
-          <button type="submit" class="btn-submit" [disabled]="isLoading()">
-            @if (isLoading()) {
-              <i class="pi pi-spin pi-spinner"></i>
-              <span>Connexion...</span>
-            } @else {
-              <span>Se connecter</span>
-            }
-          </button>
+          <!-- Bouton connexion -->
+          <p-button
+            type="submit"
+            [label]="isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate)"
+            [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'"
+            [loading]="isLoading()"
+            [disabled]="isLoading()"
+            styleClass="w-full login-submit-btn"
+          ></p-button>
 
           <!-- Séparateur -->
-          <div class="separator">
-            <span class="separator__line"></span>
-            <span class="separator__text">ou</span>
-            <span class="separator__line"></span>
+          <div class="form-separator">
+            <span class="form-separator__line"></span>
+            <span class="form-separator__text">ou</span>
+            <span class="form-separator__line"></span>
           </div>
 
-          <!-- Bouton register -->
-          <a routerLink="/auth/register" class="btn-outline">
-            Créer un compte
+          <!-- Lien register -->
+          <a routerLink="/auth/register" class="register-link">
+            {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
           </a>
 
         </form>
 
-        <p class="login-form__footer">
-          Plateforme sécurisée — Guinée 🇬🇳
-        </p>
+        <p class="login-form__footer">{{ 'AUTH.LOGIN.FOOTER' | translate }}</p>
 
       </div>
     </div>

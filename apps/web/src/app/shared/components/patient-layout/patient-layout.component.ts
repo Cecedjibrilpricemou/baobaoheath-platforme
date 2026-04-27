@@ -1,65 +1,47 @@
 // shared/components/patient-layout/patient-layout.component.ts
-// Rôle : layout partagé pour toutes les pages du module Patient
-// Contient : sidebar navigation + header + zone contenu
-
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
-import { Router } from '@angular/router';
+import { ThemeService } from '../../services/theme.service';
+import { I18nService } from '../../services/i18n.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-patient-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe],
   templateUrl: './patient-layout.component.html',
   styleUrl: './patient-layout.component.scss'
 })
 export class PatientLayoutComponent {
-  private authService = inject(AuthService);
-  private router = inject(Router);
+  private authService   = inject(AuthService);
+  readonly themeService = inject(ThemeService);
+  private i18nService   = inject(I18nService);
 
-  currentUser = this.authService.currentUser;
+  currentUser        = this.authService.currentUser;
+  sidebarOpen        = signal(false);
+  showLogoutConfirm  = signal(false); // confirmation déconnexion
 
-  // Toggle sidebar sur mobile
-  sidebarOpen = signal(false);
+  toggleSidebar()   { this.sidebarOpen.update(v => !v); }
+  closeSidebar()    { this.sidebarOpen.set(false); }
+  toggleTheme()     { this.themeService.toggle(); }
+  toggleLang()      { this.i18nService.toggle(); }
 
-  toggleSidebar() {
-    this.sidebarOpen.update(v => !v);
-  }
+  // Demande confirmation avant de déconnecter
+  askLogout()       { this.showLogoutConfirm.set(true); }
+  cancelLogout()    { this.showLogoutConfirm.set(false); }
+  confirmLogout()   { this.showLogoutConfirm.set(false); this.authService.logout(); }
 
-  closeSidebar() {
-    this.sidebarOpen.set(false);
-  }
-
-  // Initiales avatar
   getInitiales(): string {
     const u = this.currentUser();
     if (!u) return '??';
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  // Déconnexion
-  logout() {
-    this.authService.logout();
-  }
-
-  // Navigation items
   navItems = [
-    {
-      label: 'Dashboard',
-      icon: 'pi-home',
-      route: '/patient/dashboard'
-    },
-    {
-      label: 'Mon Profil',
-      icon: 'pi-user',
-      route: '/patient/profil'
-    },
-    {
-      label: 'QR Code',
-      icon: 'pi-qrcode',
-      route: '/patient/qr-code'
-    }
+    { labelKey: 'PATIENT.NAV_DASHBOARD', icon: 'pi-home',   route: '/patient/dashboard' },
+    { labelKey: 'PATIENT.NAV_PROFILE',   icon: 'pi-user',   route: '/patient/profil'    },
+    { labelKey: 'PATIENT.NAV_QR',        icon: 'pi-qrcode', route: '/patient/qr-code'   }
   ];
 }
