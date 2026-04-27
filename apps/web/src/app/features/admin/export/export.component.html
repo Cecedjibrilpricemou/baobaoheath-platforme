@@ -1,0 +1,76 @@
+<!-- features/admin/export/export.component.html -->
+<div class="bb-export">
+
+  <div class="bb-export__header">
+    <h1 class="bb-export__title"><i class="pi pi-download"></i> Export des données</h1>
+    <p class="bb-export__subtitle">Exportez les données de la plateforme pour DHIS2 ou analyse externe</p>
+  </div>
+
+  @if (successMsg()) {
+    <div class="bb-export__alert bb-export__alert--success">
+      <i class="pi pi-check-circle"></i> {{ successMsg() }}
+    </div>
+  }
+  @if (errorMsg()) {
+    <div class="bb-export__alert bb-export__alert--error">
+      <i class="pi pi-times-circle"></i> {{ errorMsg() }}
+    </div>
+  }
+
+  <div class="bb-export__card">
+    <h3 class="bb-export__card-title">Configuration de l'export</h3>
+
+    <div class="bb-export__form">
+      <div class="bb-export__field">
+        <label>Format</label>
+        <p-select [(ngModel)]="formatSelectionne" [options]="formatOptions" optionLabel="label" optionValue="value" />
+      </div>
+      <div class="bb-export__field">
+        <label>Période</label>
+        <p-select [(ngModel)]="periodeSelectionnee" [options]="periodeOptions" optionLabel="label" optionValue="value" />
+      </div>
+    </div>
+
+    <div class="bb-export__info">
+      <i class="pi pi-info-circle"></i>
+      <p>L'export inclut les consultations, diagnostics, vaccinations et référencements selon la période sélectionnée. Les données personnelles des patients sont anonymisées.</p>
+    </div>
+
+    <button class="bb-export__btn" (click)="exporter()" [disabled]="isExporting()">
+      <i class="pi pi-download"></i>
+      {{ isExporting() ? 'Export en cours...' : 'Télécharger l\'export' }}
+    </button>
+  </div>
+
+  <!-- Données incluses -->
+  <div class="bb-export__included">
+    <h3 class="bb-export__included-title">Données incluses dans l'export</h3>
+    <div class="bb-export__included-grid">
+      <div class="bb-export__included-item">
+        <i class="pi pi-heart-fill"></i>
+        <span>Consultations</span>
+      </div>
+      <div class="bb-export__included-item">
+        <i class="pi pi-search"></i>
+        <span>Diagnostics</span>
+      </div>
+      <div class="bb-export__included-item">
+        <i class="pi pi-shield"></i>
+        <span>Vaccinations</span>
+      </div>
+      <div class="bb-export__included-item">
+        <i class="pi pi-send"></i>
+        <span>Référencements</span>
+      </div>
+      <div class="bb-export__included-item">
+        <i class="pi pi-chart-bar"></i>
+        <span>Statistiques</span>
+      </div>
+      <div class="bb-export__included-item">
+        <i class="pi pi-map"></i>
+        <span>Données géo</span>
+      </div>
+    </div>
+  </div>
+
+</div>

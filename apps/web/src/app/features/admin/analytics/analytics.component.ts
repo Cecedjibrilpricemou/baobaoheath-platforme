@@ -1,0 +1,197 @@
+// features/admin/analytics/analytics.component.ts
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { SkeletonModule } from 'primeng/skeleton';
+import { SelectModule } from 'primeng/select';
+import { ApiService } from '../../../core/services/api.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+
+interface KPIs {
+  totalPatients: number;
+  totalConsultations: number;
+  totalVaccinations: number;
+  totalReferencements: number;
+  totalAsc: number;
+}
+
+interface StatutCount { statut: string; count: number; }
+interface Pathologie  { pathologie: string; count: number; }
+
+interface DashboardData {
+  kpis: KPIs;
+  consultationsParStatut: StatutCount[];
+  topPathologies: Pathologie[];
+}
+
+interface HeatmapPoint {
+  prefecture: string;
+  count: number;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface Alerte {
+  pathologie: string;
+  count: number;
+  prefecture: string;
+  evolution: number;
+}
+
+interface Tendance {
+  periode: string;
+  consultations: number;
+  vaccinations: number;
+}
+
+interface Couverture {
+  vaccin: string;
+  total: number;
+  pourcentage?: number;
+}
+
+@Component({
+  selector: 'app-analytics',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TagModule, SkeletonModule, SelectModule, TranslatePipe],
+  templateUrl: './analytics.component.html',
+  styleUrl: './analytics.component.scss'
+})
+export class AnalyticsComponent implements OnInit {
+  private api = inject(ApiService);
+
+  dashboard   = signal<DashboardData | null>(null);
+  heatmap     = signal<HeatmapPoint[]>([]);
+  alertes     = signal<Alerte[]>([]);
+  tendances   = signal<Tendance[]>([]);
+  couverture  = signal<Couverture[]>([]);
+
+  isLoadingDash    = signal(true);
+  isLoadingHeatmap = signal(true);
+  isLoadingAlertes = signal(true);
+  isLoadingTend    = signal(true);
+  isLoadingCouv    = signal(true);
+
+  activeTab = signal<'kpis' | 'heatmap' | 'alertes' | 'tendances' | 'vaccins'>('kpis');
+
+  prefiltreOptions = [
+    { label: 'Toute la Guinée', value: '' },
+    { label: 'Conakry',         value: 'Conakry'    },
+    { label: 'Kindia',          value: 'Kindia'     },
+    { label: 'Boké',            value: 'Boké'       },
+    { label: 'Mamou',           value: 'Mamou'      },
+    { label: 'Labé',            value: 'Labé'       },
+    { label: 'Faranah',         value: 'Faranah'    },
+    { label: 'Kankan',          value: 'Kankan'     },
+    { label: 'Nzérékoré',       value: 'Nzérékoré'  }
+  ];
+  prefiltreSelectionne = '';
+
+  ngOnInit() { this.loadAll(); }
+
+  loadAll() {
+    this.loadDashboard();
+    this.loadHeatmap();
+    this.loadAlertes();
+    this.loadTendances();
+    this.loadCouverture();
+  }
+
+  private loadDashboard() {
+    this.isLoadingDash.set(true);
+    const params = this.prefiltreSelectionne ? `?prefecture=${this.prefiltreSelectionne}` : '';
+    this.api.get<any>(`/analytics/dashboard${params}`).subscribe({
+      next: (r) => { this.dashboard.set(r?.data ?? r); this.isLoadingDash.set(false); },
+      error: () => { this.isLoadingDash.set(false); }
+    });
+  }
+
+  private loadHeatmap() {
+    this.isLoadingHeatmap.set(true);
+    this.api.get<any>('/analytics/heatmap').subscribe({
+      next: (r) => {
+        const data = r?.data ?? r;
+        // Agréger par prefecture
+        const map = new Map<string, number>();
+        (Array.isArray(data) ? data : []).forEach((p: any) => {
+          const pref = p.prefecture ?? 'Inconnue';
+          map.set(pref, (map.get(pref) ?? 0) + 1);
+        });
+        const points: HeatmapPoint[] = Array.from(map.entries())
+          .map(([prefecture, count]) => ({ prefecture, count }))
+          .sort((a, b) => b.count - a.count);
+        this.heatmap.set(points);
+        this.isLoadingHeatmap.set(false);
+      },
+      error: () => { this.isLoadingHeatmap.set(false); }
+    });
+  }
+
+  private loadAlertes() {
+    this.isLoadingAlertes.set(true);
+    this.api.get<any>('/analytics/alertes').subscribe({
+      next: (r) => { this.alertes.set(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []); this.isLoadingAlertes.set(false); },
+      error: () => { this.isLoadingAlertes.set(false); }
+    });
+  }
+
+  private loadTendances() {
+    this.isLoadingTend.set(true);
+    this.api.get<any>('/analytics/tendances').subscribe({
+      next: (r) => { this.tendances.set(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []); this.isLoadingTend.set(false); },
+      error: () => { this.isLoadingTend.set(false); }
+    });
+  }
+
+  private loadCouverture() {
+    this.isLoadingCouv.set(true);
+    this.api.get<any>('/analytics/vaccinations/couverture').subscribe({
+      next: (r) => { this.couverture.set(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []); this.isLoadingCouv.set(false); },
+      error: () => { this.isLoadingCouv.set(false); }
+    });
+  }
+
+  onPrefiltreChange() { this.loadDashboard(); this.loadHeatmap(); }
+
+  // ── Helpers ────────────────────────────────────────────────
+  getStatutLabel(s: string): string {
+    const map: Record<string, string> = {
+      'EN_COURS': 'En cours', 'TERMINEE': 'Terminée',
+      'PLANIFIEE': 'Planifiée', 'ANNULEE': 'Annulée', 'REFERENCEE': 'Référencée'
+    };
+    return map[s] ?? s;
+  }
+
+  getStatutColor(s: string): string {
+    const map: Record<string, string> = {
+      'EN_COURS': '#F97316', 'TERMINEE': '#22C55E',
+      'PLANIFIEE': '#3B82F6', 'ANNULEE': '#EF4444', 'REFERENCEE': '#8B5CF6'
+    };
+    return map[s] ?? '#6B7280';
+  }
+
+  getBarWidth(count: number, max: number): number {
+    return max > 0 ? Math.round((count / max) * 100) : 0;
+  }
+
+  getMaxHeatmap(): number {
+    return Math.max(...this.heatmap().map(p => p.count), 1);
+  }
+
+  getMaxPathologie(): number {
+    return Math.max(...(this.dashboard()?.topPathologies ?? []).map(p => p.count), 1);
+  }
+
+  getMaxStatut(): number {
+    return Math.max(...(this.dashboard()?.consultationsParStatut ?? []).map(s => s.count), 1);
+  }
+
+  getAlerteSeverity(evolution: number): 'danger' | 'warn' | 'success' {
+    if (evolution > 50) return 'danger';
+    if (evolution > 20) return 'warn';
+    return 'success';
+  }
+}

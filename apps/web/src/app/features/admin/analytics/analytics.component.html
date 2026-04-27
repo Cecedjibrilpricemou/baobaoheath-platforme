@@ -1,0 +1,275 @@
+<!-- features/admin/analytics/analytics.component.html -->
+<div class="bb-analytics">
+
+  <!-- Header -->
+  <div class="bb-analytics__header">
+    <div>
+      <h1 class="bb-analytics__title"><i class="pi pi-chart-bar"></i> Analytics</h1>
+      <p class="bb-analytics__subtitle">Tableau de bord épidémiologique — BaoBaoHealth Guinée 🇬🇳</p>
+    </div>
+    <div class="bb-analytics__filters">
+      <p-select
+        [(ngModel)]="prefiltreSelectionne"
+        [options]="prefiltreOptions"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onPrefiltreChange()"
+      />
+      <a routerLink="/admin/export" class="bb-analytics__export-btn">
+        <i class="pi pi-download"></i> Export
+      </a>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="bb-analytics__tabs">
+    <button class="bb-analytics__tab" [class.bb-analytics__tab--active]="activeTab() === 'kpis'" (click)="activeTab.set('kpis')">
+      <i class="pi pi-home"></i> Vue d'ensemble
+    </button>
+    <button class="bb-analytics__tab" [class.bb-analytics__tab--active]="activeTab() === 'heatmap'" (click)="activeTab.set('heatmap')">
+      <i class="pi pi-map"></i> Heatmap
+    </button>
+    <button class="bb-analytics__tab" [class.bb-analytics__tab--active]="activeTab() === 'alertes'" (click)="activeTab.set('alertes')">
+      <i class="pi pi-exclamation-triangle"></i> Alertes
+    </button>
+    <button class="bb-analytics__tab" [class.bb-analytics__tab--active]="activeTab() === 'tendances'" (click)="activeTab.set('tendances')">
+      <i class="pi pi-chart-line"></i> Tendances
+    </button>
+    <button class="bb-analytics__tab" [class.bb-analytics__tab--active]="activeTab() === 'vaccins'" (click)="activeTab.set('vaccins')">
+      <i class="pi pi-heart"></i> Vaccinations
+    </button>
+  </div>
+
+  <!-- ── VUE D'ENSEMBLE ─────────────────────────────────────── -->
+  @if (activeTab() === 'kpis') {
+    <div class="bb-analytics__section">
+
+      <!-- KPIs -->
+      @if (isLoadingDash()) {
+        <div class="bb-analytics__kpis">
+          @for (i of [1,2,3,4,5]; track i) { <p-skeleton height="110px" borderRadius="12px" /> }
+        </div>
+      } @else {
+        <div class="bb-analytics__kpis">
+          <div class="bb-analytics__kpi bb-analytics__kpi--blue">
+            <i class="pi pi-users"></i>
+            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalPatients ?? 0 }}</div>
+            <div class="bb-analytics__kpi-label">Patients</div>
+          </div>
+          <div class="bb-analytics__kpi bb-analytics__kpi--green">
+            <i class="pi pi-heart-fill"></i>
+            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalConsultations ?? 0 }}</div>
+            <div class="bb-analytics__kpi-label">Consultations</div>
+          </div>
+          <div class="bb-analytics__kpi bb-analytics__kpi--purple">
+            <i class="pi pi-shield"></i>
+            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalVaccinations ?? 0 }}</div>
+            <div class="bb-analytics__kpi-label">Vaccinations</div>
+          </div>
+          <div class="bb-analytics__kpi bb-analytics__kpi--orange">
+            <i class="pi pi-send"></i>
+            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalReferencements ?? 0 }}</div>
+            <div class="bb-analytics__kpi-label">Référencements</div>
+          </div>
+          <div class="bb-analytics__kpi bb-analytics__kpi--teal">
+            <i class="pi pi-user"></i>
+            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalAsc ?? 0 }}</div>
+            <div class="bb-analytics__kpi-label">Agents ASC</div>
+          </div>
+        </div>
+      }
+
+      <!-- Graphiques -->
+      <div class="bb-analytics__charts">
+
+        <!-- Consultations par statut -->
+        <div class="bb-analytics__chart-card">
+          <h3 class="bb-analytics__chart-title"><i class="pi pi-chart-bar"></i> Consultations par statut</h3>
+          @if (isLoadingDash()) {
+            <p-skeleton height="200px" />
+          } @else if (!dashboard()?.consultationsParStatut?.length) {
+            <div class="bb-analytics__empty">Aucune donnée</div>
+          } @else {
+            <div class="bb-analytics__bars">
+              @for (s of dashboard()!.consultationsParStatut; track s.statut) {
+                <div class="bb-analytics__bar-row">
+                  <span class="bb-analytics__bar-label">{{ getStatutLabel(s.statut) }}</span>
+                  <div class="bb-analytics__bar-track">
+                    <div
+                      class="bb-analytics__bar-fill"
+                      [style.width.%]="getBarWidth(s.count, getMaxStatut())"
+                      [style.background]="getStatutColor(s.statut)"
+                    ></div>
+                  </div>
+                  <span class="bb-analytics__bar-count">{{ s.count }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Top pathologies -->
+        <div class="bb-analytics__chart-card">
+          <h3 class="bb-analytics__chart-title"><i class="pi pi-search"></i> Top 10 pathologies</h3>
+          @if (isLoadingDash()) {
+            <p-skeleton height="200px" />
+          } @else if (!dashboard()?.topPathologies?.length) {
+            <div class="bb-analytics__empty">Aucune donnée</div>
+          } @else {
+            <div class="bb-analytics__bars">
+              @for (p of dashboard()!.topPathologies; track p.pathologie) {
+                <div class="bb-analytics__bar-row">
+                  <span class="bb-analytics__bar-label">{{ p.pathologie }}</span>
+                  <div class="bb-analytics__bar-track">
+                    <div
+                      class="bb-analytics__bar-fill"
+                      [style.width.%]="getBarWidth(p.count, getMaxPathologie())"
+                      style="background: #3EBB70"
+                    ></div>
+                  </div>
+                  <span class="bb-analytics__bar-count">{{ p.count }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ── HEATMAP ────────────────────────────────────────────── -->
+  @if (activeTab() === 'heatmap') {
+    <div class="bb-analytics__section">
+      <h2 class="bb-analytics__section-title">Distribution géographique des consultations</h2>
+      @if (isLoadingHeatmap()) {
+        <p-skeleton height="400px" borderRadius="12px" />
+      } @else if (heatmap().length === 0) {
+        <div class="bb-analytics__empty-large">
+          <i class="pi pi-map"></i>
+          <p>Aucune donnée géographique disponible</p>
+        </div>
+      } @else {
+        <div class="bb-analytics__heatmap">
+          <!-- Carte visuelle par prefecture -->
+          <div class="bb-analytics__map-grid">
+            @for (point of heatmap(); track point.prefecture) {
+              <div
+                class="bb-analytics__map-cell"
+                [style.opacity]="0.3 + (getBarWidth(point.count, getMaxHeatmap()) / 100) * 0.7"
+              >
+                <div class="bb-analytics__map-cell-name">{{ point.prefecture }}</div>
+                <div class="bb-analytics__map-cell-count">{{ point.count }}</div>
+                <div class="bb-analytics__map-cell-label">consultations</div>
+              </div>
+            }
+          </div>
+          <!-- Légende -->
+          <div class="bb-analytics__map-legend">
+            <span>Moins de consultations</span>
+            <div class="bb-analytics__legend-bar"></div>
+            <span>Plus de consultations</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── ALERTES ────────────────────────────────────────────── -->
+  @if (activeTab() === 'alertes') {
+    <div class="bb-analytics__section">
+      <h2 class="bb-analytics__section-title">Alertes épidémiques</h2>
+      @if (isLoadingAlertes()) {
+        @for (i of [1,2,3]; track i) { <p-skeleton height="70px" borderRadius="8px" styleClass="mb-2" /> }
+      } @else if (alertes().length === 0) {
+        <div class="bb-analytics__empty-large">
+          <i class="pi pi-check-circle" style="color:#22C55E"></i>
+          <p>Aucune alerte épidémique détectée</p>
+          <span>La situation sanitaire est normale</span>
+        </div>
+      } @else {
+        @for (a of alertes(); track a.pathologie) {
+          <div class="bb-analytics__alerte-card">
+            <div class="bb-analytics__alerte-left">
+              <i class="pi pi-exclamation-triangle"></i>
+              <div>
+                <p class="bb-analytics__alerte-patho">{{ a.pathologie }}</p>
+                <p class="bb-analytics__alerte-meta">{{ a.prefecture }} · {{ a.count }} cas</p>
+              </div>
+            </div>
+            <p-tag
+              [value]="'+' + a.evolution + '%'"
+              [severity]="getAlerteSeverity(a.evolution)"
+            />
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- ── TENDANCES ──────────────────────────────────────────── -->
+  @if (activeTab() === 'tendances') {
+    <div class="bb-analytics__section">
+      <h2 class="bb-analytics__section-title">Tendances temporelles</h2>
+      @if (isLoadingTend()) {
+        <p-skeleton height="300px" borderRadius="12px" />
+      } @else if (tendances().length === 0) {
+        <div class="bb-analytics__empty-large">
+          <i class="pi pi-chart-line"></i>
+          <p>Aucune donnée de tendance disponible</p>
+        </div>
+      } @else {
+        <div class="bb-analytics__tendances">
+          @for (t of tendances(); track t.periode) {
+            <div class="bb-analytics__tendance-row">
+              <span class="bb-analytics__tendance-periode">{{ t.periode }}</span>
+              <div class="bb-analytics__tendance-bars">
+                <div class="bb-analytics__tendance-bar">
+                  <div class="bb-analytics__tendance-fill bb-analytics__tendance-fill--cons" [style.width.%]="t.consultations"></div>
+                  <span>{{ t.consultations }} consultations</span>
+                </div>
+                <div class="bb-analytics__tendance-bar">
+                  <div class="bb-analytics__tendance-fill bb-analytics__tendance-fill--vacc" [style.width.%]="t.vaccinations"></div>
+                  <span>{{ t.vaccinations }} vaccinations</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── COUVERTURE VACCINALE ───────────────────────────────── -->
+  @if (activeTab() === 'vaccins') {
+    <div class="bb-analytics__section">
+      <h2 class="bb-analytics__section-title">Couverture vaccinale</h2>
+      @if (isLoadingCouv()) {
+        @for (i of [1,2,3,4]; track i) { <p-skeleton height="60px" borderRadius="8px" styleClass="mb-2" /> }
+      } @else if (couverture().length === 0) {
+        <div class="bb-analytics__empty-large">
+          <i class="pi pi-heart"></i>
+          <p>Aucune donnée de couverture vaccinale</p>
+        </div>
+      } @else {
+        <div class="bb-analytics__vaccins">
+          @for (v of couverture(); track v.vaccin) {
+            <div class="bb-analytics__vaccin-card">
+              <div class="bb-analytics__vaccin-header">
+                <span class="bb-analytics__vaccin-nom">{{ v.vaccin }}</span>
+                <span class="bb-analytics__vaccin-total">{{ v.total }} doses</span>
+              </div>
+              @if (v.pourcentage !== undefined) {
+                <div class="bb-analytics__vaccin-bar">
+                  <div class="bb-analytics__vaccin-fill" [style.width.%]="v.pourcentage"></div>
+                </div>
+                <span class="bb-analytics__vaccin-pct">{{ v.pourcentage }}%</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+</div>

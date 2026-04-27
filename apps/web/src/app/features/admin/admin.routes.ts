@@ -1,6 +1,24 @@
 // features/admin/admin.routes.ts
-// Routes du module Admin — sera complété lors du développement du module Admin
-
 import { Routes } from '@angular/router';
 
-export const ADMIN_ROUTES: Routes = [];
+export const ADMIN_ROUTES: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('../../shared/components/admin-layout/admin-layout.component')
+        .then(m => m.AdminLayoutComponent),
+    children: [
+      { path: '', redirectTo: 'analytics', pathMatch: 'full' },
+      {
+        path: 'analytics',
+        loadComponent: () =>
+          import('./analytics/analytics.component').then(m => m.AnalyticsComponent)
+      },
+      {
+        path: 'export',
+        loadComponent: () =>
+          import('./export/export.component').then(m => m.ExportComponent)
+      }
+    ]
+  }
+];

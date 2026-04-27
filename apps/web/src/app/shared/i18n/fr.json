@@ -279,5 +279,10 @@
     "NAV_DASHBOARD": "Dashboard",
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_MESSAGERIE": "Messagerie"
+  },
+  "ADMIN": {
+    "ROLE": "Administrateur",
+    "NAV_ANALYTICS": "Analytics",
+    "NAV_EXPORT": "Export DHIS2"
   }
 }
