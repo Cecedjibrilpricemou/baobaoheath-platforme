@@ -1,0 +1,415 @@
+<!-- features/asc/consultation-detail/consultation-detail.component.html -->
+<div class="bb-detail">
+
+  <!-- ── Modal confirmation clôture ───────────────────────── -->
+  @if (showCloseConfirm()) {
+    <div class="bb-logout-overlay" (click)="showCloseConfirm.set(false)">
+      <div class="bb-logout-modal" (click)="$event.stopPropagation()">
+        <div class="bb-logout-modal__icon" style="background:#FEF9C3">
+          <i class="pi pi-check-circle" style="color:#CA8A04"></i>
+        </div>
+        <h3 class="bb-logout-modal__title">Clôturer la consultation ?</h3>
+        <p class="bb-logout-modal__text">Cette action est irréversible. La consultation passera en statut "Terminée".</p>
+        <div class="bb-logout-modal__actions">
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="showCloseConfirm.set(false)">
+            Annuler
+          </button>
+          <button class="bb-logout-modal__btn" style="background:#16A34A;color:#fff;flex:1" (click)="closeConsultation()">
+            <i class="pi pi-check"></i> Confirmer
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <div class="bb-detail__header">
+    <button class="bb-detail__back" (click)="goBack()">
+      <i class="pi pi-arrow-left"></i>
+      <span>Consultations</span>
+    </button>
+
+    @if (isLoading()) {
+      <p-skeleton width="300px" height="32px" />
+    } @else if (consultation()) {
+      <div class="bb-detail__header-content">
+        <div class="bb-detail__patient">
+          <div class="bb-detail__avatar">{{ getInitiales() }}</div>
+          <div>
+            <h1 class="bb-detail__patient-name">{{ getPatientNom() }}</h1>
+            <p class="bb-detail__patient-phone">{{ consultation()?.patient?.utilisateur?.telephone }}</p>
+          </div>
+        </div>
+        <div class="bb-detail__meta">
+          <p-tag
+            [value]="getStatutLabel(consultation()!.statut)"
+            [severity]="getStatutSeverity(consultation()!.statut)"
+          />
+          <span class="bb-detail__date">{{ formatDate(consultation()!.consulteeLE) }}</span>
+        </div>
+        @if (!isConsultationTerminee()) {
+          <button
+            class="bb-detail__close-btn"
+            (click)="showCloseConfirm.set(true)"
+            [disabled]="isClosing()"
+          >
+            <i class="pi pi-check-circle"></i>
+            {{ isClosing() ? 'Clôture...' : 'Clôturer la consultation' }}
+          </button>
+        }
+      </div>
+
+      <!-- Motif + Allergies -->
+      <div class="bb-detail__info-row">
+        <div class="bb-detail__info-card">
+          <span class="bb-detail__info-label"><i class="pi pi-file"></i> Motif principal</span>
+          <span class="bb-detail__info-value">{{ consultation()!.motifPrincipal }}</span>
+        </div>
+        @if (consultation()!.patient.allergies?.length) {
+          <div class="bb-detail__info-card bb-detail__info-card--alert">
+            <span class="bb-detail__info-label"><i class="pi pi-exclamation-triangle"></i> Allergies</span>
+            <span class="bb-detail__info-value">{{ consultation()!.patient.allergies!.join(', ') }}</span>
+          </div>
+        }
+        @if (consultation()!.patient.groupeSanguin) {
+          <div class="bb-detail__info-card">
+            <span class="bb-detail__info-label"><i class="pi pi-heart"></i> Groupe sanguin</span>
+            <span class="bb-detail__info-value bb-detail__blood">{{ consultation()!.patient.groupeSanguin }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── Messages globaux ──────────────────────────────────── -->
+  @if (successMessage()) {
+    <div class="bb-detail__alert bb-detail__alert--success">
+      <i class="pi pi-check-circle"></i> {{ successMessage() }}
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="bb-detail__alert bb-detail__alert--error">
+      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- ── Tabs navigation ───────────────────────────────────── -->
+  <div class="bb-detail__tabs">
+    <button
+      class="bb-detail__tab"
+      [class.bb-detail__tab--active]="activeSection() === 'vitals'"
+      (click)="activeSection.set('vitals')"
+    >
+      <i class="pi pi-heart-fill"></i> Constantes vitales
+      @if (consultation()?.constantes) {
+        <span class="bb-detail__tab-badge">✓</span>
+      }
+    </button>
+    <button
+      class="bb-detail__tab"
+      [class.bb-detail__tab--active]="activeSection() === 'diagnostics'"
+      (click)="activeSection.set('diagnostics')"
+    >
+      <i class="pi pi-search"></i> Diagnostics
+      @if (consultation()?.diagnostics?.length) {
+        <span class="bb-detail__tab-badge">{{ consultation()!.diagnostics.length }}</span>
+      }
+    </button>
+    <button
+      class="bb-detail__tab"
+      [class.bb-detail__tab--active]="activeSection() === 'ordonnances'"
+      (click)="activeSection.set('ordonnances')"
+    >
+      <i class="pi pi-file-edit"></i> Ordonnances
+      @if (consultation()?.ordonnances?.length) {
+        <span class="bb-detail__tab-badge">{{ consultation()!.ordonnances.length }}</span>
+      }
+    </button>
+    <button
+      class="bb-detail__tab"
+      [class.bb-detail__tab--active]="activeSection() === 'referral'"
+      (click)="activeSection.set('referral')"
+    >
+      <i class="pi pi-send"></i> Référencement
+      @if (consultation()?.referencement) {
+        <span class="bb-detail__tab-badge">✓</span>
+      }
+    </button>
+  </div>
+
+  <!-- ── Section Constantes vitales ────────────────────────── -->
+  @if (activeSection() === 'vitals') {
+    <div class="bb-detail__section">
+
+      <!-- Alertes automatiques backend -->
+      @if (consultation()?.constantes?.alertes?.length) {
+        <div class="bb-detail__alertes">
+          <p class="bb-detail__alertes-title"><i class="pi pi-exclamation-triangle"></i> Alertes détectées</p>
+          @for (alerte of consultation()!.constantes!.alertes!; track alerte) {
+            <span class="bb-detail__alerte-item">{{ alerte }}</span>
+          }
+        </div>
+      }
+
+      <div class="bb-detail__vitals-grid">
+        <div class="bb-detail__vital-field">
+          <label>🌡️ Température (°C)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.temperature" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="Ex: 37.5" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>⚖️ Poids (kg)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.poidsKg" [min]="0" [max]="300" [minFractionDigits]="1" placeholder="Ex: 65.0" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>📏 Taille (cm)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.tailleCm" [min]="0" [max]="250" placeholder="Ex: 170" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>💪 Périmètre brachial (cm)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.perimetreBrachial" [min]="0" [max]="50" [minFractionDigits]="1" placeholder="Ex: 13.5" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>🩺 Tension systolique (mmHg)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.tensionSystolique" [min]="0" [max]="300" placeholder="Ex: 120" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>🩺 Tension diastolique (mmHg)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.tensionDiastolique" [min]="0" [max]="200" placeholder="Ex: 80" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>❤️ Fréquence cardiaque (bpm)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.frequenceCardiaque" [min]="0" [max]="300" placeholder="Ex: 72" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>💨 Fréquence respiratoire (/min)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.frequenceRespiratoire" [min]="0" [max]="100" placeholder="Ex: 18" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>🩸 SpO2 (%)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.spo2" [min]="0" [max]="100" [minFractionDigits]="1" placeholder="Ex: 98.0" [disabled]="isConsultationTerminee()" />
+        </div>
+        <div class="bb-detail__vital-field">
+          <label>🍬 Glycémie (g/L)</label>
+          <p-inputnumber [(ngModel)]="vitalsForm.glycemie" [min]="0" [max]="10" [minFractionDigits]="2" placeholder="Ex: 0.90" [disabled]="isConsultationTerminee()" />
+        </div>
+      </div>
+
+      @if (!isConsultationTerminee()) {
+        <button class="bb-detail__submit-btn" (click)="saveVitals()" [disabled]="isSavingVitals()">
+          <i class="pi pi-save"></i>
+          {{ isSavingVitals() ? 'Sauvegarde...' : 'Sauvegarder les constantes' }}
+        </button>
+      }
+    </div>
+  }
+
+  <!-- ── Section Diagnostics ───────────────────────────────── -->
+  @if (activeSection() === 'diagnostics') {
+    <div class="bb-detail__section">
+
+      <!-- Liste existante -->
+      @if (consultation()?.diagnostics?.length) {
+        <div class="bb-detail__list">
+          <h3 class="bb-detail__list-title">Diagnostics posés</h3>
+          @for (d of consultation()!.diagnostics; track d.id) {
+            <div class="bb-detail__list-item">
+              <div class="bb-detail__list-item-left">
+                <span class="bb-detail__diag-type">{{ d.typeDiagnostic }}</span>
+                <span class="bb-detail__diag-label">{{ d.libelle }}</span>
+                @if (d.codeIcd11) {
+                  <span class="bb-detail__diag-code">ICD-11: {{ d.codeIcd11 }}</span>
+                }
+              </div>
+              @if (d.severite) {
+                <p-tag [value]="d.severite" severity="warn" />
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Formulaire ajout -->
+      @if (!isConsultationTerminee()) {
+        <div class="bb-detail__form">
+          <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> Ajouter un diagnostic</h3>
+          <div class="bb-detail__form-grid">
+            <div class="bb-detail__form-field bb-detail__form-field--full">
+              <label>Libellé *</label>
+              <input pInputText [(ngModel)]="diagnosticForm.libelle" placeholder="Ex: Paludisme simple, Malnutrition aiguë..." />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Code ICD-11</label>
+              <input pInputText [(ngModel)]="diagnosticForm.codeIcd11" placeholder="Ex: 1F40" />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Type</label>
+              <p-select
+                [(ngModel)]="diagnosticForm.typeDiagnostic"
+                [options]="typesDiagnostic"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Sévérité</label>
+              <p-select
+                [(ngModel)]="diagnosticForm.severite"
+                [options]="severites"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Sélectionner"
+              />
+            </div>
+          </div>
+          <button class="bb-detail__submit-btn" (click)="saveDiagnostic()" [disabled]="isSavingDiagnostic() || !diagnosticForm.libelle">
+            <i class="pi pi-plus"></i>
+            {{ isSavingDiagnostic() ? 'Ajout...' : 'Ajouter le diagnostic' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Section Ordonnances ───────────────────────────────── -->
+  @if (activeSection() === 'ordonnances') {
+    <div class="bb-detail__section">
+
+      <!-- Liste existante -->
+      @if (consultation()?.ordonnances?.length) {
+        <div class="bb-detail__list">
+          <h3 class="bb-detail__list-title">Ordonnances prescrites</h3>
+          @for (o of consultation()!.ordonnances; track o.id) {
+            <div class="bb-detail__list-item">
+              <div class="bb-detail__list-item-left">
+                <span class="bb-detail__ordo-med">
+                  {{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}
+                </span>
+                <span class="bb-detail__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }} jours</span>
+                @if (o.instructions) {
+                  <span class="bb-detail__ordo-note">{{ o.instructions }}</span>
+                }
+              </div>
+              <p-tag [value]="o.statut" severity="info" />
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Formulaire ajout -->
+      @if (!isConsultationTerminee()) {
+        <div class="bb-detail__form">
+          <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> Ajouter une ordonnance</h3>
+          <div class="bb-detail__form-grid">
+            <div class="bb-detail__form-field bb-detail__form-field--full">
+              <label>Médicament *</label>
+              <p-select
+                [(ngModel)]="ordonnanceForm.idMedicament"
+                [options]="medicaments()"
+                [optionLabel]="'dci'"
+                optionValue="id"
+                placeholder="Sélectionner un médicament"
+                [filter]="true"
+                filterBy="dci,nomCommercial"
+              />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Posologie *</label>
+              <input pInputText [(ngModel)]="ordonnanceForm.posologie" placeholder="Ex: 1 comprimé" />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Fréquence *</label>
+              <input pInputText [(ngModel)]="ordonnanceForm.frequence" placeholder="Ex: 3x/jour" />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Durée (jours)</label>
+              <p-inputnumber [(ngModel)]="ordonnanceForm.dureeJours" [min]="1" [max]="365" />
+            </div>
+            <div class="bb-detail__form-field bb-detail__form-field--full">
+              <label>Instructions particulières</label>
+              <textarea pTextarea [(ngModel)]="ordonnanceForm.instructions" placeholder="Ex: À prendre pendant les repas..." rows="2"></textarea>
+            </div>
+          </div>
+          <button class="bb-detail__submit-btn" (click)="saveOrdonnance()" [disabled]="isSavingOrdonnance() || !ordonnanceForm.idMedicament">
+            <i class="pi pi-plus"></i>
+            {{ isSavingOrdonnance() ? 'Ajout...' : 'Ajouter l\'ordonnance' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Section Référencement ─────────────────────────────── -->
+  @if (activeSection() === 'referral') {
+    <div class="bb-detail__section">
+
+      <!-- Référencement existant -->
+      @if (consultation()?.referencement) {
+        <div class="bb-detail__referral-card">
+          <div class="bb-detail__referral-header">
+            <i class="pi pi-send"></i>
+            <span>Référencement effectué</span>
+            <p-tag
+              [value]="consultation()!.referencement!.urgence"
+              [severity]="getUrgenceSeverity(consultation()!.referencement!.urgence)"
+            />
+          </div>
+          <p class="bb-detail__referral-structure">
+            <strong>Structure cible :</strong>
+            {{ consultation()!.referencement!.structureCible.nom }} —
+            {{ consultation()!.referencement!.structureCible.prefecture }}
+          </p>
+          <p class="bb-detail__referral-resume">
+            {{ consultation()!.referencement!.resumeClinique }}
+          </p>
+        </div>
+      } @else if (!isConsultationTerminee()) {
+        <!-- Formulaire référencement -->
+        <div class="bb-detail__form">
+          <h3 class="bb-detail__form-title"><i class="pi pi-send"></i> Créer un référencement</h3>
+          <p class="bb-detail__form-note">Le référencement changera le statut de la consultation en "Référencée".</p>
+          <div class="bb-detail__form-grid">
+            <div class="bb-detail__form-field bb-detail__form-field--full">
+              <label>Structure de santé cible *</label>
+              <p-select
+                [(ngModel)]="referralForm.idStructureCible"
+                [options]="structures()"
+                optionLabel="nom"
+                optionValue="id"
+                placeholder="Sélectionner une structure"
+                [filter]="true"
+                filterBy="nom,prefecture"
+              />
+            </div>
+            <div class="bb-detail__form-field">
+              <label>Niveau d'urgence</label>
+              <p-select
+                [(ngModel)]="referralForm.urgence"
+                [options]="urgences"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+            <div class="bb-detail__form-field bb-detail__form-field--full">
+              <label>Résumé clinique *</label>
+              <textarea pTextarea [(ngModel)]="referralForm.resumeClinique" placeholder="Résumé de l'état clinique du patient et motif du référencement..." rows="4"></textarea>
+            </div>
+          </div>
+          <button
+            class="bb-detail__submit-btn bb-detail__submit-btn--danger"
+            (click)="saveReferral()"
+            [disabled]="isSavingReferral() || !referralForm.idStructureCible || !referralForm.resumeClinique"
+          >
+            <i class="pi pi-send"></i>
+            {{ isSavingReferral() ? 'Référencement...' : 'Créer le référencement' }}
+          </button>
+        </div>
+      } @else {
+        <div class="bb-detail__empty">
+          <i class="pi pi-send"></i>
+          <p>Aucun référencement pour cette consultation</p>
+        </div>
+      }
+    </div>
+  }
+
+</div>
