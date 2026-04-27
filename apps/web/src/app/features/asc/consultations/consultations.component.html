@@ -1,0 +1,193 @@
+<!-- features/asc/consultations/consultations.component.html -->
+<div class="consultations-page">
+
+  <!-- ── HERO ──────────────────────────────────────────────────── -->
+  <div class="page-hero">
+    <div class="page-hero__deco page-hero__deco--1"></div>
+    <div class="page-hero__deco page-hero__deco--2"></div>
+
+    <div class="page-hero__content">
+      <div class="page-hero__left">
+        <div class="page-hero__badge">
+          <i class="pi pi-heart"></i>
+          {{ 'ASC.CONSULTATIONS.BADGE' | translate }}
+        </div>
+        <h1 class="page-hero__title">{{ 'ASC.CONSULTATIONS.TITLE' | translate }}</h1>
+        <p class="page-hero__sub">{{ 'ASC.CONSULTATIONS.SUBTITLE' | translate }}</p>
+      </div>
+      <p-button
+        [label]="'ASC.CONSULTATIONS.NEW' | translate"
+        icon="pi pi-plus"
+        styleClass="hero-btn-new"
+        (onClick)="openNewForm()"
+      ></p-button>
+    </div>
+
+    <div class="page-hero__stats">
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ totalConsultations() }}</span>
+        <span class="hero-stat__label">{{ 'ASC.CONSULTATIONS.STAT_TOTAL' | translate }}</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ enCours() }}</span>
+        <span class="hero-stat__label">{{ 'ASC.CONSULTATIONS.STAT_EN_COURS' | translate }}</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat hero-stat--success">
+        <span class="hero-stat__value">{{ terminees() }}</span>
+        <span class="hero-stat__label">{{ 'ASC.CONSULTATIONS.STAT_TERMINEES' | translate }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BODY ──────────────────────────────────────────────────── -->
+  <div class="page-body">
+
+    @if (successMessage()) {
+      <div class="bb-alert bb-alert--success">
+        <i class="pi pi-check-circle"></i> <span>{{ successMessage() }}</span>
+      </div>
+    }
+
+    <!-- Formulaire nouvelle consultation -->
+    @if (showNewForm()) {
+      <div class="form-card">
+        <div class="form-card__header">
+          <div class="form-card__title">
+            <div class="form-card__title-icon"><i class="pi pi-plus-circle"></i></div>
+            <span>{{ 'ASC.CONSULTATIONS.FORM_TITLE' | translate }}</span>
+          </div>
+          <button class="form-card__close" (click)="closeNewForm()">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="bb-alert bb-alert--error">
+            <i class="pi pi-exclamation-circle"></i> <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <div class="form-grid-2">
+          <div class="form-field-wrap">
+            <label class="form-label">{{ 'ASC.CONSULTATIONS.FORM_PATIENT' | translate }}</label>
+            <p-select
+              [options]="patients()"
+              [(ngModel)]="newConsultation.patientId"
+              optionValue="id"
+              [placeholder]="'ASC.CONSULTATIONS.FORM_SELECT_PH' | translate"
+              styleClass="w-full"
+            >
+              <ng-template pTemplate="selectedItem" let-p>
+                @if (p) {
+                  {{ p.utilisateur.prenom }} {{ p.utilisateur.nom }} — {{ p.utilisateur.telephone }}
+                }
+              </ng-template>
+              <ng-template pTemplate="item" let-p>
+                {{ p.utilisateur.prenom }} {{ p.utilisateur.nom }} — {{ p.utilisateur.telephone }}
+              </ng-template>
+            </p-select>
+          </div>
+
+          <div class="form-field-wrap">
+            <label class="form-label">{{ 'ASC.CONSULTATIONS.FORM_MOTIF' | translate }}</label>
+            <input pInputText class="w-full"
+              [(ngModel)]="newConsultation.motif"
+              [placeholder]="'ASC.CONSULTATIONS.FORM_MOTIF_PH' | translate" />
+          </div>
+        </div>
+
+        <div class="form-card__actions">
+          <p-button
+            [label]="'COMMON.CANCEL' | translate"
+            severity="secondary" [outlined]="true"
+            (onClick)="closeNewForm()"
+          ></p-button>
+          <p-button
+            [label]="isSaving() ? ('COMMON.SAVING' | translate) : ('ASC.CONSULTATIONS.FORM_SUBMIT' | translate)"
+            [icon]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"
+            [loading]="isSaving()"
+            (onClick)="createConsultation()"
+          ></p-button>
+        </div>
+      </div>
+    }
+
+    <!-- Filtres -->
+    <div class="filters-bar">
+      <div class="filters-bar__label">
+        <i class="pi pi-filter"></i>
+        <span>{{ 'ASC.CONSULTATIONS.FILTER_LABEL' | translate }}</span>
+      </div>
+      <div class="filter-chips">
+        @for (s of statuts; track s) {
+          <button
+            class="filter-chip"
+            [class.filter-chip--active]="filtreStatut() === s"
+            (click)="filtreStatut.set(s)"
+          >
+            {{ s === 'TOUS' ? ('COMMON.ALL' | translate) : getStatutLabel(s) }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Liste -->
+    @if (isLoading()) {
+      <div class="loading-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>{{ 'ASC.CONSULTATIONS.LOADING' | translate }}</span>
+      </div>
+    } @else if (consultationsFiltrees.length === 0) {
+      <div class="empty-state">
+        <div class="empty-state__icon">🩺</div>
+        <h3 class="empty-state__title">{{ 'ASC.CONSULTATIONS.EMPTY_TITLE' | translate }}</h3>
+        <p class="empty-state__sub">{{ 'ASC.CONSULTATIONS.EMPTY_SUB' | translate }}</p>
+        <p-button [label]="'ASC.CONSULTATIONS.NEW' | translate" icon="pi pi-plus" (onClick)="openNewForm()"></p-button>
+      </div>
+    } @else {
+      <div class="consult-list">
+        @for (c of consultationsFiltrees; track c.id) {
+          <div class="consult-card">
+
+            <div class="consult-card__avatar">{{ getPatientInitiales(c) }}</div>
+
+            <div class="consult-card__body">
+              <div class="consult-card__patient">
+                @if (c.patient) {
+                  <span class="consult-card__name">
+                    {{ c.patient.utilisateur.prenom }} {{ c.patient.utilisateur.nom }}
+                  </span>
+                  <span class="consult-card__phone">
+                    <i class="pi pi-phone"></i> {{ c.patient.utilisateur.telephone }}
+                  </span>
+                } @else {
+                  <span class="consult-card__name">{{ 'ASC.CONSULTATIONS.PATIENT_UNKNOWN' | translate }}</span>
+                }
+              </div>
+              <div class="consult-card__meta">
+                @if (c.motif) {
+                  <span class="consult-card__motif">
+                    <i class="pi pi-file-edit"></i> {{ c.motif }}
+                  </span>
+                }
+                <span class="consult-card__date">
+                  <i class="pi pi-clock"></i> {{ formatDate(c.consulteeLE) }}
+                </span>
+              </div>
+            </div>
+
+            <p-tag
+              [value]="getStatutLabel(c.statut)"
+              [severity]="getStatutSeverity(c.statut)"
+              styleClass="consult-tag"
+            ></p-tag>
+
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

@@ -1,88 +1,82 @@
 // features/auth/login/login.component.ts
-// Rôle : composant de connexion BaoBaoHealth
-// Gère le formulaire login avec numéro de téléphone + mot de passe
-// Redirige vers le bon dashboard selon le rôle après connexion
-
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginPayload } from '../../../core/models/user.model';
+import { ThemeService } from '../../../shared/services/theme.service';
+import { I18nService } from '../../../shared/services/i18n.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 @Component({
-    selector: 'app-login',
-    standalone: true,
-    // FormsModule → ngModel pour la liaison bidirectionnelle du formulaire
-    // RouterLink → lien vers la page register
-    // CommonModule → directives *ngIf, *ngFor etc.
-    imports: [FormsModule, RouterLink, CommonModule],
-    templateUrl: './login.component.html',
-    styleUrl: './login.component.scss'
+  selector: 'app-login',
+  standalone: true,
+  imports: [
+    FormsModule, RouterLink, CommonModule,
+    ButtonModule, InputTextModule,
+    InputGroupModule, InputGroupAddonModule,
+    TranslatePipe
+  ],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-    private authService = inject(AuthService);
-    private router = inject(Router);
+  private authService = inject(AuthService);
+  private router      = inject(Router);
+  readonly themeService = inject(ThemeService);
+  private i18nService   = inject(I18nService);
 
-    // Données du formulaire liées via ngModel
-    formData: LoginPayload = {
-        telephone: '',
-        motDePasse: ''
-    };
+  formData: LoginPayload = { telephone: '', motDePasse: '' };
 
-    // Signals pour gérer les états UI
-    isLoading = signal(false);       // true pendant l'appel API
-    errorMessage = signal('');       // message d'erreur affiché à l'utilisateur
-    showPassword = signal(false);    // toggle affichage mot de passe
+  isLoading    = signal(false);
+  errorMessage = signal('');
+  showPassword = signal(false);
 
-    // Toggle visibilité du mot de passe
-    togglePassword() {
-        this.showPassword.update(v => !v);
+  togglePassword() { this.showPassword.update(v => !v); }
+  toggleTheme()    { this.themeService.toggle(); }
+  toggleLang()     { this.i18nService.toggle(); }
+
+  onSubmit() {
+    if (!this.formData.telephone || !this.formData.motDePasse) {
+      this.errorMessage.set(this.i18nService.t('AUTH.LOGIN.ERR_FIELDS'));
+      return;
     }
+    this.errorMessage.set('');
+    this.isLoading.set(true);
 
-    // Soumission du formulaire
-    onSubmit() {
-        if (!this.formData.telephone || !this.formData.motDePasse) {
-          this.errorMessage.set('Veuillez remplir tous les champs.');
-          return;
-        }
-      
-        this.errorMessage.set('');
-        this.isLoading.set(true);
-      
-        this.authService.login(this.formData).subscribe({
-          next: () => {
-            this.isLoading.set(false);
-            // Attend que le user soit chargé puis redirige
-            setTimeout(() => {
-              const role = this.authService.userRole() ?? 'PATIENT';
-              this.redirectByRole(role);
-            }, 500);
-          },
-          error: (err) => {
-            this.isLoading.set(false);
-            this.errorMessage.set(
-              err?.error?.error ?? err?.error?.message ?? 'Identifiants incorrects. Veuillez réessayer.'
-            );
-          }
-        });
+    // login() retourne maintenant un Observable<User> via switchMap
+    // plus de setTimeout fragile — le redirect se fait quand l'utilisateur est chargé
+    this.authService.login(this.formData).subscribe({
+      next: (user) => {
+        this.isLoading.set(false);
+        this.redirectByRole(user.role);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_CREDENTIALS')
+        );
       }
+    });
+  }
 
-    // Redirige vers le dashboard correspondant au rôle connecté
-    private redirectByRole(role: string) {
-        const redirectMap: Record<string, string> = {
-            PATIENT: '/patient/dashboard',
-            ASC: '/asc/consultations',
-            ASC_SUPERVISOR: '/asc/consultations',
-            MEDECIN: '/medecin/dashboard',
-            PHARMACIEN: '/medecin/dashboard',
-            ADMIN_STRUCTURE: '/admin/analytics',
-            ADMIN_REGIONAL: '/admin/analytics',
-            ADMIN_NATIONAL: '/admin/analytics',
-            SUPER_ADMIN: '/admin/analytics'
-        };
-
-        const destination = redirectMap[role] ?? '/auth/login';
-        this.router.navigate([destination]);
-    }
+  private redirectByRole(role: string) {
+    const redirectMap: Record<string, string> = {
+      PATIENT:          '/patient/dashboard',
+      ASC:              '/asc/consultations',
+      ASC_SUPERVISOR:   '/asc/consultations',
+      MEDECIN:          '/medecin/dashboard',
+      PHARMACIEN:       '/medecin/dashboard',
+      ADMIN_STRUCTURE:  '/admin/analytics',
+      ADMIN_REGIONAL:   '/admin/analytics',
+      ADMIN_NATIONAL:   '/admin/analytics',
+      SUPER_ADMIN:      '/admin/analytics'
+    };
+    this.router.navigate([redirectMap[role] ?? '/auth/login']);
+  }
 }

@@ -1,40 +1,26 @@
 // features/auth/register/register.component.scss
-// Design : card split — formes décoratives gauche + formulaire droite
 
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-// ── Variables ───────────────────────────────────────────────────────────
-$forest-deep: #0D2B1A;
-$forest-mid: #1A5C35;
-$forest-bright: #3EBB70;
-$forest-light: #F0FAF4;
-$text-dark: #0D2B1A;
-$text-mid: #4A6859;
-$text-muted: #9AA8A0;
-$border: #E8EFEB;
-$white: #ffffff;
-
-// ── Page : fond dégradé plein écran ────────────────────────────────────
+// ── PAGE ─────────────────────────────────────────────────────────
 .register-page {
-  font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0D2B1A 0%, #1A5C35 50%, #0D3320 100%);
+  background: linear-gradient(150deg, var(--bb-deep) 0%, var(--bb-mid) 55%, #0E3521 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
 }
 
-// ── Card principale split ───────────────────────────────────────────────
+// ── CARD SPLIT ───────────────────────────────────────────────────
 .register-card {
   width: 100%;
   max-width: 960px;
-  background: $white;
-  border-radius: 24px;
+  background: var(--bb-surface-0);
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.35), 0 8px 24px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
+  transition: background var(--bb-transition);
 
   @media (min-width: 768px) {
     flex-direction: row;
@@ -42,434 +28,327 @@ $white: #ffffff;
   }
 }
 
-// ── Panneau gauche décoratif ────────────────────────────────────────────
+// ── PANNEAU GAUCHE ───────────────────────────────────────────────
 .register-left {
-  background: linear-gradient(145deg, #0D2B1A 0%, #1A5C35 60%, #0F3D22 100%);
+  background: linear-gradient(150deg, var(--bb-deep) 0%, var(--bb-mid) 65%, #0E3521 100%);
   position: relative;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 32px;
-  min-height: 220px;
+  padding: 40px 32px 28px;
 
   @media (min-width: 768px) {
-    width: 42%;
+    width: 38%;
     flex-shrink: 0;
-    min-height: auto;
-  }
-}
-
-// Formes décoratives
-.deco {
-  position: absolute;
-  border-radius: 50%;
-
-  &--circle-lg {
-    width: 320px;
-    height: 320px;
-    bottom: -130px;
-    right: -90px;
-    background: rgba(62, 187, 112, 0.1);
-    border: 1px solid rgba(62, 187, 112, 0.15);
+    align-items: flex-start;
   }
 
-  &--circle-md {
-    width: 190px;
-    height: 190px;
-    top: -70px;
-    left: -55px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-  }
+  &__deco {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
 
-  &--circle-sm {
-    width: 110px;
-    height: 110px;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-    background: rgba(62, 187, 112, 0.07);
-    border: 1px solid rgba(62, 187, 112, 0.18);
-  }
-}
-
-// Contenu panneau gauche
-.register-left__content {
-  position: relative;
-  z-index: 1;
-  color: $white;
-  text-align: center;
-
-  @media (min-width: 768px) {
-    text-align: left;
-  }
-}
-
-// Logo
-.register-left__logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 24px;
-
-  @media (min-width: 768px) {
-    justify-content: flex-start;
-  }
-
-  &-icon {
-    font-size: 22px;
-  }
-
-  &-name {
-    font-family: 'Sora', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: $white;
-    letter-spacing: -0.3px;
-  }
-}
-
-// Titre gauche
-.register-left__title {
-  font-family: 'Sora', sans-serif;
-  font-size: 34px;
-  font-weight: 800;
-  color: $white;
-  letter-spacing: -1px;
-  line-height: 1.1;
-  margin-bottom: 14px;
-  text-transform: uppercase;
-
-  @media (max-width: 767px) {
-    font-size: 26px;
-
-    br {
-      display: none;
+    &--1 {
+      width: 300px; height: 300px;
+      bottom: -120px; right: -80px;
+      background: rgba(62,187,112,0.07);
+      border: 1px solid rgba(62,187,112,0.12);
+    }
+    &--2 {
+      width: 140px; height: 140px;
+      top: -50px; left: -40px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
     }
   }
-}
 
-// Sous-titre gauche
-.register-left__sub {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.6;
-  margin-bottom: 24px;
-
-  @media (max-width: 767px) {
-    display: none;
+  &__content {
+    position: relative;
+    z-index: 1;
+    color: #FFFFFF;
+    text-align: center;
+    @media (min-width: 768px) { text-align: left; }
   }
-}
 
-// Badges rôles dans le panneau gauche
-.register-left__roles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
+  &__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    @media (min-width: 768px) { justify-content: flex-start; }
 
-  @media (min-width: 768px) {
-    justify-content: flex-start;
+    &-icon {
+      width: 38px; height: 38px;
+      background: rgba(62,187,112,0.16);
+      border: 1px solid rgba(62,187,112,0.3);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    &-name {
+      font-family: var(--bb-font-display);
+      font-size: 16px; font-weight: 700; color: #FFFFFF;
+    }
+  }
+
+  &__title {
+    font-family: var(--bb-font-display);
+    font-size: 32px; font-weight: 800;
+    color: #FFFFFF; letter-spacing: -0.8px;
+    line-height: 1.1; margin-bottom: 12px;
+    text-transform: uppercase;
+    @media (max-width: 767px) { font-size: 26px; }
+  }
+
+  &__sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.65; margin-bottom: 28px;
+    max-width: 220px;
+    @media (max-width: 767px) { display: none; }
+  }
+
+  &__roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    @media (max-width: 767px) { display: none; }
+  }
+
+  &__controls {
+    position: relative; z-index: 1;
+    display: flex; gap: 8px; margin-top: 24px;
+    justify-content: center;
+    @media (min-width: 768px) { justify-content: flex-start; }
   }
 }
 
 .role-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 6px 12px;
-  border-radius: 100px;
-  background: rgba(62, 187, 112, 0.15);
-  border: 1px solid rgba(62, 187, 112, 0.25);
-  font-size: 11px;
-  font-weight: 600;
-  color: $forest-bright;
-
-  i {
-    font-size: 11px;
-  }
-
-  @media (max-width: 767px) {
-    display: none;
-  }
+  background: rgba(62,187,112,0.12);
+  border: 1px solid rgba(62,187,112,0.24);
+  border-radius: var(--bb-radius-pill);
+  font-size: 12px; font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  i { font-size: 12px; color: var(--bb-bright); }
 }
 
-// ── Panneau droit : formulaire ──────────────────────────────────────────
+.ctrl-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--bb-radius-pill);
+  color: rgba(255,255,255,0.75);
+  font-family: var(--bb-font-display);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  transition: background var(--bb-transition);
+  &:hover { background: rgba(255,255,255,0.14); }
+  i { font-size: 12px; }
+}
+
+// ── PANNEAU DROIT — FORMULAIRE ───────────────────────────────────
 .register-right {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 36px 32px;
-  background: $white;
+  padding: 36px 36px;
+  background: var(--bb-surface-0);
   overflow-y: auto;
+  transition: background var(--bb-transition);
 }
 
 .register-form-wrap {
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
 }
 
-// Titre formulaire
 .register-form__title {
-  font-family: 'Sora', sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  color: $text-dark;
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
+  font-family: var(--bb-font-display);
+  font-size: 24px; font-weight: 800;
+  color: var(--bb-text-primary);
+  letter-spacing: -0.5px; margin-bottom: 4px;
 }
 
 .register-form__sub {
-  font-size: 13px;
-  color: $text-muted;
-  margin-bottom: 24px;
+  font-size: 13px; color: var(--bb-text-muted);
+  margin-bottom: 22px;
 }
 
-// ── Alertes ─────────────────────────────────────────────────────────────
-.form-alert {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-size: 13px;
-  margin-bottom: 18px;
-
-  i {
-    font-size: 15px;
-    flex-shrink: 0;
-  }
-
-  &--error {
-    background: #FEE2E2;
-    border: 1px solid #FECACA;
-    color: #991B1B;
-  }
-
-  &--success {
-    background: $forest-light;
-    border: 1px solid #BBF7D0;
-    color: $forest-deep;
-  }
-}
-
-// ── Chips rôles ─────────────────────────────────────────────────────────
+// ── CHIPS DE RÔLE ────────────────────────────────────────────────
 .role-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .role-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 7px 12px;
-  border-radius: 100px;
-  border: 1.5px solid $border;
-  background: $forest-light;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: $text-mid;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--bb-border);
+  border-radius: var(--bb-radius-pill);
+  background: var(--bb-surface-1);
+  color: var(--bb-text-secondary);
+  font-family: var(--bb-font-body);
+  font-size: 13px; font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--bb-transition);
 
-  i {
-    font-size: 12px;
-  }
+  i { font-size: 13px; }
 
   &:hover {
-    border-color: $forest-bright;
-    color: $forest-mid;
+    border-color: var(--bb-bright);
+    color: var(--bb-primary);
+    background: var(--bb-surface-2);
   }
 
   &--active {
-    background: $forest-deep;
-    border-color: $forest-deep;
-    color: $forest-bright;
-    font-weight: 600;
-
-    i {
-      color: $forest-bright;
-    }
+    border-color: var(--bb-primary) !important;
+    background: var(--bb-success-bg) !important;
+    color: var(--bb-primary) !important;
+    font-weight: 600 !important;
   }
 }
 
-// ── Ligne deux champs ───────────────────────────────────────────────────
+// ── CHAMPS ───────────────────────────────────────────────────────
+.form-field-wrap { margin-bottom: 14px; }
+
+.form-label {
+  display: block; margin-bottom: 6px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--bb-text-secondary);
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-
-  @media (max-width: 400px) {
-    grid-template-columns: 1fr;
-  }
+  gap: 12px;
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
 }
 
-// ── Champs ──────────────────────────────────────────────────────────────
-.field-wrap {
-  margin-bottom: 12px;
-}
-
-.field-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: $text-mid;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-  margin-bottom: 6px;
-}
-
-.field-box {
-  display: flex;
-  align-items: center;
-  background: $forest-light;
-  border: 1.5px solid $border;
-  border-radius: 12px;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  position: relative;
+// InputGroup
+.p-inputgroup {
+  border-radius: var(--bb-radius) !important;
+  overflow: hidden;
+  border: 1.5px solid var(--bb-border) !important;
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
 
   &:focus-within {
-    border-color: $forest-bright;
-    box-shadow: 0 0 0 4px rgba(62, 187, 112, 0.12);
-    background: $white;
+    border-color: var(--bb-bright) !important;
+    box-shadow: 0 0 0 3px rgba(62,187,112,0.15) !important;
+  }
+
+  .p-inputgroup-addon {
+    background: var(--bb-surface-2) !important;
+    border: none !important;
+    border-right: 1px solid var(--bb-border) !important;
+    color: var(--bb-primary) !important;
+    padding: 0 11px;
+    font-size: 13px;
+  }
+
+  input.p-inputtext {
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--bb-surface-1) !important;
+    color: var(--bb-text-primary) !important;
+    padding: 11px 13px !important;
+    font-size: 13.5px !important;
+    width: 100%;
+    &::placeholder { color: var(--bb-text-muted) !important; }
   }
 }
 
-.field-icon {
-  width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $forest-bright;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.field-input {
-  flex: 1;
-  padding: 12px 10px 12px 0;
-  border: none;
-  background: transparent;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  color: $text-dark;
-  outline: none;
-
-  &::placeholder {
-    color: $text-muted;
-  }
-
-  &--padded {
-    padding-right: 52px;
-  }
-}
-
-// Toggle VOIR/CACHER
-.field-toggle {
-  position: absolute;
-  right: 10px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 6px;
-  display: flex;
-  align-items: center;
+.toggle-btn {
+  background: var(--bb-surface-2) !important;
+  border: none !important;
+  border-left: 1px solid var(--bb-border) !important;
+  cursor: pointer; padding: 0 10px !important;
+  transition: background var(--bb-transition);
+  &:hover { background: var(--bb-surface-1) !important; }
 }
 
 .toggle-label {
-  font-family: 'Sora', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  color: $forest-mid;
-  letter-spacing: 0.5px;
-  transition: color 0.2s;
-
-  &:hover {
-    color: $forest-deep;
-  }
+  font-family: var(--bb-font-display);
+  font-size: 10px; font-weight: 700;
+  color: var(--bb-text-muted); letter-spacing: 0.4px;
 }
 
-// ── Bouton principal ────────────────────────────────────────────────────
-.btn-submit {
-  width: 100%;
-  padding: 14px;
-  background: $forest-deep;
-  color: $white;
-  border: none;
-  border-radius: 12px;
-  font-family: 'Sora', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
+// ── BOUTON SUBMIT ────────────────────────────────────────────────
+.register-submit-btn {
+  width: 100% !important;
+  margin-top: 8px;
+  padding: 12px !important;
+  font-family: var(--bb-font-display) !important;
+  font-size: 14px !important; font-weight: 700 !important;
+  background: var(--bb-deep) !important;
+  border-color: var(--bb-deep) !important;
+  border-radius: var(--bb-radius) !important;
   justify-content: center;
-  gap: 8px;
+  transition: all var(--bb-transition) !important;
 
   &:hover:not(:disabled) {
-    background: $forest-mid;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(13, 43, 26, 0.3);
+    background: var(--bb-primary) !important;
+    border-color: var(--bb-primary) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(11,38,24,0.28) !important;
   }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  &:disabled { opacity: 0.55 !important; }
 }
 
-// ── Séparateur ──────────────────────────────────────────────────────────
-.separator {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 0;
-
-  &__line {
-    flex: 1;
-    height: 1px;
-    background: $border;
-  }
-
-  &__text {
-    font-size: 12px;
-    color: $text-muted;
-    font-weight: 500;
-  }
+// ── SÉPARATEUR + LIEN ────────────────────────────────────────────
+.form-separator {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0;
+  &__line { flex: 1; height: 1px; background: var(--bb-border); }
+  &__text { font-size: 11px; color: var(--bb-text-muted); font-weight: 500; }
 }
 
-// ── Bouton outline login ────────────────────────────────────────────────
-.btn-outline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 13px;
-  border: 1.5px solid $border;
-  border-radius: 12px;
-  font-family: 'Sora', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: $text-dark;
+.login-link {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 11px;
+  border: 1.5px solid var(--bb-border);
+  border-radius: var(--bb-radius);
+  font-family: var(--bb-font-display);
+  font-size: 13px; font-weight: 600;
+  color: var(--bb-text-secondary);
   text-decoration: none;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
-
+  transition: all var(--bb-transition);
   &:hover {
-    border-color: $forest-bright;
-    background: $forest-light;
-    color: $forest-mid;
+    border-color: var(--bb-bright);
+    background: var(--bb-surface-2);
+    color: var(--bb-primary);
+  }
+}
+
+// ── ALERTES ──────────────────────────────────────────────────────
+.bb-alert {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: var(--bb-radius);
+  font-size: 13px; margin-bottom: 16px;
+  border: 1px solid transparent;
+  i { font-size: 15px; flex-shrink: 0; }
+
+  &--error {
+    background: var(--bb-danger-bg);
+    border-color: var(--bb-danger-border);
+    color: var(--bb-danger);
+  }
+  &--success {
+    background: var(--bb-success-bg);
+    border-color: var(--bb-success-border);
+    color: var(--bb-success);
   }
 }

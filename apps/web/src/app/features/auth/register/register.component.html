@@ -1,178 +1,175 @@
 <!-- features/auth/register/register.component.html -->
-<!-- Design : card split — formes décoratives gauche + formulaire droite -->
-
 <div class="register-page">
-    <div class="register-card">
+  <div class="register-card">
 
-        <!-- ── Panneau gauche décoratif ──────────────────────────────────── -->
-        <div class="register-left">
+    <!-- ── Panneau gauche ──────────────────────────────────────── -->
+    <div class="register-left">
+      <div class="register-left__deco register-left__deco--1"></div>
+      <div class="register-left__deco register-left__deco--2"></div>
 
-            <!-- Formes décoratives -->
-            <div class="deco deco--circle-lg"></div>
-            <div class="deco deco--circle-md"></div>
-            <div class="deco deco--circle-sm"></div>
-
-            <!-- Contenu gauche -->
-            <div class="register-left__content">
-                <div class="register-left__logo">
-                    <span class="register-left__logo-icon">🌳</span>
-                    <span class="register-left__logo-name">BaoBaoHealth</span>
-                </div>
-                <h1 class="register-left__title">Rejoignez<br>nous</h1>
-                <p class="register-left__sub">
-                    Créez votre compte et accédez à la plateforme de santé numérique de la Guinée.
-                </p>
-
-                <!-- Rôles disponibles -->
-                <div class="register-left__roles">
-                    <div class="role-badge">
-                        <i class="pi pi-user"></i> Patient
-                    </div>
-                    <div class="role-badge">
-                        <i class="pi pi-heart"></i> Agent ASC
-                    </div>
-                    <div class="role-badge">
-                        <i class="pi pi-plus-circle"></i> Médecin
-                    </div>
-                    <div class="role-badge">
-                        <i class="pi pi-box"></i> Pharmacien
-                    </div>
-                </div>
-            </div>
-
+      <div class="register-left__content">
+        <div class="register-left__logo">
+          <div class="register-left__logo-icon">🌳</div>
+          <span class="register-left__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
 
-        <!-- ── Panneau droit : formulaire ───────────────────────────────── -->
-        <div class="register-right">
-            <div class="register-form-wrap">
+        <h1 class="register-left__title">{{ 'AUTH.REGISTER.WELCOME_TITLE' | translate }}</h1>
+        <p class="register-left__sub">{{ 'AUTH.REGISTER.WELCOME_SUBTITLE' | translate }}</p>
 
-                <h2 class="register-form__title">Créer un compte</h2>
-                <p class="register-form__sub">Tous les champs sont obligatoires</p>
-
-                <!-- Erreur -->
-                @if (errorMessage()) {
-                <div class="form-alert form-alert--error">
-                    <i class="pi pi-exclamation-circle"></i>
-                    <span>{{ errorMessage() }}</span>
-                </div>
-                }
-
-                <!-- Succès -->
-                @if (successMessage()) {
-                <div class="form-alert form-alert--success">
-                    <i class="pi pi-check-circle"></i>
-                    <span>{{ successMessage() }}</span>
-                </div>
-                }
-
-                <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
-
-                    <!-- ── Sélection rôle ── -->
-                    <div class="field-wrap">
-                        <label class="field-label">Je suis un(e)...</label>
-                        <div class="role-chips">
-                            @for (role of rolesDisponibles; track role.value) {
-                            <button type="button" class="role-chip"
-                                [class.role-chip--active]="formData.role === role.value"
-                                (click)="selectRole(role.value)">
-                                <i [class]="'pi ' + role.icon"></i>
-                                <span>{{ role.label }}</span>
-                            </button>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- ── Nom + Prénom ── -->
-                    <div class="form-row">
-                        <div class="field-wrap">
-                            <label class="field-label" for="nom">Nom</label>
-                            <div class="field-box">
-                                <div class="field-icon"><i class="pi pi-user"></i></div>
-                                <input id="nom" type="text" class="field-input" placeholder="Ex: Diallo"
-                                    [(ngModel)]="formData.nom" name="nom" required autocomplete="family-name" />
-                            </div>
-                        </div>
-
-                        <div class="field-wrap">
-                            <label class="field-label" for="prenom">Prénom</label>
-                            <div class="field-box">
-                                <div class="field-icon"><i class="pi pi-user"></i></div>
-                                <input id="prenom" type="text" class="field-input" placeholder="Ex: Mamadou"
-                                    [(ngModel)]="formData.prenom" name="prenom" required autocomplete="given-name" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── Téléphone ── -->
-                    <div class="field-wrap">
-                        <label class="field-label" for="telephone">Téléphone</label>
-                        <div class="field-box">
-                            <div class="field-icon"><i class="pi pi-phone"></i></div>
-                            <input id="telephone" type="tel" class="field-input" placeholder="Ex: 620 00 00 00"
-                                [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel" />
-                        </div>
-                    </div>
-
-                    <!-- ── Mot de passe ── -->
-                    <div class="field-wrap">
-                        <label class="field-label" for="motDePasse">Mot de passe</label>
-                        <div class="field-box">
-                            <div class="field-icon"><i class="pi pi-lock"></i></div>
-                            <input id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
-                                class="field-input field-input--padded" placeholder="Minimum 6 caractères"
-                                [(ngModel)]="formData.motDePasse" name="motDePasse" required
-                                autocomplete="new-password" />
-                            <button type="button" class="field-toggle" (click)="togglePassword()"
-                                aria-label="Afficher ou masquer le mot de passe">
-                                <span class="toggle-label">{{ showPassword() ? 'CACHER' : 'VOIR' }}</span>
-                                <span class="sr-only">Afficher ou masquer le mot de passe</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ── Confirmation ── -->
-                    <div class="field-wrap">
-                        <label class="field-label" for="confirmMotDePasse">Confirmer</label>
-                        <div class="field-box">
-                            <div class="field-icon"><i class="pi pi-lock"></i></div>
-                            <input id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
-                                class="field-input field-input--padded" placeholder="Répétez votre mot de passe"
-                                [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
-                                autocomplete="new-password" />
-                            <button type="button" class="field-toggle" (click)="toggleConfirmPassword()"
-                                aria-label="Afficher ou masquer la confirmation">
-                                <span class="toggle-label">{{ showConfirmPassword() ? 'CACHER' : 'VOIR' }}</span>
-                                <span class="sr-only">Afficher ou masquer la confirmation</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ── Bouton ── -->
-                    <button type="submit" class="btn-submit" [disabled]="isLoading()">
-                        @if (isLoading()) {
-                        <i class="pi pi-spin pi-spinner"></i>
-                        <span>Création en cours...</span>
-                        } @else {
-                        <span>Créer mon compte</span>
-                        }
-                    </button>
-
-                    <!-- Séparateur -->
-                    <div class="separator">
-                        <span class="separator__line"></span>
-                        <span class="separator__text">ou</span>
-                        <span class="separator__line"></span>
-                    </div>
-
-                    <!-- Lien login -->
-                    <a routerLink="/auth/login" class="btn-outline">
-                        Déjà un compte ? Se connecter
-                    </a>
-
-                </form>
-
-            </div>
+        <!-- Rôles disponibles -->
+        <div class="register-left__roles">
+          <div class="role-badge"><i class="pi pi-user"></i> Patient</div>
+          <div class="role-badge"><i class="pi pi-heart"></i> Agent ASC</div>
+          <div class="role-badge"><i class="pi pi-plus-circle"></i> Médecin</div>
+          <div class="role-badge"><i class="pi pi-box"></i> Pharmacien</div>
         </div>
+      </div>
 
+      <!-- Contrôles thème/langue -->
+      <div class="register-left__controls">
+        <button class="ctrl-btn" (click)="toggleTheme()">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
+        <button class="ctrl-btn" (click)="toggleLang()">
+          <i class="pi pi-globe"></i>
+          <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
+        </button>
+      </div>
     </div>
+
+    <!-- ── Panneau droit — formulaire ─────────────────────────── -->
+    <div class="register-right">
+      <div class="register-form-wrap">
+
+        <h2 class="register-form__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h2>
+        <p class="register-form__sub">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
+
+        <!-- Alertes -->
+        @if (errorMessage()) {
+          <div class="bb-alert bb-alert--error">
+            <i class="pi pi-exclamation-circle"></i>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+        @if (successMessage()) {
+          <div class="bb-alert bb-alert--success">
+            <i class="pi pi-check-circle"></i>
+            <span>{{ successMessage() }}</span>
+          </div>
+        }
+
+        <form (ngSubmit)="onSubmit()" #registerForm="ngForm" novalidate>
+
+          <!-- Sélection rôle -->
+          <div class="form-field-wrap">
+            <label class="form-label">{{ 'AUTH.REGISTER.ROLE_LABEL' | translate }}</label>
+            <div class="role-chips">
+              @for (role of rolesDisponibles; track role.value) {
+                <button
+                  type="button"
+                  class="role-chip"
+                  [class.role-chip--active]="formData.role === role.value"
+                  (click)="selectRole(role.value)"
+                >
+                  <i [class]="'pi ' + role.icon"></i>
+                  <span>{{ role.label }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Nom + Prénom -->
+          <div class="form-row">
+            <div class="form-field-wrap">
+              <label class="form-label" for="nom">{{ 'AUTH.REGISTER.LAST_NAME' | translate }}</label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
+                <input pInputText id="nom" type="text" placeholder="Ex: Diallo"
+                  [(ngModel)]="formData.nom" name="nom" required autocomplete="family-name" />
+              </div>
+            </div>
+            <div class="form-field-wrap">
+              <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
+                <input pInputText id="prenom" type="text" placeholder="Ex: Mamadou"
+                  [(ngModel)]="formData.prenom" name="prenom" required autocomplete="given-name" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Téléphone -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="telephone">{{ 'AUTH.REGISTER.PHONE' | translate }}</label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
+              <input pInputText id="telephone" type="tel"
+                [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate"
+                [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel" />
+            </div>
+          </div>
+
+          <!-- Mot de passe -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
+              <input pInputText id="motDePasse"
+                [type]="showPassword() ? 'text' : 'password'"
+                [placeholder]="'AUTH.REGISTER.PASSWORD_PLACEHOLDER' | translate"
+                [(ngModel)]="formData.motDePasse" name="motDePasse"
+                required autocomplete="new-password" />
+              <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()">
+                <span class="toggle-label">
+                  {{ (showPassword() ? 'AUTH.REGISTER.HIDE' : 'AUTH.REGISTER.SHOW') | translate }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirmation -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
+              <input pInputText id="confirmMotDePasse"
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate"
+                [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse"
+                required autocomplete="new-password" />
+              <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()">
+                <span class="toggle-label">
+                  {{ (showConfirmPassword() ? 'AUTH.REGISTER.HIDE' : 'AUTH.REGISTER.SHOW') | translate }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bouton -->
+          <p-button
+            type="submit"
+            [label]="isLoading() ? ('AUTH.REGISTER.LOADING' | translate) : ('AUTH.REGISTER.SUBMIT' | translate)"
+            [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'"
+            [loading]="isLoading()"
+            [disabled]="isLoading()"
+            styleClass="w-full register-submit-btn"
+          ></p-button>
+
+          <!-- Séparateur -->
+          <div class="form-separator">
+            <span class="form-separator__line"></span>
+            <span class="form-separator__text">ou</span>
+            <span class="form-separator__line"></span>
+          </div>
+
+          <a routerLink="/auth/login" class="login-link">
+            {{ 'AUTH.REGISTER.LOGIN_LINK' | translate }}
+          </a>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
 </div>
