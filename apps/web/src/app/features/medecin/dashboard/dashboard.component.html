@@ -1,0 +1,100 @@
+<!-- features/medecin/dashboard/dashboard.component.html -->
+<div class="bb-med-dash">
+
+  <!-- Header -->
+  <div class="bb-med-dash__header">
+    <div class="bb-med-dash__header-left">
+      <div class="bb-med-dash__avatar">{{ getInitiales() }}</div>
+      <div>
+        <h1 class="bb-med-dash__title">
+          Bonjour Dr. {{ currentUser()?.prenom }} {{ currentUser()?.nom }} 👋
+        </h1>
+        @if (stats()?.structure) {
+          <p class="bb-med-dash__structure">
+            <i class="pi pi-building"></i>
+            {{ stats()!.structure!.nom }} — {{ stats()!.structure!.prefecture }}
+          </p>
+        } @else {
+          <p class="bb-med-dash__structure">Aucune structure assignée</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats cards -->
+  @if (isLoading()) {
+    <div class="bb-med-dash__stats">
+      @for (i of [1,2,3,4]; track i) {
+        <p-skeleton height="120px" borderRadius="12px" />
+      }
+    </div>
+  } @else {
+    <div class="bb-med-dash__stats">
+      <div class="bb-med-dash__stat-card bb-med-dash__stat-card--warning">
+        <div class="bb-med-dash__stat-icon"><i class="pi pi-clock"></i></div>
+        <div class="bb-med-dash__stat-value">{{ stats()?.consultationsEnAttente ?? 0 }}</div>
+        <div class="bb-med-dash__stat-label">À valider</div>
+        <a routerLink="/medecin/consultations" class="bb-med-dash__stat-link">Voir tout →</a>
+      </div>
+      <div class="bb-med-dash__stat-card bb-med-dash__stat-card--success">
+        <div class="bb-med-dash__stat-icon"><i class="pi pi-check-circle"></i></div>
+        <div class="bb-med-dash__stat-value">{{ stats()?.consultationsValidees ?? 0 }}</div>
+        <div class="bb-med-dash__stat-label">Validées par moi</div>
+      </div>
+      <div class="bb-med-dash__stat-card bb-med-dash__stat-card--info">
+        <div class="bb-med-dash__stat-icon"><i class="pi pi-send"></i></div>
+        <div class="bb-med-dash__stat-value">{{ stats()?.referencementsEnAttente ?? 0 }}</div>
+        <div class="bb-med-dash__stat-label">Référencements</div>
+      </div>
+      <div class="bb-med-dash__stat-card bb-med-dash__stat-card--primary">
+        <div class="bb-med-dash__stat-icon"><i class="pi pi-comments"></i></div>
+        <div class="bb-med-dash__stat-value">{{ stats()?.messagesNonLus ?? 0 }}</div>
+        <div class="bb-med-dash__stat-label">Messages non lus</div>
+        <a routerLink="/medecin/messagerie" class="bb-med-dash__stat-link">Voir →</a>
+      </div>
+    </div>
+  }
+
+  <!-- Consultations récentes à valider -->
+  <div class="bb-med-dash__section">
+    <div class="bb-med-dash__section-header">
+      <h2 class="bb-med-dash__section-title">
+        <i class="pi pi-clock"></i> Consultations à valider
+      </h2>
+      <a routerLink="/medecin/consultations" class="bb-med-dash__see-all">Voir tout</a>
+    </div>
+
+    @if (isLoading()) {
+      @for (i of [1,2,3]; track i) {
+        <p-skeleton height="70px" borderRadius="8px" styleClass="mb-2" />
+      }
+    } @else if (consultationsRecentes().length === 0) {
+      <div class="bb-med-dash__empty">
+        <i class="pi pi-check-circle"></i>
+        <p>Aucune consultation en attente de validation</p>
+      </div>
+    } @else {
+      <div class="bb-med-dash__list">
+        @for (c of consultationsRecentes(); track c.id) {
+          <a [routerLink]="['/medecin/consultations']" [queryParams]="{id: c.id}" class="bb-med-dash__list-item">
+            <div class="bb-med-dash__list-item-left">
+              <div class="bb-med-dash__list-avatar">
+                {{ c.patient?.utilisateur?.prenom?.charAt(0) }}{{ c.patient?.utilisateur?.nom?.charAt(0) }}
+              </div>
+              <div>
+                <p class="bb-med-dash__list-patient">{{ getPatientNom(c) }}</p>
+                <p class="bb-med-dash__list-motif">{{ c.motifPrincipal }}</p>
+                <p class="bb-med-dash__list-asc">ASC : {{ getAscNom(c) }}</p>
+              </div>
+            </div>
+            <div class="bb-med-dash__list-right">
+              <span class="bb-med-dash__list-date">{{ formatDate(c.consulteeLE) }}</span>
+              <i class="pi pi-chevron-right"></i>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+
+</div>

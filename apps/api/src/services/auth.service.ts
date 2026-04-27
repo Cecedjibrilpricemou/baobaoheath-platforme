@@ -29,6 +29,7 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
 
     const role = dto.role ?? Role.PATIENT;
 
+    // ── PATIENT ──────────────────────────────────────────────
     if (role === Role.PATIENT) {
       await tx.patientProfile.create({
         data: {
@@ -40,22 +41,24 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
       });
     }
 
+    // ── ASC + ASC_SUPERVISOR ──────────────────────────────────
+    // Champs disponibles : idUtilisateur, zoneCouverture, numeroCertification, photoUrl, idSuperviseur, idStructure
     if (role === Role.ASC || role === Role.ASC_SUPERVISOR) {
       await tx.ascProfile.create({
         data: {
           idUtilisateur: user.id,
-          prefecture: 'Conakry',
-          zone: 'Zone par défaut',
         },
       });
     }
 
+    // ── MEDECIN ───────────────────────────────────────────────
+    // Champs disponibles : idUtilisateur, numeroCom, specialite, photoUrl, idStructure
     if (role === Role.MEDECIN) {
       await tx.medecinProfile.create({
         data: {
           idUtilisateur: user.id,
           specialite: 'Médecine générale',
-          numerOrdre: `ORD-${Date.now()}`,
+          numeroCom: `ORD-${Date.now()}`,
         },
       });
     }
@@ -175,6 +178,7 @@ export async function getMe(userId: string) {
       photoUrl: true,
       estActif: true,
       creeLe: true,
+      modifieLe: true,
     },
   });
 

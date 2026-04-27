@@ -1,0 +1,168 @@
+<!-- features/medecin/consultations/consultations.component.html -->
+<div class="bb-med-cons">
+
+  <!-- Header -->
+  <div class="bb-med-cons__header">
+    <div>
+      <h1 class="bb-med-cons__title"><i class="pi pi-check-circle"></i> Consultations à valider</h1>
+      <p class="bb-med-cons__subtitle">{{ total() }} consultation(s) en attente de validation médicale</p>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  @if (successMessage()) {
+    <div class="bb-med-cons__alert bb-med-cons__alert--success">
+      <i class="pi pi-check-circle"></i> {{ successMessage() }}
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="bb-med-cons__alert bb-med-cons__alert--error">
+      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="bb-med-cons__layout">
+
+    <!-- Liste -->
+    <div class="bb-med-cons__list" [class.bb-med-cons__list--hidden]="selected()">
+      @if (isLoading()) {
+        @for (i of [1,2,3,4]; track i) {
+          <p-skeleton height="90px" borderRadius="8px" styleClass="mb-2" />
+        }
+      } @else if (consultations().length === 0) {
+        <div class="bb-med-cons__empty">
+          <i class="pi pi-check-circle"></i>
+          <p>Aucune consultation en attente</p>
+          <span>Toutes les consultations ont été validées</span>
+        </div>
+      } @else {
+        @for (c of consultations(); track c.id) {
+          <div
+            class="bb-med-cons__item"
+            [class.bb-med-cons__item--active]="selected()?.id === c.id"
+            (click)="selectionner(c)"
+          >
+            <div class="bb-med-cons__item-avatar">
+              {{ getInitiales(c) }}
+            </div>
+            <div class="bb-med-cons__item-info">
+              <p class="bb-med-cons__item-patient">{{ getPatientNom(c) }}</p>
+              <p class="bb-med-cons__item-motif">{{ c.motifPrincipal }}</p>
+              <p class="bb-med-cons__item-meta">
+                <i class="pi pi-user"></i> ASC : {{ getAscNom(c) }} ·
+                {{ formatDate(c.consulteeLE) }}
+              </p>
+            </div>
+            <i class="pi pi-chevron-right"></i>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Détail + validation -->
+    @if (selected()) {
+      <div class="bb-med-cons__detail">
+        <div class="bb-med-cons__detail-header">
+          <button class="bb-med-cons__back" (click)="fermerDetail()">
+            <i class="pi pi-arrow-left"></i> Retour
+          </button>
+          <div>
+            <h2 class="bb-med-cons__detail-patient">{{ getPatientNom(selected()!) }}</h2>
+            <p class="bb-med-cons__detail-meta">{{ formatDate(selected()!.consulteeLE) }} · ASC : {{ getAscNom(selected()!) }}</p>
+          </div>
+        </div>
+
+        <!-- Motif -->
+        <div class="bb-med-cons__block">
+          <h3 class="bb-med-cons__block-title"><i class="pi pi-file"></i> Motif</h3>
+          <p class="bb-med-cons__block-text">{{ selected()!.motifPrincipal }}</p>
+        </div>
+
+        <!-- Constantes -->
+        @if (selected()!.constantes) {
+          <div class="bb-med-cons__block">
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-heart-fill"></i> Constantes vitales</h3>
+            @if (selected()!.constantes!.alertes?.length) {
+              <div class="bb-med-cons__alertes">
+                @for (a of selected()!.constantes!.alertes!; track a) {
+                  <span class="bb-med-cons__alerte">⚠️ {{ a }}</span>
+                }
+              </div>
+            }
+            <div class="bb-med-cons__vitals">
+              @if (selected()!.constantes!.temperature) {
+                <span>🌡️ {{ selected()!.constantes!.temperature }}°C</span>
+              }
+              @if (selected()!.constantes!.tensionSystolique) {
+                <span>🩺 {{ selected()!.constantes!.tensionSystolique }}/{{ selected()!.constantes!.tensionDiastolique }} mmHg</span>
+              }
+              @if (selected()!.constantes!.frequenceCardiaque) {
+                <span>❤️ {{ selected()!.constantes!.frequenceCardiaque }} bpm</span>
+              }
+              @if (selected()!.constantes!.spo2) {
+                <span>🩸 SpO2 {{ selected()!.constantes!.spo2 }}%</span>
+              }
+              @if (selected()!.constantes!.poidsKg) {
+                <span>⚖️ {{ selected()!.constantes!.poidsKg }} kg</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Diagnostics -->
+        @if (selected()!.diagnostics?.length) {
+          <div class="bb-med-cons__block">
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-search"></i> Diagnostics</h3>
+            @for (d of selected()!.diagnostics; track d.id) {
+              <div class="bb-med-cons__diag">
+                <span class="bb-med-cons__diag-type">{{ d.typeDiagnostic }}</span>
+                <span class="bb-med-cons__diag-label">{{ d.libelle }}</span>
+                @if (d.severite) { <p-tag [value]="d.severite" severity="warn" /> }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Ordonnances à signer -->
+        @if (selected()!.ordonnances?.length) {
+          <div class="bb-med-cons__block">
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-file-edit"></i> Ordonnances à signer</h3>
+            <p class="bb-med-cons__block-note">Sélectionnez les ordonnances à valider</p>
+            @for (o of selected()!.ordonnances; track o.id) {
+              <div
+                class="bb-med-cons__ordo"
+                [class.bb-med-cons__ordo--selected]="isOrdonnanceSelectionnee(o.id)"
+                (click)="toggleOrdonnance(o.id)"
+              >
+                <input type="checkbox" [checked]="isOrdonnanceSelectionnee(o.id)" (click)="$event.stopPropagation()" />
+                <div>
+                  <p class="bb-med-cons__ordo-med">{{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}</p>
+                  <p class="bb-med-cons__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Notes médecin -->
+        <div class="bb-med-cons__block">
+          <h3 class="bb-med-cons__block-title"><i class="pi pi-pencil"></i> Notes médicales</h3>
+          <textarea
+            pTextarea
+            [(ngModel)]="notesMedecin"
+            placeholder="Ajoutez vos observations médicales, recommandations..."
+            rows="4"
+            style="width:100%"
+          ></textarea>
+        </div>
+
+        <!-- Bouton valider -->
+        <button class="bb-med-cons__valider-btn" (click)="valider()" [disabled]="isValidating()">
+          <i class="pi pi-check-circle"></i>
+          {{ isValidating() ? 'Validation...' : 'Valider la consultation' }}
+        </button>
+      </div>
+    }
+
+  </div>
+</div>

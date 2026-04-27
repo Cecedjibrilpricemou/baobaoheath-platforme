@@ -1,0 +1,96 @@
+<!-- shared/components/medecin-layout/medecin-layout.component.html -->
+<div class="bb-layout" [class.bb-layout--sidebar-open]="sidebarOpen()">
+
+  @if (sidebarOpen()) {
+    <div class="bb-layout__overlay" (click)="closeSidebar()"></div>
+  }
+
+  <!-- Modal confirmation déconnexion -->
+  @if (showLogoutConfirm()) {
+    <div class="bb-logout-overlay" (click)="cancelLogout()">
+      <div class="bb-logout-modal" (click)="$event.stopPropagation()">
+        <div class="bb-logout-modal__icon">
+          <i class="pi pi-sign-out"></i>
+        </div>
+        <h3 class="bb-logout-modal__title">{{ 'COMMON.LOGOUT_CONFIRM_TITLE' | translate }}</h3>
+        <p class="bb-logout-modal__text">{{ 'COMMON.LOGOUT_CONFIRM_TEXT' | translate }}</p>
+        <div class="bb-logout-modal__actions">
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="cancelLogout()">
+            {{ 'COMMON.CANCEL' | translate }}
+          </button>
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--confirm" (click)="confirmLogout()">
+            <i class="pi pi-sign-out"></i>{{ 'COMMON.LOGOUT' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- SIDEBAR -->
+  <aside class="bb-sidebar" [class.bb-sidebar--open]="sidebarOpen()" role="navigation">
+    <div class="bb-sidebar__logo">
+      <div class="bb-sidebar__logo-icon">🌳</div>
+      <span class="bb-sidebar__logo-name">{{ 'APP.NAME' | translate }}</span>
+    </div>
+    <div class="bb-sidebar__profile">
+      <div class="bb-sidebar__avatar">{{ getInitiales() }}</div>
+      <div class="bb-sidebar__profile-info">
+        <span class="bb-sidebar__profile-name">Dr. {{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+        <span class="bb-sidebar__profile-role">{{ 'MEDECIN.ROLE' | translate }}</span>
+      </div>
+    </div>
+    <nav class="bb-sidebar__nav" aria-label="{{ 'COMMON.NAVIGATION' | translate }}">
+      <p class="bb-sidebar__nav-label">{{ 'COMMON.NAVIGATION' | translate }}</p>
+      @for (item of navItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="bb-sidebar__nav-item--active"
+          class="bb-sidebar__nav-item"
+          (click)="closeSidebar()"
+        >
+          <i [class]="'pi ' + item.icon"></i>
+          <span>{{ item.labelKey | translate }}</span>
+        </a>
+      }
+    </nav>
+    <div class="bb-sidebar__footer">
+      <button class="bb-sidebar__footer-btn" (click)="toggleTheme()">
+        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        <span>{{ themeService.isDark() ? ('COMMON.LIGHT_MODE' | translate) : ('COMMON.DARK_MODE' | translate) }}</span>
+      </button>
+      <button class="bb-sidebar__footer-btn" (click)="toggleLang()">
+        <i class="pi pi-globe"></i>
+        <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
+      </button>
+      <button class="bb-sidebar__logout" (click)="askLogout()">
+        <i class="pi pi-sign-out"></i>
+        <span>{{ 'COMMON.LOGOUT' | translate }}</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ZONE PRINCIPALE -->
+  <main class="bb-layout__main">
+    <header class="bb-topbar">
+      <button class="bb-topbar__menu" (click)="toggleSidebar()" aria-label="Menu">
+        <i class="pi pi-bars"></i>
+      </button>
+      <div class="bb-topbar__logo">
+        <span>🌳</span>
+        <span class="bb-topbar__logo-name">{{ 'APP.NAME' | translate }}</span>
+      </div>
+      <div class="bb-topbar__right">
+        <button class="bb-topbar__icon-btn" (click)="toggleTheme()">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
+        <button class="bb-topbar__icon-btn bb-topbar__lang" (click)="toggleLang()">
+          {{ 'COMMON.LANG_TOGGLE' | translate }}
+        </button>
+        <div class="bb-topbar__avatar">{{ getInitiales() }}</div>
+      </div>
+    </header>
+    <div class="bb-layout__content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

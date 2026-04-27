@@ -1,0 +1,100 @@
+<!-- features/medecin/messagerie/messagerie.component.html -->
+<div class="bb-msg">
+
+  <div class="bb-msg__header">
+    <h1 class="bb-msg__title"><i class="pi pi-comments"></i> Messagerie</h1>
+  </div>
+
+  @if (isLoading()) {
+  <div class="bb-msg__layout">
+    <div class="bb-msg__sidebar">
+      @for (i of [1,2,3]; track i) {
+      <p-skeleton height="72px" borderRadius="8px" styleClass="mb-2" />
+      }
+    </div>
+  </div>
+  } @else {
+  <div class="bb-msg__layout">
+
+    <!-- Sidebar conversations -->
+    <div class="bb-msg__sidebar" [class.bb-msg__sidebar--hidden]="selectedConv()">
+      @if (conversations().length === 0) {
+      <div class="bb-msg__empty">
+        <i class="pi pi-comments"></i>
+        <p>Aucune conversation</p>
+      </div>
+      } @else {
+      @for (conv of conversations(); track conv.utilisateur.id) {
+      <div class="bb-msg__conv" [class.bb-msg__conv--active]="selectedConv()?.utilisateur?.id === conv.utilisateur.id"
+        (click)="selectionnerConv(conv)">
+        <div class="bb-msg__conv-avatar">{{ getInitiales(conv.utilisateur) }}</div>
+        <div class="bb-msg__conv-info">
+          <div class="bb-msg__conv-top">
+            <span class="bb-msg__conv-nom">{{ conv.utilisateur.prenom }} {{ conv.utilisateur.nom }}</span>
+            @if (conv.dernierMessage) {
+            <span class="bb-msg__conv-date">{{ formatDate(conv.dernierMessage.envoyeLe) }}</span>
+            }
+          </div>
+          @if (conv.dernierMessage) {
+          <p class="bb-msg__conv-preview">{{ conv.dernierMessage.contenu }}</p>
+          }
+        </div>
+        @if (conv.nonLus > 0) {
+        <span class="bb-msg__conv-badge">{{ conv.nonLus }}</span>
+        }
+      </div>
+      }
+      }
+    </div>
+
+    <!-- Zone de messages -->
+    @if (selectedConv()) {
+    <div class="bb-msg__chat">
+      <!-- Header chat -->
+      <div class="bb-msg__chat-header">
+        <button class="bb-msg__back" (click)="selectedConv.set(null)">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+        <div class="bb-msg__chat-avatar">{{ getInitiales(selectedConv()!.utilisateur) }}</div>
+        <div>
+          <p class="bb-msg__chat-nom">{{ selectedConv()!.utilisateur.prenom }} {{ selectedConv()!.utilisateur.nom }}</p>
+          @if (selectedConv()!.utilisateur.role) {
+          <p class="bb-msg__chat-role">{{ selectedConv()!.utilisateur.role }}</p>
+          }
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="bb-msg__messages" #messagesContainer>
+        @for (m of selectedConv()!.messages; track m.id) {
+        <div class="bb-msg__message" [class.bb-msg__message--sent]="estEnvoye(m)">
+          @if (!estEnvoye(m)) {
+          <div class="bb-msg__message-avatar">{{ getInitiales(m.expediteur) }}</div>
+          }
+          <div class="bb-msg__bubble">
+            <p class="bb-msg__bubble-text">{{ m.contenu }}</p>
+            <span class="bb-msg__bubble-time">{{ formatHeure(m.envoyeLe) }}</span>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Input -->
+      <div class="bb-msg__input-bar">
+        <input pInputText [(ngModel)]="newMessage" placeholder="Écrivez votre message... (Entrée pour envoyer)"
+          (keydown)="onKeyDown($event)" [disabled]="isSending()" class="bb-msg__input" />
+        <button class="bb-msg__send-btn" (click)="envoyerMessage()" [disabled]="isSending() || !newMessage.trim()">
+          <i class="pi pi-send"></i>
+        </button>
+      </div>
+    </div>
+    } @else {
+    <div class="bb-msg__placeholder">
+      <i class="pi pi-comments"></i>
+      <p>Sélectionnez une conversation</p>
+    </div>
+    }
+
+  </div>
+  }
+</div>
