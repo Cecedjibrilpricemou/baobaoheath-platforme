@@ -1,0 +1,193 @@
+<!-- features/patient/dashboard/dashboard.component.html -->
+<!-- Dashboard patient BaoBaoHealth — Design premium -->
+
+<div class="dashboard">
+
+    <!-- ── HERO HEADER ──────────────────────────────────────────────── -->
+    <div class="dashboard-hero">
+      <div class="dashboard-hero__deco dashboard-hero__deco--1"></div>
+      <div class="dashboard-hero__deco dashboard-hero__deco--2"></div>
+  
+      <div class="dashboard-hero__content">
+        <div class="dashboard-hero__left">
+          <p class="dashboard-hero__greeting">Bonjour 👋</p>
+          <h1 class="dashboard-hero__name">
+            {{ currentUser()?.prenom }} {{ currentUser()?.nom }}
+          </h1>
+          <p class="dashboard-hero__sub">
+            Votre espace santé personnel — tout en un coup d'œil
+          </p>
+        </div>
+        <div class="dashboard-hero__actions">
+          <a routerLink="/patient/qr-code" class="hero-btn hero-btn--primary">
+            <i class="pi pi-qrcode"></i>
+            Mon QR Code
+          </a>
+          <a routerLink="/patient/profil" class="hero-btn hero-btn--ghost">
+            <i class="pi pi-user"></i>
+            Mon Profil
+          </a>
+        </div>
+      </div>
+    </div>
+  
+    <!-- ── STATS ────────────────────────────────────────────────────── -->
+    <div class="dashboard-body">
+  
+      <div class="stats-grid">
+        <div class="stat-card stat-card--green">
+          <div class="stat-card__icon">
+            <i class="pi pi-heart-fill"></i>
+          </div>
+          <div class="stat-card__body">
+            <span class="stat-card__value">{{ totalConsultations() }}</span>
+            <span class="stat-card__label">Consultations</span>
+          </div>
+          <div class="stat-card__trend">
+            <i class="pi pi-arrow-up-right"></i>
+          </div>
+        </div>
+  
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon">
+            <i class="pi pi-shield"></i>
+          </div>
+          <div class="stat-card__body">
+            <span class="stat-card__value">{{ totalVaccinations() }}</span>
+            <span class="stat-card__label">Vaccinations</span>
+          </div>
+          <div class="stat-card__trend">
+            <i class="pi pi-arrow-up-right"></i>
+          </div>
+        </div>
+  
+        <div class="stat-card stat-card--orange">
+          <div class="stat-card__icon">
+            <i class="pi pi-calendar"></i>
+          </div>
+          <div class="stat-card__body">
+            <span class="stat-card__value">—</span>
+            <span class="stat-card__label">Prochain RDV</span>
+          </div>
+          <div class="stat-card__trend">
+            <i class="pi pi-clock"></i>
+          </div>
+        </div>
+  
+        <div class="stat-card stat-card--purple">
+          <div class="stat-card__icon">
+            <i class="pi pi-file"></i>
+          </div>
+          <div class="stat-card__body">
+            <span class="stat-card__value">—</span>
+            <span class="stat-card__label">Ordonnances</span>
+          </div>
+          <div class="stat-card__trend">
+            <i class="pi pi-arrow-up-right"></i>
+          </div>
+        </div>
+      </div>
+  
+      <!-- ── CONTENU ──────────────────────────────────────────────── -->
+      <div class="dashboard-grid">
+  
+        <!-- Consultations récentes -->
+        <div class="dash-card">
+          <div class="dash-card__header">
+            <div class="dash-card__title">
+              <div class="dash-card__title-icon dash-card__title-icon--green">
+                <i class="pi pi-history"></i>
+              </div>
+              <span>Consultations récentes</span>
+            </div>
+            <a routerLink="/patient/profil" class="dash-card__link">
+              Voir tout <i class="pi pi-arrow-right"></i>
+            </a>
+          </div>
+  
+          <div class="dash-card__body">
+            @if (isLoading()) {
+              <div class="empty-state">
+                <i class="pi pi-spin pi-spinner"></i>
+                <p>Chargement...</p>
+              </div>
+            } @else if (consultations().length === 0) {
+              <div class="empty-state">
+                <div class="empty-state__icon">📋</div>
+                <p class="empty-state__title">Aucune consultation</p>
+                <p class="empty-state__sub">Vos consultations apparaîtront ici</p>
+              </div>
+            } @else {
+              @for (c of consultations(); track c.id) {
+                <div class="list-item">
+                  <div class="list-item__dot list-item__dot--green"></div>
+                  <div class="list-item__body">
+                    <span class="list-item__title">{{ c.motif ?? 'Consultation générale' }}</span>
+                    <span class="list-item__sub">{{ formatDate(c.date) }}</span>
+                  </div>
+                  <span class="badge {{ getStatutClass(c.statut) }}">
+                    {{ getStatutLabel(c.statut) }}
+                  </span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+  
+        <!-- Carnet vaccinal -->
+        <div class="dash-card">
+          <div class="dash-card__header">
+            <div class="dash-card__title">
+              <div class="dash-card__title-icon dash-card__title-icon--blue">
+                <i class="pi pi-shield"></i>
+              </div>
+              <span>Carnet vaccinal</span>
+            </div>
+            <a routerLink="/patient/profil" class="dash-card__link">
+              Voir tout <i class="pi pi-arrow-right"></i>
+            </a>
+          </div>
+  
+          <div class="dash-card__body">
+            @if (vaccinations().length === 0) {
+              <div class="empty-state">
+                <div class="empty-state__icon">💉</div>
+                <p class="empty-state__title">Aucune vaccination</p>
+                <p class="empty-state__sub">Votre carnet vaccinal apparaîtra ici</p>
+              </div>
+            } @else {
+              @for (v of vaccinations(); track v.id) {
+                <div class="list-item">
+                  <div class="list-item__dot list-item__dot--blue"></div>
+                  <div class="list-item__body">
+                    <span class="list-item__title">{{ v.vaccin }}</span>
+                    <span class="list-item__sub">{{ formatDate(v.dateAdministration) }}</span>
+                  </div>
+                  @if (v.prochainRappel) {
+                    <span class="badge badge--warning">
+                      <i class="pi pi-bell"></i> Rappel
+                    </span>
+                  }
+                </div>
+              }
+            }
+          </div>
+  
+          <!-- Actions rapides -->
+          <div class="dash-card__footer">
+            <a routerLink="/patient/qr-code" class="quick-btn">
+              <i class="pi pi-qrcode"></i> QR Code
+            </a>
+            <a routerLink="/patient/profil" class="quick-btn">
+              <i class="pi pi-user-edit"></i> Profil
+            </a>
+            <button class="quick-btn" (click)="exportDossier()">
+              <i class="pi pi-download"></i> Exporter
+            </button>
+          </div>
+        </div>
+  
+      </div>
+    </div>
+  
+  </div>

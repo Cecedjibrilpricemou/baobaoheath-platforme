@@ -1,0 +1,205 @@
+<!-- features/patient/qr-code/qr-code.component.html -->
+<!-- Page QR Code patient BaoBaoHealth — Design premium -->
+
+<div class="qr-page">
+
+    <!-- ── HERO ─────────────────────────────────────────────────────── -->
+    <div class="qr-hero">
+      <div class="qr-hero__deco qr-hero__deco--1"></div>
+      <div class="qr-hero__deco qr-hero__deco--2"></div>
+  
+      <div class="qr-hero__content">
+        <div class="qr-hero__left">
+          <div class="qr-hero__role-badge">
+            <i class="pi pi-qrcode"></i> QR Code Patient
+          </div>
+          <h1 class="qr-hero__title">Mon QR Code</h1>
+          <p class="qr-hero__sub">
+            Présentez ce code à votre agent de santé pour un accès instantané à votre dossier
+          </p>
+        </div>
+      </div>
+    </div>
+  
+    <!-- ── BODY ─────────────────────────────────────────────────────── -->
+    <div class="qr-body">
+  
+      <!-- Loading -->
+      @if (isLoading()) {
+        <div class="loading-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Chargement...</span>
+        </div>
+      }
+  
+      <!-- Erreur -->
+      @if (errorMessage()) {
+        <div class="alert alert--error">
+          <i class="pi pi-exclamation-circle"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+  
+      @if (!isLoading() && patientInfo()) {
+        <div class="qr-grid">
+  
+          <!-- ── Card QR Code ── -->
+          <div class="qr-card">
+  
+            <!-- Header patient -->
+            <div class="qr-card__header">
+              <div class="qr-card__avatar">{{ getInitiales() }}</div>
+              <div class="qr-card__info">
+                <h2 class="qr-card__name">
+                  {{ patientInfo()?.prenom }} {{ patientInfo()?.nom }}
+                </h2>
+                <span class="qr-card__role">Patient · BaoBaoHealth</span>
+              </div>
+              <div class="qr-card__status">
+                <i class="pi pi-check-circle"></i>
+                Vérifié
+              </div>
+            </div>
+  
+            <!-- QR Code -->
+            <div class="qr-code-section">
+              <div class="qr-code-frame">
+                <!-- Coins décoratifs -->
+                <div class="qr-corner qr-corner--tl"></div>
+                <div class="qr-corner qr-corner--tr"></div>
+                <div class="qr-corner qr-corner--bl"></div>
+                <div class="qr-corner qr-corner--br"></div>
+  
+                @if (qrCodeUrl()) {
+                  <img
+                    [src]="qrCodeUrl()"
+                    alt="QR Code patient"
+                    class="qr-code-img"
+                  />
+                  <div class="qr-code-logo">🌳</div>
+                } @else {
+                  <div class="qr-placeholder">
+                    <i class="pi pi-qrcode"></i>
+                    <p>QR Code non disponible</p>
+                  </div>
+                }
+              </div>
+  
+              <!-- Code texte -->
+              <div class="qr-code-label">
+                <span class="qr-code-label__text">Scannez pour accéder au dossier</span>
+              </div>
+            </div>
+  
+            <!-- Actions -->
+            <div class="qr-actions">
+              <button class="qr-btn qr-btn--primary" (click)="downloadQrCode()">
+                <i class="pi pi-download"></i>
+                Télécharger
+              </button>
+              <button class="qr-btn qr-btn--secondary" (click)="shareQrCode()">
+                <i class="pi pi-share-alt"></i>
+                Partager
+              </button>
+            </div>
+  
+          </div>
+  
+          <!-- ── Infos + Sécurité ── -->
+          <div class="qr-side">
+  
+            <!-- Infos visibles -->
+            <div class="info-card">
+              <div class="info-card__header">
+                <div class="info-card__icon">
+                  <i class="pi pi-eye"></i>
+                </div>
+                <h3 class="info-card__title">Informations visibles au scan</h3>
+              </div>
+  
+              <div class="info-list">
+                <div class="info-item">
+                  <div class="info-item__icon info-item__icon--green">
+                    <i class="pi pi-user"></i>
+                  </div>
+                  <div class="info-item__body">
+                    <span class="info-item__label">Nom complet</span>
+                    <span class="info-item__value">
+                      {{ patientInfo()?.prenom }} {{ patientInfo()?.nom }}
+                    </span>
+                  </div>
+                </div>
+  
+                <div class="info-item">
+                  <div class="info-item__icon info-item__icon--blue">
+                    <i class="pi pi-phone"></i>
+                  </div>
+                  <div class="info-item__body">
+                    <span class="info-item__label">Téléphone</span>
+                    <span class="info-item__value">{{ patientInfo()?.telephone }}</span>
+                  </div>
+                </div>
+  
+                @if (patientInfo()?.dateNaissance) {
+                  <div class="info-item">
+                    <div class="info-item__icon info-item__icon--orange">
+                      <i class="pi pi-calendar"></i>
+                    </div>
+                    <div class="info-item__body">
+                      <span class="info-item__label">Date de naissance</span>
+                      <span class="info-item__value">{{ formatDate(patientInfo()?.dateNaissance) }}</span>
+                    </div>
+                  </div>
+                }
+  
+                @if (patientInfo()?.groupeSanguin) {
+                  <div class="info-item">
+                    <div class="info-item__icon info-item__icon--red">
+                      <i class="pi pi-heart-fill"></i>
+                    </div>
+                    <div class="info-item__body">
+                      <span class="info-item__label">Groupe sanguin</span>
+                      <span class="info-item__value info-item__value--blood">
+                        {{ patientInfo()?.groupeSanguin }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+  
+            <!-- Note sécurité -->
+            <div class="security-card">
+              <div class="security-card__icon">
+                <i class="pi pi-shield"></i>
+              </div>
+              <div class="security-card__body">
+                <h4 class="security-card__title">QR Code sécurisé</h4>
+                <p class="security-card__text">
+                  Ce code est personnel et chiffré. Ne le partagez qu'avec des professionnels de santé autorisés BaoBaoHealth.
+                </p>
+              </div>
+            </div>
+  
+            <!-- Navigation rapide -->
+            <div class="nav-links">
+              <a routerLink="/patient/dashboard" class="nav-link">
+                <i class="pi pi-home"></i>
+                <span>Dashboard</span>
+                <i class="pi pi-arrow-right nav-link__arrow"></i>
+              </a>
+              <a routerLink="/patient/profil" class="nav-link">
+                <i class="pi pi-user"></i>
+                <span>Mon Profil</span>
+                <i class="pi pi-arrow-right nav-link__arrow"></i>
+              </a>
+            </div>
+  
+          </div>
+  
+        </div>
+      }
+  
+    </div>
+  
+  </div>

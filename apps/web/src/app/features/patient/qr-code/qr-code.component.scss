@@ -1,0 +1,538 @@
+// features/patient/qr-code/qr-code.component.scss
+// Page QR Code patient BaoBaoHealth — Design premium
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep:   #0D2B1A;
+$forest-mid:    #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light:  #F0FAF4;
+$text-dark:     #071610;
+$text-mid:      #2D5240;
+$text-muted:    #4A6B5A;
+$border:        #D8E8DC;
+$white:         #ffffff;
+
+// ── Page wrapper ────────────────────────────────────────────────────────
+.qr-page {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  background: #F0F4F2;
+}
+
+// ── HERO ────────────────────────────────────────────────────────────────
+.qr-hero {
+  background: linear-gradient(135deg, $forest-deep 0%, $forest-mid 60%, #0F3D22 100%);
+  padding: 40px 40px 80px;
+  position: relative;
+  overflow: hidden;
+
+  @media (max-width: 768px) { padding: 28px 20px 72px; }
+
+  &__deco {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+
+    &--1 {
+      width: 300px; height: 300px;
+      top: -100px; right: -60px;
+      background: rgba(62,187,112,0.07);
+      border: 1px solid rgba(62,187,112,0.1);
+    }
+
+    &--2 {
+      width: 150px; height: 150px;
+      bottom: -50px; left: 30%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+  }
+
+  &__role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(62,187,112,0.15);
+    border: 1px solid rgba(62,187,112,0.3);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $forest-bright;
+    margin-bottom: 12px;
+
+    i { font-size: 13px; }
+  }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: $white;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+
+    @media (max-width: 480px) { font-size: 22px; }
+  }
+
+  &__sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    max-width: 480px;
+    line-height: 1.6;
+  }
+}
+
+// ── BODY ────────────────────────────────────────────────────────────────
+.qr-body {
+  padding: 0 32px 32px;
+  margin-top: -40px;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 768px) { padding: 0 16px 24px; }
+}
+
+// ── LOADING ──────────────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px;
+  color: $text-muted;
+  font-size: 15px;
+  background: $white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+
+  i { font-size: 24px; }
+}
+
+// ── ALERTE ───────────────────────────────────────────────────────────────
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  margin-bottom: 20px;
+
+  &--error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+  }
+}
+
+// ── GRID ─────────────────────────────────────────────────────────────────
+.qr-grid {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 20px;
+  align-items: start;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+// ── CARD QR CODE ─────────────────────────────────────────────────────────
+.qr-card {
+  background: $white;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.8);
+
+  // Header patient
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid $border;
+  }
+
+  &__avatar {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, $forest-mid, $forest-bright);
+    color: $white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(26,92,53,0.25);
+  }
+
+  &__info { flex: 1; }
+
+  &__name {
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: $text-dark;
+    margin-bottom: 2px;
+  }
+
+  &__role {
+    font-size: 12px;
+    color: $text-muted;
+    font-weight: 500;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $forest-mid;
+    background: $forest-light;
+    padding: 6px 12px;
+    border-radius: 100px;
+    border: 1px solid $border;
+    white-space: nowrap;
+
+    i { font-size: 13px; }
+  }
+}
+
+// ── QR CODE SECTION ──────────────────────────────────────────────────────
+.qr-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+// Frame QR Code
+.qr-code-frame {
+  position: relative;
+  padding: 16px;
+  background: $white;
+  border: 2px solid $forest-deep;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(13,43,26,0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Coins décoratifs
+.qr-corner {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-color: $forest-bright;
+  border-style: solid;
+
+  &--tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+  &--tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+  &--bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+  &--br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+}
+
+.qr-code-img {
+  width: 200px; height: 200px;
+  display: block;
+  border-radius: 8px;
+}
+
+// Logo centré
+.qr-code-logo {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px; height: 36px;
+  background: $white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: 2px solid $border;
+  pointer-events: none;
+}
+
+// Placeholder
+.qr-placeholder {
+  width: 200px; height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: $forest-light;
+  border-radius: 12px;
+  color: $text-muted;
+
+  i { font-size: 48px; opacity: 0.4; }
+  p { font-size: 13px; font-weight: 500; }
+}
+
+.qr-code-label {
+  text-align: center;
+
+  &__text {
+    font-size: 13px;
+    color: $text-muted;
+    font-weight: 500;
+  }
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────
+.qr-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.qr-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+
+  i { font-size: 15px; }
+
+  &--primary {
+    background: $forest-deep;
+    color: $white;
+
+    &:hover {
+      background: $forest-mid;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(13,43,26,0.25);
+    }
+  }
+
+  &--secondary {
+    background: $forest-light;
+    color: $forest-mid;
+    border: 1.5px solid $border;
+
+    &:hover {
+      border-color: $forest-bright;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ── SIDE PANEL ───────────────────────────────────────────────────────────
+.qr-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Info card
+.info-card {
+  background: $white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border: 1px solid rgba(255,255,255,0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid $border;
+  }
+
+  &__icon {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: $forest-light;
+    color: $forest-mid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i { font-size: 14px; }
+  }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: $text-dark;
+  }
+}
+
+// Info items
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #F8FAF9;
+  border-radius: 12px;
+  border: 1px solid $border;
+  transition: background 0.2s;
+
+  &:hover { background: $forest-light; }
+
+  &__icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i { font-size: 14px; }
+
+    &--green  { background: $forest-light; color: $forest-mid; }
+    &--blue   { background: #EFF6FF; color: #2563EB; }
+    &--orange { background: #FFF7ED; color: #EA580C; }
+    &--red    { background: #FEF2F2; color: #DC2626; }
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__value {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-dark;
+
+    &--blood {
+      display: inline-flex;
+      background: #FEF2F2;
+      color: #DC2626;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+    }
+  }
+}
+
+// Security card
+.security-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-radius: 16px;
+
+  &__icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: #FFEDD5;
+    color: #EA580C;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i { font-size: 16px; }
+  }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #92400E;
+    margin-bottom: 4px;
+  }
+
+  &__text {
+    font-size: 12px;
+    color: #B45309;
+    line-height: 1.6;
+  }
+}
+
+// Nav links
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: $white;
+  border-radius: 14px;
+  border: 1px solid $border;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.2s;
+  color: $text-dark;
+  font-size: 14px;
+  font-weight: 600;
+
+  i:first-child {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: $forest-light;
+    color: $forest-mid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  span { flex: 1; }
+
+  &__arrow {
+    font-size: 13px;
+    color: $text-muted;
+    transition: transform 0.2s;
+  }
+
+  &:hover {
+    border-color: $forest-bright;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+    .nav-link__arrow { transform: translateX(4px); color: $forest-mid; }
+  }
+}

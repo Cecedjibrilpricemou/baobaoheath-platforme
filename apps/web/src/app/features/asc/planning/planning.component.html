@@ -1,0 +1,162 @@
+<!-- features/asc/planning/planning.component.html -->
+<div class="planning-page">
+
+  <!-- ── HERO ──────────────────────────────────────────────────── -->
+  <div class="page-hero">
+    <div class="page-hero__deco page-hero__deco--1"></div>
+    <div class="page-hero__deco page-hero__deco--2"></div>
+
+    <div class="page-hero__content">
+      <div class="page-hero__left">
+        <div class="page-hero__badge">
+          <i class="pi pi-calendar"></i> {{ 'ASC.PLANNING.BADGE' | translate }}
+        </div>
+        <h1 class="page-hero__title">{{ 'ASC.PLANNING.TITLE' | translate }}</h1>
+        <p class="page-hero__sub">{{ 'ASC.PLANNING.SUBTITLE' | translate }}</p>
+      </div>
+    </div>
+
+    <div class="page-hero__stats">
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ totalRdv() }}</span>
+        <span class="hero-stat__label">{{ 'ASC.PLANNING.STAT_TOTAL' | translate }}</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat hero-stat--highlight">
+        <span class="hero-stat__value">{{ rdvAujourdhui() }}</span>
+        <span class="hero-stat__label">{{ 'ASC.PLANNING.STAT_TODAY' | translate }}</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ rdvCetteSemaine() }}</span>
+        <span class="hero-stat__label">{{ 'ASC.PLANNING.STAT_WEEK' | translate }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BODY ──────────────────────────────────────────────────── -->
+  <div class="page-body">
+
+    <!-- Toggle vue -->
+    <div class="vue-toggle">
+      <button
+        class="vue-btn"
+        [class.vue-btn--active]="vue() === 'liste'"
+        (click)="vue.set('liste')"
+      >
+        <i class="pi pi-list"></i>
+        {{ 'ASC.PLANNING.VIEW_ALL' | translate }}
+      </button>
+      <button
+        class="vue-btn"
+        [class.vue-btn--active]="vue() === 'aujourd-hui'"
+        (click)="vue.set('aujourd-hui')"
+      >
+        <i class="pi pi-sun"></i>
+        {{ 'ASC.PLANNING.VIEW_TODAY' | translate }}
+        @if (rdvAujourdhui() > 0) {
+          <span class="vue-btn__badge">{{ rdvAujourdhui() }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Loading -->
+    @if (isLoading()) {
+      <div class="loading-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>{{ 'ASC.PLANNING.LOADING' | translate }}</span>
+      </div>
+    } @else if (rdvFiltres.length === 0) {
+      <div class="empty-state">
+        <div class="empty-state__icon">📅</div>
+        <h3 class="empty-state__title">
+          {{ vue() === 'aujourd-hui'
+            ? ('ASC.PLANNING.EMPTY_TODAY' | translate)
+            : ('ASC.PLANNING.EMPTY_TITLE' | translate) }}
+        </h3>
+        <p class="empty-state__sub">{{ 'ASC.PLANNING.EMPTY_SUB' | translate }}</p>
+      </div>
+    } @else {
+
+      <div class="rdv-list">
+        @for (rdv of rdvFiltres; track rdv.id) {
+          <div
+            class="rdv-card"
+            [class.rdv-card--today]="isAujourdhui(rdv.date)"
+            [class.rdv-card--passe]="isPasse(rdv.date)"
+          >
+
+            <!-- Bloc heure / date -->
+            <div class="rdv-card__time-block">
+              <span class="rdv-card__heure">{{ formatHeure(rdv.date) }}</span>
+              @if (isAujourdhui(rdv.date)) {
+                <span class="rdv-card__today-pill">{{ 'ASC.PLANNING.TODAY_BADGE' | translate }}</span>
+              }
+            </div>
+
+            <!-- Ligne de connexion -->
+            <div class="rdv-card__connector">
+              <div class="rdv-card__dot"
+                [class.rdv-card__dot--today]="isAujourdhui(rdv.date)"
+                [class.rdv-card__dot--passe]="isPasse(rdv.date)"
+              ></div>
+              <div class="rdv-card__line"></div>
+            </div>
+
+            <!-- Contenu -->
+            <div class="rdv-card__content">
+
+              <div class="rdv-card__header">
+                <!-- Avatar -->
+                <div class="rdv-card__avatar"
+                  [class.rdv-card__avatar--today]="isAujourdhui(rdv.date)"
+                >
+                  {{ getInitiales(rdv) }}
+                </div>
+
+                <!-- Infos patient -->
+                <div class="rdv-card__patient">
+                  @if (rdv.patient) {
+                    <span class="rdv-card__name">
+                      {{ rdv.patient.utilisateur.prenom }} {{ rdv.patient.utilisateur.nom }}
+                    </span>
+                    <span class="rdv-card__phone">
+                      <i class="pi pi-phone"></i>
+                      {{ rdv.patient.utilisateur.telephone }}
+                    </span>
+                  } @else {
+                    <span class="rdv-card__name">{{ 'ASC.PLANNING.PATIENT_UNKNOWN' | translate }}</span>
+                  }
+                </div>
+
+                <!-- Statut -->
+                <p-tag
+                  [value]="getStatutLabel(rdv.statut)"
+                  [severity]="getStatutSeverity(rdv.statut)"
+                  styleClass="rdv-tag"
+                ></p-tag>
+              </div>
+
+              <!-- Détails -->
+              <div class="rdv-card__details">
+                <div class="rdv-detail">
+                  <i class="pi pi-calendar"></i>
+                  <span>{{ formatDate(rdv.date) }}</span>
+                </div>
+                @if (rdv.motif) {
+                  <div class="rdv-detail">
+                    <i class="pi pi-file-edit"></i>
+                    <span>{{ rdv.motif }}</span>
+                  </div>
+                }
+              </div>
+
+            </div>
+
+          </div>
+        }
+      </div>
+
+    }
+  </div>
+</div>

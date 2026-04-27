@@ -1,0 +1,467 @@
+// features/patient/profil/profil.component.scss
+// Page profil patient BaoBaoHealth — Design premium
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ───────────────────────────────────────────────────────────
+$forest-deep:   #0D2B1A;
+$forest-mid:    #1A5C35;
+$forest-bright: #3EBB70;
+$forest-light:  #F0FAF4;
+$text-dark:     #071610;
+$text-mid:      #2D5240;
+$text-muted:    #4A6B5A;
+$border:        #D8E8DC;
+$white:         #ffffff;
+
+// ── Page wrapper ────────────────────────────────────────────────────────
+.profil-page {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  background: #F0F4F2;
+}
+
+// ── HERO ────────────────────────────────────────────────────────────────
+.profil-hero {
+  background: linear-gradient(135deg, $forest-deep 0%, $forest-mid 60%, #0F3D22 100%);
+  padding: 40px 40px 80px;
+  position: relative;
+  overflow: hidden;
+
+  @media (max-width: 768px) { padding: 28px 20px 72px; }
+
+  &__deco {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+
+    &--1 {
+      width: 350px; height: 350px;
+      top: -120px; right: -80px;
+      background: rgba(62,187,112,0.07);
+      border: 1px solid rgba(62,187,112,0.1);
+    }
+
+    &--2 {
+      width: 180px; height: 180px;
+      bottom: -60px; left: 30%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  // Avatar
+  &__avatar {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  &__avatar-initials {
+    width: 72px; height: 72px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(62,187,112,0.3), rgba(62,187,112,0.15));
+    border: 2px solid rgba(62,187,112,0.4);
+    color: $white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  &__avatar-badge {
+    position: absolute;
+    bottom: -4px; right: -4px;
+    width: 22px; height: 22px;
+    border-radius: 8px;
+    background: $forest-bright;
+    color: $forest-deep;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid $forest-deep;
+
+    i { font-size: 10px; font-weight: 700; }
+  }
+
+  // Infos
+  &__info { color: $white; }
+
+  &__role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: rgba(62,187,112,0.2);
+    border: 1px solid rgba(62,187,112,0.3);
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    color: $forest-bright;
+    margin-bottom: 8px;
+
+    i { font-size: 11px; }
+  }
+
+  &__name {
+    font-family: 'Sora', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: $white;
+    letter-spacing: -0.4px;
+    margin-bottom: 10px;
+
+    @media (max-width: 480px) { font-size: 20px; }
+  }
+
+  &__details {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__detail {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+
+    i { font-size: 13px; color: $forest-bright; }
+
+    &--blood {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      padding: 4px 10px;
+      border-radius: 100px;
+      color: #FCA5A5;
+
+      i { color: #FCA5A5; }
+    }
+  }
+
+  // Actions
+  &__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
+// Boutons hero
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+
+  i { font-size: 13px; }
+
+  &--primary {
+    background: $forest-bright;
+    color: $forest-deep;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(62,187,112,0.35);
+    }
+  }
+
+  &--ghost {
+    background: rgba(255,255,255,0.12);
+    color: $white;
+    border: 1px solid rgba(255,255,255,0.2);
+
+    &:hover { background: rgba(255,255,255,0.18); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  &--save {
+    background: $forest-bright;
+    color: $forest-deep;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(62,187,112,0.3);
+    }
+
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+}
+
+// ── BODY ────────────────────────────────────────────────────────────────
+.profil-body {
+  padding: 0 32px 32px;
+  margin-top: -40px;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 768px) { padding: 0 16px 24px; }
+}
+
+// ── ALERTES ─────────────────────────────────────────────────────────────
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+
+  i { font-size: 16px; flex-shrink: 0; }
+
+  &--success {
+    background: $forest-light;
+    border: 1px solid #BBF7D0;
+    color: $forest-mid;
+  }
+
+  &--error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+  }
+}
+
+// ── LOADING ──────────────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px;
+  color: $text-muted;
+  font-size: 15px;
+  background: $white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+
+  i { font-size: 24px; }
+}
+
+// ── GRILLE PROFIL ────────────────────────────────────────────────────────
+.profil-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+// ── CARDS ────────────────────────────────────────────────────────────────
+.profil-card {
+  background: $white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border: 1px solid rgba(255,255,255,0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid $border;
+  }
+
+  &__header-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i { font-size: 16px; }
+
+    &--green { background: $forest-light; color: $forest-mid; }
+    &--red   { background: #FEF2F2; color: #DC2626; }
+  }
+
+  &__title {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: $text-dark;
+  }
+}
+
+// ── FORM GRID ────────────────────────────────────────────────────────────
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &--full { grid-column: 1 / -1; }
+
+  &__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  &__value {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-dark;
+    padding: 10px 0;
+    border-bottom: 1px solid $border;
+    min-height: 38px;
+  }
+
+  &__input {
+    padding: 11px 14px;
+    border: 1.5px solid $border;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: $text-dark;
+    background: #F8FAF9;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+      border-color: $forest-bright;
+      box-shadow: 0 0 0 3px rgba(62,187,112,0.1);
+      background: $white;
+    }
+
+    &--textarea {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.5;
+    }
+  }
+}
+
+// ── BLOOD BADGE ──────────────────────────────────────────────────────────
+.blood-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 24px;
+  background: #FEF2F2;
+  border: 1.5px solid #FECACA;
+  border-radius: 14px;
+
+  &__value {
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #DC2626;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #EF4444;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+// ── QUICK ACTIONS ────────────────────────────────────────────────────────
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: $white;
+  border-radius: 16px;
+  border: 1px solid $border;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    border-color: $forest-bright;
+  }
+
+  &__icon {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i { font-size: 20px; }
+
+    &--green { background: $forest-light; color: $forest-mid; }
+    &--blue  { background: #EFF6FF; color: #2563EB; }
+  }
+
+  &__label {
+    flex: 1;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: $text-dark;
+  }
+
+  &__arrow {
+    font-size: 14px;
+    color: $text-muted;
+    transition: transform 0.2s, color 0.2s;
+  }
+
+  &:hover &__arrow {
+    transform: translateX(4px);
+    color: $forest-mid;
+  }
+}

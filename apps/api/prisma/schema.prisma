@@ -90,6 +90,7 @@ model Utilisateur {
 
   patientProfile       PatientProfile?
   ascProfile           AscProfile?
+  medecinProfile       MedecinProfile?
   sessions             Session[]
   auditLogs            JournalAudit[]
   messagesEnvoyes      Message[]       @relation("Expediteur")
@@ -149,6 +150,7 @@ model StructureSante {
 
   utilisateurs         Utilisateur[]
   ascProfiles          AscProfile[]
+  medecinProfiles      MedecinProfile[]
   referencementsSource Referencement[] @relation("StructureSource")
   referencementsCible  Referencement[] @relation("StructureCible")
 
@@ -207,6 +209,25 @@ model AscProfile {
   rendezVous    RendezVous[]
 
   @@map("profils_asc")
+}
+
+// ─── NOUVEAU : MedecinProfile ─────────────────────────────
+// Manquait dans le schéma original — causait un crash au register MEDECIN
+
+model MedecinProfile {
+  id                  String   @id @default(cuid())
+  numeroCom           String?  // Numéro d'ordre du Conseil de l'Ordre des Médecins
+  specialite          String?
+  photoUrl            String?
+  creeLe              DateTime @default(now())
+
+  idUtilisateur String         @unique
+  utilisateur   Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id])
+
+  @@map("profils_medecin")
 }
 
 // ─── DOMAINE 3 — ACTES MEDICAUX ──────────────────────────

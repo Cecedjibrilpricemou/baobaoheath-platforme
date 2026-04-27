@@ -1,0 +1,171 @@
+<!-- features/landing/landing.component.html -->
+<!-- Landing page BaoBaoHealth — Hero + Features + Roles + CTA -->
+
+<div class="landing">
+
+    <!-- ── NAVBAR ──────────────────────────────────────────────────────── -->
+    <nav class="navbar">
+        <div class="navbar__logo">
+          <div class="navbar__logo-icon">🌳</div>
+          <span class="navbar__logo-name">BaoBaoHealth</span>
+        </div>
+        <div class="navbar__actions">
+          <a routerLink="/auth/login" class="navbar__login">Se connecter</a>
+          <a routerLink="/auth/register" class="navbar__register">Créer un compte</a>
+        </div>
+      </nav>
+
+    <!-- ── HERO ────────────────────────────────────────────────────────── -->
+    <section class="hero">
+
+        <!-- Formes décoratives -->
+        <div class="hero-deco hero-deco--1"></div>
+        <div class="hero-deco hero-deco--2"></div>
+        <div class="hero-deco hero-deco--3"></div>
+
+        <div class="hero__content">
+            <div class="hero__badge">
+                <span class="hero__badge-dot"></span>
+                Plateforme santé numérique — Guinée 🇬🇳
+            </div>
+
+            <h1 class="hero__title">
+                La santé numérique<br>
+                <span class="hero__title-accent">au service</span><br>
+                de la Guinée
+            </h1>
+
+            <p class="hero__desc">
+                BaoBaoHealth connecte patients, agents de santé communautaire et médecins
+                en une seule plateforme sécurisée — consultations, vaccinations, analytics et plus.
+            </p>
+
+            <div class="hero__actions">
+                <a routerLink="/auth/register" class="btn-primary">
+                    Commencer gratuitement
+                    <i class="pi pi-arrow-right"></i>
+                </a>
+                <a routerLink="/auth/login" class="btn-ghost">
+                    Se connecter
+                </a>
+            </div>
+
+            <!-- Stats rapides -->
+            <div class="hero__stats">
+                @for (stat of stats; track stat.label) {
+                <div class="hero-stat">
+                    <span class="hero-stat__value">{{ stat.value }}</span>
+                    <span class="hero-stat__label">{{ stat.label }}</span>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Illustration droite -->
+        <div class="hero__visual">
+            <div class="hero-card hero-card--main">
+                <div class="hero-card__header">
+                    <div class="hero-card__avatar">MD</div>
+                    <div>
+                        <div class="hero-card__name">Mamadou Diallo</div>
+                        <div class="hero-card__role">Patient · Conakry</div>
+                    </div>
+                    <div class="hero-card__badge">✓ Actif</div>
+                </div>
+                <div class="hero-card__stats">
+                    <div class="hero-card__stat">
+                        <span class="hero-card__stat-val">12</span>
+                        <span class="hero-card__stat-lbl">Consultations</span>
+                    </div>
+                    <div class="hero-card__stat">
+                        <span class="hero-card__stat-val">8</span>
+                        <span class="hero-card__stat-lbl">Vaccins</span>
+                    </div>
+                    <div class="hero-card__stat">
+                        <span class="hero-card__stat-val">3</span>
+                        <span class="hero-card__stat-lbl">RDV</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-card hero-card--notif">
+                <i class="pi pi-bell"></i>
+                <span>Rappel vaccination — BCG dans 3 jours</span>
+            </div>
+
+            <div class="hero-card hero-card--stat">
+                <div class="hero-card__stat-icon">📊</div>
+                <div>
+                    <div class="hero-card__stat-val">94%</div>
+                    <div class="hero-card__stat-lbl">Couverture vaccinale</div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ── FEATURES ────────────────────────────────────────────────────── -->
+    <section class="features">
+        <div class="section-header">
+            <h2 class="section-title">Tout ce dont vous avez besoin</h2>
+            <p class="section-sub">9 modules intégrés pour une gestion complète de la santé</p>
+        </div>
+
+        <div class="features-grid">
+            @for (feature of features; track feature.title) {
+            <div class="feature-card">
+                <div class="feature-card__icon">{{ feature.icon }}</div>
+                <h3 class="feature-card__title">{{ feature.title }}</h3>
+                <p class="feature-card__desc">{{ feature.description }}</p>
+            </div>
+            }
+        </div>
+    </section>
+
+    <!-- ── ROLES ────────────────────────────────────────────────────────── -->
+    <section class="roles">
+        <div class="roles__inner">
+            <div class="section-header section-header--light">
+                <h2 class="section-title section-title--light">Pour chaque acteur de la santé</h2>
+                <p class="section-sub section-sub--light">8 rôles avec accès personnalisés</p>
+            </div>
+
+            <div class="roles-grid">
+                @for (role of roles; track role.title) {
+                <div class="role-card">
+                    <div class="role-card__icon">{{ role.icon }}</div>
+                    <h3 class="role-card__title">{{ role.title }}</h3>
+                    <p class="role-card__desc">{{ role.desc }}</p>
+                </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA FINAL ────────────────────────────────────────────────────── -->
+    <section class="cta">
+        <div class="cta__inner">
+            <h2 class="cta__title">Prêt à rejoindre BaoBaoHealth ?</h2>
+            <p class="cta__sub">Créez votre compte en moins de 2 minutes</p>
+            <div class="cta__actions">
+                <a routerLink="/auth/register" class="btn-primary btn-primary--lg">
+                    Créer un compte gratuit
+                    <i class="pi pi-arrow-right"></i>
+                </a>
+                <a routerLink="/auth/login" class="btn-ghost btn-ghost--lg">
+                    Se connecter
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FOOTER ────────────────────────────────────────────────────────── -->
+    <footer class="footer">
+        <div class="footer__logo">
+            <span>🌳</span>
+            <span class="footer__logo-name">BaoBaoHealth</span>
+        </div>
+        <p class="footer__copy">© 2026 BaoBaoHealth — Plateforme santé numérique Guinée</p>
+    </footer>
+
+</div>
