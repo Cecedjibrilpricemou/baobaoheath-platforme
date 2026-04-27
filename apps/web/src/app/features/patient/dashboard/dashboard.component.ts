@@ -1,14 +1,28 @@
 // features/patient/dashboard/dashboard.component.ts
-// Rôle : tableau de bord principal du patient
-// Affiche : infos patient, consultations récentes, vaccinations, rendez-vous
-
+// Corrigé pour correspondre exactement aux champs utilisés dans le template HTML
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { CardModule } from 'primeng/card';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
+import { SkeletonModule } from 'primeng/skeleton';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
-// Interface consultation
+interface PatientDashboard {
+  id: string;
+  qrCode?: string;
+  dateNaissance?: string;
+  sexe?: string;
+  groupeSanguin?: string;
+  allergies?: string[];
+  maladiesChroniques?: string[];
+  utilisateur?: { nom: string; prenom: string; telephone: string; };
+}
+
+// Interface alignée sur les champs utilisés dans le template HTML
 interface Consultation {
   id: string;
   date: string;
@@ -17,15 +31,14 @@ interface Consultation {
   asc?: { nom: string; prenom: string };
 }
 
-// Interface vaccination
+// Interface alignée sur les champs utilisés dans le template HTML
 interface Vaccination {
   id: string;
-  vaccin: string;
-  dateAdministration: string;
-  prochainRappel?: string;
+  vaccin: string;           // mappé depuis vaccinNom du backend
+  dateAdministration: string; // mappé depuis administreLe du backend
+  prochainRappel?: string;  // mappé depuis dateProchaineD du backend
 }
 
-// Interface rendez-vous
 interface RendezVous {
   id: string;
   date: string;
@@ -33,69 +46,89 @@ interface RendezVous {
   statut: string;
 }
 
+interface Facture {
+  id: string;
+  montantGnf: number;
+  statut: string;
+  creeLe: string;
+  modePaiement?: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CardModule, TagModule, ButtonModule, SkeletonModule, TranslatePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
-  private api = inject(ApiService);
+  private api         = inject(ApiService);
   private authService = inject(AuthService);
 
-  // Données utilisateur connecté
   currentUser = this.authService.currentUser;
 
-  // Signals pour les données
-  consultations = signal<Consultation[]>([]);
-  vaccinations = signal<Vaccination[]>([]);
-  isLoading = signal(true);
-  errorMessage = signal('');
+  patientProfil      = signal<PatientDashboard | null>(null);
+  consultations      = signal<Consultation[]>([]);   // garde le signal pour le template
+  vaccinations       = signal<Vaccination[]>([]);
+  factures           = signal<Facture[]>([]);
+  prochainRdv        = signal<RendezVous | null>(null);
+  isLoading          = signal(true);
+  errorMessage       = signal('');
+  totalConsultations = signal(0);  // garde le signal pour le template
+  totalVaccinations  = signal(0);
+  prochainsRappels   = signal(0);
 
-  // Stats rapides calculées
-  totalConsultations = signal(0);
-  totalVaccinations = signal(0);
-  prochainRdv = signal<RendezVous | null>(null);
-
-  ngOnInit() {
-    this.loadDashboard();
-  }
+  ngOnInit() { this.loadDashboard(); }
 
   private loadDashboard() {
     this.isLoading.set(true);
 
-    // Charger les consultations du patient
-    this.api.get<any>('/consultations').subscribe({
-      next: (data) => {
-        const consultations = Array.isArray(data) ? data : data?.data ?? [];
-        this.consultations.set(consultations.slice(0, 5));
-        this.totalConsultations.set(consultations.length);
+    // Profil patient — GET /patients/me (autorisé PATIENT)
+    this.api.get<any>('/patients/me').subscribe({
+      next: (response) => {
+        const data = response?.data ?? response;
+        this.patientProfil.set(data);
         this.isLoading.set(false);
       },
-      error: () => {
-        this.isLoading.set(false);
-      }
+      error: () => { this.isLoading.set(false); }
     });
 
-    // Charger les vaccinations du patient
+    // Carnet vaccinal — GET /vaccinations/me (autorisé PATIENT)
     this.api.get<any>('/vaccinations/me').subscribe({
-      next: (data) => {
-        const vaccinations = Array.isArray(data) ? data : data?.data ?? [];
-        this.vaccinations.set(vaccinations.slice(0, 3));
-        this.totalVaccinations.set(vaccinations.length);
+      next: (response) => {
+        const raw = Array.isArray(response) ? response : response?.data ?? [];
+        // Mapper les champs backend → champs attendus par le template
+        const list: Vaccination[] = raw.map((v: any) => ({
+          id: v.id,
+          vaccin: v.vaccinNom ?? v.vaccin ?? '—',
+          dateAdministration: v.administreLe ?? v.dateAdministration,
+          prochainRappel: v.dateProchaineD ?? v.prochainRappel
+        }));
+        this.vaccinations.set(list.slice(0, 3));
+        this.totalVaccinations.set(list.length);
+        const dans30j = new Date();
+        dans30j.setDate(dans30j.getDate() + 30);
+        this.prochainsRappels.set(
+          list.filter(v => v.prochainRappel && new Date(v.prochainRappel) <= dans30j).length
+        );
+      },
+      error: () => {}
+    });
+
+    // Paiements — GET /paiements/historique (autorisé PATIENT)
+    this.api.get<any>('/paiements/historique').subscribe({
+      next: (response) => {
+        const list = Array.isArray(response) ? response : response?.data ?? [];
+        this.factures.set(list.slice(0, 3));
       },
       error: () => {}
     });
   }
 
-  // Exporter le dossier médical
   exportDossier() {
     this.api.get<any>('/patients/me/export').subscribe({
       next: (data) => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], {
-          type: 'application/json'
-        });
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -107,19 +140,18 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Retourne la classe CSS selon le statut
-  getStatutClass(statut: string): string {
-    const map: Record<string, string> = {
-      'TERMINEE':   'badge--success',
-      'EN_COURS':   'badge--warning',
-      'PLANIFIEE':  'badge--info',
-      'ANNULEE':    'badge--danger',
-      'REFERENCEE': 'badge--purple'
+  // Méthodes utilisées dans le template
+  getStatutSeverity(statut: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    const map: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary'> = {
+      'TERMINEE':   'success',
+      'EN_COURS':   'warn',
+      'PLANIFIEE':  'info',
+      'ANNULEE':    'danger',
+      'REFERENCEE': 'secondary'
     };
-    return map[statut] ?? 'badge--default';
+    return map[statut] ?? 'secondary';
   }
 
-  // Retourne le label lisible du statut
   getStatutLabel(statut: string): string {
     const map: Record<string, string> = {
       'TERMINEE':   'Terminée',
@@ -131,13 +163,38 @@ export class DashboardComponent implements OnInit {
     return map[statut] ?? statut;
   }
 
-  // Formate une date ISO en date lisible
+  getStatutFactureSeverity(statut: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    const map: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary'> = {
+      'PAYEE':      'success',
+      'EN_ATTENTE': 'warn',
+      'PARTIELLE':  'info',
+      'ANNULEE':    'danger',
+      'REMBOURSEE': 'secondary'
+    };
+    return map[statut] ?? 'secondary';
+  }
+
   formatDate(dateStr: string): string {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  formatMontant(montant: number): string {
+    return new Intl.NumberFormat('fr-GN', {
+      style: 'currency', currency: 'GNF', maximumFractionDigits: 0
+    }).format(montant);
+  }
+
+  getInitiales(): string {
+    const user = this.currentUser();
+    const prenom = this.patientProfil()?.utilisateur?.prenom ?? user?.prenom ?? '';
+    const nom    = this.patientProfil()?.utilisateur?.nom    ?? user?.nom    ?? '';
+    return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase() || '??';
+  }
+
+  getAllergies(): string {
+    const a = this.patientProfil()?.allergies;
+    if (!a || a.length === 0) return 'Aucune allergie connue';
+    return a.join(', ');
   }
 }
