@@ -64,7 +64,10 @@
       "STAT_ROUTES": "Routes",
       "STAT_ROLES": "Roles",
       "ERR_FIELDS": "Please fill in all fields.",
-      "ERR_CREDENTIALS": "Incorrect credentials. Please try again."
+      "ERR_CREDENTIALS": "Incorrect credentials. Please try again.",
+      "IDENTIFIANT": "Phone or Email",
+      "IDENTIFIANT_PLACEHOLDER": "Phone number or email address",
+      "IDENTIFIANT_HINT": "You can sign in with your phone number or email address"
     },
     "REGISTER": {
       "TITLE": "Create account",
@@ -90,7 +93,9 @@
       "ERR_PWD_MATCH": "Passwords do not match.",
       "ERR_GENERIC": "Error creating account.",
       "SHOW": "SHOW",
-      "HIDE": "HIDE"
+      "HIDE": "HIDE",
+      "EMAIL": "Email address",
+      "EMAIL_HINT": "Allows you to receive notifications and sign in with email"
     }
   },
   "LANDING": {

@@ -1,6 +1,4 @@
 <!-- features/auth/login/login.component.html -->
-<!-- Design split — panneau gauche décoratif + formulaire PrimeNG droite -->
-
 <div class="login-page">
   <div class="login-card">
 
@@ -11,17 +9,12 @@
       <div class="login-left__deco login-left__deco--3"></div>
 
       <div class="login-left__content">
-        <!-- Logo -->
         <div class="login-left__logo">
           <div class="login-left__logo-icon">🌳</div>
           <span class="login-left__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
-
-        <!-- Titre -->
         <h1 class="login-left__title">{{ 'AUTH.LOGIN.WELCOME_TITLE' | translate }}</h1>
         <p class="login-left__sub">{{ 'AUTH.LOGIN.WELCOME_SUBTITLE' | translate }}</p>
-
-        <!-- Stats -->
         <div class="login-left__stats">
           <div class="login-stat">
             <span class="login-stat__num">9</span>
@@ -38,9 +31,8 @@
         </div>
       </div>
 
-      <!-- Contrôles thème/langue -->
       <div class="login-left__controls">
-        <button class="ctrl-btn" (click)="toggleTheme()" [title]="'COMMON.DARK_MODE' | translate">
+        <button class="ctrl-btn" (click)="toggleTheme()">
           <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
         </button>
         <button class="ctrl-btn" (click)="toggleLang()">
@@ -57,7 +49,6 @@
         <h2 class="login-form__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h2>
         <p class="login-form__sub">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
 
-        <!-- Alerte erreur -->
         @if (errorMessage()) {
           <div class="bb-alert bb-alert--error">
             <i class="pi pi-exclamation-circle"></i>
@@ -67,27 +58,28 @@
 
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm" novalidate>
 
-          <!-- Téléphone -->
+          <!-- Téléphone OU Email — détection automatique -->
           <div class="form-field-wrap">
-            <label class="form-label" for="telephone">
-              {{ 'AUTH.LOGIN.PHONE' | translate }}
+            <label class="form-label" for="identifiant">
+              {{ 'AUTH.LOGIN.IDENTIFIANT' | translate }}
             </label>
             <div class="p-inputgroup">
               <span class="p-inputgroup-addon">
-                <i class="pi pi-phone"></i>
+                <i [class]="identifiantIcon"></i>
               </span>
               <input
                 pInputText
-                id="telephone"
-                type="tel"
-                [placeholder]="'AUTH.LOGIN.PHONE_PLACEHOLDER' | translate"
-                [(ngModel)]="formData.telephone"
-                name="telephone"
+                id="identifiant"
+                type="text"
+                placeholder="{{ 'AUTH.LOGIN.IDENTIFIANT_PLACEHOLDER' | translate }}"
+                [(ngModel)]="formData.identifiant"
+                name="identifiant"
                 required
-                autocomplete="tel"
+                autocomplete="username"
                 class="w-full"
               />
             </div>
+            <small class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
           </div>
 
           <!-- Mot de passe -->
@@ -114,7 +106,6 @@
                 type="button"
                 class="p-inputgroup-addon toggle-btn"
                 (click)="togglePassword()"
-                [attr.aria-label]="'AUTH.LOGIN.SHOW' | translate"
               >
                 <span class="toggle-label">
                   {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
@@ -133,14 +124,12 @@
             styleClass="w-full login-submit-btn"
           ></p-button>
 
-          <!-- Séparateur -->
           <div class="form-separator">
             <span class="form-separator__line"></span>
             <span class="form-separator__text">ou</span>
             <span class="form-separator__line"></span>
           </div>
 
-          <!-- Lien register -->
           <a routerLink="/auth/register" class="register-link">
             {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
           </a>

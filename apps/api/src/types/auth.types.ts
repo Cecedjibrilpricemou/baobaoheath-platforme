@@ -11,13 +11,16 @@ export interface TokenPair {
   refreshToken: string;
 }
 
+// Connexion par téléphone OU email
 export interface LoginDto {
-  telephone: string;
+  identifiant: string; // téléphone ou email
   motDePasse: string;
 }
 
+// Inscription — téléphone obligatoire, email optionnel
 export interface RegisterDto {
   telephone: string;
+  email?: string;        // ← NOUVEAU optionnel
   motDePasse: string;
   prenom: string;
   nom: string;

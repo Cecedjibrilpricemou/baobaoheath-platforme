@@ -64,7 +64,10 @@
       "STAT_ROUTES": "Routes",
       "STAT_ROLES": "Rôles",
       "ERR_FIELDS": "Veuillez remplir tous les champs.",
-      "ERR_CREDENTIALS": "Identifiants incorrects. Veuillez réessayer."
+      "ERR_CREDENTIALS": "Identifiants incorrects. Veuillez réessayer.",
+      "IDENTIFIANT": "Téléphone ou Email",
+      "IDENTIFIANT_PLACEHOLDER": "Téléphone ou adresse email",
+      "IDENTIFIANT_HINT": "Vous pouvez vous connecter avec votre téléphone ou votre email"
     },
     "REGISTER": {
       "TITLE": "Créer un compte",
@@ -90,7 +93,9 @@
       "ERR_PWD_MATCH": "Les mots de passe ne correspondent pas.",
       "ERR_GENERIC": "Erreur lors de la création du compte.",
       "SHOW": "VOIR",
-      "HIDE": "CACHER"
+      "HIDE": "CACHER",
+      "EMAIL": "Adresse email",
+      "EMAIL_HINT": "Permet de recevoir les notifications et de se connecter par email"
     }
   },
   "LANDING": {

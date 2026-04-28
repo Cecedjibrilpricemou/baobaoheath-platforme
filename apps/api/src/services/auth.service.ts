@@ -6,12 +6,19 @@ import { Role } from '../config/generated/client/client';
 import { randomUUID } from 'crypto';
 
 export async function register(dto: RegisterDto): Promise<TokenPair> {
-  const existing = await prisma.utilisateur.findUnique({
-    where: { telephone: dto.telephone },
-  });
 
-  if (existing) {
-    throw new Error('Ce numéro de téléphone est déjà utilisé');
+  // Vérifier unicité téléphone
+  const existingTel = await prisma.utilisateur.findUnique({
+    where: { telephone: dto.telephone }
+  });
+  if (existingTel) throw new Error('Ce numéro de téléphone est déjà utilisé');
+
+  // Vérifier unicité email si fourni
+  if (dto.email) {
+    const existingEmail = await prisma.utilisateur.findUnique({
+      where: { email: dto.email }
+    });
+    if (existingEmail) throw new Error('Cette adresse email est déjà utilisée');
   }
 
   const motDePasseHash = await hashPassword(dto.motDePasse);
@@ -20,6 +27,7 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
     const user = await tx.utilisateur.create({
       data: {
         telephone: dto.telephone,
+        email: dto.email ?? null,
         motDePasseHash,
         prenom: dto.prenom,
         nom: dto.nom,
@@ -42,17 +50,13 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
     }
 
     // ── ASC + ASC_SUPERVISOR ──────────────────────────────────
-    // Champs disponibles : idUtilisateur, zoneCouverture, numeroCertification, photoUrl, idSuperviseur, idStructure
     if (role === Role.ASC || role === Role.ASC_SUPERVISOR) {
       await tx.ascProfile.create({
-        data: {
-          idUtilisateur: user.id,
-        },
+        data: { idUtilisateur: user.id },
       });
     }
 
     // ── MEDECIN ───────────────────────────────────────────────
-    // Champs disponibles : idUtilisateur, numeroCom, specialite, photoUrl, idStructure
     if (role === Role.MEDECIN) {
       await tx.medecinProfile.create({
         data: {
@@ -63,11 +67,17 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
       });
     }
 
+    // ── PHARMACIEN ────────────────────────────────────────────
+    if (role === Role.PHARMACIEN) {
+      await tx.pharmacienProfile.create({
+        data: { idUtilisateur: user.id },
+      });
+    }
+
     return user;
   });
 
   const sessionId = randomUUID();
-
   const tokenPair = generateTokenPair({
     userId: utilisateur.id,
     role: utilisateur.role,
@@ -87,8 +97,13 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
 }
 
 export async function login(dto: LoginDto): Promise<TokenPair> {
+  // Détection automatique : email si contient @, sinon téléphone
+  const isEmail = dto.identifiant.includes('@');
+
   const utilisateur = await prisma.utilisateur.findUnique({
-    where: { telephone: dto.telephone },
+    where: isEmail
+      ? { email: dto.identifiant }
+      : { telephone: dto.identifiant },
   });
 
   if (!utilisateur || !utilisateur.estActif) {
@@ -96,13 +111,9 @@ export async function login(dto: LoginDto): Promise<TokenPair> {
   }
 
   const valid = await verifyPassword(dto.motDePasse, utilisateur.motDePasseHash);
-
-  if (!valid) {
-    throw new Error('Identifiants invalides');
-  }
+  if (!valid) throw new Error('Identifiants invalides');
 
   const sessionId = randomUUID();
-
   const tokenPair = generateTokenPair({
     userId: utilisateur.id,
     role: utilisateur.role,
@@ -127,9 +138,7 @@ export async function login(dto: LoginDto): Promise<TokenPair> {
 }
 
 export async function logout(sessionId: string): Promise<void> {
-  await prisma.session.deleteMany({
-    where: { id: sessionId },
-  });
+  await prisma.session.deleteMany({ where: { id: sessionId } });
 }
 
 export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
@@ -143,7 +152,6 @@ export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
   }
 
   const sessionId = randomUUID();
-
   const tokenPair = generateTokenPair({
     userId: session.utilisateur.id,
     role: session.utilisateur.role,
@@ -151,7 +159,6 @@ export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
   });
 
   await prisma.session.delete({ where: { id: session.id } });
-
   await prisma.session.create({
     data: {
       id: sessionId,
@@ -182,9 +189,6 @@ export async function getMe(userId: string) {
     },
   });
 
-  if (!utilisateur) {
-    throw new Error('Utilisateur non trouvé');
-  }
-
+  if (!utilisateur) throw new Error('Utilisateur non trouvé');
   return utilisateur;
 }

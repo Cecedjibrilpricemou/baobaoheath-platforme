@@ -26,31 +26,39 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  private authService = inject(AuthService);
-  private router      = inject(Router);
+  private authService   = inject(AuthService);
+  private router        = inject(Router);
   readonly themeService = inject(ThemeService);
   private i18nService   = inject(I18nService);
 
-  formData: LoginPayload = { telephone: '', motDePasse: '' };
+  // identifiant = téléphone ou email — détection automatique côté backend
+  formData: LoginPayload = { identifiant: '', motDePasse: '' };
 
   isLoading    = signal(false);
   errorMessage = signal('');
   showPassword = signal(false);
+
+  // Placeholder dynamique selon ce que l'utilisateur saisit
+  get identifiantPlaceholder(): string {
+    return this.i18nService.t('AUTH.LOGIN.PLACEHOLDER_IDENTIFIANT');
+  }
+
+  get identifiantIcon(): string {
+    return this.formData.identifiant.includes('@') ? 'pi pi-envelope' : 'pi pi-phone';
+  }
 
   togglePassword() { this.showPassword.update(v => !v); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
 
   onSubmit() {
-    if (!this.formData.telephone || !this.formData.motDePasse) {
+    if (!this.formData.identifiant || !this.formData.motDePasse) {
       this.errorMessage.set(this.i18nService.t('AUTH.LOGIN.ERR_FIELDS'));
       return;
     }
     this.errorMessage.set('');
     this.isLoading.set(true);
 
-    // login() retourne maintenant un Observable<User> via switchMap
-    // plus de setTimeout fragile — le redirect se fait quand l'utilisateur est chargé
     this.authService.login(this.formData).subscribe({
       next: (user) => {
         this.isLoading.set(false);
@@ -71,8 +79,8 @@ export class LoginComponent {
       ASC:              '/asc/consultations',
       ASC_SUPERVISOR:   '/asc/consultations',
       MEDECIN:          '/medecin/dashboard',
-      PHARMACIEN:       '/medecin/dashboard',
-      ADMIN_STRUCTURE:  '/admin/analytics',
+      PHARMACIEN:       '/pharmacien/scanner',
+      ADMIN_STRUCTURE:  '/admin-structure/dashboard',
       ADMIN_REGIONAL:   '/admin/analytics',
       ADMIN_NATIONAL:   '/admin/analytics',
       SUPER_ADMIN:      '/admin/analytics'

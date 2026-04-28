@@ -26,22 +26,23 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
   styleUrl: './register.component.scss'
 })
 export class RegisterComponent {
-  private authService  = inject(AuthService);
-  private router       = inject(Router);
+  private authService   = inject(AuthService);
+  private router        = inject(Router);
   readonly themeService = inject(ThemeService);
   private i18nService   = inject(I18nService);
 
   formData: RegisterPayload = {
-    nom: '', prenom: '', telephone: '', motDePasse: '', role: 'PATIENT'
+    nom: '', prenom: '', telephone: '', email: '', motDePasse: '', role: 'PATIENT'
   };
   confirmMotDePasse = '';
 
-  isLoading            = signal(false);
-  errorMessage         = signal('');
-  successMessage       = signal('');
-  showPassword         = signal(false);
-  showConfirmPassword  = signal(false);
+  isLoading           = signal(false);
+  errorMessage        = signal('');
+  successMessage      = signal('');
+  showPassword        = signal(false);
+  showConfirmPassword = signal(false);
 
+  // Seuls les rôles créables par le patient lui-même
   rolesDisponibles: { value: Role; label: string; icon: string }[] = [
     { value: 'PATIENT',    label: 'Patient',        icon: 'pi-user'        },
     { value: 'ASC',        label: 'Agent de Santé', icon: 'pi-heart'       },
@@ -56,18 +57,21 @@ export class RegisterComponent {
   toggleLang()            { this.i18nService.toggle(); }
 
   private validate(): boolean {
-    const t = (k: string) => this.i18nService.t(k);
     if (!this.formData.nom || !this.formData.prenom) {
-      this.errorMessage.set(t('AUTH.REGISTER.ERR_NAME')); return false;
+      this.errorMessage.set('Veuillez saisir votre nom et prénom.'); return false;
     }
     if (!this.formData.telephone) {
-      this.errorMessage.set(t('AUTH.REGISTER.ERR_PHONE')); return false;
+      this.errorMessage.set('Le numéro de téléphone est obligatoire.'); return false;
+    }
+    // Validation email si fourni
+    if (this.formData.email && !this.formData.email.includes('@')) {
+      this.errorMessage.set('L\'adresse email n\'est pas valide.'); return false;
     }
     if (this.formData.motDePasse.length < 6) {
-      this.errorMessage.set(t('AUTH.REGISTER.ERR_PWD_SHORT')); return false;
+      this.errorMessage.set('Le mot de passe doit contenir au moins 6 caractères.'); return false;
     }
     if (this.formData.motDePasse !== this.confirmMotDePasse) {
-      this.errorMessage.set(t('AUTH.REGISTER.ERR_PWD_MATCH')); return false;
+      this.errorMessage.set('Les mots de passe ne correspondent pas.'); return false;
     }
     return true;
   }
@@ -78,17 +82,23 @@ export class RegisterComponent {
     if (!this.validate()) return;
 
     this.isLoading.set(true);
-    // register() retourne un Observable<User> — redirect après chargement réel du profil
-    this.authService.register(this.formData).subscribe({
-      next: (user) => {
+
+    // Nettoyer email vide avant envoi
+    const payload: RegisterPayload = {
+      ...this.formData,
+      email: this.formData.email?.trim() || undefined
+    };
+
+    this.authService.register(payload).subscribe({
+      next: () => {
         this.isLoading.set(false);
-        this.successMessage.set(this.i18nService.t('AUTH.REGISTER.SUCCESS'));
+        this.successMessage.set('Compte créé avec succès ! Redirection...');
         setTimeout(() => this.router.navigate(['/auth/login']), 1500);
       },
       error: (err) => {
         this.isLoading.set(false);
         this.errorMessage.set(
-          err?.error?.message ?? err?.error?.error ?? this.i18nService.t('AUTH.REGISTER.ERR_GENERIC')
+          err?.error?.message ?? err?.error?.error ?? 'Une erreur est survenue.'
         );
       }
     });

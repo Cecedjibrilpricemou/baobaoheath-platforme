@@ -12,11 +12,8 @@
           <div class="register-left__logo-icon">🌳</div>
           <span class="register-left__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
-
         <h1 class="register-left__title">{{ 'AUTH.REGISTER.WELCOME_TITLE' | translate }}</h1>
         <p class="register-left__sub">{{ 'AUTH.REGISTER.WELCOME_SUBTITLE' | translate }}</p>
-
-        <!-- Rôles disponibles -->
         <div class="register-left__roles">
           <div class="role-badge"><i class="pi pi-user"></i> Patient</div>
           <div class="role-badge"><i class="pi pi-heart"></i> Agent ASC</div>
@@ -25,7 +22,6 @@
         </div>
       </div>
 
-      <!-- Contrôles thème/langue -->
       <div class="register-left__controls">
         <button class="ctrl-btn" (click)="toggleTheme()">
           <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
@@ -44,7 +40,6 @@
         <h2 class="register-form__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h2>
         <p class="register-form__sub">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
 
-        <!-- Alertes -->
         @if (errorMessage()) {
           <div class="bb-alert bb-alert--error">
             <i class="pi pi-exclamation-circle"></i>
@@ -98,15 +93,33 @@
             </div>
           </div>
 
-          <!-- Téléphone -->
+          <!-- Téléphone (obligatoire) -->
           <div class="form-field-wrap">
-            <label class="form-label" for="telephone">{{ 'AUTH.REGISTER.PHONE' | translate }}</label>
+            <label class="form-label" for="telephone">
+              {{ 'AUTH.REGISTER.PHONE' | translate }}
+              <span class="form-required">*</span>
+            </label>
             <div class="p-inputgroup">
               <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
               <input pInputText id="telephone" type="tel"
-                [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate"
+                placeholder="Ex: 620123456"
                 [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel" />
             </div>
+          </div>
+
+          <!-- Email (optionnel) -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="email">
+              {{ 'AUTH.REGISTER.EMAIL' | translate }}
+              <span class="form-optional">(optionnel)</span>
+            </label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon"><i class="pi pi-envelope"></i></span>
+              <input pInputText id="email" type="email"
+                placeholder="Ex: mamadou@email.com"
+                [(ngModel)]="formData.email" name="email" autocomplete="email" />
+            </div>
+            <small class="form-hint">{{ 'AUTH.REGISTER.EMAIL_HINT' | translate }}</small>
           </div>
 
           <!-- Mot de passe -->
@@ -116,7 +129,7 @@
               <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
               <input pInputText id="motDePasse"
                 [type]="showPassword() ? 'text' : 'password'"
-                [placeholder]="'AUTH.REGISTER.PASSWORD_PLACEHOLDER' | translate"
+                placeholder="Minimum 6 caractères"
                 [(ngModel)]="formData.motDePasse" name="motDePasse"
                 required autocomplete="new-password" />
               <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()">
@@ -134,7 +147,7 @@
               <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
               <input pInputText id="confirmMotDePasse"
                 [type]="showConfirmPassword() ? 'text' : 'password'"
-                [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate"
+                placeholder="Répétez le mot de passe"
                 [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse"
                 required autocomplete="new-password" />
               <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()">
@@ -155,7 +168,6 @@
             styleClass="w-full register-submit-btn"
           ></p-button>
 
-          <!-- Séparateur -->
           <div class="form-separator">
             <span class="form-separator__line"></span>
             <span class="form-separator__text">ou</span>
@@ -167,7 +179,6 @@
           </a>
 
         </form>
-
       </div>
     </div>
 

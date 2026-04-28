@@ -1,25 +1,14 @@
 // core/services/auth.service.ts
-// Adapté au format de réponse du backend BaoBaoHealth
-// Format login/register : { success: true, data: { accessToken, refreshToken } }
-// Format /me           : { success: true, data: User }
-
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { tap, map, switchMap } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import {
-  User,
-  LoginPayload,
-  RegisterPayload
-} from '../models/user.model';
+import { User, LoginPayload, RegisterPayload } from '../models/user.model';
 
 interface BackendTokenResponse {
   success: boolean;
-  data: {
-    accessToken: string;
-    refreshToken: string;
-  };
+  data: { accessToken: string; refreshToken: string; };
 }
 
 interface BackendMeResponse {
@@ -27,25 +16,18 @@ interface BackendMeResponse {
   data: User;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private api = inject(ApiService);
   private router = inject(Router);
 
-  // Signals
   private _currentUser = signal<User | null>(this.loadUserFromStorage());
   private _accessToken = signal<string | null>(localStorage.getItem('accessToken'));
 
-  // Computed
   currentUser     = this._currentUser.asReadonly();
   isAuthenticated = computed(() => !!this._currentUser());
   userRole        = computed(() => this._currentUser()?.role ?? null);
 
-  // --- Auth ---
-
-  // Retourne Observable<User> — plus de setTimeout fragile
   login(payload: LoginPayload): Observable<User> {
     return this.api.post<BackendTokenResponse>('/auth/login', payload).pipe(
       tap(response => {
@@ -86,7 +68,6 @@ export class AuthService {
     );
   }
 
-  // Appel HTTP à /auth/me + mise à jour du signal
   fetchCurrentUser(): Observable<User> {
     return this.api.get<BackendMeResponse>('/auth/me').pipe(
       map(response => response.data),
@@ -99,11 +80,7 @@ export class AuthService {
     );
   }
 
-  getAccessToken(): string | null {
-    return this._accessToken();
-  }
-
-  // --- Helpers privés ---
+  getAccessToken(): string | null { return this._accessToken(); }
 
   private handleAuthSuccess(accessToken: string, refreshToken: string) {
     localStorage.setItem('accessToken', accessToken);

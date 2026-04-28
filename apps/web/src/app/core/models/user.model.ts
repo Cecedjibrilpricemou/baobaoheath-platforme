@@ -1,6 +1,4 @@
 // core/models/user.model.ts
-// Champs alignés avec le backend BaoBaoHealth (Prisma schema Utilisateur)
-
 export type Role =
   | 'PATIENT'
   | 'ASC'
@@ -21,9 +19,9 @@ export interface User {
   role: Role;
   langue: string;
   photoUrl?: string;
-  estActif: boolean;   // était "actif" — champ réel backend
-  creeLe: string;      // était "createdAt" — champ réel backend
-  modifieLe: string;   // était "updatedAt" — champ réel backend
+  estActif: boolean;
+  creeLe: string;
+  modifieLe: string;
 }
 
 export interface AuthTokens {
@@ -36,13 +34,16 @@ export interface AuthResponse {
   tokens: AuthTokens;
 }
 
+// Connexion par téléphone OU email
 export interface LoginPayload {
-  telephone: string;
+  identifiant: string; // téléphone ou email
   motDePasse: string;
 }
 
+// Inscription — téléphone obligatoire, email optionnel
 export interface RegisterPayload {
   telephone: string;
+  email?: string;        // ← NOUVEAU optionnel
   motDePasse: string;
   nom: string;
   prenom: string;
