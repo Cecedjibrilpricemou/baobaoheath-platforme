@@ -1,3 +1,4 @@
+import { prisma } from '../config/prisma';
 import { Request, Response } from 'express';
 import * as patientService from '../services/patient.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
@@ -128,5 +129,23 @@ export async function exportDossierController(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erreur serveur';
     res.status(404).json({ success: false, error: message });
+  }
+}
+export async function updateStructurePrefereeController(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { idStructure } = req.body;
+    const patient = await prisma.patientProfile.findUnique({
+      where: { idUtilisateur: req.user!.userId }
+    });
+    if (!patient) { res.status(404).json({ success: false, error: 'Profil patient non trouvé' }); return; }
+    const updated = await prisma.patientProfile.update({
+      where: { idUtilisateur: req.user!.userId },
+      data: { idStructurePreferee: idStructure ?? null },
+      include: { structurePreferee: { select: { nom: true, type: true, prefecture: true } } }
+    });
+    res.status(200).json({ success: true, data: updated, message: idStructure ? 'Structure préférée mise à jour' : 'Structure préférée supprimée' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erreur serveur';
+    res.status(400).json({ success: false, error: message });
   }
 }

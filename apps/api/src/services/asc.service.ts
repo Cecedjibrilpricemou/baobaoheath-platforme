@@ -86,28 +86,43 @@ export async function updateAscProfile(
 export async function getAscPatients(userId: string) {
     const asc = await prisma.ascProfile.findUnique({
         where: { idUtilisateur: userId },
-        include: { consultations: { select: { idPatient: true } } },
+        include: {
+            structure: true,
+            consultations: { select: { idPatient: true } }
+        },
     });
 
-    if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+    if (!asc) throw new Error('Profil ASC non trouvé');
+
+    // ── MODELE HYBRIDE ────────────────────────────────────────
+    const conditions: any[] = [];
+
+    // 1. Patient a choisi la structure de l'ASC
+    if (asc.idStructure) {
+        conditions.push({ idStructurePreferee: asc.idStructure });
     }
 
-    const idPatients = [
-        ...new Set(asc.consultations.map((c) => c.idPatient)),
-    ];
+    // 2. Patient dans la même préfecture sans structure choisie
+    if (asc.structure?.prefecture) {
+        conditions.push({ prefecture: asc.structure.prefecture, idStructurePreferee: null });
+    }
+
+    // 3. ASC est l'ASC principal du patient
+    conditions.push({ idAscPrincipal: asc.id });
+
+    // 4. Patients déjà consultés par cet ASC
+    const idPatientsConsultes = [...new Set(asc.consultations.map((c) => c.idPatient))];
+    if (idPatientsConsultes.length > 0) {
+        conditions.push({ id: { in: idPatientsConsultes } });
+    }
 
     const patients = await prisma.patientProfile.findMany({
-        where: { id: { in: idPatients } },
+        where: conditions.length > 0 ? { OR: conditions } : {},
         include: {
             utilisateur: {
-                select: {
-                    prenom: true,
-                    nom: true,
-                    telephone: true,
-                    photoUrl: true,
-                },
+                select: { prenom: true, nom: true, telephone: true, photoUrl: true },
             },
+            structurePreferee: { select: { nom: true, type: true } }
         },
         orderBy: { creeLe: 'desc' },
     });

@@ -33,29 +33,29 @@ async function main() {
 
   console.log(`✅ ${structures.length} structures créées\n`);
 
-  const chuConakry = structures[0];
-  const centreMatam = structures[2];
+  const chuConakry        = structures[0];
+  const centreMatam       = structures[2];
   const pharmacieCentrale = structures[8];
 
   // ── 2. MEDICAMENTS AVEC PRIX GUINEE ──────────────────────────
   console.log('💊 Création des médicaments...');
 
   await Promise.all([
-    upsertMedicament('Paracétamol', '500mg', 'comprimé', 'Antipyrétique', 2500, true),
-    upsertMedicament('Amoxicilline', '500mg', 'gélule', 'Antibiotique', 5000, true),
-    upsertMedicament('Artéméther-Luméfantrine', '80/480mg', 'comprimé', 'Antipaludéen', 45000, true),
-    upsertMedicament('Métronidazole', '250mg', 'comprimé', 'Antibiotique', 3000, true),
-    upsertMedicament('Ibuprofène', '400mg', 'comprimé', 'Anti-inflammatoire', 3500, true),
-    upsertMedicament('Oméprazole', '20mg', 'gélule', 'Gastroprotecteur', 8000, false),
-    upsertMedicament('Cotrimoxazole', '480mg', 'comprimé', 'Antibiotique', 2000, true),
-    upsertMedicament('Fer + Acide folique', '200mg', 'comprimé', 'Supplément', 1500, true),
-    upsertMedicament('Vitamine C', '500mg', 'comprimé', 'Supplément', 1000, false),
-    upsertMedicament('SRO', '1L', 'sachet', 'Réhydratation', 5000, true),
-    upsertMedicament('Mébendazole', '500mg', 'comprimé', 'Antiparasitaire', 8000, true),
-    upsertMedicament('Doxycycline', '100mg', 'gélule', 'Antibiotique', 4000, false),
-    upsertMedicament('Chloroquine', '100mg', 'comprimé', 'Antipaludéen', 2500, true),
-    upsertMedicament('Amoxicilline + Ac.Clav.', '625mg', 'comprimé', 'Antibiotique', 12000, false),
-    upsertMedicament('Diazépam', '5mg', 'comprimé', 'Anxiolytique', 15000, false),
+    upsertMedicament('Paracétamol',             '500mg',    'comprimé', 'Antipyrétique',      2500,  true),
+    upsertMedicament('Amoxicilline',            '500mg',    'gélule',   'Antibiotique',       5000,  true),
+    upsertMedicament('Artéméther-Luméfantrine', '80/480mg', 'comprimé', 'Antipaludéen',      45000,  true),
+    upsertMedicament('Métronidazole',           '250mg',    'comprimé', 'Antibiotique',       3000,  true),
+    upsertMedicament('Ibuprofène',              '400mg',    'comprimé', 'Anti-inflammatoire', 3500,  true),
+    upsertMedicament('Oméprazole',              '20mg',     'gélule',   'Gastroprotecteur',   8000,  false),
+    upsertMedicament('Cotrimoxazole',           '480mg',    'comprimé', 'Antibiotique',       2000,  true),
+    upsertMedicament('Fer + Acide folique',     '200mg',    'comprimé', 'Supplément',         1500,  true),
+    upsertMedicament('Vitamine C',              '500mg',    'comprimé', 'Supplément',         1000,  false),
+    upsertMedicament('SRO',                     '1L',       'sachet',   'Réhydratation',      5000,  true),
+    upsertMedicament('Mébendazole',             '500mg',    'comprimé', 'Antiparasitaire',    8000,  true),
+    upsertMedicament('Doxycycline',             '100mg',    'gélule',   'Antibiotique',       4000,  false),
+    upsertMedicament('Chloroquine',             '100mg',    'comprimé', 'Antipaludéen',       2500,  true),
+    upsertMedicament('Amoxicilline + Ac.Clav.', '625mg',   'comprimé', 'Antibiotique',      12000,  false),
+    upsertMedicament('Diazépam',               '5mg',       'comprimé', 'Anxiolytique',      15000,  false),
   ]);
 
   console.log('✅ Médicaments créés\n');

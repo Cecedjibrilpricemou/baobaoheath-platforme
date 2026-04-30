@@ -57,7 +57,7 @@ enum TypeStructure {
   HOPITAL_REG
   CHU
   CLINIQUE
-  PHARMACIE        // ← NOUVEAU
+  PHARMACIE
 }
 
 enum StatutOrdonnance {
@@ -76,21 +76,22 @@ enum ModePaiement {
 // ─── DOMAINE 1 — UTILISATEURS & ACCES ────────────────────
 
 model Utilisateur {
-  id                String    @id @default(cuid())
-  telephone         String    @unique
-  email             String?   @unique
-  motDePasseHash    String
-  role              Role
-  prenom            String
-  nom               String
-  langue            String    @default("fr")
-  photoUrl          String?
-  estActif          Boolean   @default(true)
-  twoFaActive       Boolean   @default(false)
-  twoFaSecret       String?
-  derniereConnexion DateTime?
-  creeLe            DateTime  @default(now())
-  modifieLe         DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  telephone             String    @unique
+  email                 String?   @unique
+  motDePasseHash        String
+  role                  Role
+  prenom                String
+  nom                   String
+  langue                String    @default("fr")
+  photoUrl              String?
+  estActif              Boolean   @default(true)
+  twoFaActive           Boolean   @default(false)
+  twoFaSecret           String?
+  doitChangerMotDePasse Boolean   @default(false) // ← NOUVEAU : forcer changement MDP au 1er login
+  derniereConnexion     DateTime?
+  creeLe                DateTime  @default(now())
+  modifieLe             DateTime  @updatedAt
 
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
@@ -101,12 +102,12 @@ model Utilisateur {
   pharmacienProfile    PharmacienProfile?
   sessions             Session[]
   auditLogs            JournalAudit[]
-  messagesEnvoyes      Message[]       @relation("Expediteur")
-  messagesRecus        Message[]       @relation("Destinataire")
-  consultationsSigne   Consultation[]  @relation("MedecinValideur")
-  ordonnancesSigne     Ordonnance[]    @relation("MedecinSignataire")
+  messagesEnvoyes      Message[]          @relation("Expediteur")
+  messagesRecus        Message[]          @relation("Destinataire")
+  consultationsSigne   Consultation[]     @relation("MedecinValideur")
+  ordonnancesSigne     Ordonnance[]       @relation("MedecinSignataire")
   vaccinsAdministres   Vaccination[]
-  referencementsValide Referencement[] @relation("MedecinValideurRef")
+  referencementsValide Referencement[]    @relation("MedecinValideurRef")
 
   @@map("utilisateurs")
 }
@@ -144,25 +145,25 @@ model JournalAudit {
 // ─── DOMAINE 2 — ACTEURS DE SANTE ────────────────────────
 
 model StructureSante {
-  id          String        @id @default(cuid())
-  nom         String
-  type        TypeStructure
-  prefecture  String
-  adresse     String?
-  latitude    Float?
-  longitude   Float?
-  telephone   String?
-  photoUrl    String?
-  estActive   Boolean       @default(true)
-  creeLe      DateTime      @default(now())
+  id         String        @id @default(cuid())
+  nom        String
+  type       TypeStructure
+  prefecture String
+  adresse    String?
+  latitude   Float?
+  longitude  Float?
+  telephone  String?
+  photoUrl   String?
+  estActive  Boolean       @default(true)
+  creeLe     DateTime      @default(now())
 
-  utilisateurs            Utilisateur[]
-  ascProfiles             AscProfile[]
-  medecinProfiles         MedecinProfile[]
-  pharmacienProfiles      PharmacienProfile[]
-  patientsPreferent       PatientProfile[]    @relation("StructurePreferee")
-  referencementsSource    Referencement[]     @relation("StructureSource")
-  referencementsCible     Referencement[]     @relation("StructureCible")
+  utilisateurs         Utilisateur[]
+  ascProfiles          AscProfile[]
+  medecinProfiles      MedecinProfile[]
+  pharmacienProfiles   PharmacienProfile[]
+  patientsPreferent    PatientProfile[]    @relation("StructurePreferee")
+  referencementsSource Referencement[]     @relation("StructureSource")
+  referencementsCible  Referencement[]     @relation("StructureCible")
 
   @@map("structures")
 }
@@ -190,11 +191,9 @@ model PatientProfile {
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   // ── MODELE HYBRIDE ────────────────────────────────────────
-  // Structure préférée choisie par le patient (optionnel)
   idStructurePreferee String?
   structurePreferee   StructureSante? @relation("StructurePreferee", fields: [idStructurePreferee], references: [id])
 
-  // ASC attitré du patient (optionnel)
   idAscPrincipal String?
   ascPrincipal   AscProfile? @relation("PatientAscPrincipal", fields: [idAscPrincipal], references: [id])
 
@@ -223,23 +222,23 @@ model AscProfile {
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
-  consultations  Consultation[]
-  stocks         Stock[]
-  rendezVous     RendezVous[]
+  consultations    Consultation[]
+  stocks           Stock[]
+  rendezVous       RendezVous[]
   patientsAttitres PatientProfile[] @relation("PatientAscPrincipal")
 
   @@map("profils_asc")
 }
 
 model MedecinProfile {
-  id          String   @id @default(cuid())
-  numeroCom   String?
-  specialite  String?
-  photoUrl    String?
-  creeLe      DateTime @default(now())
+  id         String   @id @default(cuid())
+  numeroCom  String?
+  specialite String?
+  photoUrl   String?
+  creeLe     DateTime @default(now())
 
-  idUtilisateur String         @unique
-  utilisateur   Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+  idUtilisateur String      @unique
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
@@ -247,7 +246,6 @@ model MedecinProfile {
   @@map("profils_medecin")
 }
 
-// ── NOUVEAU : PharmacienProfile ───────────────────────────
 model PharmacienProfile {
   id       String   @id @default(cuid())
   photoUrl String?
@@ -338,16 +336,16 @@ model Diagnostic {
 }
 
 model Medicament {
-  id               String   @id @default(cuid())
+  id               String  @id @default(cuid())
   dci              String
   nomCommercial    String?
   forme            String
   dosage           String
   categorie        String?
   imageUrl         String?
-  listeEssentielle Boolean  @default(false)
-  estActif         Boolean  @default(true)
-  prixUnitaireGnf  Int      @default(0) // ← NOUVEAU : prix national de référence en GNF
+  listeEssentielle Boolean @default(false)
+  estActif         Boolean @default(true)
+  prixUnitaireGnf  Int     @default(0)
 
   ordonnances Ordonnance[]
   stocks      Stock[]
@@ -360,7 +358,7 @@ model Ordonnance {
   posologie    String
   frequence    String
   dureeJours   Int
-  quantite     Int              @default(1) // ← NOUVEAU : quantité à délivrer
+  quantite     Int              @default(1)
   instructions String?
   statut       StatutOrdonnance @default(EN_ATTENTE)
   urlDocument  String?
@@ -380,15 +378,15 @@ model Ordonnance {
 }
 
 model Vaccination {
-  id              String    @id @default(cuid())
-  vaccinNom       String
-  codeEpi         String?
-  numeroLot       String?
-  siteInjection   String?
-  reaction        String?
-  urlCertificat   String?
-  dateProchaineD  DateTime?
-  administreLe    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  vaccinNom      String
+  codeEpi        String?
+  numeroLot      String?
+  siteInjection  String?
+  reaction       String?
+  urlCertificat  String?
+  dateProchaineD DateTime?
+  administreLe   DateTime  @default(now())
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -470,13 +468,13 @@ model Message {
 // ─── DOMAINE 5 — GESTION OPERATIONNELLE ──────────────────
 
 model Stock {
-  id              String    @id @default(cuid())
-  quantite        Int       @default(0)
-  seuilAlerte     Int       @default(10)
-  unite           String
-  datePeremption  DateTime?
-  margeGnf        Int       @default(0) // ← NOUVEAU : marge appliquée par la pharmacie
-  modifieLe       DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  quantite       Int       @default(0)
+  seuilAlerte    Int       @default(10)
+  unite          String
+  datePeremption DateTime?
+  margeGnf       Int       @default(0)
+  modifieLe      DateTime  @updatedAt
 
   idAsc String
   asc   AscProfile @relation(fields: [idAsc], references: [id], onDelete: Restrict)
@@ -492,7 +490,7 @@ model Facture {
   id                 String        @id @default(cuid())
   montantGnf         Int
   statut             InvoiceStatus @default(EN_ATTENTE)
-  modePaiement       ModePaiement? // ← NOUVEAU : enum au lieu de String
+  modePaiement       ModePaiement?
   referenceOperateur String?       @unique
   numeroOperateur    String?
   urlRecu            String?
