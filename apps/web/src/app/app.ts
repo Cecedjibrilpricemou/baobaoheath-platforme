@@ -1,13 +1,17 @@
-import { Component } from '@angular/core';
+// app.ts — BaoBaoHealth v2
+// Injecte ThemeService au démarrage pour appliquer le thème stocké
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ThemeService } from './shared/services/theme.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.scss'
+  template: '<router-outlet />',
+  styles: []
 })
 export class AppComponent {
-  title = 'BaoBaoHealth';
+  // Injection suffit : ThemeService applique le thème via effect() dans son constructeur
+  readonly theme = inject(ThemeService);
 }

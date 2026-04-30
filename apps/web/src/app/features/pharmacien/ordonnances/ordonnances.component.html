@@ -1,0 +1,159 @@
+<!-- features/pharmacien/ordonnances/ordonnances.component.html -->
+<div class="bb-ordo">
+
+  <!-- Header -->
+  <div class="bb-ordo__header">
+    <button class="bb-ordo__back" (click)="retourScanner()">
+      <i class="pi pi-arrow-left"></i> Retour au scanner
+    </button>
+    @if (patient()) {
+      <div class="bb-ordo__patient">
+        <div class="bb-ordo__patient-avatar">
+          {{ patient()!.prenom.charAt(0) }}{{ patient()!.nom.charAt(0) }}
+        </div>
+        <div>
+          <h1 class="bb-ordo__patient-name">{{ patient()!.prenom }} {{ patient()!.nom }}</h1>
+          @if (patient()!.groupeSanguin) {
+            <span class="bb-ordo__blood">🩸 {{ patient()!.groupeSanguin }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Messages -->
+  @if (successMessage()) {
+    <div class="bb-ordo__alert bb-ordo__alert--success">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="bb-ordo__alert bb-ordo__alert--error">
+      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Allergies -->
+  @if (patient()?.allergiesCritiques?.length) {
+    <div class="bb-ordo__allergies">
+      <i class="pi pi-exclamation-triangle"></i>
+      <strong>Allergies :</strong> {{ patient()!.allergiesCritiques.join(', ') }}
+    </div>
+  }
+
+  <div class="bb-ordo__layout">
+
+    <!-- Liste ordonnances -->
+    <div class="bb-ordo__list">
+      <h2 class="bb-ordo__list-title">Ordonnances à délivrer ({{ ordonnances().length }})</h2>
+
+      @if (ordonnances().length === 0) {
+        <div class="bb-ordo__empty">
+          <i class="pi pi-check-circle"></i>
+          <p>Toutes les ordonnances ont été délivrées</p>
+          <button class="bb-ordo__scanner-btn" (click)="retourScanner()">
+            Nouveau scan
+          </button>
+        </div>
+      } @else {
+        @for (o of ordonnances(); track o.id) {
+          <div
+            class="bb-ordo__item"
+            [class.bb-ordo__item--selected]="selected()?.id === o.id"
+            [class.bb-ordo__item--alerte]="o.alerteAllergie"
+            (click)="selectionner(o)"
+          >
+            @if (o.alerteAllergie) {
+              <div class="bb-ordo__item-alerte">
+                <i class="pi pi-exclamation-triangle"></i> Alerte allergie
+              </div>
+            }
+            <div class="bb-ordo__item-content">
+              <div class="bb-ordo__item-left">
+                <span class="bb-ordo__item-med">
+                  {{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}
+                </span>
+                <span class="bb-ordo__item-details">
+                  {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j · Qté: {{ o.quantite }}
+                </span>
+                <span class="bb-ordo__item-medecin">{{ o.medecinNom }} · {{ formatDate(o.signeLe) }}</span>
+              </div>
+              <span class="bb-ordo__item-prix">{{ formatMontant(o.prixTotalGnf) }}</span>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Formulaire de délivrance -->
+    @if (selected()) {
+      <div class="bb-ordo__form">
+        <h3 class="bb-ordo__form-title">
+          <i class="pi pi-check-circle"></i> Délivrance
+        </h3>
+
+        <div class="bb-ordo__form-med">
+          <strong>{{ selected()!.medicament.nomCommercial ?? selected()!.medicament.dci }}</strong>
+          <span>{{ selected()!.medicament.dosage }} — {{ selected()!.medicament.forme }}</span>
+        </div>
+
+        <!-- Quantité -->
+        <div class="bb-ordo__form-field">
+          <label>Quantité à délivrer (max {{ selected()!.quantite }})</label>
+          <p-inputnumber
+            [(ngModel)]="quantiteDelivree"
+            [min]="1"
+            [max]="selected()!.quantite"
+          />
+        </div>
+
+        <!-- Mode de paiement -->
+        <div class="bb-ordo__form-field">
+          <label>Mode de paiement</label>
+          <div class="bb-ordo__modes">
+            @for (mode of modesPaiement; track mode.value) {
+              <div
+                class="bb-ordo__mode"
+                [class.bb-ordo__mode--selected]="modePaiement === mode.value"
+                (click)="modePaiement = mode.value"
+              >
+                <p-radiobutton
+                  [value]="mode.value"
+                  [(ngModel)]="modePaiement"
+                  [inputId]="mode.value"
+                />
+                <label [for]="mode.value">{{ mode.label }}</label>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Montant calculé -->
+        <div class="bb-ordo__montant">
+          <span>Montant à encaisser</span>
+          <span class="bb-ordo__montant-value">
+            {{ formatMontant(getMontantAvecQuantite(selected()!)) }}
+          </span>
+        </div>
+
+        <!-- Boutons -->
+        <div class="bb-ordo__form-actions">
+          <button class="bb-ordo__cancel-btn" (click)="annuler()">Annuler</button>
+          <button
+            class="bb-ordo__deliver-btn"
+            (click)="delivrer()"
+            [disabled]="isDelivering() || selected()!.alerteAllergie"
+          >
+            <i [class]="isDelivering() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"></i>
+            {{ isDelivering() ? 'Délivrance...' : 'Confirmer la délivrance' }}
+          </button>
+        </div>
+
+        @if (selected()!.alerteAllergie) {
+          <p class="bb-ordo__alerte-note">
+            ⚠️ Délivrance bloquée — Contactez le médecin prescripteur avant de délivrer ce médicament.
+          </p>
+        }
+      </div>
+    }
+
+  </div>
+</div>

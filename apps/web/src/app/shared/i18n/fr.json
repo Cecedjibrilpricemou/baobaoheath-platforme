@@ -67,7 +67,8 @@
       "ERR_CREDENTIALS": "Identifiants incorrects. Veuillez réessayer.",
       "IDENTIFIANT": "Téléphone ou Email",
       "IDENTIFIANT_PLACEHOLDER": "Téléphone ou adresse email",
-      "IDENTIFIANT_HINT": "Vous pouvez vous connecter avec votre téléphone ou votre email"
+      "IDENTIFIANT_HINT": "Vous pouvez vous connecter avec votre téléphone ou votre email",
+      "PLACEHOLDER_IDENTIFIANT": "Téléphone ou adresse email"
     },
     "REGISTER": {
       "TITLE": "Créer un compte",
@@ -145,7 +146,9 @@
     "ROLE": "Patient",
     "NAV_DASHBOARD": "Dashboard",
     "NAV_PROFILE": "Mon Profil",
+    "NAV_PROFIL": "Mon Profil",
     "NAV_QR": "QR Code",
+    "NAV_QR_CODE": "Mon QR Code",
     "DASHBOARD": {
       "GREETING": "Bonjour 👋",
       "SUBTITLE": "Votre espace santé personnel",
@@ -285,9 +288,21 @@
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_MESSAGERIE": "Messagerie"
   },
+  "PHARMACIEN": {
+    "ROLE": "Pharmacien",
+    "NAV_SCANNER": "Scanner QR Code",
+    "NAV_ORDONNANCES": "Ordonnances",
+    "NAV_STOCKS": "Stocks"
+  },
   "ADMIN": {
     "ROLE": "Administrateur",
     "NAV_ANALYTICS": "Analytics",
-    "NAV_EXPORT": "Export DHIS2"
+    "NAV_EXPORT": "Export DHIS2",
+    "NAV_STRUCTURES": "Structures"
+  },
+  "ADMIN_STRUCTURE": {
+    "ROLE": "Admin Structure",
+    "NAV_DASHBOARD": "Dashboard",
+    "NAV_AGENTS": "Mes Agents"
   }
 }

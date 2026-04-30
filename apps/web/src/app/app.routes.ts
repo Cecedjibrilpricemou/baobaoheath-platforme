@@ -46,6 +46,24 @@ export const routes: Routes = [
       import('./features/medecin/medecin.routes').then(m => m.MEDECIN_ROUTES)
   },
 
+  // ── Module Pharmacien ───────────────────────────────────────────────
+  {
+    path: 'pharmacien',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PHARMACIEN'] },
+    loadChildren: () =>
+      import('./features/pharmacien/pharmacien.routes').then(m => m.PHARMACIEN_ROUTES)
+  },
+
+  // ── Module Admin Structure ──────────────────────────────────────────
+  {
+    path: 'admin-structure',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMIN_STRUCTURE'] },
+    loadChildren: () =>
+      import('./features/admin-structure/admin-structure.routes').then(m => m.ADMIN_STRUCTURE_ROUTES)
+  },
+
   // ── Module Admin ────────────────────────────────────────────────────
   {
     path: 'admin',
@@ -64,8 +82,5 @@ export const routes: Routes = [
   },
 
   // ── Wildcard ────────────────────────────────────────────────────────
-  {
-    path: '**',
-    redirectTo: ''
-  }
+  { path: '**', redirectTo: '' }
 ];

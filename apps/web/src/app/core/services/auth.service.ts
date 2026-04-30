@@ -18,15 +18,16 @@ interface BackendMeResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private api = inject(ApiService);
+  private api    = inject(ApiService);
   private router = inject(Router);
 
   private _currentUser = signal<User | null>(this.loadUserFromStorage());
   private _accessToken = signal<string | null>(localStorage.getItem('accessToken'));
 
-  currentUser     = this._currentUser.asReadonly();
-  isAuthenticated = computed(() => !!this._currentUser());
-  userRole        = computed(() => this._currentUser()?.role ?? null);
+  currentUser           = this._currentUser.asReadonly();
+  isAuthenticated       = computed(() => !!this._currentUser());
+  userRole              = computed(() => this._currentUser()?.role ?? null);
+  doitChangerMotDePasse = computed(() => this._currentUser()?.doitChangerMotDePasse ?? false);
 
   login(payload: LoginPayload): Observable<User> {
     return this.api.post<BackendTokenResponse>('/auth/login', payload).pipe(
@@ -53,7 +54,7 @@ export class AuthService {
   logout() {
     this.api.post<void>('/auth/logout', {}).subscribe({
       complete: () => this.clearSession(),
-      error: () => this.clearSession()
+      error:    () => this.clearSession()
     });
   }
 
@@ -70,6 +71,26 @@ export class AuthService {
 
   fetchCurrentUser(): Observable<User> {
     return this.api.get<BackendMeResponse>('/auth/me').pipe(
+      map(response => response.data),
+      tap(user => {
+        if (user?.id) {
+          this._currentUser.set(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+      })
+    );
+  }
+
+  // ── NOUVEAU : Changer le mot de passe ──────────────────────────
+  changerMotDePasse(dto: { ancienMotDePasse?: string; nouveauMotDePasse: string; }): Observable<any> {
+    return this.api.put<any>('/auth/change-password', dto).pipe(
+      tap(() => this.fetchCurrentUser().subscribe())
+    );
+  }
+
+  // ── NOUVEAU : Mettre à jour le profil ──────────────────────────
+  updateProfil(dto: { prenom?: string; nom?: string; email?: string; telephone?: string; }): Observable<any> {
+    return this.api.put<BackendMeResponse>('/auth/profile', dto).pipe(
       map(response => response.data),
       tap(user => {
         if (user?.id) {

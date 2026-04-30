@@ -53,6 +53,17 @@ interface Couverture {
   pourcentage?: number;
 }
 
+// ── Nouvelles interfaces pour les structures ──────────────
+interface StructureCount {
+  type: string;
+  count: number;
+}
+
+interface StatsStructures {
+  total: number;
+  parType: StructureCount[];
+}
+
 @Component({
   selector: 'app-analytics',
   standalone: true,
@@ -63,32 +74,55 @@ interface Couverture {
 export class AnalyticsComponent implements OnInit {
   private api = inject(ApiService);
 
-  dashboard   = signal<DashboardData | null>(null);
-  heatmap     = signal<HeatmapPoint[]>([]);
-  alertes     = signal<Alerte[]>([]);
-  tendances   = signal<Tendance[]>([]);
-  couverture  = signal<Couverture[]>([]);
+  dashboard        = signal<DashboardData | null>(null);
+  heatmap          = signal<HeatmapPoint[]>([]);
+  alertes          = signal<Alerte[]>([]);
+  tendances        = signal<Tendance[]>([]);
+  couverture       = signal<Couverture[]>([]);
+  statsStructures  = signal<StatsStructures | null>(null); // ← NOUVEAU
 
-  isLoadingDash    = signal(true);
-  isLoadingHeatmap = signal(true);
-  isLoadingAlertes = signal(true);
-  isLoadingTend    = signal(true);
-  isLoadingCouv    = signal(true);
+  isLoadingDash       = signal(true);
+  isLoadingHeatmap    = signal(true);
+  isLoadingAlertes    = signal(true);
+  isLoadingTend       = signal(true);
+  isLoadingCouv       = signal(true);
+  isLoadingStructures = signal(true); // ← NOUVEAU
 
   activeTab = signal<'kpis' | 'heatmap' | 'alertes' | 'tendances' | 'vaccins'>('kpis');
 
   prefiltreOptions = [
-    { label: 'Toute la Guinée', value: '' },
-    { label: 'Conakry',         value: 'Conakry'    },
-    { label: 'Kindia',          value: 'Kindia'     },
-    { label: 'Boké',            value: 'Boké'       },
-    { label: 'Mamou',           value: 'Mamou'      },
-    { label: 'Labé',            value: 'Labé'       },
-    { label: 'Faranah',         value: 'Faranah'    },
-    { label: 'Kankan',          value: 'Kankan'     },
-    { label: 'Nzérékoré',       value: 'Nzérékoré'  }
+    { label: 'Toute la Guinée', value: ''          },
+    { label: 'Conakry',         value: 'Conakry'   },
+    { label: 'Kindia',          value: 'Kindia'    },
+    { label: 'Boké',            value: 'Boké'      },
+    { label: 'Mamou',           value: 'Mamou'     },
+    { label: 'Labé',            value: 'Labé'      },
+    { label: 'Faranah',         value: 'Faranah'   },
+    { label: 'Kankan',          value: 'Kankan'    },
+    { label: 'Nzérékoré',       value: 'Nzérékoré' }
   ];
   prefiltreSelectionne = '';
+
+  // Labels et icônes par type de structure
+  readonly typeLabels: Record<string, string> = {
+    'CHU':          'CHU',
+    'HOPITAL_REG':  'Hôpitaux Régionaux',
+    'HOPITAL_PREF': 'Hôpitaux Préfectoraux',
+    'CENTRE':       'Centres de Santé',
+    'POSTE':        'Postes de Santé',
+    'CLINIQUE':     'Cliniques Privées',
+    'PHARMACIE':    'Pharmacies'
+  };
+
+  readonly typeColors: Record<string, string> = {
+    'CHU':          '#EF4444',
+    'HOPITAL_REG':  '#F97316',
+    'HOPITAL_PREF': '#EAB308',
+    'CENTRE':       '#3B82F6',
+    'POSTE':        '#8B5CF6',
+    'CLINIQUE':     '#22C55E',
+    'PHARMACIE':    '#3EBB70'
+  };
 
   ngOnInit() { this.loadAll(); }
 
@@ -98,6 +132,7 @@ export class AnalyticsComponent implements OnInit {
     this.loadAlertes();
     this.loadTendances();
     this.loadCouverture();
+    this.loadStatsStructures(); // ← NOUVEAU
   }
 
   private loadDashboard() {
@@ -114,7 +149,6 @@ export class AnalyticsComponent implements OnInit {
     this.api.get<any>('/analytics/heatmap').subscribe({
       next: (r) => {
         const data = r?.data ?? r;
-        // Agréger par prefecture
         const map = new Map<string, number>();
         (Array.isArray(data) ? data : []).forEach((p: any) => {
           const pref = p.prefecture ?? 'Inconnue';
@@ -154,9 +188,51 @@ export class AnalyticsComponent implements OnInit {
     });
   }
 
+  // ── NOUVEAU : charger les stats des structures ────────────
+  private loadStatsStructures() {
+    this.isLoadingStructures.set(true);
+    this.api.get<any>('/admin-structure/structures').subscribe({
+      next: (r) => {
+        const structures = Array.isArray(r) ? r : r?.data ?? [];
+        // Compter par type
+        const counts = new Map<string, number>();
+        structures.forEach((s: any) => {
+          counts.set(s.type, (counts.get(s.type) ?? 0) + 1);
+        });
+        const parType: StructureCount[] = Array.from(counts.entries())
+          .map(([type, count]) => ({ type, count }))
+          .sort((a, b) => b.count - a.count);
+        this.statsStructures.set({
+          total: structures.length,
+          parType
+        });
+        this.isLoadingStructures.set(false);
+      },
+      error: () => { this.isLoadingStructures.set(false); }
+    });
+  }
+
   onPrefiltreChange() { this.loadDashboard(); this.loadHeatmap(); }
 
-  // ── Helpers ────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────
+  getTypeIcon(type: string): string {
+    const map: Record<string, string> = {
+      'CHU': 'pi-building', 'HOPITAL_REG': 'pi-building',
+      'HOPITAL_PREF': 'pi-building', 'CENTRE': 'pi-heart-fill',
+      'POSTE': 'pi-home', 'CLINIQUE': 'pi-plus-circle',
+      'PHARMACIE': 'pi-box'
+    };
+    return map[type] ?? 'pi-building';
+  }
+
+  getTypeLabel(type: string): string {
+    return this.typeLabels[type] ?? type;
+  }
+
+  getTypeColor(type: string): string {
+    return this.typeColors[type] ?? '#6B7280';
+  }
+
   getStatutLabel(s: string): string {
     const map: Record<string, string> = {
       'EN_COURS': 'En cours', 'TERMINEE': 'Terminée',
@@ -187,6 +263,10 @@ export class AnalyticsComponent implements OnInit {
 
   getMaxStatut(): number {
     return Math.max(...(this.dashboard()?.consultationsParStatut ?? []).map(s => s.count), 1);
+  }
+
+  getMaxStructure(): number {
+    return Math.max(...(this.statsStructures()?.parType ?? []).map(s => s.count), 1);
   }
 
   getAlerteSeverity(evolution: number): 'danger' | 'warn' | 'success' {

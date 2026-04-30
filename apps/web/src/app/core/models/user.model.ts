@@ -20,6 +20,7 @@ export interface User {
   langue: string;
   photoUrl?: string;
   estActif: boolean;
+  doitChangerMotDePasse: boolean; // ← NOUVEAU
   creeLe: string;
   modifieLe: string;
 }
@@ -34,16 +35,14 @@ export interface AuthResponse {
   tokens: AuthTokens;
 }
 
-// Connexion par téléphone OU email
 export interface LoginPayload {
-  identifiant: string; // téléphone ou email
+  identifiant: string;
   motDePasse: string;
 }
 
-// Inscription — téléphone obligatoire, email optionnel
 export interface RegisterPayload {
   telephone: string;
-  email?: string;        // ← NOUVEAU optionnel
+  email?: string;
   motDePasse: string;
   nom: string;
   prenom: string;

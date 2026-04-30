@@ -1,4 +1,3 @@
-// features/admin/admin.routes.ts
 import { Routes } from '@angular/router';
 
 export const ADMIN_ROUTES: Routes = [
@@ -13,6 +12,11 @@ export const ADMIN_ROUTES: Routes = [
         path: 'analytics',
         loadComponent: () =>
           import('./analytics/analytics.component').then(m => m.AnalyticsComponent)
+      },
+      {
+        path: 'structures',
+        loadComponent: () =>
+          import('./structures/structures.component').then(m => m.StructuresComponent)
       },
       {
         path: 'export',

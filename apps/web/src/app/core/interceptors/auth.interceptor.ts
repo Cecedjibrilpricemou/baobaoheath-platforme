@@ -8,29 +8,26 @@ import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // Injection du service Auth (Angular 21 - style fonctionnel)
   const authService = inject(AuthService);
-
-  // Récupère le token JWT stocké en mémoire via le signal
   const token = authService.getAccessToken();
 
-  // Clone la requête en ajoutant le header Authorization si token présent
-  // On ne modifie jamais la requête originale (immutabilité HTTP)
   const authReq = token
-    ? req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` }
-      })
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
-  // Passe la requête (modifiée ou non) au prochain handler
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // Si le serveur retourne 401 (token expiré), on tente un refresh
-      if (error.status === 401) {
+      // Ne jamais tenter un refresh sur les routes auth
+      const isAuthRoute =
+        req.url.includes('/auth/login')    ||
+        req.url.includes('/auth/register') ||
+        req.url.includes('/auth/refresh')  ||
+        req.url.includes('/auth/logout');
+
+      if (error.status === 401 && !isAuthRoute) {
         return authService.refreshToken().pipe(
           switchMap(() => {
-            // Retry la requête originale avec le nouveau token
             const newToken = authService.getAccessToken();
             const retryReq = req.clone({
               setHeaders: { Authorization: `Bearer ${newToken}` }
@@ -38,14 +35,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             return next(retryReq);
           }),
           catchError(refreshError => {
-            // Si le refresh échoue aussi → session expirée, on déconnecte
             authService.logout();
             return throwError(() => refreshError);
           })
         );
       }
 
-      // Pour toute autre erreur HTTP, on propage l'erreur normalement
+      // Routes auth ou autres erreurs → propager normalement
       return throwError(() => error);
     })
   );

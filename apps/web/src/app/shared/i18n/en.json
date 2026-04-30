@@ -288,6 +288,13 @@
   "ADMIN": {
     "ROLE": "Administrator",
     "NAV_ANALYTICS": "Analytics",
-    "NAV_EXPORT": "DHIS2 Export"
+    "NAV_EXPORT": "DHIS2 Export",
+    "NAV_STRUCTURES": "Health Facilities"
+  },
+  "PHARMACIEN": {
+    "ROLE": "Pharmacist",
+    "NAV_SCANNER": "Scan QR Code",
+    "NAV_ORDONNANCES": "Prescriptions",
+    "NAV_STOCKS": "Stock"
   }
 }

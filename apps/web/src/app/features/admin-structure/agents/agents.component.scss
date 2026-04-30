@@ -1,0 +1,136 @@
+// features/admin-structure/agents/agents.component.scss
+.bb-agents {
+  padding: 1.75rem;
+
+  &__header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+  }
+
+  &__title {
+    font-family: var(--bb-font-display); font-size: 20px; font-weight: 800;
+    color: var(--bb-text-primary); letter-spacing: -0.3px; margin: 0 0 4px;
+    display: flex; align-items: center; gap: 8px;
+    i { color: var(--bb-primary); }
+  }
+
+  &__sub { font-size: 13px; color: var(--bb-text-muted); }
+
+  &__add-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(45,125,70,.25); transition: all var(--bb-transition);
+    &:hover { background: var(--bb-mid); transform: translateY(-1px); }
+    i { font-size: 12px; }
+  }
+
+  &__alert {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-radius: var(--bb-radius); font-size: 13.5px; margin-bottom: 16px; border: 1px solid transparent;
+    &--success { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
+    &--error   { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
+    i { font-size: 15px; flex-shrink: 0; }
+  }
+
+  // Formulaire
+  &__form {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-success-border);
+    border-radius: var(--bb-radius-xl); padding: 1.5rem; margin-bottom: 20px;
+    box-shadow: 0 0 0 3px rgba(62,187,112,.07); animation: bb-fade-in .25s ease;
+  }
+
+  &__form-title {
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary); margin-bottom: 16px;
+  }
+
+  &__form-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px;
+  }
+
+  &__field {
+    display: flex; flex-direction: column; gap: 6px;
+    label { font-size: 12px; font-weight: 600; color: var(--bb-text-secondary); }
+
+    input {
+      padding: 9px 12px; border-radius: var(--bb-radius);
+      border: 1.5px solid var(--bb-border); background: var(--bb-surface-1);
+      color: var(--bb-text-primary); font-family: var(--bb-font-body); font-size: 13.5px; outline: none;
+      transition: all var(--bb-transition);
+      &:focus { border-color: var(--bb-bright); box-shadow: 0 0 0 3px rgba(62,187,112,.12); }
+      &::placeholder { color: var(--bb-text-muted); }
+    }
+  }
+
+  &__form-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding-top: 16px; border-top: 1px solid var(--bb-border-light);
+  }
+
+  &__cancel-btn {
+    padding: 9px 18px; border-radius: var(--bb-radius); border: 1px solid var(--bb-border);
+    background: var(--bb-surface-1); color: var(--bb-text-secondary);
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all var(--bb-transition); &:hover { background: var(--bb-surface-2); }
+  }
+
+  &__save-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); }
+    &:disabled { opacity: .55; cursor: not-allowed; }
+    i { font-size: 12px; }
+  }
+
+  // Liste agents
+  &__list { display: flex; flex-direction: column; gap: 10px; }
+
+  &__item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: var(--bb-radius-xl);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition);
+    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); }
+  }
+
+  &__avatar {
+    width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  &__info { flex: 1; min-width: 0; }
+
+  &__name    { font-size: 14px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 2px; }
+  &__contact { font-size: 12.5px; color: var(--bb-text-muted); margin-bottom: 2px; }
+  &__meta    { font-size: 11.5px; color: var(--bb-text-muted); }
+
+  &__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  &__deactivate {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--bb-danger-border); background: var(--bb-danger-bg);
+    color: var(--bb-danger); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 13px; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-danger); color: #fff; }
+    i { font-size: 13px; }
+  }
+
+  // État vide
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 56px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl);
+    i { font-size: 40px; color: var(--bb-text-muted); opacity: .3; }
+    p { font-size: 14px; color: var(--bb-text-primary); font-weight: 600; }
+    span { font-size: 13px; color: var(--bb-text-muted); }
+  }
+}

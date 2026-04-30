@@ -1,0 +1,125 @@
+// features/admin/structures/structures.component.scss
+.bb-struct {
+  padding: 1.75rem;
+
+  &__header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+  }
+
+  &__title {
+    font-family: var(--bb-font-display); font-size: 20px; font-weight: 800;
+    color: var(--bb-text-primary); letter-spacing: -0.3px; margin: 0 0 4px;
+    display: flex; align-items: center; gap: 8px;
+    i { color: var(--bb-primary); }
+  }
+
+  &__sub { font-size: 13px; color: var(--bb-text-muted); }
+
+  &__add-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(45,125,70,.25);
+    transition: all var(--bb-transition);
+    &:hover { background: var(--bb-mid); transform: translateY(-1px); }
+    i { font-size: 12px; }
+  }
+
+  &__alert {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-radius: var(--bb-radius); font-size: 13.5px; margin-bottom: 16px;
+    border: 1px solid transparent;
+    &--success { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
+    &--error   { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
+    i { font-size: 15px; flex-shrink: 0; }
+  }
+
+  // ── Formulaire ────────────────────────────────────────────────
+  &__form {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-success-border);
+    border-radius: var(--bb-radius-xl); padding: 1.5rem; margin-bottom: 20px;
+    box-shadow: 0 0 0 3px rgba(62,187,112,.07), var(--bb-shadow-xs);
+    animation: bb-fade-in .25s ease;
+
+    h3 { font-family: var(--bb-font-display); font-size: 15px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 16px; }
+    h4 { font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 14px; }
+  }
+
+  &__form-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 16px;
+  }
+
+  &__field {
+    display: flex; flex-direction: column; gap: 6px;
+    label { font-size: 12px; font-weight: 600; color: var(--bb-text-secondary); }
+  }
+
+  &__form-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding-top: 16px; border-top: 1px solid var(--bb-border-light);
+  }
+
+  &__cancel-btn {
+    padding: 9px 18px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-secondary); font-family: var(--bb-font-display);
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); }
+  }
+
+  &__save-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); }
+    &:disabled { opacity: .55; cursor: not-allowed; }
+    i { font-size: 12px; }
+  }
+
+  // ── Liste structures ──────────────────────────────────────────
+  &__list { display: flex; flex-direction: column; gap: 12px; }
+
+  &__item {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 16px 20px; border-radius: var(--bb-radius-xl);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition);
+    flex-wrap: wrap;
+    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); }
+  }
+
+  &__item-left { display: flex; align-items: center; gap: 14px; }
+
+  &__icon {
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+
+  &__name { font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 3px; }
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__agents { font-size: 12px; color: var(--bb-primary); font-weight: 600; margin-top: 2px; }
+
+  &__item-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  &__admin-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: var(--bb-radius);
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border);
+    color: var(--bb-text-secondary); font-family: var(--bb-font-display);
+    font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); border-color: var(--bb-success-border); color: var(--bb-primary); }
+    i { font-size: 12px; }
+  }
+
+  &__admin-form {
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg); padding: 1.25rem; margin: -8px 0 4px;
+    animation: bb-fade-in .2s ease;
+    h4 { font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 14px; }
+  }
+}

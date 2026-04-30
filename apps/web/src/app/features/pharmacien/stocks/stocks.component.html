@@ -1,0 +1,101 @@
+<!-- features/pharmacien/stocks/stocks.component.html -->
+<div class="bb-ph-stocks">
+
+  <div class="bb-ph-stocks__header">
+    <div>
+      <h1 class="bb-ph-stocks__title"><i class="pi pi-box"></i> Stocks de la pharmacie</h1>
+      <p class="bb-ph-stocks__subtitle">Gérez les médicaments disponibles dans votre pharmacie</p>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="bb-ph-stocks__kpis">
+    <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--blue">
+      <i class="pi pi-box"></i>
+      <div class="bb-ph-stocks__kpi-val">{{ totalMedicaments() }}</div>
+      <div class="bb-ph-stocks__kpi-lbl">Médicaments</div>
+    </div>
+    <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--red">
+      <i class="pi pi-exclamation-triangle"></i>
+      <div class="bb-ph-stocks__kpi-val">{{ stocksCritiques() }}</div>
+      <div class="bb-ph-stocks__kpi-lbl">Stock critique</div>
+    </div>
+    <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--green">
+      <i class="pi pi-check-circle"></i>
+      <div class="bb-ph-stocks__kpi-val">{{ stocksNormaux() }}</div>
+      <div class="bb-ph-stocks__kpi-lbl">Stock normal</div>
+    </div>
+  </div>
+
+  <!-- Recherche -->
+  <p-iconfield class="bb-ph-stocks__search">
+    <p-inputicon styleClass="pi pi-search" />
+    <input
+      pInputText
+      placeholder="Rechercher un médicament..."
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="searchQuery.set($event)"
+    />
+  </p-iconfield>
+
+  <!-- Liste -->
+  @if (isLoading()) {
+    <div class="bb-ph-stocks__list">
+      @for (i of [1,2,3,4,5]; track i) {
+        <p-skeleton height="90px" borderRadius="12px" styleClass="mb-2" />
+      }
+    </div>
+  } @else if (stocksFiltres.length === 0) {
+    <div class="bb-ph-stocks__empty">
+      <i class="pi pi-box"></i>
+      <p>Aucun médicament en stock</p>
+    </div>
+  } @else {
+    <div class="bb-ph-stocks__list">
+      @for (s of stocksFiltres; track s.id) {
+        <div class="bb-ph-stocks__card" [class.bb-ph-stocks__card--critique]="s.quantite <= s.seuilAlerte">
+
+          <div class="bb-ph-stocks__card-header">
+            <div class="bb-ph-stocks__card-info">
+              <span class="bb-ph-stocks__card-nom">{{ getMedicamentLabel(s) }}</span>
+              <span class="bb-ph-stocks__card-forme">{{ s.medicament.forme }} · {{ s.medicament.dosage }}</span>
+              @if (s.medicament.categorie) {
+                <span class="bb-ph-stocks__card-cat">{{ s.medicament.categorie }}</span>
+              }
+            </div>
+            <div class="bb-ph-stocks__card-right">
+              <p-tag [value]="getNiveauLabel(s)" [severity]="getNiveauSeverity(s)" />
+              <span class="bb-ph-stocks__card-prix">{{ formatMontant(getPrixVente(s)) }}</span>
+            </div>
+          </div>
+
+          <!-- Barre de stock -->
+          <div class="bb-ph-stocks__bar-wrap">
+            <div class="bb-ph-stocks__bar-track">
+              <div
+                class="bb-ph-stocks__bar-fill"
+                [style.width.%]="getBarWidth(s)"
+                [style.background]="getBarColor(s)"
+              ></div>
+            </div>
+            <span class="bb-ph-stocks__bar-qty">{{ s.quantite }} {{ s.unite }}</span>
+          </div>
+
+          <!-- Infos bas -->
+          <div class="bb-ph-stocks__card-footer">
+            <span>Seuil alerte : {{ s.seuilAlerte }} {{ s.unite }}</span>
+            @if (s.datePeremption) {
+              <span [class.bb-ph-stocks__expire]="isExpireSoon(s)">
+                <i class="pi pi-calendar"></i>
+                Péremption : {{ formatDate(s.datePeremption) }}
+                @if (isExpireSoon(s)) { <strong>(Bientôt !)</strong> }
+              </span>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+</div>

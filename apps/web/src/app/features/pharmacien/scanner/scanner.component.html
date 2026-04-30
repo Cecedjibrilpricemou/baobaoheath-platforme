@@ -1,0 +1,141 @@
+<!-- features/pharmacien/scanner/scanner.component.html -->
+<div class="bb-scanner">
+
+  <div class="bb-scanner__header">
+    <h1 class="bb-scanner__title"><i class="pi pi-qrcode"></i> Scanner QR Code</h1>
+    <p class="bb-scanner__subtitle">Scannez le QR Code du patient pour accéder à ses ordonnances</p>
+  </div>
+
+  <!-- Zone de saisie QR Code -->
+  <div class="bb-scanner__input-zone">
+    <div class="bb-scanner__icon-area">
+      <i class="pi pi-qrcode"></i>
+    </div>
+    <div class="bb-scanner__input-wrap">
+      <div class="p-inputgroup">
+        <input
+          pInputText
+          [(ngModel)]="qrCode"
+          placeholder="Saisir ou scanner le QR Code du patient..."
+          (keydown)="onKeyDown($event)"
+          [disabled]="isScanning()"
+          class="bb-scanner__input"
+        />
+        <button
+          class="bb-scanner__btn"
+          (click)="scan()"
+          [disabled]="isScanning() || !qrCode.trim()"
+        >
+          <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-search'"></i>
+          {{ isScanning() ? 'Recherche...' : 'Rechercher' }}
+        </button>
+      </div>
+      <small class="bb-scanner__hint">Appuyez sur Entrée ou cliquez sur Rechercher</small>
+    </div>
+  </div>
+
+  <!-- Erreur -->
+  @if (errorMessage()) {
+    <div class="bb-scanner__alert bb-scanner__alert--error">
+      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Résultat du scan -->
+  @if (scanResult()) {
+    <div class="bb-scanner__result">
+
+      <!-- Carte patient -->
+      <div class="bb-scanner__patient-card">
+        <div class="bb-scanner__patient-avatar">
+          {{ scanResult()!.patient.prenom.charAt(0) }}{{ scanResult()!.patient.nom.charAt(0) }}
+        </div>
+        <div class="bb-scanner__patient-info">
+          <h2 class="bb-scanner__patient-name">
+            {{ scanResult()!.patient.prenom }} {{ scanResult()!.patient.nom }}
+          </h2>
+          <div class="bb-scanner__patient-meta">
+            <span><i class="pi pi-calendar"></i> {{ getAge(scanResult()!.patient.dateNaissance) }} ans</span>
+            @if (scanResult()!.patient.groupeSanguin) {
+              <span class="bb-scanner__blood"><i class="pi pi-heart"></i> {{ scanResult()!.patient.groupeSanguin }}</span>
+            }
+          </div>
+        </div>
+        <div class="bb-scanner__patient-badge">
+          <p-tag
+            [value]="scanResult()!.totalOrdonnances + ' ordonnance(s)'"
+            severity="info"
+          />
+        </div>
+      </div>
+
+      <!-- Alertes allergie globales -->
+      @if (scanResult()!.patient.allergiesCritiques.length > 0) {
+        <div class="bb-scanner__allergies">
+          <i class="pi pi-exclamation-triangle"></i>
+          <strong>Allergies connues :</strong>
+          {{ scanResult()!.patient.allergiesCritiques.join(', ') }}
+        </div>
+      }
+
+      <!-- Liste ordonnances -->
+      @if (scanResult()!.ordonnances.length === 0) {
+        <div class="bb-scanner__empty">
+          <i class="pi pi-check-circle"></i>
+          <p>Aucune ordonnance en attente de délivrance</p>
+        </div>
+      } @else {
+        <div class="bb-scanner__ordonnances">
+          <h3 class="bb-scanner__ordonnances-title">Ordonnances à délivrer</h3>
+
+          @for (o of scanResult()!.ordonnances; track o.id) {
+            <div class="bb-scanner__ordo" [class.bb-scanner__ordo--alerte]="o.alerteAllergie">
+
+              <!-- Alerte allergie -->
+              @if (o.alerteAllergie) {
+                <div class="bb-scanner__ordo-alerte">
+                  <i class="pi pi-exclamation-triangle"></i>
+                  Conflit allergie détecté — Contactez le médecin prescripteur avant de délivrer
+                </div>
+              }
+
+              <div class="bb-scanner__ordo-content">
+                <div class="bb-scanner__ordo-left">
+                  <span class="bb-scanner__ordo-med">
+                    {{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}
+                  </span>
+                  <span class="bb-scanner__ordo-details">
+                    {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }} jours · Qté : {{ o.quantite }}
+                  </span>
+                  <span class="bb-scanner__ordo-medecin">Prescrit par {{ o.medecinNom }}</span>
+                </div>
+                <div class="bb-scanner__ordo-right">
+                  <span class="bb-scanner__ordo-prix">{{ formatMontant(o.prixTotalGnf) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Total -->
+          <div class="bb-scanner__total">
+            <span>Total estimé</span>
+            <span class="bb-scanner__total-montant">{{ formatMontant(getTotalOrdonnances()) }}</span>
+          </div>
+
+          <!-- Bouton délivrer -->
+          <button class="bb-scanner__deliver-btn" (click)="voirOrdonnances()">
+            <i class="pi pi-check-circle"></i>
+            Procéder à la délivrance
+          </button>
+        </div>
+      }
+
+      <!-- Nouveau scan -->
+      <button class="bb-scanner__reset-btn" (click)="reset()">
+        <i class="pi pi-refresh"></i> Nouveau scan
+      </button>
+
+    </div>
+  }
+
+</div>

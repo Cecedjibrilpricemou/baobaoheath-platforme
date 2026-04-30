@@ -1,0 +1,119 @@
+<div class="bb-agents">
+  <div class="bb-agents__header">
+    <div>
+      <h1 class="bb-agents__title"><i class="pi pi-users"></i> Mes Agents</h1>
+      <p class="bb-agents__sub">Gérez les agents de votre structure</p>
+    </div>
+    <button class="bb-agents__add-btn" (click)="showForm.set(true)">
+      <i class="pi pi-plus"></i> Ajouter un agent
+    </button>
+  </div>
+
+  @if (successMsg()) {
+    <div class="bb-agents__alert bb-agents__alert--success"><i class="pi pi-check-circle"></i> {{ successMsg() }}</div>
+  }
+
+  <!-- Modal MDP temporaire — affiché UNE SEULE FOIS -->
+  @if (mdpAffiche()) {
+    <div class="bb-logout-overlay" (click)="fermerMdp()">
+      <div class="bb-mdp-modal" (click)="$event.stopPropagation()">
+        <div class="bb-mdp-modal__icon">✅</div>
+        <h3 class="bb-mdp-modal__title">Agent créé avec succès !</h3>
+        <div class="bb-mdp-modal__info">
+          <div class="bb-mdp-modal__row">
+            <span class="bb-mdp-modal__label">Agent</span>
+            <span class="bb-mdp-modal__value">{{ mdpAffiche()!.agentNom }}</span>
+          </div>
+          <div class="bb-mdp-modal__row">
+            <span class="bb-mdp-modal__label">Téléphone</span>
+            <span class="bb-mdp-modal__value">{{ mdpAffiche()!.agentTelephone }}</span>
+          </div>
+          <div class="bb-mdp-modal__row bb-mdp-modal__row--mdp">
+            <span class="bb-mdp-modal__label">Mot de passe temporaire</span>
+            <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
+          </div>
+        </div>
+        <div class="bb-mdp-modal__warning">
+          <i class="pi pi-exclamation-triangle"></i>
+          Ce mot de passe ne sera plus affiché. Communiquez-le à l'agent maintenant.
+        </div>
+        <button class="bb-mdp-modal__btn" (click)="fermerMdp()">J'ai noté le mot de passe</button>
+      </div>
+    </div>
+  }
+
+  <!-- Formulaire création -->
+  @if (showForm()) {
+    <div class="bb-agents__form">
+      <h3 class="bb-agents__form-title">Nouvel agent</h3>
+      @if (errorMsg()) {
+        <div class="bb-agents__alert bb-agents__alert--error"><i class="pi pi-times-circle"></i> {{ errorMsg() }}</div>
+      }
+      <div class="bb-agents__form-grid">
+        <div class="bb-agents__field">
+          <label>Prénom *</label>
+          <input pInputText [(ngModel)]="newAgent.prenom" placeholder="Ex: Mamadou" />
+        </div>
+        <div class="bb-agents__field">
+          <label>Nom *</label>
+          <input pInputText [(ngModel)]="newAgent.nom" placeholder="Ex: Diallo" />
+        </div>
+        <div class="bb-agents__field">
+          <label>Téléphone *</label>
+          <input pInputText [(ngModel)]="newAgent.telephone" placeholder="Ex: 620123456" />
+        </div>
+        <div class="bb-agents__field">
+          <label>Email (optionnel)</label>
+          <input pInputText [(ngModel)]="newAgent.email" type="email" placeholder="Ex: agent@email.com" />
+        </div>
+        <div class="bb-agents__field">
+          <label>Rôle *</label>
+          <p-select [(ngModel)]="newAgent.role" [options]="rolesOptions" optionLabel="label" optionValue="value" />
+        </div>
+        <!-- Mot de passe supprimé — généré automatiquement par le backend -->
+        <div class="bb-agents__field bb-agents__field--info">
+          <i class="pi pi-info-circle"></i>
+          Un mot de passe temporaire sera généré automatiquement et affiché une seule fois.
+        </div>
+      </div>
+      <div class="bb-agents__form-actions">
+        <button class="bb-agents__cancel-btn" (click)="showForm.set(false)">Annuler</button>
+        <button class="bb-agents__save-btn" (click)="creerAgent()" [disabled]="isSaving()">
+          <i class="pi pi-user-plus"></i> {{ isSaving() ? 'Création...' : 'Créer l\'agent' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Liste des agents -->
+  @if (isLoading()) {
+    @for (i of [1,2,3]; track i) { <p-skeleton height="72px" borderRadius="8px" styleClass="mb-2" /> }
+  } @else if (agents().length === 0) {
+    <div class="bb-agents__empty">
+      <i class="pi pi-users"></i>
+      <p>Aucun agent dans votre structure</p>
+      <span>Cliquez sur "Ajouter un agent" pour commencer</span>
+    </div>
+  } @else {
+    <div class="bb-agents__list">
+      @for (agent of agents(); track agent.id) {
+        <div class="bb-agents__item">
+          <div class="bb-agents__avatar">
+            {{ agent.prenom.charAt(0) }}{{ agent.nom.charAt(0) }}
+          </div>
+          <div class="bb-agents__info">
+            <p class="bb-agents__name">{{ agent.prenom }} {{ agent.nom }}</p>
+            <p class="bb-agents__contact">{{ agent.telephone }}@if (agent.email) { · {{ agent.email }} }</p>
+            <p class="bb-agents__meta">Ajouté le {{ formatDate(agent.creeLe) }}</p>
+          </div>
+          <div class="bb-agents__actions">
+            <p-tag [value]="getRoleLabel(agent.role)" severity="info" />
+            <button class="bb-agents__deactivate" (click)="desactiver(agent.id)" title="Désactiver">
+              <i class="pi pi-ban"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

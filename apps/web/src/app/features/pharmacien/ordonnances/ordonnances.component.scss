@@ -1,0 +1,189 @@
+// features/pharmacien/ordonnances/ordonnances.component.scss
+.bb-ordo {
+  padding: 1.75rem; max-width: 960px; margin: 0 auto;
+
+  &__header {
+    display: flex; align-items: center; gap: 20px; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  &__back {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-secondary); font-family: var(--bb-font-display);
+    font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); color: var(--bb-primary); border-color: var(--bb-success-border); }
+    i { font-size: 12px; }
+  }
+
+  &__patient { display: flex; align-items: center; gap: 14px; }
+
+  &__patient-avatar {
+    width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  &__patient-name {
+    font-family: var(--bb-font-display); font-size: 18px; font-weight: 800;
+    color: var(--bb-text-primary); letter-spacing: -0.3px; margin: 0 0 3px;
+  }
+
+  &__blood {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 13px;
+    background: var(--bb-danger-bg); border: 1px solid var(--bb-danger-border);
+    padding: 2px 10px; border-radius: 100px; color: var(--bb-danger); font-weight: 700;
+  }
+
+  &__alert {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-radius: var(--bb-radius); font-size: 13.5px; margin-bottom: 16px; border: 1px solid transparent;
+    &--success { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
+    &--error   { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
+    i { font-size: 15px; flex-shrink: 0; }
+  }
+
+  &__allergies {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-radius: var(--bb-radius); background: var(--bb-danger-bg);
+    border: 1px solid var(--bb-danger-border); font-size: 13.5px; color: var(--bb-danger);
+    margin-bottom: 16px; font-weight: 600;
+    i { font-size: 15px; flex-shrink: 0; }
+  }
+
+  // ── Layout ───────────────────────────────────────────────────
+  &__layout {
+    display: grid; grid-template-columns: 1fr 380px; gap: 20px;
+    @media (max-width: 900px) { grid-template-columns: 1fr; }
+  }
+
+  // ── Liste ordonnances ────────────────────────────────────────
+  &__list {}
+
+  &__list-title {
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary); margin-bottom: 14px;
+  }
+
+  &__item {
+    border: 1.5px solid var(--bb-border); border-radius: var(--bb-radius-lg);
+    margin-bottom: 10px; overflow: hidden; cursor: pointer; transition: all var(--bb-transition);
+    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-xs); }
+    &--selected { border-color: var(--bb-bright); box-shadow: 0 0 0 3px rgba(62,187,112,.1); }
+    &--alerte { border-color: var(--bb-danger-border); }
+  }
+
+  &__item-alerte {
+    display: flex; align-items: center; gap: 8px; padding: 7px 14px;
+    background: var(--bb-danger-bg); font-size: 12px; font-weight: 700; color: var(--bb-danger);
+    i { font-size: 12px; }
+  }
+
+  &__item-content {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 14px; background: var(--bb-surface-card);
+  }
+
+  &__item-left { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  &__item-med     { font-size: 13.5px; font-weight: 700; color: var(--bb-text-primary); }
+  &__item-details { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__item-medecin { font-size: 12px; color: var(--bb-text-muted); font-style: italic; }
+  &__item-prix    { font-family: var(--bb-font-display); font-size: 16px; font-weight: 800; color: var(--bb-primary); flex-shrink: 0; }
+
+  // État vide
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 40px; text-align: center;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border); border-radius: var(--bb-radius-xl);
+    i { font-size: 40px; color: var(--bb-bright); opacity: .35; }
+    p { font-size: 13.5px; color: var(--bb-text-muted); }
+  }
+
+  &__scanner-btn {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+    padding: 10px 20px; border-radius: var(--bb-radius); background: var(--bb-primary);
+    color: #fff; border: none; font-family: var(--bb-font-display); font-size: 13px;
+    font-weight: 700; cursor: pointer; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-mid); }
+  }
+
+  // ── Formulaire délivrance ────────────────────────────────────
+  &__form {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1.5rem; box-shadow: var(--bb-shadow);
+    position: sticky; top: 20px;
+    animation: bb-fade-in .2s ease;
+  }
+
+  &__form-title {
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary); margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--bb-border-light);
+    display: flex; align-items: center; gap: 8px;
+    i { color: var(--bb-primary); }
+  }
+
+  &__form-med {
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    border-radius: var(--bb-radius); padding: 12px 14px; margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 3px;
+    strong { font-size: 14px; font-weight: 700; color: var(--bb-text-primary); }
+    span   { font-size: 12.5px; color: var(--bb-text-muted); }
+  }
+
+  &__form-field {
+    display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
+    label { font-size: 12.5px; font-weight: 600; color: var(--bb-text-secondary); }
+  }
+
+  &__modes { display: flex; flex-direction: column; gap: 8px; }
+
+  &__mode {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: var(--bb-radius);
+    border: 1.5px solid var(--bb-border); background: var(--bb-surface-1);
+    cursor: pointer; transition: all var(--bb-transition); font-size: 13.5px;
+    &:hover { border-color: var(--bb-bright); background: var(--bb-success-bg); }
+    &--selected { border-color: var(--bb-bright) !important; background: var(--bb-success-bg) !important; font-weight: 600; }
+    label { cursor: pointer; }
+  }
+
+  &__montant {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px; border-radius: var(--bb-radius-lg);
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+    margin-bottom: 16px; font-size: 13.5px; font-weight: 600; color: var(--bb-text-secondary);
+  }
+
+  &__montant-value {
+    font-family: var(--bb-font-display); font-size: 20px; font-weight: 800; color: var(--bb-primary);
+  }
+
+  &__form-actions { display: flex; gap: 10px; }
+
+  &__cancel-btn {
+    flex: 1; padding: 11px; border-radius: var(--bb-radius); border: 1px solid var(--bb-border);
+    background: var(--bb-surface-1); color: var(--bb-text-secondary);
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all var(--bb-transition); &:hover { background: var(--bb-surface-2); }
+  }
+
+  &__deliver-btn {
+    flex: 2; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px; border-radius: var(--bb-radius); background: var(--bb-primary);
+    color: #fff; border: none; font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(45,125,70,.25); transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    i { font-size: 13px; }
+  }
+
+  &__alerte-note {
+    margin-top: 12px; padding: 10px 14px; border-radius: var(--bb-radius);
+    background: var(--bb-danger-bg); border: 1px solid var(--bb-danger-border);
+    font-size: 12.5px; color: var(--bb-danger); font-weight: 600; line-height: 1.5;
+  }
+}

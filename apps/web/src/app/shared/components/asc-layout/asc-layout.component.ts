@@ -6,11 +6,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { ProfilModalComponent } from '../profil-modal/profil-modal.component';
 
 @Component({
   selector: 'app-asc-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe, ProfilModalComponent],
   templateUrl: './asc-layout.component.html',
   styleUrl: './asc-layout.component.scss'
 })
@@ -19,16 +20,16 @@ export class AscLayoutComponent {
   readonly themeService = inject(ThemeService);
   private i18nService   = inject(I18nService);
 
-  currentUser       = this.authService.currentUser;
-  sidebarOpen       = signal(false);
-  showLogoutConfirm = signal(false); // confirmation déconnexion
+  currentUser           = this.authService.currentUser;
+  doitChangerMotDePasse = this.authService.doitChangerMotDePasse;
+  sidebarOpen           = signal(false);
+  showLogoutConfirm     = signal(false);
+  showProfil            = signal(false);
 
   toggleSidebar()  { this.sidebarOpen.update(v => !v); }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
-
-  // Demande confirmation avant de déconnecter
   askLogout()      { this.showLogoutConfirm.set(true); }
   cancelLogout()   { this.showLogoutConfirm.set(false); }
   confirmLogout()  { this.showLogoutConfirm.set(false); this.authService.logout(); }
@@ -40,8 +41,8 @@ export class AscLayoutComponent {
   }
 
   navItems = [
-    { labelKey: 'ASC.NAV_CONSULTATIONS', icon: 'pi-heart',   route: '/asc/consultations' },
-    { labelKey: 'ASC.NAV_STOCKS',        icon: 'pi-box',     route: '/asc/stocks'        },
-    { labelKey: 'ASC.NAV_PLANNING',      icon: 'pi-calendar',route: '/asc/planning'      }
+    { labelKey: 'ASC.NAV_CONSULTATIONS', icon: 'pi-heart',     route: '/asc/consultations' },
+    { labelKey: 'ASC.NAV_STOCKS',        icon: 'pi-box',       route: '/asc/stocks'        },
+    { labelKey: 'ASC.NAV_PLANNING',      icon: 'pi-calendar',  route: '/asc/planning'      }
   ];
 }

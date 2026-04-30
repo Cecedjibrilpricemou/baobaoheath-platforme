@@ -1,23 +1,17 @@
-<!-- shared/components/medecin-layout/medecin-layout.component.html -->
 <div class="bb-layout" [class.bb-layout--sidebar-open]="sidebarOpen()">
 
   @if (sidebarOpen()) {
     <div class="bb-layout__overlay" (click)="closeSidebar()"></div>
   }
 
-  <!-- Modal confirmation déconnexion -->
   @if (showLogoutConfirm()) {
     <div class="bb-logout-overlay" (click)="cancelLogout()">
       <div class="bb-logout-modal" (click)="$event.stopPropagation()">
-        <div class="bb-logout-modal__icon">
-          <i class="pi pi-sign-out"></i>
-        </div>
+        <div class="bb-logout-modal__icon"><i class="pi pi-sign-out"></i></div>
         <h3 class="bb-logout-modal__title">{{ 'COMMON.LOGOUT_CONFIRM_TITLE' | translate }}</h3>
         <p class="bb-logout-modal__text">{{ 'COMMON.LOGOUT_CONFIRM_TEXT' | translate }}</p>
         <div class="bb-logout-modal__actions">
-          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="cancelLogout()">
-            {{ 'COMMON.CANCEL' | translate }}
-          </button>
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="cancelLogout()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button class="bb-logout-modal__btn bb-logout-modal__btn--confirm" (click)="confirmLogout()">
             <i class="pi pi-sign-out"></i>{{ 'COMMON.LOGOUT' | translate }}
           </button>
@@ -26,28 +20,30 @@
     </div>
   }
 
-  <!-- SIDEBAR -->
+  @if (showProfil()) {
+    <app-profil-modal
+      [forcerChangement]="doitChangerMotDePasse()"
+      (fermer)="showProfil.set(false)"
+    />
+  }
+
   <aside class="bb-sidebar" [class.bb-sidebar--open]="sidebarOpen()" role="navigation">
     <div class="bb-sidebar__logo">
       <div class="bb-sidebar__logo-icon">🌳</div>
       <span class="bb-sidebar__logo-name">{{ 'APP.NAME' | translate }}</span>
     </div>
-    <div class="bb-sidebar__profile">
+    <div class="bb-sidebar__profile bb-sidebar__profile--clickable" (click)="showProfil.set(true)">
       <div class="bb-sidebar__avatar">{{ getInitiales() }}</div>
       <div class="bb-sidebar__profile-info">
-        <span class="bb-sidebar__profile-name">Dr. {{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+        <span class="bb-sidebar__profile-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
         <span class="bb-sidebar__profile-role">{{ 'MEDECIN.ROLE' | translate }}</span>
       </div>
+      <i class="pi pi-pencil bb-sidebar__profile-edit"></i>
     </div>
     <nav class="bb-sidebar__nav" aria-label="{{ 'COMMON.NAVIGATION' | translate }}">
       <p class="bb-sidebar__nav-label">{{ 'COMMON.NAVIGATION' | translate }}</p>
       @for (item of navItems; track item.route) {
-        <a
-          [routerLink]="item.route"
-          routerLinkActive="bb-sidebar__nav-item--active"
-          class="bb-sidebar__nav-item"
-          (click)="closeSidebar()"
-        >
+        <a [routerLink]="item.route" routerLinkActive="bb-sidebar__nav-item--active" class="bb-sidebar__nav-item" (click)="closeSidebar()">
           <i [class]="'pi ' + item.icon"></i>
           <span>{{ item.labelKey | translate }}</span>
         </a>
@@ -69,24 +65,41 @@
     </div>
   </aside>
 
-  <!-- ZONE PRINCIPALE -->
   <main class="bb-layout__main">
     <header class="bb-topbar">
-      <button class="bb-topbar__menu" (click)="toggleSidebar()" aria-label="Menu">
-        <i class="pi pi-bars"></i>
-      </button>
-      <div class="bb-topbar__logo">
-        <span>🌳</span>
-        <span class="bb-topbar__logo-name">{{ 'APP.NAME' | translate }}</span>
-      </div>
+      <button class="bb-topbar__menu" (click)="toggleSidebar()" aria-label="Menu"><i class="pi pi-bars"></i></button>
+      <div class="bb-topbar__logo"><span>🌳</span><span class="bb-topbar__logo-name">{{ 'APP.NAME' | translate }}</span></div>
       <div class="bb-topbar__right">
-        <button class="bb-topbar__icon-btn" (click)="toggleTheme()">
+        <button class="bb-topbar__icon-btn" (click)="toggleTheme()"><i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i></button>
+        <button class="bb-topbar__icon-btn bb-topbar__lang" (click)="toggleLang()">{{ 'COMMON.LANG_TOGGLE' | translate }}</button>
+        <div class="bb-topbar__avatar" (click)="showProfil.set(true)" style="cursor:pointer">{{ getInitiales() }}</div>
+      </div>
+    </header>
+    <header class="bb-topbar-desktop">
+      <div class="bb-topbar-desktop__breadcrumb">
+        <span class="bb-topbar-desktop__page-title">{{ 'MEDECIN.ROLE' | translate }}</span>
+        <span class="bb-topbar-desktop__sep">/</span>
+        <span class="bb-topbar-desktop__page-sub">{{ 'APP.NAME' | translate }}</span>
+      </div>
+      <div class="bb-topbar-desktop__search">
+        <i class="pi pi-search"></i>
+        <input type="text" [placeholder]="'COMMON.SEARCH' | translate" readonly />
+      </div>
+      <div class="bb-topbar-desktop__right">
+        <button class="bb-topbar-desktop__icon-btn" (click)="toggleTheme()">
           <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
         </button>
-        <button class="bb-topbar__icon-btn bb-topbar__lang" (click)="toggleLang()">
-          {{ 'COMMON.LANG_TOGGLE' | translate }}
+        <button class="bb-topbar-desktop__icon-btn" (click)="toggleLang()">
+          <i class="pi pi-globe"></i>
         </button>
-        <div class="bb-topbar__avatar">{{ getInitiales() }}</div>
+        <div class="bb-topbar-desktop__user" (click)="showProfil.set(true)" style="cursor:pointer">
+          <div class="bb-topbar-desktop__user-avatar">{{ getInitiales() }}</div>
+          <div class="bb-topbar-desktop__user-info">
+            <div class="bb-topbar-desktop__user-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</div>
+            <div class="bb-topbar-desktop__user-role">{{ 'MEDECIN.ROLE' | translate }}</div>
+          </div>
+          <i class="pi pi-chevron-down bb-topbar-desktop__chevron"></i>
+        </div>
       </div>
     </header>
     <div class="bb-layout__content">

@@ -1,0 +1,98 @@
+<div class="bb-struct">
+  <div class="bb-struct__header">
+    <div>
+      <h1 class="bb-struct__title"><i class="pi pi-building"></i> Structures de santé</h1>
+      <p class="bb-struct__sub">Gérez toutes les structures de la plateforme</p>
+    </div>
+    <button class="bb-struct__add-btn" (click)="showForm.set(true)"><i class="pi pi-plus"></i> Nouvelle structure</button>
+  </div>
+
+  @if (successMsg()) { <div class="bb-struct__alert bb-struct__alert--success"><i class="pi pi-check-circle"></i> {{ successMsg() }}</div> }
+  @if (errorMsg()) { <div class="bb-struct__alert bb-struct__alert--error"><i class="pi pi-times-circle"></i> {{ errorMsg() }}</div> }
+
+  <!-- Modal MDP temporaire — affiché UNE SEULE FOIS -->
+  @if (mdpAffiche()) {
+    <div class="bb-logout-overlay" (click)="fermerMdp()">
+      <div class="bb-mdp-modal" (click)="$event.stopPropagation()">
+        <div class="bb-mdp-modal__icon">✅</div>
+        <h3 class="bb-mdp-modal__title">Structure créée avec succès !</h3>
+        <p class="bb-mdp-modal__structure">{{ mdpAffiche()!.structureNom }}</p>
+        <div class="bb-mdp-modal__info">
+          <div class="bb-mdp-modal__row">
+            <span class="bb-mdp-modal__label">Responsable</span>
+            <span class="bb-mdp-modal__value">{{ mdpAffiche()!.adminNom }}</span>
+          </div>
+          <div class="bb-mdp-modal__row">
+            <span class="bb-mdp-modal__label">Téléphone</span>
+            <span class="bb-mdp-modal__value">{{ mdpAffiche()!.adminTelephone }}</span>
+          </div>
+          <div class="bb-mdp-modal__row bb-mdp-modal__row--mdp">
+            <span class="bb-mdp-modal__label">Mot de passe temporaire</span>
+            <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
+          </div>
+        </div>
+        <div class="bb-mdp-modal__warning">
+          <i class="pi pi-exclamation-triangle"></i>
+          Ce mot de passe ne sera plus affiché. Communiquez-le au responsable maintenant.
+        </div>
+        <button class="bb-mdp-modal__btn" (click)="fermerMdp()">J'ai noté le mot de passe</button>
+      </div>
+    </div>
+  }
+
+  @if (showForm()) {
+    <div class="bb-struct__form">
+      <h3>Nouvelle structure</h3>
+      <div class="bb-struct__form-grid">
+        <div class="bb-struct__field"><label>Nom *</label><input pInputText [(ngModel)]="newStructure.nom" placeholder="Ex: Centre de Santé de Matam" /></div>
+        <div class="bb-struct__field"><label>Type *</label><p-select [(ngModel)]="newStructure.type" [options]="typeOptions" optionLabel="label" optionValue="value" /></div>
+        <div class="bb-struct__field"><label>Préfecture *</label><p-select [(ngModel)]="newStructure.prefecture" [options]="prefectures" optionLabel="label" optionValue="value" placeholder="Sélectionner" /></div>
+        <div class="bb-struct__field"><label>Adresse</label><input pInputText [(ngModel)]="newStructure.adresse" placeholder="Ex: Quartier Ratoma" /></div>
+        <div class="bb-struct__field"><label>Téléphone</label><input pInputText [(ngModel)]="newStructure.telephone" placeholder="Ex: 620000000" /></div>
+        <div class="bb-struct__field"><label>Latitude</label><p-inputnumber [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" placeholder="Ex: 9.5370" /></div>
+        <div class="bb-struct__field"><label>Longitude</label><p-inputnumber [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" placeholder="Ex: -13.6773" /></div>
+      </div>
+
+      <!-- Section responsable — fusionnée dans le même formulaire -->
+      <h4 class="bb-struct__section-label">Responsable (Admin de structure)</h4>
+      <p class="bb-struct__section-note">Un mot de passe temporaire sera généré automatiquement</p>
+      <div class="bb-struct__form-grid">
+        <div class="bb-struct__field"><label>Prénom *</label><input pInputText [(ngModel)]="newStructure.admin.prenom" placeholder="Ex: Ibrahima" /></div>
+        <div class="bb-struct__field"><label>Nom *</label><input pInputText [(ngModel)]="newStructure.admin.nom" placeholder="Ex: Bah" /></div>
+        <div class="bb-struct__field"><label>Téléphone *</label><input pInputText [(ngModel)]="newStructure.admin.telephone" placeholder="Ex: 622000001" /></div>
+        <div class="bb-struct__field"><label>Email (optionnel)</label><input pInputText [(ngModel)]="newStructure.admin.email" type="email" placeholder="Ex: admin@structure.gn" /></div>
+      </div>
+
+      <div class="bb-struct__form-actions">
+        <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">Annuler</button>
+        <button class="bb-struct__save-btn" (click)="creerStructure()" [disabled]="isSaving()">
+          <i class="pi pi-building"></i> {{ isSaving() ? 'Création...' : 'Créer la structure' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    @for (i of [1,2,3,4]; track i) { <p-skeleton height="90px" borderRadius="8px" styleClass="mb-2" /> }
+  } @else {
+    <div class="bb-struct__list">
+      @for (s of structures(); track s.id) {
+        <div class="bb-struct__item">
+          <div class="bb-struct__item-left">
+            <div class="bb-struct__icon">🏥</div>
+            <div>
+              <p class="bb-struct__name">{{ s.nom }}</p>
+              <p class="bb-struct__meta">{{ s.prefecture }} · {{ getTypeLabel(s.type) }}</p>
+              @if (s._count) { <p class="bb-struct__agents">{{ s._count.utilisateurs }} utilisateur(s)</p> }
+              @if (s.utilisateurs?.length) {
+                <p class="bb-struct__admin-info">
+                  <i class="pi pi-user"></i> {{ getAdmin(s) }}
+                </p>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

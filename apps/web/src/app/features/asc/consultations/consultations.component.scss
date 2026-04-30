@@ -1,60 +1,41 @@
 // features/asc/consultations/consultations.component.scss
 
-.consultations-page { min-height: 100vh; background: var(--bb-surface-ground); }
+.consultations-page {}
 
-// ── HERO BTN NEW ─────────────────────────────────────────────────
-::ng-deep .hero-btn-new {
-  background: var(--bb-bright) !important;
-  border-color: var(--bb-bright) !important;
-  color: var(--bb-deep) !important;
-  font-family: var(--bb-font-display) !important;
-  font-weight: 700 !important;
-  border-radius: var(--bb-radius) !important;
-  &:hover { background: #50CC82 !important; transform: translateY(-1px); }
-}
-
-// ── FORM CARD ─────────────────────────────────────────────────────
+// ── Formulaire nouvelle consultation ────────────────────────────
 .form-card {
-  background: var(--bb-surface-card);
-  border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius-xl);
-  box-shadow: var(--bb-shadow-sm);
-  padding: 20px;
-  margin-bottom: 20px;
-  transition: background var(--bb-transition), border-color var(--bb-transition);
+  background: var(--bb-surface-card); border: 1px solid var(--bb-success-border);
+  border-radius: var(--bb-radius-xl); padding: 1.5rem; margin-bottom: 20px;
+  box-shadow: 0 0 0 3px rgba(62,187,112,.07), var(--bb-shadow-xs);
+  animation: bb-fade-in .25s ease;
 
   &__header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
   }
 
   &__title {
     display: flex; align-items: center; gap: 10px;
-    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
-    color: var(--bb-text-primary);
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700; color: var(--bb-text-primary);
   }
 
   &__title-icon {
     width: 32px; height: 32px; border-radius: 9px;
-    background: var(--bb-success-bg);
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
     display: flex; align-items: center; justify-content: center;
-    i { font-size: 15px; color: var(--bb-primary); }
+    i { font-size: 14px; color: var(--bb-primary); }
   }
 
   &__close {
-    width: 32px; height: 32px; border-radius: 8px;
+    width: 30px; height: 30px; border-radius: 8px;
     border: 1px solid var(--bb-border); background: var(--bb-surface-1);
-    color: var(--bb-text-muted); cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all var(--bb-transition);
-    &:hover { background: var(--bb-danger-bg); border-color: var(--bb-danger-border); color: var(--bb-danger); }
-    i { font-size: 13px; }
+    color: var(--bb-text-muted); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 13px; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
   }
 
   &__actions {
-    display: flex; justify-content: flex-end; gap: 10px;
-    margin-top: 16px; padding-top: 16px;
-    border-top: 1px solid var(--bb-border-light);
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
+    padding-top: 16px; border-top: 1px solid var(--bb-border-light);
   }
 }
 
@@ -67,118 +48,67 @@
 
 .form-label { font-size: 12.5px; font-weight: 600; color: var(--bb-text-secondary); }
 
-// ── FILTRES ───────────────────────────────────────────────────────
+// ── Filtres ───────────────────────────────────────────────────────
 .filters-bar {
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  background: var(--bb-surface-card);
-  border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius-lg);
-  padding: 12px 16px; margin-bottom: 16px;
-  box-shadow: var(--bb-shadow-xs);
-  transition: background var(--bb-transition);
+  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
 
   &__label {
     display: flex; align-items: center; gap: 7px;
-    font-size: 13px; font-weight: 600; color: var(--bb-text-muted);
-    flex-shrink: 0;
+    font-size: 12.5px; font-weight: 600; color: var(--bb-text-muted);
     i { font-size: 13px; }
   }
 }
 
-.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .filter-chip {
-  padding: 5px 14px; border-radius: var(--bb-radius-pill);
-  border: 1.5px solid var(--bb-border);
-  background: var(--bb-surface-1); color: var(--bb-text-secondary);
-  font-family: var(--bb-font-body); font-size: 12.5px; font-weight: 500;
-  cursor: pointer; transition: all var(--bb-transition);
-  &:hover { border-color: var(--bb-bright); color: var(--bb-primary); }
-  &--active { border-color: var(--bb-primary) !important; background: var(--bb-success-bg) !important; color: var(--bb-primary) !important; font-weight: 600 !important; }
+  padding: 6px 14px; border-radius: var(--bb-radius-pill);
+  border: 1px solid var(--bb-border); background: transparent;
+  color: var(--bb-text-muted); font-family: var(--bb-font-display);
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all var(--bb-transition);
+
+  &:hover { background: var(--bb-surface-2); color: var(--bb-text-secondary); }
+
+  &--active {
+    background: var(--bb-success-bg) !important; border-color: var(--bb-success-border) !important;
+    color: var(--bb-primary) !important;
+  }
 }
 
-// ── LISTE CONSULTATIONS ───────────────────────────────────────────
+// ── Liste consultations ───────────────────────────────────────────
 .consult-list { display: flex; flex-direction: column; gap: 10px; }
 
 .consult-card {
   display: flex; align-items: center; gap: 14px;
-  padding: 16px 20px;
-  background: var(--bb-surface-card);
-  border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius-lg);
-  box-shadow: var(--bb-shadow-xs);
-  transition: all var(--bb-transition);
+  padding: 14px 16px; border-radius: var(--bb-radius-xl);
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+  box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition); cursor: pointer;
 
-  &:hover {
-    border-color: var(--bb-border-light);
-    box-shadow: var(--bb-shadow-sm);
-    transform: translateY(-2px);
-  }
+  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); transform: translateY(-1px); }
 
   &__avatar {
-    width: 44px; height: 44px; border-radius: 13px;
-    background: var(--bb-bright); color: var(--bb-deep);
-    display: flex; align-items: center; justify-content: center;
+    width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
+    color: #fff; display: flex; align-items: center; justify-content: center;
     font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
-    flex-shrink: 0;
+    text-transform: uppercase;
   }
 
   &__body { flex: 1; min-width: 0; }
 
-  &__patient { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  &__patient { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
 
   &__name {
-    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
-    color: var(--bb-text-primary);
+    font-size: 14px; font-weight: 700; color: var(--bb-text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  &__phone {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 12px; color: var(--bb-text-muted);
-    i { font-size: 11px; }
-  }
+  &__phone { font-size: 12.5px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 4px; i { font-size: 11px; } }
 
-  &__meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  &__meta { display: flex; gap: 14px; flex-wrap: wrap; }
 
-  &__motif {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 12.5px; color: var(--bb-text-secondary);
-    i { font-size: 11px; }
-  }
-
-  &__date {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 12px; color: var(--bb-text-muted);
-    i { font-size: 11px; }
-  }
+  &__motif { font-size: 12.5px; color: var(--bb-text-secondary); display: flex; align-items: center; gap: 5px; i { font-size: 11px; } }
+  &__date  { font-size: 12px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 5px; i { font-size: 11px; } }
 }
 
-::ng-deep .consult-tag {
-  font-family: var(--bb-font-display) !important;
-  font-size: 11px !important; font-weight: 600 !important;
-  border-radius: 100px !important; flex-shrink: 0;
-}
-
-// ── ALERTES + ÉTATS ──────────────────────────────────────────────
-.bb-alert {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 16px; border-radius: var(--bb-radius);
-  font-size: 13.5px; margin-bottom: 16px; border: 1px solid transparent;
-  i { font-size: 16px; flex-shrink: 0; }
-  &--success { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
-  &--error   { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
-}
-
-.loading-state {
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 48px; color: var(--bb-text-muted);
-  i { font-size: 28px; color: var(--bb-bright); }
-}
-
-.empty-state {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 56px 24px; text-align: center;
-  &__icon { font-size: 40px; margin-bottom: 6px; }
-  &__title { font-family: var(--bb-font-display); font-size: 18px; font-weight: 700; color: var(--bb-text-primary); }
-  &__sub   { font-size: 13.5px; color: var(--bb-text-muted); margin-bottom: 8px; }
-}
+.consult-tag { font-size: 11.5px !important; flex-shrink: 0; }

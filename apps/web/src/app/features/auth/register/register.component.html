@@ -1,8 +1,9 @@
 <!-- features/auth/register/register.component.html -->
+<!-- Register public — PATIENT uniquement -->
 <div class="register-page">
   <div class="register-card">
 
-    <!-- ── Panneau gauche ──────────────────────────────────────── -->
+    <!-- ── Panneau gauche ─────────────────────────────────────── -->
     <div class="register-left">
       <div class="register-left__deco register-left__deco--1"></div>
       <div class="register-left__deco register-left__deco--2"></div>
@@ -14,12 +15,19 @@
         </div>
         <h1 class="register-left__title">{{ 'AUTH.REGISTER.WELCOME_TITLE' | translate }}</h1>
         <p class="register-left__sub">{{ 'AUTH.REGISTER.WELCOME_SUBTITLE' | translate }}</p>
+
         <div class="register-left__roles">
-          <div class="role-badge"><i class="pi pi-user"></i> Patient</div>
-          <div class="role-badge"><i class="pi pi-heart"></i> Agent ASC</div>
-          <div class="role-badge"><i class="pi pi-plus-circle"></i> Médecin</div>
-          <div class="role-badge"><i class="pi pi-box"></i> Pharmacien</div>
+          <div class="role-badge">
+            <i class="pi pi-user"></i> Espace Patient
+          </div>
+          <div class="role-badge role-badge--info">
+            <i class="pi pi-info-circle"></i> Inscription libre
+          </div>
         </div>
+
+        <p class="register-left__note">
+          Vous êtes soignant ? Contactez l'administrateur de votre structure de santé pour obtenir votre accès.
+        </p>
       </div>
 
       <div class="register-left__controls">
@@ -33,7 +41,7 @@
       </div>
     </div>
 
-    <!-- ── Panneau droit — formulaire ─────────────────────────── -->
+    <!-- ── Panneau droit — formulaire ────────────────────────── -->
     <div class="register-right">
       <div class="register-form-wrap">
 
@@ -41,37 +49,19 @@
         <p class="register-form__sub">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
 
         @if (errorMessage()) {
-          <div class="bb-alert bb-alert--error">
-            <i class="pi pi-exclamation-circle"></i>
-            <span>{{ errorMessage() }}</span>
-          </div>
+        <div class="bb-alert bb-alert--error">
+          <i class="pi pi-exclamation-circle"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
         }
         @if (successMessage()) {
-          <div class="bb-alert bb-alert--success">
-            <i class="pi pi-check-circle"></i>
-            <span>{{ successMessage() }}</span>
-          </div>
+        <div class="bb-alert bb-alert--success">
+          <i class="pi pi-check-circle"></i>
+          <span>{{ successMessage() }}</span>
+        </div>
         }
 
         <form (ngSubmit)="onSubmit()" #registerForm="ngForm" novalidate>
-
-          <!-- Sélection rôle -->
-          <div class="form-field-wrap">
-            <label class="form-label">{{ 'AUTH.REGISTER.ROLE_LABEL' | translate }}</label>
-            <div class="role-chips">
-              @for (role of rolesDisponibles; track role.value) {
-                <button
-                  type="button"
-                  class="role-chip"
-                  [class.role-chip--active]="formData.role === role.value"
-                  (click)="selectRole(role.value)"
-                >
-                  <i [class]="'pi ' + role.icon"></i>
-                  <span>{{ role.label }}</span>
-                </button>
-              }
-            </div>
-          </div>
 
           <!-- Nom + Prénom -->
           <div class="form-row">
@@ -79,21 +69,21 @@
               <label class="form-label" for="nom">{{ 'AUTH.REGISTER.LAST_NAME' | translate }}</label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
-                <input pInputText id="nom" type="text" placeholder="Ex: Diallo"
-                  [(ngModel)]="formData.nom" name="nom" required autocomplete="family-name" />
+                <input pInputText id="nom" type="text" placeholder="Ex: Diallo" [(ngModel)]="formData.nom" name="nom"
+                  required autocomplete="family-name" />
               </div>
             </div>
             <div class="form-field-wrap">
               <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
-                <input pInputText id="prenom" type="text" placeholder="Ex: Mamadou"
-                  [(ngModel)]="formData.prenom" name="prenom" required autocomplete="given-name" />
+                <input pInputText id="prenom" type="text" placeholder="Ex: Mamadou" [(ngModel)]="formData.prenom"
+                  name="prenom" required autocomplete="given-name" />
               </div>
             </div>
           </div>
 
-          <!-- Téléphone (obligatoire) -->
+          <!-- Téléphone -->
           <div class="form-field-wrap">
             <label class="form-label" for="telephone">
               {{ 'AUTH.REGISTER.PHONE' | translate }}
@@ -101,9 +91,8 @@
             </label>
             <div class="p-inputgroup">
               <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
-              <input pInputText id="telephone" type="tel"
-                placeholder="Ex: 620123456"
-                [(ngModel)]="formData.telephone" name="telephone" required autocomplete="tel" />
+              <input pInputText id="telephone" type="tel" placeholder="Ex: 620123456" [(ngModel)]="formData.telephone"
+                name="telephone" required autocomplete="tel" />
             </div>
           </div>
 
@@ -115,9 +104,8 @@
             </label>
             <div class="p-inputgroup">
               <span class="p-inputgroup-addon"><i class="pi pi-envelope"></i></span>
-              <input pInputText id="email" type="email"
-                placeholder="Ex: mamadou@email.com"
-                [(ngModel)]="formData.email" name="email" autocomplete="email" />
+              <input pInputText id="email" type="email" placeholder="Ex: mamadou@email.com" [(ngModel)]="formData.email"
+                name="email" autocomplete="email" />
             </div>
             <small class="form-hint">{{ 'AUTH.REGISTER.EMAIL_HINT' | translate }}</small>
           </div>
@@ -127,11 +115,9 @@
             <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
             <div class="p-inputgroup">
               <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
-              <input pInputText id="motDePasse"
-                [type]="showPassword() ? 'text' : 'password'"
-                placeholder="Minimum 6 caractères"
-                [(ngModel)]="formData.motDePasse" name="motDePasse"
-                required autocomplete="new-password" />
+              <input pInputText id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
+                placeholder="Minimum 6 caractères" [(ngModel)]="formData.motDePasse" name="motDePasse" required
+                autocomplete="new-password" />
               <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()">
                 <span class="toggle-label">
                   {{ (showPassword() ? 'AUTH.REGISTER.HIDE' : 'AUTH.REGISTER.SHOW') | translate }}
@@ -140,16 +126,14 @@
             </div>
           </div>
 
-          <!-- Confirmation -->
+          <!-- Confirmation mot de passe -->
           <div class="form-field-wrap">
             <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
             <div class="p-inputgroup">
               <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
-              <input pInputText id="confirmMotDePasse"
-                [type]="showConfirmPassword() ? 'text' : 'password'"
-                placeholder="Répétez le mot de passe"
-                [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse"
-                required autocomplete="new-password" />
+              <input pInputText id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
+                placeholder="Répétez le mot de passe" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
+                autocomplete="new-password" />
               <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()">
                 <span class="toggle-label">
                   {{ (showConfirmPassword() ? 'AUTH.REGISTER.HIDE' : 'AUTH.REGISTER.SHOW') | translate }}
@@ -158,15 +142,11 @@
             </div>
           </div>
 
-          <!-- Bouton -->
-          <p-button
-            type="submit"
+          <!-- Bouton submit -->
+          <p-button type="submit"
             [label]="isLoading() ? ('AUTH.REGISTER.LOADING' | translate) : ('AUTH.REGISTER.SUBMIT' | translate)"
-            [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'"
-            [loading]="isLoading()"
-            [disabled]="isLoading()"
-            styleClass="w-full register-submit-btn"
-          ></p-button>
+            [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'" [loading]="isLoading()"
+            [disabled]="isLoading()" styleClass="w-full register-submit-btn"></p-button>
 
           <div class="form-separator">
             <span class="form-separator__line"></span>
