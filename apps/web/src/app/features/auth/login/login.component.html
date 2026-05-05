@@ -10,11 +10,20 @@
 
       <div class="login-left__content">
         <div class="login-left__logo">
-          <div class="login-left__logo-icon">🌳</div>
+          <div class="login-left__logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 21V12"/>
+              <path d="M12 12c-3 0-5-2-5-5s2-5 5-5 5 2 5 5"/>
+              <path d="M12 12c3 0 5-2 5-5"/>
+              <path d="M7 12c-2 0-4 1.5-4 4s2 3 4 3h10c2 0 4-1 4-3s-2-4-4-4"/>
+            </svg>
+          </div>
           <span class="login-left__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
+
         <h1 class="login-left__title">{{ 'AUTH.LOGIN.WELCOME_TITLE' | translate }}</h1>
         <p class="login-left__sub">{{ 'AUTH.LOGIN.WELCOME_SUBTITLE' | translate }}</p>
+
         <div class="login-left__stats">
           <div class="login-stat">
             <span class="login-stat__num">9</span>
@@ -32,10 +41,10 @@
       </div>
 
       <div class="login-left__controls">
-        <button class="ctrl-btn" (click)="toggleTheme()">
+        <button type="button" class="ctrl-btn" (click)="toggleTheme()">
           <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
         </button>
-        <button class="ctrl-btn" (click)="toggleLang()">
+        <button type="button" class="ctrl-btn" (click)="toggleLang()">
           <i class="pi pi-globe"></i>
           <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
         </button>
@@ -106,6 +115,7 @@
                 type="button"
                 class="p-inputgroup-addon toggle-btn"
                 (click)="togglePassword()"
+                [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
               >
                 <span class="toggle-label">
                   {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
@@ -131,12 +141,16 @@
           </div>
 
           <a routerLink="/auth/register" class="register-link">
+            <i class="pi pi-user-plus"></i>
             {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
           </a>
 
         </form>
 
-        <p class="login-form__footer">{{ 'AUTH.LOGIN.FOOTER' | translate }}</p>
+        <p class="login-form__footer">
+          <i class="pi pi-shield"></i>
+          {{ 'AUTH.LOGIN.FOOTER' | translate }}
+        </p>
 
       </div>
     </div>

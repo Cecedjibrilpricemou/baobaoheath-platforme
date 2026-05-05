@@ -47,6 +47,15 @@
     h4 { font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 14px; }
   }
 
+  &__section-label {
+    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 8px 0 4px;
+  }
+
+  &__section-note {
+    font-size: 12px; color: var(--bb-text-muted); margin-bottom: 14px;
+  }
+
   &__form-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 16px;
   }
@@ -90,9 +99,16 @@
     box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition);
     flex-wrap: wrap;
     &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); }
+
+    &--inactive {
+      opacity: 0.65;
+      background: var(--bb-surface-1);
+      &:hover { border-color: #FECACA; }
+    }
   }
 
-  &__item-left { display: flex; align-items: center; gap: 14px; }
+  &__item-left  { display: flex; align-items: center; gap: 14px; flex: 1; }
+  &__item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
   &__icon {
     width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
@@ -100,10 +116,58 @@
     display: flex; align-items: center; justify-content: center; font-size: 20px;
   }
 
-  &__name { font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 3px; }
+  &__name-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px;
+  }
+
+  &__name { font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700; color: var(--bb-text-primary); margin: 0; }
   &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
   &__agents { font-size: 12px; color: var(--bb-primary); font-weight: 600; margin-top: 2px; }
+  &__admin-info { font-size: 12px; color: var(--bb-text-muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
 
+  // ── Badges statut ─────────────────────────────────────────────
+  &__badge-active {
+    font-size: 11px; font-weight: 600; color: var(--bb-primary);
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    border-radius: 999px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 4px;
+    i { font-size: 10px; }
+  }
+
+  &__badge-inactive {
+    font-size: 11px; font-weight: 600; color: #EF4444;
+    background: #FEF2F2; border: 1px solid #FECACA;
+    border-radius: 999px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 4px;
+    i { font-size: 10px; }
+  }
+
+  // ── Boutons action ────────────────────────────────────────────
+  &__deactivate-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: var(--bb-radius);
+    background: #FEF2F2; border: 1px solid #FECACA;
+    color: #EF4444; font-family: var(--bb-font-display);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: #FEE2E2; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    i { font-size: 12px; }
+  }
+
+  &__activate-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: var(--bb-radius);
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    color: var(--bb-primary); font-family: var(--bb-font-display);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: #DCFCE7; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    i { font-size: 12px; }
+  }
+
+  // ── Ancien (conservé pour compatibilité) ──────────────────────
   &__item-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
   &__admin-btn {

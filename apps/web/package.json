@@ -23,8 +23,9 @@
   "private": true,
   "packageManager": "npm@11.10.0",
   "dependencies": {
+    "@angular/animations": "^21.2.10",
     "@angular/common": "^21.1.0",
-    "@angular/compiler": "^21.1.0",
+    "@angular/compiler": "^21.2.10",
     "@angular/core": "^21.1.0",
     "@angular/forms": "^21.1.0",
     "@angular/platform-browser": "^21.1.0",
@@ -33,17 +34,17 @@
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.6",
+    "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0",
-    "qrcode": "^1.5.4"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular/build": "^21.1.4",
     "@angular/cli": "^21.1.4",
-    "@angular/compiler-cli": "^21.1.0",
+    "@angular/compiler-cli": "^21.2.11",
+    "@types/qrcode": "^1.5.5",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8",
-    "@types/qrcode": "^1.5.5"
+    "vitest": "^4.0.8"
   }
 }

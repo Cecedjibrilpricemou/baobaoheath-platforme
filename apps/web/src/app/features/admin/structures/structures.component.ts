@@ -33,12 +33,14 @@ interface MotDePasseAffiche {
 export class StructuresComponent implements OnInit {
   private api = inject(ApiService);
 
-  structures = signal<Structure[]>([]);
-  isLoading = signal(true);
-  showForm = signal(false);
-  isSaving = signal(false);
-  successMsg = signal('');
-  errorMsg = signal('');
+  structures        = signal<Structure[]>([]);
+  isLoading         = signal(true);
+  showForm          = signal(false);
+  isSaving          = signal(false);
+  isToggling        = signal<string | null>(null); // id de la structure en cours de toggle
+  successMsg        = signal('');
+  errorMsg          = signal('');
+  confirmDesactiver = signal<Structure | null>(null); // modal confirmation
 
   mdpAffiche = signal<MotDePasseAffiche | null>(null);
 
@@ -49,16 +51,16 @@ export class StructuresComponent implements OnInit {
   };
 
   typeOptions = [
-    { label: 'Poste de Santé', value: 'POSTE' },
-    { label: 'Centre de Santé', value: 'CENTRE' },
+    { label: 'Poste de Santé',      value: 'POSTE'        },
+    { label: 'Centre de Santé',     value: 'CENTRE'       },
     { label: 'Hôpital Préfectoral', value: 'HOPITAL_PREF' },
-    { label: 'Hôpital Régional', value: 'HOPITAL_REG' },
-    { label: 'CHU', value: 'CHU' },
-    { label: 'Clinique Privée', value: 'CLINIQUE' },
-    { label: 'Pharmacie Privée', value: 'PHARMACIE' }
+    { label: 'Hôpital Régional',    value: 'HOPITAL_REG'  },
+    { label: 'CHU',                 value: 'CHU'          },
+    { label: 'Clinique Privée',     value: 'CLINIQUE'     },
+    { label: 'Pharmacie Privée',    value: 'PHARMACIE'    }
   ];
 
-  prefectures = ['Conakry', 'Kindia', 'Boké', 'Mamou', 'Labé', 'Faranah', 'Kankan', 'Nzérékoré', 'Coyah', 'Dubréka', 'Forécariah', 'Fria', 'Télimélé', 'Pita', 'Dalaba', 'Tougué', 'Dinguiraye', 'Kouroussa', 'Siguiri', 'Mandiana', 'Kérouané', 'Macenta', 'Guékédou', 'Kissidougou', 'Beyla', 'Lola', 'Yomou'].map(p => ({ label: p, value: p }));
+  prefectures = ['Conakry','Kindia','Boké','Mamou','Labé','Faranah','Kankan','Nzérékoré','Coyah','Dubréka','Forécariah','Fria','Télimélé','Pita','Dalaba','Tougué','Dinguiraye','Kouroussa','Siguiri','Mandiana','Kérouané','Macenta','Guékédou','Kissidougou','Beyla','Lola','Yomou'].map(p => ({ label: p, value: p }));
 
   ngOnInit() { this.loadStructures(); }
 
@@ -105,13 +107,10 @@ export class StructuresComponent implements OnInit {
           latitude: null, longitude: null, telephone: '',
           admin: { prenom: '', nom: '', telephone: '', email: '' }
         };
-
-        // Si email fourni → email envoyé, pas besoin d'afficher le MDP
         if (data.admin?.email) {
           this.successMsg.set(`✅ Structure créée ! Les identifiants ont été envoyés par email à ${data.admin.email}`);
           setTimeout(() => this.successMsg.set(''), 6000);
         } else {
-          // Pas d'email → afficher MDP UNE SEULE FOIS
           this.mdpAffiche.set({
             structureNom: data.structure?.nom ?? payload.nom,
             adminNom: `${data.admin?.prenom ?? ''} ${data.admin?.nom ?? ''}`,
@@ -122,6 +121,52 @@ export class StructuresComponent implements OnInit {
         this.loadStructures();
       },
       error: err => { this.isSaving.set(false); this.errorMsg.set(err?.error?.error ?? 'Erreur lors de la création.'); }
+    });
+  }
+
+  // ── Demander confirmation avant désactivation ─────────────────
+  demanderDesactivation(s: Structure) {
+    this.confirmDesactiver.set(s);
+  }
+
+  annulerDesactivation() {
+    this.confirmDesactiver.set(null);
+  }
+
+  // ── Désactiver une structure ──────────────────────────────────
+  confirmerDesactivation() {
+    const s = this.confirmDesactiver();
+    if (!s) return;
+    this.confirmDesactiver.set(null);
+    this.isToggling.set(s.id);
+    this.api.delete<any>(`/admin-structure/structures/${s.id}`).subscribe({
+      next: () => {
+        this.isToggling.set(null);
+        this.successMsg.set(`Structure "${s.nom}" désactivée.`);
+        setTimeout(() => this.successMsg.set(''), 4000);
+        this.loadStructures();
+      },
+      error: err => {
+        this.isToggling.set(null);
+        this.errorMsg.set(err?.error?.error ?? 'Erreur lors de la désactivation.');
+      }
+    });
+  }
+
+  // ── Réactiver une structure ───────────────────────────────────
+  reactiver(s: Structure) {
+    this.isToggling.set(s.id);
+    this.api.put<any>(`/admin-structure/structures/${s.id}`, { estActive: true }).subscribe({
+      next: () => {
+        this.isToggling.set(null);
+        this.successMsg.set(`Structure "${s.nom}" réactivée.`);
+        setTimeout(() => this.successMsg.set(''), 4000);
+        this.loadStructures();
+      },
+      error: err => {
+        this.isToggling.set(null);
+        this.errorMsg.set(err?.error?.error ?? 'Erreur lors de la réactivation.');
+      }
     });
   }
 

@@ -10,7 +10,7 @@
   @if (successMsg()) { <div class="bb-struct__alert bb-struct__alert--success"><i class="pi pi-check-circle"></i> {{ successMsg() }}</div> }
   @if (errorMsg()) { <div class="bb-struct__alert bb-struct__alert--error"><i class="pi pi-times-circle"></i> {{ errorMsg() }}</div> }
 
-  <!-- Modal MDP temporaire — affiché UNE SEULE FOIS -->
+  <!-- Modal MDP temporaire -->
   @if (mdpAffiche()) {
     <div class="bb-logout-overlay" (click)="fermerMdp()">
       <div class="bb-mdp-modal" (click)="$event.stopPropagation()">
@@ -40,6 +40,28 @@
     </div>
   }
 
+  <!-- Modal confirmation désactivation -->
+  @if (confirmDesactiver()) {
+    <div class="bb-logout-overlay" (click)="annulerDesactivation()">
+      <div class="bb-logout-modal" (click)="$event.stopPropagation()">
+        <div class="bb-logout-modal__icon" style="background:rgba(239,68,68,.12)">
+          <i class="pi pi-ban" style="color:#EF4444"></i>
+        </div>
+        <h3 class="bb-logout-modal__title">Désactiver la structure ?</h3>
+        <p class="bb-logout-modal__text">
+          La structure <strong>{{ confirmDesactiver()!.nom }}</strong> sera désactivée.
+          Ses agents ne pourront plus se connecter.
+        </p>
+        <div class="bb-logout-modal__actions">
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="annulerDesactivation()">Annuler</button>
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--confirm" style="background:#EF4444" (click)="confirmerDesactivation()">
+            <i class="pi pi-ban"></i> Désactiver
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (showForm()) {
     <div class="bb-struct__form">
       <h3>Nouvelle structure</h3>
@@ -52,8 +74,6 @@
         <div class="bb-struct__field"><label>Latitude</label><p-inputnumber [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" placeholder="Ex: 9.5370" /></div>
         <div class="bb-struct__field"><label>Longitude</label><p-inputnumber [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" placeholder="Ex: -13.6773" /></div>
       </div>
-
-      <!-- Section responsable — fusionnée dans le même formulaire -->
       <h4 class="bb-struct__section-label">Responsable (Admin de structure)</h4>
       <p class="bb-struct__section-note">Un mot de passe temporaire sera généré automatiquement</p>
       <div class="bb-struct__form-grid">
@@ -62,7 +82,6 @@
         <div class="bb-struct__field"><label>Téléphone *</label><input pInputText [(ngModel)]="newStructure.admin.telephone" placeholder="Ex: 622000001" /></div>
         <div class="bb-struct__field"><label>Email (optionnel)</label><input pInputText [(ngModel)]="newStructure.admin.email" type="email" placeholder="Ex: admin@structure.gn" /></div>
       </div>
-
       <div class="bb-struct__form-actions">
         <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">Annuler</button>
         <button class="bb-struct__save-btn" (click)="creerStructure()" [disabled]="isSaving()">
@@ -77,19 +96,47 @@
   } @else {
     <div class="bb-struct__list">
       @for (s of structures(); track s.id) {
-        <div class="bb-struct__item">
+        <div class="bb-struct__item" [class.bb-struct__item--inactive]="!s.estActive">
           <div class="bb-struct__item-left">
             <div class="bb-struct__icon">🏥</div>
             <div>
-              <p class="bb-struct__name">{{ s.nom }}</p>
+              <div class="bb-struct__name-row">
+                <p class="bb-struct__name">{{ s.nom }}</p>
+                @if (!s.estActive) {
+                  <span class="bb-struct__badge-inactive"><i class="pi pi-ban"></i> Désactivée</span>
+                } @else {
+                  <span class="bb-struct__badge-active"><i class="pi pi-check-circle"></i> Active</span>
+                }
+              </div>
               <p class="bb-struct__meta">{{ s.prefecture }} · {{ getTypeLabel(s.type) }}</p>
               @if (s._count) { <p class="bb-struct__agents">{{ s._count.utilisateurs }} utilisateur(s)</p> }
               @if (s.utilisateurs?.length) {
-                <p class="bb-struct__admin-info">
-                  <i class="pi pi-user"></i> {{ getAdmin(s) }}
-                </p>
+                <p class="bb-struct__admin-info"><i class="pi pi-user"></i> {{ getAdmin(s) }}</p>
               }
             </div>
+          </div>
+          <div class="bb-struct__item-actions">
+            @if (s.estActive) {
+              <button
+                class="bb-struct__deactivate-btn"
+                (click)="demanderDesactivation(s)"
+                [disabled]="isToggling() === s.id"
+                title="Désactiver"
+              >
+                <i [class]="isToggling() === s.id ? 'pi pi-spinner pi-spin' : 'pi pi-ban'"></i>
+                Désactiver
+              </button>
+            } @else {
+              <button
+                class="bb-struct__activate-btn"
+                (click)="reactiver(s)"
+                [disabled]="isToggling() === s.id"
+                title="Réactiver"
+              >
+                <i [class]="isToggling() === s.id ? 'pi pi-spinner pi-spin' : 'pi pi-check-circle'"></i>
+                Réactiver
+              </button>
+            }
           </div>
         </div>
       }

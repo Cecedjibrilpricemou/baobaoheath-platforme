@@ -6,18 +6,11 @@ import { Role } from '../config/generated/client/client';
 import { randomUUID } from 'crypto';
 
 export async function register(dto: RegisterDto): Promise<TokenPair> {
-
-  // Vérifier unicité téléphone
-  const existingTel = await prisma.utilisateur.findUnique({
-    where: { telephone: dto.telephone }
-  });
+  const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.telephone } });
   if (existingTel) throw new Error('Ce numéro de téléphone est déjà utilisé');
 
-  // Vérifier unicité email si fourni
   if (dto.email) {
-    const existingEmail = await prisma.utilisateur.findUnique({
-      where: { email: dto.email }
-    });
+    const existingEmail = await prisma.utilisateur.findUnique({ where: { email: dto.email } });
     if (existingEmail) throw new Error('Cette adresse email est déjà utilisée');
   }
 
@@ -37,102 +30,51 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
 
     const role = dto.role ?? Role.PATIENT;
 
-    // ── PATIENT ──────────────────────────────────────────────
     if (role === Role.PATIENT) {
       await tx.patientProfile.create({
-        data: {
-          idUtilisateur: user.id,
-          dateNaissance: new Date('2000-01-01'),
-          sexe: 'M',
-          prefecture: 'Conakry',
-        },
+        data: { idUtilisateur: user.id, dateNaissance: new Date('2000-01-01'), sexe: 'M', prefecture: 'Conakry' },
       });
     }
-
-    // ── ASC + ASC_SUPERVISOR ──────────────────────────────────
     if (role === Role.ASC || role === Role.ASC_SUPERVISOR) {
-      await tx.ascProfile.create({
-        data: { idUtilisateur: user.id },
-      });
+      await tx.ascProfile.create({ data: { idUtilisateur: user.id } });
     }
-
-    // ── MEDECIN ───────────────────────────────────────────────
     if (role === Role.MEDECIN) {
-      await tx.medecinProfile.create({
-        data: {
-          idUtilisateur: user.id,
-          specialite: 'Médecine générale',
-          numeroCom: `ORD-${Date.now()}`,
-        },
-      });
+      await tx.medecinProfile.create({ data: { idUtilisateur: user.id, specialite: 'Médecine générale', numeroCom: `ORD-${Date.now()}` } });
     }
-
-    // ── PHARMACIEN ────────────────────────────────────────────
     if (role === Role.PHARMACIEN) {
-      await tx.pharmacienProfile.create({
-        data: { idUtilisateur: user.id },
-      });
+      await tx.pharmacienProfile.create({ data: { idUtilisateur: user.id } });
     }
 
     return user;
   });
 
   const sessionId = randomUUID();
-  const tokenPair = generateTokenPair({
-    userId: utilisateur.id,
-    role: utilisateur.role,
-    sessionId,
-  });
-
+  const tokenPair = generateTokenPair({ userId: utilisateur.id, role: utilisateur.role, sessionId });
   await prisma.session.create({
-    data: {
-      id: sessionId,
-      refreshToken: tokenPair.refreshToken,
-      expireLe: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      idUtilisateur: utilisateur.id,
-    },
+    data: { id: sessionId, refreshToken: tokenPair.refreshToken, expireLe: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), idUtilisateur: utilisateur.id },
   });
 
   return tokenPair;
 }
 
 export async function login(dto: LoginDto): Promise<TokenPair> {
-  // Détection automatique : email si contient @, sinon téléphone
   const isEmail = dto.identifiant.includes('@');
-
   const utilisateur = await prisma.utilisateur.findUnique({
-    where: isEmail
-      ? { email: dto.identifiant }
-      : { telephone: dto.identifiant },
+    where: isEmail ? { email: dto.identifiant } : { telephone: dto.identifiant },
   });
 
-  if (!utilisateur || !utilisateur.estActif) {
-    throw new Error('Identifiants invalides');
-  }
+  if (!utilisateur || !utilisateur.estActif) throw new Error('Identifiants invalides');
 
   const valid = await verifyPassword(dto.motDePasse, utilisateur.motDePasseHash);
   if (!valid) throw new Error('Identifiants invalides');
 
   const sessionId = randomUUID();
-  const tokenPair = generateTokenPair({
-    userId: utilisateur.id,
-    role: utilisateur.role,
-    sessionId,
-  });
+  const tokenPair = generateTokenPair({ userId: utilisateur.id, role: utilisateur.role, sessionId });
 
   await prisma.session.create({
-    data: {
-      id: sessionId,
-      refreshToken: tokenPair.refreshToken,
-      expireLe: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      idUtilisateur: utilisateur.id,
-    },
+    data: { id: sessionId, refreshToken: tokenPair.refreshToken, expireLe: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), idUtilisateur: utilisateur.id },
   });
-
-  await prisma.utilisateur.update({
-    where: { id: utilisateur.id },
-    data: { derniereConnexion: new Date() },
-  });
+  await prisma.utilisateur.update({ where: { id: utilisateur.id }, data: { derniereConnexion: new Date() } });
 
   return tokenPair;
 }
@@ -142,30 +84,15 @@ export async function logout(sessionId: string): Promise<void> {
 }
 
 export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
-  const session = await prisma.session.findUnique({
-    where: { refreshToken },
-    include: { utilisateur: true },
-  });
-
-  if (!session || session.expireLe < new Date()) {
-    throw new Error('Session expirée ou invalide');
-  }
+  const session = await prisma.session.findUnique({ where: { refreshToken }, include: { utilisateur: true } });
+  if (!session || session.expireLe < new Date()) throw new Error('Session expirée ou invalide');
 
   const sessionId = randomUUID();
-  const tokenPair = generateTokenPair({
-    userId: session.utilisateur.id,
-    role: session.utilisateur.role,
-    sessionId,
-  });
+  const tokenPair = generateTokenPair({ userId: session.utilisateur.id, role: session.utilisateur.role, sessionId });
 
   await prisma.session.delete({ where: { id: session.id } });
   await prisma.session.create({
-    data: {
-      id: sessionId,
-      refreshToken: tokenPair.refreshToken,
-      expireLe: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      idUtilisateur: session.utilisateur.id,
-    },
+    data: { id: sessionId, refreshToken: tokenPair.refreshToken, expireLe: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), idUtilisateur: session.utilisateur.id },
   });
 
   return tokenPair;
@@ -175,20 +102,56 @@ export async function getMe(userId: string) {
   const utilisateur = await prisma.utilisateur.findUnique({
     where: { id: userId },
     select: {
-      id: true,
-      telephone: true,
-      email: true,
-      prenom: true,
-      nom: true,
-      role: true,
-      langue: true,
-      photoUrl: true,
-      estActif: true,
-      creeLe: true,
-      modifieLe: true,
+      id: true, telephone: true, email: true,
+      prenom: true, nom: true, role: true,
+      langue: true, photoUrl: true, estActif: true,
+      doitChangerMotDePasse: true,
+      creeLe: true, modifieLe: true,
     },
   });
-
   if (!utilisateur) throw new Error('Utilisateur non trouvé');
   return utilisateur;
+}
+
+// ── NOUVEAU : Changer le mot de passe ────────────────────────────
+export async function changerMotDePasse(userId: string, dto: {
+  ancienMotDePasse?: string;
+  nouveauMotDePasse: string;
+}): Promise<void> {
+  const utilisateur = await prisma.utilisateur.findUnique({ where: { id: userId } });
+  if (!utilisateur) throw new Error('Utilisateur non trouvé');
+
+  // Si changement non forcé → vérifier l'ancien mot de passe
+  if (!utilisateur.doitChangerMotDePasse) {
+    if (!dto.ancienMotDePasse) throw new Error('L\'ancien mot de passe est obligatoire');
+    const valid = await verifyPassword(dto.ancienMotDePasse, utilisateur.motDePasseHash);
+    if (!valid) throw new Error('Ancien mot de passe incorrect');
+  }
+
+  if (dto.nouveauMotDePasse.length < 6) throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+
+  const motDePasseHash = await hashPassword(dto.nouveauMotDePasse);
+  await prisma.utilisateur.update({
+    where: { id: userId },
+    data: { motDePasseHash, doitChangerMotDePasse: false }
+  });
+}
+
+// ── NOUVEAU : Mettre à jour le profil ────────────────────────────
+export async function updateProfil(userId: string, dto: {
+  prenom?: string;
+  nom?: string;
+  email?: string;
+  telephone?: string;
+}): Promise<void> {
+  if (dto.email) {
+    const existing = await prisma.utilisateur.findFirst({ where: { email: dto.email, NOT: { id: userId } } });
+    if (existing) throw new Error('Cette adresse email est déjà utilisée');
+  }
+  if (dto.telephone) {
+    const existing = await prisma.utilisateur.findFirst({ where: { telephone: dto.telephone, NOT: { id: userId } } });
+    if (existing) throw new Error('Ce numéro de téléphone est déjà utilisé');
+  }
+
+  await prisma.utilisateur.update({ where: { id: userId }, data: dto });
 }

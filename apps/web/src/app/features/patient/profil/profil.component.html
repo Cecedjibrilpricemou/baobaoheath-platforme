@@ -32,6 +32,11 @@
               <i class="pi pi-heart-fill"></i> {{ profil()?.groupeSanguin }}
             </span>
             }
+            @if (profil()?.dateNaissance) {
+            <span class="profil-hero__detail">
+              <i class="pi pi-calendar"></i> {{ formatDate(profil()?.dateNaissance) }}
+            </span>
+            }
           </div>
         </div>
       </div>
@@ -64,12 +69,14 @@
 
     @if (successMessage()) {
     <div class="bb-alert bb-alert--success">
-      <i class="pi pi-check-circle"></i> <span>{{ successMessage() }}</span>
+      <i class="pi pi-check-circle"></i>
+      <span>{{ successMessage() }}</span>
     </div>
     }
     @if (errorMessage()) {
     <div class="bb-alert bb-alert--error">
-      <i class="pi pi-exclamation-circle"></i> <span>{{ errorMessage() }}</span>
+      <i class="pi pi-exclamation-circle"></i>
+      <span>{{ errorMessage() }}</span>
     </div>
     }
 
@@ -218,7 +225,7 @@
         } @else {
         <div class="structure-aucune">
           <i class="pi pi-info-circle"></i>
-          <span>Aucune structure préférée — vous êtes accessible par tous les soignants via votre QR Code</span>
+          <span>Aucune structure préférée — vous êtes accessible par tous les soignants via votre QR Code.</span>
         </div>
         }
 
@@ -246,12 +253,18 @@
     <div class="quick-actions">
       <a routerLink="/patient/qr-code" class="quick-action">
         <div class="quick-action__icon quick-action__icon--green"><i class="pi pi-qrcode"></i></div>
-        <span class="quick-action__label">{{ 'PATIENT.PROFILE.QUICK_QR' | translate }}</span>
+        <div class="quick-action__body">
+          <span class="quick-action__label">{{ 'PATIENT.PROFILE.QUICK_QR' | translate }}</span>
+          <span class="quick-action__sub">Partager mon dossier en un scan</span>
+        </div>
         <i class="pi pi-arrow-right quick-action__arrow"></i>
       </a>
       <a routerLink="/patient/dashboard" class="quick-action">
         <div class="quick-action__icon quick-action__icon--blue"><i class="pi pi-home"></i></div>
-        <span class="quick-action__label">{{ 'PATIENT.PROFILE.QUICK_DASHBOARD' | translate }}</span>
+        <div class="quick-action__body">
+          <span class="quick-action__label">{{ 'PATIENT.PROFILE.QUICK_DASHBOARD' | translate }}</span>
+          <span class="quick-action__sub">Aperçu de ma santé</span>
+        </div>
         <i class="pi pi-arrow-right quick-action__arrow"></i>
       </a>
     </div>

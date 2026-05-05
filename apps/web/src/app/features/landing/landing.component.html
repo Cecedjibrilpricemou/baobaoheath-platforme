@@ -1,7 +1,7 @@
 <!-- features/landing/landing.component.html -->
 <div class="landing">
 
-  <!-- ── NAVBAR ──────────────────────────────────────────────────── -->
+  <!-- ── NAVBAR ──────────────────────────────────────────────────────── -->
   <nav class="lnav">
     <div class="lnav__logo">
       <div class="lnav__logo-icon">🌳</div>
@@ -10,8 +10,8 @@
 
     <div class="lnav__links">
       <a href="#features" class="lnav__link">{{ 'LANDING.NAV_FEATURES' | translate }}</a>
-      <a href="#roles"    class="lnav__link">{{ 'LANDING.NAV_ROLES'    | translate }}</a>
-      <a href="#how"      class="lnav__link">{{ 'LANDING.NAV_HOW'      | translate }}</a>
+      <a href="#roles" class="lnav__link">{{ 'LANDING.NAV_ROLES' | translate }}</a>
+      <a href="#how" class="lnav__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
     </div>
 
     <div class="lnav__actions">
@@ -23,13 +23,37 @@
       <button class="lnav__icon-btn lnav__lang" (click)="toggleLang()">
         {{ 'COMMON.LANG_TOGGLE' | translate }}
       </button>
-      <a routerLink="/auth/login"    class="lnav__login">{{ 'LANDING.NAV_LOGIN'    | translate }}</a>
+      <a routerLink="/auth/login" class="lnav__login">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
       <a routerLink="/auth/register" class="lnav__register">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
     </div>
   </nav>
 
-  <!-- ── HERO ────────────────────────────────────────────────────── -->
+  <!-- ── HERO ────────────────────────────────────────────────────────── -->
   <section class="hero">
+
+    <!-- Carousel d'images en arrière-plan -->
+    <div class="hero__carousel" aria-hidden="true">
+
+      <!-- Slides générés dynamiquement -->
+      <div class="hero__carousel-track">
+        @for (i of slideIndices; track i) {
+        <div class="hero__carousel-slide" [class]="'hero__carousel-slide hero__carousel-slide--' + (i + 1)"
+          [class.is-active]="activeSlide() === i">
+          <div class="hero__carousel-overlay"></div>
+        </div>
+        }
+      </div>
+
+      <!-- Dots de navigation dynamiques -->
+      <div class="hero__carousel-dots">
+        @for (i of slideIndices; track i) {
+        <span class="hero__carousel-dot" [class.hero__carousel-dot--active]="activeSlide() === i"
+          (click)="goToSlide(i)"></span>
+        }
+      </div>
+    </div>
+
+    <!-- Deco cercles -->
     <div class="hero__deco hero__deco--1"></div>
     <div class="hero__deco hero__deco--2"></div>
 
@@ -61,10 +85,10 @@
       <!-- Stats -->
       <div class="hero__stats">
         @for (stat of stats; track stat.labelKey) {
-          <div class="hero-stat">
-            <span class="hero-stat__value">{{ stat.value }}</span>
-            <span class="hero-stat__label">{{ stat.labelKey | translate }}</span>
-          </div>
+        <div class="hero-stat">
+          <span class="hero-stat__value">{{ stat.value }}</span>
+          <span class="hero-stat__label">{{ stat.labelKey | translate }}</span>
+        </div>
         }
       </div>
     </div>
@@ -116,11 +140,11 @@
   <!-- ── TRUST BAR ─────────────────────────────────────────────── -->
   <div class="trust-bar">
     @for (item of trustItems; track item.label) {
-      <div class="trust-bar__item">
-        <i [class]="'pi ' + item.icon"></i>
-        <span>{{ item.label }}</span>
-      </div>
-      @if (!$last) { <div class="trust-bar__sep"></div> }
+    <div class="trust-bar__item">
+      <i [class]="'pi ' + item.icon"></i>
+      <span>{{ item.label }}</span>
+    </div>
+    @if (!$last) { <div class="trust-bar__sep"></div> }
     }
   </div>
 
@@ -133,11 +157,11 @@
     </div>
     <div class="features-grid">
       @for (f of features; track f.title) {
-        <div class="feature-card">
-          <div class="feature-card__icon"><i [class]="'pi ' + f.icon"></i></div>
-          <h3 class="feature-card__title">{{ f.title }}</h3>
-          <p class="feature-card__desc">{{ f.description }}</p>
-        </div>
+      <div class="feature-card">
+        <div class="feature-card__icon"><i [class]="'pi ' + f.icon"></i></div>
+        <h3 class="feature-card__title">{{ f.title }}</h3>
+        <p class="feature-card__desc">{{ f.description }}</p>
+      </div>
       }
     </div>
   </section>
@@ -154,11 +178,11 @@
       </div>
       <div class="roles-grid">
         @for (role of roles; track role.title) {
-          <div class="role-card">
-            <div class="role-card__icon"><i [class]="'pi ' + role.icon"></i></div>
-            <h3 class="role-card__title">{{ role.title }}</h3>
-            <p class="role-card__desc">{{ role.desc }}</p>
-          </div>
+        <div class="role-card">
+          <div class="role-card__icon"><i [class]="'pi ' + role.icon"></i></div>
+          <h3 class="role-card__title">{{ role.title }}</h3>
+          <p class="role-card__desc">{{ role.desc }}</p>
+        </div>
         }
       </div>
     </div>
@@ -173,11 +197,11 @@
     </div>
     <div class="steps-grid">
       @for (step of steps; track step.num) {
-        <div class="step">
-          <div class="step__num">{{ step.num }}</div>
-          <h3 class="step__title">{{ step.title }}</h3>
-          <p class="step__desc">{{ step.desc }}</p>
-        </div>
+      <div class="step">
+        <div class="step__num">{{ step.num }}</div>
+        <h3 class="step__title">{{ step.title }}</h3>
+        <p class="step__desc">{{ step.desc }}</p>
+      </div>
       }
     </div>
   </section>
@@ -213,20 +237,20 @@
       <div class="lfooter__col">
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_PLATFORM' | translate }}</div>
         <a href="#features" class="lfooter__link">{{ 'LANDING.NAV_FEATURES' | translate }}</a>
-        <a href="#roles"    class="lfooter__link">{{ 'LANDING.NAV_ROLES'    | translate }}</a>
-        <a href="#how"      class="lfooter__link">{{ 'LANDING.NAV_HOW'      | translate }}</a>
+        <a href="#roles" class="lfooter__link">{{ 'LANDING.NAV_ROLES' | translate }}</a>
+        <a href="#how" class="lfooter__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
       </div>
 
       <div class="lfooter__col">
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_ACCOUNT' | translate }}</div>
-        <a routerLink="/auth/login"    class="lfooter__link">{{ 'LANDING.NAV_LOGIN'    | translate }}</a>
+        <a routerLink="/auth/login" class="lfooter__link">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
         <a routerLink="/auth/register" class="lfooter__link">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
       </div>
 
       <div class="lfooter__col">
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_LEGAL' | translate }}</div>
         <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_PRIVACY' | translate }}</a>
-        <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_TERMS'   | translate }}</a>
+        <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_TERMS' | translate }}</a>
         <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
       </div>
     </div>
@@ -235,7 +259,7 @@
       <span class="lfooter__copy">{{ 'LANDING.FOOTER_COPY' | translate }}</span>
       <div class="lfooter__badges">
         <span class="lfooter__badge"><i class="pi pi-shield"></i> {{ 'LANDING.FOOTER_SECURE' | translate }}</span>
-        <span class="lfooter__badge"><i class="pi pi-globe"></i>  {{ 'LANDING.FOOTER_MADE'   | translate }}</span>
+        <span class="lfooter__badge"><i class="pi pi-globe"></i> {{ 'LANDING.FOOTER_MADE' | translate }}</span>
       </div>
     </div>
   </footer>
