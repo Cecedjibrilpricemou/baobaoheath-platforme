@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { prisma } from '../config/prisma';
 import {
     SendSmsDto,
@@ -14,7 +15,7 @@ async function mockSendSms(
     await new Promise((r) => setTimeout(r, 300));
     console.log(`[SMS MOCK] → ${telephone}: ${message}`);
     return {
-        messageId: `AT-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
+        messageId: `AT-${Date.now()}-${randomBytes(2).readUInt16BE(0)}`,
         statut: 'ENVOYE',
     };
 }
@@ -86,6 +87,10 @@ export async function envoyerAlerteStock(idStock: string) {
     }
 
     const message = `BaoBaoHealth ALERTE: Stock critique — ${stock.medicament.dci} (${stock.quantite} ${stock.unite} restants, seuil: ${stock.seuilAlerte}). Veuillez renouveler votre stock.`;
+
+    if (!stock.asc) {
+        throw new Error('Ce stock n est pas rattache a un ASC');
+    }
 
     return mockSendSms(stock.asc.utilisateur.telephone, message);
 }

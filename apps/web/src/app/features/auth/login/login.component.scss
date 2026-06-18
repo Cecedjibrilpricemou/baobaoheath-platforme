@@ -1,9 +1,9 @@
-// ═══════════════════════════════════════════════════════════════════
-// login.component.scss — BaoBaoHealth (refonte UI/UX)
-// Logique Angular intacte. Tous les sélecteurs viennent du template.
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// login.component.scss â€” BaoBaoHealth (refonte UI/UX)
+// Logique Angular intacte. Tous les sÃ©lecteurs viennent du template.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// ── PAGE WRAPPER ──────────────────────────────────────────────────
+// â”€â”€ PAGE WRAPPER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .login-page {
   min-height: 100vh;
   background:
@@ -27,7 +27,7 @@
   }
 }
 
-// ── CARD SPLIT ────────────────────────────────────────────────────
+// â”€â”€ CARD SPLIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .login-card {
   width: 100%;
   max-width: 980px;
@@ -50,7 +50,7 @@
   }
 }
 
-// ── PANNEAU GAUCHE ────────────────────────────────────────────────
+// â”€â”€ PANNEAU GAUCHE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .login-left {
   background:
     radial-gradient(700px 400px at 100% 0%, rgba(62, 187, 112, .30), transparent 55%),
@@ -155,13 +155,36 @@
     @media (max-width: 767px) { display: none; }
   }
 
-  &__stats {
-    display: flex;
-    background: rgba(255, 255, 255, .06);
-    border: 1px solid rgba(255, 255, 255, .10);
-    border-radius: var(--bb-radius-lg);
-    padding: 16px 0;
-    backdrop-filter: blur(8px);
+  &__hero {
+    margin-top: 16px;
+    flex: 1;
+    min-height: 320px;
+    border-radius: var(--bb-radius-xl);
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: 100%;
+    position: relative;
+    transform: translateY(0);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    &-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%;
+      display: block;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
 
     @media (max-width: 767px) { display: none; }
   }
@@ -173,29 +196,7 @@
   }
 }
 
-.login-stat {
-  flex: 1;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 4px;
-  padding: 0 12px;
-
-  & + & { border-left: 1px solid rgba(255, 255, 255, .10); }
-
-  &__num {
-    font-family: var(--bb-font-display);
-    font-size: 24px; font-weight: 800;
-    color: var(--bb-bright);
-    line-height: 1; letter-spacing: -.02em;
-  }
-
-  &__lbl {
-    font-size: 10px; color: rgba(255, 255, 255, .5);
-    text-transform: uppercase; letter-spacing: .08em;
-    font-weight: 600;
-  }
-}
-
-// ── Boutons thème / langue ────────────────────────────────────────
+// ── Boutons thème / langue ────────────────────────────────────
 .ctrl-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px;
@@ -217,15 +218,15 @@
   i { font-size: 12px; }
 }
 
-// ── PANNEAU DROIT — FORMULAIRE ────────────────────────────────────
+// ── PANNEAU DROIT — FORMULAIRE ───────────────────────────────────
 .login-right {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
-  padding: 48px 44px;
+  padding: 32px 40px;
   background: var(--bb-surface-0);
   transition: background var(--bb-transition);
 
-  @media (max-width: 767px) { padding: 36px 24px; }
+  @media (max-width: 767px) { padding: 32px 24px; }
 }
 
 .login-form-wrap {
@@ -242,11 +243,11 @@
 
 .login-form__sub {
   font-size: 14px; color: var(--bb-text-muted);
-  margin: 0 0 28px;
+  margin: 0 0 16px;
 }
 
 .login-form__footer {
-  text-align: center; margin-top: 24px;
+  text-align: center; margin-top: 16px;
   font-size: 11.5px; color: var(--bb-text-muted);
   display: flex; align-items: center; justify-content: center; gap: 6px;
 
@@ -287,7 +288,7 @@
   }
 }
 
-// ── CHAMPS ────────────────────────────────────────────────────────
+// â”€â”€ CHAMPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .form-field-wrap { margin-bottom: 16px; }
 
 .form-label {
@@ -308,7 +309,7 @@
   line-height: 1.4;
 }
 
-// ── InputGroup (refacto: addons transparents intégrés) ────────────
+// â”€â”€ InputGroup (refacto: addons transparents intÃ©grÃ©s) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .p-inputgroup {
   display: flex !important;
   align-items: stretch !important;
@@ -358,7 +359,7 @@
   }
 }
 
-// ── Toggle mot de passe ───────────────────────────────────────────
+// â”€â”€ Toggle mot de passe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .toggle-btn {
   background: transparent !important;
   border: none !important;
@@ -384,7 +385,24 @@
   text-transform: uppercase;
 }
 
-// ── BOUTON SUBMIT ─────────────────────────────────────────────────
+// ── LIEN MOT DE PASSE OUBLIÉ ────────────────────────────────────
+.forgot-link-wrap {
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+.forgot-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bb-text-muted);
+  text-decoration: none;
+  font-family: var(--bb-font-display);
+  transition: color var(--bb-transition);
+
+  &:hover { color: var(--bb-primary); }
+}
+
+// â”€â”€ BOUTON SUBMIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 :host ::ng-deep .login-submit-btn,
 .login-submit-btn {
   width: 100% !important;
@@ -419,7 +437,7 @@
   }
 }
 
-// ── SÉPARATEUR ────────────────────────────────────────────────────
+// â”€â”€ SÃ‰PARATEUR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .form-separator {
   display: flex;
   align-items: center;
@@ -441,7 +459,7 @@
   }
 }
 
-// ── LIEN REGISTER ─────────────────────────────────────────────────
+// â”€â”€ LIEN REGISTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .register-link {
   display: flex;
   align-items: center;
@@ -467,3 +485,157 @@
     color: var(--bb-primary);
   }
 }
+
+// ── OTP HEADER ───────────────────────────────────────────────────
+.otp-header {
+  text-align: center;
+  margin-bottom: 28px;
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    background: rgba(62, 187, 112, 0.1);
+    color: var(--bb-primary);
+    margin-bottom: 20px;
+
+    i { font-size: 24px; }
+  }
+
+  .login-form__title { text-align: center; }
+  .login-form__sub   { text-align: center; margin: 0; }
+}
+
+// ── OTP STATUS BAR ───────────────────────────────────────────────
+.otp-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--bb-radius);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+
+  i { font-size: 13px; flex-shrink: 0; }
+
+  &--timer {
+    background: rgba(62, 187, 112, 0.08);
+    color: var(--bb-primary);
+    border: 1px solid rgba(62, 187, 112, 0.2);
+  }
+
+  &--warning {
+    background: rgba(234, 179, 8, 0.08);
+    color: #b45309;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+  }
+
+  &--expired {
+    background: rgba(239, 68, 68, 0.08);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+}
+
+// ── OTP ACTIONS ──────────────────────────────────────────────────
+.otp-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.otp-resend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 1.5px solid var(--bb-border);
+  border-radius: var(--bb-radius-pill);
+  background: var(--bb-surface-1);
+  color: var(--bb-primary);
+  font-family: var(--bb-font-display);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--bb-transition);
+
+  i { font-size: 11px; }
+
+  &:hover:not(:disabled) {
+    border-color: var(--bb-bright);
+    background: rgba(62, 187, 112, 0.08);
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.otp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: none;
+  border: none;
+  color: var(--bb-text-muted);
+  font-family: var(--bb-font-display);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--bb-transition);
+
+  i { font-size: 11px; }
+
+  &:hover:not(:disabled) { color: var(--bb-text-secondary); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// â”€â”€ OTP INPUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+.otp-inputs-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 32px 0 24px;
+
+  .otp-digit-input {
+    width: 48px;
+    height: 56px;
+    border: 2px solid var(--bb-border);
+    border-radius: 12px;
+    background: var(--bb-surface-1);
+    color: var(--bb-text-primary);
+    font-size: 24px;
+    font-weight: 800;
+    text-align: center;
+    transition: all var(--bb-transition);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    font-family: var(--bb-font-display);
+
+    &:focus {
+      border-color: var(--bb-bright);
+      background: var(--bb-surface-0);
+      box-shadow: 0 0 0 4px rgba(62, 187, 112, 0.15);
+      outline: none;
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      background: var(--bb-surface-2);
+      color: var(--bb-text-muted);
+      cursor: not-allowed;
+      border-color: var(--bb-border-light);
+    }
+    
+    &.filled {
+      border-color: var(--bb-primary);
+      color: var(--bb-deep);
+      background-color: rgba(62, 187, 112, 0.05);
+    }
+  }
+}
+
+

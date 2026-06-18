@@ -242,4 +242,28 @@
     i { font-size: 40px; color: var(--bb-text-muted); opacity: .3; }
     p { font-size: 13.5px; color: var(--bb-text-muted); }
   }
+
+  // Alertes cliniques temps réel
+  &__realtime-alerts {
+    display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  &__realtime-alert {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    font-size: 0.825rem; font-weight: 500;
+    border-left: 3px solid transparent;
+
+    i { font-size: 0.9rem; flex-shrink: 0; }
+
+    &--danger {
+      background: #fef2f2; color: #991b1b; border-left-color: #ef4444;
+      [data-theme="dark"] & { background: #450a0a; color: #fca5a5; border-left-color: #dc2626; }
+    }
+    &--warn {
+      background: #fffbeb; color: #92400e; border-left-color: #f59e0b;
+      [data-theme="dark"] & { background: #451a03; color: #fcd34d; border-left-color: #d97706; }
+    }
+  }
 }

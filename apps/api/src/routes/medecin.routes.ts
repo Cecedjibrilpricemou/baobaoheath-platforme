@@ -11,6 +11,12 @@ import {
 } from '../controllers/medecin.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
+import { validateBody } from '../middlewares/validate.middleware';
+import {
+  validerConsultationSchema,
+  repondreReferencementSchema,
+  sendMessageSchema,
+} from '../validators/api.schemas';
 
 const router = Router();
 
@@ -24,14 +30,14 @@ router.get('/dashboard', getDashboardStatsController);
 
 // ─── Consultations ────────────────────────────────────────
 router.get('/consultations', getConsultationsAValiderController);
-router.put('/consultations/:id/valider', validerConsultationController);
+router.put('/consultations/:id/valider', validateBody(validerConsultationSchema), validerConsultationController);
 
 // ─── Référencements ───────────────────────────────────────
 router.get('/referencements', getReferencementsController);
-router.put('/referencements/:id/repondre', repondreReferencementController);
+router.put('/referencements/:id/repondre', validateBody(repondreReferencementSchema), repondreReferencementController);
 
 // ─── Messagerie ───────────────────────────────────────────
 router.get('/messages', getMessagesController);
-router.post('/messages', sendMessageController);
+router.post('/messages', validateBody(sendMessageSchema), sendMessageController);
 
 export default router;

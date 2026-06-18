@@ -10,6 +10,8 @@ import {
 } from '../controllers/notification.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
+import { validateBody } from '../middlewares/validate.middleware';
+import { sendSmsSchema, sendSmsMasseSchema } from '../validators/api.schemas';
 
 const router = Router();
 
@@ -20,6 +22,7 @@ router.use(authenticate);
 router.post(
     '/sms',
     requireRole('ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'),
+    validateBody(sendSmsSchema),
     envoyerSmsController
 );
 
@@ -27,6 +30,7 @@ router.post(
 router.post(
     '/sms/masse',
     requireRole('ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'),
+    validateBody(sendSmsMasseSchema),
     envoyerSmsMasseController
 );
 

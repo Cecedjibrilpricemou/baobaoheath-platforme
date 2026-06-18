@@ -2,7 +2,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { CardModule } from 'primeng/card';
@@ -13,7 +13,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
 import { ApiService } from '../../../core/services/api.service';
-import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { ConsultationService } from '../../../core/services/consultation.service';
 
 // ─── Interfaces alignées avec le backend ─────────────────
 
@@ -107,17 +107,17 @@ interface Structure {
   selector: 'app-consultation-detail',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, RouterLink,
+    CommonModule, FormsModule,
     ButtonModule, TagModule, CardModule,
     InputTextModule, TextareaModule, InputNumberModule,
-    SkeletonModule, DividerModule, SelectModule,
-    TranslatePipe
+    SkeletonModule, DividerModule, SelectModule
   ],
   templateUrl: './consultation-detail.component.html',
   styleUrl: './consultation-detail.component.scss'
 })
 export class ConsultationDetailComponent implements OnInit {
   private api    = inject(ApiService);
+  private consultationService = inject(ConsultationService);
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -129,15 +129,52 @@ export class ConsultationDetailComponent implements OnInit {
 
   // ── Constantes vitales ──────────────────────────────────
   vitalsForm: ConstantesVitales = {};
-  isSavingVitals = signal(false);
+  isSavingVitals  = signal(false);
+  vitalsAlerts    = signal<{ level: 'danger' | 'warn'; message: string }[]>([]);
+
+  onVitalsChange() {
+    const v = this.vitalsForm;
+    const alerts: { level: 'danger' | 'warn'; message: string }[] = [];
+
+    if (v.spo2 != null) {
+      if (v.spo2 < 90)       alerts.push({ level: 'danger', message: `SpO2 critique : ${v.spo2}% — saturation insuffisante` });
+      else if (v.spo2 < 95)  alerts.push({ level: 'warn',   message: `SpO2 basse : ${v.spo2}% (normale ≥ 95%)` });
+    }
+    if (v.temperature != null) {
+      if (v.temperature >= 39)         alerts.push({ level: 'danger', message: `Hyperthermie sévère : ${v.temperature}°C` });
+      else if (v.temperature >= 38)    alerts.push({ level: 'warn',   message: `Fièvre : ${v.temperature}°C` });
+      else if (v.temperature < 36)     alerts.push({ level: 'warn',   message: `Hypothermie : ${v.temperature}°C` });
+    }
+    if (v.tensionSystolique != null) {
+      if (v.tensionSystolique >= 180)  alerts.push({ level: 'danger', message: `HTA sévère : ${v.tensionSystolique} mmHg systolique` });
+      else if (v.tensionSystolique >= 140) alerts.push({ level: 'warn', message: `HTA : ${v.tensionSystolique} mmHg systolique` });
+      else if (v.tensionSystolique < 90)   alerts.push({ level: 'danger', message: `Hypotension : ${v.tensionSystolique} mmHg systolique` });
+    }
+    if (v.frequenceCardiaque != null) {
+      if (v.frequenceCardiaque > 120)  alerts.push({ level: 'danger', message: `Tachycardie sévère : ${v.frequenceCardiaque} bpm` });
+      else if (v.frequenceCardiaque > 100) alerts.push({ level: 'warn', message: `Tachycardie : ${v.frequenceCardiaque} bpm` });
+      else if (v.frequenceCardiaque < 60)  alerts.push({ level: 'warn', message: `Bradycardie : ${v.frequenceCardiaque} bpm` });
+    }
+    if (v.frequenceRespiratoire != null) {
+      if (v.frequenceRespiratoire > 25)  alerts.push({ level: 'danger', message: `Tachypnée sévère : ${v.frequenceRespiratoire} /min` });
+      else if (v.frequenceRespiratoire < 12) alerts.push({ level: 'warn', message: `Bradypnée : ${v.frequenceRespiratoire} /min` });
+    }
+    if (v.glycemie != null) {
+      if (v.glycemie < 0.70)   alerts.push({ level: 'danger', message: `Hypoglycémie : ${v.glycemie} g/L (< 0.70)` });
+      else if (v.glycemie > 3.0) alerts.push({ level: 'danger', message: `Hyperglycémie critique : ${v.glycemie} g/L` });
+      else if (v.glycemie > 2.0) alerts.push({ level: 'warn',   message: `Glycémie élevée : ${v.glycemie} g/L` });
+    }
+
+    this.vitalsAlerts.set(alerts);
+  }
 
   // ── Diagnostic ──────────────────────────────────────────
-  diagnosticForm = {
-    libelle: '',
-    codeIcd11: '',
-    typeDiagnostic: 'PRINCIPAL',
-    severite: '',
-    source: 'ASC'
+  diagnosticForm: {
+    libelle: string; codeIcd11: string;
+    typeDiagnostic: 'PRINCIPAL' | 'DIFFERENTIEL' | 'SECONDAIRE';
+    severite: string; source: 'ASC';
+  } = {
+    libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC'
   };
   isSavingDiagnostic = signal(false);
   typesDiagnostic = [
@@ -164,11 +201,11 @@ export class ConsultationDetailComponent implements OnInit {
   isSavingOrdonnance = signal(false);
 
   // ── Référencement ────────────────────────────────────────
-  referralForm = {
-    idStructureCible: '',
-    urgence: 'ROUTINE',
-    resumeClinique: ''
-  };
+  referralForm: {
+    idStructureCible: string;
+    urgence: 'ROUTINE' | 'URGENT' | 'URGENCE_VITALE';
+    resumeClinique: string;
+  } = { idStructureCible: '', urgence: 'ROUTINE', resumeClinique: '' };
   structures      = signal<Structure[]>([]);
   isSavingReferral = signal(false);
   urgences = [
@@ -192,13 +229,16 @@ export class ConsultationDetailComponent implements OnInit {
 
   private loadConsultation(id: string) {
     this.isLoading.set(true);
-    this.api.get<any>(`/consultations/${id}`).subscribe({
+    this.consultationService.getConsultationById(id).subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        this.consultation.set(data);
-        // Pré-remplir le formulaire vitaux si déjà saisis
-        if (data.constantes) {
-          this.vitalsForm = { ...data.constantes };
+        if (response.success && response.data) {
+          const data = response.data as unknown as Consultation;
+          this.consultation.set(data);
+          // Pré-remplir le formulaire vitaux si déjà saisis
+          if (data.constantes) {
+            this.vitalsForm = { ...data.constantes };
+            this.onVitalsChange();
+          }
         }
         this.isLoading.set(false);
       },
@@ -210,15 +250,15 @@ export class ConsultationDetailComponent implements OnInit {
   }
 
   private loadMedicaments() {
-    this.api.get<any>('/medicaments').subscribe({
-      next: (r) => this.medicaments.set(Array.isArray(r) ? r : r?.data ?? []),
+    this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/medicaments').subscribe({
+      next: (r) => this.medicaments.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as Medicament[]),
       error: () => {}
     });
   }
 
   private loadStructures() {
-    this.api.get<any>('/structures').subscribe({
-      next: (r) => this.structures.set(Array.isArray(r) ? r : r?.data ?? []),
+    this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/structures').subscribe({
+      next: (r) => this.structures.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as Structure[]),
       error: () => {}
     });
   }
@@ -228,13 +268,15 @@ export class ConsultationDetailComponent implements OnInit {
     const id = this.consultation()?.id;
     if (!id) return;
     this.isSavingVitals.set(true);
-    this.api.post<any>(`/consultations/${id}/vitals`, this.vitalsForm).subscribe({
+    this.consultationService.saveVitals(id, this.vitalsForm).subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        const c = this.consultation();
-        if (c) this.consultation.set({ ...c, constantes: data });
-        this.isSavingVitals.set(false);
-        this.showSuccess('Constantes vitales sauvegardées !');
+        if (response.success && response.data) {
+          const constantes = response.data as unknown as ConstantesVitales;
+          const c = this.consultation();
+          if (c) this.consultation.set({ ...c, constantes });
+          this.isSavingVitals.set(false);
+          this.showSuccess('Constantes vitales sauvegardées !');
+        }
       },
       error: (err) => {
         this.isSavingVitals.set(false);
@@ -248,14 +290,19 @@ export class ConsultationDetailComponent implements OnInit {
     const id = this.consultation()?.id;
     if (!id || !this.diagnosticForm.libelle) return;
     this.isSavingDiagnostic.set(true);
-    this.api.post<any>(`/consultations/${id}/diagnostics`, this.diagnosticForm).subscribe({
+    this.consultationService.saveDiagnostic(id, {
+      ...this.diagnosticForm,
+      severite: (this.diagnosticForm.severite as 'LEGER' | 'MODERE' | 'SEVERE' | 'CRITIQUE') || undefined
+    }).subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        const c = this.consultation();
-        if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data] });
-        this.diagnosticForm = { libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC' };
-        this.isSavingDiagnostic.set(false);
-        this.showSuccess('Diagnostic ajouté !');
+        if (response.success && response.data) {
+          const data = response.data as unknown as Diagnostic;
+          const c = this.consultation();
+          if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data] });
+          this.diagnosticForm = { libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC' };
+          this.isSavingDiagnostic.set(false);
+          this.showSuccess('Diagnostic ajouté !');
+        }
       },
       error: (err) => {
         this.isSavingDiagnostic.set(false);
@@ -269,14 +316,16 @@ export class ConsultationDetailComponent implements OnInit {
     const id = this.consultation()?.id;
     if (!id || !this.ordonnanceForm.idMedicament) return;
     this.isSavingOrdonnance.set(true);
-    this.api.post<any>(`/consultations/${id}/ordonnances`, this.ordonnanceForm).subscribe({
+    this.consultationService.saveOrdonnance(id, this.ordonnanceForm).subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        const c = this.consultation();
-        if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data] });
-        this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
-        this.isSavingOrdonnance.set(false);
-        this.showSuccess('Ordonnance ajoutée !');
+        if (response.success && response.data) {
+          const data = response.data as unknown as Ordonnance;
+          const c = this.consultation();
+          if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data] });
+          this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
+          this.isSavingOrdonnance.set(false);
+          this.showSuccess('Ordonnance ajoutée !');
+        }
       },
       error: (err) => {
         this.isSavingOrdonnance.set(false);
@@ -290,13 +339,15 @@ export class ConsultationDetailComponent implements OnInit {
     const id = this.consultation()?.id;
     if (!id || !this.referralForm.idStructureCible || !this.referralForm.resumeClinique) return;
     this.isSavingReferral.set(true);
-    this.api.post<any>(`/consultations/${id}/referral`, this.referralForm).subscribe({
+    this.consultationService.saveReferral(id, this.referralForm).subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        const c = this.consultation();
-        if (c) this.consultation.set({ ...c, referencement: data, statut: 'REFERENCEE' });
-        this.isSavingReferral.set(false);
-        this.showSuccess('Référencement créé !');
+        if (response.success && response.data) {
+          const ref = response.data as unknown as Referencement;
+          const c = this.consultation();
+          if (c) this.consultation.set({ ...c, referencement: ref, statut: 'REFERENCEE' });
+          this.isSavingReferral.set(false);
+          this.showSuccess('Référencement créé !');
+        }
       },
       error: (err) => {
         this.isSavingReferral.set(false);
@@ -311,7 +362,7 @@ export class ConsultationDetailComponent implements OnInit {
     if (!id) return;
     this.isClosing.set(true);
     this.showCloseConfirm.set(false);
-    this.api.post<any>(`/consultations/${id}/complete`, {}).subscribe({
+    this.consultationService.closeConsultation(id).subscribe({
       next: () => {
         const c = this.consultation();
         if (c) this.consultation.set({ ...c, statut: 'TERMINEE' });

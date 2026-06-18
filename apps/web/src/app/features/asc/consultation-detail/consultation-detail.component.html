@@ -151,10 +151,22 @@
         </div>
       }
 
+      <!-- Alertes cliniques temps réel -->
+      @if (vitalsAlerts().length) {
+        <div class="bb-detail__realtime-alerts">
+          @for (alert of vitalsAlerts(); track alert.message) {
+            <div class="bb-detail__realtime-alert" [class.bb-detail__realtime-alert--danger]="alert.level === 'danger'" [class.bb-detail__realtime-alert--warn]="alert.level === 'warn'">
+              <i [class]="alert.level === 'danger' ? 'pi pi-times-circle' : 'pi pi-exclamation-triangle'"></i>
+              {{ alert.message }}
+            </div>
+          }
+        </div>
+      }
+
       <div class="bb-detail__vitals-grid">
         <div class="bb-detail__vital-field">
           <label>🌡️ Température (°C)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.temperature" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="Ex: 37.5" [disabled]="isConsultationTerminee()" />
+          <p-inputnumber [(ngModel)]="vitalsForm.temperature" (ngModelChange)="onVitalsChange()" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="Ex: 37.5" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
           <label>⚖️ Poids (kg)</label>
@@ -170,7 +182,7 @@
         </div>
         <div class="bb-detail__vital-field">
           <label>🩺 Tension systolique (mmHg)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.tensionSystolique" [min]="0" [max]="300" placeholder="Ex: 120" [disabled]="isConsultationTerminee()" />
+          <p-inputnumber [(ngModel)]="vitalsForm.tensionSystolique" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 120" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
           <label>🩺 Tension diastolique (mmHg)</label>
@@ -178,19 +190,19 @@
         </div>
         <div class="bb-detail__vital-field">
           <label>❤️ Fréquence cardiaque (bpm)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.frequenceCardiaque" [min]="0" [max]="300" placeholder="Ex: 72" [disabled]="isConsultationTerminee()" />
+          <p-inputnumber [(ngModel)]="vitalsForm.frequenceCardiaque" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 72" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
           <label>💨 Fréquence respiratoire (/min)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.frequenceRespiratoire" [min]="0" [max]="100" placeholder="Ex: 18" [disabled]="isConsultationTerminee()" />
+          <p-inputnumber [(ngModel)]="vitalsForm.frequenceRespiratoire" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" placeholder="Ex: 18" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
           <label>🩸 SpO2 (%)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.spo2" [min]="0" [max]="100" [minFractionDigits]="1" placeholder="Ex: 98.0" [disabled]="isConsultationTerminee()" />
+          <p-inputnumber [(ngModel)]="vitalsForm.spo2" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [minFractionDigits]="1" placeholder="Ex: 98.0" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
           <label>🍬 Glycémie (g/L)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.glycemie" [min]="0" [max]="10" [minFractionDigits]="2" placeholder="Ex: 0.90" [disabled]="isConsultationTerminee()" />
+          <p-inputnumber [(ngModel)]="vitalsForm.glycemie" (ngModelChange)="onVitalsChange()" [min]="0" [max]="10" [minFractionDigits]="2" placeholder="Ex: 0.90" [disabled]="isConsultationTerminee()" />
         </div>
       </div>
 

@@ -1,9 +1,10 @@
 <!-- features/auth/login/login.component.html -->
 <div class="login-page">
-  <div class="login-card">
+  <div class="login-card" [style.maxWidth.px]="requiresOtp() ? 480 : 980" style="transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)">
 
     <!-- ── Panneau gauche ──────────────────────────────────────── -->
-    <div class="login-left">
+    @if (!requiresOtp()) {
+      <div class="login-left">
       <div class="login-left__deco login-left__deco--1"></div>
       <div class="login-left__deco login-left__deco--2"></div>
       <div class="login-left__deco login-left__deco--3"></div>
@@ -21,22 +22,8 @@
           <span class="login-left__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
 
-        <h1 class="login-left__title">{{ 'AUTH.LOGIN.WELCOME_TITLE' | translate }}</h1>
-        <p class="login-left__sub">{{ 'AUTH.LOGIN.WELCOME_SUBTITLE' | translate }}</p>
-
-        <div class="login-left__stats">
-          <div class="login-stat">
-            <span class="login-stat__num">9</span>
-            <span class="login-stat__lbl">{{ 'AUTH.LOGIN.STAT_MODULES' | translate }}</span>
-          </div>
-          <div class="login-stat">
-            <span class="login-stat__num">62</span>
-            <span class="login-stat__lbl">{{ 'AUTH.LOGIN.STAT_ROUTES' | translate }}</span>
-          </div>
-          <div class="login-stat">
-            <span class="login-stat__num">8</span>
-            <span class="login-stat__lbl">{{ 'AUTH.LOGIN.STAT_ROLES' | translate }}</span>
-          </div>
+        <div class="login-left__hero">
+          <img src="assets/images/loginimage.jpeg" alt="" class="login-left__hero-img">
         </div>
       </div>
 
@@ -50,102 +37,200 @@
         </button>
       </div>
     </div>
+    }
 
     <!-- ── Panneau droit — formulaire ─────────────────────────── -->
-    <div class="login-right">
-      <div class="login-form-wrap">
+    <div class="login-right" [style.padding]="requiresOtp() ? '48px 32px' : ''">
+      <div class="login-form-wrap" [style.maxWidth]="requiresOtp() ? '100%' : '360px'">
 
-        <h2 class="login-form__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h2>
-        <p class="login-form__sub">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
-
-        @if (errorMessage()) {
-          <div class="bb-alert bb-alert--error">
-            <i class="pi pi-exclamation-circle"></i>
-            <span>{{ errorMessage() }}</span>
+        @if (!requiresOtp()) {
+          <h2 class="login-form__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h2>
+          <p class="login-form__sub">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
+        } @else {
+          <div class="otp-header">
+            <div class="otp-header__icon">
+              <i class="pi pi-shield"></i>
+            </div>
+            <h2 class="login-form__title">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</h2>
+            <p class="login-form__sub">{{ 'AUTH.LOGIN.OTP_SUBTITLE' | translate }}<br><strong>{{ otpEmail() }}</strong></p>
           </div>
         }
 
-        <form (ngSubmit)="onSubmit()" #loginForm="ngForm" novalidate>
+        @if (!requiresOtp()) {
+          <form (ngSubmit)="onSubmit()" #loginForm="ngForm" novalidate>
 
-          <!-- Téléphone OU Email — détection automatique -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="identifiant">
-              {{ 'AUTH.LOGIN.IDENTIFIANT' | translate }}
-            </label>
-            <div class="p-inputgroup">
-              <span class="p-inputgroup-addon">
-                <i [class]="identifiantIcon"></i>
-              </span>
-              <input
-                pInputText
-                id="identifiant"
-                type="text"
-                placeholder="{{ 'AUTH.LOGIN.IDENTIFIANT_PLACEHOLDER' | translate }}"
-                [(ngModel)]="formData.identifiant"
-                name="identifiant"
-                required
-                autocomplete="username"
-                class="w-full"
-              />
+            <!-- Téléphone OU Email — détection automatique -->
+            <div class="form-field-wrap">
+              <label class="form-label" for="identifiant">
+                {{ 'AUTH.LOGIN.IDENTIFIANT' | translate }}
+              </label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon">
+                  <i [class]="identifiantIcon"></i>
+                </span>
+                <input
+                  pInputText
+                  id="identifiant"
+                  type="text"
+                  placeholder="{{ 'AUTH.LOGIN.IDENTIFIANT_PLACEHOLDER' | translate }}"
+                  [(ngModel)]="formData.identifiant"
+                  name="identifiant"
+                  required
+                  autocomplete="username"
+                  class="w-full"
+                  #identifiantInput="ngModel"
+                />
+              </div>
+              @if (identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched)) {
+                <small class="bb-error-text">L'identifiant est requis</small>
+              }
+              @if (!(identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched))) {
+                <small class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
+              }
             </div>
-            <small class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
-          </div>
 
-          <!-- Mot de passe -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="motDePasse">
-              {{ 'AUTH.LOGIN.PASSWORD' | translate }}
-            </label>
-            <div class="p-inputgroup">
-              <span class="p-inputgroup-addon">
-                <i class="pi pi-lock"></i>
-              </span>
-              <input
-                pInputText
-                id="motDePasse"
-                [type]="showPassword() ? 'text' : 'password'"
-                [placeholder]="'AUTH.LOGIN.PASSWORD' | translate"
-                [(ngModel)]="formData.motDePasse"
-                name="motDePasse"
-                required
-                autocomplete="current-password"
-                class="w-full"
-              />
+            <!-- Mot de passe -->
+            <div class="form-field-wrap">
+              <label class="form-label" for="motDePasse">
+                {{ 'AUTH.LOGIN.PASSWORD' | translate }}
+              </label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon">
+                  <i class="pi pi-lock"></i>
+                </span>
+                <input
+                  pInputText
+                  id="motDePasse"
+                  [type]="showPassword() ? 'text' : 'password'"
+                  [placeholder]="'AUTH.LOGIN.PASSWORD' | translate"
+                  [(ngModel)]="formData.motDePasse"
+                  name="motDePasse"
+                  required
+                  autocomplete="current-password"
+                  class="w-full"
+                  #mdpInput="ngModel"
+                />
+                <button
+                  type="button"
+                  class="p-inputgroup-addon toggle-btn"
+                  (click)="togglePassword()"
+                  [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
+                >
+                  <span class="toggle-label">
+                    {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
+                  </span>
+                </button>
+              </div>
+              @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
+                <small class="bb-error-text">Le mot de passe est requis</small>
+              }
+            </div>
+
+            <!-- Mot de passe oublié -->
+            <div class="forgot-link-wrap">
+              <a routerLink="/auth/forgot-password" class="forgot-link">
+                {{ 'AUTH.FORGOT.TITLE' | translate }}
+              </a>
+            </div>
+
+            <!-- Bouton connexion -->
+            <p-button
+              type="submit"
+              [label]="isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate)"
+              [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'"
+              [loading]="isLoading()"
+              [disabled]="isLoading()"
+              styleClass="w-full login-submit-btn"
+            ></p-button>
+
+            <div class="form-separator">
+              <span class="form-separator__line"></span>
+              <span class="form-separator__text">ou</span>
+              <span class="form-separator__line"></span>
+            </div>
+
+            <a routerLink="/auth/register" class="register-link">
+              <i class="pi pi-user-plus"></i>
+              {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
+            </a>
+
+          </form>
+        } @else {
+
+          <!-- ── Status bar : countdown ou expiré ──────────────── -->
+          @if (otpExpired) {
+            <div class="otp-status otp-status--expired">
+              <i class="pi pi-clock"></i>
+              {{ 'AUTH.LOGIN.OTP_EXPIRED_MSG' | translate }}
+            </div>
+          } @else {
+            <div class="otp-status otp-status--timer" [class.otp-status--warning]="otpSecondsLeft() < 60">
+              <i class="pi pi-clock"></i>
+              {{ 'AUTH.LOGIN.OTP_EXPIRES_IN' | translate }} : <strong>{{ otpTimeDisplay }}</strong>
+            </div>
+          }
+
+          <form (ngSubmit)="verifyOtp()" #otpForm="ngForm" novalidate>
+
+            <!-- Champs OTP -->
+            <div class="form-field-wrap">
+              <div class="otp-inputs-container"
+                   [style.opacity]="(isLoading() || otpExpired) ? '0.6' : '1'"
+                   [style.pointer-events]="(isLoading() || otpExpired) ? 'none' : 'auto'">
+                @for (digit of otpDigits; track $index) {
+                  <input
+                    #otpInput
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="1"
+                    class="otp-digit-input"
+                    [class.filled]="otpDigits[$index]"
+                    [(ngModel)]="otpDigits[$index]"
+                    [ngModelOptions]="{standalone: true}"
+                    (ngModelChange)="onOtpChange($index, $event)"
+                    (keydown)="onOtpKeyDown($index, $event)"
+                    (paste)="onOtpPaste($event)"
+                    [disabled]="isLoading() || otpExpired"
+                  />
+                }
+              </div>
+            </div>
+
+            <!-- Bouton vérifier -->
+            <p-button
+              type="submit"
+              [label]="'AUTH.LOGIN.OTP_SUBMIT' | translate"
+              icon="pi pi-check"
+              [loading]="isLoading()"
+              [disabled]="isLoading() || otpCode.length !== 6 || otpExpired"
+              styleClass="w-full login-submit-btn"
+            ></p-button>
+
+            <!-- Actions secondaires -->
+            <div class="otp-actions">
               <button
                 type="button"
-                class="p-inputgroup-addon toggle-btn"
-                (click)="togglePassword()"
-                [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
+                class="otp-resend-btn"
+                (click)="resendOtp()"
+                [disabled]="isLoading()"
               >
-                <span class="toggle-label">
-                  {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
-                </span>
+                <i class="pi pi-refresh"></i>
+                {{ 'AUTH.LOGIN.OTP_RESEND' | translate }}
+              </button>
+
+              <button
+                type="button"
+                class="otp-back-btn"
+                (click)="cancelOtp()"
+                [disabled]="isLoading()"
+              >
+                <i class="pi pi-arrow-left"></i>
+                {{ 'AUTH.LOGIN.OTP_BACK' | translate }}
               </button>
             </div>
-          </div>
 
-          <!-- Bouton connexion -->
-          <p-button
-            type="submit"
-            [label]="isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate)"
-            [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'"
-            [loading]="isLoading()"
-            [disabled]="isLoading()"
-            styleClass="w-full login-submit-btn"
-          ></p-button>
-
-          <div class="form-separator">
-            <span class="form-separator__line"></span>
-            <span class="form-separator__text">ou</span>
-            <span class="form-separator__line"></span>
-          </div>
-
-          <a routerLink="/auth/register" class="register-link">
-            <i class="pi pi-user-plus"></i>
-            {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
-          </a>
-
-        </form>
+          </form>
+        }
 
         <p class="login-form__footer">
           <i class="pi pi-shield"></i>

@@ -1,14 +1,14 @@
 // core/services/auth.service.ts
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { tap, map, switchMap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { User, LoginPayload, RegisterPayload } from '../models/user.model';
 
 interface BackendTokenResponse {
   success: boolean;
-  data: { accessToken: string; refreshToken: string; };
+  data: { accessToken: string; };
 }
 
 interface BackendMeResponse {
@@ -16,24 +16,49 @@ interface BackendMeResponse {
   data: User;
 }
 
+interface BackendLoginResponse {
+  success: boolean;
+  data: {
+    accessToken?: string;
+    requiresOtp?: boolean;
+    email?: string;
+    message?: string;
+    expiresInMinutes?: number;
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private api    = inject(ApiService);
   private router = inject(Router);
 
+  // Access token kept in memory only — never in localStorage (XSS risk)
+  private _accessToken = signal<string | null>(null);
+  // User profile in localStorage for fast re-render; refreshed on every token refresh
   private _currentUser = signal<User | null>(this.loadUserFromStorage());
-  private _accessToken = signal<string | null>(localStorage.getItem('accessToken'));
 
   currentUser           = this._currentUser.asReadonly();
   isAuthenticated       = computed(() => !!this._currentUser());
   userRole              = computed(() => this._currentUser()?.role ?? null);
   doitChangerMotDePasse = computed(() => this._currentUser()?.doitChangerMotDePasse ?? false);
 
-  login(payload: LoginPayload): Observable<User> {
-    return this.api.post<BackendTokenResponse>('/auth/login', payload).pipe(
+  login(payload: LoginPayload): Observable<BackendLoginResponse['data']> {
+    return this.api.post<BackendLoginResponse>('/auth/login', payload).pipe(
+      switchMap(response => {
+        if (response.success && response.data.accessToken) {
+          this._accessToken.set(response.data.accessToken);
+          return this.fetchCurrentUser().pipe(map(() => response.data));
+        }
+        return of(response.data);
+      })
+    );
+  }
+
+  verifyOtp(email: string, code: string): Observable<User> {
+    return this.api.post<BackendTokenResponse>('/auth/verify-otp', { email, code }).pipe(
       tap(response => {
-        if (response.success && response.data) {
-          this.handleAuthSuccess(response.data.accessToken, response.data.refreshToken);
+        if (response.success && response.data?.accessToken) {
+          this._accessToken.set(response.data.accessToken);
         }
       }),
       switchMap(() => this.fetchCurrentUser())
@@ -43,8 +68,8 @@ export class AuthService {
   register(payload: RegisterPayload): Observable<User> {
     return this.api.post<BackendTokenResponse>('/auth/register', payload).pipe(
       tap(response => {
-        if (response.success && response.data) {
-          this.handleAuthSuccess(response.data.accessToken, response.data.refreshToken);
+        if (response.success && response.data?.accessToken) {
+          this._accessToken.set(response.data.accessToken);
         }
       }),
       switchMap(() => this.fetchCurrentUser())
@@ -58,12 +83,12 @@ export class AuthService {
     });
   }
 
+  // Refresh uses the HttpOnly cookie automatically (no token in body)
   refreshToken(): Observable<BackendTokenResponse> {
-    const refreshToken = localStorage.getItem('refreshToken');
-    return this.api.post<BackendTokenResponse>('/auth/refresh', { refreshToken }).pipe(
+    return this.api.post<BackendTokenResponse>('/auth/refresh', {}).pipe(
       tap(response => {
-        if (response.success && response.data) {
-          this.handleAuthSuccess(response.data.accessToken, response.data.refreshToken);
+        if (response.success && response.data?.accessToken) {
+          this._accessToken.set(response.data.accessToken);
         }
       })
     );
@@ -81,15 +106,21 @@ export class AuthService {
     );
   }
 
-  // ── NOUVEAU : Changer le mot de passe ──────────────────────────
-  changerMotDePasse(dto: { ancienMotDePasse?: string; nouveauMotDePasse: string; }): Observable<any> {
-    return this.api.put<any>('/auth/change-password', dto).pipe(
+  changerMotDePasse(dto: { ancienMotDePasse?: string; nouveauMotDePasse: string; }): Observable<unknown> {
+    return this.api.put<unknown>('/auth/change-password', dto).pipe(
       tap(() => this.fetchCurrentUser().subscribe())
     );
   }
 
-  // ── NOUVEAU : Mettre à jour le profil ──────────────────────────
-  updateProfil(dto: { prenom?: string; nom?: string; email?: string; telephone?: string; }): Observable<any> {
+  forgotPassword(email: string): Observable<void> {
+    return this.api.post<void>('/auth/forgot-password', { email });
+  }
+
+  resetPassword(token: string, nouveauMotDePasse: string): Observable<void> {
+    return this.api.post<void>('/auth/reset-password', { token, nouveauMotDePasse });
+  }
+
+  updateProfil(dto: { prenom?: string; nom?: string; email?: string; telephone?: string; }): Observable<User> {
     return this.api.put<BackendMeResponse>('/auth/profile', dto).pipe(
       map(response => response.data),
       tap(user => {
@@ -103,23 +134,19 @@ export class AuthService {
 
   getAccessToken(): string | null { return this._accessToken(); }
 
-  private handleAuthSuccess(accessToken: string, refreshToken: string) {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    this._accessToken.set(accessToken);
-  }
-
   private clearSession() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('currentUser');
-    this._currentUser.set(null);
     this._accessToken.set(null);
+    this._currentUser.set(null);
+    localStorage.removeItem('currentUser');
     this.router.navigate(['/auth/login']);
   }
 
   private loadUserFromStorage(): User | null {
-    const raw = localStorage.getItem('currentUser');
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem('currentUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   }
 }

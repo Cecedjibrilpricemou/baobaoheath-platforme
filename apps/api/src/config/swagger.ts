@@ -821,7 +821,7 @@ export const swaggerDocument = {
         description: 'Exporte les données de consultation au format JSON ou CSV — compatible DHIS2. Accessible Admin uniquement',
         security: [{ bearerAuth: [] }],
         parameters: [
-          { name: 'format', in: 'query', schema: { type: 'string', enum: ['JSON', 'CSV'], default: 'JSON' }, description: 'Format d\'export' },
+          { name: 'format', in: 'query', schema: { type: 'string', enum: ['JSON', 'CSV', 'DHIS2'], default: 'JSON' }, description: 'Format d\'export' },
           { name: 'debut', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-01-01' },
           { name: 'fin', in: 'query', schema: { type: 'string', format: 'date' }, example: '2026-12-31' },
           { name: 'prefecture', in: 'query', schema: { type: 'string' } },
@@ -836,6 +836,129 @@ export const swaggerDocument = {
           },
           403: { description: 'Accès refusé — Admin requis' },
         },
+      },
+    },
+    '/api/v1/sync/changes': {
+      get: {
+        tags: ['Sync Offline'],
+        summary: 'Recuperer les changements offline',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'since', in: 'query', schema: { type: 'string', format: 'date-time' } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 100 } },
+          { name: 'scope', in: 'query', schema: { type: 'string', default: 'medical' } },
+        ],
+        responses: { 200: { description: 'Changements retournes' } },
+      },
+    },
+    '/api/v1/sync/push': {
+      post: {
+        tags: ['Sync Offline'],
+        summary: 'Envoyer des mutations offline',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  mutations: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      required: ['clientMutationId', 'entityType', 'operation', 'payload'],
+                      properties: {
+                        clientMutationId: { type: 'string' },
+                        entityType: { type: 'string', enum: ['PatientProfile', 'Consultation', 'ConstantesVitales', 'Vaccination', 'Stock'] },
+                        entityId: { type: 'string' },
+                        operation: { type: 'string', enum: ['CREATE', 'UPDATE', 'DELETE'] },
+                        payload: { type: 'object' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { 202: { description: 'Mutations recues et traitees' } },
+      },
+    },
+    '/api/v1/fhir/patients/{id}/bundle': {
+      get: {
+        tags: ['FHIR'],
+        summary: 'Exporter le dossier patient en Bundle FHIR minimal',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { 200: { description: 'Bundle FHIR' }, 403: { description: 'Consentement requis ou acces refuse' } },
+      },
+    },
+    '/api/v1/fhir/patients/{id}': {
+      get: {
+        tags: ['FHIR'],
+        summary: 'Exporter un Patient FHIR',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { 200: { description: 'Patient FHIR' }, 403: { description: 'Consentement requis ou acces refuse' } },
+      },
+    },
+    '/api/v1/fhir/consultations/{id}': {
+      get: {
+        tags: ['FHIR'],
+        summary: 'Exporter une consultation en Encounter FHIR',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { 200: { description: 'Encounter FHIR' } },
+      },
+    },
+    '/api/v1/triage/evaluer': {
+      post: {
+        tags: ['Triage ASC'],
+        summary: 'Evaluer les symptomes avec le moteur de regles ASC',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { type: 'object', properties: { symptomes: { type: 'array', items: { type: 'string' } }, constantes: { type: 'object' } } } } },
+        },
+        responses: { 200: { description: 'Hypotheses et recommandation' } },
+      },
+    },
+    '/api/v1/privacy/me/consents': {
+      get: {
+        tags: ['Confidentialite'],
+        summary: 'Lister mes consentements',
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: 'Consentements patient' } },
+      },
+      put: {
+        tags: ['Confidentialite'],
+        summary: 'Donner ou retirer un consentement',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { type: 'object', required: ['scope', 'actif'], properties: { scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, actif: { type: 'boolean' } } } } },
+        },
+        responses: { 200: { description: 'Consentement mis a jour' } },
+      },
+    },
+    '/api/v1/privacy/me/audit-logs': {
+      get: {
+        tags: ['Confidentialite'],
+        summary: 'Voir les acces a mon dossier',
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: 'Journal des acces' } },
+      },
+    },
+    '/api/v1/ussd/session': {
+      post: {
+        tags: ['USSD'],
+        summary: 'Endpoint callback USSD compatible agregateur',
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { type: 'object', required: ['sessionId', 'phoneNumber'], properties: { sessionId: { type: 'string' }, phoneNumber: { type: 'string' }, text: { type: 'string' } } } } },
+        },
+        responses: { 200: { description: 'Reponse texte CON/END', content: { 'text/plain': { schema: { type: 'string' } } } } },
       },
     },
   },

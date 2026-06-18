@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
-import { ApiService } from '../../../core/services/api.service';
+import { AdminService } from '../../../core/services/admin.service';
 
 @Component({
   selector: 'app-export',
@@ -14,7 +14,7 @@ import { ApiService } from '../../../core/services/api.service';
   styleUrl: './export.component.scss'
 })
 export class ExportComponent {
-  private api = inject(ApiService);
+  private adminService = inject(AdminService);
 
   isExporting  = signal(false);
   successMsg   = signal('');
@@ -40,13 +40,12 @@ export class ExportComponent {
     this.successMsg.set('');
     this.errorMsg.set('');
 
-    const params = `?format=${this.formatSelectionne}&periode=${this.periodeSelectionnee}`;
-
-    this.api.get<any>(`/analytics/export${params}`).subscribe({
-      next: (data) => {
+    this.adminService.exportAnalytics(this.formatSelectionne, this.periodeSelectionnee).subscribe({
+      next: (response) => {
+        const raw = response as unknown as { data?: unknown };
         const content = this.formatSelectionne === 'csv'
-          ? data
-          : JSON.stringify(data?.data ?? data, null, 2);
+          ? String(response)
+          : JSON.stringify(raw?.data ?? response, null, 2);
 
         const mimeType = this.formatSelectionne === 'csv' ? 'text/csv' : 'application/json';
         const blob = new Blob([content], { type: mimeType });
@@ -63,7 +62,7 @@ export class ExportComponent {
       },
       error: (err) => {
         this.isExporting.set(false);
-        this.errorMsg.set(err?.error?.message ?? 'Erreur lors de l\'export.');
+        this.errorMsg.set(err?.error?.message ?? err?.error?.error ?? 'Erreur lors de l\'export.');
       }
     });
   }

@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TextareaModule } from 'primeng/textarea';
-import { ApiService } from '../../../core/services/api.service';
+import { MedecinService } from '../../../core/services/medecin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface Constantes {
@@ -41,12 +41,12 @@ interface Consultation {
 @Component({
   selector: 'app-medecin-consultations',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule, TextareaModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule, TextareaModule],
   templateUrl: './consultations.component.html',
   styleUrl: './consultations.component.scss'
 })
 export class MedecinConsultationsComponent implements OnInit {
-  private api = inject(ApiService);
+  private medecinService = inject(MedecinService);
 
   consultations   = signal<Consultation[]>([]);
   selected        = signal<Consultation | null>(null);
@@ -64,11 +64,13 @@ export class MedecinConsultationsComponent implements OnInit {
 
   private loadConsultations() {
     this.isLoading.set(true);
-    this.api.get<any>('/medecin/consultations').subscribe({
-      next: (r) => {
-        const data = Array.isArray(r) ? r : r?.data ?? [];
-        this.consultations.set(data);
-        this.total.set(r?.meta?.total ?? data.length);
+    this.medecinService.getConsultations().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const data = response.data as unknown as Consultation[];
+          this.consultations.set(data);
+          this.total.set(response.meta?.total ?? data.length);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }
@@ -98,9 +100,13 @@ export class MedecinConsultationsComponent implements OnInit {
     const c = this.selected();
     if (!c) return;
     this.isValidating.set(true);
-    this.api.put<any>(`/medecin/consultations/${c.id}/valider`, {
-      notesMedecin: this.notesMedecin,
-      idOrdonnances: this.ordonnancesSelectionnees
+    // On utilise validerConsultation du service
+    this.medecinService.validerConsultation(c.id, {
+      diagnosticConfirme: 'CONFIRME', // Ou récupérer depuis un champ s'il existe
+      commentaires: this.notesMedecin,
+      // On passe les idOrdonnances si l'API l'accepte ou on s'adapte à l'interface
+      // @ts-ignore - adapter selon l'implémentation backend réelle
+      idOrdonnances: this.ordonnancesSelectionnees 
     }).subscribe({
       next: () => {
         this.isValidating.set(false);

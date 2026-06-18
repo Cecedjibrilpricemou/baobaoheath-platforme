@@ -10,7 +10,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { ApiService } from '../../../core/services/api.service';
+import { AscService } from '../../../core/services/asc.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface Medicament {
@@ -47,7 +47,7 @@ interface Stock {
   styleUrl: './stocks.component.scss'
 })
 export class StocksComponent implements OnInit {
-  private api = inject(ApiService);
+  private ascService = inject(AscService);
   protected Math = Math;
 
   stocks           = signal<Stock[]>([]);
@@ -66,23 +66,28 @@ export class StocksComponent implements OnInit {
 
   private loadStocks() {
     this.isLoading.set(true);
-    this.api.get<any>('/asc/stocks').subscribe({
+    this.ascService.getStocks().subscribe({
       next: (response) => {
-        const raw = Array.isArray(response) ? response : response?.data ?? [];
-        // Aplatir les données pour que le template fonctionne directement
-        const data: Stock[] = raw.map((s: any) => ({
-          id: s.id,
-          quantite: s.quantite,
-          seuilAlerte: s.seuilAlerte,
-          unite: s.unite,
-          dateExpiration: s.datePeremption ?? s.dateExpiration,  // compatibilité backend
-          categorie: s.medicament?.categorie ?? s.categorie,     // aplatir depuis relation
-          medicament: s.medicament ?? { dci: s.medicamentNom ?? '—', forme: '', dosage: '' }
-        }));
-        this.stocks.set(data);
-        this.totalMedicaments.set(data.length);
-        this.stocksCritiques.set(data.filter(s => s.quantite <= s.seuilAlerte).length);
-        this.stocksNormaux.set(data.filter(s => s.quantite > s.seuilAlerte).length);
+        if (response.success && response.data) {
+          const raw = response.data;
+          // Aplatir les données pour que le template fonctionne directement
+          const data: Stock[] = (raw as Record<string, unknown>[]).map((s) => {
+            const med = s['medicament'] as Record<string, unknown> | null | undefined;
+            return {
+              id: s['id'] as string,
+              quantite: s['quantite'] as number,
+              seuilAlerte: s['seuilAlerte'] as number,
+              unite: s['unite'] as string,
+              dateExpiration: (s['datePeremption'] ?? s['dateExpiration']) as string | undefined,
+              categorie: (med?.['categorie'] ?? s['categorie']) as string | undefined,
+              medicament: (med ?? { dci: (s['medicamentNom'] ?? '—') as string, forme: '', dosage: '' }) as unknown as Stock['medicament']
+            };
+          });
+          this.stocks.set(data);
+          this.totalMedicaments.set(data.length);
+          this.stocksCritiques.set(data.filter(s => s.quantite <= s.seuilAlerte).length);
+          this.stocksNormaux.set(data.filter(s => s.quantite > s.seuilAlerte).length);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }
@@ -133,8 +138,8 @@ export class StocksComponent implements OnInit {
 
   saveStock(stockId: string) {
     this.isSaving.set(true); this.errorMessage.set('');
-    this.api.put<any>(`/asc/stocks/${stockId}`, { quantite: this.editQuantite() }).subscribe({
-      next: () => {
+    this.ascService.updateStock(stockId, this.editQuantite()).subscribe({
+      next: (response) => {
         this.isSaving.set(false); this.editingId.set(null);
         this.successMessage.set('Stock mis à jour avec succès !');
         setTimeout(() => this.successMessage.set(''), 3000);

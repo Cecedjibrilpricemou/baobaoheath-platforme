@@ -1,6 +1,4 @@
 // features/patient/qr-code/qr-code.component.ts
-// CORRIGÉ : génération du QR Code via la librairie "qrcode"
-// qrCode backend = UUID (ex: clxyz123...) → généré en data URL base64 ici
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -8,21 +6,11 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
-import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { Patient } from '../../../core/models/patient.model';
 import QRCode from 'qrcode';
-
-interface PatientInfo {
-  id: string;
-  nom: string;
-  prenom: string;
-  telephone: string;
-  dateNaissance?: string;
-  groupeSanguin?: string;
-  qrCode?: string; // UUID reçu du backend
-  utilisateur?: { nom: string; prenom: string; telephone: string; };
-}
 
 @Component({
   selector: 'app-qr-code',
@@ -32,10 +20,10 @@ interface PatientInfo {
   styleUrl: './qr-code.component.scss'
 })
 export class QrCodeComponent implements OnInit {
-  private api         = inject(ApiService);
   private authService = inject(AuthService);
+  private patientService = inject(PatientService);
 
-  patientInfo  = signal<PatientInfo | null>(null);
+  patientInfo  = signal<Patient | null>(null);
   qrCodeUrl    = signal<string | null>(null); // data URL base64 générée côté frontend
   isLoading    = signal(true);
   errorMessage = signal('');
@@ -44,24 +32,18 @@ export class QrCodeComponent implements OnInit {
 
   private loadPatient() {
     this.isLoading.set(true);
-    this.api.get<any>('/patients/me').subscribe({
+    this.patientService.getMe().subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        const info: PatientInfo = {
-          id: data?.id ?? '',
-          nom: data?.utilisateur?.nom ?? data?.nom ?? '',
-          prenom: data?.utilisateur?.prenom ?? data?.prenom ?? '',
-          telephone: data?.utilisateur?.telephone ?? data?.telephone ?? '',
-          dateNaissance: data?.dateNaissance,
-          groupeSanguin: data?.groupeSanguin,
-          qrCode: data?.qrCode,
-          utilisateur: data?.utilisateur
-        };
-        this.patientInfo.set(info);
+        if (response.success && response.data) {
+          const info = response.data;
+          this.patientInfo.set(info);
 
-        // Générer le QR Code à partir de l'UUID reçu du backend
-        if (info.qrCode) {
-          this.generateQrCode(info.qrCode);
+          // Générer le QR Code à partir de l'UUID reçu du backend
+          if (info.qrCode) {
+            this.generateQrCode(info.qrCode);
+          } else {
+            this.isLoading.set(false);
+          }
         } else {
           this.isLoading.set(false);
         }
@@ -75,11 +57,10 @@ export class QrCodeComponent implements OnInit {
 
   private async generateQrCode(code: string) {
     try {
-      // Génère une data URL PNG du QR Code à partir du code UUID
       const dataUrl = await QRCode.toDataURL(code, {
         width: 280,
         margin: 2,
-        color: { dark: '#1a1a2e', light: '#ffffff' }
+        color: { dark: '#0F172A', light: '#ffffff' } // Use slate-900 for dark
       });
       this.qrCodeUrl.set(dataUrl);
     } catch (err) {
@@ -92,7 +73,7 @@ export class QrCodeComponent implements OnInit {
   getInitiales(): string {
     const p = this.patientInfo();
     if (!p) return '??';
-    return `${p.prenom?.charAt(0) ?? ''}${p.nom?.charAt(0) ?? ''}`.toUpperCase();
+    return `${p.utilisateur?.prenom?.charAt(0) ?? p.prenom?.charAt(0) ?? ''}${p.utilisateur?.nom?.charAt(0) ?? p.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
   formatDate(dateStr?: string): string {
@@ -105,7 +86,7 @@ export class QrCodeComponent implements OnInit {
     if (!url) return;
     const a = document.createElement('a');
     a.href = url;
-    a.download = `qr-code-${this.patientInfo()?.nom ?? 'patient'}.png`;
+    a.download = `qr-code-${this.patientInfo()?.utilisateur?.nom ?? this.patientInfo()?.nom ?? 'patient'}.png`;
     a.click();
   }
 

@@ -1,14 +1,17 @@
 import { prisma } from '../config/prisma';
+import { JwtPayload } from '../types/auth.types';
 import {
     CreateVaccinationDto,
     UpdateVaccinationDto,
     VaccinationFilters,
     RappelVaccinationFilters,
 } from '../types/vaccination.types';
+import { assertCanAccessPatient } from './access-control.service';
+import { ForbiddenError } from '../utils/app-error';
 
 // ─── Administrer un vaccin ────────────────────────────────
 export async function administrerVaccin(
-    userId: string,
+    user: JwtPayload,
     dto: CreateVaccinationDto
 ) {
     const patient = await prisma.patientProfile.findUnique({
@@ -19,10 +22,12 @@ export async function administrerVaccin(
         throw new Error('Patient non trouvé');
     }
 
+    await assertCanAccessPatient(user, dto.idPatient);
+
     return prisma.vaccination.create({
         data: {
             idPatient: dto.idPatient,
-            idAdministrePar: userId,
+            idAdministrePar: user.userId,
             vaccinNom: dto.vaccinNom,
             codeEpi: dto.codeEpi,
             numeroLot: dto.numeroLot,
@@ -122,6 +127,7 @@ export async function getMonCarnetVaccinal(userId: string) {
 
 // ─── Mettre à jour une vaccination ───────────────────────
 export async function updateVaccination(
+    user: JwtPayload,
     id: string,
     dto: UpdateVaccinationDto
 ) {
@@ -132,6 +138,8 @@ export async function updateVaccination(
     if (!vaccination) {
         throw new Error('Vaccination non trouvée');
     }
+
+    await assertCanAccessPatient(user, vaccination.idPatient);
 
     return prisma.vaccination.update({
         where: { id },

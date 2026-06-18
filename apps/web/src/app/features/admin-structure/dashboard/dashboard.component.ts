@@ -60,8 +60,8 @@ export class AdminStructureDashboardComponent implements OnInit {
   private api = inject(ApiService);
   stats = signal<Stats | null>(null);
   ngOnInit() {
-    this.api.get<any>('/admin-structure/stats').subscribe({
-      next: r => this.stats.set(r?.data ?? r),
+    this.api.get<{ data?: Stats }>('/admin-structure/stats').subscribe({
+      next: r => this.stats.set(r?.data ?? null),
       error: () => {}
     });
   }

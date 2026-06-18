@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BaoBaoHealth — Pitch de Présentation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    :root {
+      --primary: #0D9F6E;
+      --primary-light: #E6F7F0;
+      --primary-dark: #057A55;
+      --accent: #F59E0B;
+      --danger: #EF4444;
+      --dark: #0F172A;
+      --gray: #64748B;
+      --light: #F8FAFC;
+      --border: #E2E8F0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--dark);
+      line-height: 1.7;
+      background: #fff;
+      font-size: 11pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── PAGE SYSTEM ─────────────────────────────── */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 0;
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .page-content {
+      padding: 40px 50px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── COVER PAGE ───────────────────────────────── */
+    .cover {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 40%, #0D9F6E 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: #fff;
+    }
+
+    .cover-deco {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.06;
+      background: #fff;
+    }
+
+    .cover-deco--1 {
+      width: 500px;
+      height: 500px;
+      top: -150px;
+      right: -100px;
+    }
+
+    .cover-deco--2 {
+      width: 300px;
+      height: 300px;
+      bottom: -80px;
+      left: -60px;
+    }
+
+    .cover-deco--3 {
+      width: 200px;
+      height: 200px;
+      top: 40%;
+      left: 10%;
+    }
+
+    .cover-logo {
+      width: 90px;
+      height: 90px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .cover-logo svg {
+      width: 48px;
+      height: 48px;
+      stroke: #3EBB70;
+    }
+
+    .cover h1 {
+      font-size: 44pt;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff, #3EBB70);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover .tagline {
+      font-size: 15pt;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 48px;
+      max-width: 500px;
+    }
+
+    .cover-meta {
+      position: absolute;
+      bottom: 50px;
+      font-size: 9pt;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+    }
+
+    .cover-badge {
+      display: inline-block;
+      padding: 8px 24px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 10pt;
+      font-weight: 500;
+      color: #3EBB70;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── HEADERS ──────────────────────────────────── */
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 14pt;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 22pt;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .section-subtitle {
+      font-size: 11pt;
+      color: var(--gray);
+      font-weight: 400;
+      margin-bottom: 28px;
+    }
+
+    /* ── PAGE HEADER BAR ─────────────────────────── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 50px;
+      border-bottom: 1px solid var(--border);
+      background: var(--light);
+    }
+
+    .page-header-logo {
+      font-weight: 800;
+      font-size: 11pt;
+      color: var(--primary);
+    }
+
+    .page-header-section {
+      font-size: 9pt;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    /* ── PITCH SECTION ───────────────────────────── */
+    .pitch-block {
+      margin-bottom: 26px;
+      padding: 20px 24px;
+      border-radius: 12px;
+      border-left: 4px solid var(--primary);
+      background: var(--primary-light);
+    }
+
+    .pitch-block--problem {
+      border-left-color: var(--danger);
+      background: #FEF2F2;
+    }
+
+    .pitch-block--tech {
+      border-left-color: #3B82F6;
+      background: #EFF6FF;
+    }
+
+    .pitch-block--cta {
+      border-left-color: var(--accent);
+      background: #FFFBEB;
+    }
+
+    .pitch-block h3 {
+      font-size: 12pt;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pitch-block p {
+      font-size: 10.5pt;
+      color: #334155;
+      line-height: 1.8;
+    }
+
+    .pitch-block p em {
+      font-style: italic;
+      color: var(--gray);
+    }
+
+    /* ── ROLE CARDS ───────────────────────────────── */
+    .role-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+
+    .role-card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      color: #fff;
+    }
+
+    .role-card-header.patient {
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+    }
+
+    .role-card-header.asc {
+      background: linear-gradient(135deg, #0D9F6E, #057A55);
+    }
+
+    .role-card-header.medecin {
+      background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+    }
+
+    .role-card-header.pharma {
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+    }
+
+    .role-card-header.admin {
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+    }
+
+    .role-card-header.super {
+      background: linear-gradient(135deg, #0F172A, #334155);
+    }
+
+    .role-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20pt;
+      flex-shrink: 0;
+    }
+
+    .role-card-header h3 {
+      font-size: 13pt;
+      font-weight: 700;
+    }
+
+    .role-card-header .role-desc {
+      font-size: 9pt;
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
+    .role-card-body {
+      padding: 18px 20px;
+    }
+
+    .role-card-body p.role-importance {
+      font-size: 10pt;
+      color: var(--gray);
+      margin-bottom: 14px;
+      font-style: italic;
+      border-left: 3px solid var(--border);
+      padding-left: 12px;
+    }
+
+    .role-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .role-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 9.5pt;
+      color: #334155;
+    }
+
+    .role-feature-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10pt;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── FLOW DIAGRAM ────────────────────────────── */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 30px 0;
+      flex-wrap: nowrap;
+    }
+
+    .flow-step {
+      text-align: center;
+      flex: 1;
+    }
+
+    .flow-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22pt;
+      margin: 0 auto 8px;
+      color: #fff;
+    }
+
+    .flow-step:nth-child(1) .flow-circle {
+      background: #3B82F6;
+    }
+
+    .flow-step:nth-child(3) .flow-circle {
+      background: #0D9F6E;
+    }
+
+    .flow-step:nth-child(5) .flow-circle {
+      background: #8B5CF6;
+    }
+
+    .flow-step:nth-child(7) .flow-circle {
+      background: #F59E0B;
+    }
+
+    .flow-label {
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .flow-sub {
+      font-size: 8pt;
+      color: var(--gray);
+    }
+
+    .flow-arrow {
+      font-size: 20pt;
+      color: var(--border);
+      margin: 0 -4px;
+      flex-shrink: 0;
+    }
+
+    /* ── TECH TABLE ───────────────────────────────── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .tech-item {
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--light);
+    }
+
+    .tech-item strong {
+      display: block;
+      font-size: 10pt;
+      color: var(--primary-dark);
+      margin-bottom: 4px;
+    }
+
+    .tech-item span {
+      font-size: 9pt;
+      color: var(--gray);
+    }
+
+    /* ── FOOTER ───────────────────────────────────── */
+    .page-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 50px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8pt;
+      color: #94A3B8;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── UTILITIES ────────────────────────────────── */
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-12 {
+      margin-top: 12px;
+    }
+
+    .mb-8 {
+      margin-bottom: 8px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        box-shadow: none;
+        margin: 0;
+      }
+    }
+
+    @media screen {
+      body {
+        background: #E2E8F0;
+        padding: 20px 0;
+      }
+
+      .page {
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════ PAGE 1 : COUVERTURE ═══════════════════ -->
+  <div class="page cover">
+    <div class="cover-deco cover-deco--1"></div>
+    <div class="cover-deco cover-deco--2"></div>
+    <div class="cover-deco cover-deco--3"></div>
+
+    <div class="page-content"
+      style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;">
+      <div class="cover-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M12 21V12" />
+          <path d="M12 12c-3 0-5-2-5-5s2-5 5-5 5 2 5 5" />
+          <path d="M12 12c3 0 5-2 5-5" />
+          <path d="M7 12c-2 0-4 1.5-4 4s2 3 4 3h10c2 0 4-1 4-3s-2-4-4-4" />
+        </svg>
+      </div>
+      <div class="cover-badge">Pitch de Présentation</div>
+      <h1>BaoBaoHealth</h1>
+      <p class="tagline">La plateforme numérique qui digitalise l'intégralité du parcours de soin, du village le plus
+        reculé jusqu'au Ministère de la Santé.</p>
+
+      <div class="cover-meta">
+        <p>Document confidentiel — Juin 2026</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE 2 : LE PITCH ═══════════════════ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-logo">🌿 BaoBaoHealth</span>
+      <span class="page-header-section">Discours de Présentation</span>
+    </div>
+    <div class="page-content">
+      <div class="section-num">1</div>
+      <h2 class="section-title">Discours de Présentation</h2>
+      <p class="section-subtitle">Script du pitch oral devant le jury — Durée estimée : 3 à 4 minutes</p>
+
+      <div class="pitch-block pitch-block--problem">
+        <h3>🔴 Accroche — Le Problème</h3>
+        <p>
+          « Mesdames, Messieurs les membres du jury, bonjour.<br><br>
+          Imaginez vivre dans un village où le médecin le plus proche est à 40 kilomètres.
+          Imaginez perdre le carnet de santé papier de votre enfant, effaçant tout son historique vaccinal.
+          Dans nos pays, ce n'est pas de l'imagination, c'est le <strong>quotidien de millions de
+            personnes</strong>.<br><br>
+          Le résultat ? Des diagnostics tardifs, des ruptures de soin, la circulation de fausses ordonnances,
+          et une incapacité pour l'État d'anticiper les épidémies par manque de données fiables. »
+        </p>
+      </div>
+
+      <div class="pitch-block">
+        <h3>🟢 La Solution — Notre Vision</h3>
+        <p>
+          « C'est pour résoudre cette fracture sanitaire que nous avons créé <strong>BaoBaoHealth</strong>.<br><br>
+          BaoBaoHealth n'est pas une simple application. C'est le <strong>système nerveux central</strong> d'un
+          écosystème de santé
+          moderne, inclusif et interconnecté. Nous digitalisons l'intégralité du parcours de soin,
+          du village le plus reculé jusqu'au Ministère de la Santé. »
+        </p>
+      </div>
+
+      <div class="pitch-block">
+        <h3>🟢 Le Fonctionnement — La Démonstration</h3>
+        <p>
+          « Concrètement, nous avons interconnecté <strong>5 acteurs clés</strong> :<br><br>
+          <strong>1.</strong> Le <strong>Patient</strong> possède enfin son dossier médical numérique, sécurisé et
+          accessible depuis son téléphone.<br>
+          <strong>2.</strong> L'<strong>Agent de Santé Communautaire (ASC)</strong>, équipé de notre application qui
+          fonctionne <strong>hors-ligne</strong>,
+          réalise un premier triage intelligent au cœur du village.<br>
+          <strong>3.</strong> Si l'urgence est détectée, le patient est référé au <strong>Médecin</strong> de l'hôpital,
+          qui le reçoit avec son dossier déjà ouvert, prêt pour le diagnostic et la prescription d'une e-ordonnance
+          infalsifiable.<br>
+          <strong>4.</strong> Le <strong>Pharmacien</strong> scanne simplement le QR Code du patient pour délivrer les
+          médicaments en toute sécurité.<br>
+          <strong>5.</strong> Les <strong>Administrateurs</strong> disposent de tableaux de bord et de cartes thermiques
+          en temps réel
+          pour suivre les épidémies et piloter les stocks. »
+        </p>
+      </div>
+
+      <div class="pitch-block pitch-block--tech">
+        <h3>🔵 L'Innovation Technologique</h3>
+        <p>
+          « Ce qui fait la force de BaoBaoHealth, c'est sa robustesse technologique.
+          Nous avons bâti une architecture d'entreprise à la pointe : un Frontend performant sous <strong>Angular
+            17</strong>,
+          adossé à un Backend Node.js ultra-sécurisé avec <strong>Prisma</strong> et <strong>Redis</strong>.
+          Mais surtout, BaoBaoHealth est <strong>interopérable</strong> : nous avons intégré le standard mondial
+          <strong>HL7/FHIR</strong>,
+          permettant à notre plateforme de dialoguer nativement avec les systèmes de l'OMS. »
+        </p>
+      </div>
+
+      <div class="pitch-block pitch-block--cta">
+        <h3>🟡 Conclusion — L'Appel à l'Action</h3>
+        <p>
+          « BaoBaoHealth, c'est la promesse d'une santé <strong>continue, sécurisée et pilotée par la donnée</strong>.
+          Nous avons la technologie, l'architecture, et la vision pour transformer notre système de santé public.
+          Nous vous invitons à nous accompagner pour déployer cette solution et <strong>sauver des vies, un clic à la
+            fois</strong>. Merci. »
+        </p>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>BaoBaoHealth — Pitch de Présentation</span>
+      <span>Page 2</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE 3 : PARCOURS DE SOIN ══════════════ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-logo">🌿 BaoBaoHealth</span>
+      <span class="page-header-section">Parcours de Soin</span>
+    </div>
+    <div class="page-content">
+      <div class="section-num">2</div>
+      <h2 class="section-title">Le Parcours de Soin Digitalisé</h2>
+      <p class="section-subtitle">De la consultation au village jusqu'à la délivrance en pharmacie — tout est tracé.</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-circle">🤒</div>
+          <div class="flow-label">Patient</div>
+          <div class="flow-sub">Signale ses symptômes</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-circle">🩺</div>
+          <div class="flow-label">ASC</div>
+          <div class="flow-sub">Triage intelligent</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-circle">👨‍⚕️</div>
+          <div class="flow-label">Médecin</div>
+          <div class="flow-sub">Diagnostic & Prescription</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-circle">💊</div>
+          <div class="flow-label">Pharmacien</div>
+          <div class="flow-sub">Délivrance sécurisée</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- PATIENT -->
+      <div class="role-card">
+        <div class="role-card-header patient">
+          <div class="role-icon">🤒</div>
+          <div>
+            <h3>Interface Patient</h3>
+            <div class="role-desc">Le citoyen, l'utilisateur final du système de santé</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Le patient est remis au centre. Fini les carnets de santé en papier perdus ou
+            déchirés. Il a un contrôle total sur ses données médicales.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">📋</div><span><strong>Dossier médical numérique</strong> — Historique
+                complet, allergies, groupe sanguin</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💉</div><span><strong>Carnet de vaccination digital</strong> — Rappels
+                automatiques par notification/SMS</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📱</div><span><strong>QR Code unique</strong> — Identité médicale scannable
+                en pharmacie ou à l'hôpital</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🔒</div><span><strong>Gestion de la vie privée</strong> — Consentements
+                révocables sur l'usage des données</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💳</div><span><strong>Paiement Mobile Money</strong> — Historique des
+                factures (Orange Money)</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📄</div><span><strong>E-Ordonnances</strong> — Accès aux prescriptions avec
+                code QR infalsifiable</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ASC -->
+      <div class="role-card">
+        <div class="role-card-header asc">
+          <div class="role-icon">🩺</div>
+          <div>
+            <h3>Interface Agent de Santé Communautaire (ASC)</h3>
+            <div class="role-desc">Le relais médical sur le terrain — villages et zones rurales</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">C'est la porte d'entrée du système. L'ASC a besoin d'un outil très guidé, capable
+            de fonctionner sans connexion internet au fin fond d'un village.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">🚦</div><span><strong>Triage intelligent</strong> — Formulaire guidé pour
+                évaluer la gravité (Vert, Jaune, Rouge)</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🚑</div><span><strong>Référencement rapide</strong> — Transfert des cas
+                graves vers le médecin</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📡</div><span><strong>Mode hors-ligne</strong> — Consultations enregistrées
+                localement, sync au retour réseau</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💊</div><span><strong>Mini-pharmacie</strong> — Gestion de sa boîte de
+                médicaments de base</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>BaoBaoHealth — Pitch de Présentation</span>
+      <span>Page 3</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE 4 : MÉDECIN + PHARMACIEN ══════════ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-logo">🌿 BaoBaoHealth</span>
+      <span class="page-header-section">Interfaces Métier</span>
+    </div>
+    <div class="page-content">
+
+      <!-- MEDECIN -->
+      <div class="role-card">
+        <div class="role-card-header medecin">
+          <div class="role-icon">👨‍⚕️</div>
+          <div>
+            <h3>Interface Médecin</h3>
+            <div class="role-desc">Le praticien qualifié dans un centre de santé ou hôpital</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">L'expert clinique. Son outil doit être rapide, complet et lui faire gagner du temps
+            sur la paperasse administrative.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">📥</div><span><strong>File d'attente</strong> — Patients référés par les
+                ASC, triés par urgence</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🔬</div><span><strong>Consultation avancée</strong> — Constantes vitales,
+                historique complet, diagnostics CIM-10</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📝</div><span><strong>E-Ordonnances</strong> — Prescriptions numériques
+                infalsifiables avec signature</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💬</div><span><strong>Télé-expertise</strong> — Chat sécurisé pour un
+                deuxième avis médical</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📊</div><span><strong>Dashboard</strong> — Statistiques personnelles
+                (consultations, validations)</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🔄</div><span><strong>FHIR / HL7</strong> — Export interopérable vers
+                d'autres systèmes de santé</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHARMACIEN -->
+      <div class="role-card">
+        <div class="role-card-header pharma">
+          <div class="role-icon">💊</div>
+          <div>
+            <h3>Interface Pharmacien</h3>
+            <div class="role-desc">Le gérant de la pharmacie — dernier maillon de la chaîne de soin</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Il vérifie la validité des prescriptions pour éviter les fraudes et
+            l'automédication dangereuse, tout en gérant son inventaire.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">📷</div><span><strong>Scanner QR Code</strong> — Flash le téléphone du
+                patient, vérifie la signature de l'ordonnance</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">✅</div><span><strong>Délivrance</strong> — Coche les médicaments vendus,
+                mise à jour automatique du dossier</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📦</div><span><strong>Gestion des stocks</strong> — Inventaire en temps
+                réel, alertes péremption et rupture</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">⚠️</div><span><strong>Alerte allergie</strong> — Détection automatique des
+                conflits médicamenteux</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">👥</div><span><strong>Gestion d'équipe</strong> — Ajout/suppression de
+                préparateurs en pharmacie</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📊</div><span><strong>Réapprovisionnement</strong> — Ajout de stocks avec
+                traçabilité complète</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SUPERVISEUR ASC -->
+      <div class="role-card">
+        <div class="role-card-header asc">
+          <div class="role-icon">👁️</div>
+          <div>
+            <h3>Interface Superviseur ASC</h3>
+            <div class="role-desc">Infirmier chef de poste (ICP) ou coordinateur de zone</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Le superviseur garantit la qualité des soins : il vérifie les triages des ASC et
+            gère l'approvisionnement de leurs trousses médicales.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">✅</div><span><strong>Validation clinique</strong> — Revue des triages
+                effectués par les ASC de sa zone</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📦</div><span><strong>Logistique</strong> — Validation des demandes de
+                réapprovisionnement</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📅</div><span><strong>Plannings</strong> — Tournées, visites à domicile,
+                campagnes de vaccination</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📈</div><span><strong>Rapports</strong> — Statistiques des consultations et
+                référencements de la zone</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="page-footer">
+      <span>BaoBaoHealth — Pitch de Présentation</span>
+      <span>Page 4</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE 5 : ADMIN + TECH ═════════════════ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-logo">🌿 BaoBaoHealth</span>
+      <span class="page-header-section">Administration & Architecture</span>
+    </div>
+    <div class="page-content">
+
+      <div class="section-num">3</div>
+      <h2 class="section-title">Les Interfaces d'Administration</h2>
+      <p class="section-subtitle">4 niveaux d'administration reflétant la hiérarchie réelle du système de santé public.
+      </p>
+
+      <!-- ADMIN STRUCTURE -->
+      <div class="role-card">
+        <div class="role-card-header admin">
+          <div class="role-icon">🏥</div>
+          <div>
+            <h3>Admin de Structure</h3>
+            <div class="role-desc">Directeur d'hôpital, de CSPS ou de pharmacie</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Gère le niveau local : le fonctionnement quotidien de SA structure. Il ne voit que
+            les données de son établissement.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">👥</div><span><strong>RH</strong> — Ajout/Gestion des médecins, infirmiers
+                et pharmaciens</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📊</div><span><strong>Stats locales</strong> — Consultations/jour, taux
+                d'occupation</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💊</div><span><strong>Stocks</strong> — Médicaments de la pharmacie
+                intégrée</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💰</div><span><strong>Finances</strong> — Paiements Mobile Money
+                reçus</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN REGIONAL -->
+      <div class="role-card">
+        <div class="role-card-header admin">
+          <div class="role-icon">🗺️</div>
+          <div>
+            <h3>Admin Régional</h3>
+            <div class="role-desc">Direction Régionale de la Santé (DRS) ou chef de district sanitaire</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Supervise tous les centres de santé et ASC de sa région. Compare les performances
+            entre établissements.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">📈</div><span><strong>Comparatif</strong> — Performance inter-structures de
+                la région</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🦠</div><span><strong>Alertes épidémiques</strong> — Pics de maladies dans
+                sa préfecture</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💉</div><span><strong>Couverture vaccinale</strong> — Taux de vaccination
+                des enfants</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🗺️</div><span><strong>Cartographie ASC</strong> — Suivi de l'activité
+                terrain</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN NATIONAL -->
+      <div class="role-card">
+        <div class="role-card-header admin">
+          <div class="role-icon">🏛️</div>
+          <div>
+            <h3>Admin National</h3>
+            <div class="role-desc">Ministère de la Santé / Organisation Mondiale de la Santé (OMS)</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Niveau macroscopique : tendances de santé publique à l'échelle du pays. Ne voit pas
+            les dossiers individuels.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">🗺️</div><span><strong>Heatmap</strong> — Carte thermique de la propagation
+                des maladies</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">📊</div><span><strong>Indicateurs clés</strong> — Mortalité infantile,
+                prévalence, tendances</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">💉</div><span><strong>Campagnes nationales</strong> — Lancer et suivre une
+                vaccination de masse</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🔄</div><span><strong>Interopérabilité</strong> — Stats d'échanges FHIR
+                public/privé</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUPER ADMIN -->
+      <div class="role-card">
+        <div class="role-card-header super">
+          <div class="role-icon">⚙️</div>
+          <div>
+            <h3>Super Administrateur</h3>
+            <div class="role-desc">Équipe technique et fondatrice de BaoBaoHealth</div>
+          </div>
+        </div>
+        <div class="role-card-body">
+          <p class="role-importance">Rôle purement technique. Il maintient la plateforme, crée les comptes admin de haut
+            niveau et surveille la sécurité.</p>
+          <div class="role-features">
+            <div class="role-feature">
+              <div class="role-feature-icon">🔑</div><span><strong>Accès</strong> — Création des comptes Admin National
+                et Régional</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🛡️</div><span><strong>Audit & Sécurité</strong> — Logs de toutes les
+                actions sensibles</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🏥</div><span><strong>Structures</strong> — Ajout d'hôpitaux et de régions
+                dans le système</span>
+            </div>
+            <div class="role-feature">
+              <div class="role-feature-icon">🔧</div><span><strong>Configuration</strong> — Clés API Orange Money,
+                serveurs SMS, BDD</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="page-footer">
+      <span>BaoBaoHealth — Pitch de Présentation</span>
+      <span>Page 5</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE 6 : ARCHITECTURE TECHNIQUE ════════ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-logo">🌿 BaoBaoHealth</span>
+      <span class="page-header-section">Architecture Technique</span>
+    </div>
+    <div class="page-content">
+
+      <div class="section-num">4</div>
+      <h2 class="section-title">Architecture & Technologies</h2>
+      <p class="section-subtitle">Une stack moderne, sécurisée et prête pour la montée en charge.</p>
+
+      <div class="tech-grid">
+        <div class="tech-item">
+          <strong>🎨 Frontend — Angular 17+</strong>
+          <span>Framework moderne avec Signals, composants standalone, lazy loading. Interface responsive et premium
+            avec PrimeNG.</span>
+        </div>
+        <div class="tech-item">
+          <strong>⚙️ Backend — Node.js / Express 5</strong>
+          <span>API REST sécurisée avec gestion d'erreurs centralisée, rate limiting distribué (Redis), et validation
+            Zod.</span>
+        </div>
+        <div class="tech-item">
+          <strong>🗄️ Base de données — PostgreSQL + Prisma</strong>
+          <span>ORM type-safe avec migrations versionnées, transactions atomiques pour l'intégrité des données
+            médicales.</span>
+        </div>
+        <div class="tech-item">
+          <strong>🔐 Sécurité — JWT + OTP + RBAC</strong>
+          <span>Authentification à double facteur par email, contrôle d'accès basé sur les rôles, gestion fine des
+            consentements.</span>
+        </div>
+        <div class="tech-item">
+          <strong>🔄 Interopérabilité — HL7/FHIR</strong>
+          <span>Standard international de l'OMS pour l'échange de données de santé entre systèmes hétérogènes.</span>
+        </div>
+        <div class="tech-item">
+          <strong>📡 Mode Offline — Sync Engine</strong>
+          <span>Les ASC travaillent sans connexion. Les mutations sont stockées localement puis synchronisées
+            automatiquement.</span>
+        </div>
+        <div class="tech-item">
+          <strong>💳 Paiement — Orange Money</strong>
+          <span>Intégration native du paiement mobile pour les consultations et médicaments, sans manipulation
+            d'espèces.</span>
+        </div>
+        <div class="tech-item">
+          <strong>📊 Épidémiologie — Alertes IA</strong>
+          <span>Détection automatique de pics épidémiques par seuils configurables, avec alertes push aux
+            autorités.</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-num" style="background: var(--accent);">5</div>
+      <h2 class="section-title">Sécurité & Conformité</h2>
+      <p class="section-subtitle">La plateforme respecte les meilleures pratiques en matière de protection des données
+        de santé.</p>
+
+      <div class="tech-grid">
+        <div class="tech-item">
+          <strong>🔒 Principe du moindre privilège</strong>
+          <span>Chaque rôle ne voit que les données strictement nécessaires à sa mission. Le pharmacien ne voit pas les
+            diagnostics.</span>
+        </div>
+        <div class="tech-item">
+          <strong>📝 Journal d'audit complet</strong>
+          <span>Chaque action sensible (export, consultation de dossier, modification) est tracée avec l'auteur et
+            l'horodatage.</span>
+        </div>
+        <div class="tech-item">
+          <strong>✅ Consentement éclairé</strong>
+          <span>Le patient contrôle l'usage de ses données via une interface dédiée. Il peut révoquer ses consentements
+            à tout moment.</span>
+        </div>
+        <div class="tech-item">
+          <strong>🛡️ Protection anti-abus</strong>
+          <span>Rate limiting distribué via Redis pour bloquer les attaques par force brute sur
+            l'authentification.</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div
+        style="text-align:center; padding: 24px; background: linear-gradient(135deg, #0F172A, #1E293B); border-radius: 14px; color: #fff;">
+        <p style="font-size: 14pt; font-weight: 700; margin-bottom: 8px; color: #3EBB70;">
+          « Sauver des vies, un clic à la fois. »
+        </p>
+        <p style="font-size: 9pt; color: rgba(255,255,255,0.6);">
+          BaoBaoHealth — La santé digitale accessible à tous, partout, tout le temps.
+        </p>
+      </div>
+
+    </div>
+    <div class="page-footer">
+      <span>BaoBaoHealth — Pitch de Présentation</span>
+      <span>Page 6</span>
+    </div>
+  </div>
+
+</body>
+
+</html>

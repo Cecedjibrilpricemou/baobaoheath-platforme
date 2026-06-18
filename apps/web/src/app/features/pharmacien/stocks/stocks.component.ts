@@ -6,13 +6,15 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { SelectModule } from 'primeng/select';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { ApiService } from '../../../core/services/api.service';
+import { PharmacienService } from '../../../core/services/pharmacien.service';
 
 interface Medicament {
-  dci: string; nomCommercial?: string; forme: string;
-  dosage: string; categorie?: string; prixUnitaireGnf: number;
+  id: string; dci: string; nomCommercial?: string;
+  forme: string; dosage: string; categorie?: string; prixUnitaireGnf: number;
 }
 
 interface Stock {
@@ -24,36 +26,70 @@ interface Stock {
 @Component({
   selector: 'app-pharmacien-stocks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule, InputTextModule, IconFieldModule, InputIconModule],
+  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule,
+    InputTextModule, InputNumberModule, SelectModule, IconFieldModule, InputIconModule],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })
 export class PharmacienStocksComponent implements OnInit {
-  private api = inject(ApiService);
+  private pharmacienService = inject(PharmacienService);
   protected Math = Math;
 
   stocks           = signal<Stock[]>([]);
+  medicaments      = signal<Medicament[]>([]);
   isLoading        = signal(true);
+  isSaving         = signal(false);
   searchQuery      = signal('');
   totalMedicaments = signal(0);
   stocksCritiques  = signal(0);
   stocksNormaux    = signal(0);
+  showForm         = signal(false);
+  successMsg       = signal('');
+  errorMsg         = signal('');
 
-  ngOnInit() { this.loadStocks(); }
+  // Formulaire réapprovisionnement
+  formReappro = {
+    idMedicament: '',
+    quantiteAjoutee: null as number | null,
+    datePeremption: '',
+    margeGnf: null as number | null
+  };
+
+  ngOnInit() { this.loadStocks(); this.loadMedicaments(); }
 
   private loadStocks() {
     this.isLoading.set(true);
-    this.api.get<any>('/pharmacien/stocks').subscribe({
-      next: (r) => {
-        const data = Array.isArray(r) ? r : r?.data ?? [];
-        this.stocks.set(data);
-        this.totalMedicaments.set(data.length);
-        this.stocksCritiques.set(data.filter((s: Stock) => s.quantite <= s.seuilAlerte).length);
-        this.stocksNormaux.set(data.filter((s: Stock) => s.quantite > s.seuilAlerte).length);
+    this.pharmacienService.getStocks().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const data = response.data as unknown as Stock[];
+          this.stocks.set(data);
+          this.totalMedicaments.set(data.length);
+          this.stocksCritiques.set(data.filter((s: Stock) => s.quantite <= s.seuilAlerte).length);
+          this.stocksNormaux.set(data.filter((s: Stock) => s.quantite > s.seuilAlerte).length);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }
     });
+  }
+
+  private loadMedicaments() {
+    this.pharmacienService.getMedicaments().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.medicaments.set(response.data as unknown as Medicament[]);
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  get medicamentOptions() {
+    return this.medicaments().map(m => ({
+      label: m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} — ${m.dosage}`,
+      value: m.id
+    }));
   }
 
   get stocksFiltres(): Stock[] {
@@ -66,15 +102,42 @@ export class PharmacienStocksComponent implements OnInit {
     );
   }
 
+  reapprovisionner() {
+    if (!this.formReappro.idMedicament || !this.formReappro.quantiteAjoutee) {
+      this.errorMsg.set('Médicament et quantité sont obligatoires.'); return;
+    }
+    this.isSaving.set(true); this.errorMsg.set('');
+
+    const payload = {
+      idMedicament: this.formReappro.idMedicament,
+      quantiteAjoutee: this.formReappro.quantiteAjoutee,
+      datePeremption: this.formReappro.datePeremption || undefined,
+      margeGnf: this.formReappro.margeGnf ?? undefined
+    };
+
+    this.pharmacienService.reapprovisionner(payload).subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.showForm.set(false);
+        this.formReappro = { idMedicament: '', quantiteAjoutee: null, datePeremption: '', margeGnf: null };
+        this.successMsg.set('Stock réapprovisionné avec succès !');
+        setTimeout(() => this.successMsg.set(''), 4000);
+        this.loadStocks();
+      },
+      error: (err) => {
+        this.isSaving.set(false);
+        this.errorMsg.set(err?.error?.error ?? 'Erreur lors du réapprovisionnement.');
+      }
+    });
+  }
+
   getMedicamentLabel(s: Stock): string {
     return s.medicament.nomCommercial
       ? `${s.medicament.nomCommercial} (${s.medicament.dci})`
       : `${s.medicament.dci} ${s.medicament.dosage}`;
   }
 
-  getPrixVente(s: Stock): number {
-    return s.medicament.prixUnitaireGnf + (s.margeGnf ?? 0);
-  }
+  getPrixVente(s: Stock): number { return s.medicament.prixUnitaireGnf + (s.margeGnf ?? 0); }
 
   getNiveauSeverity(s: Stock): 'danger' | 'warn' | 'success' {
     if (s.quantite <= s.seuilAlerte) return 'danger';
@@ -88,10 +151,7 @@ export class PharmacienStocksComponent implements OnInit {
     return 'Normal';
   }
 
-  getBarWidth(s: Stock): number {
-    return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100);
-  }
-
+  getBarWidth(s: Stock): number { return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100); }
   getBarColor(s: Stock): string {
     if (s.quantite <= s.seuilAlerte) return '#EF4444';
     if (s.quantite <= s.seuilAlerte * 2) return '#F97316';

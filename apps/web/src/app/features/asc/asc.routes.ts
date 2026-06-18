@@ -15,6 +15,11 @@ export const ASC_ROUTES: Routes = [
           import('./consultations/consultations.component').then(m => m.ConsultationsComponent)
       },
       {
+        path: 'triage',
+        loadComponent: () =>
+          import('./triage/triage').then(m => m.Triage)
+      },
+      {
         path: 'consultations/:id',
         loadComponent: () =>
           import('./consultation-detail/consultation-detail.component')
@@ -29,6 +34,11 @@ export const ASC_ROUTES: Routes = [
         path: 'planning',
         loadComponent: () =>
           import('./planning/planning.component').then(m => m.PlanningComponent)
+      },
+      {
+        path: 'sync',
+        loadComponent: () =>
+          import('./sync/sync').then(m => m.Sync)
       }
     ]
   }

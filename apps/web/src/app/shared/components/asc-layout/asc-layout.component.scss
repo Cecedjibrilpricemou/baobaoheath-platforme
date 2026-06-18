@@ -433,3 +433,60 @@
 @media (min-width: 1025px) {
   .bb-layout__overlay { display: none; }
 }
+
+// ── CONNECTIVITY BANNER ───────────────────────────────────────────
+.bb-connectivity-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slideDown 0.25s ease;
+
+  &__icon { font-size: 1.125rem; flex-shrink: 0; }
+  &__text { display: flex; flex-direction: column; gap: 0.125rem; flex: 1; }
+  &__title { font-weight: 600; }
+  &__sub { font-size: 0.78rem; opacity: 0.8; font-weight: 400; }
+  &__action {
+    margin-left: auto;
+    text-decoration: underline;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  &--offline {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    .bb-connectivity-banner__action { color: #92400e; }
+    [data-theme="dark"] & {
+      background: #451a03;
+      color: #fcd34d;
+      border-color: #78350f;
+      .bb-connectivity-banner__action { color: #fcd34d; }
+    }
+  }
+
+  &--online {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    [data-theme="dark"] & {
+      background: #064e3b;
+      color: #6ee7b7;
+      border-color: #047857;
+    }
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

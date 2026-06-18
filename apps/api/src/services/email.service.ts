@@ -2,13 +2,185 @@
 import nodemailer from 'nodemailer';
 
 // ── Transporter Gmail ─────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
+type EmailConfig = {
+    user: string;
+    pass: string;
+};
+
+function getEmailConfig(): EmailConfig {
+    const user = process.env.GMAIL_USER?.trim();
+    const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, '');
+
+    if (!user || !pass) {
+        throw new Error('Configuration Gmail manquante: GMAIL_USER ou GMAIL_APP_PASSWORD absent');
     }
-});
+
+    if (pass.length !== 16) {
+        throw new Error('Configuration Gmail invalide: GMAIL_APP_PASSWORD doit contenir 16 caracteres');
+    }
+
+    return { user, pass };
+}
+
+function createGmailTransporter() {
+    const { user, pass } = getEmailConfig();
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+    });
+}
+
+function getGmailAuthHelp(error: unknown): string | undefined {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes('535') && !message.toLowerCase().includes('badcredentials')) {
+        return undefined;
+    }
+
+    return [
+        'Authentification Gmail refusee.',
+        'Verifiez que GMAIL_USER est le meme compte Gmail que celui qui a genere le mot de passe d application.',
+        'GMAIL_APP_PASSWORD doit etre le mot de passe d application Gmail de 16 caracteres, pas le mot de passe normal du compte.',
+        'Si vous venez de le remplacer, redemarrez npm run dev.',
+    ].join(' ');
+}
+
+export async function envoyerOtpConnexion(dto: {
+    destinataire: string;
+    prenomNom: string;
+    code: string;
+    expireDansMinutes: number;
+}): Promise<void> {
+    const { user } = getEmailConfig();
+
+    const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+          <tr>
+            <td style="background:#1B5E35;color:#ffffff;padding:24px;text-align:center;">
+              <h1 style="margin:0;font-size:22px;">BaoBaoHealth</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:#d1fae5;">Verification de connexion</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <p style="font-size:15px;color:#334155;margin:0 0 16px;">Bonjour ${dto.prenomNom},</p>
+              <p style="font-size:15px;color:#334155;line-height:1.6;margin:0 0 20px;">
+                Utilisez le code ci-dessous pour finaliser votre connexion a BaoBaoHealth.
+              </p>
+              <div style="text-align:center;margin:24px 0;">
+                <span style="display:inline-block;background:#f0fdf4;border:1px solid #86efac;color:#14532d;font-size:34px;font-weight:800;letter-spacing:8px;padding:16px 24px;border-radius:8px;font-family:Consolas,monospace;">
+                  ${dto.code}
+                </span>
+              </div>
+              <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0;">
+                Ce code expire dans ${dto.expireDansMinutes} minutes. Si vous n'avez pas demande cette connexion, ignorez cet email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+    try {
+        await createGmailTransporter().sendMail({
+            from: `"BaoBaoHealth" <${user}>`,
+            to: dto.destinataire,
+            subject: `Code de verification BaoBaoHealth: ${dto.code}`,
+            html
+        });
+    } catch (error) {
+        const help = getGmailAuthHelp(error);
+        if (help) {
+            throw new Error(help);
+        }
+        throw error;
+    }
+}
+
+// ── Email de réinitialisation de mot de passe ────────────────────
+export async function envoyerEmailResetMotDePasse(dto: {
+    destinataire: string;
+    prenomNom: string;
+    lienReset: string;
+    expireDansMinutes: number;
+}): Promise<void> {
+    const { user } = getEmailConfig();
+
+    const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#0B2618 0%,#1B5E35 100%);color:#ffffff;padding:28px;text-align:center;">
+              <h1 style="margin:0;font-size:22px;">BaoBaoHealth</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:#d1fae5;">Réinitialisation de mot de passe</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <p style="font-size:15px;color:#334155;margin:0 0 16px;">Bonjour ${dto.prenomNom},</p>
+              <p style="font-size:15px;color:#334155;line-height:1.6;margin:0 0 24px;">
+                Vous avez demandé la réinitialisation de votre mot de passe BaoBaoHealth.
+                Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+              </p>
+              <div style="text-align:center;margin:28px 0;">
+                <a href="${dto.lienReset}"
+                   style="display:inline-block;background:#1B5E35;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:700;">
+                  Réinitialiser mon mot de passe
+                </a>
+              </div>
+              <p style="font-size:13px;color:#64748b;line-height:1.6;margin:0 0 16px;">
+                Ce lien expire dans <strong>${dto.expireDansMinutes} minutes</strong>.
+                Si vous n'avez pas demandé cette réinitialisation, ignorez cet email — votre mot de passe restera inchangé.
+              </p>
+              <p style="font-size:12px;color:#94a3b8;margin:0;word-break:break-all;">
+                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+                ${dto.lienReset}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f8fafc;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 BaoBaoHealth · Guinée 🇬🇳</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+    try {
+        await createGmailTransporter().sendMail({
+            from: `"BaoBaoHealth" <${user}>`,
+            to: dto.destinataire,
+            subject: 'Réinitialisation de votre mot de passe BaoBaoHealth',
+            html
+        });
+    } catch (error) {
+        const help = getGmailAuthHelp(error);
+        if (help) throw new Error(help);
+        throw error;
+    }
+}
 
 // ── Email de bienvenue pour un admin de structure ─────────────────
 export async function envoyerEmailAdminStructure(dto: {
@@ -114,12 +286,22 @@ export async function envoyerEmailAdminStructure(dto: {
 </html>
   `;
 
-    await transporter.sendMail({
-        from: `"BaoBaoHealth 🌳" <${process.env.GMAIL_USER}>`,
-        to: dto.destinataire,
-        subject: `🏥 Vos identifiants BaoBaoHealth — ${dto.nomStructure}`,
-        html
-    });
+    const { user } = getEmailConfig();
+
+    try {
+        await createGmailTransporter().sendMail({
+            from: `"BaoBaoHealth" <${user}>`,
+            to: dto.destinataire,
+            subject: `Vos identifiants BaoBaoHealth - ${dto.nomStructure}`,
+            html
+        });
+    } catch (error) {
+        const help = getGmailAuthHelp(error);
+        if (help) {
+            throw new Error(help);
+        }
+        throw error;
+    }
 }
 
 // ── Email de bienvenue pour un agent (ASC, Médecin, Pharmacien) ───
@@ -198,10 +380,20 @@ export async function envoyerEmailAgent(dto: {
 </html>
   `;
 
-    await transporter.sendMail({
-        from: `"BaoBaoHealth 🌳" <${process.env.GMAIL_USER}>`,
-        to: dto.destinataire,
-        subject: `🌳 Vos identifiants BaoBaoHealth — ${dto.nomStructure}`,
-        html
-    });
+    const { user } = getEmailConfig();
+
+    try {
+        await createGmailTransporter().sendMail({
+            from: `"BaoBaoHealth" <${user}>`,
+            to: dto.destinataire,
+            subject: `Vos identifiants BaoBaoHealth - ${dto.nomStructure}`,
+            html
+        });
+    } catch (error) {
+        const help = getGmailAuthHelp(error);
+        if (help) {
+            throw new Error(help);
+        }
+        throw error;
+    }
 }

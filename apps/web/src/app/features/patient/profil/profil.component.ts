@@ -13,17 +13,9 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DividerModule } from 'primeng/divider';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
-
-interface PatientProfil {
-  id: string; telephone: string; nom: string; prenom: string;
-  dateNaissance?: string; sexe?: string; adresse?: string;
-  groupeSanguin?: string; allergies?: string | string[];
-  antecedents?: string; qrCode?: string;
-  idStructurePreferee?: string;
-  structurePreferee?: { id: string; nom: string; type: string; prefecture: string };
-  utilisateur?: { id: string; telephone: string; nom: string; prenom: string; email?: string };
-}
+import { Patient } from '../../../core/models/patient.model';
 
 interface Structure {
   id: string; nom: string; type: string; prefecture: string;
@@ -44,9 +36,10 @@ interface Structure {
 export class ProfilComponent implements OnInit {
   private api = inject(ApiService);
   private authService = inject(AuthService);
+  private patientService = inject(PatientService);
 
   currentUser = this.authService.currentUser;
-  profil = signal<PatientProfil | null>(null);
+  profil = signal<Patient | null>(null);
   structures = signal<Structure[]>([]);
   isLoading = signal(true);
   isSaving = signal(false);
@@ -55,7 +48,7 @@ export class ProfilComponent implements OnInit {
   editMode = signal(false);
   successMessage = signal('');
   errorMessage = signal('');
-  formData: Partial<PatientProfil> = {};
+  formData: Partial<Patient> = {};
   idStructureSelectionnee = '';
 
   sexeOptions = [{ label: 'Masculin', value: 'M' }, { label: 'Féminin', value: 'F' }];
@@ -75,28 +68,14 @@ export class ProfilComponent implements OnInit {
 
   private loadProfil() {
     this.isLoading.set(true);
-    this.api.get<any>('/patients/me').subscribe({
+    this.patientService.getMe().subscribe({
       next: (response) => {
-        const data = response?.data ?? response;
-        const profil: PatientProfil = {
-          id: data?.id ?? '',
-          telephone: data?.utilisateur?.telephone ?? data?.telephone ?? '',
-          nom: data?.utilisateur?.nom ?? data?.nom ?? '',
-          prenom: data?.utilisateur?.prenom ?? data?.prenom ?? '',
-          dateNaissance: data?.dateNaissance,
-          sexe: data?.sexe,
-          adresse: data?.adresse ?? data?.village,
-          groupeSanguin: data?.groupeSanguin,
-          allergies: data?.allergies,
-          antecedents: data?.antecedents,
-          qrCode: data?.qrCode,
-          idStructurePreferee: data?.idStructurePreferee,
-          structurePreferee: data?.structurePreferee,
-          utilisateur: data?.utilisateur
-        };
-        this.profil.set(profil);
-        this.formData = { ...profil };
-        this.idStructureSelectionnee = data?.idStructurePreferee ?? '';
+        if (response.success && response.data) {
+          const data = response.data;
+          this.profil.set(data);
+          this.formData = { ...data };
+          this.idStructureSelectionnee = data.idStructurePreferee ?? '';
+        }
         this.isLoading.set(false);
       },
       error: () => {
@@ -107,9 +86,10 @@ export class ProfilComponent implements OnInit {
   }
 
   private loadStructures() {
-    this.api.get<any>('/admin-structure/structures/publiques').subscribe({
+    // Keep this one using api.service since we haven't created AdminStructureService yet
+    this.api.get<{ data?: Structure[]; success?: boolean } | Structure[]>('/admin-structure/structures/publiques').subscribe({
       next: (response) => {
-        const data = Array.isArray(response) ? response : response?.data ?? [];
+        const data = Array.isArray(response) ? response : (response as { data?: Structure[] })?.data ?? [];
         this.structures.set(data.filter((s: Structure) => s.type !== 'PHARMACIE'));
       },
       error: () => { }
@@ -119,10 +99,9 @@ export class ProfilComponent implements OnInit {
   enableEdit() { this.formData = { ...this.profil() }; this.editMode.set(true); }
   cancelEdit() { this.editMode.set(false); this.errorMessage.set(''); }
 
-  // Aligné avec le template HTML qui appelle saveProfil()
   saveProfil() {
     this.isSaving.set(true);
-    this.api.put<any>('/patients/me', this.formData).subscribe({
+    this.patientService.updateMe(this.formData).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.editMode.set(false);
@@ -138,9 +117,7 @@ export class ProfilComponent implements OnInit {
 
   saveStructurePreferee() {
     this.isSavingStructure.set(true);
-    this.api.put<any>('/patients/me/structure', {
-      idStructure: this.idStructureSelectionnee || null
-    }).subscribe({
+    this.patientService.setStructurePreferee(this.idStructureSelectionnee || null).subscribe({
       next: () => {
         this.isSavingStructure.set(false);
         this.showSuccess(
@@ -159,13 +136,12 @@ export class ProfilComponent implements OnInit {
 
   exportDossier() {
     this.isExporting.set(true);
-    this.api.get<any>('/patients/me/export').subscribe({
-      next: (data) => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+    this.patientService.exportDossier().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(new Blob(['{}']));
         const a = document.createElement('a');
         a.href = url;
-        a.download = `dossier-${this.profil()?.nom ?? 'patient'}.json`;
+        a.download = `dossier-${this.profil()?.utilisateur?.nom ?? this.profil()?.nom ?? 'patient'}.json`;
         a.click();
         URL.revokeObjectURL(url);
         this.isExporting.set(false);
@@ -174,16 +150,14 @@ export class ProfilComponent implements OnInit {
     });
   }
 
-  // Méthode manquante — utilisée dans le template
   getInitiales(): string {
     const p = this.profil();
     const u = this.currentUser();
-    const prenom = p?.prenom ?? u?.prenom ?? '';
-    const nom = p?.nom ?? u?.nom ?? '';
+    const prenom = p?.utilisateur?.prenom ?? p?.prenom ?? u?.prenom ?? '';
+    const nom = p?.utilisateur?.nom ?? p?.nom ?? u?.nom ?? '';
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase() || '??';
   }
 
-  // Méthode manquante — utilisée dans le template
   formatDate(dateStr?: string): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('fr-FR', {

@@ -6,7 +6,7 @@ import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
-import { ApiService } from '../../../core/services/api.service';
+import { MedecinService } from '../../../core/services/medecin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
@@ -30,13 +30,13 @@ interface ConsultationRecente {
 @Component({
   selector: 'app-medecin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, CardModule, TagModule, ButtonModule, SkeletonModule, TranslatePipe],
+  imports: [CommonModule, RouterLink, CardModule, TagModule, ButtonModule, SkeletonModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
 export class MedecinDashboardComponent implements OnInit {
-  private api         = inject(ApiService);
-  private authService = inject(AuthService);
+  private medecinService = inject(MedecinService);
+  private authService    = inject(AuthService);
 
   currentUser          = this.authService.currentUser;
   stats                = signal<DashboardStats | null>(null);
@@ -49,19 +49,22 @@ export class MedecinDashboardComponent implements OnInit {
     this.isLoading.set(true);
 
     // Stats dashboard
-    this.api.get<any>('/medecin/dashboard').subscribe({
-      next: (r) => {
-        this.stats.set(r?.data ?? r);
+    this.medecinService.getDashboard().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.stats.set(response.data as unknown as DashboardStats);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }
     });
 
     // Consultations récentes à valider
-    this.api.get<any>('/medecin/consultations?limit=5').subscribe({
-      next: (r) => {
-        const data = Array.isArray(r) ? r : r?.data ?? [];
-        this.consultationsRecentes.set(data.slice(0, 5));
+    this.medecinService.getConsultationsRecentes().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.consultationsRecentes.set(response.data as unknown as ConsultationRecente[]);
+        }
       },
       error: () => {}
     });

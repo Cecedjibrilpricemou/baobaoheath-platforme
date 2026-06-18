@@ -1,29 +1,8 @@
 // core/models/user.model.ts
-export type Role =
-  | 'PATIENT'
-  | 'ASC'
-  | 'ASC_SUPERVISOR'
-  | 'MEDECIN'
-  | 'PHARMACIEN'
-  | 'ADMIN_STRUCTURE'
-  | 'ADMIN_REGIONAL'
-  | 'ADMIN_NATIONAL'
-  | 'SUPER_ADMIN';
+export type { Role, UserDto } from '@baobaoheath/shared-types';
+import type { UserDto } from '@baobaoheath/shared-types';
 
-export interface User {
-  id: string;
-  telephone: string;
-  email?: string;
-  nom: string;
-  prenom: string;
-  role: Role;
-  langue: string;
-  photoUrl?: string;
-  estActif: boolean;
-  doitChangerMotDePasse: boolean; // ← NOUVEAU
-  creeLe: string;
-  modifieLe: string;
-}
+export type User = UserDto;
 
 export interface AuthTokens {
   accessToken: string;
@@ -41,10 +20,10 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
+  nom: string;
+  prenom: string;
   telephone: string;
   email?: string;
   motDePasse: string;
-  nom: string;
-  prenom: string;
-  role: Role;
+  role?: import('@baobaoheath/shared-types').Role;
 }

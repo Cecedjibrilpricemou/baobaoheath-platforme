@@ -1,0 +1,289 @@
+.triage-page {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.triage-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--surface-card);
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+
+  .header-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--bb-primary), var(--bb-bright));
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    i {
+      font-size: 32px;
+      color: white;
+    }
+  }
+
+  .header-content h1 {
+    margin: 0 0 8px 0;
+    color: var(--text-color);
+  }
+
+  .header-content p {
+    margin: 0;
+    color: var(--text-color-secondary);
+  }
+}
+
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    opacity: 0.5;
+    transition: all 0.3s;
+
+    .step-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--surface-card);
+      border: 2px solid var(--surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--text-color-secondary);
+      font-size: 18px;
+    }
+
+    span {
+      font-weight: 500;
+    }
+
+    &.active {
+      opacity: 1;
+      .step-circle {
+        border-color: var(--bb-primary);
+        background: var(--bb-primary);
+        color: white;
+        box-shadow: 0 4px 15px rgba(45, 125, 70, 0.3);
+      }
+      span { color: var(--bb-primary); }
+    }
+
+    &.completed {
+      opacity: 1;
+      .step-circle {
+        border-color: var(--bb-primary);
+        color: var(--bb-primary);
+      }
+    }
+  }
+
+  .step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--surface-border);
+    margin: 0 16px;
+    margin-bottom: 24px;
+  }
+}
+
+.section-card {
+  background: var(--surface-card);
+  color: var(--text-color);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  min-height: 400px;
+}
+
+.step-panel {
+  animation: fadeIn 0.4s ease;
+
+  h2 { margin-top: 0; color: var(--text-color); }
+  
+  .text-secondary { color: var(--text-color-secondary); }
+
+  .search-box {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .patient-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--surface-ground);
+    border: 1px solid var(--surface-border);
+    border-radius: 16px;
+    transition: all 0.2s;
+
+    &.selectable {
+      cursor: pointer;
+      &:hover {
+        border-color: var(--bb-primary);
+        transform: translateY(-2px);
+      }
+    }
+
+    &.selected {
+      border-color: var(--bb-primary);
+      background: color-mix(in srgb, var(--bb-primary) 10%, transparent);
+      box-shadow: 0 0 0 1px var(--bb-primary);
+    }
+
+    .patient-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bb-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .patient-info {
+      flex: 1;
+      h3 { margin: 0 0 4px 0; color: var(--text-color); }
+      p { margin: 0; font-size: 14px; color: var(--text-color-secondary); }
+    }
+  }
+
+  .step-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 40px;
+    border-top: 1px solid var(--surface-border);
+    padding-top: 24px;
+  }
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+}
+
+/* IA PANEL */
+.ia-panel {
+  text-align: center;
+}
+
+.ia-loading {
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .pulse-ring {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 2px solid var(--bb-primary);
+    animation: pulse 1.5s infinite;
+  }
+
+  .ia-icon {
+    font-size: 48px;
+    color: var(--bb-primary);
+    position: relative;
+    z-index: 2;
+    margin-bottom: 24px;
+  }
+}
+
+.ia-result {
+  text-align: left;
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 32px;
+    border-radius: 20px;
+    color: white;
+    margin-bottom: 32px;
+
+    &.bg-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    &.bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    &.bg-green { background: linear-gradient(135deg, #10b981, #059669); }
+
+    .score-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      
+      span { font-size: 28px; font-weight: bold; line-height: 1; }
+      small { font-size: 12px; opacity: 0.8; }
+    }
+
+    .gravity-text h3 { margin: 0 0 4px 0; font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+    .gravity-text h2 { margin: 0; font-size: 28px; }
+  }
+
+  .recommendations {
+    background: var(--surface-ground);
+    padding: 24px;
+    border-radius: 16px;
+    color: var(--text-color);
+
+    h3 { margin-top: 0; color: var(--text-color); display: flex; align-items: center; gap: 8px; }
+    
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        i { color: var(--bb-primary); margin-top: 4px; }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}

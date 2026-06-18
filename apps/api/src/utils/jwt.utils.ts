@@ -1,9 +1,14 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { JwtPayload, TokenPair } from '../types/auth.types';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '15m';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN ?? '7d';
+const rawJwtSecret = process.env.JWT_SECRET;
+if (!rawJwtSecret) {
+  throw new Error('JWT_SECRET manquant');
+}
+const JWT_SECRET: Secret = rawJwtSecret;
+
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN ?? '15m') as SignOptions['expiresIn'];
+const JWT_REFRESH_EXPIRES_IN = (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as SignOptions['expiresIn'];
 
 export function generateTokenPair(payload: JwtPayload): TokenPair {
   const accessToken = jwt.sign(payload, JWT_SECRET, {
@@ -20,9 +25,9 @@ export function generateTokenPair(payload: JwtPayload): TokenPair {
 }
 
 export function verifyAccessToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+  return jwt.verify(token, JWT_SECRET) as unknown as JwtPayload;
 }
 
 export function verifyRefreshToken(token: string): Pick<JwtPayload, 'userId' | 'sessionId'> {
-  return jwt.verify(token, JWT_SECRET) as Pick<JwtPayload, 'userId' | 'sessionId'>;
+  return jwt.verify(token, JWT_SECRET) as unknown as Pick<JwtPayload, 'userId' | 'sessionId'>;
 }

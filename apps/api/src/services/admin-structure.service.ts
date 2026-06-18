@@ -1,4 +1,5 @@
 // src/services/admin-structure.service.ts
+import { randomBytes } from 'crypto';
 import { prisma } from '../config/prisma';
 import { hashPassword } from '../utils/password.utils';
 import { Role, TypeStructure } from '../config/generated/client/client';
@@ -9,9 +10,10 @@ const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Ro
 // ── Générer un mot de passe temporaire ───────────────────────────
 function genererMotDePasseTemp(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const bytes = randomBytes(5);
     let pwd = 'BaoBao@';
     for (let i = 0; i < 5; i++) {
-        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+        pwd += chars[bytes[i] % chars.length];
     }
     return pwd;
 }
@@ -89,6 +91,90 @@ export async function creerStructureAvecAdmin(dto: {
             role: result.admin.role
         },
         motDePasseTemporaire: motDePasseTemp
+    };
+}
+
+export async function creerPharmacieAvecPharmacien(dto: {
+    nom: string; prefecture: string;
+    adresse?: string; latitude?: number; longitude?: number; telephone?: string;
+    pharmacien: { prenom: string; nom: string; telephone: string; email?: string; motDePasse?: string; };
+}) {
+    const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.pharmacien.telephone } });
+    if (existingTel) throw new Error('Ce numero de telephone est deja utilise');
+
+    if (dto.pharmacien.email) {
+        const existingEmail = await prisma.utilisateur.findUnique({ where: { email: dto.pharmacien.email } });
+        if (existingEmail) throw new Error('Cette adresse email est deja utilisee');
+    }
+
+    const motDePasseTemp = dto.pharmacien.motDePasse || genererMotDePasseTemp();
+    const motDePasseHash = await hashPassword(motDePasseTemp);
+    const isTemporaire = !dto.pharmacien.motDePasse;
+
+    const result = await prisma.$transaction(async (tx) => {
+        const structure = await tx.structureSante.create({
+            data: {
+                nom: dto.nom,
+                type: TypeStructure.PHARMACIE,
+                prefecture: dto.prefecture,
+                adresse: dto.adresse,
+                latitude: dto.latitude,
+                longitude: dto.longitude,
+                telephone: dto.telephone,
+                estActive: true
+            }
+        });
+
+        const pharmacien = await tx.utilisateur.create({
+            data: {
+                telephone: dto.pharmacien.telephone,
+                email: dto.pharmacien.email ?? null,
+                motDePasseHash,
+                prenom: dto.pharmacien.prenom,
+                nom: dto.pharmacien.nom,
+                role: Role.PHARMACIEN,
+                idStructure: structure.id,
+                doitChangerMotDePasse: isTemporaire
+            }
+        });
+
+        await tx.pharmacienProfile.create({
+            data: {
+                idUtilisateur: pharmacien.id,
+                idStructure: structure.id,
+                estResponsable: true
+            }
+        });
+
+        return { structure, pharmacien };
+    });
+
+    if (dto.pharmacien.email && isTemporaire) {
+        try {
+            await envoyerEmailAgent({
+                destinataire: dto.pharmacien.email,
+                prenomNom: `${dto.pharmacien.prenom} ${dto.pharmacien.nom}`,
+                role: Role.PHARMACIEN,
+                nomStructure: dto.nom,
+                telephone: dto.pharmacien.telephone,
+                motDePasseTemporaire: motDePasseTemp
+            });
+        } catch (emailError) {
+            console.error('Erreur envoi email pharmacien responsable:', emailError);
+        }
+    }
+
+    return {
+        structure: result.structure,
+        pharmacien: {
+            id: result.pharmacien.id,
+            telephone: result.pharmacien.telephone,
+            email: result.pharmacien.email,
+            prenom: result.pharmacien.prenom,
+            nom: result.pharmacien.nom,
+            role: result.pharmacien.role
+        },
+        motDePasseTemporaire: isTemporaire ? motDePasseTemp : undefined
     };
 }
 

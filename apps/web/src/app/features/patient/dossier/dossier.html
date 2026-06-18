@@ -1,0 +1,63 @@
+<div class="dossier-page">
+  <div class="dossier-header">
+    <div class="header-content">
+      <h1>Mon Dossier Médical</h1>
+      <p>Retrouvez ici tout votre historique de consultations et votre carnet vaccinal.</p>
+    </div>
+    <div class="header-actions">
+      <p-button icon="pi pi-download" label="Exporter FHIR" styleClass="p-button-outlined" />
+      <p-button icon="pi pi-qrcode" label="Mon QR Code" routerLink="/patient/qr-code" />
+    </div>
+  </div>
+
+  <div class="dossier-content">
+    
+    <!-- SECTION HISTORIQUE MÉDICAL (TIMELINE) -->
+    <div class="section-card timeline-section">
+      <div class="section-title">
+        <i class="pi pi-history"></i>
+        <h2>Historique des consultations</h2>
+      </div>
+      
+      <p-timeline [value]="historique()" align="alternate" styleClass="custom-timeline">
+        <ng-template pTemplate="marker" let-event>
+          <span class="custom-marker" [style.backgroundColor]="event.color">
+            <i [class]="event.icon"></i>
+          </span>
+        </ng-template>
+        <ng-template pTemplate="content" let-event>
+          <p-card [header]="event.type" [subheader]="event.date" styleClass="timeline-card">
+            <p><strong>Médecin/Agent:</strong> {{ event.medecin }}</p>
+            <p><strong>Diagnostic:</strong> {{ event.diagnostic }}</p>
+            <p-tag [value]="event.statut" severity="success" styleClass="mt-2"></p-tag>
+          </p-card>
+        </ng-template>
+      </p-timeline>
+    </div>
+
+    <!-- SECTION CARNET VACCINAL (GRILLE) -->
+    <div class="section-card vaccins-section">
+      <div class="section-title">
+        <i class="pi pi-shield"></i>
+        <h2>Carnet Vaccinal</h2>
+      </div>
+      
+      <div class="vaccins-grid">
+        @for (vaccin of vaccins(); track vaccin.nom) {
+          <div class="vaccin-card" [class.vaccin-danger]="vaccin.severity === 'danger'">
+            <div class="vaccin-icon">
+              <i class="pi pi-check-circle" *ngIf="vaccin.severity === 'success'"></i>
+              <i class="pi pi-exclamation-circle" *ngIf="vaccin.severity === 'danger'"></i>
+            </div>
+            <div class="vaccin-details">
+              <h3>{{ vaccin.nom }}</h3>
+              <p>{{ vaccin.date }}</p>
+            </div>
+            <p-tag [value]="vaccin.statut" [severity]="vaccin.severity"></p-tag>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+</div>

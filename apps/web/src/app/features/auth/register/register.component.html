@@ -58,19 +58,6 @@
         <h2 class="register-form__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h2>
         <p class="register-form__sub">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
 
-        @if (errorMessage()) {
-        <div class="bb-alert bb-alert--error">
-          <i class="pi pi-exclamation-circle"></i>
-          <span>{{ errorMessage() }}</span>
-        </div>
-        }
-        @if (successMessage()) {
-        <div class="bb-alert bb-alert--success">
-          <i class="pi pi-check-circle"></i>
-          <span>{{ successMessage() }}</span>
-        </div>
-        }
-
         <form (ngSubmit)="onSubmit()" #registerForm="ngForm" novalidate>
 
           <!-- Nom + Prénom -->
@@ -80,76 +67,96 @@
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
                 <input pInputText id="nom" type="text" placeholder="Ex: Diallo" [(ngModel)]="formData.nom" name="nom"
-                  required autocomplete="family-name" />
+                  required autocomplete="family-name" #nomInput="ngModel" />
               </div>
+              @if (nomInput.invalid && (nomInput.dirty || nomInput.touched)) {
+                <small class="bb-error-text">Le nom est requis</small>
+              }
             </div>
             <div class="form-field-wrap">
               <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
                 <input pInputText id="prenom" type="text" placeholder="Ex: Mamadou" [(ngModel)]="formData.prenom"
-                  name="prenom" required autocomplete="given-name" />
+                  name="prenom" required autocomplete="given-name" #prenomInput="ngModel" />
               </div>
+              @if (prenomInput.invalid && (prenomInput.dirty || prenomInput.touched)) {
+                <small class="bb-error-text">Le prénom est requis</small>
+              }
             </div>
           </div>
 
-          <!-- Téléphone -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="telephone">
-              {{ 'AUTH.REGISTER.PHONE' | translate }}
-              <span class="form-required">*</span>
-            </label>
-            <div class="p-inputgroup">
-              <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
-              <input pInputText id="telephone" type="tel" placeholder="Ex: 620123456" [(ngModel)]="formData.telephone"
-                name="telephone" required autocomplete="tel" />
+          <div class="form-row">
+            <!-- Téléphone -->
+            <div class="form-field-wrap">
+              <label class="form-label" for="telephone">
+                {{ 'AUTH.REGISTER.PHONE' | translate }}
+                <span class="form-required">*</span>
+              </label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
+                <input pInputText id="telephone" type="tel" placeholder="Ex: 620123456" [(ngModel)]="formData.telephone"
+                  name="telephone" required autocomplete="tel" #telInput="ngModel" />
+              </div>
+              @if (telInput.invalid && (telInput.dirty || telInput.touched)) {
+                <small class="bb-error-text">Le téléphone est requis</small>
+              }
+            </div>
+
+            <!-- Email (optionnel) -->
+            <div class="form-field-wrap">
+              <label class="form-label" for="email">
+                {{ 'AUTH.REGISTER.EMAIL' | translate }}
+                <span class="form-optional">(optionnel)</span>
+              </label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-envelope"></i></span>
+                <input pInputText id="email" type="email" placeholder="Ex: email@mail.com" [(ngModel)]="formData.email"
+                  name="email" autocomplete="email" email #emailInput="ngModel" />
+              </div>
+              @if (emailInput.invalid && (emailInput.dirty || emailInput.touched)) {
+                <small class="bb-error-text">Format invalide</small>
+              }
             </div>
           </div>
 
-          <!-- Email (optionnel) -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="email">
-              {{ 'AUTH.REGISTER.EMAIL' | translate }}
-              <span class="form-optional">(optionnel)</span>
-            </label>
-            <div class="p-inputgroup">
-              <span class="p-inputgroup-addon"><i class="pi pi-envelope"></i></span>
-              <input pInputText id="email" type="email" placeholder="Ex: mamadou@email.com" [(ngModel)]="formData.email"
-                name="email" autocomplete="email" />
+          <div class="form-row">
+            <!-- Mot de passe -->
+            <div class="form-field-wrap">
+              <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
+                <input pInputText id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
+                  placeholder="Min 6 caractères" [(ngModel)]="formData.motDePasse" name="motDePasse" required
+                  minlength="6" autocomplete="new-password" #mdpInput="ngModel" />
+                <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()">
+                  <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;"></i>
+                </button>
+              </div>
+              @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
+                <small class="bb-error-text">Min 6 caractères</small>
+              }
             </div>
-            <small class="form-hint">{{ 'AUTH.REGISTER.EMAIL_HINT' | translate }}</small>
-          </div>
 
-          <!-- Mot de passe -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
-            <div class="p-inputgroup">
-              <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
-              <input pInputText id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
-                placeholder="Minimum 6 caractères" [(ngModel)]="formData.motDePasse" name="motDePasse" required
-                autocomplete="new-password" />
-              <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()">
-                <span class="toggle-label">
-                  {{ (showPassword() ? 'AUTH.REGISTER.HIDE' : 'AUTH.REGISTER.SHOW') | translate }}
-                </span>
-              </button>
-            </div>
-            <small class="form-hint">Au moins 6 caractères. Évitez les mots de passe trop simples.</small>
-          </div>
-
-          <!-- Confirmation mot de passe -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
-            <div class="p-inputgroup">
-              <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
-              <input pInputText id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
-                placeholder="Répétez le mot de passe" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
-                autocomplete="new-password" />
-              <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()">
-                <span class="toggle-label">
-                  {{ (showConfirmPassword() ? 'AUTH.REGISTER.HIDE' : 'AUTH.REGISTER.SHOW') | translate }}
-                </span>
-              </button>
+            <!-- Confirmation mot de passe -->
+            <div class="form-field-wrap">
+              <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
+              <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
+                <input pInputText id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
+                  placeholder="Répétez" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
+                  autocomplete="new-password" #confirmMdpInput="ngModel" />
+                <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()">
+                  <i [class]="showConfirmPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;"></i>
+                </button>
+              </div>
+              @if (confirmMdpInput.dirty || confirmMdpInput.touched) {
+                @if (confirmMdpInput.invalid) {
+                  <small class="bb-error-text">Veuillez confirmer</small>
+                } @else if (formData.motDePasse !== confirmMotDePasse) {
+                  <small class="bb-error-text">Non identique</small>
+                }
+              }
             </div>
           </div>
 

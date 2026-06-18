@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24.x'
+
+jobs:
+  # ── API ──────────────────────────────────────────────────────────────
+  api-build-test:
+    name: API — Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: baobaoheath
+          POSTGRES_PASSWORD: baobaoheath
+          POSTGRES_DB: baobaoheath_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://baobaoheath:baobaoheath@localhost:5432/baobaoheath_test
+      JWT_SECRET: ci-test-secret-at-least-32-chars-long
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars
+      NODE_ENV: test
+      PORT: 3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Generate Prisma client
+        run: npx prisma generate --config prisma.config.ts
+
+      - name: Run migrations
+        run: npx prisma migrate deploy --config prisma.config.ts
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  # ── API Security audit ───────────────────────────────────────────────
+  api-audit:
+    name: API — Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - run: npm ci
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+  # ── Frontend ─────────────────────────────────────────────────────────
+  web-build:
+    name: Web — Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Build production
+        run: npm run build -- --configuration=production
+
+  # ── Frontend Security audit ──────────────────────────────────────────
+  web-audit:
+    name: Web — Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Audit dependencies
+        run: npm audit --audit-level=high

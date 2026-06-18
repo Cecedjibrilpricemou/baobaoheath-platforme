@@ -6,93 +6,147 @@
       <h1 class="bb-ph-stocks__title"><i class="pi pi-box"></i> Stocks de la pharmacie</h1>
       <p class="bb-ph-stocks__subtitle">Gérez les médicaments disponibles dans votre pharmacie</p>
     </div>
+    <button class="bb-ph-stocks__add-btn" (click)="showForm.set(true)">
+      <i class="pi pi-plus"></i> Réapprovisionner
+    </button>
   </div>
+
+  <!-- Alertes -->
+  @if (successMsg()) {
+    <div class="bb-ph-stocks__alert bb-ph-stocks__alert--success">
+      <i class="pi pi-check-circle"></i> {{ successMsg() }}
+    </div>
+  }
+  @if (errorMsg()) {
+    <div class="bb-ph-stocks__alert bb-ph-stocks__alert--error">
+      <i class="pi pi-times-circle"></i> {{ errorMsg() }}
+    </div>
+  }
+
+  <!-- Formulaire réapprovisionnement -->
+  @if (showForm()) {
+    <div class="bb-ph-stocks__form">
+      <h3><i class="pi pi-cart-plus"></i> Réapprovisionner le stock</h3>
+      <div class="bb-ph-stocks__form-grid">
+        <div class="bb-ph-stocks__field bb-ph-stocks__field--full">
+          <label>Médicament *</label>
+          <p-select
+            [(ngModel)]="formReappro.idMedicament"
+            [options]="medicamentOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Sélectionner un médicament"
+            [filter]="true"
+            filterPlaceholder="Rechercher..."
+            styleClass="w-full"
+          />
+        </div>
+        <div class="bb-ph-stocks__field">
+          <label>Quantité ajoutée (Boîtes) *</label>
+          <p-inputnumber [(ngModel)]="formReappro.quantiteAjoutee" placeholder="Ex: 100" [min]="1" styleClass="w-full" />
+        </div>
+        <div class="bb-ph-stocks__field">
+          <label>Date de péremption</label>
+          <input pInputText type="date" [(ngModel)]="formReappro.datePeremption" class="w-full" />
+        </div>
+        <div class="bb-ph-stocks__field">
+          <label>Marge Bénéficiaire (GNF)</label>
+          <p-inputnumber [(ngModel)]="formReappro.margeGnf" placeholder="Ex: 5000" [min]="0" styleClass="w-full" />
+        </div>
+      </div>
+      <div class="bb-ph-stocks__form-actions">
+        <button class="bb-ph-stocks__cancel-btn" (click)="showForm.set(false); errorMsg.set('')">Annuler</button>
+        <button class="bb-ph-stocks__save-btn" (click)="reapprovisionner()" [disabled]="isSaving()">
+          <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"></i>
+          {{ isSaving() ? 'Enregistrement...' : 'Confirmer le réapprovisionnement' }}
+        </button>
+      </div>
+    </div>
+  }
 
   <!-- KPIs -->
   <div class="bb-ph-stocks__kpis">
     <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--blue">
       <i class="pi pi-box"></i>
       <div class="bb-ph-stocks__kpi-val">{{ totalMedicaments() }}</div>
-      <div class="bb-ph-stocks__kpi-lbl">Médicaments</div>
+      <div class="bb-ph-stocks__kpi-lbl">Total Médicaments</div>
     </div>
     <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--red">
       <i class="pi pi-exclamation-triangle"></i>
       <div class="bb-ph-stocks__kpi-val">{{ stocksCritiques() }}</div>
-      <div class="bb-ph-stocks__kpi-lbl">Stock critique</div>
+      <div class="bb-ph-stocks__kpi-lbl">Rupture / Critique</div>
     </div>
     <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--green">
       <i class="pi pi-check-circle"></i>
       <div class="bb-ph-stocks__kpi-val">{{ stocksNormaux() }}</div>
-      <div class="bb-ph-stocks__kpi-lbl">Stock normal</div>
+      <div class="bb-ph-stocks__kpi-lbl">Stock Normal</div>
     </div>
   </div>
 
   <!-- Recherche -->
-  <p-iconfield class="bb-ph-stocks__search">
-    <p-inputicon styleClass="pi pi-search" />
-    <input
-      pInputText
-      placeholder="Rechercher un médicament..."
-      [(ngModel)]="searchQuery"
-      (ngModelChange)="searchQuery.set($event)"
-    />
-  </p-iconfield>
+  <div class="bb-ph-stocks__search">
+    <p-iconfield>
+      <p-inputicon styleClass="pi pi-search" />
+      <input pInputText placeholder="Rechercher un médicament (DCI, nom commercial)..."
+        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+    </p-iconfield>
+  </div>
 
   <!-- Liste -->
   @if (isLoading()) {
     <div class="bb-ph-stocks__list">
-      @for (i of [1,2,3,4,5]; track i) {
-        <p-skeleton height="90px" borderRadius="12px" styleClass="mb-2" />
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <p-skeleton height="160px" borderRadius="16px" styleClass="mb-2" />
       }
     </div>
   } @else if (stocksFiltres.length === 0) {
     <div class="bb-ph-stocks__empty">
-      <i class="pi pi-box"></i>
-      <p>Aucun médicament en stock</p>
+      <i class="pi pi-inbox"></i>
+      <p>Aucun médicament trouvé</p>
+      <span>Cliquez sur "Réapprovisionner" pour ajouter de nouveaux stocks.</span>
     </div>
   } @else {
     <div class="bb-ph-stocks__list">
       @for (s of stocksFiltres; track s.id) {
         <div class="bb-ph-stocks__card" [class.bb-ph-stocks__card--critique]="s.quantite <= s.seuilAlerte">
-
+          
           <div class="bb-ph-stocks__card-header">
             <div class="bb-ph-stocks__card-info">
-              <span class="bb-ph-stocks__card-nom">{{ getMedicamentLabel(s) }}</span>
+              <span class="bb-ph-stocks__card-nom" [title]="getMedicamentLabel(s)">{{ getMedicamentLabel(s) }}</span>
               <span class="bb-ph-stocks__card-forme">{{ s.medicament.forme }} · {{ s.medicament.dosage }}</span>
               @if (s.medicament.categorie) {
                 <span class="bb-ph-stocks__card-cat">{{ s.medicament.categorie }}</span>
               }
             </div>
             <div class="bb-ph-stocks__card-right">
-              <p-tag [value]="getNiveauLabel(s)" [severity]="getNiveauSeverity(s)" />
+              <p-tag [value]="getNiveauLabel(s)" [severity]="getNiveauSeverity(s)" [rounded]="true" />
               <span class="bb-ph-stocks__card-prix">{{ formatMontant(getPrixVente(s)) }}</span>
             </div>
           </div>
 
-          <!-- Barre de stock -->
           <div class="bb-ph-stocks__bar-wrap">
-            <div class="bb-ph-stocks__bar-track">
-              <div
-                class="bb-ph-stocks__bar-fill"
-                [style.width.%]="getBarWidth(s)"
-                [style.background]="getBarColor(s)"
-              ></div>
+            <div class="bb-ph-stocks__bar-top">
+              <span>Niveau de stock</span>
+              <span class="bb-ph-stocks__bar-qty">{{ s.quantite }} {{ s.unite }}</span>
             </div>
-            <span class="bb-ph-stocks__bar-qty">{{ s.quantite }} {{ s.unite }}</span>
+            <div class="bb-ph-stocks__bar-track">
+              <div class="bb-ph-stocks__bar-fill"
+                [style.width.%]="getBarWidth(s)"
+                [style.background]="getBarColor(s)">
+              </div>
+            </div>
           </div>
 
-          <!-- Infos bas -->
           <div class="bb-ph-stocks__card-footer">
-            <span>Seuil alerte : {{ s.seuilAlerte }} {{ s.unite }}</span>
+            <span><i class="pi pi-bell"></i> Seuil d'alerte : {{ s.seuilAlerte }} {{ s.unite }}</span>
             @if (s.datePeremption) {
               <span [class.bb-ph-stocks__expire]="isExpireSoon(s)">
-                <i class="pi pi-calendar"></i>
-                Péremption : {{ formatDate(s.datePeremption) }}
-                @if (isExpireSoon(s)) { <strong>(Bientôt !)</strong> }
+                <i class="pi pi-calendar-times"></i> Exp: {{ formatDate(s.datePeremption) }}
               </span>
+            } @else {
+              <span><i class="pi pi-calendar-times"></i> Sans péremption</span>
             }
           </div>
-
         </div>
       }
     </div>

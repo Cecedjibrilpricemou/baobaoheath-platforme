@@ -1,0 +1,16 @@
+<section class="how-section" id="how">
+  <div class="section-header">
+    <div class="section-tag">{{ 'LANDING.HOW_TAG' | translate }}</div>
+    <h2 class="section-title">{{ 'LANDING.HOW_TITLE' | translate }}</h2>
+    <p class="section-sub">{{ 'LANDING.HOW_SUB' | translate }}</p>
+  </div>
+  <div class="steps-grid">
+    @for (step of steps; track step.num) {
+    <div class="step">
+      <div class="step__num">{{ step.num }}</div>
+      <h3 class="step__title">{{ step.title }}</h3>
+      <p class="step__desc">{{ step.desc }}</p>
+    </div>
+    }
+  </div>
+</section>

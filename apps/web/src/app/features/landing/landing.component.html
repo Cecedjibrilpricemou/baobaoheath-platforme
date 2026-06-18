@@ -12,6 +12,7 @@
       <a href="#features" class="lnav__link">{{ 'LANDING.NAV_FEATURES' | translate }}</a>
       <a href="#roles" class="lnav__link">{{ 'LANDING.NAV_ROLES' | translate }}</a>
       <a href="#how" class="lnav__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
+      <a href="#contact" class="lnav__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
     </div>
 
     <div class="lnav__actions">
@@ -84,7 +85,7 @@
 
       <!-- Stats -->
       <div class="hero__stats">
-        @for (stat of stats; track stat.labelKey) {
+        @for (stat of stats(); track stat.labelKey) {
         <div class="hero-stat">
           <span class="hero-stat__value">{{ stat.value }}</span>
           <span class="hero-stat__label">{{ stat.labelKey | translate }}</span>
@@ -148,63 +149,11 @@
     }
   </div>
 
-  <!-- ── FEATURES ──────────────────────────────────────────────── -->
-  <section class="features-section" id="features">
-    <div class="section-header">
-      <div class="section-tag">{{ 'LANDING.FEATURES_TAG' | translate }}</div>
-      <h2 class="section-title">{{ 'LANDING.FEATURES_TITLE' | translate }}</h2>
-      <p class="section-sub">{{ 'LANDING.FEATURES_SUB' | translate }}</p>
-    </div>
-    <div class="features-grid">
-      @for (f of features; track f.title) {
-      <div class="feature-card">
-        <div class="feature-card__icon"><i [class]="'pi ' + f.icon"></i></div>
-        <h3 class="feature-card__title">{{ f.title }}</h3>
-        <p class="feature-card__desc">{{ f.description }}</p>
-      </div>
-      }
-    </div>
-  </section>
-
-  <!-- ── RÔLES ──────────────────────────────────────────────────── -->
-  <section class="roles-section" id="roles">
-    <div class="roles-section__deco roles-section__deco--1"></div>
-    <div class="roles-section__deco roles-section__deco--2"></div>
-    <div class="roles-section__inner">
-      <div class="section-header">
-        <div class="section-tag section-tag--light">{{ 'LANDING.ROLES_TAG' | translate }}</div>
-        <h2 class="section-title section-title--light">{{ 'LANDING.ROLES_TITLE' | translate }}</h2>
-        <p class="section-sub section-sub--light">{{ 'LANDING.ROLES_SUB' | translate }}</p>
-      </div>
-      <div class="roles-grid">
-        @for (role of roles; track role.title) {
-        <div class="role-card">
-          <div class="role-card__icon"><i [class]="'pi ' + role.icon"></i></div>
-          <h3 class="role-card__title">{{ role.title }}</h3>
-          <p class="role-card__desc">{{ role.desc }}</p>
-        </div>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- ── COMMENT ÇA MARCHE ──────────────────────────────────────── -->
-  <section class="how-section" id="how">
-    <div class="section-header">
-      <div class="section-tag">{{ 'LANDING.HOW_TAG' | translate }}</div>
-      <h2 class="section-title">{{ 'LANDING.HOW_TITLE' | translate }}</h2>
-      <p class="section-sub">{{ 'LANDING.HOW_SUB' | translate }}</p>
-    </div>
-    <div class="steps-grid">
-      @for (step of steps; track step.num) {
-      <div class="step">
-        <div class="step__num">{{ step.num }}</div>
-        <h3 class="step__title">{{ step.title }}</h3>
-        <p class="step__desc">{{ step.desc }}</p>
-      </div>
-      }
-    </div>
-  </section>
+  <!-- ── SECTIONS (EXTRAITES DANS LEURS COMPOSANTS) ───────────── -->
+  <app-features></app-features>
+  <app-roles></app-roles>
+  <app-how-it-works></app-how-it-works>
+  <app-contact></app-contact>
 
   <!-- ── CTA FINAL ─────────────────────────────────────────────── -->
   <section class="cta-section">
@@ -251,7 +200,7 @@
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_LEGAL' | translate }}</div>
         <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_PRIVACY' | translate }}</a>
         <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_TERMS' | translate }}</a>
-        <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
+        <a href="#contact" class="lfooter__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
       </div>
     </div>
 

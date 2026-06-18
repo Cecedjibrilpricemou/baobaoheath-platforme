@@ -73,7 +73,7 @@
       <div class="bb-topbar-desktop__breadcrumb">
         <span class="bb-topbar-desktop__page-title">{{ 'ASC.ROLE' | translate }}</span>
         <span class="bb-topbar-desktop__sep">/</span>
-        <span class="bb-topbar-desktop__page-sub">{{ 'APP.NAME' | translate }}</span>
+        <span class="bb-topbar-desktop__page-sub">{{ pageLabel() | translate }}</span>
       </div>
       <div class="bb-topbar-desktop__search">
         <i class="pi pi-search"></i>
@@ -98,6 +98,27 @@
     </header>
 
     <div class="bb-layout__content">
+
+      @if (!isOnline()) {
+        <div class="bb-connectivity-banner bb-connectivity-banner--offline">
+          <i class="pi pi-wifi-slash bb-connectivity-banner__icon"></i>
+          <div class="bb-connectivity-banner__text">
+            <span class="bb-connectivity-banner__title">{{ 'ASC.OFFLINE_MSG' | translate }}</span>
+            <span class="bb-connectivity-banner__sub">{{ 'ASC.OFFLINE_PENDING' | translate }}</span>
+          </div>
+          <a routerLink="/asc/sync" class="bb-connectivity-banner__action">
+            {{ 'ASC.OFFLINE_SYNC_LINK' | translate }} <i class="pi pi-arrow-right"></i>
+          </a>
+        </div>
+      }
+
+      @if (justCameOnline()) {
+        <div class="bb-connectivity-banner bb-connectivity-banner--online">
+          <i class="pi pi-check-circle bb-connectivity-banner__icon"></i>
+          <span class="bb-connectivity-banner__title">{{ 'ASC.ONLINE_MSG' | translate }}</span>
+        </div>
+      }
+
       <router-outlet></router-outlet>
     </div>
   </main>

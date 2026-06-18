@@ -7,18 +7,13 @@ export async function getDashboardGlobalController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  try {
-    const filters = {
+  const filters = {
       prefecture: req.query.prefecture as string | undefined,
       debut: req.query.debut as string | undefined,
       fin: req.query.fin as string | undefined,
     };
     const data = await analyticsService.getDashboardGlobal(filters);
     res.status(200).json({ success: true, data });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur serveur';
-    res.status(500).json({ success: false, error: message });
-  }
 }
 
 // ─── Données heatmap cartographique ──────────────────────
@@ -26,18 +21,13 @@ export async function getHeatmapController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  try {
-    const filters = {
+  const filters = {
       pathologie: req.query.pathologie as string | undefined,
       debut: req.query.debut as string | undefined,
       fin: req.query.fin as string | undefined,
     };
     const data = await analyticsService.getHeatmapData(filters);
     res.status(200).json({ success: true, data });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur serveur';
-    res.status(500).json({ success: false, error: message });
-  }
 }
 
 // ─── Alertes épidémiques ──────────────────────────────────
@@ -45,13 +35,8 @@ export async function getAlertesEpidemiquesController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  try {
-    const data = await analyticsService.getAlertesEpidemiques();
+  const data = await analyticsService.getAlertesEpidemiques();
     res.status(200).json({ success: true, data });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur serveur';
-    res.status(500).json({ success: false, error: message });
-  }
 }
 
 // ─── Couverture vaccinale ─────────────────────────────────
@@ -59,16 +44,11 @@ export async function getCouvertureVaccinaleController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  try {
-    const filters = {
+  const filters = {
       prefecture: req.query.prefecture as string | undefined,
     };
     const data = await analyticsService.getCouvertureVaccinale(filters);
     res.status(200).json({ success: true, data });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur serveur';
-    res.status(500).json({ success: false, error: message });
-  }
 }
 
 // ─── Tendances temporelles ────────────────────────────────
@@ -76,16 +56,11 @@ export async function getTendancesController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  try {
-    const filters = {
+  const filters = {
       prefecture: req.query.prefecture as string | undefined,
     };
     const data = await analyticsService.getTendances(filters);
     res.status(200).json({ success: true, data });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur serveur';
-    res.status(500).json({ success: false, error: message });
-  }
 }
 
 // ─── Export données ───────────────────────────────────────
@@ -93,9 +68,8 @@ export async function exporterDonneesController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  try {
-    const filters = {
-      format: (req.query.format as 'JSON' | 'CSV') ?? 'JSON',
+  const filters = {
+      format: (req.query.format as 'JSON' | 'CSV' | 'DHIS2') ?? 'JSON',
       debut: req.query.debut as string | undefined,
       fin: req.query.fin as string | undefined,
       prefecture: req.query.prefecture as string | undefined,
@@ -114,8 +88,4 @@ export async function exporterDonneesController(
     }
 
     res.status(200).json({ success: true, data });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur serveur';
-    res.status(500).json({ success: false, error: message });
-  }
 }

@@ -22,6 +22,11 @@ export const ADMIN_ROUTES: Routes = [
         path: 'export',
         loadComponent: () =>
           import('./export/export.component').then(m => m.ExportComponent)
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./settings/settings.component').then(m => m.SettingsComponent)
       }
     ]
   }

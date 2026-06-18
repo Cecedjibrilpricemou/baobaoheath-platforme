@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
-import { ApiService } from '../../../core/services/api.service';
+import { AscService } from '../../../core/services/asc.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface RendezVous {
@@ -20,7 +20,7 @@ interface RendezVous {
   styleUrl: './planning.component.scss'
 })
 export class PlanningComponent implements OnInit {
-  private api = inject(ApiService);
+  private ascService = inject(AscService);
 
   rendezVous    = signal<RendezVous[]>([]);
   isLoading     = signal(true);
@@ -34,17 +34,19 @@ export class PlanningComponent implements OnInit {
 
   private loadPlanning() {
     this.isLoading.set(true);
-    this.api.get<any>('/asc/planning').subscribe({
+    this.ascService.getPlanning().subscribe({
       next: (response) => {
-        const data = Array.isArray(response) ? response : response?.data ?? [];
-        this.rendezVous.set(data);
-        this.totalRdv.set(data.length);
-        const today = new Date().toDateString();
-        this.rdvAujourdhui.set(data.filter((r: RendezVous) => new Date(r.date).toDateString() === today).length);
-        const now = new Date();
-        const endWeek = new Date(now);
-        endWeek.setDate(now.getDate() + 7);
-        this.rdvCetteSemaine.set(data.filter((r: RendezVous) => { const d = new Date(r.date); return d >= now && d <= endWeek; }).length);
+        if (response.success && response.data) {
+          const data = response.data as unknown as RendezVous[];
+          this.rendezVous.set(data);
+          this.totalRdv.set(data.length);
+          const today = new Date().toDateString();
+          this.rdvAujourdhui.set(data.filter((r) => new Date(r.date).toDateString() === today).length);
+          const now = new Date();
+          const endWeek = new Date(now);
+          endWeek.setDate(now.getDate() + 7);
+          this.rdvCetteSemaine.set(data.filter((r) => { const d = new Date(r.date); return d >= now && d <= endWeek; }).length);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }

@@ -1,0 +1,16 @@
+<section class="features-section" id="features">
+  <div class="section-header">
+    <div class="section-tag">{{ 'LANDING.FEATURES_TAG' | translate }}</div>
+    <h2 class="section-title">{{ 'LANDING.FEATURES_TITLE' | translate }}</h2>
+    <p class="section-sub">{{ 'LANDING.FEATURES_SUB' | translate }}</p>
+  </div>
+  <div class="features-grid">
+    @for (f of features; track f.title) {
+    <div class="feature-card">
+      <div class="feature-card__icon"><i [class]="'pi ' + f.icon"></i></div>
+      <h3 class="feature-card__title">{{ f.title }}</h3>
+      <p class="feature-card__desc">{{ f.description }}</p>
+    </div>
+    }
+  </div>
+</section>

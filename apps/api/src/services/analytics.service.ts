@@ -1,3 +1,4 @@
+import { NiveauAlerteEpidemique, Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import {
     AnalyticsFilters,
@@ -68,7 +69,7 @@ export async function getDashboardGlobal(filters: AnalyticsFilters) {
 
 // ─── Données cartographiques (Heatmap) ───────────────────
 export async function getHeatmapData(filters: HeatmapFilters) {
-    const whereConsultation: any = {};
+    const whereConsultation: Prisma.ConsultationWhereInput = {};
 
     if (filters.debut || filters.fin) {
         whereConsultation.consulteeLE = buildPeriodFilter(filters);
@@ -189,6 +190,42 @@ export async function getAlertesEpidemiques(): Promise<AlerteEpidemique[]> {
         const ordre = { URGENCE: 0, ALERTE: 1, ATTENTION: 2 };
         return ordre[a.niveau] - ordre[b.niveau];
     });
+}
+
+export async function detecterEtPersisterAlertesEpidemiques() {
+    const alertes = await getAlertesEpidemiques();
+
+    const persisted = await prisma.$transaction(
+        alertes.map((alerte) =>
+            prisma.alerteEpidemique.upsert({
+                where: {
+                    pathologie_prefecture_fenetreJours_statut: {
+                        pathologie: alerte.pathologie,
+                        prefecture: alerte.prefecture,
+                        fenetreJours: 30,
+                        statut: 'ACTIVE',
+                    },
+                },
+                update: {
+                    nombre: alerte.nombre,
+                    seuil: alerte.seuil,
+                    niveau: alerte.niveau as NiveauAlerteEpidemique,
+                    dateDetection: new Date(),
+                    metadonnees: { source: 'analytics-job' },
+                },
+                create: {
+                    pathologie: alerte.pathologie,
+                    prefecture: alerte.prefecture,
+                    nombre: alerte.nombre,
+                    seuil: alerte.seuil,
+                    niveau: alerte.niveau as NiveauAlerteEpidemique,
+                    metadonnees: { source: 'analytics-job' },
+                },
+            })
+        )
+    );
+
+    return { total: persisted.length, alertes: persisted };
 }
 
 // ─── Taux de couverture vaccinale ─────────────────────────
@@ -321,6 +358,29 @@ export async function exporterDonnees(filters: ExportFilters) {
         return { format: 'CSV', contenu: lignes, total: consultations.length };
     }
 
+    if (filters.format === 'DHIS2') {
+        const dataValues = consultations.flatMap((c) =>
+            c.diagnostics.map((diagnostic) => ({
+                dataElement: diagnostic.codeIcd11 ?? diagnostic.libelle,
+                orgUnit: c.patient.prefecture,
+                period: c.consulteeLE.toISOString().slice(0, 10).replace(/-/g, ''),
+                value: 1,
+                categoryOptionCombo: 'default',
+                comment: c.motifPrincipal,
+            }))
+        );
+
+        return {
+            format: 'DHIS2',
+            contenu: {
+                dataSet: 'BAOBAOHEALTH_MORBIDITE',
+                completeDate: new Date().toISOString().slice(0, 10),
+                dataValues,
+            },
+            total: dataValues.length,
+        };
+    }
+
     return {
         format: 'JSON',
         contenu: consultations,
@@ -329,8 +389,8 @@ export async function exporterDonnees(filters: ExportFilters) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────
-function buildDateWhere(filters: AnalyticsFilters) {
-    const where: any = {};
+function buildDateWhere(filters: AnalyticsFilters): Prisma.ConsultationWhereInput {
+    const where: Prisma.ConsultationWhereInput = {};
     if (filters.prefecture) {
         where.patient = { prefecture: filters.prefecture };
     }
@@ -340,8 +400,8 @@ function buildDateWhere(filters: AnalyticsFilters) {
     return where;
 }
 
-function buildPeriodFilter(filters: { debut?: string; fin?: string }) {
-    const periode: any = {};
+function buildPeriodFilter(filters: { debut?: string; fin?: string }): Prisma.DateTimeFilter {
+    const periode: Prisma.DateTimeFilter = {};
     if (filters.debut) periode.gte = new Date(filters.debut);
     if (filters.fin) periode.lte = new Date(filters.fin);
     return periode;

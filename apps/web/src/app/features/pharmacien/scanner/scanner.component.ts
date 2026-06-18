@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { CardModule } from 'primeng/card';
-import { ApiService } from '../../../core/services/api.service';
+import { PharmacienService } from '../../../core/services/pharmacien.service';
 
 interface Medicament {
   id: string; dci: string; nomCommercial?: string;
@@ -43,7 +43,7 @@ interface ScanResult {
   styleUrl: './scanner.component.scss'
 })
 export class ScannerComponent {
-  private api    = inject(ApiService);
+  private pharmacienService = inject(PharmacienService);
   private router = inject(Router);
 
   qrCode       = '';
@@ -60,14 +60,18 @@ export class ScannerComponent {
     this.errorMessage.set('');
     this.scanResult.set(null);
 
-    this.api.get<any>(`/pharmacien/scan/${this.qrCode.trim()}`).subscribe({
+    this.pharmacienService.scanQrCode(this.qrCode.trim()).subscribe({
       next: (response) => {
         this.isScanning.set(false);
-        this.scanResult.set(response?.data ?? response);
+        if (response.success && response.data) {
+          this.scanResult.set(response.data as unknown as ScanResult);
+        } else {
+          this.scanResult.set(response.data as unknown as ScanResult ?? null);
+        }
       },
       error: (err) => {
         this.isScanning.set(false);
-        this.errorMessage.set(err?.error?.error ?? 'Patient non trouvé — QR Code invalide');
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? 'Patient non trouvé — QR Code invalide');
       }
     });
   }

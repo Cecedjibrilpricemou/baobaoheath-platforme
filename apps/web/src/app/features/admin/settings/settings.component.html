@@ -1,0 +1,183 @@
+<div class="settings-page">
+  <div class="settings-header">
+    <div class="header-content">
+      <h1>Paramètres de la Plateforme</h1>
+      <p>Configurez les règles globales, la sécurité et le comportement du système.</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Annuler" styleClass="p-button-outlined p-button-secondary"></p-button>
+      <p-button label="Sauvegarder" icon="pi pi-check" (onClick)="sauvegarder()"></p-button>
+    </div>
+  </div>
+
+  <div class="settings-container">
+    <!-- Sidebar Navigation -->
+    <div class="settings-sidebar">
+      <ul>
+        @for (tab of tabs; track tab.id) {
+          <li [class.active]="activeTab() === tab.id" (click)="setTab(tab.id)">
+            <i [class]="tab.icon"></i>
+            <span>{{ tab.label }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Contenu Principal -->
+    <div class="settings-content">
+      
+      <!-- ONGLET : STRUCTURE -->
+      @if (activeTab() === 'structure') {
+        <div class="settings-panel">
+          <h2>Profil de la Structure</h2>
+          <p class="panel-desc">Gérez les informations générales de l'établissement.</p>
+          
+          <div class="form-grid">
+            <div class="field">
+              <label>Nom de l'établissement</label>
+              <input type="text" pInputText [(ngModel)]="structure.nom" class="w-full">
+            </div>
+            <div class="field">
+              <label>Type de structure</label>
+              <p-select [options]="typeOptions" [(ngModel)]="structure.type" styleClass="w-full"></p-select>
+            </div>
+          </div>
+          
+          <div class="field">
+            <label>Adresse complète</label>
+            <input type="text" pInputText [(ngModel)]="structure.adresse" class="w-full">
+          </div>
+          
+          <div class="divider"></div>
+          
+          <h2>Facturation & Finances</h2>
+          <p class="panel-desc">Moyens de paiements acceptés et paramètres financiers.</p>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Paiement par Espèces</span>
+              <span class="setting-sub">Accepter les paiements physiques au guichet.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="structure.paiementEspeces"></p-toggleSwitch>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Paiement par Orange Money</span>
+              <span class="setting-sub">Intégration directe de l'API Orange Money Guinée.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="structure.paiementOrangeMoney"></p-toggleSwitch>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Paiement par MTN MoMo</span>
+              <span class="setting-sub">Intégration directe de l'API MTN Mobile Money.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="structure.paiementMomo"></p-toggleSwitch>
+          </div>
+
+          <div class="field mt-4">
+            <label>Marge bénéficiaire Pharmacie (%) : {{ structure.marge }}%</label>
+            <p-slider [(ngModel)]="structure.marge" [min]="0" [max]="50" styleClass="w-full mt-2"></p-slider>
+          </div>
+        </div>
+      }
+
+      <!-- ONGLET : SECURITE -->
+      @if (activeTab() === 'security') {
+        <div class="settings-panel">
+          <h2>Sécurité & Accès</h2>
+          <p class="panel-desc">Gouvernance des accès et protection des données.</p>
+          
+          <div class="setting-row warning-bg">
+            <div class="setting-info">
+              <span class="setting-title">Forcer l'Authentification à 2 Facteurs (2FA)</span>
+              <span class="setting-sub">Obliger tous les médecins et administrateurs à utiliser le 2FA.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="security.force2FA"></p-toggleSwitch>
+          </div>
+          
+          <div class="field mt-4">
+            <label>Expiration des sessions inactives</label>
+            <p-select [options]="timeoutOptions" [(ngModel)]="security.sessionTimeout" styleClass="w-full"></p-select>
+            <small class="text-secondary mt-1 block">Déconnecte automatiquement l'utilisateur après ce délai.</small>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <h2>Confidentialité Patient</h2>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Recueil du Consentement Automatique</span>
+              <span class="setting-sub">Demander le consentement électronique lors de la création du dossier.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="security.consentementDefaut"></p-toggleSwitch>
+          </div>
+        </div>
+      }
+
+      <!-- ONGLET : ALERTES -->
+      @if (activeTab() === 'alerts') {
+        <div class="settings-panel">
+          <h2>Alertes Épidémiologiques</h2>
+          <p class="panel-desc">Configuration des seuils de détection automatique.</p>
+          
+          <div class="field">
+            <label>Seuil d'Alerte Paludisme (cas/semaine) : {{ alerts.seuilPaludisme }}</label>
+            <p-slider [(ngModel)]="alerts.seuilPaludisme" [min]="10" [max]="200" styleClass="w-full mt-2"></p-slider>
+          </div>
+          
+          <div class="field mt-4">
+            <label>Seuil d'Alerte Fièvres Hémorragiques (Ebola, Marburg) : {{ alerts.seuilEbola }}</label>
+            <p-slider [(ngModel)]="alerts.seuilEbola" [min]="1" [max]="10" styleClass="w-full mt-2"></p-slider>
+            <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle"></i> Toute détection déclenche une urgence nationale immédiate.</small>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <h2>Intelligence Artificielle</h2>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Activer l'assistant IA de Triage</span>
+              <span class="setting-sub">Permet aux ASC d'utiliser BaoBao IA sur le terrain.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="alerts.activerIA"></p-toggleSwitch>
+          </div>
+        </div>
+      }
+
+      <!-- ONGLET : HORS LIGNE -->
+      @if (activeTab() === 'sync') {
+        <div class="settings-panel">
+          <h2>Hors-ligne (PWA) & USSD</h2>
+          <p class="panel-desc">Paramètres de connectivité pour les zones isolées.</p>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Autoriser le mode Hors-ligne (PWA)</span>
+              <span class="setting-sub">Permet aux applications mobiles de stocker les données localement sans internet.</span>
+            </div>
+            <p-toggleSwitch [(ngModel)]="sync.offlineMode"></p-toggleSwitch>
+          </div>
+          
+          <div class="field mt-4">
+            <label>Fréquence de Synchronisation Auto (minutes) : {{ sync.frequence }}</label>
+            <p-slider [(ngModel)]="sync.frequence" [min]="5" [max]="120" [step]="5" styleClass="w-full mt-2"></p-slider>
+            <small class="text-secondary mt-1 block">Si le réseau est disponible, l'app enverra les données selon cet intervalle.</small>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <h2>Services USSD</h2>
+          <div class="field">
+            <label>Timeout des sessions USSD (secondes)</label>
+            <input type="number" pInputText [(ngModel)]="sync.ussdTimeout" class="w-full">
+            <small class="text-secondary mt-1 block">Délai avant l'expiration du menu sur les téléphones basiques.</small>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+</div>

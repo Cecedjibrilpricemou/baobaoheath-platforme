@@ -8,12 +8,7 @@ export const PHARMACIEN_ROUTES: Routes = [
       import('../../shared/components/pharmacien-layout/pharmacien-layout.component')
         .then(m => m.PharmacienLayoutComponent),
     children: [
-      { path: '', redirectTo: 'scanner', pathMatch: 'full' },
-      {
-        path: 'scanner',
-        loadComponent: () =>
-          import('./scanner/scanner.component').then(m => m.ScannerComponent)
-      },
+      { path: '', redirectTo: 'ordonnances', pathMatch: 'full' },
       {
         path: 'ordonnances',
         loadComponent: () =>

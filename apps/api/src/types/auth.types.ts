@@ -1,4 +1,5 @@
 import { Role } from '../config/generated/client/client';
+export type { LoginDto, RegisterDto, VerifyLoginOtpDto, OtpLoginChallenge, OtpRequestDto, OtpVerifyDto, ForgotPasswordDto, ResetPasswordDto } from '@baobaoheath/shared-types';
 
 export interface JwtPayload {
   userId: string;
@@ -11,31 +12,4 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-// Connexion par téléphone OU email
-export interface LoginDto {
-  identifiant: string; // téléphone ou email
-  motDePasse: string;
-}
-
-// Inscription — téléphone obligatoire, email optionnel
-export interface RegisterDto {
-  telephone: string;
-  email?: string;        // ← NOUVEAU optionnel
-  motDePasse: string;
-  prenom: string;
-  nom: string;
-  role?: Role;
-}
-
-export interface OtpRequestDto {
-  telephone: string;
-}
-
-export interface OtpVerifyDto {
-  telephone: string;
-  code: string;
-}
-
-export interface AuthenticatedRequest extends Express.Request {
-  user: JwtPayload;
-}
+export type LoginResult = TokenPair | import('@baobaoheath/shared-types').OtpLoginChallenge;

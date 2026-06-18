@@ -23,7 +23,7 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     ASC:             '/asc/consultations',
     ASC_SUPERVISOR:  '/asc/consultations',
     MEDECIN:         '/medecin/dashboard',
-    PHARMACIEN:      '/pharmacien/scanner',
+    PHARMACIEN:      '/pharmacien/ordonnances',
     ADMIN_STRUCTURE: '/admin-structure/dashboard',
     ADMIN_REGIONAL:  '/admin/analytics',
     ADMIN_NATIONAL:  '/admin/analytics',

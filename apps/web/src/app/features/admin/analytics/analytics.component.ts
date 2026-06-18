@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SelectModule } from 'primeng/select';
-import { ApiService } from '../../../core/services/api.service';
+import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface KPIs {
@@ -66,12 +66,12 @@ interface StatsStructures {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TagModule, SkeletonModule, SelectModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TagModule, SkeletonModule, SelectModule],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss'
 })
 export class AnalyticsComponent implements OnInit {
-  private api = inject(ApiService);
+  private adminService = inject(AdminService);
 
   dashboard = signal<DashboardData | null>(null);
   heatmap = signal<HeatmapPoint[]>([]);
@@ -135,27 +135,32 @@ export class AnalyticsComponent implements OnInit {
 
   private loadDashboard() {
     this.isLoadingDash.set(true);
-    const params = this.prefiltreSelectionne ? `?prefecture=${this.prefiltreSelectionne}` : '';
-    this.api.get<any>(`/analytics/dashboard${params}`).subscribe({
-      next: (r) => { this.dashboard.set(r?.data ?? r); this.isLoadingDash.set(false); },
+    const params = this.prefiltreSelectionne ? { prefecture: this.prefiltreSelectionne } : undefined;
+    this.adminService.getAnalyticsDashboard(params).subscribe({
+      next: (response) => { 
+        if (response.success && response.data) this.dashboard.set(response.data as unknown as DashboardData);
+        this.isLoadingDash.set(false); 
+      },
       error: () => { this.isLoadingDash.set(false); }
     });
   }
 
   private loadHeatmap() {
     this.isLoadingHeatmap.set(true);
-    this.api.get<any>('/analytics/heatmap').subscribe({
-      next: (r) => {
-        const data = r?.data ?? r;
-        const map = new Map<string, number>();
-        (Array.isArray(data) ? data : []).forEach((p: any) => {
-          const pref = p.prefecture ?? 'Inconnue';
-          map.set(pref, (map.get(pref) ?? 0) + 1);
-        });
-        const points: HeatmapPoint[] = Array.from(map.entries())
-          .map(([prefecture, count]) => ({ prefecture, count }))
-          .sort((a, b) => b.count - a.count);
-        this.heatmap.set(points);
+    this.adminService.getAnalyticsHeatmap().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const data = response.data;
+          const map = new Map<string, number>();
+          (Array.isArray(data) ? data : []).forEach((p) => {
+            const pref = (p as { prefecture?: string }).prefecture ?? 'Inconnue';
+            map.set(pref, (map.get(pref) ?? 0) + 1);
+          });
+          const points: HeatmapPoint[] = Array.from(map.entries())
+            .map(([prefecture, count]) => ({ prefecture, count }))
+            .sort((a, b) => b.count - a.count);
+          this.heatmap.set(points);
+        }
         this.isLoadingHeatmap.set(false);
       },
       error: () => { this.isLoadingHeatmap.set(false); }
@@ -164,24 +169,33 @@ export class AnalyticsComponent implements OnInit {
 
   private loadAlertes() {
     this.isLoadingAlertes.set(true);
-    this.api.get<any>('/analytics/alertes').subscribe({
-      next: (r) => { this.alertes.set(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []); this.isLoadingAlertes.set(false); },
+    this.adminService.getAnalyticsAlertes().subscribe({
+      next: (response) => { 
+        if (response.success && response.data) this.alertes.set(response.data as unknown as Alerte[]);
+        this.isLoadingAlertes.set(false); 
+      },
       error: () => { this.isLoadingAlertes.set(false); }
     });
   }
 
   private loadTendances() {
     this.isLoadingTend.set(true);
-    this.api.get<any>('/analytics/tendances').subscribe({
-      next: (r) => { this.tendances.set(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []); this.isLoadingTend.set(false); },
+    this.adminService.getAnalyticsTendances().subscribe({
+      next: (response) => { 
+        if (response.success && response.data) this.tendances.set(response.data as unknown as Tendance[]);
+        this.isLoadingTend.set(false); 
+      },
       error: () => { this.isLoadingTend.set(false); }
     });
   }
 
   private loadCouverture() {
     this.isLoadingCouv.set(true);
-    this.api.get<any>('/analytics/vaccinations/couverture').subscribe({
-      next: (r) => { this.couverture.set(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []); this.isLoadingCouv.set(false); },
+    this.adminService.getAnalyticsCouverture().subscribe({
+      next: (response) => { 
+        if (response.success && response.data) this.couverture.set(response.data as unknown as Couverture[]);
+        this.isLoadingCouv.set(false); 
+      },
       error: () => { this.isLoadingCouv.set(false); }
     });
   }
@@ -189,19 +203,20 @@ export class AnalyticsComponent implements OnInit {
   // ── Utilise la route publique accessible sans restriction de rôle
   private loadStatsStructures() {
     this.isLoadingStructures.set(true);
-    this.api.get<any>('/admin-structure/structures/publiques').subscribe({
-      next: (r) => {
-        // La réponse est { success: true, data: [...] }
-        const structures: any[] = Array.isArray(r) ? r : (Array.isArray(r?.data) ? r.data : []);
-        const counts = new Map<string, number>();
-        structures.forEach((s: any) => {
-          const type = s.type ?? 'INCONNU';
-          counts.set(type, (counts.get(type) ?? 0) + 1);
-        });
-        const parType: StructureCount[] = Array.from(counts.entries())
-          .map(([type, count]) => ({ type, count }))
-          .sort((a, b) => b.count - a.count);
-        this.statsStructures.set({ total: structures.length, parType });
+    this.adminService.getPublicStructures().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const structures = response.data;
+          const counts = new Map<string, number>();
+          structures.forEach((s) => {
+            const type = (s as { type?: string }).type ?? 'INCONNU';
+            counts.set(type, (counts.get(type) ?? 0) + 1);
+          });
+          const parType: StructureCount[] = Array.from(counts.entries())
+            .map(([type, count]) => ({ type, count }))
+            .sort((a, b) => b.count - a.count);
+          this.statsStructures.set({ total: structures.length, parType });
+        }
         this.isLoadingStructures.set(false);
       },
       error: () => { this.isLoadingStructures.set(false); }

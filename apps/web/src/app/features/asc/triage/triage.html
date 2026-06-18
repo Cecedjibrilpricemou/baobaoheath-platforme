@@ -1,0 +1,144 @@
+<div class="triage-page">
+  <div class="triage-header">
+    <div class="header-icon">
+      <i class="pi pi-bolt"></i>
+    </div>
+    <div class="header-content">
+      <h1>Triage Intelligent IA</h1>
+      <p>Évaluez rapidement l'état du patient pour prendre la bonne décision.</p>
+    </div>
+  </div>
+
+  <!-- WIZARD STEPS INDICATOR -->
+  <div class="wizard-steps">
+    <div class="step" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1">
+      <div class="step-circle">1</div>
+      <span>Patient</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2">
+      <div class="step-circle">2</div>
+      <span>Symptômes</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" [class.active]="currentStep() === 3">
+      <div class="step-circle"><i class="pi pi-sparkles"></i></div>
+      <span>Analyse IA</span>
+    </div>
+  </div>
+
+  <div class="wizard-content section-card">
+    
+    <!-- STEP 1: PATIENT -->
+    @if (currentStep() === 1) {
+      <div class="step-panel">
+        <h2>Identification du Patient</h2>
+        <p class="text-secondary">Recherchez le patient par son code QR ou son numéro de téléphone.</p>
+        
+        <div class="search-box">
+          <span class="p-input-icon-left w-full">
+            <i class="pi pi-search"></i>
+            <input type="text" pInputText [(ngModel)]="patientRecherche" placeholder="Numéro de téléphone ou ID..." class="w-full" />
+          </span>
+          <p-button label="Rechercher" icon="pi pi-search" (onClick)="rechercherPatient()"></p-button>
+        </div>
+
+        @if (searchResults().length > 0) {
+          <div class="search-results mt-4" style="display: flex; flex-direction: column; gap: 12px;">
+            @for (p of searchResults(); track p.id) {
+              <div class="patient-card selectable" 
+                   [class.selected]="patientData()?.id === p.id"
+                   (click)="selectPatient(p)">
+                <div class="patient-avatar">{{ getPatientInitiales(p) }}</div>
+                <div class="patient-info">
+                  <h3>{{ getPatientNom(p) }}</h3>
+                  <p>{{ getPatientDetails(p) }}</p>
+                </div>
+                @if (patientData()?.id === p.id) {
+                  <i class="pi pi-check-circle text-primary text-2xl" style="color: var(--bb-primary);"></i>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="step-actions">
+          <p-button label="Suivant" icon="pi pi-arrow-right" iconPos="right" [disabled]="!patientTrouve()" (onClick)="nextStep()"></p-button>
+        </div>
+      </div>
+    }
+
+    <!-- STEP 2: SYMPTOMES -->
+    @if (currentStep() === 2) {
+      <div class="step-panel">
+        <h2>Symptômes & Constantes</h2>
+        
+        <div class="form-grid mt-4">
+          <div class="field">
+            <label>Symptômes observés</label>
+            <p-multiSelect [options]="symptomesList" [(ngModel)]="selectedSymptomes" defaultLabel="Sélectionner les symptômes" optionLabel="label" optionValue="value" display="chip" styleClass="w-full"></p-multiSelect>
+          </div>
+          
+          <div class="field">
+            <label>Température (°C) : {{ temperature() }}</label>
+            <p-slider [(ngModel)]="temperature" [min]="35" [max]="42" [step]="0.1" styleClass="w-full mt-2"></p-slider>
+          </div>
+
+          <div class="field">
+            <label>Tension artérielle</label>
+            <input type="text" pInputText [(ngModel)]="tension" placeholder="Ex: 12/8" class="w-full" />
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <p-button label="Retour" icon="pi pi-arrow-left" styleClass="p-button-outlined" (onClick)="prevStep()"></p-button>
+          <p-button label="Lancer l'Analyse IA" icon="pi pi-sparkles" styleClass="p-button-primary" (onClick)="nextStep()"></p-button>
+        </div>
+      </div>
+    }
+
+    <!-- STEP 3: ANALYSE IA -->
+    @if (currentStep() === 3) {
+      <div class="step-panel ia-panel">
+        
+        @if (isAnalysing()) {
+          <div class="ia-loading">
+            <div class="pulse-ring"></div>
+            <i class="pi pi-sparkles ia-icon"></i>
+            <h2>BaoBao IA analyse les données...</h2>
+            <p-progressBar [value]="iaProgress()" styleClass="w-full mt-4"></p-progressBar>
+            <p class="mt-2 text-secondary">Comparaison avec les directives OMS en cours...</p>
+          </div>
+        } @else if (analysisResult()) {
+          <div class="ia-result">
+            <div class="result-header" [ngClass]="{'bg-red': analysisResult()?.score! > 60, 'bg-orange': analysisResult()?.score! > 30 && analysisResult()?.score! <= 60, 'bg-green': analysisResult()?.score! <= 30}">
+              <div class="score-circle">
+                <span>{{ analysisResult()?.score }}</span>
+                <small>/100</small>
+              </div>
+              <div class="gravity-text">
+                <h3>Gravité Évaluée</h3>
+                <h2>{{ analysisResult()?.gravity }}</h2>
+              </div>
+            </div>
+
+            <div class="recommendations">
+              <h3><i class="pi pi-list"></i> Recommandations de l'IA</h3>
+              <ul>
+                @for (rec of analysisResult()?.recommendations; track rec) {
+                  <li><i class="pi pi-check-circle"></i> {{ rec }}</li>
+                }
+              </ul>
+            </div>
+
+            <div class="step-actions">
+              <p-button label="Créer la consultation" icon="pi pi-check" styleClass="w-full" (onClick)="creerConsultation()" [loading]="isCreating()"></p-button>
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+
+  </div>
+</div>

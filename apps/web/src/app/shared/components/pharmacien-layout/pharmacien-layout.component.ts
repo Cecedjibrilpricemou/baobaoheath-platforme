@@ -40,7 +40,6 @@ export class PharmacienLayoutComponent {
   }
 
   navItems = [
-    { labelKey: 'PHARMACIEN.NAV_SCANNER',     icon: 'pi-qrcode',  route: '/pharmacien/scanner'     },
     { labelKey: 'PHARMACIEN.NAV_ORDONNANCES',  icon: 'pi-file',    route: '/pharmacien/ordonnances'  },
     { labelKey: 'PHARMACIEN.NAV_STOCKS',       icon: 'pi-box',     route: '/pharmacien/stocks'       }
   ];

@@ -1,0 +1,20 @@
+<section class="roles-section" id="roles">
+  <div class="roles-section__deco roles-section__deco--1"></div>
+  <div class="roles-section__deco roles-section__deco--2"></div>
+  <div class="roles-section__inner">
+    <div class="section-header">
+      <div class="section-tag section-tag--light">{{ 'LANDING.ROLES_TAG' | translate }}</div>
+      <h2 class="section-title section-title--light">{{ 'LANDING.ROLES_TITLE' | translate }}</h2>
+      <p class="section-sub section-sub--light">{{ 'LANDING.ROLES_SUB' | translate }}</p>
+    </div>
+    <div class="roles-grid">
+      @for (role of roles; track role.title) {
+      <div class="role-card">
+        <div class="role-card__icon"><i [class]="'pi ' + role.icon"></i></div>
+        <h3 class="role-card__title">{{ role.title }}</h3>
+        <p class="role-card__desc">{{ role.desc }}</p>
+      </div>
+      }
+    </div>
+  </div>
+</section>

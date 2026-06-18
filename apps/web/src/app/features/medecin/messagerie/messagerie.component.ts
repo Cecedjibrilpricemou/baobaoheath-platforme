@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
-import { ApiService } from '../../../core/services/api.service';
+import { MedecinService } from '../../../core/services/medecin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
@@ -38,15 +38,15 @@ interface Conversation {
 @Component({
   selector: 'app-messagerie',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SkeletonModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SkeletonModule],
   templateUrl: './messagerie.component.html',
   styleUrl: './messagerie.component.scss'
 })
 export class MessagerieComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
 
-  private api         = inject(ApiService);
-  private authService = inject(AuthService);
+  private medecinService = inject(MedecinService);
+  private authService    = inject(AuthService);
 
   currentUser     = this.authService.currentUser;
   messages        = signal<Message[]>([]);
@@ -68,11 +68,13 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
 
   private loadMessages() {
     this.isLoading.set(true);
-    this.api.get<any>('/medecin/messages').subscribe({
-      next: (r) => {
-        const data: Message[] = Array.isArray(r) ? r : r?.data ?? [];
-        this.messages.set(data);
-        this.buildConversations(data);
+    this.medecinService.getMessages().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const data = response.data as Message[];
+          this.messages.set(data);
+          this.buildConversations(data);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }
@@ -135,23 +137,25 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     if (!conv || !this.newMessage.trim()) return;
 
     this.isSending.set(true);
-    this.api.post<any>('/medecin/messages', {
+    this.medecinService.sendMessage({
       idDestinataire: conv.utilisateur.id,
       contenu: this.newMessage.trim()
     }).subscribe({
-      next: (r) => {
-        const msg = r?.data ?? r;
-        // Ajouter le message à la conversation
-        const updatedConv = {
-          ...conv,
-          messages: [...conv.messages, msg],
-          dernierMessage: msg
-        };
-        this.selectedConv.set(updatedConv);
-        // Mettre à jour la liste
-        this.conversations.update(convs =>
-          convs.map(c => c.utilisateur.id === conv.utilisateur.id ? updatedConv : c)
-        );
+      next: (response) => {
+        if (response.success && response.data) {
+          const msg = response.data as unknown as Message;
+          // Ajouter le message à la conversation
+          const updatedConv = {
+            ...conv,
+            messages: [...conv.messages, msg],
+            dernierMessage: msg
+          };
+          this.selectedConv.set(updatedConv);
+          // Mettre à jour la liste
+          this.conversations.update(convs =>
+            convs.map(c => c.utilisateur.id === conv.utilisateur.id ? updatedConv : c)
+          );
+        }
         this.newMessage = '';
         this.isSending.set(false);
         this.shouldScroll = true;

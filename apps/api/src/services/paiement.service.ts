@@ -1,92 +1,46 @@
 import { prisma } from '../config/prisma';
 import {
-  InitierPaiementDto,
   ConfirmerPaiementDto,
+  InitierPaiementDto,
   PaiementFilters,
 } from '../types/paiement.types';
-import { randomUUID } from 'crypto';
+import { initierPaiementSimule } from './payment-provider.service';
 
-// ─── MOCK — Simuler appel Orange Money ───────────────────
-async function mockOrangeMoneyRequest(
-  montant: number,
-  numero: string
-): Promise<{ reference: string; statut: string }> {
-  await new Promise((r) => setTimeout(r, 500));
-  return {
-    reference: `OM-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
-    statut: 'EN_ATTENTE',
-  };
-}
+const MAX_MONTANT_GNF = 10_000_000;
 
-// ─── MOCK — Simuler appel MTN MoMo ───────────────────────
-async function mockMtnMomoRequest(
-  montant: number,
-  numero: string
-): Promise<{ reference: string; statut: string }> {
-  await new Promise((r) => setTimeout(r, 500));
-  return {
-    reference: `MTN-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
-    statut: 'EN_ATTENTE',
-  };
-}
-
-// ─── Initier un paiement ──────────────────────────────────
-export async function initierPaiement(
-  userId: string,
-  dto: InitierPaiementDto
-) {
-  // Vérifier que la consultation existe
+export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
   const consultation = await prisma.consultation.findUnique({
     where: { id: dto.idConsultation },
     include: { patient: true, facture: true },
   });
 
-  if (!consultation) {
-    throw new Error('Consultation non trouvée');
-  }
+  if (!consultation) throw new Error('Consultation non trouvee');
+  if (consultation.facture) throw new Error('Une facture existe deja pour cette consultation');
 
-  if (consultation.facture) {
-    throw new Error('Une facture existe déjà pour cette consultation');
-  }
-
-  // Vérifier que le patient est bien celui connecté
   if (consultation.patient.idUtilisateur !== userId) {
-    throw new Error('Accès refusé — ce n\'est pas votre consultation');
+    throw new Error("Acces refuse - ce n'est pas votre consultation");
   }
 
-  let referenceOperateur: string | undefined;
+  // Use server-side tariff when set; otherwise cap client-provided amount
+  const montantGnf = consultation.tarifGnf != null && consultation.tarifGnf > 0
+    ? consultation.tarifGnf
+    : Math.min(dto.montantGnf, MAX_MONTANT_GNF);
 
-  // Appel API selon le mode de paiement
-  if (dto.modePaiement === 'ORANGE_MONEY') {
-    if (!dto.numeroOperateur) {
-      throw new Error('Numéro Orange Money requis');
-    }
-    const result = await mockOrangeMoneyRequest(
-      dto.montantGnf,
-      dto.numeroOperateur
-    );
-    referenceOperateur = result.reference;
-  } else if (dto.modePaiement === 'MTN_MOMO') {
-    if (!dto.numeroOperateur) {
-      throw new Error('Numéro MTN MoMo requis');
-    }
-    const result = await mockMtnMomoRequest(
-      dto.montantGnf,
-      dto.numeroOperateur
-    );
-    referenceOperateur = result.reference;
-  }
+  const providerResult = await initierPaiementSimule({
+    modePaiement: dto.modePaiement,
+    montantGnf,
+    numeroOperateur: dto.numeroOperateur,
+  });
 
-  // Créer la facture en base
-  const facture = await prisma.facture.create({
+  return prisma.facture.create({
     data: {
       idPatient: consultation.patient.id,
       idConsultation: dto.idConsultation,
-      montantGnf: dto.montantGnf,
+      montantGnf,
       modePaiement: dto.modePaiement,
       numeroOperateur: dto.numeroOperateur,
-      referenceOperateur,
-      statut: dto.modePaiement === 'ESPECES' ? 'EN_ATTENTE' : 'EN_ATTENTE',
+      referenceOperateur: providerResult.referenceOperateur,
+      statut: providerResult.statut,
     },
     include: {
       patient: {
@@ -99,15 +53,9 @@ export async function initierPaiement(
       consultation: true,
     },
   });
-
-  return facture;
 }
 
-// ─── Vérifier le statut d'un paiement ────────────────────
-export async function verifierStatutPaiement(
-  userId: string,
-  idFacture: string
-) {
+export async function verifierStatutPaiement(userId: string, idFacture: string) {
   const facture = await prisma.facture.findUnique({
     where: { id: idFacture },
     include: {
@@ -122,33 +70,19 @@ export async function verifierStatutPaiement(
     },
   });
 
-  if (!facture) {
-    throw new Error('Facture non trouvée');
-  }
-
-  if (facture.patient.idUtilisateur !== userId) {
-    throw new Error('Accès refusé');
-  }
+  if (!facture) throw new Error('Facture non trouvee');
+  if (facture.patient.idUtilisateur !== userId) throw new Error('Acces refuse');
 
   return facture;
 }
 
-// ─── Confirmer un paiement ────────────────────────────────
-export async function confirmerPaiement(
-  idFacture: string,
-  dto: ConfirmerPaiementDto
-) {
+export async function confirmerPaiement(idFacture: string, dto: ConfirmerPaiementDto) {
   const facture = await prisma.facture.findUnique({
     where: { id: idFacture },
   });
 
-  if (!facture) {
-    throw new Error('Facture non trouvée');
-  }
-
-  if (facture.statut === 'PAYEE') {
-    throw new Error('Cette facture a déjà été payée');
-  }
+  if (!facture) throw new Error('Facture non trouvee');
+  if (facture.statut === 'PAYEE') throw new Error('Cette facture a deja ete payee');
 
   return prisma.facture.update({
     where: { id: idFacture },
@@ -169,18 +103,12 @@ export async function confirmerPaiement(
   });
 }
 
-// ─── Historique des paiements du patient ─────────────────
-export async function getHistoriquePaiements(
-  userId: string,
-  filters: PaiementFilters
-) {
+export async function getHistoriquePaiements(userId: string, filters: PaiementFilters) {
   const patient = await prisma.patientProfile.findUnique({
     where: { idUtilisateur: userId },
   });
 
-  if (!patient) {
-    throw new Error('Profil patient non trouvé');
-  }
+  if (!patient) throw new Error('Profil patient non trouve');
 
   const page = filters.page ?? 1;
   const limit = filters.limit ?? 20;
@@ -188,7 +116,7 @@ export async function getHistoriquePaiements(
 
   const where = {
     idPatient: patient.id,
-    ...(filters.statut && { statut: filters.statut as any }),
+    ...(filters.statut && { statut: filters.statut }),
     ...(filters.modePaiement && { modePaiement: filters.modePaiement }),
   };
 
@@ -221,27 +149,15 @@ export async function getHistoriquePaiements(
   };
 }
 
-// ─── Annuler un paiement ──────────────────────────────────
-export async function annulerPaiement(
-  userId: string,
-  idFacture: string
-) {
+export async function annulerPaiement(userId: string, idFacture: string) {
   const facture = await prisma.facture.findUnique({
     where: { id: idFacture },
     include: { patient: true },
   });
 
-  if (!facture) {
-    throw new Error('Facture non trouvée');
-  }
-
-  if (facture.patient.idUtilisateur !== userId) {
-    throw new Error('Accès refusé');
-  }
-
-  if (facture.statut === 'PAYEE') {
-    throw new Error('Impossible d\'annuler une facture déjà payée');
-  }
+  if (!facture) throw new Error('Facture non trouvee');
+  if (facture.patient.idUtilisateur !== userId) throw new Error('Acces refuse');
+  if (facture.statut === 'PAYEE') throw new Error("Impossible d'annuler une facture deja payee");
 
   return prisma.facture.update({
     where: { id: idFacture },

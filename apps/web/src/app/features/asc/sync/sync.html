@@ -1,0 +1,72 @@
+<div class="sync-page">
+  <div class="sync-header">
+    <div class="header-icon" [ngClass]="isOnline() ? 'online-icon' : 'offline-icon'">
+      <i class="pi" [ngClass]="isOnline() ? 'pi-wifi' : 'pi-wifi-slash'"></i>
+    </div>
+    <div class="header-content">
+      <h1>Centre de Synchronisation</h1>
+      <p>
+        @if (isOnline()) {
+          <span class="text-green-600 font-medium">Vous êtes en ligne.</span> Vous pouvez synchroniser vos données.
+        } @else {
+          <span class="text-orange-500 font-medium">Vous êtes hors ligne.</span> Vos données sont sauvegardées localement.
+        }
+      </p>
+    </div>
+    <div class="header-actions">
+      <p-button 
+        [label]="isSyncing() ? 'Synchronisation...' : 'Synchroniser maintenant'" 
+        [icon]="isSyncing() ? 'pi pi-sync pi-spin' : 'pi pi-cloud-upload'" 
+        [disabled]="!isOnline() || pendingItems().length === 0 || isSyncing()"
+        (onClick)="startSync()">
+      </p-button>
+    </div>
+  </div>
+
+  <div class="sync-content section-card">
+    <div class="section-title">
+      <i class="pi pi-database"></i>
+      <h2>Données en attente ({{ pendingItems().length }})</h2>
+    </div>
+
+    @if (isSyncing()) {
+      <div class="sync-progress mb-4">
+        <p-progressBar [value]="syncProgress()" styleClass="w-full"></p-progressBar>
+        <p class="text-sm text-secondary mt-2 text-center">Envoi sécurisé des données au serveur central...</p>
+      </div>
+    }
+
+    @if (pendingItems().length === 0) {
+      <div class="empty-state">
+        <i class="pi pi-check-circle text-green-500"></i>
+        <h3>Toutes les données sont synchronisées</h3>
+        <p class="text-secondary">Aucun élément en attente d'envoi.</p>
+      </div>
+    } @else {
+      <div class="pending-list">
+        @for (item of pendingItems(); track item.id) {
+          <div class="pending-item">
+            <div class="item-icon">
+              <i class="pi" [ngClass]="{
+                'pi-file-edit text-blue-500': item.type === 'Consultation',
+                'pi-user-plus text-green-500': item.type === 'Nouveau Patient',
+                'pi-box text-purple-500': item.type === 'Mise à jour stock'
+              }"></i>
+            </div>
+            <div class="item-info">
+              <h3>{{ item.type }}</h3>
+              <p>{{ item.patient }} &bull; Saisi {{ item.date }}</p>
+            </div>
+            <div class="item-status">
+              @if (item.status === 'pending') {
+                <p-tag severity="warning" value="En attente" icon="pi pi-clock"></p-tag>
+              } @else {
+                <p-tag severity="success" value="Synchronisé" icon="pi pi-check"></p-tag>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -128,7 +128,6 @@ export async function validerConsultation(
                 data: {
                     signePar: userId,
                     signeLe: new Date(),
-                    statut: 'DELIVREE',
                 },
             });
         }
@@ -153,7 +152,7 @@ export async function getReferencements(
 
     const where = {
         ...(filters.statut
-            ? { statut: filters.statut as any }
+            ? { statut: filters.statut }
             : { statut: 'EN_ATTENTE' as const }),
         ...(medecin?.idStructure && {
             idStructureCible: medecin.idStructure,

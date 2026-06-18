@@ -20,10 +20,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       // Ne jamais tenter un refresh sur les routes auth
       const isAuthRoute =
-        req.url.includes('/auth/login')    ||
-        req.url.includes('/auth/register') ||
-        req.url.includes('/auth/refresh')  ||
-        req.url.includes('/auth/logout');
+        req.url.includes('/auth/login')           ||
+        req.url.includes('/auth/register')        ||
+        req.url.includes('/auth/verify-otp')      ||
+        req.url.includes('/auth/refresh')         ||
+        req.url.includes('/auth/logout')          ||
+        req.url.includes('/auth/forgot-password') ||
+        req.url.includes('/auth/reset-password');
 
       if (error.status === 401 && !isAuthRoute) {
         return authService.refreshToken().pipe(

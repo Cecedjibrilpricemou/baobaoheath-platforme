@@ -9,19 +9,11 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { SkeletonModule } from 'primeng/skeleton';
-import { ApiService } from '../../../core/services/api.service';
+import { AscService } from '../../../core/services/asc.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
-
-interface Consultation {
-  id: string; consulteeLE: string; statut: string; motif?: string;
-  motifPrincipal?: string;
-  patient?: { utilisateur: { nom: string; prenom: string; telephone: string; }; };
-}
-interface Patient {
-  id: string;
-  utilisateur: { nom: string; prenom: string; telephone: string; };
-}
+import { Consultation } from '../../../core/models/asc.model';
+import { Patient } from '../../../core/models/patient.model';
 
 @Component({
   selector: 'app-consultations',
@@ -36,7 +28,7 @@ interface Patient {
   styleUrl: './consultations.component.scss'
 })
 export class ConsultationsComponent implements OnInit {
-  private api = inject(ApiService);
+  private ascService = inject(AscService);
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -66,13 +58,15 @@ export class ConsultationsComponent implements OnInit {
 
   private loadConsultations() {
     this.isLoading.set(true);
-    this.api.get<any>('/consultations').subscribe({
+    this.ascService.getHistoriqueConsultations(1, 100).subscribe({
       next: (response) => {
-        const data = Array.isArray(response) ? response : response?.data ?? [];
-        this.consultations.set(data);
-        this.totalConsultations.set(data.length);
-        this.enCours.set(data.filter((c: Consultation) => c.statut === 'EN_COURS').length);
-        this.terminees.set(data.filter((c: Consultation) => c.statut === 'TERMINEE').length);
+        if (response.success && response.data) {
+          const data = response.data.items || [];
+          this.consultations.set(data);
+          this.totalConsultations.set(data.length);
+          this.enCours.set(data.filter((c: Consultation) => c.statut === 'EN_COURS').length);
+          this.terminees.set(data.filter((c: Consultation) => c.statut === 'TERMINEE').length);
+        }
         this.isLoading.set(false);
       },
       error: () => { this.isLoading.set(false); }
@@ -80,12 +74,11 @@ export class ConsultationsComponent implements OnInit {
   }
 
   private loadPatients() {
-    // TODO: quand la zone de couverture ASC sera définie,
-    // revenir sur /asc/patients pour n'afficher que les patients de la zone
-    this.api.get<any>('/patients').subscribe({
+    this.ascService.searchPatients('').subscribe({
       next: (response) => {
-        const data = Array.isArray(response) ? response : response?.data ?? [];
-        this.patients.set(data);
+        if (response.success && response.data) {
+          this.patients.set(response.data);
+        }
       },
       error: () => { }
     });
@@ -101,7 +94,7 @@ export class ConsultationsComponent implements OnInit {
     this.router.navigate(['/asc/consultations', consultation.id]);
   }
 
-  getMotif(c: Consultation): string {
+  getMotif(c: Consultation & { motifPrincipal?: string }): string {
     return c.motifPrincipal ?? c.motif ?? '—';
   }
 
@@ -111,16 +104,18 @@ export class ConsultationsComponent implements OnInit {
   createConsultation() {
     if (!this.newConsultation.patientId) { this.errorMessage.set('Veuillez sélectionner un patient.'); return; }
     this.isSaving.set(true); this.errorMessage.set('');
-    this.api.post<any>('/consultations', {
+    
+    this.ascService.saveConsultation({
       idPatient: this.newConsultation.patientId,
-      motifPrincipal: this.newConsultation.motif
+      motifPrincipal: this.newConsultation.motif,
+      symptomes: [] // Require symptoms to be captured in the detail view or logic later
     }).subscribe({
       next: (response) => {
         this.isSaving.set(false); this.showNewForm.set(false);
         this.successMessage.set('Consultation ouverte avec succès !');
         setTimeout(() => this.successMessage.set(''), 3000);
         // Naviguer directement vers le détail de la nouvelle consultation
-        const id = response?.data?.id ?? response?.id;
+        const id = response?.data?.id;
         if (id) {
           this.router.navigate(['/asc/consultations', id]);
         } else {
@@ -151,8 +146,8 @@ export class ConsultationsComponent implements OnInit {
   }
 
   getPatientInitiales(c: Consultation): string {
-    const u = c.patient?.utilisateur;
+    const u = c.patient;
     if (!u) return '??';
-    return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
+    return `${u.utilisateur?.prenom?.charAt(0) ?? u.prenom?.charAt(0) ?? ''}${u.utilisateur?.nom?.charAt(0) ?? u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 }

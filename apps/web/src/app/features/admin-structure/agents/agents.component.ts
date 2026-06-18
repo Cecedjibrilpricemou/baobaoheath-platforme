@@ -20,6 +20,11 @@ interface MotDePasseAffiche {
   motDePasse: string;
 }
 
+interface CreateAgentResponse {
+  motDePasseTemporaire?: string;
+  agent?: { prenom: string; nom: string; telephone: string };
+}
+
 @Component({
   selector: 'app-agents',
   standalone: true,
@@ -51,8 +56,8 @@ export class AgentsComponent implements OnInit {
 
   loadAgents() {
     this.isLoading.set(true);
-    this.api.get<any>('/admin-structure/agents').subscribe({
-      next: r => { this.agents.set(Array.isArray(r) ? r : r?.data ?? []); this.isLoading.set(false); },
+    this.api.get<{ data?: Agent[]; success?: boolean } | Agent[]>('/admin-structure/agents').subscribe({
+      next: r => { this.agents.set(Array.isArray(r) ? r : (r as { data?: Agent[] })?.data ?? []); this.isLoading.set(false); },
       error: () => { this.isLoading.set(false); }
     });
   }
@@ -71,9 +76,9 @@ export class AgentsComponent implements OnInit {
       email: this.newAgent.email || undefined
     };
 
-    this.api.post<any>('/admin-structure/agents', payload).subscribe({
+    this.api.post<{ data?: CreateAgentResponse } | CreateAgentResponse>('/admin-structure/agents', payload).subscribe({
       next: (r) => {
-        const data = r?.data ?? r;
+        const data = ((r as { data?: CreateAgentResponse })?.data ?? r) as CreateAgentResponse;
         this.isSaving.set(false);
         this.showForm.set(false);
         this.newAgent = { telephone: '', email: '', prenom: '', nom: '', role: 'ASC' };
@@ -106,7 +111,7 @@ export class AgentsComponent implements OnInit {
   }
 
   desactiver(id: string) {
-    this.api.put<any>(`/admin-structure/agents/${id}/desactiver`, {}).subscribe({
+    this.api.put<{ success: boolean }>(`/admin-structure/agents/${id}/desactiver`, {}).subscribe({
       next: () => { this.successMsg.set('Agent désactivé.'); this.loadAgents(); },
       error: () => { }
     });

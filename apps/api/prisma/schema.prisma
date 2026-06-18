@@ -73,6 +73,37 @@ enum ModePaiement {
   MTN_MOMO
 }
 
+enum SyncOperation {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum SyncMutationStatus {
+  RECU
+  TRAITE
+  REJETE
+}
+
+enum ConsentScope {
+  DOSSIER_MEDICAL
+  FHIR_EXPORT
+  RAPPELS_SMS
+  RECHERCHE_ANONYMISEE
+}
+
+enum UssdSessionStatus {
+  ACTIVE
+  TERMINEE
+  EXPIREE
+}
+
+enum NiveauAlerteEpidemique {
+  ATTENTION
+  ALERTE
+  URGENCE
+}
+
 // ─── DOMAINE 1 — UTILISATEURS & ACCES ────────────────────
 
 model Utilisateur {
@@ -88,6 +119,7 @@ model Utilisateur {
   estActif          Boolean   @default(true)
   twoFaActive       Boolean   @default(false)
   twoFaSecret       String?
+  doitChangerMotDePasse Boolean @default(false)
   derniereConnexion DateTime?
   creeLe            DateTime  @default(now())
   modifieLe         DateTime  @updatedAt
@@ -100,6 +132,8 @@ model Utilisateur {
   medecinProfile       MedecinProfile?
   pharmacienProfile    PharmacienProfile?
   sessions             Session[]
+  authOtps             AuthOtp[]
+  motDePasseResets     MotDePasseReset[]
   auditLogs            JournalAudit[]
   messagesEnvoyes      Message[]       @relation("Expediteur")
   messagesRecus        Message[]       @relation("Destinataire")
@@ -107,6 +141,10 @@ model Utilisateur {
   ordonnancesSigne     Ordonnance[]    @relation("MedecinSignataire")
   vaccinsAdministres   Vaccination[]
   referencementsValide Referencement[] @relation("MedecinValideurRef")
+  syncEvents            SyncEvent[]
+  syncMutations         SyncMutation[]
+  consentementsDonnes   ConsentementPatient[]
+  ussdSessions          UssdSession[]
 
   @@map("utilisateurs")
 }
@@ -125,6 +163,36 @@ model Session {
   @@map("sessions")
 }
 
+model AuthOtp {
+  id            String    @id @default(cuid())
+  codeHash      String
+  expireLe      DateTime
+  tentatives    Int       @default(0)
+  maxTentatives Int       @default(5)
+  utiliseLe     DateTime?
+  creeLe        DateTime  @default(now())
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur, expireLe])
+  @@map("auth_otp")
+}
+
+model MotDePasseReset {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  expireLe   DateTime
+  utiliseLe  DateTime?
+  creeLe     DateTime  @default(now())
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur])
+  @@map("mot_de_passe_resets")
+}
+
 model JournalAudit {
   id          String   @id @default(cuid())
   action      String
@@ -139,6 +207,48 @@ model JournalAudit {
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   @@map("journal_audit")
+}
+
+model SyncEvent {
+  id            String        @id @default(cuid())
+  version       Int           @unique @default(autoincrement())
+  scope         String
+  entityType    String
+  entityId      String?
+  operation     SyncOperation
+  payload       Json?
+  idStructure   String?
+  idUtilisateur String?
+  creeLe        DateTime      @default(now())
+
+  utilisateur Utilisateur? @relation(fields: [idUtilisateur], references: [id], onDelete: SetNull)
+
+  @@index([scope, version])
+  @@index([idStructure, version])
+  @@index([idUtilisateur, version])
+  @@map("sync_events")
+}
+
+model SyncMutation {
+  id               String             @id @default(cuid())
+  clientMutationId String             @unique
+  deviceId         String?
+  entityType       String
+  entityId         String?
+  operation        SyncOperation
+  payload          Json
+  baseVersion      Int?
+  statut           SyncMutationStatus @default(RECU)
+  erreur           String?
+  creeLe           DateTime           @default(now())
+  traiteLe         DateTime?
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur, creeLe])
+  @@index([statut, creeLe])
+  @@map("sync_mutations")
 }
 
 // ─── DOMAINE 2 — ACTEURS DE SANTE ────────────────────────
@@ -160,6 +270,7 @@ model StructureSante {
   ascProfiles             AscProfile[]
   medecinProfiles         MedecinProfile[]
   pharmacienProfiles      PharmacienProfile[]
+  stocks                  Stock[]
   patientsPreferent       PatientProfile[]    @relation("StructurePreferee")
   referencementsSource    Referencement[]     @relation("StructureSource")
   referencementsCible     Referencement[]     @relation("StructureCible")
@@ -202,6 +313,7 @@ model PatientProfile {
   vaccinations  Vaccination[]
   factures      Facture[]
   rendezVous    RendezVous[]
+  consentements ConsentementPatient[]
 
   @@map("patients")
 }
@@ -249,9 +361,10 @@ model MedecinProfile {
 
 // ── NOUVEAU : PharmacienProfile ───────────────────────────
 model PharmacienProfile {
-  id       String   @id @default(cuid())
-  photoUrl String?
-  creeLe   DateTime @default(now())
+  id             String   @id @default(cuid())
+  photoUrl       String?
+  estResponsable Boolean  @default(false)
+  creeLe         DateTime @default(now())
 
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
@@ -276,6 +389,7 @@ model Consultation {
   notesMedecin     String?
   piecesJointes    String[]
   signeLe          DateTime?
+  tarifGnf         Int?
   consulteeLE      DateTime        @default(now())
   creeLe           DateTime        @default(now())
   modifieLe        DateTime        @updatedAt
@@ -478,13 +592,17 @@ model Stock {
   margeGnf        Int       @default(0) // ← NOUVEAU : marge appliquée par la pharmacie
   modifieLe       DateTime  @updatedAt
 
-  idAsc String
-  asc   AscProfile @relation(fields: [idAsc], references: [id], onDelete: Restrict)
+  idAsc String?
+  asc   AscProfile? @relation(fields: [idAsc], references: [id], onDelete: Restrict)
+
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: Restrict)
 
   idMedicament String
   medicament   Medicament @relation(fields: [idMedicament], references: [id])
 
   @@unique([idAsc, idMedicament])
+  @@unique([idStructure, idMedicament])
   @@map("stocks")
 }
 
@@ -507,4 +625,60 @@ model Facture {
   consultation   Consultation? @relation(fields: [idConsultation], references: [id])
 
   @@map("factures")
+}
+
+model ConsentementPatient {
+  id            String       @id @default(cuid())
+  scope         ConsentScope
+  actif         Boolean      @default(true)
+  donneLe       DateTime     @default(now())
+  retireLe      DateTime?
+  source        String       @default("WEB")
+  commentaire   String?
+
+  idPatient     String
+  patient       PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Cascade)
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  @@unique([idPatient, scope])
+  @@index([scope, actif])
+  @@map("consentements_patient")
+}
+
+model AlerteEpidemique {
+  id            String                  @id @default(cuid())
+  pathologie    String
+  prefecture    String
+  nombre        Int
+  seuil         Int
+  niveau        NiveauAlerteEpidemique
+  fenetreJours  Int                     @default(30)
+  statut        String                  @default("ACTIVE")
+  dateDetection DateTime                @default(now())
+  metadonnees   Json?
+
+  @@unique([pathologie, prefecture, fenetreJours, statut])
+  @@index([prefecture, statut])
+  @@index([niveau, dateDetection])
+  @@map("alertes_epidemiologiques")
+}
+
+model UssdSession {
+  id          String            @id @default(cuid())
+  telephone   String
+  etape       String            @default("ACCUEIL")
+  statut      UssdSessionStatus @default(ACTIVE)
+  donnees     Json?
+  creeLe      DateTime          @default(now())
+  expireLe    DateTime
+  modifieLe   DateTime          @updatedAt
+
+  idUtilisateur String?
+  utilisateur   Utilisateur? @relation(fields: [idUtilisateur], references: [id], onDelete: SetNull)
+
+  @@index([telephone, statut])
+  @@index([expireLe])
+  @@map("ussd_sessions")
 }

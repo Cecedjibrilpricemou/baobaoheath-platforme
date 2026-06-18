@@ -8,42 +8,17 @@ import {
 } from '../controllers/paiement.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
+import { validateBody } from '../middlewares/validate.middleware';
+import { confirmerPaiementSchema, initierPaiementSchema } from '../validators/api.schemas';
 
 const router = Router();
 
-// ─── Tous les endpoints nécessitent authentification ─────
 router.use(authenticate);
 
-// ─── Routes Patient ───────────────────────────────────────
-router.post(
-  '/',
-  requireRole('PATIENT'),
-  initierPaiementController
-);
-
-router.get(
-  '/historique',
-  requireRole('PATIENT'),
-  getHistoriquePaiementsController
-);
-
-router.get(
-  '/:id/statut',
-  requireRole('PATIENT'),
-  verifierStatutPaiementController
-);
-
-router.post(
-  '/:id/annuler',
-  requireRole('PATIENT'),
-  annulerPaiementController
-);
-
-// ─── Routes Admin / Structure ─────────────────────────────
-router.post(
-  '/:id/confirmer',
-  requireRole('ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'PHARMACIEN'),
-  confirmerPaiementController
-);
+router.post('/', requireRole('PATIENT'), validateBody(initierPaiementSchema), initierPaiementController);
+router.get('/historique', requireRole('PATIENT'), getHistoriquePaiementsController);
+router.get('/:id/statut', requireRole('PATIENT'), verifierStatutPaiementController);
+router.post('/:id/annuler', requireRole('PATIENT'), annulerPaiementController);
+router.post('/:id/confirmer', requireRole('ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'PHARMACIEN'), validateBody(confirmerPaiementSchema), confirmerPaiementController);
 
 export default router;
