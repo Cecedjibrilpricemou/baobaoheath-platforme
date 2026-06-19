@@ -1,7 +1,7 @@
 import { PrismaClient } from './generated/client/client';
 import { encryptArray, encryptField, deepDecrypt } from '../utils/encryption.utils';
 
-interface FieldMap {
+export interface FieldMap {
   scalar: string[];
   array: string[];
 }
@@ -10,7 +10,10 @@ interface FieldMap {
 // Diagnostic.libelle: it's grouped/filtered at the DB level for epidemic
 // surveillance analytics (groupBy + contains), which non-deterministic
 // AES-GCM ciphertext would break.
-const ENCRYPTED_FIELDS: Record<string, FieldMap> = {
+//
+// Exported so prisma/backfill-encryption.ts can migrate existing plaintext
+// rows using the exact same field list this extension encrypts going forward.
+export const ENCRYPTED_FIELDS: Record<string, FieldMap> = {
   PatientProfile: { scalar: ['groupeSanguin', 'urgenceNom', 'urgenceTelephone'], array: ['allergies', 'maladiesChroniques'] },
   Consultation: { scalar: ['motifPrincipal', 'resumeIa', 'notesAsc', 'notesMedecin'], array: ['symptomes'] },
   Ordonnance: { scalar: ['posologie', 'instructions'], array: [] },

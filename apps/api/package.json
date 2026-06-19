@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "prisma:migrate": "prisma migrate dev --config prisma.config.ts",
     "prisma:studio": "prisma studio --config prisma.config.ts",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:backfill-encryption": "tsx prisma/backfill-encryption.ts"
   },
   "dependencies": {
     "@baobaoheath/shared-types": "*",
