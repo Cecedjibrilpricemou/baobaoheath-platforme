@@ -7,13 +7,13 @@
   </div>
 
   @if (successMsg()) {
-    <div class="bb-export__alert bb-export__alert--success">
-      <i class="pi pi-check-circle"></i> {{ successMsg() }}
+    <div class="bb-export__alert bb-export__alert--success" role="status" aria-live="polite">
+      <i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMsg() }}
     </div>
   }
   @if (errorMsg()) {
-    <div class="bb-export__alert bb-export__alert--error">
-      <i class="pi pi-times-circle"></i> {{ errorMsg() }}
+    <div class="bb-export__alert bb-export__alert--error" role="alert">
+      <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMsg() }}
     </div>
   }
 
@@ -22,12 +22,12 @@
 
     <div class="bb-export__form">
       <div class="bb-export__field">
-        <label>Format</label>
-        <p-select [(ngModel)]="formatSelectionne" [options]="formatOptions" optionLabel="label" optionValue="value" />
+        <label id="export-format-label" for="export-format">Format</label>
+        <p-select inputId="export-format" [(ngModel)]="formatSelectionne" [options]="formatOptions" optionLabel="label" optionValue="value" />
       </div>
       <div class="bb-export__field">
-        <label>Période</label>
-        <p-select [(ngModel)]="periodeSelectionnee" [options]="periodeOptions" optionLabel="label" optionValue="value" />
+        <label id="export-periode-label" for="export-periode">Période</label>
+        <p-select inputId="export-periode" [(ngModel)]="periodeSelectionnee" [options]="periodeOptions" optionLabel="label" optionValue="value" />
       </div>
     </div>
 

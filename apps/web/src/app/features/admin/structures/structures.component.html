@@ -10,9 +10,9 @@
   <!-- Modal MDP temporaire -->
   @if (mdpAffiche()) {
     <div class="bb-logout-overlay" (click)="fermerMdp()">
-      <div class="bb-mdp-modal" (click)="$event.stopPropagation()">
-        <div class="bb-mdp-modal__icon">✅</div>
-        <h3 class="bb-mdp-modal__title">Structure créée avec succès !</h3>
+      <div class="bb-mdp-modal" role="dialog" aria-modal="true" aria-labelledby="struct-mdp-title" (click)="$event.stopPropagation()">
+        <div class="bb-mdp-modal__icon" aria-hidden="true">✅</div>
+        <h3 id="struct-mdp-title" class="bb-mdp-modal__title">Structure créée avec succès !</h3>
         <p class="bb-mdp-modal__structure">{{ mdpAffiche()!.structureNom }}</p>
         <div class="bb-mdp-modal__info">
           <div class="bb-mdp-modal__row">
@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="bb-mdp-modal__warning">
-          <i class="pi pi-exclamation-triangle"></i>
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
           Ce mot de passe ne sera plus affiché. Communiquez-le au responsable maintenant.
         </div>
         <button class="bb-mdp-modal__btn" (click)="fermerMdp()">J'ai noté le mot de passe</button>
@@ -40,19 +40,19 @@
   <!-- Modal confirmation désactivation -->
   @if (confirmDesactiver()) {
     <div class="bb-logout-overlay" (click)="annulerDesactivation()">
-      <div class="bb-logout-modal" (click)="$event.stopPropagation()">
+      <div class="bb-logout-modal" role="dialog" aria-modal="true" aria-labelledby="struct-deactivate-title" aria-describedby="struct-deactivate-text" (click)="$event.stopPropagation()">
         <div class="bb-logout-modal__icon" style="background:rgba(239,68,68,.12)">
-          <i class="pi pi-ban" style="color:#EF4444"></i>
+          <i class="pi pi-ban" style="color:#EF4444" aria-hidden="true"></i>
         </div>
-        <h3 class="bb-logout-modal__title">Désactiver la structure ?</h3>
-        <p class="bb-logout-modal__text">
+        <h3 id="struct-deactivate-title" class="bb-logout-modal__title">Désactiver la structure ?</h3>
+        <p id="struct-deactivate-text" class="bb-logout-modal__text">
           La structure <strong>{{ confirmDesactiver()!.nom }}</strong> sera désactivée.
           Ses agents ne pourront plus se connecter.
         </p>
         <div class="bb-logout-modal__actions">
           <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="annulerDesactivation()">Annuler</button>
           <button class="bb-logout-modal__btn bb-logout-modal__btn--confirm" style="background:#EF4444" (click)="confirmerDesactivation()">
-            <i class="pi pi-ban"></i> Désactiver
+            <i class="pi pi-ban" aria-hidden="true"></i> Désactiver
           </button>
         </div>
       </div>
@@ -64,43 +64,43 @@
       <h3>Nouvelle structure</h3>
       <div class="bb-struct__form-grid">
         <div class="bb-struct__field">
-          <label>Nom *</label>
-          <input pInputText [(ngModel)]="newStructure.nom" placeholder="Ex: Centre de Santé de Matam" #structNom="ngModel" required />
-          @if (structNom.invalid && (structNom.dirty || structNom.touched)) { <small class="bb-error-text">Obligatoire</small> }
+          <label for="struct-nom">Nom *</label>
+          <input id="struct-nom" pInputText [(ngModel)]="newStructure.nom" placeholder="Ex: Centre de Santé de Matam" #structNom="ngModel" required aria-describedby="struct-nom-msg" />
+          @if (structNom.invalid && (structNom.dirty || structNom.touched)) { <small id="struct-nom-msg" class="bb-error-text" role="alert">Obligatoire</small> }
         </div>
         <div class="bb-struct__field">
-          <label>Type *</label>
-          <p-select [(ngModel)]="newStructure.type" [options]="typeOptions" optionLabel="label" optionValue="value" />
+          <label id="struct-type-label" for="struct-type">Type *</label>
+          <p-select inputId="struct-type" [(ngModel)]="newStructure.type" [options]="typeOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="bb-struct__field">
-          <label>Préfecture *</label>
-          <p-select [(ngModel)]="newStructure.prefecture" [options]="prefectures" optionLabel="label" optionValue="value" placeholder="Sélectionner" #structPref="ngModel" required />
-          @if (structPref.invalid && (structPref.dirty || structPref.touched)) { <small class="bb-error-text">Obligatoire</small> }
+          <label id="struct-pref-label" for="struct-pref">Préfecture *</label>
+          <p-select inputId="struct-pref" [(ngModel)]="newStructure.prefecture" [options]="prefectures" optionLabel="label" optionValue="value" placeholder="Sélectionner" #structPref="ngModel" required />
+          @if (structPref.invalid && (structPref.dirty || structPref.touched)) { <small class="bb-error-text" role="alert">Obligatoire</small> }
         </div>
-        <div class="bb-struct__field"><label>Adresse</label><input pInputText [(ngModel)]="newStructure.adresse" placeholder="Ex: Quartier Ratoma" /></div>
-        <div class="bb-struct__field"><label>Téléphone</label><input pInputText [(ngModel)]="newStructure.telephone" placeholder="Ex: 620000000" /></div>
-        <div class="bb-struct__field"><label>Latitude</label><p-inputnumber [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" placeholder="Ex: 9.5370" /></div>
-        <div class="bb-struct__field"><label>Longitude</label><p-inputnumber [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" placeholder="Ex: -13.6773" /></div>
+        <div class="bb-struct__field"><label for="struct-adresse">Adresse</label><input id="struct-adresse" pInputText [(ngModel)]="newStructure.adresse" placeholder="Ex: Quartier Ratoma" /></div>
+        <div class="bb-struct__field"><label for="struct-tel">Téléphone</label><input id="struct-tel" pInputText [(ngModel)]="newStructure.telephone" placeholder="Ex: 620000000" /></div>
+        <div class="bb-struct__field"><label id="struct-lat-label" for="struct-lat">Latitude</label><p-inputnumber inputId="struct-lat" [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" placeholder="Ex: 9.5370" /></div>
+        <div class="bb-struct__field"><label id="struct-lng-label" for="struct-lng">Longitude</label><p-inputnumber inputId="struct-lng" [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" placeholder="Ex: -13.6773" /></div>
       </div>
       <h4 class="bb-struct__section-label">Responsable (Admin de structure)</h4>
       <p class="bb-struct__section-note">Un mot de passe temporaire sera généré automatiquement</p>
       <div class="bb-struct__form-grid">
         <div class="bb-struct__field">
-          <label>Prénom *</label>
-          <input pInputText [(ngModel)]="newStructure.admin.prenom" placeholder="Ex: Ibrahima" #adminPrenom="ngModel" required />
-          @if (adminPrenom.invalid && (adminPrenom.dirty || adminPrenom.touched)) { <small class="bb-error-text">Obligatoire</small> }
+          <label for="struct-admin-prenom">Prénom *</label>
+          <input id="struct-admin-prenom" pInputText [(ngModel)]="newStructure.admin.prenom" placeholder="Ex: Ibrahima" #adminPrenom="ngModel" required aria-describedby="struct-admin-prenom-msg" />
+          @if (adminPrenom.invalid && (adminPrenom.dirty || adminPrenom.touched)) { <small id="struct-admin-prenom-msg" class="bb-error-text" role="alert">Obligatoire</small> }
         </div>
         <div class="bb-struct__field">
-          <label>Nom *</label>
-          <input pInputText [(ngModel)]="newStructure.admin.nom" placeholder="Ex: Bah" #adminNom="ngModel" required />
-          @if (adminNom.invalid && (adminNom.dirty || adminNom.touched)) { <small class="bb-error-text">Obligatoire</small> }
+          <label for="struct-admin-nom">Nom *</label>
+          <input id="struct-admin-nom" pInputText [(ngModel)]="newStructure.admin.nom" placeholder="Ex: Bah" #adminNom="ngModel" required aria-describedby="struct-admin-nom-msg" />
+          @if (adminNom.invalid && (adminNom.dirty || adminNom.touched)) { <small id="struct-admin-nom-msg" class="bb-error-text" role="alert">Obligatoire</small> }
         </div>
         <div class="bb-struct__field">
-          <label>Téléphone *</label>
-          <input pInputText [(ngModel)]="newStructure.admin.telephone" placeholder="Ex: 622000001" #adminPhone="ngModel" required />
-          @if (adminPhone.invalid && (adminPhone.dirty || adminPhone.touched)) { <small class="bb-error-text">Obligatoire</small> }
+          <label for="struct-admin-tel">Téléphone *</label>
+          <input id="struct-admin-tel" pInputText [(ngModel)]="newStructure.admin.telephone" placeholder="Ex: 622000001" #adminPhone="ngModel" required aria-describedby="struct-admin-tel-msg" />
+          @if (adminPhone.invalid && (adminPhone.dirty || adminPhone.touched)) { <small id="struct-admin-tel-msg" class="bb-error-text" role="alert">Obligatoire</small> }
         </div>
-        <div class="bb-struct__field"><label>Email (optionnel)</label><input pInputText [(ngModel)]="newStructure.admin.email" type="email" placeholder="Ex: admin@structure.gn" /></div>
+        <div class="bb-struct__field"><label for="struct-admin-email">Email (optionnel)</label><input id="struct-admin-email" pInputText [(ngModel)]="newStructure.admin.email" type="email" placeholder="Ex: admin@structure.gn" /></div>
       </div>
       <div class="bb-struct__form-actions">
         <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">Annuler</button>

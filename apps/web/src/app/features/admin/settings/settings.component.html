@@ -13,10 +13,18 @@
   <div class="settings-container">
     <!-- Sidebar Navigation -->
     <div class="settings-sidebar">
-      <ul>
+      <ul role="tablist">
         @for (tab of tabs; track tab.id) {
-          <li [class.active]="activeTab() === tab.id" (click)="setTab(tab.id)">
-            <i [class]="tab.icon"></i>
+          <li
+            role="tab"
+            tabindex="0"
+            [attr.aria-selected]="activeTab() === tab.id"
+            [class.active]="activeTab() === tab.id"
+            (click)="setTab(tab.id)"
+            (keydown.enter)="setTab(tab.id)"
+            (keydown.space)="$event.preventDefault(); setTab(tab.id)"
+          >
+            <i [class]="tab.icon" aria-hidden="true"></i>
             <span>{{ tab.label }}</span>
           </li>
         }
@@ -34,52 +42,52 @@
           
           <div class="form-grid">
             <div class="field">
-              <label>Nom de l'établissement</label>
-              <input type="text" pInputText [(ngModel)]="structure.nom" class="w-full">
+              <label for="structure-nom">Nom de l'établissement</label>
+              <input id="structure-nom" type="text" pInputText [(ngModel)]="structure.nom" class="w-full">
             </div>
             <div class="field">
-              <label>Type de structure</label>
-              <p-select [options]="typeOptions" [(ngModel)]="structure.type" styleClass="w-full"></p-select>
+              <label id="structure-type-label" for="structure-type">Type de structure</label>
+              <p-select inputId="structure-type" [options]="typeOptions" [(ngModel)]="structure.type" styleClass="w-full"></p-select>
             </div>
           </div>
-          
+
           <div class="field">
-            <label>Adresse complète</label>
-            <input type="text" pInputText [(ngModel)]="structure.adresse" class="w-full">
+            <label for="structure-adresse">Adresse complète</label>
+            <input id="structure-adresse" type="text" pInputText [(ngModel)]="structure.adresse" class="w-full">
           </div>
-          
+
           <div class="divider"></div>
-          
+
           <h2>Facturation & Finances</h2>
           <p class="panel-desc">Moyens de paiements acceptés et paramètres financiers.</p>
-          
+
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title">Paiement par Espèces</span>
+              <span class="setting-title" id="setting-especes-label">Paiement par Espèces</span>
               <span class="setting-sub">Accepter les paiements physiques au guichet.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="structure.paiementEspeces"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="structure.paiementEspeces" [ariaLabelledBy]="'setting-especes-label'"></p-toggleSwitch>
           </div>
-          
+
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title">Paiement par Orange Money</span>
+              <span class="setting-title" id="setting-om-label">Paiement par Orange Money</span>
               <span class="setting-sub">Intégration directe de l'API Orange Money Guinée.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="structure.paiementOrangeMoney"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="structure.paiementOrangeMoney" [ariaLabelledBy]="'setting-om-label'"></p-toggleSwitch>
           </div>
-          
+
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title">Paiement par MTN MoMo</span>
+              <span class="setting-title" id="setting-momo-label">Paiement par MTN MoMo</span>
               <span class="setting-sub">Intégration directe de l'API MTN Mobile Money.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="structure.paiementMomo"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="structure.paiementMomo" [ariaLabelledBy]="'setting-momo-label'"></p-toggleSwitch>
           </div>
 
           <div class="field mt-4">
-            <label>Marge bénéficiaire Pharmacie (%) : {{ structure.marge }}%</label>
-            <p-slider [(ngModel)]="structure.marge" [min]="0" [max]="50" styleClass="w-full mt-2"></p-slider>
+            <label id="structure-marge-label">Marge bénéficiaire Pharmacie (%) : {{ structure.marge }}%</label>
+            <p-slider [(ngModel)]="structure.marge" [min]="0" [max]="50" styleClass="w-full mt-2" [ariaLabelledBy]="'structure-marge-label'"></p-slider>
           </div>
         </div>
       }
@@ -92,27 +100,27 @@
           
           <div class="setting-row warning-bg">
             <div class="setting-info">
-              <span class="setting-title">Forcer l'Authentification à 2 Facteurs (2FA)</span>
+              <span class="setting-title" id="setting-2fa-label">Forcer l'Authentification à 2 Facteurs (2FA)</span>
               <span class="setting-sub">Obliger tous les médecins et administrateurs à utiliser le 2FA.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="security.force2FA"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="security.force2FA" [ariaLabelledBy]="'setting-2fa-label'"></p-toggleSwitch>
           </div>
-          
+
           <div class="field mt-4">
-            <label>Expiration des sessions inactives</label>
-            <p-select [options]="timeoutOptions" [(ngModel)]="security.sessionTimeout" styleClass="w-full"></p-select>
+            <label id="security-timeout-label" for="security-timeout">Expiration des sessions inactives</label>
+            <p-select inputId="security-timeout" [options]="timeoutOptions" [(ngModel)]="security.sessionTimeout" styleClass="w-full"></p-select>
             <small class="text-secondary mt-1 block">Déconnecte automatiquement l'utilisateur après ce délai.</small>
           </div>
-          
+
           <div class="divider"></div>
-          
+
           <h2>Confidentialité Patient</h2>
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title">Recueil du Consentement Automatique</span>
+              <span class="setting-title" id="setting-consentement-label">Recueil du Consentement Automatique</span>
               <span class="setting-sub">Demander le consentement électronique lors de la création du dossier.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="security.consentementDefaut"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="security.consentementDefaut" [ariaLabelledBy]="'setting-consentement-label'"></p-toggleSwitch>
           </div>
         </div>
       }
@@ -124,25 +132,25 @@
           <p class="panel-desc">Configuration des seuils de détection automatique.</p>
           
           <div class="field">
-            <label>Seuil d'Alerte Paludisme (cas/semaine) : {{ alerts.seuilPaludisme }}</label>
-            <p-slider [(ngModel)]="alerts.seuilPaludisme" [min]="10" [max]="200" styleClass="w-full mt-2"></p-slider>
+            <label id="alert-paludisme-label">Seuil d'Alerte Paludisme (cas/semaine) : {{ alerts.seuilPaludisme }}</label>
+            <p-slider [(ngModel)]="alerts.seuilPaludisme" [min]="10" [max]="200" styleClass="w-full mt-2" [ariaLabelledBy]="'alert-paludisme-label'"></p-slider>
           </div>
-          
+
           <div class="field mt-4">
-            <label>Seuil d'Alerte Fièvres Hémorragiques (Ebola, Marburg) : {{ alerts.seuilEbola }}</label>
-            <p-slider [(ngModel)]="alerts.seuilEbola" [min]="1" [max]="10" styleClass="w-full mt-2"></p-slider>
-            <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle"></i> Toute détection déclenche une urgence nationale immédiate.</small>
+            <label id="alert-ebola-label">Seuil d'Alerte Fièvres Hémorragiques (Ebola, Marburg) : {{ alerts.seuilEbola }}</label>
+            <p-slider [(ngModel)]="alerts.seuilEbola" [min]="1" [max]="10" styleClass="w-full mt-2" [ariaLabelledBy]="'alert-ebola-label'"></p-slider>
+            <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Toute détection déclenche une urgence nationale immédiate.</small>
           </div>
-          
+
           <div class="divider"></div>
-          
+
           <h2>Intelligence Artificielle</h2>
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title">Activer l'assistant IA de Triage</span>
+              <span class="setting-title" id="setting-ia-label">Activer l'assistant IA de Triage</span>
               <span class="setting-sub">Permet aux ASC d'utiliser BaoBao IA sur le terrain.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="alerts.activerIA"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="alerts.activerIA" [ariaLabelledBy]="'setting-ia-label'"></p-toggleSwitch>
           </div>
         </div>
       }
@@ -155,24 +163,24 @@
           
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title">Autoriser le mode Hors-ligne (PWA)</span>
+              <span class="setting-title" id="setting-offline-label">Autoriser le mode Hors-ligne (PWA)</span>
               <span class="setting-sub">Permet aux applications mobiles de stocker les données localement sans internet.</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="sync.offlineMode"></p-toggleSwitch>
+            <p-toggleSwitch [(ngModel)]="sync.offlineMode" [ariaLabelledBy]="'setting-offline-label'"></p-toggleSwitch>
           </div>
-          
+
           <div class="field mt-4">
-            <label>Fréquence de Synchronisation Auto (minutes) : {{ sync.frequence }}</label>
-            <p-slider [(ngModel)]="sync.frequence" [min]="5" [max]="120" [step]="5" styleClass="w-full mt-2"></p-slider>
+            <label id="sync-frequence-label">Fréquence de Synchronisation Auto (minutes) : {{ sync.frequence }}</label>
+            <p-slider [(ngModel)]="sync.frequence" [min]="5" [max]="120" [step]="5" styleClass="w-full mt-2" [ariaLabelledBy]="'sync-frequence-label'"></p-slider>
             <small class="text-secondary mt-1 block">Si le réseau est disponible, l'app enverra les données selon cet intervalle.</small>
           </div>
-          
+
           <div class="divider"></div>
-          
+
           <h2>Services USSD</h2>
           <div class="field">
-            <label>Timeout des sessions USSD (secondes)</label>
-            <input type="number" pInputText [(ngModel)]="sync.ussdTimeout" class="w-full">
+            <label for="ussd-timeout">Timeout des sessions USSD (secondes)</label>
+            <input id="ussd-timeout" type="number" pInputText [(ngModel)]="sync.ussdTimeout" class="w-full">
             <small class="text-secondary mt-1 block">Délai avant l'expiration du menu sur les téléphones basiques.</small>
           </div>
         </div>

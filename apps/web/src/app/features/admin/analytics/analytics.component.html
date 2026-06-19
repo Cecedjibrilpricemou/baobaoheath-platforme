@@ -29,37 +29,42 @@
     <button
       class="bb-analytics__tab"
       [class.bb-analytics__tab--active]="activeTab() === 'kpis'"
+      [attr.aria-pressed]="activeTab() === 'kpis'"
       (click)="activeTab.set('kpis')"
     >
-      <i class="pi pi-home"></i> Vue d'ensemble
+      <i class="pi pi-home" aria-hidden="true"></i> Vue d'ensemble
     </button>
     <button
       class="bb-analytics__tab"
       [class.bb-analytics__tab--active]="activeTab() === 'heatmap'"
+      [attr.aria-pressed]="activeTab() === 'heatmap'"
       (click)="activeTab.set('heatmap')"
     >
-      <i class="pi pi-map"></i> Heatmap
+      <i class="pi pi-map" aria-hidden="true"></i> Heatmap
     </button>
     <button
       class="bb-analytics__tab"
       [class.bb-analytics__tab--active]="activeTab() === 'alertes'"
+      [attr.aria-pressed]="activeTab() === 'alertes'"
       (click)="activeTab.set('alertes')"
     >
-      <i class="pi pi-exclamation-triangle"></i> Alertes
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Alertes
     </button>
     <button
       class="bb-analytics__tab"
       [class.bb-analytics__tab--active]="activeTab() === 'tendances'"
+      [attr.aria-pressed]="activeTab() === 'tendances'"
       (click)="activeTab.set('tendances')"
     >
-      <i class="pi pi-chart-line"></i> Tendances
+      <i class="pi pi-chart-line" aria-hidden="true"></i> Tendances
     </button>
     <button
       class="bb-analytics__tab"
       [class.bb-analytics__tab--active]="activeTab() === 'vaccins'"
+      [attr.aria-pressed]="activeTab() === 'vaccins'"
       (click)="activeTab.set('vaccins')"
     >
-      <i class="pi pi-heart"></i> Vaccinations
+      <i class="pi pi-heart" aria-hidden="true"></i> Vaccinations
     </button>
   </div>
 
