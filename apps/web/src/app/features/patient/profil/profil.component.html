@@ -68,21 +68,21 @@
   <div class="page-body">
 
     @if (successMessage()) {
-    <div class="bb-alert bb-alert--success">
-      <i class="pi pi-check-circle"></i>
+    <div class="bb-alert bb-alert--success" role="status" aria-live="polite">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
       <span>{{ successMessage() }}</span>
     </div>
     }
     @if (errorMessage()) {
-    <div class="bb-alert bb-alert--error">
-      <i class="pi pi-exclamation-circle"></i>
+    <div class="bb-alert bb-alert--error" role="alert">
+      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
       <span>{{ errorMessage() }}</span>
     </div>
     }
 
     @if (isLoading()) {
-    <div class="loading-state">
-      <i class="pi pi-spin pi-spinner"></i>
+    <div class="loading-state" role="status" aria-live="polite">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
       <span>{{ 'PATIENT.PROFILE.LOADING' | translate }}</span>
     </div>
     } @else {
@@ -99,43 +99,43 @@
         </div>
         <div class="form-grid">
           <div class="form-field">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.LAST_NAME' | translate }}</label>
+            <label class="form-field__label" for="profil-nom">{{ 'PATIENT.PROFILE.LAST_NAME' | translate }}</label>
             @if (editMode()) {
-            <input pInputText class="form-field__input w-full" [(ngModel)]="formData.nom"
+            <input id="profil-nom" pInputText class="form-field__input w-full" [(ngModel)]="formData.nom"
               [placeholder]="'PATIENT.PROFILE.LAST_NAME' | translate" />
             } @else {
-            <span class="form-field__value">{{ profil()?.nom || currentUser()?.nom || '—' }}</span>
+            <span id="profil-nom" class="form-field__value">{{ profil()?.nom || currentUser()?.nom || '—' }}</span>
             }
           </div>
           <div class="form-field">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.FIRST_NAME' | translate }}</label>
+            <label class="form-field__label" for="profil-prenom">{{ 'PATIENT.PROFILE.FIRST_NAME' | translate }}</label>
             @if (editMode()) {
-            <input pInputText class="form-field__input w-full" [(ngModel)]="formData.prenom"
+            <input id="profil-prenom" pInputText class="form-field__input w-full" [(ngModel)]="formData.prenom"
               [placeholder]="'PATIENT.PROFILE.FIRST_NAME' | translate" />
             } @else {
-            <span class="form-field__value">{{ profil()?.prenom || currentUser()?.prenom || '—' }}</span>
+            <span id="profil-prenom" class="form-field__value">{{ profil()?.prenom || currentUser()?.prenom || '—' }}</span>
             }
           </div>
           <div class="form-field">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.PHONE' | translate }}</label>
+            <label class="form-field__label" for="profil-tel">{{ 'PATIENT.PROFILE.PHONE' | translate }}</label>
             @if (editMode()) {
-            <input pInputText type="tel" class="form-field__input w-full" [(ngModel)]="formData.telephone" />
+            <input id="profil-tel" pInputText type="tel" class="form-field__input w-full" [(ngModel)]="formData.telephone" />
             } @else {
-            <span class="form-field__value">{{ profil()?.telephone || currentUser()?.telephone || '—' }}</span>
+            <span id="profil-tel" class="form-field__value">{{ profil()?.telephone || currentUser()?.telephone || '—' }}</span>
             }
           </div>
           <div class="form-field">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.BIRTH_DATE' | translate }}</label>
+            <label class="form-field__label" for="profil-naissance">{{ 'PATIENT.PROFILE.BIRTH_DATE' | translate }}</label>
             @if (editMode()) {
-            <input pInputText type="date" class="form-field__input w-full" [(ngModel)]="formData.dateNaissance" />
+            <input id="profil-naissance" pInputText type="date" class="form-field__input w-full" [(ngModel)]="formData.dateNaissance" />
             } @else {
-            <span class="form-field__value">{{ formatDate(profil()?.dateNaissance) }}</span>
+            <span id="profil-naissance" class="form-field__value">{{ formatDate(profil()?.dateNaissance) }}</span>
             }
           </div>
           <div class="form-field">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.GENDER' | translate }}</label>
+            <label class="form-field__label" id="profil-sexe-label" for="profil-sexe">{{ 'PATIENT.PROFILE.GENDER' | translate }}</label>
             @if (editMode()) {
-            <p-select [options]="sexeOptions" [(ngModel)]="formData.sexe" optionLabel="label" optionValue="value"
+            <p-select inputId="profil-sexe" [options]="sexeOptions" [(ngModel)]="formData.sexe" optionLabel="label" optionValue="value"
               [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate" styleClass="w-full"></p-select>
             } @else {
             <span class="form-field__value">
@@ -145,12 +145,12 @@
             }
           </div>
           <div class="form-field">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.ADDRESS' | translate }}</label>
+            <label class="form-field__label" for="profil-adresse">{{ 'PATIENT.PROFILE.ADDRESS' | translate }}</label>
             @if (editMode()) {
-            <input pInputText class="form-field__input w-full" [(ngModel)]="formData.adresse"
+            <input id="profil-adresse" pInputText class="form-field__input w-full" [(ngModel)]="formData.adresse"
               [placeholder]="'PATIENT.PROFILE.ADDRESS_PLACEHOLDER' | translate" />
             } @else {
-            <span class="form-field__value">{{ profil()?.adresse || '—' }}</span>
+            <span id="profil-adresse" class="form-field__value">{{ profil()?.adresse || '—' }}</span>
             }
           </div>
         </div>
@@ -166,9 +166,9 @@
         </div>
         <div class="form-grid">
           <div class="form-field form-field--full">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.BLOOD_TYPE' | translate }}</label>
+            <label class="form-field__label" id="profil-sang-label" for="profil-sang">{{ 'PATIENT.PROFILE.BLOOD_TYPE' | translate }}</label>
             @if (editMode()) {
-            <p-select [options]="bloodOptions" [(ngModel)]="formData.groupeSanguin" optionLabel="label"
+            <p-select inputId="profil-sang" [options]="bloodOptions" [(ngModel)]="formData.groupeSanguin" optionLabel="label"
               optionValue="value" [placeholder]="'PATIENT.PROFILE.BLOOD_SELECT' | translate"
               styleClass="w-full"></p-select>
             } @else {
@@ -183,21 +183,21 @@
             }
           </div>
           <div class="form-field form-field--full">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.ALLERGIES' | translate }}</label>
+            <label class="form-field__label" for="profil-allergies">{{ 'PATIENT.PROFILE.ALLERGIES' | translate }}</label>
             @if (editMode()) {
-            <textarea pTextarea class="form-field__input w-full" [(ngModel)]="formData.allergies"
+            <textarea pTextarea id="profil-allergies" class="form-field__input w-full" [(ngModel)]="formData.allergies"
               [placeholder]="'PATIENT.PROFILE.ALLERGIES_PH' | translate" rows="3"></textarea>
             } @else {
-            <span class="form-field__value">{{ getAllergies() }}</span>
+            <span id="profil-allergies" class="form-field__value">{{ getAllergies() }}</span>
             }
           </div>
           <div class="form-field form-field--full">
-            <label class="form-field__label">{{ 'PATIENT.PROFILE.ANTECEDENTS' | translate }}</label>
+            <label class="form-field__label" for="profil-antecedents">{{ 'PATIENT.PROFILE.ANTECEDENTS' | translate }}</label>
             @if (editMode()) {
-            <textarea pTextarea class="form-field__input w-full" [(ngModel)]="formData.antecedents"
+            <textarea pTextarea id="profil-antecedents" class="form-field__input w-full" [(ngModel)]="formData.antecedents"
               [placeholder]="'PATIENT.PROFILE.ANTECEDENTS_PH' | translate" rows="3"></textarea>
             } @else {
-            <span class="form-field__value">{{ profil()?.antecedents || '—' }}</span>
+            <span id="profil-antecedents" class="form-field__value">{{ profil()?.antecedents || '—' }}</span>
             }
           </div>
         </div>
@@ -231,17 +231,17 @@
 
         <!-- Sélection -->
         <div class="structure-select">
-          <label class="form-field__label">Choisir ou changer ma structure</label>
+          <label class="form-field__label" id="profil-structure-label" for="profil-structure">Choisir ou changer ma structure</label>
           <div class="structure-select__row">
-            <p-select [(ngModel)]="idStructureSelectionnee" [options]="structureOptions" optionLabel="label"
+            <p-select inputId="profil-structure" [(ngModel)]="idStructureSelectionnee" [options]="structureOptions" optionLabel="label"
               optionValue="value" placeholder="— Aucune structure (accès libre) —" styleClass="w-full" />
             <button class="structure-select__btn" (click)="saveStructurePreferee()" [disabled]="isSavingStructure()">
-              <i [class]="isSavingStructure() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"></i>
+              <i [class]="isSavingStructure() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
               {{ isSavingStructure() ? 'Enregistrement...' : 'Enregistrer' }}
             </button>
           </div>
           <small class="structure-select__hint">
-            <i class="pi pi-info-circle"></i>
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
             En zone rurale sans structure, vous serez rattaché automatiquement selon votre zone géographique.
           </small>
         </div>
