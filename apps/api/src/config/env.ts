@@ -17,6 +17,11 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
+  // ─── Chiffrement des champs sensibles (AES-256-GCM) ──
+  DB_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'DB_ENCRYPTION_KEY doit etre une chaine hexadecimale de 64 caracteres (32 octets)'),
+
   // ─── Serveur ─────────────────────────────────────────
   PORT: z
     .string()
