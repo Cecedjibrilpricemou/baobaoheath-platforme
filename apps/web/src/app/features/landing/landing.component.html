@@ -17,8 +17,8 @@
 
     <div class="lnav__actions">
       <!-- Toggle thème -->
-      <button class="lnav__icon-btn" (click)="toggleTheme()" [title]="'COMMON.DARK_MODE' | translate">
-        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+      <button class="lnav__icon-btn" (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Activer le thème clair' : 'Activer le thème sombre'">
+        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
       </button>
       <!-- Toggle langue -->
       <button class="lnav__icon-btn lnav__lang" (click)="toggleLang()">
@@ -95,7 +95,7 @@
     </div>
 
     <!-- Illustration droite -->
-    <div class="hero__visual">
+    <div class="hero__visual" aria-hidden="true">
       <div class="hero-card hero-card--main">
         <div class="hero-card__header">
           <div class="hero-card__avatar">MD</div>
@@ -142,7 +142,7 @@
   <div class="trust-bar">
     @for (item of trustItems; track item.label) {
     <div class="trust-bar__item">
-      <i [class]="'pi ' + item.icon"></i>
+      <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
       <span>{{ item.label }}</span>
     </div>
     @if (!$last) { <div class="trust-bar__sep"></div> }
@@ -207,8 +207,8 @@
     <div class="lfooter__bottom">
       <span class="lfooter__copy">{{ 'LANDING.FOOTER_COPY' | translate }}</span>
       <div class="lfooter__badges">
-        <span class="lfooter__badge"><i class="pi pi-shield"></i> {{ 'LANDING.FOOTER_SECURE' | translate }}</span>
-        <span class="lfooter__badge"><i class="pi pi-globe"></i> {{ 'LANDING.FOOTER_MADE' | translate }}</span>
+        <span class="lfooter__badge"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'LANDING.FOOTER_SECURE' | translate }}</span>
+        <span class="lfooter__badge"><i class="pi pi-globe" aria-hidden="true"></i> {{ 'LANDING.FOOTER_MADE' | translate }}</span>
       </div>
     </div>
   </footer>

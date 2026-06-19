@@ -10,7 +10,7 @@
     <div class="roles-grid">
       @for (role of roles; track role.title) {
       <div class="role-card">
-        <div class="role-card__icon"><i [class]="'pi ' + role.icon"></i></div>
+        <div class="role-card__icon" aria-hidden="true"><i [class]="'pi ' + role.icon"></i></div>
         <h3 class="role-card__title">{{ role.title }}</h3>
         <p class="role-card__desc">{{ role.desc }}</p>
       </div>

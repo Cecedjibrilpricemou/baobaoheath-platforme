@@ -7,7 +7,7 @@
   <div class="features-grid">
     @for (f of features; track f.title) {
     <div class="feature-card">
-      <div class="feature-card__icon"><i [class]="'pi ' + f.icon"></i></div>
+      <div class="feature-card__icon" aria-hidden="true"><i [class]="'pi ' + f.icon"></i></div>
       <h3 class="feature-card__title">{{ f.title }}</h3>
       <p class="feature-card__desc">{{ f.description }}</p>
     </div>
