@@ -13,24 +13,25 @@
 
   <!-- Alertes -->
   @if (successMsg()) {
-    <div class="bb-ph-stocks__alert bb-ph-stocks__alert--success">
-      <i class="pi pi-check-circle"></i> {{ successMsg() }}
+    <div class="bb-ph-stocks__alert bb-ph-stocks__alert--success" role="status" aria-live="polite">
+      <i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMsg() }}
     </div>
   }
   @if (errorMsg()) {
-    <div class="bb-ph-stocks__alert bb-ph-stocks__alert--error">
-      <i class="pi pi-times-circle"></i> {{ errorMsg() }}
+    <div class="bb-ph-stocks__alert bb-ph-stocks__alert--error" role="alert">
+      <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMsg() }}
     </div>
   }
 
   <!-- Formulaire réapprovisionnement -->
   @if (showForm()) {
     <div class="bb-ph-stocks__form">
-      <h3><i class="pi pi-cart-plus"></i> Réapprovisionner le stock</h3>
+      <h3><i class="pi pi-cart-plus" aria-hidden="true"></i> Réapprovisionner le stock</h3>
       <div class="bb-ph-stocks__form-grid">
         <div class="bb-ph-stocks__field bb-ph-stocks__field--full">
-          <label>Médicament *</label>
+          <label id="reappro-med-label" for="reappro-med">Médicament *</label>
           <p-select
+            inputId="reappro-med"
             [(ngModel)]="formReappro.idMedicament"
             [options]="medicamentOptions"
             optionLabel="label"
@@ -42,22 +43,22 @@
           />
         </div>
         <div class="bb-ph-stocks__field">
-          <label>Quantité ajoutée (Boîtes) *</label>
-          <p-inputnumber [(ngModel)]="formReappro.quantiteAjoutee" placeholder="Ex: 100" [min]="1" styleClass="w-full" />
+          <label for="reappro-qty">Quantité ajoutée (Boîtes) *</label>
+          <p-inputnumber inputId="reappro-qty" [(ngModel)]="formReappro.quantiteAjoutee" placeholder="Ex: 100" [min]="1" styleClass="w-full" />
         </div>
         <div class="bb-ph-stocks__field">
-          <label>Date de péremption</label>
-          <input pInputText type="date" [(ngModel)]="formReappro.datePeremption" class="w-full" />
+          <label for="reappro-date">Date de péremption</label>
+          <input id="reappro-date" pInputText type="date" [(ngModel)]="formReappro.datePeremption" class="w-full" />
         </div>
         <div class="bb-ph-stocks__field">
-          <label>Marge Bénéficiaire (GNF)</label>
-          <p-inputnumber [(ngModel)]="formReappro.margeGnf" placeholder="Ex: 5000" [min]="0" styleClass="w-full" />
+          <label for="reappro-marge">Marge Bénéficiaire (GNF)</label>
+          <p-inputnumber inputId="reappro-marge" [(ngModel)]="formReappro.margeGnf" placeholder="Ex: 5000" [min]="0" styleClass="w-full" />
         </div>
       </div>
       <div class="bb-ph-stocks__form-actions">
         <button class="bb-ph-stocks__cancel-btn" (click)="showForm.set(false); errorMsg.set('')">Annuler</button>
         <button class="bb-ph-stocks__save-btn" (click)="reapprovisionner()" [disabled]="isSaving()">
-          <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"></i>
+          <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
           {{ isSaving() ? 'Enregistrement...' : 'Confirmer le réapprovisionnement' }}
         </button>
       </div>
@@ -88,6 +89,7 @@
     <p-iconfield>
       <p-inputicon styleClass="pi pi-search" />
       <input pInputText placeholder="Rechercher un médicament (DCI, nom commercial)..."
+        aria-label="Rechercher un médicament"
         [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
     </p-iconfield>
   </div>

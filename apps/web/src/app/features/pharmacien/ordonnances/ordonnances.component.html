@@ -16,6 +16,7 @@
             type="text"
             [(ngModel)]="qrCode"
             placeholder="Saisissez ou scannez le QR Code du patient..."
+            aria-label="QR Code du patient"
             (keydown)="onKeyDown($event)"
             [disabled]="isScanning()"
             class="bb-ordo__search-input"
@@ -25,15 +26,15 @@
             (click)="scan()"
             [disabled]="isScanning() || !qrCode.trim()"
           >
-            <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-qrcode'"></i>
+            <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-qrcode'" aria-hidden="true"></i>
             {{ isScanning() ? 'Recherche...' : 'Rechercher' }}
           </button>
         </div>
       </div>
 
       @if (errorMessage()) {
-        <div class="bb-ordo__alert bb-ordo__alert--error mt-3">
-          <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+        <div class="bb-ordo__alert bb-ordo__alert--error mt-3" role="alert">
+          <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMessage() }}
         </div>
       }
     </div>
@@ -49,7 +50,7 @@
         <i class="pi pi-refresh"></i> Nouveau scan
       </button>
       <div class="bb-ordo__patient">
-        <div class="bb-ordo__patient-avatar">
+        <div class="bb-ordo__patient-avatar" aria-hidden="true">
           {{ patient()!.prenom.charAt(0) }}{{ patient()!.nom.charAt(0) }}
         </div>
         <div>
@@ -63,18 +64,18 @@
 
     <!-- Messages -->
     @if (successMessage()) {
-      <div class="bb-ordo__alert bb-ordo__alert--success"><i class="pi pi-check"></i> {{ successMessage() }}</div>
+      <div class="bb-ordo__alert bb-ordo__alert--success" role="status" aria-live="polite"><i class="pi pi-check" aria-hidden="true"></i> {{ successMessage() }}</div>
     }
     @if (errorMessage()) {
-      <div class="bb-ordo__alert bb-ordo__alert--error">
-        <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+      <div class="bb-ordo__alert bb-ordo__alert--error" role="alert">
+        <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMessage() }}
       </div>
     }
 
     <!-- Allergies -->
     @if (patient()?.allergiesCritiques?.length) {
-      <div class="bb-ordo__allergies">
-        <i class="pi pi-exclamation-triangle"></i>
+      <div class="bb-ordo__allergies" role="alert">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
         <strong>Allergies connues :</strong> {{ patient()!.allergiesCritiques.join(', ') }}
       </div>
     }
@@ -99,8 +100,8 @@
               (click)="selectionner(o)"
             >
               @if (o.alerteAllergie) {
-                <div class="bb-ordo__item-alerte">
-                  <i class="pi pi-exclamation-triangle"></i> Risque d'allergie
+                <div class="bb-ordo__item-alerte" role="alert">
+                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Risque d'allergie
                 </div>
               }
               <div class="bb-ordo__item-content">
@@ -109,14 +110,20 @@
                     {{ o.medicament.nomCommercial ?? o.medicament.dci }} <span class="badge">{{ o.medicament.dosage }}</span>
                   </span>
                   <span class="bb-ordo__item-details">
-                    <i class="pi pi-clock"></i> {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j <br>
+                    <i class="pi pi-clock" aria-hidden="true"></i> {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j <br>
                     <strong>Qté : {{ o.quantite }} boîtes</strong>
                   </span>
-                  <span class="bb-ordo__item-medecin"><i class="pi pi-user-edit"></i> {{ o.medecinNom }} · {{ formatDate(o.signeLe) }}</span>
+                  <span class="bb-ordo__item-medecin"><i class="pi pi-user-edit" aria-hidden="true"></i> {{ o.medecinNom }} · {{ formatDate(o.signeLe) }}</span>
                 </div>
                 <div class="bb-ordo__item-right">
                   <span class="bb-ordo__item-prix">{{ formatMontant(o.prixTotalGnf) }}</span>
-                  <button class="bb-ordo__btn-select">Délivrer <i class="pi pi-chevron-right"></i></button>
+                  <button
+                    class="bb-ordo__btn-select"
+                    (click)="selectionner(o)"
+                    [attr.aria-label]="'Délivrer ' + (o.medicament.nomCommercial ?? o.medicament.dci) + (o.alerteAllergie ? ' — risque d\'allergie' : '')"
+                  >
+                    Délivrer <i class="pi pi-chevron-right" aria-hidden="true"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -128,7 +135,7 @@
       @if (selected()) {
         <div class="bb-ordo__form">
           <h3 class="bb-ordo__form-title">
-            <i class="pi pi-shopping-cart"></i> Délivrance
+            <i class="pi pi-shopping-cart" aria-hidden="true"></i> Délivrance
           </h3>
 
           <div class="bb-ordo__form-med">
@@ -138,8 +145,9 @@
 
           <!-- Quantité -->
           <div class="bb-ordo__form-field mt-4">
-            <label>Quantité à délivrer (sur {{ selected()!.quantite }} prescrites)</label>
+            <label id="ordo-qty-label" for="ordo-qty">Quantité à délivrer (sur {{ selected()!.quantite }} prescrites)</label>
             <p-inputnumber
+              inputId="ordo-qty"
               [(ngModel)]="quantiteDelivree"
               [min]="1"
               [max]="selected()!.quantite"
@@ -150,8 +158,8 @@
 
           <!-- Mode de paiement -->
           <div class="bb-ordo__form-field mt-4">
-            <label>Mode de paiement</label>
-            <div class="bb-ordo__modes">
+            <span id="ordo-mode-label" class="form-label">Mode de paiement</span>
+            <div class="bb-ordo__modes" role="radiogroup" aria-labelledby="ordo-mode-label">
               @for (mode of modesPaiement; track mode.value) {
                 <div
                   class="bb-ordo__mode"
@@ -185,14 +193,14 @@
               (click)="delivrer()"
               [disabled]="isDelivering() || selected()!.alerteAllergie"
             >
-              <i [class]="isDelivering() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"></i>
+              <i [class]="isDelivering() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
               {{ isDelivering() ? 'Traitement...' : 'Confirmer l\'encaissement' }}
             </button>
           </div>
 
           @if (selected()!.alerteAllergie) {
-            <div class="bb-ordo__alert-block mt-3">
-              <i class="pi pi-lock"></i> Délivrance bloquée pour raison médicale (Allergie).
+            <div class="bb-ordo__alert-block mt-3" role="alert">
+              <i class="pi pi-lock" aria-hidden="true"></i> Délivrance bloquée pour raison médicale (Allergie).
             </div>
           }
         </div>

@@ -17,6 +17,7 @@
           pInputText
           [(ngModel)]="qrCode"
           placeholder="Saisir ou scanner le QR Code du patient..."
+          aria-label="QR Code du patient"
           (keydown)="onKeyDown($event)"
           [disabled]="isScanning()"
           class="bb-scanner__input"
@@ -26,7 +27,7 @@
           (click)="scan()"
           [disabled]="isScanning() || !qrCode.trim()"
         >
-          <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-search'"></i>
+          <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-search'" aria-hidden="true"></i>
           {{ isScanning() ? 'Recherche...' : 'Rechercher' }}
         </button>
       </div>
@@ -36,14 +37,14 @@
 
   <!-- Erreur -->
   @if (errorMessage()) {
-    <div class="bb-scanner__alert bb-scanner__alert--error">
-      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    <div class="bb-scanner__alert bb-scanner__alert--error" role="alert">
+      <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMessage() }}
     </div>
   }
 
   <!-- Résultat du scan -->
   @if (scanResult()) {
-    <div class="bb-scanner__result">
+    <div class="bb-scanner__result" role="status" aria-live="polite">
 
       <!-- Carte patient -->
       <div class="bb-scanner__patient-card">
@@ -71,8 +72,8 @@
 
       <!-- Alertes allergie globales -->
       @if (scanResult()!.patient.allergiesCritiques.length > 0) {
-        <div class="bb-scanner__allergies">
-          <i class="pi pi-exclamation-triangle"></i>
+        <div class="bb-scanner__allergies" role="alert">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
           <strong>Allergies connues :</strong>
           {{ scanResult()!.patient.allergiesCritiques.join(', ') }}
         </div>
@@ -93,8 +94,8 @@
 
               <!-- Alerte allergie -->
               @if (o.alerteAllergie) {
-                <div class="bb-scanner__ordo-alerte">
-                  <i class="pi pi-exclamation-triangle"></i>
+                <div class="bb-scanner__ordo-alerte" role="alert">
+                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
                   Conflit allergie détecté — Contactez le médecin prescripteur avant de délivrer
                 </div>
               }
