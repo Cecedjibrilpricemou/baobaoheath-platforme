@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/.angular
+**/coverage
+apps/api/src/config/generated
+.git
+.github
+.vscode
+.claude
+backups
+docker/postgres-data
+docker/redis-data
+*.log
+.env
+.env.*
+!.env.example
