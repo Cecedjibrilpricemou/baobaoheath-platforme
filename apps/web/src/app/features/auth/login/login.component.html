@@ -28,11 +28,11 @@
       </div>
 
       <div class="login-left__controls">
-        <button type="button" class="ctrl-btn" (click)="toggleTheme()">
-          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        <button type="button" class="ctrl-btn" (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Activer le thème clair' : 'Activer le thème sombre'">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
         </button>
         <button type="button" class="ctrl-btn" (click)="toggleLang()">
-          <i class="pi pi-globe"></i>
+          <i class="pi pi-globe" aria-hidden="true"></i>
           <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
         </button>
       </div>
@@ -79,13 +79,15 @@
                   autocomplete="username"
                   class="w-full"
                   #identifiantInput="ngModel"
+                  [attr.aria-invalid]="identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched) ? true : null"
+                  aria-describedby="identifiant-msg"
                 />
               </div>
               @if (identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched)) {
-                <small class="bb-error-text">L'identifiant est requis</small>
+                <small id="identifiant-msg" class="bb-error-text" role="alert">L'identifiant est requis</small>
               }
               @if (!(identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched))) {
-                <small class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
+                <small id="identifiant-msg" class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
               }
             </div>
 
@@ -109,12 +111,15 @@
                   autocomplete="current-password"
                   class="w-full"
                   #mdpInput="ngModel"
+                  [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
+                  aria-describedby="motDePasse-msg"
                 />
                 <button
                   type="button"
                   class="p-inputgroup-addon toggle-btn"
                   (click)="togglePassword()"
                   [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
+                  [attr.aria-pressed]="showPassword()"
                 >
                   <span class="toggle-label">
                     {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
@@ -122,7 +127,7 @@
                 </button>
               </div>
               @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
-                <small class="bb-error-text">Le mot de passe est requis</small>
+                <small id="motDePasse-msg" class="bb-error-text" role="alert">Le mot de passe est requis</small>
               }
             </div>
 
@@ -159,13 +164,13 @@
 
           <!-- ── Status bar : countdown ou expiré ──────────────── -->
           @if (otpExpired) {
-            <div class="otp-status otp-status--expired">
-              <i class="pi pi-clock"></i>
+            <div class="otp-status otp-status--expired" role="status" aria-live="polite">
+              <i class="pi pi-clock" aria-hidden="true"></i>
               {{ 'AUTH.LOGIN.OTP_EXPIRED_MSG' | translate }}
             </div>
           } @else {
-            <div class="otp-status otp-status--timer" [class.otp-status--warning]="otpSecondsLeft() < 60">
-              <i class="pi pi-clock"></i>
+            <div class="otp-status otp-status--timer" [class.otp-status--warning]="otpSecondsLeft() < 60" role="status" aria-live="polite">
+              <i class="pi pi-clock" aria-hidden="true"></i>
               {{ 'AUTH.LOGIN.OTP_EXPIRES_IN' | translate }} : <strong>{{ otpTimeDisplay }}</strong>
             </div>
           }
@@ -174,7 +179,10 @@
 
             <!-- Champs OTP -->
             <div class="form-field-wrap">
+              <span id="otp-group-label" class="form-label">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</span>
               <div class="otp-inputs-container"
+                   role="group"
+                   aria-labelledby="otp-group-label"
                    [style.opacity]="(isLoading() || otpExpired) ? '0.6' : '1'"
                    [style.pointer-events]="(isLoading() || otpExpired) ? 'none' : 'auto'">
                 @for (digit of otpDigits; track $index) {
@@ -191,6 +199,7 @@
                     (keydown)="onOtpKeyDown($index, $event)"
                     (paste)="onOtpPaste($event)"
                     [disabled]="isLoading() || otpExpired"
+                    [attr.aria-label]="'Chiffre ' + ($index + 1) + ' sur ' + otpDigits.length"
                   />
                 }
               </div>
