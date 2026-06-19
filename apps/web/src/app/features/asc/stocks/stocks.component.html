@@ -36,20 +36,20 @@
   <div class="page-body">
 
     @if (successMessage()) {
-    <div class="bb-alert bb-alert--success">
-      <i class="pi pi-check-circle"></i> <span>{{ successMessage() }}</span>
+    <div class="bb-alert bb-alert--success" role="status" aria-live="polite">
+      <i class="pi pi-check-circle" aria-hidden="true"></i> <span>{{ successMessage() }}</span>
     </div>
     }
     @if (errorMessage()) {
-    <div class="bb-alert bb-alert--error">
-      <i class="pi pi-exclamation-circle"></i> <span>{{ errorMessage() }}</span>
+    <div class="bb-alert bb-alert--error" role="alert">
+      <i class="pi pi-exclamation-circle" aria-hidden="true"></i> <span>{{ errorMessage() }}</span>
     </div>
     }
 
     <!-- Alerte critique -->
     @if (stocksCritiques() > 0) {
-    <div class="bb-alert bb-alert--warning">
-      <i class="pi pi-exclamation-triangle"></i>
+    <div class="bb-alert bb-alert--warning" role="status" aria-live="polite">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
       <span>
         <strong>{{ stocksCritiques() }} {{ 'ASC.STOCKS.CRITICAL_ALERT' | translate }}</strong>
       </span>
@@ -61,6 +61,7 @@
       <p-iconfield>
         <p-inputicon styleClass="pi pi-search" />
         <input pInputText type="text" class="w-full" [placeholder]="'ASC.STOCKS.SEARCH_PH' | translate"
+          [attr.aria-label]="'ASC.STOCKS.SEARCH_PH' | translate"
           [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
       </p-iconfield>
     </div>
@@ -109,13 +110,13 @@
         <div class="stock-card__quantity">
           @if (editingId() === stock.id) {
           <div class="qty-edit">
-            <button class="qty-btn" (click)="editQuantite.update(v => Math.max(0, v - 1))">
-              <i class="pi pi-minus"></i>
+            <button class="qty-btn" (click)="editQuantite.update(v => Math.max(0, v - 1))" aria-label="Diminuer la quantité">
+              <i class="pi pi-minus" aria-hidden="true"></i>
             </button>
             <!-- ✅ -->
-            <p-inputNumber [ngModel]="editQuantite()" (ngModelChange)="editQuantite.set($event)"></p-inputNumber>
-            <button class="qty-btn" (click)="editQuantite.update(v => v + 1)">
-              <i class="pi pi-plus"></i>
+            <p-inputNumber [ngModel]="editQuantite()" (ngModelChange)="editQuantite.set($event)" ariaLabel="Quantité en stock"></p-inputNumber>
+            <button class="qty-btn" (click)="editQuantite.update(v => v + 1)" aria-label="Augmenter la quantité">
+              <i class="pi pi-plus" aria-hidden="true"></i>
             </button>
           </div>
           } @else {

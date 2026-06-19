@@ -42,17 +42,19 @@
       <button
         class="vue-btn"
         [class.vue-btn--active]="vue() === 'liste'"
+        [attr.aria-pressed]="vue() === 'liste'"
         (click)="vue.set('liste')"
       >
-        <i class="pi pi-list"></i>
+        <i class="pi pi-list" aria-hidden="true"></i>
         {{ 'ASC.PLANNING.VIEW_ALL' | translate }}
       </button>
       <button
         class="vue-btn"
         [class.vue-btn--active]="vue() === 'aujourd-hui'"
+        [attr.aria-pressed]="vue() === 'aujourd-hui'"
         (click)="vue.set('aujourd-hui')"
       >
-        <i class="pi pi-sun"></i>
+        <i class="pi pi-sun" aria-hidden="true"></i>
         {{ 'ASC.PLANNING.VIEW_TODAY' | translate }}
         @if (rdvAujourdhui() > 0) {
           <span class="vue-btn__badge">{{ rdvAujourdhui() }}</span>
@@ -110,6 +112,7 @@
                 <!-- Avatar -->
                 <div class="rdv-card__avatar"
                   [class.rdv-card__avatar--today]="isAujourdhui(rdv.date)"
+                  aria-hidden="true"
                 >
                   {{ getInitiales(rdv) }}
                 </div>

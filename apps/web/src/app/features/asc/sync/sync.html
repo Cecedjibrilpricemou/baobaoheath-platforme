@@ -30,15 +30,15 @@
     </div>
 
     @if (isSyncing()) {
-      <div class="sync-progress mb-4">
+      <div class="sync-progress mb-4" role="status" aria-live="polite">
         <p-progressBar [value]="syncProgress()" styleClass="w-full"></p-progressBar>
-        <p class="text-sm text-secondary mt-2 text-center">Envoi sécurisé des données au serveur central...</p>
+        <p class="text-sm text-secondary mt-2 text-center">Envoi sécurisé des données au serveur central... {{ syncProgress() }}%</p>
       </div>
     }
 
     @if (pendingItems().length === 0) {
       <div class="empty-state">
-        <i class="pi pi-check-circle text-green-500"></i>
+        <i class="pi pi-check-circle text-green-500" aria-hidden="true"></i>
         <h3>Toutes les données sont synchronisées</h3>
         <p class="text-secondary">Aucun élément en attente d'envoi.</p>
       </div>

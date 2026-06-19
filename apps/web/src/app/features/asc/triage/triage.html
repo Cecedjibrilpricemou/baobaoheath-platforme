@@ -10,19 +10,19 @@
   </div>
 
   <!-- WIZARD STEPS INDICATOR -->
-  <div class="wizard-steps">
-    <div class="step" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1">
-      <div class="step-circle">1</div>
+  <div class="wizard-steps" role="list" aria-label="Étapes du triage">
+    <div class="step" role="listitem" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1" [attr.aria-current]="currentStep() === 1 ? 'step' : null">
+      <div class="step-circle" aria-hidden="true">1</div>
       <span>Patient</span>
     </div>
-    <div class="step-line"></div>
-    <div class="step" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2">
-      <div class="step-circle">2</div>
+    <div class="step-line" aria-hidden="true"></div>
+    <div class="step" role="listitem" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2" [attr.aria-current]="currentStep() === 2 ? 'step' : null">
+      <div class="step-circle" aria-hidden="true">2</div>
       <span>Symptômes</span>
     </div>
-    <div class="step-line"></div>
-    <div class="step" [class.active]="currentStep() === 3">
-      <div class="step-circle"><i class="pi pi-sparkles"></i></div>
+    <div class="step-line" aria-hidden="true"></div>
+    <div class="step" role="listitem" [class.active]="currentStep() === 3" [attr.aria-current]="currentStep() === 3 ? 'step' : null">
+      <div class="step-circle" aria-hidden="true"><i class="pi pi-sparkles"></i></div>
       <span>Analyse IA</span>
     </div>
   </div>
@@ -37,8 +37,8 @@
         
         <div class="search-box">
           <span class="p-input-icon-left w-full">
-            <i class="pi pi-search"></i>
-            <input type="text" pInputText [(ngModel)]="patientRecherche" placeholder="Numéro de téléphone ou ID..." class="w-full" />
+            <i class="pi pi-search" aria-hidden="true"></i>
+            <input type="text" pInputText [(ngModel)]="patientRecherche" placeholder="Numéro de téléphone ou ID..." aria-label="Numéro de téléphone ou ID du patient" class="w-full" />
           </span>
           <p-button label="Rechercher" icon="pi pi-search" (onClick)="rechercherPatient()"></p-button>
         </div>
@@ -46,16 +46,22 @@
         @if (searchResults().length > 0) {
           <div class="search-results mt-4" style="display: flex; flex-direction: column; gap: 12px;">
             @for (p of searchResults(); track p.id) {
-              <div class="patient-card selectable" 
+              <div class="patient-card selectable"
+                   role="button"
+                   tabindex="0"
                    [class.selected]="patientData()?.id === p.id"
-                   (click)="selectPatient(p)">
-                <div class="patient-avatar">{{ getPatientInitiales(p) }}</div>
+                   [attr.aria-pressed]="patientData()?.id === p.id"
+                   [attr.aria-label]="getPatientNom(p) + ' — ' + getPatientDetails(p)"
+                   (click)="selectPatient(p)"
+                   (keydown.enter)="selectPatient(p)"
+                   (keydown.space)="$event.preventDefault(); selectPatient(p)">
+                <div class="patient-avatar" aria-hidden="true">{{ getPatientInitiales(p) }}</div>
                 <div class="patient-info">
                   <h3>{{ getPatientNom(p) }}</h3>
                   <p>{{ getPatientDetails(p) }}</p>
                 </div>
                 @if (patientData()?.id === p.id) {
-                  <i class="pi pi-check-circle text-primary text-2xl" style="color: var(--bb-primary);"></i>
+                  <i class="pi pi-check-circle text-primary text-2xl" style="color: var(--bb-primary);" aria-hidden="true"></i>
                 }
               </div>
             }
@@ -75,18 +81,18 @@
         
         <div class="form-grid mt-4">
           <div class="field">
-            <label>Symptômes observés</label>
-            <p-multiSelect [options]="symptomesList" [(ngModel)]="selectedSymptomes" defaultLabel="Sélectionner les symptômes" optionLabel="label" optionValue="value" display="chip" styleClass="w-full"></p-multiSelect>
-          </div>
-          
-          <div class="field">
-            <label>Température (°C) : {{ temperature() }}</label>
-            <p-slider [(ngModel)]="temperature" [min]="35" [max]="42" [step]="0.1" styleClass="w-full mt-2"></p-slider>
+            <label id="triage-symptomes-label" for="triage-symptomes">Symptômes observés</label>
+            <p-multiSelect inputId="triage-symptomes" [options]="symptomesList" [(ngModel)]="selectedSymptomes" defaultLabel="Sélectionner les symptômes" optionLabel="label" optionValue="value" display="chip" styleClass="w-full"></p-multiSelect>
           </div>
 
           <div class="field">
-            <label>Tension artérielle</label>
-            <input type="text" pInputText [(ngModel)]="tension" placeholder="Ex: 12/8" class="w-full" />
+            <label id="triage-temp-label">Température (°C) : {{ temperature() }}</label>
+            <p-slider [(ngModel)]="temperature" [min]="35" [max]="42" [step]="0.1" styleClass="w-full mt-2" [ariaLabelledBy]="'triage-temp-label'"></p-slider>
+          </div>
+
+          <div class="field">
+            <label for="triage-tension">Tension artérielle</label>
+            <input id="triage-tension" type="text" pInputText [(ngModel)]="tension" placeholder="Ex: 12/8" class="w-full" />
           </div>
         </div>
 
@@ -102,15 +108,15 @@
       <div class="step-panel ia-panel">
         
         @if (isAnalysing()) {
-          <div class="ia-loading">
-            <div class="pulse-ring"></div>
-            <i class="pi pi-sparkles ia-icon"></i>
+          <div class="ia-loading" role="status" aria-live="polite">
+            <div class="pulse-ring" aria-hidden="true"></div>
+            <i class="pi pi-sparkles ia-icon" aria-hidden="true"></i>
             <h2>BaoBao IA analyse les données...</h2>
             <p-progressBar [value]="iaProgress()" styleClass="w-full mt-4"></p-progressBar>
-            <p class="mt-2 text-secondary">Comparaison avec les directives OMS en cours...</p>
+            <p class="mt-2 text-secondary">Comparaison avec les directives OMS en cours... {{ iaProgress() }}%</p>
           </div>
         } @else if (analysisResult()) {
-          <div class="ia-result">
+          <div class="ia-result" role="status" aria-live="polite">
             <div class="result-header" [ngClass]="{'bg-red': analysisResult()?.score! > 60, 'bg-orange': analysisResult()?.score! > 30 && analysisResult()?.score! <= 60, 'bg-green': analysisResult()?.score! <= 30}">
               <div class="score-circle">
                 <span>{{ analysisResult()?.score }}</span>
@@ -123,10 +129,10 @@
             </div>
 
             <div class="recommendations">
-              <h3><i class="pi pi-list"></i> Recommandations de l'IA</h3>
+              <h3><i class="pi pi-list" aria-hidden="true"></i> Recommandations de l'IA</h3>
               <ul>
                 @for (rec of analysisResult()?.recommendations; track rec) {
-                  <li><i class="pi pi-check-circle"></i> {{ rec }}</li>
+                  <li><i class="pi pi-check-circle" aria-hidden="true"></i> {{ rec }}</li>
                 }
               </ul>
             </div>

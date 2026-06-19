@@ -4,18 +4,18 @@
   <!-- ── Modal confirmation clôture ───────────────────────── -->
   @if (showCloseConfirm()) {
     <div class="bb-logout-overlay" (click)="showCloseConfirm.set(false)">
-      <div class="bb-logout-modal" (click)="$event.stopPropagation()">
+      <div class="bb-logout-modal" role="dialog" aria-modal="true" aria-labelledby="close-confirm-title" aria-describedby="close-confirm-text" (click)="$event.stopPropagation()">
         <div class="bb-logout-modal__icon" style="background:#FEF9C3">
-          <i class="pi pi-check-circle" style="color:#CA8A04"></i>
+          <i class="pi pi-check-circle" style="color:#CA8A04" aria-hidden="true"></i>
         </div>
-        <h3 class="bb-logout-modal__title">Clôturer la consultation ?</h3>
-        <p class="bb-logout-modal__text">Cette action est irréversible. La consultation passera en statut "Terminée".</p>
+        <h3 id="close-confirm-title" class="bb-logout-modal__title">Clôturer la consultation ?</h3>
+        <p id="close-confirm-text" class="bb-logout-modal__text">Cette action est irréversible. La consultation passera en statut "Terminée".</p>
         <div class="bb-logout-modal__actions">
           <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="showCloseConfirm.set(false)">
             Annuler
           </button>
           <button class="bb-logout-modal__btn" style="background:#16A34A;color:#fff;flex:1" (click)="closeConsultation()">
-            <i class="pi pi-check"></i> Confirmer
+            <i class="pi pi-check" aria-hidden="true"></i> Confirmer
           </button>
         </div>
       </div>
@@ -34,7 +34,7 @@
     } @else if (consultation()) {
       <div class="bb-detail__header-content">
         <div class="bb-detail__patient">
-          <div class="bb-detail__avatar">{{ getInitiales() }}</div>
+          <div class="bb-detail__avatar" aria-hidden="true">{{ getInitiales() }}</div>
           <div>
             <h1 class="bb-detail__patient-name">{{ getPatientNom() }}</h1>
             <p class="bb-detail__patient-phone">{{ consultation()?.patient?.utilisateur?.telephone }}</p>
@@ -83,13 +83,13 @@
 
   <!-- ── Messages globaux ──────────────────────────────────── -->
   @if (successMessage()) {
-    <div class="bb-detail__alert bb-detail__alert--success">
-      <i class="pi pi-check-circle"></i> {{ successMessage() }}
+    <div class="bb-detail__alert bb-detail__alert--success" role="status" aria-live="polite">
+      <i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMessage() }}
     </div>
   }
   @if (errorMessage()) {
-    <div class="bb-detail__alert bb-detail__alert--error">
-      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    <div class="bb-detail__alert bb-detail__alert--error" role="alert">
+      <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMessage() }}
     </div>
   }
 
@@ -98,9 +98,10 @@
     <button
       class="bb-detail__tab"
       [class.bb-detail__tab--active]="activeSection() === 'vitals'"
+      [attr.aria-pressed]="activeSection() === 'vitals'"
       (click)="activeSection.set('vitals')"
     >
-      <i class="pi pi-heart-fill"></i> Constantes vitales
+      <i class="pi pi-heart-fill" aria-hidden="true"></i> Constantes vitales
       @if (consultation()?.constantes) {
         <span class="bb-detail__tab-badge">✓</span>
       }
@@ -108,9 +109,10 @@
     <button
       class="bb-detail__tab"
       [class.bb-detail__tab--active]="activeSection() === 'diagnostics'"
+      [attr.aria-pressed]="activeSection() === 'diagnostics'"
       (click)="activeSection.set('diagnostics')"
     >
-      <i class="pi pi-search"></i> Diagnostics
+      <i class="pi pi-search" aria-hidden="true"></i> Diagnostics
       @if (consultation()?.diagnostics?.length) {
         <span class="bb-detail__tab-badge">{{ consultation()!.diagnostics.length }}</span>
       }
@@ -118,9 +120,10 @@
     <button
       class="bb-detail__tab"
       [class.bb-detail__tab--active]="activeSection() === 'ordonnances'"
+      [attr.aria-pressed]="activeSection() === 'ordonnances'"
       (click)="activeSection.set('ordonnances')"
     >
-      <i class="pi pi-file-edit"></i> Ordonnances
+      <i class="pi pi-file-edit" aria-hidden="true"></i> Ordonnances
       @if (consultation()?.ordonnances?.length) {
         <span class="bb-detail__tab-badge">{{ consultation()!.ordonnances.length }}</span>
       }
@@ -128,9 +131,10 @@
     <button
       class="bb-detail__tab"
       [class.bb-detail__tab--active]="activeSection() === 'referral'"
+      [attr.aria-pressed]="activeSection() === 'referral'"
       (click)="activeSection.set('referral')"
     >
-      <i class="pi pi-send"></i> Référencement
+      <i class="pi pi-send" aria-hidden="true"></i> Référencement
       @if (consultation()?.referencement) {
         <span class="bb-detail__tab-badge">✓</span>
       }
@@ -143,8 +147,8 @@
 
       <!-- Alertes automatiques backend -->
       @if (consultation()?.constantes?.alertes?.length) {
-        <div class="bb-detail__alertes">
-          <p class="bb-detail__alertes-title"><i class="pi pi-exclamation-triangle"></i> Alertes détectées</p>
+        <div class="bb-detail__alertes" role="alert">
+          <p class="bb-detail__alertes-title"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Alertes détectées</p>
           @for (alerte of consultation()!.constantes!.alertes!; track alerte) {
             <span class="bb-detail__alerte-item">{{ alerte }}</span>
           }
@@ -153,10 +157,10 @@
 
       <!-- Alertes cliniques temps réel -->
       @if (vitalsAlerts().length) {
-        <div class="bb-detail__realtime-alerts">
+        <div class="bb-detail__realtime-alerts" role="alert" aria-live="assertive">
           @for (alert of vitalsAlerts(); track alert.message) {
             <div class="bb-detail__realtime-alert" [class.bb-detail__realtime-alert--danger]="alert.level === 'danger'" [class.bb-detail__realtime-alert--warn]="alert.level === 'warn'">
-              <i [class]="alert.level === 'danger' ? 'pi pi-times-circle' : 'pi pi-exclamation-triangle'"></i>
+              <i [class]="alert.level === 'danger' ? 'pi pi-times-circle' : 'pi pi-exclamation-triangle'" aria-hidden="true"></i>
               {{ alert.message }}
             </div>
           }
@@ -165,44 +169,44 @@
 
       <div class="bb-detail__vitals-grid">
         <div class="bb-detail__vital-field">
-          <label>🌡️ Température (°C)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.temperature" (ngModelChange)="onVitalsChange()" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="Ex: 37.5" [disabled]="isConsultationTerminee()" />
+          <label for="vital-temperature">🌡️ Température (°C)</label>
+          <p-inputnumber inputId="vital-temperature" [(ngModel)]="vitalsForm.temperature" (ngModelChange)="onVitalsChange()" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="Ex: 37.5" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>⚖️ Poids (kg)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.poidsKg" [min]="0" [max]="300" [minFractionDigits]="1" placeholder="Ex: 65.0" [disabled]="isConsultationTerminee()" />
+          <label for="vital-poids">⚖️ Poids (kg)</label>
+          <p-inputnumber inputId="vital-poids" [(ngModel)]="vitalsForm.poidsKg" [min]="0" [max]="300" [minFractionDigits]="1" placeholder="Ex: 65.0" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>📏 Taille (cm)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.tailleCm" [min]="0" [max]="250" placeholder="Ex: 170" [disabled]="isConsultationTerminee()" />
+          <label for="vital-taille">📏 Taille (cm)</label>
+          <p-inputnumber inputId="vital-taille" [(ngModel)]="vitalsForm.tailleCm" [min]="0" [max]="250" placeholder="Ex: 170" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>💪 Périmètre brachial (cm)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.perimetreBrachial" [min]="0" [max]="50" [minFractionDigits]="1" placeholder="Ex: 13.5" [disabled]="isConsultationTerminee()" />
+          <label for="vital-perimetre">💪 Périmètre brachial (cm)</label>
+          <p-inputnumber inputId="vital-perimetre" [(ngModel)]="vitalsForm.perimetreBrachial" [min]="0" [max]="50" [minFractionDigits]="1" placeholder="Ex: 13.5" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>🩺 Tension systolique (mmHg)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.tensionSystolique" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 120" [disabled]="isConsultationTerminee()" />
+          <label for="vital-tension-sys">🩺 Tension systolique (mmHg)</label>
+          <p-inputnumber inputId="vital-tension-sys" [(ngModel)]="vitalsForm.tensionSystolique" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 120" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>🩺 Tension diastolique (mmHg)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.tensionDiastolique" [min]="0" [max]="200" placeholder="Ex: 80" [disabled]="isConsultationTerminee()" />
+          <label for="vital-tension-dia">🩺 Tension diastolique (mmHg)</label>
+          <p-inputnumber inputId="vital-tension-dia" [(ngModel)]="vitalsForm.tensionDiastolique" [min]="0" [max]="200" placeholder="Ex: 80" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>❤️ Fréquence cardiaque (bpm)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.frequenceCardiaque" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 72" [disabled]="isConsultationTerminee()" />
+          <label for="vital-fc">❤️ Fréquence cardiaque (bpm)</label>
+          <p-inputnumber inputId="vital-fc" [(ngModel)]="vitalsForm.frequenceCardiaque" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 72" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>💨 Fréquence respiratoire (/min)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.frequenceRespiratoire" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" placeholder="Ex: 18" [disabled]="isConsultationTerminee()" />
+          <label for="vital-fr">💨 Fréquence respiratoire (/min)</label>
+          <p-inputnumber inputId="vital-fr" [(ngModel)]="vitalsForm.frequenceRespiratoire" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" placeholder="Ex: 18" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>🩸 SpO2 (%)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.spo2" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [minFractionDigits]="1" placeholder="Ex: 98.0" [disabled]="isConsultationTerminee()" />
+          <label for="vital-spo2">🩸 SpO2 (%)</label>
+          <p-inputnumber inputId="vital-spo2" [(ngModel)]="vitalsForm.spo2" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [minFractionDigits]="1" placeholder="Ex: 98.0" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label>🍬 Glycémie (g/L)</label>
-          <p-inputnumber [(ngModel)]="vitalsForm.glycemie" (ngModelChange)="onVitalsChange()" [min]="0" [max]="10" [minFractionDigits]="2" placeholder="Ex: 0.90" [disabled]="isConsultationTerminee()" />
+          <label for="vital-glycemie">🍬 Glycémie (g/L)</label>
+          <p-inputnumber inputId="vital-glycemie" [(ngModel)]="vitalsForm.glycemie" (ngModelChange)="onVitalsChange()" [min]="0" [max]="10" [minFractionDigits]="2" placeholder="Ex: 0.90" [disabled]="isConsultationTerminee()" />
         </div>
       </div>
 
@@ -246,16 +250,17 @@
           <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> Ajouter un diagnostic</h3>
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label>Libellé *</label>
-              <input pInputText [(ngModel)]="diagnosticForm.libelle" placeholder="Ex: Paludisme simple, Malnutrition aiguë..." />
+              <label for="diag-libelle">Libellé *</label>
+              <input id="diag-libelle" pInputText [(ngModel)]="diagnosticForm.libelle" placeholder="Ex: Paludisme simple, Malnutrition aiguë..." />
             </div>
             <div class="bb-detail__form-field">
-              <label>Code ICD-11</label>
-              <input pInputText [(ngModel)]="diagnosticForm.codeIcd11" placeholder="Ex: 1F40" />
+              <label for="diag-icd11">Code ICD-11</label>
+              <input id="diag-icd11" pInputText [(ngModel)]="diagnosticForm.codeIcd11" placeholder="Ex: 1F40" />
             </div>
             <div class="bb-detail__form-field">
-              <label>Type</label>
+              <label id="diag-type-label" for="diag-type">Type</label>
               <p-select
+                inputId="diag-type"
                 [(ngModel)]="diagnosticForm.typeDiagnostic"
                 [options]="typesDiagnostic"
                 optionLabel="label"
@@ -263,8 +268,9 @@
               />
             </div>
             <div class="bb-detail__form-field">
-              <label>Sévérité</label>
+              <label id="diag-severite-label" for="diag-severite">Sévérité</label>
               <p-select
+                inputId="diag-severite"
                 [(ngModel)]="diagnosticForm.severite"
                 [options]="severites"
                 optionLabel="label"
@@ -313,8 +319,9 @@
           <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> Ajouter une ordonnance</h3>
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label>Médicament *</label>
+              <label id="ordo-medicament-label" for="ordo-medicament">Médicament *</label>
               <p-select
+                inputId="ordo-medicament"
                 [(ngModel)]="ordonnanceForm.idMedicament"
                 [options]="medicaments()"
                 [optionLabel]="'dci'"
@@ -325,20 +332,20 @@
               />
             </div>
             <div class="bb-detail__form-field">
-              <label>Posologie *</label>
-              <input pInputText [(ngModel)]="ordonnanceForm.posologie" placeholder="Ex: 1 comprimé" />
+              <label for="ordo-posologie">Posologie *</label>
+              <input id="ordo-posologie" pInputText [(ngModel)]="ordonnanceForm.posologie" placeholder="Ex: 1 comprimé" />
             </div>
             <div class="bb-detail__form-field">
-              <label>Fréquence *</label>
-              <input pInputText [(ngModel)]="ordonnanceForm.frequence" placeholder="Ex: 3x/jour" />
+              <label for="ordo-frequence">Fréquence *</label>
+              <input id="ordo-frequence" pInputText [(ngModel)]="ordonnanceForm.frequence" placeholder="Ex: 3x/jour" />
             </div>
             <div class="bb-detail__form-field">
-              <label>Durée (jours)</label>
-              <p-inputnumber [(ngModel)]="ordonnanceForm.dureeJours" [min]="1" [max]="365" />
+              <label for="ordo-duree">Durée (jours)</label>
+              <p-inputnumber inputId="ordo-duree" [(ngModel)]="ordonnanceForm.dureeJours" [min]="1" [max]="365" />
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label>Instructions particulières</label>
-              <textarea pTextarea [(ngModel)]="ordonnanceForm.instructions" placeholder="Ex: À prendre pendant les repas..." rows="2"></textarea>
+              <label for="ordo-instructions">Instructions particulières</label>
+              <textarea pTextarea id="ordo-instructions" [(ngModel)]="ordonnanceForm.instructions" placeholder="Ex: À prendre pendant les repas..." rows="2"></textarea>
             </div>
           </div>
           <button class="bb-detail__submit-btn" (click)="saveOrdonnance()" [disabled]="isSavingOrdonnance() || !ordonnanceForm.idMedicament">
@@ -381,8 +388,9 @@
           <p class="bb-detail__form-note">Le référencement changera le statut de la consultation en "Référencée".</p>
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label>Structure de santé cible *</label>
+              <label id="ref-structure-label" for="ref-structure">Structure de santé cible *</label>
               <p-select
+                inputId="ref-structure"
                 [(ngModel)]="referralForm.idStructureCible"
                 [options]="structures()"
                 optionLabel="nom"
@@ -393,8 +401,9 @@
               />
             </div>
             <div class="bb-detail__form-field">
-              <label>Niveau d'urgence</label>
+              <label id="ref-urgence-label" for="ref-urgence">Niveau d'urgence</label>
               <p-select
+                inputId="ref-urgence"
                 [(ngModel)]="referralForm.urgence"
                 [options]="urgences"
                 optionLabel="label"
@@ -402,8 +411,8 @@
               />
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label>Résumé clinique *</label>
-              <textarea pTextarea [(ngModel)]="referralForm.resumeClinique" placeholder="Résumé de l'état clinique du patient et motif du référencement..." rows="4"></textarea>
+              <label for="ref-resume">Résumé clinique *</label>
+              <textarea pTextarea id="ref-resume" [(ngModel)]="referralForm.resumeClinique" placeholder="Résumé de l'état clinique du patient et motif du référencement..." rows="4"></textarea>
             </div>
           </div>
           <button
