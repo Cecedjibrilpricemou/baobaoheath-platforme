@@ -41,9 +41,10 @@ async function main() {
   // 3. Pharmacien
   const pharmacienUser = await prisma.utilisateur.upsert({
     where: { telephone: '600000004' },
-    update: {},
+    update: { email: 'lunaire.diallo@baobaohealth.test' },
     create: {
       telephone: '600000004',
+      email: 'lunaire.diallo@baobaohealth.test',
       motDePasseHash,
       prenom: 'Lunaire',
       nom: 'Diallo',
@@ -65,9 +66,10 @@ async function main() {
   // 4. Medecin
   const medecinUser = await prisma.utilisateur.upsert({
     where: { telephone: '600000003' },
-    update: {},
+    update: { email: 'alpha.barry@baobaohealth.test' },
     create: {
       telephone: '600000003',
+      email: 'alpha.barry@baobaohealth.test',
       motDePasseHash,
       prenom: 'Dr. Alpha',
       nom: 'Barry',

@@ -151,6 +151,7 @@ export const reapprovisionnerStockSchema = z.object({
 
 export const delivrerOrdonnanceSchema = z.object({
   modePaiement: z.enum(['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO']).optional(),
+  quantiteDelivree: z.coerce.number().int().positive().optional(),
 }).strict();
 
 export const createConsultationSchema = z.object({

@@ -44,9 +44,13 @@ export async function scanPatient(qrCode: string, pharmacienId: string) {
       consultations: {
         where: { statut: 'TERMINEE' },
         include: {
+          asc: { include: { utilisateur: { select: { prenom: true, nom: true } } } },
           ordonnances: {
             where: { statut: StatutOrdonnance.EN_ATTENTE },
-            include: { medicament: true },
+            include: {
+              medicament: true,
+              signataire: { select: { prenom: true, nom: true } },
+            },
           },
         },
         orderBy: { consulteeLE: 'desc' },
@@ -55,13 +59,48 @@ export async function scanPatient(qrCode: string, pharmacienId: string) {
     },
   });
   if (!patient) throw new Error('Patient non trouve');
-  return patient;
+
+  const ordonnances = patient.consultations.flatMap((c) =>
+    c.ordonnances.map((o) => {
+      const signataire = o.signataire ?? c.asc?.utilisateur;
+      const medecinNom = signataire ? `${signataire.prenom} ${signataire.nom}` : 'Inconnu';
+      const alerteAllergie = patient.allergies.some(
+        (a) => a.toLowerCase() === o.medicament.dci.toLowerCase() ||
+          (o.medicament.nomCommercial && a.toLowerCase() === o.medicament.nomCommercial.toLowerCase())
+      );
+      return {
+        id: o.id,
+        posologie: o.posologie,
+        frequence: o.frequence,
+        dureeJours: o.dureeJours,
+        quantite: o.quantite,
+        statut: o.statut,
+        signeLe: (o.signeLe ?? o.creeLe).toISOString(),
+        medecinNom,
+        medicament: o.medicament,
+        prixTotalGnf: o.quantite * o.medicament.prixUnitaireGnf,
+        alerteAllergie,
+      };
+    })
+  );
+
+  return {
+    patient: {
+      prenom: patient.utilisateur.prenom,
+      nom: patient.utilisateur.nom,
+      dateNaissance: patient.dateNaissance.toISOString(),
+      groupeSanguin: patient.groupeSanguin ?? undefined,
+      allergiesCritiques: patient.allergies,
+    },
+    ordonnances,
+    totalOrdonnances: ordonnances.length,
+  };
 }
 
 export async function delivrerOrdonnance(
   ordonnanceId: string,
   pharmacienId: string,
-  _dto: { modePaiement?: string }
+  dto: { modePaiement?: string; quantiteDelivree?: number }
 ) {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
 
@@ -72,6 +111,11 @@ export async function delivrerOrdonnance(
   if (!ordonnance) throw new Error('Ordonnance non trouvee');
   if (ordonnance.statut !== StatutOrdonnance.EN_ATTENTE) {
     throw new Error('Cette ordonnance ne peut plus etre delivree');
+  }
+
+  const quantiteDelivree = dto.quantiteDelivree ?? ordonnance.quantite;
+  if (quantiteDelivree > ordonnance.quantite) {
+    throw new Error('La quantite delivree ne peut pas depasser la quantite prescrite');
   }
 
   const stock = await prisma.stock.findFirst({
@@ -85,8 +129,8 @@ export async function delivrerOrdonnance(
   const updatedOrdonnance = await prisma.$transaction(async (tx) => {
     // Atomic check-and-decrement: fails if quantity dropped below threshold since we checked
     const decremented = await tx.stock.updateMany({
-      where: { id: stock.id, quantite: { gte: ordonnance.quantite } },
-      data: { quantite: { decrement: ordonnance.quantite } },
+      where: { id: stock.id, quantite: { gte: quantiteDelivree } },
+      data: { quantite: { decrement: quantiteDelivree } },
     });
     if (decremented.count === 0) throw new Error('Stock insuffisant pour delivrer cette ordonnance');
 
@@ -97,7 +141,11 @@ export async function delivrerOrdonnance(
     });
   });
 
-  return updatedOrdonnance;
+  return {
+    ...updatedOrdonnance,
+    quantiteDelivree,
+    montantGnf: quantiteDelivree * updatedOrdonnance.medicament.prixUnitaireGnf,
+  };
 }
 
 export async function getStocksPharmacie(pharmacienId: string) {
