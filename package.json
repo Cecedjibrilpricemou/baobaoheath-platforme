@@ -10,7 +10,9 @@
       "dev": "concurrently \"npm run api\" \"npm run web\"",
       "build:api": "npm run build --workspace=apps/api",
       "build:web": "npm run build --workspace=apps/web",
-      "format": "prettier --write ."
+      "format": "prettier --write .",
+      "backup:db": "bash scripts/backup-db.sh",
+      "restore:db": "bash scripts/restore-db.sh"
     },
     "devDependencies": {
       "concurrently": "^9.1.2",
