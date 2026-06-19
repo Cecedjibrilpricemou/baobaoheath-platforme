@@ -4,7 +4,7 @@
   <!-- ── HEADER ─────────────────────────────────────────────── -->
   <div class="bb-med-dash__header">
     <div class="bb-med-dash__header-left">
-      <div class="bb-med-dash__avatar">{{ getInitiales() }}</div>
+      <div class="bb-med-dash__avatar" aria-hidden="true">{{ getInitiales() }}</div>
       <div class="bb-med-dash__header-text">
         <h1 class="bb-med-dash__title">
           Bonjour Dr. {{ currentUser()?.prenom }} {{ currentUser()?.nom }}

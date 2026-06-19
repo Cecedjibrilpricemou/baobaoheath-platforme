@@ -11,13 +11,13 @@
 
   <!-- Messages -->
   @if (successMessage()) {
-    <div class="bb-med-cons__alert bb-med-cons__alert--success">
-      <i class="pi pi-check-circle"></i> {{ successMessage() }}
+    <div class="bb-med-cons__alert bb-med-cons__alert--success" role="status" aria-live="polite">
+      <i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMessage() }}
     </div>
   }
   @if (errorMessage()) {
-    <div class="bb-med-cons__alert bb-med-cons__alert--error">
-      <i class="pi pi-times-circle"></i> {{ errorMessage() }}
+    <div class="bb-med-cons__alert bb-med-cons__alert--error" role="alert">
+      <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMessage() }}
     </div>
   }
 
@@ -39,21 +39,27 @@
         @for (c of consultations(); track c.id) {
           <div
             class="bb-med-cons__item"
+            role="button"
+            tabindex="0"
             [class.bb-med-cons__item--active]="selected()?.id === c.id"
+            [attr.aria-pressed]="selected()?.id === c.id"
+            [attr.aria-label]="getPatientNom(c) + ' — ' + c.motifPrincipal"
             (click)="selectionner(c)"
+            (keydown.enter)="selectionner(c)"
+            (keydown.space)="$event.preventDefault(); selectionner(c)"
           >
-            <div class="bb-med-cons__item-avatar">
+            <div class="bb-med-cons__item-avatar" aria-hidden="true">
               {{ getInitiales(c) }}
             </div>
             <div class="bb-med-cons__item-info">
               <p class="bb-med-cons__item-patient">{{ getPatientNom(c) }}</p>
               <p class="bb-med-cons__item-motif">{{ c.motifPrincipal }}</p>
               <p class="bb-med-cons__item-meta">
-                <i class="pi pi-user"></i> ASC : {{ getAscNom(c) }} ·
+                <i class="pi pi-user" aria-hidden="true"></i> ASC : {{ getAscNom(c) }} ·
                 {{ formatDate(c.consulteeLE) }}
               </p>
             </div>
-            <i class="pi pi-chevron-right"></i>
+            <i class="pi pi-chevron-right" aria-hidden="true"></i>
           </div>
         }
       }
@@ -83,7 +89,7 @@
           <div class="bb-med-cons__block">
             <h3 class="bb-med-cons__block-title"><i class="pi pi-heart-fill"></i> Constantes vitales</h3>
             @if (selected()!.constantes!.alertes?.length) {
-              <div class="bb-med-cons__alertes">
+              <div class="bb-med-cons__alertes" role="alert">
                 @for (a of selected()!.constantes!.alertes!; track a) {
                   <span class="bb-med-cons__alerte">⚠️ {{ a }}</span>
                 }
@@ -134,11 +140,11 @@
                 [class.bb-med-cons__ordo--selected]="isOrdonnanceSelectionnee(o.id)"
                 (click)="toggleOrdonnance(o.id)"
               >
-                <input type="checkbox" [checked]="isOrdonnanceSelectionnee(o.id)" (click)="$event.stopPropagation()" />
-                <div>
+                <input type="checkbox" [id]="'ordo-check-' + o.id" [checked]="isOrdonnanceSelectionnee(o.id)" (click)="$event.stopPropagation()" (change)="toggleOrdonnance(o.id)" />
+                <label [for]="'ordo-check-' + o.id" (click)="$event.stopPropagation()">
                   <p class="bb-med-cons__ordo-med">{{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}</p>
                   <p class="bb-med-cons__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j</p>
-                </div>
+                </label>
               </div>
             }
           </div>
@@ -146,11 +152,12 @@
 
         <!-- Notes médecin -->
         <div class="bb-med-cons__block">
-          <h3 class="bb-med-cons__block-title"><i class="pi pi-pencil"></i> Notes médicales</h3>
+          <h3 id="notes-medecin-title" class="bb-med-cons__block-title"><i class="pi pi-pencil" aria-hidden="true"></i> Notes médicales</h3>
           <textarea
             pTextarea
             [(ngModel)]="notesMedecin"
             placeholder="Ajoutez vos observations médicales, recommandations..."
+            aria-labelledby="notes-medecin-title"
             rows="4"
             style="width:100%"
           ></textarea>
@@ -158,7 +165,7 @@
 
         <!-- Bouton valider -->
         <button class="bb-med-cons__valider-btn" (click)="valider()" [disabled]="isValidating()">
-          <i class="pi pi-check-circle"></i>
+          <i class="pi pi-check-circle" aria-hidden="true"></i>
           {{ isValidating() ? 'Validation...' : 'Valider la consultation' }}
         </button>
       </div>
