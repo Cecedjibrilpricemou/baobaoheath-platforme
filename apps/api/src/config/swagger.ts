@@ -1,5 +1,6 @@
 import { Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
+import { logger } from './logger';
 
 export const swaggerDocument = {
   openapi: '3.0.0',
@@ -975,7 +976,7 @@ export function setupSwagger(app: Express): void {
     })
   );
 
-  console.log(
+  logger.debug(
     `Documentation API : http://localhost:${process.env.PORT ?? 3000}/api/docs`
   );
 }

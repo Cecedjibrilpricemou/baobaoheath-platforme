@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/app-error';
+import { logger } from '../config/logger';
 
 /**
  * Middleware global de gestion des erreurs.
@@ -14,11 +15,12 @@ import { AppError } from '../utils/app-error';
  */
 export function globalErrorHandler(
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void {
   if (err instanceof AppError) {
+    logger.warn(`${req.method} ${req.originalUrl} -> ${err.statusCode} ${err.message}`);
     res.status(err.statusCode).json({
       success: false,
       error: err.message,
@@ -27,7 +29,7 @@ export function globalErrorHandler(
   }
 
   // Erreurs inattendues (bugs, erreurs Prisma, etc.)
-  console.error('[ERREUR NON GEREE]', err.stack ?? err.message);
+  logger.error(`Erreur non geree: ${req.method} ${req.originalUrl}`, { stack: err.stack ?? err.message });
 
   res.status(500).json({
     success: false,

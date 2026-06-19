@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import { prisma } from '../config/prisma';
+import { logger } from '../config/logger';
 import {
     SendSmsDto,
     SendNotificationDto,
@@ -13,7 +14,7 @@ async function mockSendSms(
     message: string
 ): Promise<{ messageId: string; statut: string }> {
     await new Promise((r) => setTimeout(r, 300));
-    console.log(`[SMS MOCK] → ${telephone}: ${message}`);
+    logger.debug(`[SMS MOCK] -> ${telephone}: ${message}`);
     return {
         messageId: `AT-${Date.now()}-${randomBytes(2).readUInt16BE(0)}`,
         statut: 'ENVOYE',

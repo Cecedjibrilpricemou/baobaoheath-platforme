@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { hashPassword } from '../utils/password.utils';
 import { Role, TypeStructure } from '../config/generated/client/client';
 import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
+import { logger } from '../config/logger';
 
 const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN];
 
@@ -76,7 +77,7 @@ export async function creerStructureAvecAdmin(dto: {
             });
         } catch (emailError) {
             // L'email échoue silencieusement — le compte est quand même créé
-            console.error('Erreur envoi email admin structure:', emailError);
+            logger.error('Erreur envoi email admin structure', { error: emailError });
         }
     }
 
@@ -160,7 +161,7 @@ export async function creerPharmacieAvecPharmacien(dto: {
                 motDePasseTemporaire: motDePasseTemp
             });
         } catch (emailError) {
-            console.error('Erreur envoi email pharmacien responsable:', emailError);
+            logger.error('Erreur envoi email pharmacien responsable', { error: emailError });
         }
     }
 
@@ -293,7 +294,7 @@ export async function creerAgent(adminId: string, dto: {
                 motDePasseTemporaire: motDePasseTemp
             });
         } catch (emailError) {
-            console.error('Erreur envoi email agent:', emailError);
+            logger.error('Erreur envoi email agent', { error: emailError });
         }
     }
 

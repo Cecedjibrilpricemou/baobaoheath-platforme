@@ -3,6 +3,7 @@ import { verifyAccessToken } from '../utils/jwt.utils';
 import { JwtPayload } from '../types/auth.types';
 import { prisma } from '../config/prisma';
 import { UnauthorizedError } from '../utils/app-error';
+import { setContextUserId } from '../utils/request-context';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
@@ -44,6 +45,7 @@ export async function authenticate(
       role: session.utilisateur.role,
       sessionId: session.id,
     };
+    setContextUserId(session.utilisateur.id);
     next();
   } catch {
     next(new UnauthorizedError('Token expiré ou invalide'));

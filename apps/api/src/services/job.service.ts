@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { detecterEtPersisterAlertesEpidemiques } from './analytics.service';
 import { verifierRappelsAEnvoyer } from './notification.service';
 import { expirerSessionsUssd } from './ussd.service';
+import { logger } from '../config/logger';
 
 let started = false;
 let redis: Redis | undefined;
@@ -31,7 +32,7 @@ export function startBackgroundJobs() {
   if (process.env.REDIS_URL) {
     redis = new Redis(process.env.REDIS_URL, { lazyConnect: true });
     redis.connect().catch((error: unknown) => {
-      console.warn('Redis indisponible, jobs en mode local', error);
+      logger.warn('Redis indisponible, jobs en mode local', { error });
       redis = undefined;
     });
   }
@@ -41,27 +42,27 @@ export function startBackgroundJobs() {
       const result = await verifierRappelsAEnvoyer();
       const hasWork = result.rendezVousARappeler > 0 || result.vaccinationsARappeler > 0;
       if (hasWork || isVerboseJobsEnabled()) {
-        console.log('[JOB] rappels verifies', result);
+        logger.info('[JOB] rappels verifies', result);
       }
-    }).catch((error: unknown) => console.error('[JOB] rappels failed', error));
+    }).catch((error: unknown) => logger.error('[JOB] rappels failed', { error }));
   };
 
   const runAlertes = () => {
     void withOptionalRedisLock('alertes-epidemiques', async () => {
       const result = await detecterEtPersisterAlertesEpidemiques();
       if (result.total > 0 || isVerboseJobsEnabled()) {
-        console.log('[JOB] alertes epidemiques', { total: result.total });
+        logger.info('[JOB] alertes epidemiques', { total: result.total });
       }
-    }).catch((error: unknown) => console.error('[JOB] alertes failed', error));
+    }).catch((error: unknown) => logger.error('[JOB] alertes failed', { error }));
   };
 
   const runUssdCleanup = () => {
     void withOptionalRedisLock('ussd-cleanup', async () => {
       const result = await expirerSessionsUssd();
       if (result.count > 0 || isVerboseJobsEnabled()) {
-        console.log('[JOB] sessions ussd expirees', { count: result.count });
+        logger.info('[JOB] sessions ussd expirees', { count: result.count });
       }
-    }).catch((error: unknown) => console.error('[JOB] ussd cleanup failed', error));
+    }).catch((error: unknown) => logger.error('[JOB] ussd cleanup failed', { error }));
   };
 
   runRappels();

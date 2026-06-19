@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logger } from '../config/logger';
+import { getRequestId } from '../utils/request-context';
 
 const SENSITIVE_KEYS = new Set([
   'motDePasse',
@@ -55,6 +57,7 @@ export function auditRequest(req: AuthRequest, res: Response, next: NextFunction
         ipAdresse: req.ip,
         userAgent: req.get('user-agent'),
         metadonnees: sanitize({
+          requestId: getRequestId(),
           statusCode: res.statusCode,
           originalUrl: req.originalUrl,
           params: req.params,
@@ -63,7 +66,7 @@ export function auditRequest(req: AuthRequest, res: Response, next: NextFunction
         }) as object,
       },
     }).catch((error: unknown) => {
-      console.error('Audit log failed', error);
+      logger.error('Audit log failed', { error });
     });
   });
 

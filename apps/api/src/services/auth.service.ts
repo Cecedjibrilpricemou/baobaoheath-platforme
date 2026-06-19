@@ -13,6 +13,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../utils/app-error';
+import { logger } from '../config/logger';
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const OTP_TTL_MINUTES = 10;
@@ -143,7 +144,7 @@ export async function login(dto: LoginDto): Promise<LoginResult> {
       expireDansMinutes: OTP_TTL_MINUTES,
     });
   } catch (error: unknown) {
-    console.error('[AUTH OTP] Envoi email echoue', {
+    logger.error('[AUTH OTP] Envoi email echoue', {
       email: utilisateur.email,
       error: error instanceof Error ? error.message : error,
     });
@@ -154,7 +155,7 @@ export async function login(dto: LoginDto): Promise<LoginResult> {
     }
 
     devOtp = code;
-    console.log(`[AUTH OTP DEV] Code OTP pour ${utilisateur.email}: ${code}`);
+    logger.debug(`[AUTH OTP DEV] Code OTP pour ${utilisateur.email}: ${code}`);
   }
 
   return {
@@ -343,7 +344,7 @@ export async function demanderResetMotDePasse(dto: ForgotPasswordDto): Promise<v
       expireDansMinutes:  RESET_TOKEN_TTL_MINUTES,
     });
   } catch (error: unknown) {
-    console.error('[RESET PWD] Envoi email echoue', {
+    logger.error('[RESET PWD] Envoi email echoue', {
       email: utilisateur.email,
       error: error instanceof Error ? error.message : error,
     });

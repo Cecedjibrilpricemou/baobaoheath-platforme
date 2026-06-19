@@ -25,9 +25,11 @@ import privacyRoutes from './routes/privacy.routes';
 import ussdRoutes from './routes/ussd.routes';
 import statsRoutes from './routes/stats.routes';
 import { setupSwagger } from './config/swagger';
+import { logger } from './config/logger';
 import { auditRequest } from './services/audit.service';
 import { startBackgroundJobs } from './services/job.service';
 import { globalErrorHandler } from './middlewares/error.middleware';
+import { requestContextMiddleware } from './middlewares/request-context.middleware';
 
 const app = express();
 
@@ -35,7 +37,7 @@ const app = express();
 let redisClient: Redis | undefined;
 if (env.REDIS_URL) {
   redisClient = new Redis(env.REDIS_URL);
-  redisClient.on('error', (err) => console.warn('Redis rate-limit indisponible:', err.message));
+  redisClient.on('error', (err) => logger.warn('Redis rate-limit indisponible', { error: err.message }));
 }
 
 const apiLimiter = rateLimit({
@@ -59,6 +61,7 @@ app.use(cors({
   origin: env.ALLOWED_ORIGINS,
   credentials: true,
 }));
+app.use(requestContextMiddleware);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -104,9 +107,9 @@ app.use((_req: Request, res: Response) => {
 app.use(globalErrorHandler);
 
 app.listen(env.PORT, () => {
-  console.log(`Documentation API : http://localhost:${env.PORT}/api/docs`);
-  console.log(`BaoBaoHealth API : http://localhost:${env.PORT}`);
-  console.log(`Environnement   : ${env.NODE_ENV}`);
+  logger.info(`Documentation API : http://localhost:${env.PORT}/api/docs`);
+  logger.info(`BaoBaoHealth API : http://localhost:${env.PORT}`);
+  logger.info(`Environnement   : ${env.NODE_ENV}`);
   startBackgroundJobs();
 });
 
