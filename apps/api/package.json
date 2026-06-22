@@ -15,8 +15,8 @@
     "prisma:backfill-encryption": "tsx prisma/backfill-encryption.ts"
   },
   "dependencies": {
-    "@baobaoheath/shared-types": "*",
     "@anthropic-ai/sdk": "^0.39.0",
+    "@baobaoheath/shared-types": "*",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@scalar/express-api-reference": "^0.9.9",
@@ -29,7 +29,7 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.1",
     "pg": "^8.16.0",
     "rate-limit-redis": "^4.2.0",
     "swagger-ui-express": "^5.0.1",
