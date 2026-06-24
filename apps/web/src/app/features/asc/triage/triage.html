@@ -68,6 +68,10 @@
           </div>
         }
 
+        @if (searchResults().length === 0 && searchError()) {
+          <p class="bb-error-text mt-3" role="alert">{{ searchError() }}</p>
+        }
+
         <div class="step-actions">
           <p-button label="Suivant" icon="pi pi-arrow-right" iconPos="right" [disabled]="!patientTrouve()" (onClick)="nextStep()"></p-button>
         </div>

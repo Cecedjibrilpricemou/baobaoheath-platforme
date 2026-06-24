@@ -133,9 +133,8 @@ export class DashboardComponent implements OnInit {
 
   exportDossier() {
     this.patientService.exportDossier().subscribe({
-      next: (_blob) => {
-        // Mock export logic for now, standard angular BLOB handling would go here
-        const url = URL.createObjectURL(new Blob(['{}']));
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `dossier-medical-${this.currentUser()?.nom ?? 'patient'}.json`;

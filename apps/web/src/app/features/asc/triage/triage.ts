@@ -38,6 +38,7 @@ export class Triage {
   patientTrouve = signal(false);
   patientData = signal<Patient | null>(null);
   isSearching = signal(false);
+  searchError = signal('');
 
   // Step 2: Symptômes & Constantes
   symptomesList = [
@@ -75,6 +76,7 @@ export class Triage {
     this.isSearching.set(true);
     this.patientTrouve.set(false);
     this.searchResults.set([]);
+    this.searchError.set('');
 
     this.patientService.getPatients(1, 5, undefined, query).subscribe({
       next: (response) => {
@@ -84,17 +86,14 @@ export class Triage {
           const items = (paginatedData as { items?: Patient[] })?.items ?? (Array.isArray(paginatedData) ? paginatedData : []);
           if (Array.isArray(items) && items.length > 0) {
             this.searchResults.set(items);
+          } else {
+            this.searchError.set('Aucun patient trouvé avec ce critère.');
           }
         }
       },
       error: () => {
         this.isSearching.set(false);
-        // Fallback: afficher un patient mockée pour la démo
-        this.searchResults.set([{
-          id: 'mock-1',
-          utilisateur: { prenom: 'Patient', nom: 'Trouvé', telephone: '' },
-          sexe: 'M', prefecture: 'Conakry'
-        }]);
+        this.searchError.set('Erreur lors de la recherche. Veuillez réessayer.');
       }
     });
   }

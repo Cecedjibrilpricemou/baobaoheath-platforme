@@ -9,7 +9,6 @@ import Aura from '@primeuix/themes/aura';
 import { catchError, of, switchMap } from 'rxjs';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
-import { mockDataInterceptor } from './core/interceptors/mock-data.interceptor';
 import { AuthService } from './core/services/auth.service';
 
 function initializeAuth() {
@@ -26,7 +25,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideRouter(routes, withViewTransitions()),
-    provideHttpClient(withInterceptors([authInterceptor, mockDataInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor])),
     { provide: APP_INITIALIZER, useFactory: initializeAuth, multi: true },
     provideAnimationsAsync(),
     provideToastr({

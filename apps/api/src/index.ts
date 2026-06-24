@@ -45,7 +45,12 @@ const apiLimiter = rateLimit({
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  ...(redisClient && { store: new RedisStore({ sendCommand: async (...args: string[]) => redisClient!.call(args[0], ...args.slice(1)) as any }) }),
+  ...(redisClient && {
+    store: new RedisStore({
+      prefix: 'rl:api:',
+      sendCommand: async (...args: string[]) => redisClient!.call(args[0], ...args.slice(1)) as any,
+    }),
+  }),
 });
 
 const authLimiter = rateLimit({
@@ -53,7 +58,12 @@ const authLimiter = rateLimit({
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  ...(redisClient && { store: new RedisStore({ sendCommand: async (...args: string[]) => redisClient!.call(args[0], ...args.slice(1)) as any }) }),
+  ...(redisClient && {
+    store: new RedisStore({
+      prefix: 'rl:auth:',
+      sendCommand: async (...args: string[]) => redisClient!.call(args[0], ...args.slice(1)) as any,
+    }),
+  }),
 });
 
 app.use(helmet());

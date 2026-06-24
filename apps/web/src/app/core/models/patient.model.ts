@@ -81,7 +81,7 @@ export interface Ordonnance {
 
 export interface Vaccination {
   id: string;
-  nomVaccin?: string;       // mock / legacy field name
+  nomVaccin?: string;       // legacy field name
   vaccinNom?: string;       // API field name (Prisma schema)
   dateAdministration: string;
   prochaineDose?: string;   // alternative field name
