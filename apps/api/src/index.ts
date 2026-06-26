@@ -82,10 +82,15 @@ const authLimiter = rateLimit({
 });
 
 app.use(helmet());
-app.use(cors({
+
+const corsOptions = {
   origin: env.ALLOWED_ORIGINS,
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(requestContextMiddleware);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));

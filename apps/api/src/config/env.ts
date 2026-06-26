@@ -31,8 +31,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   ALLOWED_ORIGINS: z
     .string()
-    .optional()
-    .transform((val) => val?.split(',').map((s) => s.trim()) ?? ['http://localhost:4200']),
+    .default('http://localhost:4200')
+    .transform((val) => val.split(',').map((s) => s.trim())),
 
   // ─── Email (optionnel en dev) ────────────────────────
   GMAIL_USER: z.string().optional(),
