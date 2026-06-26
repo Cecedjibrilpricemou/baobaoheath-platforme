@@ -1,4 +1,6 @@
 // core/models/patient.model.ts
+export type { ConsultationView as Consultation, OrdonnanceView as Ordonnance, DiagnosticView as Diagnostic } from '@baobaoheath/shared-types';
+
 export interface Patient {
   id: string;
   numeroPatient?: string;
@@ -43,15 +45,6 @@ export interface PatientCreatePayload {
 
 export interface PatientUpdatePayload extends Partial<PatientCreatePayload> {}
 
-export interface Diagnostic {
-  id: string;
-  libelle: string;
-  codeIcd11?: string;
-  typeDiagnostic?: string;
-  severite?: string;
-  source: string;
-}
-
 export interface OrdonnanceLigne {
   id: string;
   posologie: string;
@@ -59,24 +52,6 @@ export interface OrdonnanceLigne {
   dureeJours: number;
   quantite?: number;
   medicament?: { id: string; nom: string; forme?: string };
-}
-
-export interface Consultation {
-  id: string;
-  statut: string;
-  motifPrincipal: string;
-  consulteeLE: string;
-  medecin?: { utilisateur: { prenom: string; nom: string } };
-  asc?: { utilisateur: { prenom: string; nom: string } };
-  diagnostics?: Diagnostic[];
-  ordonnances?: Ordonnance[];
-}
-
-export interface Ordonnance {
-  id: string;
-  statut: string;
-  signeLe: string;
-  lignes?: OrdonnanceLigne[];
 }
 
 export interface Vaccination {

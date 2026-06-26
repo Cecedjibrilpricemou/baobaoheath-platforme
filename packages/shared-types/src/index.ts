@@ -451,6 +451,43 @@ export interface DelivrancePayload {
   }[];
 }
 
+// ─── Canonical view models (API response shapes) ──────────────────────────────
+
+export interface DiagnosticView {
+  id: string;
+  libelle: string;
+  codeIcd11?: string;
+  typeDiagnostic?: string;
+  severite?: string;
+  source: string;
+}
+
+export interface OrdonnanceView {
+  id: string;
+  statut: string;
+  signeLe?: string;
+  posologie: string;
+  frequence: string;
+  dureeJours: number;
+  quantite?: number;
+  instructions?: string;
+  medicament?: { id: string; dci: string; nomCommercial?: string; forme: string; dosage: string };
+}
+
+export interface ConsultationView {
+  id: string;
+  statut: EncounterStatus;
+  motifPrincipal: string;
+  consulteeLE: string;
+  notesAsc?: string;
+  notesMedecin?: string;
+  idPatient?: string;
+  asc?: { utilisateur: { prenom: string; nom: string } };
+  medecinValideur?: { prenom: string; nom: string };
+  diagnostics?: DiagnosticView[];
+  ordonnances?: OrdonnanceView[];
+}
+
 // ─── Analytics DTOs ───────────────────────────────────────────────────────────
 export interface AnalyticsFilters {
   prefecture?: string;
