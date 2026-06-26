@@ -54,6 +54,9 @@ const envSchema = z.object({
   // ─── Frontend URL (pour les liens dans les emails) ──
   FRONTEND_URL: z.string().default('http://localhost:4200'),
 
+  // ─── Sentry (optionnel) ─────────────────────────────
+  SENTRY_DSN: z.string().url().optional(),
+
   // ─── OTP dev fallback ───────────────────────────────
   EMAIL_OTP_DEV_FALLBACK: z
     .string()

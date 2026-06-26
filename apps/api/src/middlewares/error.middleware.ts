@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/app-error';
 import { logger } from '../config/logger';
+import { captureError } from '../config/sentry';
 
 /**
  * Middleware global de gestion des erreurs.
@@ -29,6 +30,7 @@ export function globalErrorHandler(
   }
 
   // Erreurs inattendues (bugs, erreurs Prisma, etc.)
+  captureError(err, { method: req.method, url: req.originalUrl });
   logger.error(`Erreur non geree: ${req.method} ${req.originalUrl}`, { stack: err.stack ?? err.message });
 
   res.status(500).json({

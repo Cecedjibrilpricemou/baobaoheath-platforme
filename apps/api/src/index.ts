@@ -27,17 +27,22 @@ import statsRoutes from './routes/stats.routes';
 import { setupSwagger } from './config/swagger';
 import { logger } from './config/logger';
 import { prisma } from './config/prisma';
+import { initSentry, captureError } from './config/sentry';
 import { auditRequest } from './services/audit.service';
 import { startBackgroundJobs } from './services/job.service';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import { requestContextMiddleware } from './middlewares/request-context.middleware';
 
+initSentry(env.SENTRY_DSN);
+
 process.on('uncaughtException', (err) => {
+  captureError(err, { type: 'uncaughtException' });
   logger.error('uncaughtException — shutting down', { error: err.message, stack: err.stack });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
+  captureError(reason, { type: 'unhandledRejection' });
   logger.error('unhandledRejection — shutting down', { reason });
   process.exit(1);
 });
