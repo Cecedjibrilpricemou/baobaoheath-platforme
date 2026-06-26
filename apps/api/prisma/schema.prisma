@@ -315,6 +315,9 @@ model PatientProfile {
   rendezVous    RendezVous[]
   consentements ConsentementPatient[]
 
+  @@index([prefecture])
+  @@index([idStructurePreferee])
+  @@index([idAscPrincipal])
   @@map("patients")
 }
 
@@ -411,6 +414,10 @@ model Consultation {
   rendezVous    RendezVous?
   messages      Message[]
 
+  @@index([idPatient, consulteeLE(sort: Desc)])
+  @@index([idAsc])
+  @@index([idMedecinValideur])
+  @@index([statut])
   @@map("consultations")
 }
 
@@ -448,6 +455,8 @@ model Diagnostic {
   idConsultation String
   consultation   Consultation @relation(fields: [idConsultation], references: [id], onDelete: Cascade)
 
+  @@index([idConsultation])
+  @@index([creeLe, libelle])
   @@map("diagnostics")
 }
 
@@ -490,6 +499,8 @@ model Ordonnance {
   signePar   String?
   signataire Utilisateur? @relation("MedecinSignataire", fields: [signePar], references: [id])
 
+  @@index([idConsultation])
+  @@index([statut])
   @@map("ordonnances")
 }
 
@@ -510,6 +521,8 @@ model Vaccination {
   idAdministrePar String
   administrePar   Utilisateur @relation(fields: [idAdministrePar], references: [id])
 
+  @@index([idPatient, administreLe(sort: Desc)])
+  @@index([dateProchaineD])
   @@map("vaccinations")
 }
 
@@ -534,6 +547,9 @@ model RendezVous {
   idConsultation String?       @unique
   consultation   Consultation? @relation(fields: [idConsultation], references: [id])
 
+  @@index([idPatient])
+  @@index([idAsc])
+  @@index([prevuLe, statut, rappel24h])
   @@map("rendez_vous")
 }
 
@@ -559,6 +575,8 @@ model Referencement {
   idMedecinValideur String?
   medecinValideur   Utilisateur? @relation("MedecinValideurRef", fields: [idMedecinValideur], references: [id])
 
+  @@index([idStructureCible, statut])
+  @@index([creeLe])
   @@map("referencements")
 }
 
@@ -578,6 +596,8 @@ model Message {
   idConsultation String?
   consultation   Consultation? @relation(fields: [idConsultation], references: [id])
 
+  @@index([idDestinataire, lu])
+  @@index([idExpediteur])
   @@map("messages")
 }
 
@@ -624,6 +644,8 @@ model Facture {
   idConsultation String?       @unique
   consultation   Consultation? @relation(fields: [idConsultation], references: [id])
 
+  @@index([idPatient, creeLe(sort: Desc)])
+  @@index([statut])
   @@map("factures")
 }
 
