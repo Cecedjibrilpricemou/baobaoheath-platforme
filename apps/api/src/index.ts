@@ -90,7 +90,6 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 app.use(requestContextMiddleware);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
