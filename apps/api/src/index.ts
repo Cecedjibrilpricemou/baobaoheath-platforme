@@ -159,6 +159,7 @@ app.listen(env.PORT, () => {
   logger.info(`Documentation API : http://localhost:${env.PORT}/api/docs`);
   logger.info(`BaoBaoHealth API : http://localhost:${env.PORT}`);
   logger.info(`Environnement   : ${env.NODE_ENV}`);
+  logger.info(`CORS origins    : ${env.ALLOWED_ORIGINS.join(', ')}`);
   startBackgroundJobs();
 });
 

@@ -29,10 +29,12 @@ const envSchema = z.object({
     .transform((val) => parseInt(val, 10))
     .refine((val) => val > 0 && val < 65536, 'PORT doit etre entre 1 et 65535'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  ALLOWED_ORIGINS: z
-    .string()
-    .default('http://localhost:4200')
-    .transform((val) => val.split(',').map((s) => s.trim())),
+  ALLOWED_ORIGINS: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() ? val : 'http://localhost:4200')
+      .split(',')
+      .map((s) => s.trim()),
+    z.array(z.string().min(1))
+  ),
 
   // ─── Email (optionnel en dev) ────────────────────────
   GMAIL_USER: z.string().optional(),
