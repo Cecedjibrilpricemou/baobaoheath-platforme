@@ -54,6 +54,7 @@ export async function administrerVaccin(
 
 // ─── Récupérer le carnet vaccinal d'un patient ───────────
 export async function getCarnetVaccinal(
+    user: JwtPayload,
     idPatient: string,
     filters: VaccinationFilters
 ) {
@@ -64,6 +65,8 @@ export async function getCarnetVaccinal(
     if (!patient) {
         throw new Error('Patient non trouvé');
     }
+
+    await assertCanAccessPatient(user, idPatient);
 
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 50;

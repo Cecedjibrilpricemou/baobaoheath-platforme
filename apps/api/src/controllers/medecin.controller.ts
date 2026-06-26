@@ -47,7 +47,7 @@ export async function validerConsultationController(
   res: Response
 ): Promise<void> {
   const consultation = await medecinService.validerConsultation(
-      req.user!.userId,
+      req.user!,
       req.params.id,
       req.body
     );
@@ -77,7 +77,7 @@ export async function repondreReferencementController(
   res: Response
 ): Promise<void> {
   const referencement = await medecinService.repondreReferencement(
-      req.user!.userId,
+      req.user!,
       req.params.id,
       req.body
     );

@@ -28,6 +28,7 @@ export async function getCarnetVaccinalController(
       limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     };
     const result = await vaccinationService.getCarnetVaccinal(
+      req.user!,
       req.params.id,
       filters
     );

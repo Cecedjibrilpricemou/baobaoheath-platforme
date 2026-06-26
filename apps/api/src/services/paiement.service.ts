@@ -5,6 +5,10 @@ import {
   PaiementFilters,
 } from '../types/paiement.types';
 import { initierPaiementSimule } from './payment-provider.service';
+import { JwtPayload } from '../types/auth.types';
+import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+
+const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
 const MAX_MONTANT_GNF = 10_000_000;
 
@@ -76,13 +80,29 @@ export async function verifierStatutPaiement(userId: string, idFacture: string) 
   return facture;
 }
 
-export async function confirmerPaiement(idFacture: string, dto: ConfirmerPaiementDto) {
+export async function confirmerPaiement(user: JwtPayload, idFacture: string, dto: ConfirmerPaiementDto) {
   const facture = await prisma.facture.findUnique({
     where: { id: idFacture },
+    include: {
+      consultation: {
+        include: { asc: { select: { idStructure: true } } },
+      },
+    },
   });
 
-  if (!facture) throw new Error('Facture non trouvee');
-  if (facture.statut === 'PAYEE') throw new Error('Cette facture a deja ete payee');
+  if (!facture) throw new NotFoundError('Facture non trouvee');
+  if (facture.statut === 'PAYEE') throw new ValidationError('Cette facture a deja ete payee');
+
+  if (!ADMIN_ROLES.has(user.role)) {
+    const utilisateur = await prisma.utilisateur.findUnique({
+      where: { id: user.userId },
+      select: { idStructure: true },
+    });
+    const consultationStructure = facture.consultation?.asc?.idStructure;
+    if (!utilisateur?.idStructure || utilisateur.idStructure !== consultationStructure) {
+      throw new ForbiddenError('Vous ne pouvez confirmer que les paiements de votre structure');
+    }
+  }
 
   return prisma.facture.update({
     where: { id: idFacture },

@@ -5,6 +5,11 @@ import {
     MedecinFilters,
     SendMessageDto,
 } from '../types/medecin.types';
+import { JwtPayload } from '../types/auth.types';
+import { assertCanAccessConsultation } from './access-control.service';
+import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+
+const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
 // ─── Récupérer le profil du médecin connecté ─────────────
 export async function getMyMedecinProfile(userId: string) {
@@ -92,28 +97,30 @@ export async function getConsultationsAValider(
 
 // ─── Valider une consultation ─────────────────────────────
 export async function validerConsultation(
-    userId: string,
+    user: JwtPayload,
     idConsultation: string,
     dto: ValiderConsultationDto
 ) {
+    await assertCanAccessConsultation(user, idConsultation);
+
     const consultation = await prisma.consultation.findUnique({
         where: { id: idConsultation },
         include: { ordonnances: true },
     });
 
     if (!consultation) {
-        throw new Error('Consultation non trouvée');
+        throw new NotFoundError('Consultation non trouvée');
     }
 
     if (consultation.idMedecinValideur) {
-        throw new Error('Consultation déjà validée par un médecin');
+        throw new ValidationError('Consultation déjà validée par un médecin');
     }
 
     return prisma.$transaction(async (tx) => {
         const updated = await tx.consultation.update({
             where: { id: idConsultation },
             data: {
-                idMedecinValideur: userId,
+                idMedecinValideur: user.userId,
                 notesMedecin: dto.notesMedecin,
                 signeLe: new Date(),
             },
@@ -126,7 +133,7 @@ export async function validerConsultation(
                     idConsultation,
                 },
                 data: {
-                    signePar: userId,
+                    signePar: user.userId,
                     signeLe: new Date(),
                 },
             });
@@ -199,7 +206,7 @@ export async function getReferencements(
 
 // ─── Répondre à un référencement ──────────────────────────
 export async function repondreReferencement(
-    userId: string,
+    user: JwtPayload,
     idReferencement: string,
     dto: RepondreReferencementDto
 ) {
@@ -208,15 +215,25 @@ export async function repondreReferencement(
     });
 
     if (!referencement) {
-        throw new Error('Référencement non trouvé');
+        throw new NotFoundError('Référencement non trouvé');
     }
 
     if (referencement.statut !== 'EN_ATTENTE') {
-        throw new Error('Ce référencement a déjà été traité');
+        throw new ValidationError('Ce référencement a déjà été traité');
     }
 
     if (dto.statut === 'REFUSE' && !dto.motifRefus) {
-        throw new Error('Le motif de refus est obligatoire');
+        throw new ValidationError('Le motif de refus est obligatoire');
+    }
+
+    if (!ADMIN_ROLES.has(user.role)) {
+        const utilisateur = await prisma.utilisateur.findUnique({
+            where: { id: user.userId },
+            select: { idStructure: true },
+        });
+        if (!utilisateur?.idStructure || utilisateur.idStructure !== referencement.idStructureCible) {
+            throw new ForbiddenError('Vous ne pouvez traiter que les référencements dirigés vers votre structure');
+        }
     }
 
     return prisma.referencement.update({
@@ -224,7 +241,7 @@ export async function repondreReferencement(
         data: {
             statut: dto.statut,
             motifRefus: dto.motifRefus,
-            idMedecinValideur: userId,
+            idMedecinValideur: user.userId,
             reponduLe: new Date(),
         },
         include: {

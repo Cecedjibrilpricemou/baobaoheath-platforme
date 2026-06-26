@@ -36,6 +36,7 @@ export async function confirmerPaiementController(
     res: Response
 ): Promise<void> {
     const facture = await paiementService.confirmerPaiement(
+            req.user!,
             req.params.id,
             req.body
         );
