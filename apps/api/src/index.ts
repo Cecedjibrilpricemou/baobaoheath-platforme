@@ -32,6 +32,16 @@ import { startBackgroundJobs } from './services/job.service';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import { requestContextMiddleware } from './middlewares/request-context.middleware';
 
+process.on('uncaughtException', (err) => {
+  logger.error('uncaughtException — shutting down', { error: err.message, stack: err.stack });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('unhandledRejection — shutting down', { reason });
+  process.exit(1);
+});
+
 const app = express();
 
 // Configuration Redis pour le Rate Limiting
