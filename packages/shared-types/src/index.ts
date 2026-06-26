@@ -465,4 +465,6 @@ export interface ExportFilters {
   debut?: string;
   fin?: string;
   prefecture?: string;
+  page?: number;
+  limit?: number;
 }

@@ -73,6 +73,8 @@ export async function exporterDonneesController(
       debut: req.query.debut as string | undefined,
       fin: req.query.fin as string | undefined,
       prefecture: req.query.prefecture as string | undefined,
+      page: req.query.page ? parseInt(req.query.page as string) : undefined,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     };
 
     const data = await analyticsService.exporterDonnees(filters);

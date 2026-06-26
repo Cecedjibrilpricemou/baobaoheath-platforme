@@ -67,6 +67,8 @@ export async function getDashboardGlobal(filters: AnalyticsFilters) {
     };
 }
 
+const HEATMAP_MAX = 20_000;
+
 // ─── Données cartographiques (Heatmap) ───────────────────
 export async function getHeatmapData(filters: HeatmapFilters) {
     const whereConsultation: Prisma.ConsultationWhereInput = {};
@@ -85,6 +87,7 @@ export async function getHeatmapData(filters: HeatmapFilters) {
 
     const consultations = await prisma.consultation.findMany({
         where: whereConsultation,
+        take: HEATMAP_MAX,
         include: {
             patient: {
                 select: {
@@ -129,6 +132,8 @@ export async function getHeatmapData(filters: HeatmapFilters) {
     return Object.values(parPrefecture);
 }
 
+const ALERTES_DIAGNOSTICS_MAX = 50_000;
+
 // ─── Alertes épidémiques ──────────────────────────────────
 export async function getAlertesEpidemiques(): Promise<AlerteEpidemique[]> {
     const ilyA30Jours = new Date();
@@ -138,6 +143,7 @@ export async function getAlertesEpidemiques(): Promise<AlerteEpidemique[]> {
         where: {
             creeLe: { gte: ilyA30Jours },
         },
+        take: ALERTES_DIAGNOSTICS_MAX,
         include: {
             consultation: {
                 include: {
@@ -315,8 +321,14 @@ export async function getTendances(filters: AnalyticsFilters) {
     return tendances;
 }
 
+const EXPORT_MAX_LIMIT = 5_000;
+
 // ─── Export données DHIS2 / CSV ───────────────────────────
 export async function exporterDonnees(filters: ExportFilters) {
+    const page = filters.page ?? 1;
+    const limit = Math.min(filters.limit ?? 1_000, EXPORT_MAX_LIMIT);
+    const skip = (page - 1) * limit;
+
     const where = {
         ...(filters.prefecture && {
             patient: { prefecture: filters.prefecture },
@@ -326,19 +338,26 @@ export async function exporterDonnees(filters: ExportFilters) {
             : {}),
     };
 
-    const consultations = await prisma.consultation.findMany({
-        where,
-        include: {
-            patient: {
-                include: {
-                    utilisateur: { select: { prenom: true, nom: true } },
+    const [consultations, total] = await Promise.all([
+        prisma.consultation.findMany({
+            where,
+            skip,
+            take: limit,
+            include: {
+                patient: {
+                    include: {
+                        utilisateur: { select: { prenom: true, nom: true } },
+                    },
                 },
+                diagnostics: true,
+                constantes: true,
             },
-            diagnostics: true,
-            constantes: true,
-        },
-        orderBy: { consulteeLE: 'desc' },
-    });
+            orderBy: { consulteeLE: 'desc' },
+        }),
+        prisma.consultation.count({ where }),
+    ]);
+
+    const meta = { total, page, limit, totalPages: Math.ceil(total / limit) };
 
     if (filters.format === 'CSV') {
         const lignes = [
@@ -355,7 +374,7 @@ export async function exporterDonnees(filters: ExportFilters) {
             ].join(',')),
         ].join('\n');
 
-        return { format: 'CSV', contenu: lignes, total: consultations.length };
+        return { format: 'CSV', contenu: lignes, meta };
     }
 
     if (filters.format === 'DHIS2') {
@@ -377,14 +396,14 @@ export async function exporterDonnees(filters: ExportFilters) {
                 completeDate: new Date().toISOString().slice(0, 10),
                 dataValues,
             },
-            total: dataValues.length,
+            meta,
         };
     }
 
     return {
         format: 'JSON',
         contenu: consultations,
-        total: consultations.length,
+        meta,
     };
 }
 
