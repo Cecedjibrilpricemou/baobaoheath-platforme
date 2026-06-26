@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { prisma } from '../config/prisma';
 import { logger } from '../config/logger';
+import { NotFoundError, ValidationError } from '../utils/app-error';
 import {
     SendSmsDto,
     SendNotificationDto,
@@ -43,7 +44,7 @@ export async function envoyerRappelRendezVous(idRendezVous: string) {
     });
 
     if (!rdv) {
-        throw new Error('Rendez-vous non trouvé');
+        throw new NotFoundError('Rendez-vous non trouvé');
     }
 
     const { utilisateur } = rdv.patient;
@@ -84,13 +85,13 @@ export async function envoyerAlerteStock(idStock: string) {
     });
 
     if (!stock) {
-        throw new Error('Stock non trouvé');
+        throw new NotFoundError('Stock non trouvé');
     }
 
     const message = `BaoBaoHealth ALERTE: Stock critique — ${stock.medicament.dci} (${stock.quantite} ${stock.unite} restants, seuil: ${stock.seuilAlerte}). Veuillez renouveler votre stock.`;
 
     if (!stock.asc) {
-        throw new Error('Ce stock n est pas rattache a un ASC');
+        throw new ValidationError('Ce stock n est pas rattache a un ASC');
     }
 
     return mockSendSms(stock.asc.utilisateur.telephone, message);
@@ -120,7 +121,7 @@ export async function envoyerNotificationReferencement(
     });
 
     if (!ref) {
-        throw new Error('Référencement non trouvé');
+        throw new NotFoundError('Référencement non trouvé');
     }
 
     const { utilisateur } = ref.consultation.patient;
@@ -150,7 +151,7 @@ export async function envoyerRappelVaccination(idVaccination: string) {
     });
 
     if (!vaccination) {
-        throw new Error('Vaccination non trouvée');
+        throw new NotFoundError('Vaccination non trouvée');
     }
 
     const { utilisateur } = vaccination.patient;

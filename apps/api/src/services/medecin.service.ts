@@ -31,7 +31,7 @@ export async function getMyMedecinProfile(userId: string) {
     });
 
     if (!medecin) {
-        throw new Error('Médecin non trouvé');
+        throw new NotFoundError('Médecin non trouvé');
     }
 
     return medecin;
@@ -270,7 +270,7 @@ export async function sendMessage(userId: string, dto: SendMessageDto) {
     });
 
     if (!destinataire) {
-        throw new Error('Destinataire non trouvé');
+        throw new NotFoundError('Destinataire non trouvé');
     }
 
     return prisma.message.create({

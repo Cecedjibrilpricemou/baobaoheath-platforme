@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma';
+import { NotFoundError } from '../utils/app-error';
 
 type FhirResource = Record<string, unknown>;
 
@@ -200,7 +201,7 @@ async function loadPatient(idPatient: string) {
     include: { utilisateur: true },
   });
 
-  if (!patient) throw new Error('Patient non trouve');
+  if (!patient) throw new NotFoundError('Patient non trouve');
   return patient;
 }
 
@@ -216,7 +217,7 @@ async function loadConsultation(idConsultation: string) {
     },
   });
 
-  if (!consultation) throw new Error('Consultation non trouvee');
+  if (!consultation) throw new NotFoundError('Consultation non trouvee');
   return consultation;
 }
 
@@ -247,7 +248,7 @@ export async function getPatientBundleFhir(idPatient: string) {
     },
   });
 
-  if (!patient) throw new Error('Patient non trouve');
+  if (!patient) throw new NotFoundError('Patient non trouve');
 
   const resources: FhirResource[] = [
     fhirPatient(patient),

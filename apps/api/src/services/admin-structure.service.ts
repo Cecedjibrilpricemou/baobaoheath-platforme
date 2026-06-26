@@ -5,6 +5,7 @@ import { hashPassword } from '../utils/password.utils';
 import { Role, TypeStructure } from '../config/generated/client/client';
 import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
 import { logger } from '../config/logger';
+import { ConflictError, ForbiddenError, ValidationError } from '../utils/app-error';
 
 const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN];
 
@@ -26,14 +27,14 @@ export async function creerStructureAvecAdmin(dto: {
     admin: { prenom: string; nom: string; telephone: string; email?: string; };
 }) {
     const typeValid = Object.values(TypeStructure).includes(dto.type as TypeStructure);
-    if (!typeValid) throw new Error(`Type invalide : ${dto.type}`);
+    if (!typeValid) throw new ValidationError(`Type invalide : ${dto.type}`);
 
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.admin.telephone } });
-    if (existingTel) throw new Error('Ce numéro de téléphone est déjà utilisé');
+    if (existingTel) throw new ConflictError('Ce numéro de téléphone est déjà utilisé');
 
     if (dto.admin.email) {
         const existingEmail = await prisma.utilisateur.findUnique({ where: { email: dto.admin.email } });
-        if (existingEmail) throw new Error('Cette adresse email est déjà utilisée');
+        if (existingEmail) throw new ConflictError('Cette adresse email est déjà utilisée');
     }
 
     const motDePasseTemp = genererMotDePasseTemp();
@@ -101,11 +102,11 @@ export async function creerPharmacieAvecPharmacien(dto: {
     pharmacien: { prenom: string; nom: string; telephone: string; email?: string; motDePasse?: string; };
 }) {
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.pharmacien.telephone } });
-    if (existingTel) throw new Error('Ce numero de telephone est deja utilise');
+    if (existingTel) throw new ConflictError('Ce numero de telephone est deja utilise');
 
     if (dto.pharmacien.email) {
         const existingEmail = await prisma.utilisateur.findUnique({ where: { email: dto.pharmacien.email } });
-        if (existingEmail) throw new Error('Cette adresse email est deja utilisee');
+        if (existingEmail) throw new ConflictError('Cette adresse email est deja utilisee');
     }
 
     const motDePasseTemp = dto.pharmacien.motDePasse || genererMotDePasseTemp();
@@ -201,7 +202,7 @@ export async function modifierStructure(id: string, dto: {
 }) {
     if (dto.type) {
         const typeValid = Object.values(TypeStructure).includes(dto.type as TypeStructure);
-        if (!typeValid) throw new Error(`Type invalide : ${dto.type}`);
+        if (!typeValid) throw new ValidationError(`Type invalide : ${dto.type}`);
     }
     const { type, ...rest } = dto;
     return prisma.structureSante.update({
@@ -223,7 +224,7 @@ export async function getAgentsStructure(adminId: string) {
     const admin = await prisma.utilisateur.findUnique({
         where: { id: adminId }, include: { structure: true }
     });
-    if (!admin?.idStructure) throw new Error('Aucune structure assignée');
+    if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
 
     return prisma.utilisateur.findMany({
         where: { idStructure: admin.idStructure, role: { in: ROLES_AUTORISES }, estActif: true },
@@ -241,18 +242,18 @@ export async function creerAgent(adminId: string, dto: {
         where: { id: adminId },
         include: { structure: true }
     });
-    if (!admin?.idStructure) throw new Error('Aucune structure assignée');
+    if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
 
     if (!ROLES_AUTORISES.includes(dto.role)) {
-        throw new Error(`Vous ne pouvez pas créer un compte de type ${dto.role}`);
+        throw new ForbiddenError(`Vous ne pouvez pas créer un compte de type ${dto.role}`);
     }
 
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.telephone } });
-    if (existingTel) throw new Error('Ce numéro de téléphone est déjà utilisé');
+    if (existingTel) throw new ConflictError('Ce numéro de téléphone est déjà utilisé');
 
     if (dto.email) {
         const existingEmail = await prisma.utilisateur.findUnique({ where: { email: dto.email } });
-        if (existingEmail) throw new Error('Cette adresse email est déjà utilisée');
+        if (existingEmail) throw new ConflictError('Cette adresse email est déjà utilisée');
     }
 
     const motDePasseTemp = dto.motDePasse || genererMotDePasseTemp();
@@ -307,11 +308,11 @@ export async function creerAgent(adminId: string, dto: {
 // ── ADMIN_STRUCTURE : désactiver un agent ────────────────────────
 export async function desactiverAgent(adminId: string, agentId: string) {
     const admin = await prisma.utilisateur.findUnique({ where: { id: adminId } });
-    if (!admin?.idStructure) throw new Error('Aucune structure assignée');
+    if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
 
     const agent = await prisma.utilisateur.findUnique({ where: { id: agentId } });
     if (!agent || agent.idStructure !== admin.idStructure) {
-        throw new Error('Cet agent n\'appartient pas à votre structure');
+        throw new ForbiddenError('Cet agent n\'appartient pas à votre structure');
     }
 
     return prisma.utilisateur.update({ where: { id: agentId }, data: { estActif: false } });
@@ -322,7 +323,7 @@ export async function getStatsStructure(adminId: string) {
     const admin = await prisma.utilisateur.findUnique({
         where: { id: adminId }, include: { structure: true }
     });
-    if (!admin?.idStructure) throw new Error('Aucune structure assignée');
+    if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
 
     const [totalAgents, totalConsultations, totalPatients, structure] = await Promise.all([
         prisma.utilisateur.count({ where: { idStructure: admin.idStructure, estActif: true } }),

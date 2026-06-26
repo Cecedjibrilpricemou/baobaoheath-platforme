@@ -6,6 +6,7 @@ import {
     StockFilters,
     RapportFilters,
 } from '../types/asc.types';
+import { ConflictError, ForbiddenError, NotFoundError } from '../utils/app-error';
 
 // ─── Récupérer le profil ASC connecté ────────────────────
 export async function getMyAscProfile(userId: string) {
@@ -35,7 +36,7 @@ export async function getMyAscProfile(userId: string) {
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     return asc;
@@ -51,7 +52,7 @@ export async function updateAscProfile(
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     if (dto.photoUrl) {
@@ -90,7 +91,7 @@ export async function getAscPatients(userId: string) {
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     const idPatients = [
@@ -122,7 +123,7 @@ export async function getAscPlanning(userId: string) {
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     const today = new Date();
@@ -155,7 +156,7 @@ export async function getAscStocks(userId: string, filters: StockFilters) {
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     const page = filters.page ?? 1;
@@ -205,7 +206,7 @@ export async function createStock(userId: string, dto: CreateStockDto) {
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     const medicament = await prisma.medicament.findUnique({
@@ -213,7 +214,7 @@ export async function createStock(userId: string, dto: CreateStockDto) {
     });
 
     if (!medicament) {
-        throw new Error('Médicament non trouvé');
+        throw new NotFoundError('Médicament non trouvé');
     }
 
     const existingStock = await prisma.stock.findUnique({
@@ -226,7 +227,7 @@ export async function createStock(userId: string, dto: CreateStockDto) {
     });
 
     if (existingStock) {
-        throw new Error(
+        throw new ConflictError(
             'Un stock existe déjà pour ce médicament — utilisez la mise à jour'
         );
     }
@@ -257,7 +258,7 @@ export async function updateStock(
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     const stock = await prisma.stock.findUnique({
@@ -265,7 +266,7 @@ export async function updateStock(
     });
 
     if (!stock || stock.idAsc !== asc.id) {
-        throw new Error('Stock non trouvé ou accès refusé');
+        throw new ForbiddenError('Stock non trouvé ou accès refusé');
     }
 
     return prisma.stock.update({
@@ -292,7 +293,7 @@ export async function getRapportMensuel(
     });
 
     if (!asc) {
-        throw new Error('Profil ASC non trouvé');
+        throw new NotFoundError('Profil ASC non trouvé');
     }
 
     const debut = new Date(filters.annee, filters.mois - 1, 1);

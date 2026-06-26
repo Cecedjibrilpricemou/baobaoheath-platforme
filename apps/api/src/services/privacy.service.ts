@@ -1,5 +1,6 @@
 import { ConsentScope } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { ForbiddenError, NotFoundError } from '../utils/app-error';
 
 export async function getPatientForUser(userId: string) {
   const patient = await prisma.patientProfile.findUnique({
@@ -7,7 +8,7 @@ export async function getPatientForUser(userId: string) {
     select: { id: true },
   });
 
-  if (!patient) throw new Error('Profil patient non trouve');
+  if (!patient) throw new NotFoundError('Profil patient non trouve');
   return patient;
 }
 
@@ -64,7 +65,7 @@ export async function assertPatientConsent(
     select: { idUtilisateur: true },
   });
 
-  if (!patient) throw new Error('Patient non trouve');
+  if (!patient) throw new NotFoundError('Patient non trouve');
   if (requesterUserId && patient.idUtilisateur === requesterUserId) return;
 
   const consent = await prisma.consentementPatient.findUnique({
@@ -72,7 +73,7 @@ export async function assertPatientConsent(
   });
 
   if (!consent?.actif) {
-    throw new Error(`Consentement requis: ${scope}`);
+    throw new ForbiddenError(`Consentement requis: ${scope}`);
   }
 }
 

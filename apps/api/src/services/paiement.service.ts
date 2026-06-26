@@ -18,11 +18,11 @@ export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
     include: { patient: true, facture: true },
   });
 
-  if (!consultation) throw new Error('Consultation non trouvee');
-  if (consultation.facture) throw new Error('Une facture existe deja pour cette consultation');
+  if (!consultation) throw new NotFoundError('Consultation non trouvee');
+  if (consultation.facture) throw new ValidationError('Une facture existe deja pour cette consultation');
 
   if (consultation.patient.idUtilisateur !== userId) {
-    throw new Error("Acces refuse - ce n'est pas votre consultation");
+    throw new ForbiddenError("Acces refuse - ce n'est pas votre consultation");
   }
 
   // Use server-side tariff when set; otherwise cap client-provided amount
@@ -74,8 +74,8 @@ export async function verifierStatutPaiement(userId: string, idFacture: string) 
     },
   });
 
-  if (!facture) throw new Error('Facture non trouvee');
-  if (facture.patient.idUtilisateur !== userId) throw new Error('Acces refuse');
+  if (!facture) throw new NotFoundError('Facture non trouvee');
+  if (facture.patient.idUtilisateur !== userId) throw new ForbiddenError('Acces refuse');
 
   return facture;
 }
@@ -128,7 +128,7 @@ export async function getHistoriquePaiements(userId: string, filters: PaiementFi
     where: { idUtilisateur: userId },
   });
 
-  if (!patient) throw new Error('Profil patient non trouve');
+  if (!patient) throw new NotFoundError('Profil patient non trouve');
 
   const page = filters.page ?? 1;
   const limit = filters.limit ?? 20;
@@ -175,9 +175,9 @@ export async function annulerPaiement(userId: string, idFacture: string) {
     include: { patient: true },
   });
 
-  if (!facture) throw new Error('Facture non trouvee');
-  if (facture.patient.idUtilisateur !== userId) throw new Error('Acces refuse');
-  if (facture.statut === 'PAYEE') throw new Error("Impossible d'annuler une facture deja payee");
+  if (!facture) throw new NotFoundError('Facture non trouvee');
+  if (facture.patient.idUtilisateur !== userId) throw new ForbiddenError('Acces refuse');
+  if (facture.statut === 'PAYEE') throw new ValidationError("Impossible d'annuler une facture deja payee");
 
   return prisma.facture.update({
     where: { id: idFacture },

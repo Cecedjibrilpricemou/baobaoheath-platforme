@@ -1,5 +1,6 @@
 // src/services/email.service.ts
 import nodemailer from 'nodemailer';
+import { AppError } from '../utils/app-error';
 
 // ── Transporter Gmail ─────────────────────────────────────────────
 type EmailConfig = {
@@ -12,11 +13,11 @@ function getEmailConfig(): EmailConfig {
     const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, '');
 
     if (!user || !pass) {
-        throw new Error('Configuration Gmail manquante: GMAIL_USER ou GMAIL_APP_PASSWORD absent');
+        throw new AppError('Configuration Gmail manquante: GMAIL_USER ou GMAIL_APP_PASSWORD absent', 503);
     }
 
     if (pass.length !== 16) {
-        throw new Error('Configuration Gmail invalide: GMAIL_APP_PASSWORD doit contenir 16 caracteres');
+        throw new AppError('Configuration Gmail invalide: GMAIL_APP_PASSWORD doit contenir 16 caracteres', 503);
     }
 
     return { user, pass };
@@ -102,7 +103,7 @@ export async function envoyerOtpConnexion(dto: {
     } catch (error) {
         const help = getGmailAuthHelp(error);
         if (help) {
-            throw new Error(help);
+            throw new AppError(help, 503);
         }
         throw error;
     }
@@ -177,7 +178,7 @@ export async function envoyerEmailResetMotDePasse(dto: {
         });
     } catch (error) {
         const help = getGmailAuthHelp(error);
-        if (help) throw new Error(help);
+        if (help) throw new AppError(help, 503);
         throw error;
     }
 }
@@ -298,7 +299,7 @@ export async function envoyerEmailAdminStructure(dto: {
     } catch (error) {
         const help = getGmailAuthHelp(error);
         if (help) {
-            throw new Error(help);
+            throw new AppError(help, 503);
         }
         throw error;
     }
@@ -392,7 +393,7 @@ export async function envoyerEmailAgent(dto: {
     } catch (error) {
         const help = getGmailAuthHelp(error);
         if (help) {
-            throw new Error(help);
+            throw new AppError(help, 503);
         }
         throw error;
     }

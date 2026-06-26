@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { ModePaiement } from '../types/paiement.types';
+import { ValidationError } from '../utils/app-error';
 
 export interface PaymentProviderRequest {
   modePaiement: ModePaiement;
@@ -21,7 +22,7 @@ export async function initierPaiementSimule(
   }
 
   if (!request.numeroOperateur) {
-    throw new Error(
+    throw new ValidationError(
       request.modePaiement === 'ORANGE_MONEY'
         ? 'Numero Orange Money requis'
         : 'Numero MTN MoMo requis'

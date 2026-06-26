@@ -10,6 +10,7 @@ import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import { hashPassword } from '../utils/password.utils';
 import { assertCanAccessPatient } from './access-control.service';
+import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 
 export interface RecordSyncEventInput {
   scope: string;
@@ -155,7 +156,7 @@ async function processMutation(user: JwtPayload, idMutation: string, mutation: S
 
 async function applyMutation(user: JwtPayload, mutation: SyncMutationInput): Promise<string | undefined> {
   if (mutation.operation === SyncOperation.DELETE) {
-    throw new Error('Suppression offline non autorisee sur les donnees medicales');
+    throw new ForbiddenError('Suppression offline non autorisee sur les donnees medicales');
   }
 
   switch (mutation.entityType) {
@@ -170,7 +171,7 @@ async function applyMutation(user: JwtPayload, mutation: SyncMutationInput): Pro
     case 'Stock':
       return updateStockFromSync(user, mutation);
     default:
-      throw new Error(`Type de ressource sync non supporte: ${mutation.entityType}`);
+      throw new ValidationError(`Type de ressource sync non supporte: ${mutation.entityType}`);
   }
 }
 
@@ -178,7 +179,7 @@ async function upsertPatientFromSync(user: JwtPayload, mutation: SyncMutationInp
   const payload = mutation.payload;
 
   if (mutation.operation === SyncOperation.UPDATE) {
-    if (!mutation.entityId) throw new Error('entityId requis pour mise a jour patient');
+    if (!mutation.entityId) throw new ValidationError('entityId requis pour mise a jour patient');
     await assertCanAccessPatient(user, mutation.entityId);
 
     const updated = await prisma.patientProfile.update({
@@ -196,7 +197,7 @@ async function upsertPatientFromSync(user: JwtPayload, mutation: SyncMutationInp
   }
 
   if (!['ASC', 'ASC_SUPERVISOR'].includes(user.role)) {
-    throw new Error('Seul un ASC peut creer un patient offline');
+    throw new ForbiddenError('Seul un ASC peut creer un patient offline');
   }
 
   const telephone = String(payload.telephone ?? '');
@@ -206,7 +207,7 @@ async function upsertPatientFromSync(user: JwtPayload, mutation: SyncMutationInp
   const sexe = String(payload.sexe ?? '');
   const prefecture = String(payload.prefecture ?? '');
   if (!telephone || !prenom || !nom || !dateNaissance || !sexe || !prefecture) {
-    throw new Error('Donnees patient offline incompletes');
+    throw new ValidationError('Donnees patient offline incompletes');
   }
 
   const motDePasseHash = await hashPassword(`offline-${randomUUID()}`);
@@ -234,14 +235,14 @@ async function upsertPatientFromSync(user: JwtPayload, mutation: SyncMutationInp
 }
 
 async function createConsultationFromSync(user: JwtPayload, mutation: SyncMutationInput) {
-  if (!['ASC', 'ASC_SUPERVISOR'].includes(user.role)) throw new Error('Seul un ASC peut creer une consultation offline');
+  if (!['ASC', 'ASC_SUPERVISOR'].includes(user.role)) throw new ForbiddenError('Seul un ASC peut creer une consultation offline');
   const asc = await prisma.ascProfile.findUnique({ where: { idUtilisateur: user.userId } });
-  if (!asc) throw new Error('Profil ASC non trouve');
+  if (!asc) throw new NotFoundError('Profil ASC non trouve');
 
   const payload = mutation.payload;
   const idPatient = String(payload.idPatient ?? '');
   const motifPrincipal = String(payload.motifPrincipal ?? '');
-  if (!idPatient || !motifPrincipal) throw new Error('Donnees consultation incompletes');
+  if (!idPatient || !motifPrincipal) throw new ValidationError('Donnees consultation incompletes');
   await assertCanAccessPatient(user, idPatient);
 
   const consultation = await prisma.consultation.create({
@@ -261,7 +262,7 @@ async function createConsultationFromSync(user: JwtPayload, mutation: SyncMutati
 async function upsertVitalsFromSync(user: JwtPayload, mutation: SyncMutationInput) {
   const payload = mutation.payload;
   const idConsultation = String(payload.idConsultation ?? mutation.entityId ?? '');
-  if (!idConsultation) throw new Error('idConsultation requis');
+  if (!idConsultation) throw new ValidationError('idConsultation requis');
 
   const existing = await prisma.constantesVitales.findUnique({ where: { idConsultation } });
   const data = {
@@ -284,7 +285,7 @@ async function createVaccinationFromSync(user: JwtPayload, mutation: SyncMutatio
   const payload = mutation.payload;
   const idPatient = String(payload.idPatient ?? '');
   const vaccinNom = String(payload.vaccinNom ?? '');
-  if (!idPatient || !vaccinNom) throw new Error('Donnees vaccination incompletes');
+  if (!idPatient || !vaccinNom) throw new ValidationError('Donnees vaccination incompletes');
   await assertCanAccessPatient(user, idPatient);
 
   const vaccination = await prisma.vaccination.create({
@@ -304,15 +305,15 @@ async function createVaccinationFromSync(user: JwtPayload, mutation: SyncMutatio
 }
 
 async function updateStockFromSync(user: JwtPayload, mutation: SyncMutationInput) {
-  if (!mutation.entityId) throw new Error('entityId requis pour stock');
+  if (!mutation.entityId) throw new ValidationError('entityId requis pour stock');
   const asc = await prisma.ascProfile.findUnique({ where: { idUtilisateur: user.userId } });
-  if (!asc) throw new Error('Profil ASC non trouve');
+  if (!asc) throw new NotFoundError('Profil ASC non trouve');
 
   const stock = await prisma.stock.findFirst({ where: { id: mutation.entityId, idAsc: asc.id } });
-  if (!stock) throw new Error('Stock non trouve dans le perimetre ASC');
+  if (!stock) throw new NotFoundError('Stock non trouve dans le perimetre ASC');
 
   const quantite = Number(mutation.payload.quantite);
-  if (!Number.isInteger(quantite) || quantite < 0) throw new Error('Quantite stock invalide');
+  if (!Number.isInteger(quantite) || quantite < 0) throw new ValidationError('Quantite stock invalide');
 
   const updated = await prisma.stock.update({
     where: { id: mutation.entityId },

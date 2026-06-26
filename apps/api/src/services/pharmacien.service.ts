@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { prisma } from '../config/prisma';
 import { Role, StatutOrdonnance, TypeStructure } from '../config/generated/client/client';
 import { hashPassword } from '../utils/password.utils';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 
 type CreateAgentPharmacieDto = {
   telephone: string;
@@ -25,10 +26,10 @@ async function getPharmacienAvecStructure(pharmacienId: string) {
   });
 
   if (!pharmacien?.idStructure || !pharmacien.structure) {
-    throw new Error('Pharmacien sans structure assignee');
+    throw new ForbiddenError('Pharmacien sans structure assignee');
   }
   if (pharmacien.structure.type !== TypeStructure.PHARMACIE) {
-    throw new Error('La structure assignee n est pas une pharmacie');
+    throw new ValidationError('La structure assignee n est pas une pharmacie');
   }
 
   return pharmacien;
@@ -58,7 +59,7 @@ export async function scanPatient(qrCode: string, pharmacienId: string) {
       },
     },
   });
-  if (!patient) throw new Error('Patient non trouve');
+  if (!patient) throw new NotFoundError('Patient non trouve');
 
   const ordonnances = patient.consultations.flatMap((c) =>
     c.ordonnances.map((o) => {
@@ -108,14 +109,14 @@ export async function delivrerOrdonnance(
     where: { id: ordonnanceId },
     include: { medicament: true },
   });
-  if (!ordonnance) throw new Error('Ordonnance non trouvee');
+  if (!ordonnance) throw new NotFoundError('Ordonnance non trouvee');
   if (ordonnance.statut !== StatutOrdonnance.EN_ATTENTE) {
-    throw new Error('Cette ordonnance ne peut plus etre delivree');
+    throw new ValidationError('Cette ordonnance ne peut plus etre delivree');
   }
 
   const quantiteDelivree = dto.quantiteDelivree ?? ordonnance.quantite;
   if (quantiteDelivree > ordonnance.quantite) {
-    throw new Error('La quantite delivree ne peut pas depasser la quantite prescrite');
+    throw new ValidationError('La quantite delivree ne peut pas depasser la quantite prescrite');
   }
 
   const stock = await prisma.stock.findFirst({
@@ -124,7 +125,7 @@ export async function delivrerOrdonnance(
       idStructure: pharmacien.idStructure,
     },
   });
-  if (!stock) throw new Error('Stock insuffisant pour delivrer cette ordonnance');
+  if (!stock) throw new ValidationError('Stock insuffisant pour delivrer cette ordonnance');
 
   const updatedOrdonnance = await prisma.$transaction(async (tx) => {
     // Atomic check-and-decrement: fails if quantity dropped below threshold since we checked
@@ -132,7 +133,7 @@ export async function delivrerOrdonnance(
       where: { id: stock.id, quantite: { gte: quantiteDelivree } },
       data: { quantite: { decrement: quantiteDelivree } },
     });
-    if (decremented.count === 0) throw new Error('Stock insuffisant pour delivrer cette ordonnance');
+    if (decremented.count === 0) throw new ValidationError('Stock insuffisant pour delivrer cette ordonnance');
 
     return tx.ordonnance.update({
       where: { id: ordonnanceId },
@@ -186,10 +187,10 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
   unite?: string;
 }) {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
-  if (dto.quantiteAjoutee <= 0) throw new Error('La quantite doit etre superieure a 0');
+  if (dto.quantiteAjoutee <= 0) throw new ValidationError('La quantite doit etre superieure a 0');
 
   const medicament = await prisma.medicament.findUnique({ where: { id: dto.idMedicament } });
-  if (!medicament) throw new Error('Medicament non trouve');
+  if (!medicament) throw new NotFoundError('Medicament non trouve');
 
   const stockExistant = await prisma.stock.findFirst({
     where: {
@@ -259,15 +260,15 @@ export async function getAgentsPharmacie(pharmacienId: string) {
 export async function creerAgentPharmacie(pharmacienId: string, dto: CreateAgentPharmacieDto) {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
   if (!pharmacien.pharmacienProfile?.estResponsable) {
-    throw new Error('Seul le pharmacien responsable peut creer des agents');
+    throw new ForbiddenError('Seul le pharmacien responsable peut creer des agents');
   }
 
   const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.telephone } });
-  if (existingTel) throw new Error('Ce numero de telephone est deja utilise');
+  if (existingTel) throw new ConflictError('Ce numero de telephone est deja utilise');
 
   if (dto.email) {
     const existingEmail = await prisma.utilisateur.findUnique({ where: { email: dto.email } });
-    if (existingEmail) throw new Error('Cette adresse email est deja utilisee');
+    if (existingEmail) throw new ConflictError('Cette adresse email est deja utilisee');
   }
 
   const motDePasseTemp = dto.motDePasse || genererMotDePasseTemp();

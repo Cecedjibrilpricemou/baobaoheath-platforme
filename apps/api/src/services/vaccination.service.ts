@@ -7,7 +7,7 @@ import {
     RappelVaccinationFilters,
 } from '../types/vaccination.types';
 import { assertCanAccessPatient } from './access-control.service';
-import { ForbiddenError } from '../utils/app-error';
+import { ForbiddenError, NotFoundError } from '../utils/app-error';
 
 // ─── Administrer un vaccin ────────────────────────────────
 export async function administrerVaccin(
@@ -19,7 +19,7 @@ export async function administrerVaccin(
     });
 
     if (!patient) {
-        throw new Error('Patient non trouvé');
+        throw new NotFoundError('Patient non trouvé');
     }
 
     await assertCanAccessPatient(user, dto.idPatient);
@@ -63,7 +63,7 @@ export async function getCarnetVaccinal(
     });
 
     if (!patient) {
-        throw new Error('Patient non trouvé');
+        throw new NotFoundError('Patient non trouvé');
     }
 
     await assertCanAccessPatient(user, idPatient);
@@ -112,7 +112,7 @@ export async function getMonCarnetVaccinal(userId: string) {
     });
 
     if (!patient) {
-        throw new Error('Profil patient non trouvé');
+        throw new NotFoundError('Profil patient non trouvé');
     }
 
     const vaccinations = await prisma.vaccination.findMany({
@@ -139,7 +139,7 @@ export async function updateVaccination(
     });
 
     if (!vaccination) {
-        throw new Error('Vaccination non trouvée');
+        throw new NotFoundError('Vaccination non trouvée');
     }
 
     await assertCanAccessPatient(user, vaccination.idPatient);
