@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import Redis from 'ioredis';
 import { env } from './config/env';
 
 import authRoutes from './routes/auth.routes';
@@ -28,6 +27,7 @@ import { setupSwagger } from './config/swagger';
 import { logger } from './config/logger';
 import { prisma } from './config/prisma';
 import { initSentry, captureError } from './config/sentry';
+import { initRedis, getRedis } from './config/redis';
 import { auditRequest } from './services/audit.service';
 import { startBackgroundJobs } from './services/job.service';
 import { globalErrorHandler } from './middlewares/error.middleware';
@@ -49,12 +49,11 @@ process.on('unhandledRejection', (reason) => {
 
 const app = express();
 
-// Configuration Redis pour le Rate Limiting
-let redisClient: Redis | undefined;
+// Shared Redis client (rate limiting + cache)
 if (env.REDIS_URL) {
-  redisClient = new Redis(env.REDIS_URL);
-  redisClient.on('error', (err) => logger.warn('Redis rate-limit indisponible', { error: err.message }));
+  initRedis(env.REDIS_URL);
 }
+const redisClient = getRedis();
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

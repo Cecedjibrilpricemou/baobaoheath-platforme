@@ -6,9 +6,15 @@ import {
     AlerteEpidemique,
     ExportFilters,
 } from '../types/analytics.types';
+import { withCache } from '../utils/cache';
 
 // ─── Dashboard général — statistiques globales ────────────
 export async function getDashboardGlobal(filters: AnalyticsFilters) {
+    const cacheKey = `analytics:dashboard:${filters.prefecture ?? 'all'}:${filters.debut ?? ''}:${filters.fin ?? ''}`;
+    return withCache(cacheKey, 120, () => _getDashboardGlobal(filters));
+}
+
+async function _getDashboardGlobal(filters: AnalyticsFilters) {
     const where = buildDateWhere(filters);
 
     const [

@@ -8,6 +8,7 @@ import {
 import { JwtPayload } from '../types/auth.types';
 import { assertCanAccessConsultation } from './access-control.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { withCache, cacheDel } from '../utils/cache';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
@@ -139,6 +140,7 @@ export async function validerConsultation(
             });
         }
 
+        await cacheDel(`medecin:dashboard:${user.userId}`);
         return updated;
     });
 }
@@ -322,6 +324,10 @@ export async function getMessages(userId: string) {
 
 // ─── Dashboard médecin — statistiques globales ────────────
 export async function getDashboardStats(userId: string) {
+    return withCache(`medecin:dashboard:${userId}`, 60, () => _getDashboardStats(userId));
+}
+
+async function _getDashboardStats(userId: string) {
     const medecin = await prisma.utilisateur.findUnique({
         where: { id: userId },
         include: { structure: true },
