@@ -26,6 +26,7 @@ import ussdRoutes from './routes/ussd.routes';
 import statsRoutes from './routes/stats.routes';
 import { setupSwagger } from './config/swagger';
 import { logger } from './config/logger';
+import { prisma } from './config/prisma';
 import { auditRequest } from './services/audit.service';
 import { startBackgroundJobs } from './services/job.service';
 import { globalErrorHandler } from './middlewares/error.middleware';
@@ -77,13 +78,33 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1', apiLimiter);
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
-    success: true,
-    message: 'BaoBaoHealth API operationnelle',
+app.get('/health', async (_req: Request, res: Response) => {
+  const checks: Record<string, 'ok' | 'error'> = {};
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.postgres = 'ok';
+  } catch {
+    checks.postgres = 'error';
+  }
+
+  if (redisClient) {
+    try {
+      await redisClient.ping();
+      checks.redis = 'ok';
+    } catch {
+      checks.redis = 'error';
+    }
+  }
+
+  const allOk = Object.values(checks).every((s) => s === 'ok');
+  res.status(allOk ? 200 : 503).json({
+    success: allOk,
+    message: allOk ? 'BaoBaoHealth API operationnelle' : 'Degraded',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: env.NODE_ENV,
+    checks,
   });
 });
 
