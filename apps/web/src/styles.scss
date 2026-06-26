@@ -10,16 +10,17 @@
 @import 'primeflex/primeflex.css';
 
 // ── POLICES LOCALES ──────────────────────────────────────────────
-// Fichiers WOFF2 à placer dans src/assets/fonts/ (voir README)
 @font-face { font-family: 'Sora'; src: url('/assets/fonts/Sora-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Sora'; src: url('/assets/fonts/Sora-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'Sora'; src: url('/assets/fonts/Sora-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
 @font-face { font-family: 'Sora'; src: url('/assets/fonts/Sora-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
 @font-face { font-family: 'Sora'; src: url('/assets/fonts/Sora-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
 @font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
 @font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-MediumItalic.woff2') format('woff2'); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('/assets/fonts/DMSans-BoldItalic.woff2') format('woff2'); font-weight: 700; font-style: italic; font-display: swap; }
 
 // ── TOKENS MODE CLAIR ─────────────────────────────────────────────
 :root {
