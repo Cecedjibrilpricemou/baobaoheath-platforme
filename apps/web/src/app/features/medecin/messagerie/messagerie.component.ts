@@ -143,7 +143,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const msg = response.data as unknown as Message;
+          const msg = response.data as Message;
           // Ajouter le message à la conversation
           const updatedConv = {
             ...conv,

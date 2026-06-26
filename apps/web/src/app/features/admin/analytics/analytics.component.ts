@@ -138,7 +138,7 @@ export class AnalyticsComponent implements OnInit {
     const params = this.prefiltreSelectionne ? { prefecture: this.prefiltreSelectionne } : undefined;
     this.adminService.getAnalyticsDashboard(params).subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.dashboard.set(response.data as unknown as DashboardData);
+        if (response.success && response.data) this.dashboard.set(response.data as DashboardData);
         this.isLoadingDash.set(false); 
       },
       error: () => { this.isLoadingDash.set(false); }
@@ -171,7 +171,7 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingAlertes.set(true);
     this.adminService.getAnalyticsAlertes().subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.alertes.set(response.data as unknown as Alerte[]);
+        if (response.success && response.data) this.alertes.set(response.data as Alerte[]);
         this.isLoadingAlertes.set(false); 
       },
       error: () => { this.isLoadingAlertes.set(false); }
@@ -182,7 +182,7 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingTend.set(true);
     this.adminService.getAnalyticsTendances().subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.tendances.set(response.data as unknown as Tendance[]);
+        if (response.success && response.data) this.tendances.set(response.data as Tendance[]);
         this.isLoadingTend.set(false); 
       },
       error: () => { this.isLoadingTend.set(false); }
@@ -193,7 +193,7 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingCouv.set(true);
     this.adminService.getAnalyticsCouverture().subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.couverture.set(response.data as unknown as Couverture[]);
+        if (response.success && response.data) this.couverture.set(response.data as Couverture[]);
         this.isLoadingCouv.set(false); 
       },
       error: () => { this.isLoadingCouv.set(false); }

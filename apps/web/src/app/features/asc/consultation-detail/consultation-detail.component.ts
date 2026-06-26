@@ -271,7 +271,7 @@ export class ConsultationDetailComponent implements OnInit {
     this.consultationService.saveVitals(id, this.vitalsForm).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const constantes = response.data as unknown as ConstantesVitales;
+          const constantes = response.data;
           const c = this.consultation();
           if (c) this.consultation.set({ ...c, constantes });
           this.isSavingVitals.set(false);
@@ -296,9 +296,9 @@ export class ConsultationDetailComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as unknown as Diagnostic;
+          const data = response.data;
           const c = this.consultation();
-          if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data] });
+          if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data as unknown as Diagnostic] });
           this.diagnosticForm = { libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC' };
           this.isSavingDiagnostic.set(false);
           this.showSuccess('Diagnostic ajouté !');
@@ -319,9 +319,9 @@ export class ConsultationDetailComponent implements OnInit {
     this.consultationService.saveOrdonnance(id, this.ordonnanceForm).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as unknown as Ordonnance;
+          const data = response.data;
           const c = this.consultation();
-          if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data] });
+          if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data as unknown as Ordonnance] });
           this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
           this.isSavingOrdonnance.set(false);
           this.showSuccess('Ordonnance ajoutée !');
@@ -342,9 +342,9 @@ export class ConsultationDetailComponent implements OnInit {
     this.consultationService.saveReferral(id, this.referralForm).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const ref = response.data as unknown as Referencement;
+          const ref = response.data;
           const c = this.consultation();
-          if (c) this.consultation.set({ ...c, referencement: ref, statut: 'REFERENCEE' });
+          if (c) this.consultation.set({ ...c, referencement: ref as unknown as Referencement, statut: 'REFERENCEE' });
           this.isSavingReferral.set(false);
           this.showSuccess('Référencement créé !');
         }

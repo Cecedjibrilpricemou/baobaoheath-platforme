@@ -80,7 +80,14 @@ export class StocksComponent implements OnInit {
               unite: s['unite'] as string,
               dateExpiration: (s['datePeremption'] ?? s['dateExpiration']) as string | undefined,
               categorie: (med?.['categorie'] ?? s['categorie']) as string | undefined,
-              medicament: (med ?? { dci: (s['medicamentNom'] ?? '—') as string, forme: '', dosage: '' }) as unknown as Stock['medicament']
+              medicament: {
+                id: (med?.['id'] ?? '') as string,
+                dci: (med?.['dci'] ?? s['medicamentNom'] ?? '—') as string,
+                nomCommercial: med?.['nomCommercial'] as string | undefined,
+                forme: (med?.['forme'] ?? '') as string,
+                dosage: (med?.['dosage'] ?? '') as string,
+                categorie: (med?.['categorie'] ?? s['categorie']) as string | undefined
+              }
             };
           });
           this.stocks.set(data);

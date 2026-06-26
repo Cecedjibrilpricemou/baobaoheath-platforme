@@ -67,7 +67,7 @@ export class MedecinConsultationsComponent implements OnInit {
     this.medecinService.getConsultations().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as unknown as Consultation[];
+          const data = response.data as Consultation[];
           this.consultations.set(data);
           this.total.set(response.meta?.total ?? data.length);
         }

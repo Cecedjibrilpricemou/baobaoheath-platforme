@@ -1,5 +1,11 @@
 // core/models/patient.model.ts
-export type { ConsultationView as Consultation, OrdonnanceView as Ordonnance, DiagnosticView as Diagnostic } from '@baobaoheath/shared-types';
+import { ConsultationView } from '@baobaoheath/shared-types';
+export type { OrdonnanceView as Ordonnance, DiagnosticView as Diagnostic } from '@baobaoheath/shared-types';
+
+export interface Consultation extends ConsultationView {
+  medecin?: { utilisateur?: { prenom: string; nom: string } };
+  patient?: { utilisateur?: { prenom: string; nom: string; telephone: string } };
+}
 
 export interface Patient {
   id: string;

@@ -63,7 +63,7 @@ export class MedecinDashboardComponent implements OnInit {
     this.medecinService.getConsultationsRecentes().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.consultationsRecentes.set(response.data as unknown as ConsultationRecente[]);
+          this.consultationsRecentes.set(response.data as ConsultationRecente[]);
         }
       },
       error: () => {}

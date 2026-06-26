@@ -42,7 +42,7 @@ export class ExportComponent {
 
     this.adminService.exportAnalytics(this.formatSelectionne, this.periodeSelectionnee).subscribe({
       next: (response) => {
-        const raw = response as unknown as { data?: unknown };
+        const raw = response as { data?: unknown };
         const content = this.formatSelectionne === 'csv'
           ? String(response)
           : JSON.stringify(raw?.data ?? response, null, 2);

@@ -25,9 +25,9 @@ export function generateTokenPair(payload: JwtPayload): TokenPair {
 }
 
 export function verifyAccessToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as unknown as JwtPayload;
+  return jwt.verify(token, JWT_SECRET) as jwt.JwtPayload as JwtPayload;
 }
 
 export function verifyRefreshToken(token: string): Pick<JwtPayload, 'userId' | 'sessionId'> {
-  return jwt.verify(token, JWT_SECRET) as unknown as Pick<JwtPayload, 'userId' | 'sessionId'>;
+  return jwt.verify(token, JWT_SECRET) as jwt.JwtPayload as Pick<JwtPayload, 'userId' | 'sessionId'>;
 }

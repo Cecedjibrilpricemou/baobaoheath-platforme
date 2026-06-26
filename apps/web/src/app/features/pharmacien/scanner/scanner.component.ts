@@ -66,7 +66,7 @@ export class ScannerComponent {
         if (response.success && response.data) {
           this.scanResult.set(response.data as unknown as ScanResult);
         } else {
-          this.scanResult.set(response.data as unknown as ScanResult ?? null);
+          this.scanResult.set((response.data as unknown as ScanResult) ?? null);
         }
       },
       error: (err) => {

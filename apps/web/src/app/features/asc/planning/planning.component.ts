@@ -37,7 +37,7 @@ export class PlanningComponent implements OnInit {
     this.ascService.getPlanning().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as unknown as RendezVous[];
+          const data = response.data as RendezVous[];
           this.rendezVous.set(data);
           this.totalRdv.set(data.length);
           const today = new Date().toDateString();

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 import { Consultation, Diagnostic, OrdonnanceLigne } from '../models/patient.model';
+import { ConstantesVitalesView } from '@baobaoheath/shared-types';
 
 export interface VitalsPayload {
   temperature?: number;
@@ -49,8 +50,8 @@ export class ConsultationService {
     return this.api.get<ApiResponse<Consultation>>(`/consultations/${id}`);
   }
 
-  saveVitals(id: string, payload: VitalsPayload): Observable<ApiResponse<VitalsPayload>> {
-    return this.api.post<ApiResponse<VitalsPayload>>(`/consultations/${id}/vitals`, payload);
+  saveVitals(id: string, payload: VitalsPayload): Observable<ApiResponse<ConstantesVitalesView>> {
+    return this.api.post<ApiResponse<ConstantesVitalesView>>(`/consultations/${id}/vitals`, payload);
   }
 
   saveDiagnostic(id: string, payload: DiagnosticPayload): Observable<ApiResponse<Diagnostic>> {
@@ -61,8 +62,8 @@ export class ConsultationService {
     return this.api.post<ApiResponse<OrdonnanceLigne>>(`/consultations/${id}/ordonnances`, payload);
   }
 
-  saveReferral(id: string, payload: ReferralPayload): Observable<ApiResponse<unknown>> {
-    return this.api.post<ApiResponse<unknown>>(`/consultations/${id}/referral`, payload);
+  saveReferral(id: string, payload: ReferralPayload): Observable<ApiResponse<{ id: string; statut: string }>> {
+    return this.api.post<ApiResponse<{ id: string; statut: string }>>(`/consultations/${id}/referral`, payload);
   }
 
   closeConsultation(id: string): Observable<ApiResponse<Consultation>> {

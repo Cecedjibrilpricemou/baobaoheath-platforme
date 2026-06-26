@@ -474,6 +474,21 @@ export interface OrdonnanceView {
   medicament?: { id: string; dci: string; nomCommercial?: string; forme: string; dosage: string };
 }
 
+export interface ConstantesVitalesView {
+  id?: string;
+  temperature?: number;
+  poidsKg?: number;
+  tailleCm?: number;
+  perimetreBrachial?: number;
+  tensionSystolique?: number;
+  tensionDiastolique?: number;
+  frequenceCardiaque?: number;
+  frequenceRespiratoire?: number;
+  spo2?: number;
+  glycemie?: number;
+  alertes?: string[];
+}
+
 export interface ConsultationView {
   id: string;
   statut: EncounterStatus;
@@ -482,6 +497,7 @@ export interface ConsultationView {
   notesAsc?: string;
   notesMedecin?: string;
   idPatient?: string;
+  constantes?: ConstantesVitalesView;
   asc?: { utilisateur: { prenom: string; nom: string } };
   medecinValideur?: { prenom: string; nom: string };
   diagnostics?: DiagnosticView[];

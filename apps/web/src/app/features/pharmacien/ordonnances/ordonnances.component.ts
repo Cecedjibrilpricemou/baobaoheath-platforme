@@ -136,7 +136,7 @@ export class OrdonnancesComponent implements OnInit {
         this.isDelivering.set(false);
         this.selected.set(null);
         this.ordonnances.update(list => list.filter(ord => ord.id !== o.id));
-        const responseData = response?.data as unknown as { montantGnf?: number };
+        const responseData = response?.data as { montantGnf?: number };
         this.successMessage.set(`✅ Médicaments délivrés — ${this.formatMontant(responseData?.montantGnf ?? 0)}`);
         setTimeout(() => this.successMessage.set(''), 5000);
       },

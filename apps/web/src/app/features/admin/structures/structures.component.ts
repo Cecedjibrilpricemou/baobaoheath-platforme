@@ -139,7 +139,7 @@ export class StructuresComponent implements OnInit {
 
     request$.subscribe({
       next: (response) => {
-        const data = (response?.data ?? response) as unknown as CreateStructureResponse;
+        const data = (response?.data ?? response) as CreateStructureResponse;
         this.isSaving.set(false);
         this.showForm.set(false);
         this.newStructure = {
