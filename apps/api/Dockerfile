@@ -25,5 +25,8 @@ COPY --from=build /repo/apps/api/dist ./dist
 COPY apps/api/package.json ./package.json
 COPY apps/api/prisma ./prisma
 
+RUN chown -R node:node /repo
+USER node
+
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
