@@ -141,6 +141,8 @@ jobs:
     needs: [api-build-test, api-audit, web-build, web-audit]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
 
     steps:
       - uses: actions/checkout@v4
@@ -166,7 +168,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Deploy via SSH
-        if: ${{ secrets.DEPLOY_HOST != '' }}
+        if: ${{ env.DEPLOY_HOST != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
