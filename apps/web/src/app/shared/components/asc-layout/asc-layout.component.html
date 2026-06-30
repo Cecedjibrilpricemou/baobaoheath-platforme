@@ -104,7 +104,7 @@
           <i class="pi pi-wifi-slash bb-connectivity-banner__icon" aria-hidden="true"></i>
           <div class="bb-connectivity-banner__text">
             <span class="bb-connectivity-banner__title">{{ 'ASC.OFFLINE_MSG' | translate }}</span>
-            <span class="bb-connectivity-banner__sub">{{ 'ASC.OFFLINE_PENDING' | translate }}</span>
+            <span class="bb-connectivity-banner__sub">{{ 'ASC.OFFLINE_PENDING' | translate: { count: pendingCount() } }}</span>
           </div>
           <a routerLink="/asc/sync" class="bb-connectivity-banner__action">
             {{ 'ASC.OFFLINE_SYNC_LINK' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i>

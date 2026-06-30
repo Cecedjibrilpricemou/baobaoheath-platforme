@@ -306,6 +306,7 @@
       "THRESHOLD": "Seuil",
       "EXPIRES": "Expire le",
       "EXPIRES_SOON": "Bientôt",
+      "UNIT_DEFAULT": "unités",
       "EMPTY_TITLE": "Aucun médicament",
       "EMPTY_SUB": "L'inventaire apparaîtra ici",
       "EMPTY_SEARCH": "Aucun résultat pour",

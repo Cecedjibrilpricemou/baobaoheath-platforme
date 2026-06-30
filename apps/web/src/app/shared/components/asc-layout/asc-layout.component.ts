@@ -33,6 +33,7 @@ export class AscLayoutComponent {
   sidebarOpen           = signal(false);
   showLogoutConfirm     = signal(false);
   showProfil            = signal(false);
+  pendingCount          = signal(0);
 
   // ── Connectivity ─────────────────────────────────────────────────
   isOnline         = signal(navigator.onLine);

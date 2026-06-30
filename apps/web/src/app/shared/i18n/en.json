@@ -43,12 +43,12 @@
     "PLANIFIE": "Scheduled",
     "CONFIRME": "Confirmed",
     "ANNULE": "Cancelled",
-    "TERMINE": "Done"
+    "TERMINE": "Completed"
   },
   "AUTH": {
     "LOGIN": {
       "TITLE": "Sign in",
-      "SUBTITLE": "Access your personal space",
+      "SUBTITLE": "Access your account",
       "PHONE": "Phone number",
       "PHONE_PLACEHOLDER": "e.g. 620 00 00 00",
       "PASSWORD": "Password",
@@ -59,7 +59,7 @@
       "SHOW": "SHOW",
       "HIDE": "HIDE",
       "WELCOME_TITLE": "Welcome",
-      "WELCOME_SUBTITLE": "Guinea's digital health platform — patients, health workers and doctors connected.",
+      "WELCOME_SUBTITLE": "Guinea's digital health platform — patients, community health workers and doctors connected.",
       "STAT_MODULES": "Modules",
       "STAT_ROUTES": "Routes",
       "STAT_ROLES": "Roles",
@@ -145,7 +145,7 @@
   },
   "LANDING": {
     "NAV_FEATURES": "Features",
-    "NAV_ROLES": "For who",
+    "NAV_ROLES": "Who It's For",
     "NAV_HOW": "How it works",
     "NAV_LOGIN": "Sign in",
     "NAV_REGISTER": "Create account",
@@ -164,9 +164,9 @@
     "FEATURES_TAG": "Features",
     "FEATURES_TITLE": "Everything you need",
     "FEATURES_SUB": "9 integrated modules for complete community health management",
-    "ROLES_TAG": "For who",
+    "ROLES_TAG": "Who It's For",
     "ROLES_TITLE": "For every healthcare actor",
-    "ROLES_SUB": "8 distinct roles with personalised spaces",
+    "ROLES_SUB": "8 distinct roles with personalized spaces",
     "HOW_TAG": "Simple & fast",
     "HOW_TITLE": "Start in 3 steps",
     "HOW_SUB": "No lengthy training required — the platform is built for the field",
@@ -183,17 +183,19 @@
     "FOOTER_TERMS": "Terms of service",
     "FOOTER_CONTACT": "Contact",
     "FOOTER_COPY": "© 2026 BaoBaoHealth — All rights reserved",
-    "FOOTER_SECURE": "Encrypted data",
+    "FOOTER_SECURE": "Secure data",
     "FOOTER_MADE": "Made in Guinea 🇬🇳"
   },
   "PATIENT": {
     "ROLE": "Patient",
     "NAV_DASHBOARD": "Dashboard",
     "NAV_PROFILE": "My Profile",
+    "NAV_PROFIL": "My Profile",
     "NAV_QR": "QR Code",
+    "NAV_QR_CODE": "My QR Code",
     "DASHBOARD": {
       "GREETING": "Hello 👋",
-      "SUBTITLE": "Your personal health space",
+      "SUBTITLE": "Your personal health dashboard",
       "BTN_QR": "My QR Code",
       "BTN_PROFILE": "My Profile",
       "STAT_CONSULTATIONS": "Consultations",
@@ -201,11 +203,11 @@
       "STAT_RDV": "Next Appointment",
       "STAT_ORDONNANCES": "Prescriptions",
       "RECENT_CONSULT": "Recent consultations",
-      "VACCINE_BOOK": "Vaccine booklet",
+      "VACCINE_BOOK": "Vaccination record",
       "NO_CONSULT": "No consultations",
       "NO_CONSULT_SUB": "Your consultations will appear here",
       "NO_VACCINE": "No vaccinations",
-      "NO_VACCINE_SUB": "Your vaccine booklet will appear here",
+      "NO_VACCINE_SUB": "Your vaccination record will appear here",
       "REMINDER": "Reminder",
       "EXPORTING": "Exporting..."
     },
@@ -296,14 +298,15 @@
       "STAT_TOTAL": "Medications",
       "STAT_CRITIQUES": "Critical",
       "STAT_NORMAUX": "Normal",
-      "SEARCH_PH": "Search a medication...",
-      "CRITICAL_ALERT": "medication(s) at critical stock — urgent resupply needed",
+      "SEARCH_PH": "Search medications...",
+      "CRITICAL_ALERT": "medication(s) critically low — urgent resupply needed",
       "LEVEL_CRITIQUE": "Critical",
       "LEVEL_FAIBLE": "Low",
       "LEVEL_NORMAL": "Normal",
       "THRESHOLD": "Threshold",
       "EXPIRES": "Expires",
       "EXPIRES_SOON": "Soon",
+      "UNIT_DEFAULT": "units",
       "EMPTY_TITLE": "No medications",
       "EMPTY_SUB": "Inventory will appear here",
       "EMPTY_SEARCH": "No results for",
@@ -345,5 +348,10 @@
     "NAV_SCANNER": "Scan QR Code",
     "NAV_ORDONNANCES": "Prescriptions",
     "NAV_STOCKS": "Stock"
+  },
+  "ADMIN_STRUCTURE": {
+    "ROLE": "Facility Admin",
+    "NAV_DASHBOARD": "Dashboard",
+    "NAV_AGENTS": "My Agents"
   }
 }
