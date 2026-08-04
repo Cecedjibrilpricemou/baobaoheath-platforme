@@ -9,6 +9,7 @@ import { JwtPayload } from '../types/auth.types';
 import { assertCanAccessConsultation } from './access-control.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { withCache, cacheDel } from '../utils/cache';
+import { emitToUser } from '../realtime/socket.server';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
@@ -273,7 +274,7 @@ export async function sendMessage(userId: string, dto: SendMessageDto) {
         throw new NotFoundError('Destinataire non trouvé');
     }
 
-    return prisma.message.create({
+    const message = await prisma.message.create({
         data: {
             idExpediteur: userId,
             idDestinataire: dto.idDestinataire,
@@ -289,6 +290,10 @@ export async function sendMessage(userId: string, dto: SendMessageDto) {
             },
         },
     });
+
+    emitToUser(dto.idDestinataire, 'message:new', message);
+
+    return message;
 }
 
 // ─── Messagerie — récupérer les messages ─────────────────

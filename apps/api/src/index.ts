@@ -32,6 +32,8 @@ import { auditRequest } from './services/audit.service';
 import { startBackgroundJobs } from './services/job.service';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import { requestContextMiddleware } from './middlewares/request-context.middleware';
+import { createServer } from 'http';
+import { initSocketServer } from './realtime/socket.server';
 
 initSentry(env.SENTRY_DSN);
 
@@ -155,11 +157,15 @@ app.use((_req: Request, res: Response) => {
 // Middleware global de gestion des erreurs
 app.use(globalErrorHandler);
 
-app.listen(env.PORT, () => {
+const httpServer = createServer(app);
+initSocketServer(httpServer);
+
+httpServer.listen(env.PORT, () => {
   logger.info(`Documentation API : http://localhost:${env.PORT}/api/docs`);
   logger.info(`BaoBaoHealth API : http://localhost:${env.PORT}`);
   logger.info(`Environnement   : ${env.NODE_ENV}`);
   logger.info(`CORS origins    : ${env.ALLOWED_ORIGINS.join(', ')}`);
+  logger.info(`WebSocket       : ws://localhost:${env.PORT}`);
   startBackgroundJobs();
 });
 
