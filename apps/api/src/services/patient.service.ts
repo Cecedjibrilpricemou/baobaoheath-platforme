@@ -40,7 +40,14 @@ export async function createPatient(dto: CreatePatientDto) {
         urgenceNom: dto.urgenceNom,
         urgenceTelephone: dto.urgenceTelephone,
       },
-      include: { utilisateur: true },
+      include: {
+        utilisateur: {
+          select: {
+            id: true, telephone: true, email: true, prenom: true, nom: true,
+            photoUrl: true, langue: true, role: true, estActif: true, creeLe: true,
+          },
+        },
+      },
     });
 
     return { utilisateur, patient };

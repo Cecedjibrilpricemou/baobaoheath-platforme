@@ -1,33 +1,12 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import { env } from '../config/env';
 import { TokenPair } from '../types/auth.types';
-
-const REFRESH_COOKIE = 'bb_refresh';
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
-  path: '/api/v1/auth',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-};
-
-function setRefreshCookie(res: Response, refreshToken: string) {
-  res.cookie(REFRESH_COOKIE, refreshToken, COOKIE_OPTIONS);
-}
-
-function clearRefreshCookie(res: Response) {
-  res.clearCookie(REFRESH_COOKIE, { ...COOKIE_OPTIONS, maxAge: 0 });
-}
+import { setAuthCookies, clearAuthCookies, REFRESH_COOKIE } from '../utils/auth-cookies';
 
 function sendTokens(res: Response, status: number, tokenPair: TokenPair) {
-  setRefreshCookie(res, tokenPair.refreshToken);
-  res.status(status).json({
-    success: true,
-    data: { accessToken: tokenPair.accessToken },
-  });
+  setAuthCookies(res, tokenPair);
+  res.status(status).json({ success: true, data: { authenticated: true } });
 }
 
 export async function registerController(req: Request, res: Response): Promise<void> {
@@ -51,12 +30,12 @@ export async function verifyLoginOtpController(req: Request, res: Response): Pro
 
 export async function logoutController(req: AuthRequest, res: Response): Promise<void> {
   await authService.logout(req.user!.sessionId);
-  clearRefreshCookie(res);
+  clearAuthCookies(res);
   res.status(200).json({ success: true, message: 'Déconnexion réussie' });
 }
 
 export async function refreshController(req: Request, res: Response): Promise<void> {
-  const tokenFromCookie: string | undefined = (req as Request & { cookies: Record<string, string> }).cookies?.[REFRESH_COOKIE];
+  const tokenFromCookie: string | undefined = req.cookies?.[REFRESH_COOKIE];
   const tokenFromBody: string | undefined = req.body?.refreshToken;
   const refreshToken = tokenFromCookie ?? tokenFromBody;
 

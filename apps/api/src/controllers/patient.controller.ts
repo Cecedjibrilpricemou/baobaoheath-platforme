@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import * as patientService from '../services/patient.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { setAuthCookies } from '../utils/auth-cookies';
 
 export async function createPatientController(req: Request, res: Response): Promise<void> {
-  const result = await patientService.createPatient(req.body);
-    res.status(201).json({ success: true, data: result });
+  const { tokenPair, patient } = await patientService.createPatient(req.body);
+  setAuthCookies(res, tokenPair);
+  res.status(201).json({ success: true, data: { patient } });
 }
 
 export async function getPatientsController(req: AuthRequest, res: Response): Promise<void> {

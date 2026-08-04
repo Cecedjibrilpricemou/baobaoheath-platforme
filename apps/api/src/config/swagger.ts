@@ -56,11 +56,11 @@ export const swaggerDocument = {
           motDePasse: { type: 'string', example: 'MotDePasse123!' },
         },
       },
-      TokenPair: {
+      AuthAck: {
         type: 'object',
+        description: "Les tokens ne sont plus renvoyés dans le corps de la réponse : ils sont posés en cookies httpOnly (bb_access, bb_refresh) accompagnés d'un cookie bb_csrf (non httpOnly) à répercuter dans l'en-tête X-CSRF-Token sur toute requête mutante.",
         properties: {
-          accessToken: { type: 'string', description: 'JWT valide 15 minutes' },
-          refreshToken: { type: 'string', description: 'JWT valide 7 jours' },
+          authenticated: { type: 'boolean', example: true },
         },
       },
       Utilisateur: {
@@ -509,7 +509,7 @@ export const swaggerDocument = {
         description: 'Enregistre un nouvel utilisateur et retourne une paire de tokens JWT',
         requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/RegisterDto' } } } },
         responses: {
-          201: { description: 'Compte créé avec succès', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] } } } },
+          201: { description: 'Compte créé avec succès', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/AuthAck' } } }] } } } },
           400: { description: 'Numéro déjà utilisé ou données invalides' },
         },
       },
@@ -520,7 +520,7 @@ export const swaggerDocument = {
         summary: 'Se connecter',
         requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/LoginDto' } } } },
         responses: {
-          200: { description: 'Connexion réussie', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] } } } },
+          200: { description: 'Connexion réussie', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/AuthAck' } } }] } } } },
           401: { description: 'Identifiants invalides' },
         },
       },
@@ -531,7 +531,7 @@ export const swaggerDocument = {
         summary: 'Renouveler les tokens',
         requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['refreshToken'], properties: { refreshToken: { type: 'string' } } } } } },
         responses: {
-          200: { description: 'Tokens renouvelés', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/TokenPair' } } }] } } } },
+          200: { description: 'Tokens renouvelés', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/AuthAck' } } }] } } } },
           401: { description: 'Refresh token invalide ou expiré' },
         },
       },
@@ -558,7 +558,7 @@ export const swaggerDocument = {
         summary: 'Créer un compte patient',
         requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreatePatientDto' } } } },
         responses: {
-          201: { description: 'Patient créé avec succès', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { tokenPair: { $ref: '#/components/schemas/TokenPair' }, patient: { $ref: '#/components/schemas/PatientProfile' } } } } }] } } } },
+          201: { description: 'Patient créé avec succès', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { patient: { $ref: '#/components/schemas/PatientProfile' } } } } }] } } } },
           400: { description: 'Numéro déjà utilisé ou données invalides' },
         },
       },
