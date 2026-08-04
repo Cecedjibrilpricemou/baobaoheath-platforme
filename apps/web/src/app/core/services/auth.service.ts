@@ -6,9 +6,9 @@ import { tap, map, switchMap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { User, LoginPayload, RegisterPayload } from '../models/user.model';
 
-interface BackendTokenResponse {
+interface BackendAckResponse {
   success: boolean;
-  data: { accessToken: string; };
+  data: { authenticated: boolean; };
 }
 
 interface BackendMeResponse {
@@ -19,7 +19,7 @@ interface BackendMeResponse {
 interface BackendLoginResponse {
   success: boolean;
   data: {
-    accessToken?: string;
+    authenticated?: boolean;
     requiresOtp?: boolean;
     email?: string;
     message?: string;
@@ -32,8 +32,7 @@ export class AuthService {
   private api    = inject(ApiService);
   private router = inject(Router);
 
-  // Access token kept in memory only — never in localStorage (XSS risk)
-  private _accessToken = signal<string | null>(null);
+  // Access/refresh/CSRF tokens all live in cookies (httpOnly for the first two) — never touched from JS.
   // User profile in localStorage for fast re-render; refreshed on every token refresh
   private _currentUser = signal<User | null>(this.loadUserFromStorage());
 
@@ -45,8 +44,7 @@ export class AuthService {
   login(payload: LoginPayload): Observable<BackendLoginResponse['data']> {
     return this.api.post<BackendLoginResponse>('/auth/login', payload).pipe(
       switchMap(response => {
-        if (response.success && response.data.accessToken) {
-          this._accessToken.set(response.data.accessToken);
+        if (response.success && response.data.authenticated) {
           return this.fetchCurrentUser().pipe(map(() => response.data));
         }
         return of(response.data);
@@ -55,23 +53,13 @@ export class AuthService {
   }
 
   verifyOtp(email: string, code: string): Observable<User> {
-    return this.api.post<BackendTokenResponse>('/auth/verify-otp', { email, code }).pipe(
-      tap(response => {
-        if (response.success && response.data?.accessToken) {
-          this._accessToken.set(response.data.accessToken);
-        }
-      }),
+    return this.api.post<BackendAckResponse>('/auth/verify-otp', { email, code }).pipe(
       switchMap(() => this.fetchCurrentUser())
     );
   }
 
   register(payload: RegisterPayload): Observable<User> {
-    return this.api.post<BackendTokenResponse>('/auth/register', payload).pipe(
-      tap(response => {
-        if (response.success && response.data?.accessToken) {
-          this._accessToken.set(response.data.accessToken);
-        }
-      }),
+    return this.api.post<BackendAckResponse>('/auth/register', payload).pipe(
       switchMap(() => this.fetchCurrentUser())
     );
   }
@@ -83,15 +71,9 @@ export class AuthService {
     });
   }
 
-  // Refresh uses the HttpOnly cookie automatically (no token in body)
-  refreshToken(): Observable<BackendTokenResponse> {
-    return this.api.post<BackendTokenResponse>('/auth/refresh', {}).pipe(
-      tap(response => {
-        if (response.success && response.data?.accessToken) {
-          this._accessToken.set(response.data.accessToken);
-        }
-      })
-    );
+  // Refresh uses the HttpOnly cookie automatically — response just confirms new cookies were issued.
+  refreshToken(): Observable<BackendAckResponse> {
+    return this.api.post<BackendAckResponse>('/auth/refresh', {});
   }
 
   fetchCurrentUser(): Observable<User> {
@@ -132,10 +114,7 @@ export class AuthService {
     );
   }
 
-  getAccessToken(): string | null { return this._accessToken(); }
-
   private clearSession() {
-    this._accessToken.set(null);
     this._currentUser.set(null);
     localStorage.removeItem('currentUser');
     this.router.navigate(['/auth/login']);

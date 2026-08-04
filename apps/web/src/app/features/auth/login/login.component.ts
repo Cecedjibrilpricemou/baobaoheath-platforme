@@ -10,7 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { LoginPayload } from '../../../core/models/user.model';
 
 interface LoginResponseData {
-  accessToken?: string;
+  authenticated?: boolean;
   requiresOtp?: boolean;
   email?: string;
   message?: string;

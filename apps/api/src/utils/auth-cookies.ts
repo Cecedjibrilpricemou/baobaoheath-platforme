@@ -20,6 +20,16 @@ const REFRESH_COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
+// A cookie's Path also gates document.cookie *visibility* from whatever page reads it —
+// not just which requests carry it. The frontend SPA lives under arbitrary routes like
+// /patient/profil, never under /api/v1, so bb_csrf must be Path=/ or the frontend could
+// never read it back to echo it in the X-CSRF-Token header.
+const CSRF_COOKIE_OPTIONS = {
+  ...BASE_COOKIE_OPTIONS,
+  httpOnly: false,
+  path: '/',
+};
+
 /** Access-cookie maxAge is derived from the token's own `exp` claim so it never drifts from JWT_EXPIRES_IN. */
 function accessTokenMaxAgeMs(accessToken: string): number {
   const decoded = jwt.decode(accessToken) as { exp?: number } | null;
@@ -34,11 +44,11 @@ export function setAuthCookies(res: Response, tokenPair: TokenPair): void {
 
   res.cookie(REFRESH_COOKIE, tokenPair.refreshToken, REFRESH_COOKIE_OPTIONS);
   res.cookie(ACCESS_COOKIE, tokenPair.accessToken, { ...BASE_COOKIE_OPTIONS, maxAge });
-  res.cookie(CSRF_COOKIE, csrfToken, { ...BASE_COOKIE_OPTIONS, httpOnly: false, maxAge });
+  res.cookie(CSRF_COOKIE, csrfToken, { ...CSRF_COOKIE_OPTIONS, maxAge });
 }
 
 export function clearAuthCookies(res: Response): void {
   res.clearCookie(REFRESH_COOKIE, { ...REFRESH_COOKIE_OPTIONS, maxAge: 0 });
   res.clearCookie(ACCESS_COOKIE, { ...BASE_COOKIE_OPTIONS, maxAge: 0 });
-  res.clearCookie(CSRF_COOKIE, { ...BASE_COOKIE_OPTIONS, httpOnly: false, maxAge: 0 });
+  res.clearCookie(CSRF_COOKIE, { ...CSRF_COOKIE_OPTIONS, maxAge: 0 });
 }
