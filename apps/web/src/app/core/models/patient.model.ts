@@ -14,7 +14,7 @@ export interface Patient {
   poidsKg?: number;
   tailleCm?: number;
   allergies?: string[];
-  antecedents?: string[];
+  maladiesChroniques?: string[];
   // Some endpoints return nested utilisateur, others return flat fields
   utilisateur?: {
     prenom: string;
@@ -46,7 +46,7 @@ export interface PatientCreatePayload {
   motDePasse?: string;
   groupeSanguin?: string;
   allergies?: string[];
-  antecedents?: string[];
+  maladiesChroniques?: string[];
 }
 
 export interface PatientUpdatePayload extends Partial<PatientCreatePayload> {}

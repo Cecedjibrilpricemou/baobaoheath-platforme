@@ -99,9 +99,30 @@ export class ProfilComponent implements OnInit {
   enableEdit() { this.formData = { ...this.profil() }; this.editMode.set(true); }
   cancelEdit() { this.editMode.set(false); this.errorMessage.set(''); }
 
+  private toArray(value: unknown): string[] | undefined {
+    if (Array.isArray(value)) return value.filter((v) => typeof v === 'string' && v.trim().length > 0);
+    if (typeof value === 'string') return value.split(',').map((v) => v.trim()).filter(Boolean);
+    return undefined;
+  }
+
+  private buildUpdatePayload() {
+    const f = this.formData;
+    // The backend only accepts a specific set of fields on this endpoint (see
+    // updatePatientSchema — telephone/dateNaissance/sexe are read-only here).
+    // Sending the raw fetched object back (including nulls and unknown keys)
+    // makes the strict Zod schema reject the whole request.
+    return {
+      ...(f.prenom && { prenom: f.prenom }),
+      ...(f.nom && { nom: f.nom }),
+      ...(f.groupeSanguin && { groupeSanguin: f.groupeSanguin }),
+      ...(this.toArray(f.allergies)?.length && { allergies: this.toArray(f.allergies) }),
+      ...(this.toArray(f.maladiesChroniques)?.length && { maladiesChroniques: this.toArray(f.maladiesChroniques) }),
+    };
+  }
+
   saveProfil() {
     this.isSaving.set(true);
-    this.patientService.updateMe(this.formData).subscribe({
+    this.patientService.updateMe(this.buildUpdatePayload()).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.editMode.set(false);
