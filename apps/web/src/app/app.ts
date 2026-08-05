@@ -3,6 +3,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './shared/services/theme.service';
+import { SocketService } from './core/services/socket.service';
 
 @Component({
   selector: 'app-root',
@@ -12,6 +13,8 @@ import { ThemeService } from './shared/services/theme.service';
   styles: []
 })
 export class AppComponent {
-  // Injection suffit : ThemeService applique le thème via effect() dans son constructeur
+  // Injection suffit : ThemeService et SocketService appliquent leurs effets
+  // via effect() dans leur propre constructeur.
   readonly theme = inject(ThemeService);
+  readonly socket = inject(SocketService);
 }

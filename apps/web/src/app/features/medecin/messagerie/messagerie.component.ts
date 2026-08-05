@@ -1,5 +1,6 @@
 // features/medecin/messagerie/messagerie.component.ts
-import { Component, inject, signal, OnInit, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, OnInit, ElementRef, ViewChild, AfterViewChecked, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -7,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MedecinService } from '../../../core/services/medecin.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SocketService } from '../../../core/services/socket.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface Utilisateur {
@@ -47,6 +49,8 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
 
   private medecinService = inject(MedecinService);
   private authService    = inject(AuthService);
+  private socketService  = inject(SocketService);
+  private destroyRef      = inject(DestroyRef);
 
   currentUser     = this.authService.currentUser;
   messages        = signal<Message[]>([]);
@@ -57,7 +61,48 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
   newMessage      = '';
   private shouldScroll = false;
 
-  ngOnInit() { this.loadMessages(); }
+  ngOnInit() {
+    this.loadMessages();
+    this.socketService.on<Message>('message:new')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((msg) => this.handleIncomingMessage(msg));
+  }
+
+  private handleIncomingMessage(msg: Message) {
+    const userId = this.currentUser()?.id;
+    // The server only ever emits to the recipient's own room, but a stale
+    // socket surviving a user switch (rare, but cheap to guard) shouldn't
+    // attribute someone else's message to the wrong conversation.
+    if (msg.idDestinataire !== userId) return;
+
+    const interlocuteurId = msg.idExpediteur;
+    const isConvOuverte = this.selectedConv()?.utilisateur?.id === interlocuteurId;
+
+    this.conversations.update((convs) => {
+      const existing = convs.find((c) => c.utilisateur.id === interlocuteurId);
+      const updated: Conversation = existing
+        ? {
+            ...existing,
+            messages: [...existing.messages, msg],
+            dernierMessage: msg,
+            nonLus: isConvOuverte ? existing.nonLus : existing.nonLus + 1,
+          }
+        : {
+            utilisateur: { ...msg.expediteur, id: interlocuteurId },
+            messages: [msg],
+            dernierMessage: msg,
+            nonLus: isConvOuverte ? 0 : 1,
+          };
+
+      const rest = convs.filter((c) => c.utilisateur.id !== interlocuteurId);
+      return [updated, ...rest];
+    });
+
+    if (isConvOuverte) {
+      this.selectedConv.set(this.conversations().find((c) => c.utilisateur.id === interlocuteurId) ?? null);
+      this.shouldScroll = true;
+    }
+  }
 
   ngAfterViewChecked() {
     if (this.shouldScroll) {

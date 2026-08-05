@@ -27,6 +27,11 @@ function readCookie(cookieHeader: string | undefined, name: string): string | un
 
 export function initSocketServer(httpServer: HttpServer): SocketIoServer {
   io = new SocketIoServer(httpServer, {
+    // bb_access is scoped to Path=/api/v1 (least-privilege cookie scoping —
+    // see auth-cookies.ts). Socket.IO's default /socket.io/ path sits outside
+    // that scope, so the handshake would never carry the cookie. Nesting the
+    // WS endpoint under /api/v1 keeps it in-scope on both server and client.
+    path: '/api/v1/socket.io',
     cors: {
       origin: env.ALLOWED_ORIGINS,
       credentials: true,
