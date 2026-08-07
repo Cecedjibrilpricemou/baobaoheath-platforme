@@ -8,11 +8,11 @@
       <p class="section-sub section-sub--light">{{ 'LANDING.ROLES_SUB' | translate }}</p>
     </div>
     <div class="roles-grid">
-      @for (role of roles; track role.title) {
+      @for (role of roles; track role.titleKey) {
       <div class="role-card">
         <div class="role-card__icon" aria-hidden="true"><i [class]="'pi ' + role.icon"></i></div>
-        <h3 class="role-card__title">{{ role.title }}</h3>
-        <p class="role-card__desc">{{ role.desc }}</p>
+        <h3 class="role-card__title">{{ role.titleKey | translate }}</h3>
+        <p class="role-card__desc">{{ role.descKey | translate }}</p>
       </div>
       }
     </div>

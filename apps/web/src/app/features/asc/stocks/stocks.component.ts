@@ -12,6 +12,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { AscService } from '../../../core/services/asc.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface Medicament {
   id: string;
@@ -48,6 +49,7 @@ interface Stock {
 })
 export class StocksComponent implements OnInit {
   private ascService = inject(AscService);
+  private i18n = inject(I18nService);
   protected Math = Math;
 
   stocks           = signal<Stock[]>([]);
@@ -148,13 +150,13 @@ export class StocksComponent implements OnInit {
     this.ascService.updateStock(stockId, this.editQuantite()).subscribe({
       next: (response) => {
         this.isSaving.set(false); this.editingId.set(null);
-        this.successMessage.set('Stock mis à jour avec succès !');
+        this.successMessage.set(this.i18n.t('ASC.STOCKS.SUCCESS_UPDATE'));
         setTimeout(() => this.successMessage.set(''), 3000);
         this.loadStocks();
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Erreur lors de la mise à jour.');
+        this.errorMessage.set(err?.error?.message ?? this.i18n.t('ASC.STOCKS.ERR_UPDATE'));
       }
     });
   }

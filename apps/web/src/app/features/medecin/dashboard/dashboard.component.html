@@ -7,7 +7,7 @@
       <div class="bb-med-dash__avatar" aria-hidden="true">{{ getInitiales() }}</div>
       <div class="bb-med-dash__header-text">
         <h1 class="bb-med-dash__title">
-          Bonjour Dr. {{ currentUser()?.prenom }} {{ currentUser()?.nom }}
+          {{ 'MEDECIN.DASHBOARD.GREETING_PREFIX' | translate }} {{ currentUser()?.prenom }} {{ currentUser()?.nom }}
           <span class="bb-med-dash__wave" aria-hidden="true">👋</span>
         </h1>
         @if (stats()?.structure) {
@@ -20,7 +20,7 @@
         } @else {
           <p class="bb-med-dash__structure bb-med-dash__structure--empty">
             <i class="pi pi-info-circle"></i>
-            Aucune structure assignée
+            {{ 'MEDECIN.DASHBOARD.NO_STRUCTURE' | translate }}
           </p>
         }
       </div>
@@ -40,11 +40,11 @@
       <a routerLink="/medecin/consultations" class="bb-med-dash__stat-card bb-med-dash__stat-card--warning">
         <div class="bb-med-dash__stat-top">
           <div class="bb-med-dash__stat-icon"><i class="pi pi-clock"></i></div>
-          <span class="bb-med-dash__stat-pill">À traiter</span>
+          <span class="bb-med-dash__stat-pill">{{ 'MEDECIN.DASHBOARD.STAT_PENDING_PILL' | translate }}</span>
         </div>
         <div class="bb-med-dash__stat-value">{{ stats()?.consultationsEnAttente ?? 0 }}</div>
-        <div class="bb-med-dash__stat-label">À valider</div>
-        <span class="bb-med-dash__stat-link">Voir tout <i class="pi pi-arrow-right"></i></span>
+        <div class="bb-med-dash__stat-label">{{ 'MEDECIN.DASHBOARD.STAT_TO_VALIDATE' | translate }}</div>
+        <span class="bb-med-dash__stat-link">{{ 'COMMON.SEE_ALL' | translate }} <i class="pi pi-arrow-right"></i></span>
       </a>
 
       <div class="bb-med-dash__stat-card bb-med-dash__stat-card--success">
@@ -52,7 +52,7 @@
           <div class="bb-med-dash__stat-icon"><i class="pi pi-check-circle"></i></div>
         </div>
         <div class="bb-med-dash__stat-value">{{ stats()?.consultationsValidees ?? 0 }}</div>
-        <div class="bb-med-dash__stat-label">Validées par moi</div>
+        <div class="bb-med-dash__stat-label">{{ 'MEDECIN.DASHBOARD.STAT_VALIDATED' | translate }}</div>
       </div>
 
       <div class="bb-med-dash__stat-card bb-med-dash__stat-card--info">
@@ -60,7 +60,7 @@
           <div class="bb-med-dash__stat-icon"><i class="pi pi-send"></i></div>
         </div>
         <div class="bb-med-dash__stat-value">{{ stats()?.referencementsEnAttente ?? 0 }}</div>
-        <div class="bb-med-dash__stat-label">Référencements</div>
+        <div class="bb-med-dash__stat-label">{{ 'MEDECIN.DASHBOARD.STAT_REFERENCEMENTS' | translate }}</div>
       </div>
 
       <a routerLink="/medecin/messagerie" class="bb-med-dash__stat-card bb-med-dash__stat-card--primary">
@@ -68,8 +68,8 @@
           <div class="bb-med-dash__stat-icon"><i class="pi pi-comments"></i></div>
         </div>
         <div class="bb-med-dash__stat-value">{{ stats()?.messagesNonLus ?? 0 }}</div>
-        <div class="bb-med-dash__stat-label">Messages non lus</div>
-        <span class="bb-med-dash__stat-link">Voir <i class="pi pi-arrow-right"></i></span>
+        <div class="bb-med-dash__stat-label">{{ 'MEDECIN.DASHBOARD.STAT_MESSAGES_UNREAD' | translate }}</div>
+        <span class="bb-med-dash__stat-link">{{ 'MEDECIN.DASHBOARD.SEE' | translate }} <i class="pi pi-arrow-right"></i></span>
       </a>
 
     </div>
@@ -80,10 +80,10 @@
     <div class="bb-med-dash__section-header">
       <div class="bb-med-dash__section-title-wrap">
         <span class="bb-med-dash__section-bullet"><i class="pi pi-clock"></i></span>
-        <h2 class="bb-med-dash__section-title">Consultations à valider</h2>
+        <h2 class="bb-med-dash__section-title">{{ 'MEDECIN.DASHBOARD.SECTION_TITLE' | translate }}</h2>
       </div>
       <a routerLink="/medecin/consultations" class="bb-med-dash__see-all">
-        Voir tout <i class="pi pi-arrow-right"></i>
+        {{ 'COMMON.SEE_ALL' | translate }} <i class="pi pi-arrow-right"></i>
       </a>
     </div>
 
@@ -98,8 +98,8 @@
         <div class="bb-med-dash__empty-icon">
           <i class="pi pi-check-circle"></i>
         </div>
-        <p class="bb-med-dash__empty-title">Tout est à jour</p>
-        <p class="bb-med-dash__empty-sub">Aucune consultation en attente de validation</p>
+        <p class="bb-med-dash__empty-title">{{ 'MEDECIN.DASHBOARD.EMPTY_TITLE' | translate }}</p>
+        <p class="bb-med-dash__empty-sub">{{ 'MEDECIN.DASHBOARD.EMPTY_SUB' | translate }}</p>
       </div>
     } @else {
       <div class="bb-med-dash__list">
@@ -114,7 +114,7 @@
                 <p class="bb-med-dash__list-motif">{{ c.motifPrincipal }}</p>
                 <p class="bb-med-dash__list-asc">
                   <i class="pi pi-user"></i>
-                  ASC : {{ getAscNom(c) }}
+                  {{ 'MEDECIN.DASHBOARD.ASC_LABEL' | translate }} {{ getAscNom(c) }}
                 </p>
               </div>
             </div>

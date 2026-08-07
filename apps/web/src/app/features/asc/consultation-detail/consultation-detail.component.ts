@@ -14,6 +14,8 @@ import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
 import { ApiService } from '../../../core/services/api.service';
 import { ConsultationService } from '../../../core/services/consultation.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 // ─── Interfaces alignées avec le backend ─────────────────
 
@@ -110,7 +112,7 @@ interface Structure {
     CommonModule, FormsModule,
     ButtonModule, TagModule, CardModule,
     InputTextModule, TextareaModule, InputNumberModule,
-    SkeletonModule, DividerModule, SelectModule
+    SkeletonModule, DividerModule, SelectModule, TranslatePipe
   ],
   templateUrl: './consultation-detail.component.html',
   styleUrl: './consultation-detail.component.scss'
@@ -120,6 +122,7 @@ export class ConsultationDetailComponent implements OnInit {
   private consultationService = inject(ConsultationService);
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
+  private i18n   = inject(I18nService);
 
   consultation    = signal<Consultation | null>(null);
   isLoading       = signal(true);
@@ -137,32 +140,32 @@ export class ConsultationDetailComponent implements OnInit {
     const alerts: { level: 'danger' | 'warn'; message: string }[] = [];
 
     if (v.spo2 != null) {
-      if (v.spo2 < 90)       alerts.push({ level: 'danger', message: `SpO2 critique : ${v.spo2}% — saturation insuffisante` });
-      else if (v.spo2 < 95)  alerts.push({ level: 'warn',   message: `SpO2 basse : ${v.spo2}% (normale ≥ 95%)` });
+      if (v.spo2 < 90)       alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_SPO2_CRITICAL', { v: v.spo2 }) });
+      else if (v.spo2 < 95)  alerts.push({ level: 'warn',   message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_SPO2_LOW', { v: v.spo2 }) });
     }
     if (v.temperature != null) {
-      if (v.temperature >= 39)         alerts.push({ level: 'danger', message: `Hyperthermie sévère : ${v.temperature}°C` });
-      else if (v.temperature >= 38)    alerts.push({ level: 'warn',   message: `Fièvre : ${v.temperature}°C` });
-      else if (v.temperature < 36)     alerts.push({ level: 'warn',   message: `Hypothermie : ${v.temperature}°C` });
+      if (v.temperature >= 39)         alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HYPERTHERMIA_SEVERE', { v: v.temperature }) });
+      else if (v.temperature >= 38)    alerts.push({ level: 'warn',   message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_FEVER', { v: v.temperature }) });
+      else if (v.temperature < 36)     alerts.push({ level: 'warn',   message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HYPOTHERMIA', { v: v.temperature }) });
     }
     if (v.tensionSystolique != null) {
-      if (v.tensionSystolique >= 180)  alerts.push({ level: 'danger', message: `HTA sévère : ${v.tensionSystolique} mmHg systolique` });
-      else if (v.tensionSystolique >= 140) alerts.push({ level: 'warn', message: `HTA : ${v.tensionSystolique} mmHg systolique` });
-      else if (v.tensionSystolique < 90)   alerts.push({ level: 'danger', message: `Hypotension : ${v.tensionSystolique} mmHg systolique` });
+      if (v.tensionSystolique >= 180)  alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HTA_SEVERE', { v: v.tensionSystolique }) });
+      else if (v.tensionSystolique >= 140) alerts.push({ level: 'warn', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HTA', { v: v.tensionSystolique }) });
+      else if (v.tensionSystolique < 90)   alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HYPOTENSION', { v: v.tensionSystolique }) });
     }
     if (v.frequenceCardiaque != null) {
-      if (v.frequenceCardiaque > 120)  alerts.push({ level: 'danger', message: `Tachycardie sévère : ${v.frequenceCardiaque} bpm` });
-      else if (v.frequenceCardiaque > 100) alerts.push({ level: 'warn', message: `Tachycardie : ${v.frequenceCardiaque} bpm` });
-      else if (v.frequenceCardiaque < 60)  alerts.push({ level: 'warn', message: `Bradycardie : ${v.frequenceCardiaque} bpm` });
+      if (v.frequenceCardiaque > 120)  alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_TACHY_SEVERE', { v: v.frequenceCardiaque }) });
+      else if (v.frequenceCardiaque > 100) alerts.push({ level: 'warn', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_TACHY', { v: v.frequenceCardiaque }) });
+      else if (v.frequenceCardiaque < 60)  alerts.push({ level: 'warn', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_BRADY', { v: v.frequenceCardiaque }) });
     }
     if (v.frequenceRespiratoire != null) {
-      if (v.frequenceRespiratoire > 25)  alerts.push({ level: 'danger', message: `Tachypnée sévère : ${v.frequenceRespiratoire} /min` });
-      else if (v.frequenceRespiratoire < 12) alerts.push({ level: 'warn', message: `Bradypnée : ${v.frequenceRespiratoire} /min` });
+      if (v.frequenceRespiratoire > 25)  alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_TACHYPNEA_SEVERE', { v: v.frequenceRespiratoire }) });
+      else if (v.frequenceRespiratoire < 12) alerts.push({ level: 'warn', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_BRADYPNEA', { v: v.frequenceRespiratoire }) });
     }
     if (v.glycemie != null) {
-      if (v.glycemie < 0.70)   alerts.push({ level: 'danger', message: `Hypoglycémie : ${v.glycemie} g/L (< 0.70)` });
-      else if (v.glycemie > 3.0) alerts.push({ level: 'danger', message: `Hyperglycémie critique : ${v.glycemie} g/L` });
-      else if (v.glycemie > 2.0) alerts.push({ level: 'warn',   message: `Glycémie élevée : ${v.glycemie} g/L` });
+      if (v.glycemie < 0.70)   alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HYPOGLYCEMIA', { v: v.glycemie }) });
+      else if (v.glycemie > 3.0) alerts.push({ level: 'danger', message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HYPERGLYCEMIA_CRITICAL', { v: v.glycemie }) });
+      else if (v.glycemie > 2.0) alerts.push({ level: 'warn',   message: this.i18n.t('ASC.CONSULTATION_DETAIL.ALERT_HYPERGLYCEMIA_HIGH', { v: v.glycemie }) });
     }
 
     this.vitalsAlerts.set(alerts);
@@ -177,17 +180,21 @@ export class ConsultationDetailComponent implements OnInit {
     libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC'
   };
   isSavingDiagnostic = signal(false);
-  typesDiagnostic = [
-    { label: 'Principal', value: 'PRINCIPAL' },
-    { label: 'Secondaire', value: 'SECONDAIRE' },
-    { label: 'Différentiel', value: 'DIFFERENTIEL' }
-  ];
-  severites = [
-    { label: 'Légère', value: 'LEGERE' },
-    { label: 'Modérée', value: 'MODEREE' },
-    { label: 'Sévère', value: 'SEVERE' },
-    { label: 'Critique', value: 'CRITIQUE' }
-  ];
+  get typesDiagnostic() {
+    return [
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.TYPE_PRINCIPAL'), value: 'PRINCIPAL' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.TYPE_SECONDAIRE'), value: 'SECONDAIRE' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.TYPE_DIFFERENTIEL'), value: 'DIFFERENTIEL' }
+    ];
+  }
+  get severites() {
+    return [
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_LEGERE'), value: 'LEGERE' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_MODEREE'), value: 'MODEREE' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_SEVERE'), value: 'SEVERE' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_CRITIQUE'), value: 'CRITIQUE' }
+    ];
+  }
 
   // ── Ordonnance ──────────────────────────────────────────
   ordonnanceForm = {
@@ -208,11 +215,13 @@ export class ConsultationDetailComponent implements OnInit {
   } = { idStructureCible: '', urgence: 'ROUTINE', resumeClinique: '' };
   structures      = signal<Structure[]>([]);
   isSavingReferral = signal(false);
-  urgences = [
-    { label: 'Routine', value: 'ROUTINE' },
-    { label: 'Urgent', value: 'URGENT' },
-    { label: 'Urgence Vitale', value: 'URGENCE_VITALE' }
-  ];
+  get urgences() {
+    return [
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.URGENCE_ROUTINE'), value: 'ROUTINE' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.URGENCE_URGENT'), value: 'URGENT' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.URGENCE_VITALE'), value: 'URGENCE_VITALE' }
+    ];
+  }
 
   // ── Clôture ──────────────────────────────────────────────
   isClosing           = signal(false);
@@ -243,7 +252,7 @@ export class ConsultationDetailComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Impossible de charger la consultation.');
+        this.errorMessage.set(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_LOAD'));
         this.isLoading.set(false);
       }
     });
@@ -275,12 +284,12 @@ export class ConsultationDetailComponent implements OnInit {
           const c = this.consultation();
           if (c) this.consultation.set({ ...c, constantes });
           this.isSavingVitals.set(false);
-          this.showSuccess('Constantes vitales sauvegardées !');
+          this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_VITALS'));
         }
       },
       error: (err) => {
         this.isSavingVitals.set(false);
-        this.showError(err?.error?.message ?? 'Erreur lors de la sauvegarde.');
+        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_SAVE_GENERIC'));
       }
     });
   }
@@ -301,12 +310,12 @@ export class ConsultationDetailComponent implements OnInit {
           if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data as unknown as Diagnostic] });
           this.diagnosticForm = { libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC' };
           this.isSavingDiagnostic.set(false);
-          this.showSuccess('Diagnostic ajouté !');
+          this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_DIAGNOSTIC'));
         }
       },
       error: (err) => {
         this.isSavingDiagnostic.set(false);
-        this.showError(err?.error?.message ?? 'Erreur lors de l\'ajout.');
+        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ADD_GENERIC'));
       }
     });
   }
@@ -324,12 +333,12 @@ export class ConsultationDetailComponent implements OnInit {
           if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data as unknown as Ordonnance] });
           this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
           this.isSavingOrdonnance.set(false);
-          this.showSuccess('Ordonnance ajoutée !');
+          this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_ORDONNANCE'));
         }
       },
       error: (err) => {
         this.isSavingOrdonnance.set(false);
-        this.showError(err?.error?.message ?? 'Erreur lors de l\'ajout.');
+        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ADD_GENERIC'));
       }
     });
   }
@@ -346,12 +355,12 @@ export class ConsultationDetailComponent implements OnInit {
           const c = this.consultation();
           if (c) this.consultation.set({ ...c, referencement: ref as unknown as Referencement, statut: 'REFERENCEE' });
           this.isSavingReferral.set(false);
-          this.showSuccess('Référencement créé !');
+          this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_REFERRAL'));
         }
       },
       error: (err) => {
         this.isSavingReferral.set(false);
-        this.showError(err?.error?.message ?? 'Erreur lors du référencement.');
+        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_REFERRAL'));
       }
     });
   }
@@ -367,11 +376,11 @@ export class ConsultationDetailComponent implements OnInit {
         const c = this.consultation();
         if (c) this.consultation.set({ ...c, statut: 'TERMINEE' });
         this.isClosing.set(false);
-        this.showSuccess('Consultation clôturée avec succès !');
+        this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_CLOSE'));
       },
       error: (err) => {
         this.isClosing.set(false);
-        this.showError(err?.error?.message ?? 'Erreur lors de la clôture.');
+        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CLOSE'));
       }
     });
   }
@@ -390,11 +399,8 @@ export class ConsultationDetailComponent implements OnInit {
   }
 
   getStatutLabel(statut: string): string {
-    const map: Record<string, string> = {
-      'TERMINEE': 'Terminée', 'EN_COURS': 'En cours',
-      'PLANIFIEE': 'Planifiée', 'ANNULEE': 'Annulée', 'REFERENCEE': 'Référencée'
-    };
-    return map[statut] ?? statut;
+    const known = ['TERMINEE', 'EN_COURS', 'PLANIFIEE', 'ANNULEE', 'REFERENCEE'];
+    return known.includes(statut) ? this.i18n.t(`STATUT.${statut}`) : statut;
   }
 
   getUrgenceSeverity(urgence: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

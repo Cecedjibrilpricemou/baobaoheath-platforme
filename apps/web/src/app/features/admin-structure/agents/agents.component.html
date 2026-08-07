@@ -1,11 +1,11 @@
 <div class="bb-agents">
   <div class="bb-agents__header">
     <div>
-      <h1 class="bb-agents__title"><i class="pi pi-users"></i> Mes Agents</h1>
-      <p class="bb-agents__sub">Gérez les agents de votre structure</p>
+      <h1 class="bb-agents__title"><i class="pi pi-users"></i> {{ 'ADMIN_STRUCTURE.AGENTS.TITLE' | translate }}</h1>
+      <p class="bb-agents__sub">{{ 'ADMIN_STRUCTURE.AGENTS.SUBTITLE' | translate }}</p>
     </div>
     <button class="bb-agents__add-btn" (click)="showForm.set(true)">
-      <i class="pi pi-plus"></i> Ajouter un agent
+      <i class="pi pi-plus"></i> {{ 'ADMIN_STRUCTURE.AGENTS.ADD_BTN' | translate }}
     </button>
   </div>
 
@@ -18,26 +18,26 @@
     <div class="bb-logout-overlay" (click)="fermerMdp()">
       <div class="bb-mdp-modal" role="dialog" aria-modal="true" aria-labelledby="agent-mdp-title" (click)="$event.stopPropagation()">
         <div class="bb-mdp-modal__icon" aria-hidden="true">✅</div>
-        <h3 id="agent-mdp-title" class="bb-mdp-modal__title">Agent créé avec succès !</h3>
+        <h3 id="agent-mdp-title" class="bb-mdp-modal__title">{{ 'ADMIN_STRUCTURE.AGENTS.CREATED_TITLE' | translate }}</h3>
         <div class="bb-mdp-modal__info">
           <div class="bb-mdp-modal__row">
-            <span class="bb-mdp-modal__label">Agent</span>
+            <span class="bb-mdp-modal__label">{{ 'ADMIN_STRUCTURE.AGENTS.AGENT_LABEL' | translate }}</span>
             <span class="bb-mdp-modal__value">{{ mdpAffiche()!.agentNom }}</span>
           </div>
           <div class="bb-mdp-modal__row">
-            <span class="bb-mdp-modal__label">Téléphone</span>
+            <span class="bb-mdp-modal__label">{{ 'ADMIN_STRUCTURE.AGENTS.PHONE_LABEL' | translate }}</span>
             <span class="bb-mdp-modal__value">{{ mdpAffiche()!.agentTelephone }}</span>
           </div>
           <div class="bb-mdp-modal__row bb-mdp-modal__row--mdp">
-            <span class="bb-mdp-modal__label">Mot de passe temporaire</span>
+            <span class="bb-mdp-modal__label">{{ 'ADMIN_STRUCTURE.AGENTS.TEMP_PASSWORD_LABEL' | translate }}</span>
             <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
           </div>
         </div>
         <div class="bb-mdp-modal__warning">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-          Ce mot de passe ne sera plus affiché. Communiquez-le à l'agent maintenant.
+          {{ 'ADMIN_STRUCTURE.AGENTS.PASSWORD_WARNING' | translate }}
         </div>
-        <button class="bb-mdp-modal__btn" (click)="fermerMdp()">J'ai noté le mot de passe</button>
+        <button class="bb-mdp-modal__btn" (click)="fermerMdp()">{{ 'ADMIN_STRUCTURE.AGENTS.NOTED_PASSWORD_BTN' | translate }}</button>
       </div>
     </div>
   }
@@ -45,41 +45,41 @@
   <!-- Formulaire création -->
   @if (showForm()) {
     <div class="bb-agents__form">
-      <h3 class="bb-agents__form-title">Nouvel agent</h3>
+      <h3 class="bb-agents__form-title">{{ 'ADMIN_STRUCTURE.AGENTS.NEW_AGENT_TITLE' | translate }}</h3>
       @if (errorMsg()) {
         <div class="bb-agents__alert bb-agents__alert--error" role="alert"><i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMsg() }}</div>
       }
       <div class="bb-agents__form-grid">
         <div class="bb-agents__field">
-          <label for="agent-prenom">Prénom *</label>
-          <input id="agent-prenom" pInputText [(ngModel)]="newAgent.prenom" placeholder="Ex: Mamadou" />
+          <label for="agent-prenom">{{ 'ADMIN_STRUCTURE.AGENTS.PRENOM_LABEL' | translate }}</label>
+          <input id="agent-prenom" pInputText [(ngModel)]="newAgent.prenom" [placeholder]="'ADMIN_STRUCTURE.AGENTS.PRENOM_PH' | translate" />
         </div>
         <div class="bb-agents__field">
-          <label for="agent-nom">Nom *</label>
-          <input id="agent-nom" pInputText [(ngModel)]="newAgent.nom" placeholder="Ex: Diallo" />
+          <label for="agent-nom">{{ 'ADMIN_STRUCTURE.AGENTS.NOM_LABEL' | translate }}</label>
+          <input id="agent-nom" pInputText [(ngModel)]="newAgent.nom" [placeholder]="'ADMIN_STRUCTURE.AGENTS.NOM_PH' | translate" />
         </div>
         <div class="bb-agents__field">
-          <label for="agent-tel">Téléphone *</label>
-          <input id="agent-tel" pInputText [(ngModel)]="newAgent.telephone" placeholder="Ex: 620123456" />
+          <label for="agent-tel">{{ 'ADMIN_STRUCTURE.AGENTS.TEL_LABEL' | translate }}</label>
+          <input id="agent-tel" pInputText [(ngModel)]="newAgent.telephone" [placeholder]="'ADMIN_STRUCTURE.AGENTS.TEL_PH' | translate" />
         </div>
         <div class="bb-agents__field">
-          <label for="agent-email">Email (optionnel)</label>
-          <input id="agent-email" pInputText [(ngModel)]="newAgent.email" type="email" placeholder="Ex: agent@email.com" />
+          <label for="agent-email">{{ 'ADMIN_STRUCTURE.AGENTS.EMAIL_LABEL' | translate }}</label>
+          <input id="agent-email" pInputText [(ngModel)]="newAgent.email" type="email" [placeholder]="'ADMIN_STRUCTURE.AGENTS.EMAIL_PH' | translate" />
         </div>
         <div class="bb-agents__field">
-          <label id="agent-role-label" for="agent-role">Rôle *</label>
+          <label id="agent-role-label" for="agent-role">{{ 'ADMIN_STRUCTURE.AGENTS.ROLE_LABEL' | translate }}</label>
           <p-select inputId="agent-role" [(ngModel)]="newAgent.role" [options]="rolesOptions" optionLabel="label" optionValue="value" />
         </div>
         <!-- Mot de passe supprimé — généré automatiquement par le backend -->
         <div class="bb-agents__field bb-agents__field--info">
           <i class="pi pi-info-circle" aria-hidden="true"></i>
-          Un mot de passe temporaire sera généré automatiquement et affiché une seule fois.
+          {{ 'ADMIN_STRUCTURE.AGENTS.AUTO_PASSWORD_INFO' | translate }}
         </div>
       </div>
       <div class="bb-agents__form-actions">
-        <button class="bb-agents__cancel-btn" (click)="showForm.set(false)">Annuler</button>
+        <button class="bb-agents__cancel-btn" (click)="showForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
         <button class="bb-agents__save-btn" (click)="creerAgent()" [disabled]="isSaving()">
-          <i class="pi pi-user-plus"></i> {{ isSaving() ? 'Création...' : 'Créer l\'agent' }}
+          <i class="pi pi-user-plus"></i> {{ (isSaving() ? 'ADMIN_STRUCTURE.AGENTS.CREATING' : 'ADMIN_STRUCTURE.AGENTS.CREATE_BTN') | translate }}
         </button>
       </div>
     </div>
@@ -91,8 +91,8 @@
   } @else if (agents().length === 0) {
     <div class="bb-agents__empty">
       <i class="pi pi-users" aria-hidden="true"></i>
-      <p>Aucun agent dans votre structure</p>
-      <span>Cliquez sur "Ajouter un agent" pour commencer</span>
+      <p>{{ 'ADMIN_STRUCTURE.AGENTS.EMPTY_TITLE' | translate }}</p>
+      <span>{{ 'ADMIN_STRUCTURE.AGENTS.EMPTY_SUB' | translate }}</span>
     </div>
   } @else {
     <div class="bb-agents__list">
@@ -104,11 +104,11 @@
           <div class="bb-agents__info">
             <p class="bb-agents__name">{{ agent.prenom }} {{ agent.nom }}</p>
             <p class="bb-agents__contact">{{ agent.telephone }}@if (agent.email) { · {{ agent.email }} }</p>
-            <p class="bb-agents__meta">Ajouté le {{ formatDate(agent.creeLe) }}</p>
+            <p class="bb-agents__meta">{{ 'ADMIN_STRUCTURE.AGENTS.ADDED_ON' | translate: { date: formatDate(agent.creeLe) } }}</p>
           </div>
           <div class="bb-agents__actions">
             <p-tag [value]="getRoleLabel(agent.role)" severity="info" />
-            <button class="bb-agents__deactivate" (click)="desactiver(agent.id)" title="Désactiver" [attr.aria-label]="'Désactiver ' + agent.prenom + ' ' + agent.nom">
+            <button class="bb-agents__deactivate" (click)="desactiver(agent.id)" [attr.title]="'ADMIN_STRUCTURE.AGENTS.DEACTIVATE_TITLE' | translate" [attr.aria-label]="'ADMIN_STRUCTURE.AGENTS.DEACTIVATE_ARIA' | translate: { nom: agent.prenom + ' ' + agent.nom }">
               <i class="pi pi-ban" aria-hidden="true"></i>
             </button>
           </div>

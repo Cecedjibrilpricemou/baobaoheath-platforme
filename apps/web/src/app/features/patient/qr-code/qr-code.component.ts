@@ -9,6 +9,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { AuthService } from '../../../core/services/auth.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient } from '../../../core/models/patient.model';
 import QRCode from 'qrcode';
 
@@ -22,6 +23,7 @@ import QRCode from 'qrcode';
 export class QrCodeComponent implements OnInit {
   private authService = inject(AuthService);
   private patientService = inject(PatientService);
+  private i18n = inject(I18nService);
 
   patientInfo  = signal<Patient | null>(null);
   qrCodeUrl    = signal<string | null>(null); // data URL base64 générée côté frontend
@@ -64,7 +66,7 @@ export class QrCodeComponent implements OnInit {
       });
       this.qrCodeUrl.set(dataUrl);
     } catch (err) {
-      this.errorMessage.set('Impossible de générer le QR Code.');
+      this.errorMessage.set(this.i18n.t('PATIENT.QR.ERR_GENERATE'));
     } finally {
       this.isLoading.set(false);
     }

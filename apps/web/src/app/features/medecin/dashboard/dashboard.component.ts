@@ -30,7 +30,7 @@ interface ConsultationRecente {
 @Component({
   selector: 'app-medecin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, CardModule, TagModule, ButtonModule, SkeletonModule],
+  imports: [CommonModule, RouterLink, CardModule, TagModule, ButtonModule, SkeletonModule, TranslatePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

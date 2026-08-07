@@ -52,20 +52,21 @@ export class RegisterComponent {
   toggleLang() { this.i18nService.toggle(); }
 
   private validate(): boolean {
+    const errTitle = this.i18nService.t('AUTH.REGISTER.ERR_TITLE');
     if (!this.formData.nom || !this.formData.prenom) {
-      this.toastr.error('Veuillez saisir votre nom et prénom.', 'Erreur'); return false;
+      this.toastr.error(this.i18nService.t('AUTH.REGISTER.ERR_NAME'), errTitle); return false;
     }
     if (!this.formData.telephone) {
-      this.toastr.error('Le numéro de téléphone est obligatoire.', 'Erreur'); return false;
+      this.toastr.error(this.i18nService.t('AUTH.REGISTER.ERR_PHONE'), errTitle); return false;
     }
     if (this.formData.email && !this.formData.email.includes('@')) {
-      this.toastr.error('L\'adresse email n\'est pas valide.', 'Erreur'); return false;
+      this.toastr.error(this.i18nService.t('AUTH.REGISTER.ERR_EMAIL'), errTitle); return false;
     }
     if (this.formData.motDePasse.length < 6) {
-      this.toastr.error('Le mot de passe doit contenir au moins 6 caractères.', 'Erreur'); return false;
+      this.toastr.error(this.i18nService.t('AUTH.REGISTER.ERR_PWD_SHORT'), errTitle); return false;
     }
     if (this.formData.motDePasse !== this.confirmMotDePasse) {
-      this.toastr.error('Les mots de passe ne correspondent pas.', 'Erreur'); return false;
+      this.toastr.error(this.i18nService.t('AUTH.REGISTER.ERR_PWD_MATCH'), errTitle); return false;
     }
     return true;
   }
@@ -86,14 +87,14 @@ export class RegisterComponent {
     this.authService.register(payload).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.toastr.success('Compte créé avec succès ! Redirection...', 'Succès');
+        this.toastr.success(this.i18nService.t('AUTH.REGISTER.SUCCESS'), this.i18nService.t('AUTH.REGISTER.SUCCESS_TITLE'));
         setTimeout(() => this.router.navigate(['/auth/login']), 1500);
       },
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.message ?? err?.error?.error ?? 'Une erreur est survenue.',
-          'Erreur d\'inscription'
+          err?.error?.message ?? err?.error?.error ?? this.i18nService.t('AUTH.REGISTER.ERR_GENERIC'),
+          this.i18nService.t('AUTH.REGISTER.ERR_REGISTER_TITLE')
         );
       }
     });

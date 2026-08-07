@@ -8,7 +8,7 @@
         <i class="pi pi-chart-bar"></i>
         Analytics
       </h1>
-      <p class="bb-analytics__subtitle">Tableau de bord épidémiologique — BaoBaoHealth Guinée 🇬🇳</p>
+      <p class="bb-analytics__subtitle">{{ 'ADMIN.ANALYTICS.SUBTITLE' | translate }}</p>
     </div>
     <div class="bb-analytics__filters">
       <p-select
@@ -19,7 +19,7 @@
         (onChange)="onPrefiltreChange()"
       />
       <a routerLink="/admin/export" class="bb-analytics__export-btn">
-        <i class="pi pi-download"></i> Export
+        <i class="pi pi-download"></i> {{ 'ADMIN.ANALYTICS.EXPORT' | translate }}
       </a>
     </div>
   </div>
@@ -32,7 +32,7 @@
       [attr.aria-pressed]="activeTab() === 'kpis'"
       (click)="activeTab.set('kpis')"
     >
-      <i class="pi pi-home" aria-hidden="true"></i> Vue d'ensemble
+      <i class="pi pi-home" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_OVERVIEW' | translate }}
     </button>
     <button
       class="bb-analytics__tab"
@@ -40,7 +40,7 @@
       [attr.aria-pressed]="activeTab() === 'heatmap'"
       (click)="activeTab.set('heatmap')"
     >
-      <i class="pi pi-map" aria-hidden="true"></i> Heatmap
+      <i class="pi pi-map" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_HEATMAP' | translate }}
     </button>
     <button
       class="bb-analytics__tab"
@@ -48,7 +48,7 @@
       [attr.aria-pressed]="activeTab() === 'alertes'"
       (click)="activeTab.set('alertes')"
     >
-      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Alertes
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_ALERTES' | translate }}
     </button>
     <button
       class="bb-analytics__tab"
@@ -56,7 +56,7 @@
       [attr.aria-pressed]="activeTab() === 'tendances'"
       (click)="activeTab.set('tendances')"
     >
-      <i class="pi pi-chart-line" aria-hidden="true"></i> Tendances
+      <i class="pi pi-chart-line" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_TENDANCES' | translate }}
     </button>
     <button
       class="bb-analytics__tab"
@@ -64,7 +64,7 @@
       [attr.aria-pressed]="activeTab() === 'vaccins'"
       (click)="activeTab.set('vaccins')"
     >
-      <i class="pi pi-heart" aria-hidden="true"></i> Vaccinations
+      <i class="pi pi-heart" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_VACCINS' | translate }}
     </button>
   </div>
 
@@ -86,27 +86,27 @@
           <div class="bb-analytics__kpi bb-analytics__kpi--blue">
             <i class="pi pi-users"></i>
             <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalPatients ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">Patients</div>
+            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_PATIENTS' | translate }}</div>
           </div>
           <div class="bb-analytics__kpi bb-analytics__kpi--green">
             <i class="pi pi-heart-fill"></i>
             <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalConsultations ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">Consultations</div>
+            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_CONSULTATIONS' | translate }}</div>
           </div>
           <div class="bb-analytics__kpi bb-analytics__kpi--purple">
             <i class="pi pi-shield"></i>
             <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalVaccinations ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">Vaccinations</div>
+            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_VACCINATIONS' | translate }}</div>
           </div>
           <div class="bb-analytics__kpi bb-analytics__kpi--orange">
             <i class="pi pi-send"></i>
             <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalReferencements ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">Référencements</div>
+            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_REFERENCEMENTS' | translate }}</div>
           </div>
           <div class="bb-analytics__kpi bb-analytics__kpi--teal">
             <i class="pi pi-user"></i>
             <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalAsc ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">Agents ASC</div>
+            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_ASC' | translate }}</div>
           </div>
         </div>
       }
@@ -116,12 +116,12 @@
         <div class="bb-analytics__struct-header">
           <div class="bb-analytics__struct-title">
             <i class="pi pi-building"></i>
-            <span>Structures de santé</span>
+            <span>{{ 'ADMIN.ANALYTICS.STRUCTURES_TITLE' | translate }}</span>
           </div>
           @if (statsStructures()) {
             <div class="bb-analytics__struct-total">
               <span class="bb-analytics__struct-total-num">{{ statsStructures()!.total }}</span>
-              <span class="bb-analytics__struct-total-lbl">structures au total</span>
+              <span class="bb-analytics__struct-total-lbl">{{ 'ADMIN.ANALYTICS.STRUCTURES_TOTAL' | translate }}</span>
             </div>
           }
         </div>
@@ -133,7 +133,7 @@
             }
           </div>
         } @else if (!statsStructures()?.parType?.length) {
-          <div class="bb-analytics__empty">Aucune structure enregistrée</div>
+          <div class="bb-analytics__empty">{{ 'ADMIN.ANALYTICS.NO_STRUCTURES' | translate }}</div>
         } @else {
           <div class="bb-analytics__struct-grid">
             @for (s of statsStructures()!.parType; track s.type) {
@@ -162,12 +162,12 @@
         <div class="bb-analytics__chart-card">
           <h3 class="bb-analytics__chart-title">
             <i class="pi pi-chart-bar"></i>
-            Consultations par statut
+            {{ 'ADMIN.ANALYTICS.CONSULT_BY_STATUS_TITLE' | translate }}
           </h3>
           @if (isLoadingDash()) {
             <p-skeleton height="200px" />
           } @else if (!dashboard()?.consultationsParStatut?.length) {
-            <div class="bb-analytics__empty">Aucune donnée</div>
+            <div class="bb-analytics__empty">{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</div>
           } @else {
             <div class="bb-analytics__bars">
               @for (s of dashboard()!.consultationsParStatut; track s.statut) {
@@ -191,12 +191,12 @@
         <div class="bb-analytics__chart-card">
           <h3 class="bb-analytics__chart-title">
             <i class="pi pi-search"></i>
-            Top 10 pathologies
+            {{ 'ADMIN.ANALYTICS.TOP_PATHOLOGIES_TITLE' | translate }}
           </h3>
           @if (isLoadingDash()) {
             <p-skeleton height="200px" />
           } @else if (!dashboard()?.topPathologies?.length) {
-            <div class="bb-analytics__empty">Aucune donnée</div>
+            <div class="bb-analytics__empty">{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</div>
           } @else {
             <div class="bb-analytics__bars">
               @for (p of dashboard()!.topPathologies; track p.pathologie) {
@@ -225,15 +225,15 @@
   ════════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'heatmap') {
     <div class="bb-analytics__section">
-      <h2 class="bb-analytics__section-title">Distribution géographique des consultations</h2>
+      <h2 class="bb-analytics__section-title">{{ 'ADMIN.ANALYTICS.GEO_DISTRIB_TITLE' | translate }}</h2>
 
       @if (isLoadingHeatmap()) {
         <p-skeleton height="400px" borderRadius="12px" />
       } @else if (heatmap().length === 0) {
         <div class="bb-analytics__empty-large">
           <i class="pi pi-map"></i>
-          <p>Aucune donnée géographique disponible</p>
-          <span>Les données apparaîtront ici une fois les consultations enregistrées</span>
+          <p>{{ 'ADMIN.ANALYTICS.NO_GEO_DATA_TITLE' | translate }}</p>
+          <span>{{ 'ADMIN.ANALYTICS.NO_GEO_DATA_SUB' | translate }}</span>
         </div>
       } @else {
         <div class="bb-analytics__heatmap">
@@ -245,14 +245,14 @@
               >
                 <div class="bb-analytics__map-cell-name">{{ point.prefecture }}</div>
                 <div class="bb-analytics__map-cell-count">{{ point.count }}</div>
-                <div class="bb-analytics__map-cell-label">consultations</div>
+                <div class="bb-analytics__map-cell-label">{{ 'ADMIN.ANALYTICS.CONSULTATIONS_UNIT' | translate }}</div>
               </div>
             }
           </div>
           <div class="bb-analytics__map-legend">
-            <span>Moins de consultations</span>
+            <span>{{ 'ADMIN.ANALYTICS.LESS_CONSULTATIONS' | translate }}</span>
             <div class="bb-analytics__legend-bar"></div>
-            <span>Plus de consultations</span>
+            <span>{{ 'ADMIN.ANALYTICS.MORE_CONSULTATIONS' | translate }}</span>
           </div>
         </div>
       }
@@ -264,7 +264,7 @@
   ════════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'alertes') {
     <div class="bb-analytics__section">
-      <h2 class="bb-analytics__section-title">Alertes épidémiques</h2>
+      <h2 class="bb-analytics__section-title">{{ 'ADMIN.ANALYTICS.EPIDEMIC_ALERTS_TITLE' | translate }}</h2>
 
       @if (isLoadingAlertes()) {
         @for (i of [1,2,3]; track i) {
@@ -273,8 +273,8 @@
       } @else if (alertes().length === 0) {
         <div class="bb-analytics__empty-large">
           <i class="pi pi-check-circle" style="color:#22C55E; opacity:1"></i>
-          <p>Aucune alerte épidémique détectée</p>
-          <span>La situation sanitaire est normale</span>
+          <p>{{ 'ADMIN.ANALYTICS.NO_ALERTS_TITLE' | translate }}</p>
+          <span>{{ 'ADMIN.ANALYTICS.NO_ALERTS_SUB' | translate }}</span>
         </div>
       } @else {
         @for (a of alertes(); track a.pathologie) {
@@ -283,7 +283,7 @@
               <i class="pi pi-exclamation-triangle"></i>
               <div>
                 <p class="bb-analytics__alerte-patho">{{ a.pathologie }}</p>
-                <p class="bb-analytics__alerte-meta">{{ a.prefecture }} · {{ a.count }} cas</p>
+                <p class="bb-analytics__alerte-meta">{{ a.prefecture }} · {{ a.count }} {{ 'ADMIN.ANALYTICS.CASES_UNIT' | translate }}</p>
               </div>
             </div>
             <p-tag [value]="'+' + a.evolution + '%'" [severity]="getAlerteSeverity(a.evolution)" />
@@ -298,14 +298,14 @@
   ════════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'tendances') {
     <div class="bb-analytics__section">
-      <h2 class="bb-analytics__section-title">Tendances temporelles</h2>
+      <h2 class="bb-analytics__section-title">{{ 'ADMIN.ANALYTICS.TIME_TRENDS_TITLE' | translate }}</h2>
 
       @if (isLoadingTend()) {
         <p-skeleton height="300px" borderRadius="12px" />
       } @else if (tendances().length === 0) {
         <div class="bb-analytics__empty-large">
           <i class="pi pi-chart-line"></i>
-          <p>Aucune donnée de tendance disponible</p>
+          <p>{{ 'ADMIN.ANALYTICS.NO_TREND_DATA' | translate }}</p>
         </div>
       } @else {
         <div class="bb-analytics__tendances">
@@ -318,14 +318,14 @@
                     class="bb-analytics__tendance-fill bb-analytics__tendance-fill--cons"
                     [style.width.%]="t.consultations"
                   ></div>
-                  <span>{{ t.consultations }} consultations</span>
+                  <span>{{ 'ADMIN.ANALYTICS.CONSULTATIONS_LABEL' | translate: { count: t.consultations } }}</span>
                 </div>
                 <div class="bb-analytics__tendance-bar">
                   <div
                     class="bb-analytics__tendance-fill bb-analytics__tendance-fill--vacc"
                     [style.width.%]="t.vaccinations"
                   ></div>
-                  <span>{{ t.vaccinations }} vaccinations</span>
+                  <span>{{ 'ADMIN.ANALYTICS.VACCINATIONS_LABEL' | translate: { count: t.vaccinations } }}</span>
                 </div>
               </div>
             </div>
@@ -340,7 +340,7 @@
   ════════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'vaccins') {
     <div class="bb-analytics__section">
-      <h2 class="bb-analytics__section-title">Couverture vaccinale</h2>
+      <h2 class="bb-analytics__section-title">{{ 'ADMIN.ANALYTICS.VACCINE_COVERAGE_TITLE' | translate }}</h2>
 
       @if (isLoadingCouv()) {
         @for (i of [1,2,3,4]; track i) {
@@ -349,7 +349,7 @@
       } @else if (couverture().length === 0) {
         <div class="bb-analytics__empty-large">
           <i class="pi pi-heart"></i>
-          <p>Aucune donnée de couverture vaccinale</p>
+          <p>{{ 'ADMIN.ANALYTICS.NO_COVERAGE_DATA' | translate }}</p>
         </div>
       } @else {
         <div class="bb-analytics__vaccins">
@@ -357,7 +357,7 @@
             <div class="bb-analytics__vaccin-card">
               <div class="bb-analytics__vaccin-header">
                 <span class="bb-analytics__vaccin-nom">{{ v.vaccin }}</span>
-                <span class="bb-analytics__vaccin-total">{{ v.total }} doses</span>
+                <span class="bb-analytics__vaccin-total">{{ v.total }} {{ 'ADMIN.ANALYTICS.DOSES_UNIT' | translate }}</span>
               </div>
               @if (v.pourcentage !== undefined) {
                 <div class="bb-analytics__vaccin-bar">

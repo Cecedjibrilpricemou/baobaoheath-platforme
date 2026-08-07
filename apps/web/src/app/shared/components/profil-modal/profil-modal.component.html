@@ -10,7 +10,7 @@
           <span class="bb-profil-modal__role">{{ getRoleLabel() }}</span>
         </div>
         @if (!forcerChangement()) {
-          <button class="bb-profil-modal__close" (click)="fermerModal()" aria-label="Fermer">
+          <button class="bb-profil-modal__close" (click)="fermerModal()" [attr.aria-label]="'PROFIL_MODAL.CLOSE_ARIA' | translate">
             <i class="pi pi-times" aria-hidden="true"></i>
           </button>
         }
@@ -20,7 +20,7 @@
       @if (forcerChangement()) {
         <div class="bb-profil-modal__forced" role="alert">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-          <span>Vous devez changer votre mot de passe temporaire avant de continuer.</span>
+          <span>{{ 'PROFIL_MODAL.FORCED_CHANGE_MSG' | translate }}</span>
         </div>
       }
 
@@ -28,10 +28,10 @@
       @if (!forcerChangement()) {
         <div class="bb-profil-modal__tabs">
           <button class="bb-profil-modal__tab" [class.bb-profil-modal__tab--active]="activeTab() === 'profil'" [attr.aria-pressed]="activeTab() === 'profil'" (click)="setTab('profil')">
-            <i class="pi pi-user" aria-hidden="true"></i> Mon profil
+            <i class="pi pi-user" aria-hidden="true"></i> {{ 'PROFIL_MODAL.TAB_PROFIL' | translate }}
           </button>
           <button class="bb-profil-modal__tab" [class.bb-profil-modal__tab--active]="activeTab() === 'password'" [attr.aria-pressed]="activeTab() === 'password'" (click)="setTab('password')">
-            <i class="pi pi-lock" aria-hidden="true"></i> Mot de passe
+            <i class="pi pi-lock" aria-hidden="true"></i> {{ 'PROFIL_MODAL.TAB_PASSWORD' | translate }}
           </button>
         </div>
       }
@@ -53,25 +53,25 @@
         <div class="bb-profil-modal__body">
           <div class="bb-profil-modal__grid">
             <div class="bb-profil-modal__field">
-              <label for="profil-prenom">Prénom *</label>
-              <input id="profil-prenom" pInputText [(ngModel)]="profilForm.prenom" placeholder="Prénom" />
+              <label for="profil-prenom">{{ 'PROFIL_MODAL.PRENOM_LABEL' | translate }}</label>
+              <input id="profil-prenom" pInputText [(ngModel)]="profilForm.prenom" [placeholder]="'PROFIL_MODAL.PRENOM_PH' | translate" />
             </div>
             <div class="bb-profil-modal__field">
-              <label for="profil-nom">Nom *</label>
-              <input id="profil-nom" pInputText [(ngModel)]="profilForm.nom" placeholder="Nom" />
+              <label for="profil-nom">{{ 'PROFIL_MODAL.NOM_LABEL' | translate }}</label>
+              <input id="profil-nom" pInputText [(ngModel)]="profilForm.nom" [placeholder]="'PROFIL_MODAL.NOM_PH' | translate" />
             </div>
             <div class="bb-profil-modal__field">
-              <label for="profil-telephone">Téléphone</label>
-              <input id="profil-telephone" pInputText [(ngModel)]="profilForm.telephone" placeholder="Téléphone" />
+              <label for="profil-telephone">{{ 'PROFIL_MODAL.TEL_LABEL' | translate }}</label>
+              <input id="profil-telephone" pInputText [(ngModel)]="profilForm.telephone" [placeholder]="'PROFIL_MODAL.TEL_PH' | translate" />
             </div>
             <div class="bb-profil-modal__field">
-              <label for="profil-email">Email <span class="bb-profil-modal__optional">(optionnel)</span></label>
-              <input id="profil-email" pInputText [(ngModel)]="profilForm.email" placeholder="Email" type="email" />
+              <label for="profil-email">{{ 'PROFIL_MODAL.EMAIL_LABEL' | translate }} <span class="bb-profil-modal__optional">{{ 'PROFIL_MODAL.EMAIL_OPTIONAL' | translate }}</span></label>
+              <input id="profil-email" pInputText [(ngModel)]="profilForm.email" [placeholder]="'PROFIL_MODAL.EMAIL_PH' | translate" type="email" />
             </div>
           </div>
           <button class="bb-profil-modal__save-btn" (click)="saveProfil()" [disabled]="isSaving()">
             <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
-            {{ isSaving() ? 'Sauvegarde...' : 'Sauvegarder' }}
+            {{ (isSaving() ? 'PROFIL_MODAL.SAVING' : 'COMMON.SAVE') | translate }}
           </button>
         </div>
       }
@@ -81,45 +81,45 @@
         <div class="bb-profil-modal__body">
           @if (!forcerChangement()) {
             <div class="bb-profil-modal__field">
-              <label for="profil-ancien-mdp">Ancien mot de passe *</label>
+              <label for="profil-ancien-mdp">{{ 'PROFIL_MODAL.OLD_PASSWORD_LABEL' | translate }}</label>
               <div class="bb-profil-modal__input-wrap">
                 <input id="profil-ancien-mdp" pInputText [(ngModel)]="passwordForm.ancienMotDePasse"
                   [type]="showAncien() ? 'text' : 'password'"
-                  placeholder="Ancien mot de passe" />
+                  [placeholder]="'PROFIL_MODAL.OLD_PASSWORD_PH' | translate" />
                 <button type="button" class="bb-profil-modal__eye" (click)="showAncien.update(v => !v)"
-                  [attr.aria-label]="showAncien() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" [attr.aria-pressed]="showAncien()">
+                  [attr.aria-label]="(showAncien() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate" [attr.aria-pressed]="showAncien()">
                   <i [class]="showAncien() ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
                 </button>
               </div>
             </div>
           }
           <div class="bb-profil-modal__field">
-            <label for="profil-nouveau-mdp">Nouveau mot de passe *</label>
+            <label for="profil-nouveau-mdp">{{ 'PROFIL_MODAL.NEW_PASSWORD_LABEL' | translate }}</label>
             <div class="bb-profil-modal__input-wrap">
               <input id="profil-nouveau-mdp" pInputText [(ngModel)]="passwordForm.nouveauMotDePasse"
                 [type]="showNouveau() ? 'text' : 'password'"
-                placeholder="Minimum 6 caractères" />
+                [placeholder]="'PROFIL_MODAL.NEW_PASSWORD_PH' | translate" />
               <button type="button" class="bb-profil-modal__eye" (click)="showNouveau.update(v => !v)"
-                [attr.aria-label]="showNouveau() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" [attr.aria-pressed]="showNouveau()">
+                [attr.aria-label]="(showNouveau() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate" [attr.aria-pressed]="showNouveau()">
                 <i [class]="showNouveau() ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
               </button>
             </div>
           </div>
           <div class="bb-profil-modal__field">
-            <label for="profil-confirm-mdp">Confirmer le mot de passe *</label>
+            <label for="profil-confirm-mdp">{{ 'PROFIL_MODAL.CONFIRM_PASSWORD_LABEL' | translate }}</label>
             <div class="bb-profil-modal__input-wrap">
               <input id="profil-confirm-mdp" pInputText [(ngModel)]="passwordForm.confirmation"
                 [type]="showConfirm() ? 'text' : 'password'"
-                placeholder="Répétez le mot de passe" />
+                [placeholder]="'PROFIL_MODAL.CONFIRM_PASSWORD_PH' | translate" />
               <button type="button" class="bb-profil-modal__eye" (click)="showConfirm.update(v => !v)"
-                [attr.aria-label]="showConfirm() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" [attr.aria-pressed]="showConfirm()">
+                [attr.aria-label]="(showConfirm() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate" [attr.aria-pressed]="showConfirm()">
                 <i [class]="showConfirm() ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
               </button>
             </div>
           </div>
           <button class="bb-profil-modal__save-btn" (click)="savePassword()" [disabled]="isSaving()">
             <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-lock'" aria-hidden="true"></i>
-            {{ isSaving() ? 'Changement...' : 'Changer le mot de passe' }}
+            {{ (isSaving() ? 'PROFIL_MODAL.CHANGING' : 'PROFIL_MODAL.CHANGE_PASSWORD_BTN') | translate }}
           </button>
         </div>
       }

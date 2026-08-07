@@ -4,8 +4,8 @@
   <!-- Header -->
   <div class="bb-med-cons__header">
     <div>
-      <h1 class="bb-med-cons__title"><i class="pi pi-check-circle"></i> Consultations à valider</h1>
-      <p class="bb-med-cons__subtitle">{{ total() }} consultation(s) en attente de validation médicale</p>
+      <h1 class="bb-med-cons__title"><i class="pi pi-check-circle"></i> {{ 'MEDECIN.CONSULTATIONS.TITLE' | translate }}</h1>
+      <p class="bb-med-cons__subtitle">{{ 'MEDECIN.CONSULTATIONS.SUBTITLE' | translate: { count: total() } }}</p>
     </div>
   </div>
 
@@ -32,8 +32,8 @@
       } @else if (consultations().length === 0) {
         <div class="bb-med-cons__empty">
           <i class="pi pi-check-circle"></i>
-          <p>Aucune consultation en attente</p>
-          <span>Toutes les consultations ont été validées</span>
+          <p>{{ 'MEDECIN.CONSULTATIONS.EMPTY_TITLE' | translate }}</p>
+          <span>{{ 'MEDECIN.CONSULTATIONS.EMPTY_SUB' | translate }}</span>
         </div>
       } @else {
         @for (c of consultations(); track c.id) {
@@ -55,7 +55,7 @@
               <p class="bb-med-cons__item-patient">{{ getPatientNom(c) }}</p>
               <p class="bb-med-cons__item-motif">{{ c.motifPrincipal }}</p>
               <p class="bb-med-cons__item-meta">
-                <i class="pi pi-user" aria-hidden="true"></i> ASC : {{ getAscNom(c) }} ·
+                <i class="pi pi-user" aria-hidden="true"></i> {{ 'MEDECIN.CONSULTATIONS.ASC_LABEL' | translate }} {{ getAscNom(c) }} ·
                 {{ formatDate(c.consulteeLE) }}
               </p>
             </div>
@@ -70,24 +70,24 @@
       <div class="bb-med-cons__detail">
         <div class="bb-med-cons__detail-header">
           <button class="bb-med-cons__back" (click)="fermerDetail()">
-            <i class="pi pi-arrow-left"></i> Retour
+            <i class="pi pi-arrow-left"></i> {{ 'COMMON.BACK' | translate }}
           </button>
           <div>
             <h2 class="bb-med-cons__detail-patient">{{ getPatientNom(selected()!) }}</h2>
-            <p class="bb-med-cons__detail-meta">{{ formatDate(selected()!.consulteeLE) }} · ASC : {{ getAscNom(selected()!) }}</p>
+            <p class="bb-med-cons__detail-meta">{{ formatDate(selected()!.consulteeLE) }} · {{ 'MEDECIN.CONSULTATIONS.ASC_LABEL' | translate }} {{ getAscNom(selected()!) }}</p>
           </div>
         </div>
 
         <!-- Motif -->
         <div class="bb-med-cons__block">
-          <h3 class="bb-med-cons__block-title"><i class="pi pi-file"></i> Motif</h3>
+          <h3 class="bb-med-cons__block-title"><i class="pi pi-file"></i> {{ 'MEDECIN.CONSULTATIONS.MOTIF' | translate }}</h3>
           <p class="bb-med-cons__block-text">{{ selected()!.motifPrincipal }}</p>
         </div>
 
         <!-- Constantes -->
         @if (selected()!.constantes) {
           <div class="bb-med-cons__block">
-            <h3 class="bb-med-cons__block-title"><i class="pi pi-heart-fill"></i> Constantes vitales</h3>
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-heart-fill"></i> {{ 'MEDECIN.CONSULTATIONS.VITALS_TITLE' | translate }}</h3>
             @if (selected()!.constantes!.alertes?.length) {
               <div class="bb-med-cons__alertes" role="alert">
                 @for (a of selected()!.constantes!.alertes!; track a) {
@@ -118,7 +118,7 @@
         <!-- Diagnostics -->
         @if (selected()!.diagnostics?.length) {
           <div class="bb-med-cons__block">
-            <h3 class="bb-med-cons__block-title"><i class="pi pi-search"></i> Diagnostics</h3>
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-search"></i> {{ 'MEDECIN.CONSULTATIONS.DIAGNOSTICS_TITLE' | translate }}</h3>
             @for (d of selected()!.diagnostics; track d.id) {
               <div class="bb-med-cons__diag">
                 <span class="bb-med-cons__diag-type">{{ d.typeDiagnostic }}</span>
@@ -132,8 +132,8 @@
         <!-- Ordonnances à signer -->
         @if (selected()!.ordonnances?.length) {
           <div class="bb-med-cons__block">
-            <h3 class="bb-med-cons__block-title"><i class="pi pi-file-edit"></i> Ordonnances à signer</h3>
-            <p class="bb-med-cons__block-note">Sélectionnez les ordonnances à valider</p>
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-file-edit"></i> {{ 'MEDECIN.CONSULTATIONS.ORDONNANCES_TITLE' | translate }}</h3>
+            <p class="bb-med-cons__block-note">{{ 'MEDECIN.CONSULTATIONS.ORDONNANCES_HINT' | translate }}</p>
             @for (o of selected()!.ordonnances; track o.id) {
               <div
                 class="bb-med-cons__ordo"
@@ -152,11 +152,11 @@
 
         <!-- Notes médecin -->
         <div class="bb-med-cons__block">
-          <h3 id="notes-medecin-title" class="bb-med-cons__block-title"><i class="pi pi-pencil" aria-hidden="true"></i> Notes médicales</h3>
+          <h3 id="notes-medecin-title" class="bb-med-cons__block-title"><i class="pi pi-pencil" aria-hidden="true"></i> {{ 'MEDECIN.CONSULTATIONS.NOTES_TITLE' | translate }}</h3>
           <textarea
             pTextarea
             [(ngModel)]="notesMedecin"
-            placeholder="Ajoutez vos observations médicales, recommandations..."
+            [placeholder]="'MEDECIN.CONSULTATIONS.NOTES_PLACEHOLDER' | translate"
             aria-labelledby="notes-medecin-title"
             rows="4"
             style="width:100%"
@@ -166,7 +166,7 @@
         <!-- Bouton valider -->
         <button class="bb-med-cons__valider-btn" (click)="valider()" [disabled]="isValidating()">
           <i class="pi pi-check-circle" aria-hidden="true"></i>
-          {{ isValidating() ? 'Validation...' : 'Valider la consultation' }}
+          {{ (isValidating() ? 'MEDECIN.CONSULTATIONS.VALIDATING' : 'MEDECIN.CONSULTATIONS.VALIDATE_BTN') | translate }}
         </button>
       </div>
     }

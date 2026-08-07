@@ -28,7 +28,7 @@
       </div>
 
       <div class="login-left__controls">
-        <button type="button" class="ctrl-btn" (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Activer le thème clair' : 'Activer le thème sombre'">
+        <button type="button" class="ctrl-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
           <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
         </button>
         <button type="button" class="ctrl-btn" (click)="toggleLang()">
@@ -84,7 +84,7 @@
                 />
               </div>
               @if (identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched)) {
-                <small id="identifiant-msg" class="bb-error-text" role="alert">L'identifiant est requis</small>
+                <small id="identifiant-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.IDENTIFIANT_REQUIRED' | translate }}</small>
               }
               @if (!(identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched))) {
                 <small id="identifiant-msg" class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
@@ -127,7 +127,7 @@
                 </button>
               </div>
               @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
-                <small id="motDePasse-msg" class="bb-error-text" role="alert">Le mot de passe est requis</small>
+                <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.PASSWORD_REQUIRED' | translate }}</small>
               }
             </div>
 
@@ -150,7 +150,7 @@
 
             <div class="form-separator">
               <span class="form-separator__line"></span>
-              <span class="form-separator__text">ou</span>
+              <span class="form-separator__text">{{ 'COMMON.OR' | translate }}</span>
               <span class="form-separator__line"></span>
             </div>
 
@@ -199,7 +199,7 @@
                     (keydown)="onOtpKeyDown($index, $event)"
                     (paste)="onOtpPaste($event)"
                     [disabled]="isLoading() || otpExpired"
-                    [attr.aria-label]="'Chiffre ' + ($index + 1) + ' sur ' + otpDigits.length"
+                    [attr.aria-label]="'AUTH.LOGIN.OTP_DIGIT_ARIA' | translate: { n: $index + 1, total: otpDigits.length }"
                   />
                 }
               </div>

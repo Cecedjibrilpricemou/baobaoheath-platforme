@@ -13,14 +13,16 @@ import { AscService } from '../../../core/services/asc.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { Patient } from '../../../core/models/patient.model';
 import { TriageResult, TriageHypothese } from '../../../core/models/asc.model';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-triage',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ButtonModule, InputTextModule, 
-    MultiSelectModule, SliderModule, 
-    ProgressBarModule, TagModule, CardModule
+    CommonModule, FormsModule, ButtonModule, InputTextModule,
+    MultiSelectModule, SliderModule,
+    ProgressBarModule, TagModule, CardModule, TranslatePipe
   ],
   templateUrl: './triage.html',
   styleUrl: './triage.scss',
@@ -29,6 +31,7 @@ export class Triage {
   private ascService = inject(AscService);
   private patientService = inject(PatientService);
   private router = inject(Router);
+  private i18n = inject(I18nService);
 
   currentStep = signal(1);
   
@@ -41,24 +44,26 @@ export class Triage {
   searchError = signal('');
 
   // Step 2: Symptômes & Constantes
-  symptomesList = [
-    { label: 'Fièvre', value: 'fievre' },
-    { label: 'Frissons', value: 'frissons' },
-    { label: 'Toux sèche', value: 'toux' },
-    { label: 'Maux de tête', value: 'cephalee' },
-    { label: 'Vomissements', value: 'vomissement' },
-    { label: 'Diarrhée', value: 'diarrhee' },
-    { label: 'Fatigue extrême', value: 'fatigue' },
-    { label: 'Douleur thoracique', value: 'douleur thoracique' },
-    { label: 'Respiration rapide', value: 'respiration rapide' },
-    { label: 'Vertige', value: 'vertige' },
-    { label: 'Vision trouble', value: 'vision trouble' },
-    { label: 'Soif intense', value: 'soif' },
-    { label: 'Saignement', value: 'saignement' },
-    { label: 'Œdème', value: 'oedeme' },
-    { label: 'Éruption cutanée', value: 'eruption' },
-    { label: 'Plaie', value: 'plaie' }
-  ];
+  get symptomesList() {
+    return [
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_FIEVRE'), value: 'fievre' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_FRISSONS'), value: 'frissons' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_TOUX'), value: 'toux' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_CEPHALEE'), value: 'cephalee' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_VOMISSEMENT'), value: 'vomissement' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_DIARRHEE'), value: 'diarrhee' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_FATIGUE'), value: 'fatigue' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_DOULEUR_THORACIQUE'), value: 'douleur thoracique' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_RESPIRATION_RAPIDE'), value: 'respiration rapide' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_VERTIGE'), value: 'vertige' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_VISION_TROUBLE'), value: 'vision trouble' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_SOIF'), value: 'soif' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_SAIGNEMENT'), value: 'saignement' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_OEDEME'), value: 'oedeme' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_ERUPTION'), value: 'eruption' },
+      { label: this.i18n.t('ASC.TRIAGE.SYMPTOM_PLAIE'), value: 'plaie' }
+    ];
+  }
   selectedSymptomes = signal<string[]>([]);
   temperature = signal<number>(37);
   tension = signal<string>('12/8');
@@ -87,13 +92,13 @@ export class Triage {
           if (Array.isArray(items) && items.length > 0) {
             this.searchResults.set(items);
           } else {
-            this.searchError.set('Aucun patient trouvé avec ce critère.');
+            this.searchError.set(this.i18n.t('ASC.TRIAGE.ERR_NO_PATIENT_FOUND'));
           }
         }
       },
       error: () => {
         this.isSearching.set(false);
-        this.searchError.set('Erreur lors de la recherche. Veuillez réessayer.');
+        this.searchError.set(this.i18n.t('ASC.TRIAGE.ERR_SEARCH'));
       }
     });
   }
@@ -173,13 +178,13 @@ export class Triage {
 
     if (urgence === 'URGENCE_VITALE') {
       score = 85;
-      gravity = 'Rouge (Urgence Vitale)';
+      gravity = this.i18n.t('ASC.TRIAGE.GRAVITY_RED_VITAL');
     } else if (urgence === 'URGENT') {
       score = 55;
-      gravity = 'Orange (Urgent)';
+      gravity = this.i18n.t('ASC.TRIAGE.GRAVITY_ORANGE');
     } else {
       score = 15;
-      gravity = 'Vert (Routine)';
+      gravity = this.i18n.t('ASC.TRIAGE.GRAVITY_GREEN');
     }
 
     const recommendations: string[] = [];
@@ -193,7 +198,7 @@ export class Triage {
 
     // Ajouter les alertes constantes vitales
     if (data.alertes && Array.isArray(data.alertes)) {
-      data.alertes.forEach((a: string) => recommendations.push(`⚠️ Alerte : ${a}`));
+      data.alertes.forEach((a: string) => recommendations.push(this.i18n.t('ASC.TRIAGE.ALERT_PREFIX', { alert: a })));
     }
 
     // Ajouter la recommandation générale
@@ -214,29 +219,29 @@ export class Triage {
     if (symps.includes('vomissement') || temp > 39) {
       this.analysisResult.set({
         score: 85,
-        gravity: 'Rouge (Urgence)',
+        gravity: this.i18n.t('ASC.TRIAGE.GRAVITY_RED'),
         recommendations: [
-          'Référer immédiatement au centre médical le plus proche.',
-          'Administrer des sels de réhydratation.',
-          'Alerter le médecin superviseur.'
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_1_1'),
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_1_2'),
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_1_3')
         ]
       });
     } else if (symps.includes('fievre') || temp > 38) {
       this.analysisResult.set({
         score: 45,
-        gravity: 'Orange (Alerte)',
+        gravity: this.i18n.t('ASC.TRIAGE.GRAVITY_ORANGE_ALERT'),
         recommendations: [
-          'Test de paludisme rapide recommandé.',
-          'Suivi dans 24h.'
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_2_1'),
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_2_2')
         ]
       });
     } else {
       this.analysisResult.set({
         score: 15,
-        gravity: 'Vert (Faible)',
+        gravity: this.i18n.t('ASC.TRIAGE.GRAVITY_GREEN_LOW'),
         recommendations: [
-          'Prescrire du paracétamol.',
-          'Repos et bonne hydratation.'
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_3_1'),
+          this.i18n.t('ASC.TRIAGE.FALLBACK_REC_3_2')
         ]
       });
     }
@@ -253,7 +258,7 @@ export class Triage {
 
   getPatientNom(p?: Patient): string {
     const patient = p || this.patientData();
-    if (!patient) return 'Patient inconnu';
+    if (!patient) return this.i18n.t('ASC.CONSULTATIONS.PATIENT_UNKNOWN');
     const prenom = patient.utilisateur?.prenom ?? patient.prenom ?? '';
     const nom = patient.utilisateur?.nom ?? patient.nom ?? '';
     return `${prenom} ${nom}`;
@@ -262,9 +267,9 @@ export class Triage {
   getPatientDetails(p?: Patient): string {
     const patient = p || this.patientData();
     if (!patient) return '';
-    const sexe = patient.sexe === 'M' ? 'Masculin' : patient.sexe === 'F' ? 'Féminin' : patient.sexe ?? '';
+    const sexe = patient.sexe === 'M' ? this.i18n.t('PATIENT.PROFILE.GENDER_M') : patient.sexe === 'F' ? this.i18n.t('PATIENT.PROFILE.GENDER_F') : patient.sexe ?? '';
     const prefecture = patient.prefecture ?? 'Conakry';
-    return `Sexe: ${sexe} | Région: ${prefecture}`;
+    return this.i18n.t('ASC.TRIAGE.PATIENT_DETAILS', { sexe, region: prefecture });
   }
 
   creerConsultation() {
@@ -276,7 +281,7 @@ export class Triage {
     const result = this.analysisResult();
     const payload = {
       idPatient: patient.id || 'fallback-id',
-      motifPrincipal: 'Triage IA: ' + (result?.gravity || 'Routine'),
+      motifPrincipal: this.i18n.t('ASC.TRIAGE.MOTIF_PREFIX') + ' ' + (result?.gravity || this.i18n.t('ASC.TRIAGE.GRAVITY_GREEN')),
       symptomes: this.selectedSymptomes()
     };
 

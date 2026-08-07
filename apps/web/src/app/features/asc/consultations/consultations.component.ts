@@ -12,6 +12,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { AscService } from '../../../core/services/asc.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 import { Consultation } from '../../../core/models/asc.model';
 import { Patient } from '../../../core/models/patient.model';
 
@@ -31,6 +32,7 @@ export class ConsultationsComponent implements OnInit {
   private ascService = inject(AscService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private i18n = inject(I18nService);
 
   currentUser = this.authService.currentUser;
   consultations = signal<Consultation[]>([]);
@@ -102,7 +104,7 @@ export class ConsultationsComponent implements OnInit {
   closeNewForm() { this.showNewForm.set(false); this.errorMessage.set(''); }
 
   createConsultation() {
-    if (!this.newConsultation.patientId) { this.errorMessage.set('Veuillez sélectionner un patient.'); return; }
+    if (!this.newConsultation.patientId) { this.errorMessage.set(this.i18n.t('ASC.CONSULTATIONS.ERR_PATIENT')); return; }
     this.isSaving.set(true); this.errorMessage.set('');
     
     this.ascService.saveConsultation({
@@ -112,7 +114,7 @@ export class ConsultationsComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         this.isSaving.set(false); this.showNewForm.set(false);
-        this.successMessage.set('Consultation ouverte avec succès !');
+        this.successMessage.set(this.i18n.t('ASC.CONSULTATIONS.SUCCESS_CREATE'));
         setTimeout(() => this.successMessage.set(''), 3000);
         // Naviguer directement vers le détail de la nouvelle consultation
         const id = response?.data?.id;
@@ -122,7 +124,7 @@ export class ConsultationsComponent implements OnInit {
           this.loadConsultations();
         }
       },
-      error: (err) => { this.isSaving.set(false); this.errorMessage.set(err?.error?.message ?? 'Erreur lors de la création.'); }
+      error: (err) => { this.isSaving.set(false); this.errorMessage.set(err?.error?.message ?? this.i18n.t('ASC.CONSULTATIONS.ERR_CREATE')); }
     });
   }
 

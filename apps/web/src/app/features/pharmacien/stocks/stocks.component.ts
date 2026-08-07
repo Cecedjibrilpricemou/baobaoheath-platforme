@@ -11,6 +11,8 @@ import { SelectModule } from 'primeng/select';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface Medicament {
   id: string; dci: string; nomCommercial?: string;
@@ -27,12 +29,13 @@ interface Stock {
   selector: 'app-pharmacien-stocks',
   standalone: true,
   imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule,
-    InputTextModule, InputNumberModule, SelectModule, IconFieldModule, InputIconModule],
+    InputTextModule, InputNumberModule, SelectModule, IconFieldModule, InputIconModule, TranslatePipe],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })
 export class PharmacienStocksComponent implements OnInit {
   private pharmacienService = inject(PharmacienService);
+  private i18n = inject(I18nService);
   protected Math = Math;
 
   stocks           = signal<Stock[]>([]);
@@ -104,7 +107,7 @@ export class PharmacienStocksComponent implements OnInit {
 
   reapprovisionner() {
     if (!this.formReappro.idMedicament || !this.formReappro.quantiteAjoutee) {
-      this.errorMsg.set('Médicament et quantité sont obligatoires.'); return;
+      this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_REQUIRED')); return;
     }
     this.isSaving.set(true); this.errorMsg.set('');
 
@@ -120,13 +123,13 @@ export class PharmacienStocksComponent implements OnInit {
         this.isSaving.set(false);
         this.showForm.set(false);
         this.formReappro = { idMedicament: '', quantiteAjoutee: null, datePeremption: '', margeGnf: null };
-        this.successMsg.set('Stock réapprovisionné avec succès !');
+        this.successMsg.set(this.i18n.t('PHARMACIEN.STOCKS.SUCCESS_REAPPRO'));
         setTimeout(() => this.successMsg.set(''), 4000);
         this.loadStocks();
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.errorMsg.set(err?.error?.error ?? 'Erreur lors du réapprovisionnement.');
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.STOCKS.ERR_REAPPRO'));
       }
     });
   }
@@ -146,9 +149,9 @@ export class PharmacienStocksComponent implements OnInit {
   }
 
   getNiveauLabel(s: Stock): string {
-    if (s.quantite <= s.seuilAlerte) return 'Critique';
-    if (s.quantite <= s.seuilAlerte * 2) return 'Faible';
-    return 'Normal';
+    if (s.quantite <= s.seuilAlerte) return this.i18n.t('PHARMACIEN.STOCKS.NIVEAU_CRITIQUE');
+    if (s.quantite <= s.seuilAlerte * 2) return this.i18n.t('PHARMACIEN.STOCKS.NIVEAU_FAIBLE');
+    return this.i18n.t('PHARMACIEN.STOCKS.NIVEAU_NORMAL');
   }
 
   getBarWidth(s: Stock): number { return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100); }

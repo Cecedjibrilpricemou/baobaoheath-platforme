@@ -5,18 +5,21 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { AuthService } from '../../../core/services/auth.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { I18nService } from '../../services/i18n.service';
 
 type Tab = 'profil' | 'password';
 
 @Component({
   selector: 'app-profil-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TranslatePipe],
   templateUrl: './profil-modal.component.html',
   styleUrl: './profil-modal.component.scss'
 })
 export class ProfilModalComponent implements OnInit {
   private authService = inject(AuthService);
+  private i18n = inject(I18nService);
 
   // Input/Output
   forcerChangement = input<boolean>(false); // true si doitChangerMotDePasse
@@ -61,18 +64,18 @@ export class ProfilModalComponent implements OnInit {
   // ── Sauvegarder le profil ───────────────────────────────────────
   saveProfil() {
     if (!this.profilForm.prenom || !this.profilForm.nom) {
-      this.errorMsg.set('Prénom et nom sont obligatoires.'); return;
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_NAME_REQUIRED')); return;
     }
     this.isSaving.set(true); this.errorMsg.set('');
 
     this.authService.updateProfil(this.profilForm).subscribe({
       next: () => {
         this.isSaving.set(false);
-        this.showSuccess('Profil mis à jour avec succès !');
+        this.showSuccess(this.i18n.t('PROFIL_MODAL.SUCCESS_UPDATED'));
       },
       error: err => {
         this.isSaving.set(false);
-        this.errorMsg.set(err?.error?.error ?? 'Erreur lors de la mise à jour.');
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PROFIL_MODAL.ERR_UPDATE'));
       }
     });
   }
@@ -80,13 +83,13 @@ export class ProfilModalComponent implements OnInit {
   // ── Changer le mot de passe ─────────────────────────────────────
   savePassword() {
     if (this.passwordForm.nouveauMotDePasse.length < 6) {
-      this.errorMsg.set('Le mot de passe doit contenir au moins 6 caractères.'); return;
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PWD_SHORT')); return;
     }
     if (this.passwordForm.nouveauMotDePasse !== this.passwordForm.confirmation) {
-      this.errorMsg.set('Les mots de passe ne correspondent pas.'); return;
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PWD_MATCH')); return;
     }
     if (!this.forcerChangement() && !this.passwordForm.ancienMotDePasse) {
-      this.errorMsg.set('L\'ancien mot de passe est obligatoire.'); return;
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_OLD_PWD_REQUIRED')); return;
     }
 
     this.isSaving.set(true); this.errorMsg.set('');
@@ -99,7 +102,7 @@ export class ProfilModalComponent implements OnInit {
       next: () => {
         this.isSaving.set(false);
         this.passwordForm = { ancienMotDePasse: '', nouveauMotDePasse: '', confirmation: '' };
-        this.showSuccess('Mot de passe changé avec succès !');
+        this.showSuccess(this.i18n.t('PROFIL_MODAL.SUCCESS_PWD_CHANGED'));
         // Si changement forcé → fermer après 1.5s
         if (this.forcerChangement()) {
           setTimeout(() => this.fermer.emit(), 1500);
@@ -107,7 +110,7 @@ export class ProfilModalComponent implements OnInit {
       },
       error: err => {
         this.isSaving.set(false);
-        this.errorMsg.set(err?.error?.error ?? 'Erreur lors du changement.');
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PROFIL_MODAL.ERR_PWD_CHANGE'));
       }
     });
   }
@@ -119,11 +122,15 @@ export class ProfilModalComponent implements OnInit {
 
   getRoleLabel(): string {
     const map: Record<string, string> = {
-      'PATIENT': 'Patient', 'ASC': 'Agent de Santé',
-      'ASC_SUPERVISOR': 'Superviseur ASC', 'MEDECIN': 'Médecin',
-      'PHARMACIEN': 'Pharmacien', 'ADMIN_STRUCTURE': 'Admin Structure',
-      'ADMIN_REGIONAL': 'Admin Régional', 'ADMIN_NATIONAL': 'Admin National',
-      'SUPER_ADMIN': 'Super Administrateur'
+      'PATIENT': this.i18n.t('PATIENT.ROLE'),
+      'ASC': this.i18n.t('ASC.ROLE'),
+      'ASC_SUPERVISOR': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_ASC_SUPERVISOR'),
+      'MEDECIN': this.i18n.t('MEDECIN.ROLE'),
+      'PHARMACIEN': this.i18n.t('PHARMACIEN.ROLE'),
+      'ADMIN_STRUCTURE': this.i18n.t('ADMIN_STRUCTURE.ROLE'),
+      'ADMIN_REGIONAL': this.i18n.t('PROFIL_MODAL.ROLE_ADMIN_REGIONAL'),
+      'ADMIN_NATIONAL': this.i18n.t('PROFIL_MODAL.ROLE_ADMIN_NATIONAL'),
+      'SUPER_ADMIN': this.i18n.t('PROFIL_MODAL.ROLE_SUPER_ADMIN')
     };
     return map[this.currentUser()?.role ?? ''] ?? '';
   }

@@ -8,14 +8,14 @@
         <div class="bb-logout-modal__icon" style="background:#FEF9C3">
           <i class="pi pi-check-circle" style="color:#CA8A04" aria-hidden="true"></i>
         </div>
-        <h3 id="close-confirm-title" class="bb-logout-modal__title">Clôturer la consultation ?</h3>
-        <p id="close-confirm-text" class="bb-logout-modal__text">Cette action est irréversible. La consultation passera en statut "Terminée".</p>
+        <h3 id="close-confirm-title" class="bb-logout-modal__title">{{ 'ASC.CONSULTATION_DETAIL.CLOSE_CONFIRM_TITLE' | translate }}</h3>
+        <p id="close-confirm-text" class="bb-logout-modal__text">{{ 'ASC.CONSULTATION_DETAIL.CLOSE_CONFIRM_TEXT' | translate }}</p>
         <div class="bb-logout-modal__actions">
           <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="showCloseConfirm.set(false)">
-            Annuler
+            {{ 'COMMON.CANCEL' | translate }}
           </button>
           <button class="bb-logout-modal__btn" style="background:#16A34A;color:#fff;flex:1" (click)="closeConsultation()">
-            <i class="pi pi-check" aria-hidden="true"></i> Confirmer
+            <i class="pi pi-check" aria-hidden="true"></i> {{ 'COMMON.CONFIRM' | translate }}
           </button>
         </div>
       </div>
@@ -26,7 +26,7 @@
   <div class="bb-detail__header">
     <button class="bb-detail__back" (click)="goBack()">
       <i class="pi pi-arrow-left"></i>
-      <span>Consultations</span>
+      <span>{{ 'ASC.CONSULTATION_DETAIL.BACK' | translate }}</span>
     </button>
 
     @if (isLoading()) {
@@ -54,7 +54,7 @@
             [disabled]="isClosing()"
           >
             <i class="pi pi-check-circle"></i>
-            {{ isClosing() ? 'Clôture...' : 'Clôturer la consultation' }}
+            {{ (isClosing() ? 'ASC.CONSULTATION_DETAIL.CLOSING' : 'ASC.CONSULTATION_DETAIL.CLOSE_BTN') | translate }}
           </button>
         }
       </div>
@@ -62,18 +62,18 @@
       <!-- Motif + Allergies -->
       <div class="bb-detail__info-row">
         <div class="bb-detail__info-card">
-          <span class="bb-detail__info-label"><i class="pi pi-file"></i> Motif principal</span>
+          <span class="bb-detail__info-label"><i class="pi pi-file"></i> {{ 'ASC.CONSULTATION_DETAIL.MOTIF_LABEL' | translate }}</span>
           <span class="bb-detail__info-value">{{ consultation()!.motifPrincipal }}</span>
         </div>
         @if (consultation()!.patient.allergies?.length) {
           <div class="bb-detail__info-card bb-detail__info-card--alert">
-            <span class="bb-detail__info-label"><i class="pi pi-exclamation-triangle"></i> Allergies</span>
+            <span class="bb-detail__info-label"><i class="pi pi-exclamation-triangle"></i> {{ 'PATIENT.PROFILE.ALLERGIES' | translate }}</span>
             <span class="bb-detail__info-value">{{ consultation()!.patient.allergies!.join(', ') }}</span>
           </div>
         }
         @if (consultation()!.patient.groupeSanguin) {
           <div class="bb-detail__info-card">
-            <span class="bb-detail__info-label"><i class="pi pi-heart"></i> Groupe sanguin</span>
+            <span class="bb-detail__info-label"><i class="pi pi-heart"></i> {{ 'PATIENT.PROFILE.BLOOD_TYPE' | translate }}</span>
             <span class="bb-detail__info-value bb-detail__blood">{{ consultation()!.patient.groupeSanguin }}</span>
           </div>
         }
@@ -101,7 +101,7 @@
       [attr.aria-pressed]="activeSection() === 'vitals'"
       (click)="activeSection.set('vitals')"
     >
-      <i class="pi pi-heart-fill" aria-hidden="true"></i> Constantes vitales
+      <i class="pi pi-heart-fill" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.TAB_VITALS' | translate }}
       @if (consultation()?.constantes) {
         <span class="bb-detail__tab-badge">✓</span>
       }
@@ -112,7 +112,7 @@
       [attr.aria-pressed]="activeSection() === 'diagnostics'"
       (click)="activeSection.set('diagnostics')"
     >
-      <i class="pi pi-search" aria-hidden="true"></i> Diagnostics
+      <i class="pi pi-search" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.TAB_DIAGNOSTICS' | translate }}
       @if (consultation()?.diagnostics?.length) {
         <span class="bb-detail__tab-badge">{{ consultation()!.diagnostics.length }}</span>
       }
@@ -123,7 +123,7 @@
       [attr.aria-pressed]="activeSection() === 'ordonnances'"
       (click)="activeSection.set('ordonnances')"
     >
-      <i class="pi pi-file-edit" aria-hidden="true"></i> Ordonnances
+      <i class="pi pi-file-edit" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.TAB_ORDONNANCES' | translate }}
       @if (consultation()?.ordonnances?.length) {
         <span class="bb-detail__tab-badge">{{ consultation()!.ordonnances.length }}</span>
       }
@@ -134,7 +134,7 @@
       [attr.aria-pressed]="activeSection() === 'referral'"
       (click)="activeSection.set('referral')"
     >
-      <i class="pi pi-send" aria-hidden="true"></i> Référencement
+      <i class="pi pi-send" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.TAB_REFERRAL' | translate }}
       @if (consultation()?.referencement) {
         <span class="bb-detail__tab-badge">✓</span>
       }
@@ -148,7 +148,7 @@
       <!-- Alertes automatiques backend -->
       @if (consultation()?.constantes?.alertes?.length) {
         <div class="bb-detail__alertes" role="alert">
-          <p class="bb-detail__alertes-title"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Alertes détectées</p>
+          <p class="bb-detail__alertes-title"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.ALERTS_DETECTED' | translate }}</p>
           @for (alerte of consultation()!.constantes!.alertes!; track alerte) {
             <span class="bb-detail__alerte-item">{{ alerte }}</span>
           }
@@ -169,51 +169,51 @@
 
       <div class="bb-detail__vitals-grid">
         <div class="bb-detail__vital-field">
-          <label for="vital-temperature">🌡️ Température (°C)</label>
-          <p-inputnumber inputId="vital-temperature" [(ngModel)]="vitalsForm.temperature" (ngModelChange)="onVitalsChange()" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="Ex: 37.5" [disabled]="isConsultationTerminee()" />
+          <label for="vital-temperature">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TEMP' | translate }}</label>
+          <p-inputnumber inputId="vital-temperature" [(ngModel)]="vitalsForm.temperature" (ngModelChange)="onVitalsChange()" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TEMP_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-poids">⚖️ Poids (kg)</label>
-          <p-inputnumber inputId="vital-poids" [(ngModel)]="vitalsForm.poidsKg" [min]="0" [max]="300" [minFractionDigits]="1" placeholder="Ex: 65.0" [disabled]="isConsultationTerminee()" />
+          <label for="vital-poids">{{ 'ASC.CONSULTATION_DETAIL.VITAL_POIDS' | translate }}</label>
+          <p-inputnumber inputId="vital-poids" [(ngModel)]="vitalsForm.poidsKg" [min]="0" [max]="300" [minFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_POIDS_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-taille">📏 Taille (cm)</label>
-          <p-inputnumber inputId="vital-taille" [(ngModel)]="vitalsForm.tailleCm" [min]="0" [max]="250" placeholder="Ex: 170" [disabled]="isConsultationTerminee()" />
+          <label for="vital-taille">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TAILLE' | translate }}</label>
+          <p-inputnumber inputId="vital-taille" [(ngModel)]="vitalsForm.tailleCm" [min]="0" [max]="250" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TAILLE_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-perimetre">💪 Périmètre brachial (cm)</label>
-          <p-inputnumber inputId="vital-perimetre" [(ngModel)]="vitalsForm.perimetreBrachial" [min]="0" [max]="50" [minFractionDigits]="1" placeholder="Ex: 13.5" [disabled]="isConsultationTerminee()" />
+          <label for="vital-perimetre">{{ 'ASC.CONSULTATION_DETAIL.VITAL_PERIMETRE' | translate }}</label>
+          <p-inputnumber inputId="vital-perimetre" [(ngModel)]="vitalsForm.perimetreBrachial" [min]="0" [max]="50" [minFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_PERIMETRE_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-tension-sys">🩺 Tension systolique (mmHg)</label>
-          <p-inputnumber inputId="vital-tension-sys" [(ngModel)]="vitalsForm.tensionSystolique" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 120" [disabled]="isConsultationTerminee()" />
+          <label for="vital-tension-sys">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TENSION_SYS' | translate }}</label>
+          <p-inputnumber inputId="vital-tension-sys" [(ngModel)]="vitalsForm.tensionSystolique" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TENSION_SYS_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-tension-dia">🩺 Tension diastolique (mmHg)</label>
-          <p-inputnumber inputId="vital-tension-dia" [(ngModel)]="vitalsForm.tensionDiastolique" [min]="0" [max]="200" placeholder="Ex: 80" [disabled]="isConsultationTerminee()" />
+          <label for="vital-tension-dia">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TENSION_DIA' | translate }}</label>
+          <p-inputnumber inputId="vital-tension-dia" [(ngModel)]="vitalsForm.tensionDiastolique" [min]="0" [max]="200" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TENSION_DIA_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-fc">❤️ Fréquence cardiaque (bpm)</label>
-          <p-inputnumber inputId="vital-fc" [(ngModel)]="vitalsForm.frequenceCardiaque" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" placeholder="Ex: 72" [disabled]="isConsultationTerminee()" />
+          <label for="vital-fc">{{ 'ASC.CONSULTATION_DETAIL.VITAL_FC' | translate }}</label>
+          <p-inputnumber inputId="vital-fc" [(ngModel)]="vitalsForm.frequenceCardiaque" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_FC_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-fr">💨 Fréquence respiratoire (/min)</label>
-          <p-inputnumber inputId="vital-fr" [(ngModel)]="vitalsForm.frequenceRespiratoire" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" placeholder="Ex: 18" [disabled]="isConsultationTerminee()" />
+          <label for="vital-fr">{{ 'ASC.CONSULTATION_DETAIL.VITAL_FR' | translate }}</label>
+          <p-inputnumber inputId="vital-fr" [(ngModel)]="vitalsForm.frequenceRespiratoire" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_FR_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-spo2">🩸 SpO2 (%)</label>
-          <p-inputnumber inputId="vital-spo2" [(ngModel)]="vitalsForm.spo2" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [minFractionDigits]="1" placeholder="Ex: 98.0" [disabled]="isConsultationTerminee()" />
+          <label for="vital-spo2">{{ 'ASC.CONSULTATION_DETAIL.VITAL_SPO2' | translate }}</label>
+          <p-inputnumber inputId="vital-spo2" [(ngModel)]="vitalsForm.spo2" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [minFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_SPO2_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
         <div class="bb-detail__vital-field">
-          <label for="vital-glycemie">🍬 Glycémie (g/L)</label>
-          <p-inputnumber inputId="vital-glycemie" [(ngModel)]="vitalsForm.glycemie" (ngModelChange)="onVitalsChange()" [min]="0" [max]="10" [minFractionDigits]="2" placeholder="Ex: 0.90" [disabled]="isConsultationTerminee()" />
+          <label for="vital-glycemie">{{ 'ASC.CONSULTATION_DETAIL.VITAL_GLYCEMIE' | translate }}</label>
+          <p-inputnumber inputId="vital-glycemie" [(ngModel)]="vitalsForm.glycemie" (ngModelChange)="onVitalsChange()" [min]="0" [max]="10" [minFractionDigits]="2" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_GLYCEMIE_PH' | translate" [disabled]="isConsultationTerminee()" />
         </div>
       </div>
 
       @if (!isConsultationTerminee()) {
         <button class="bb-detail__submit-btn" (click)="saveVitals()" [disabled]="isSavingVitals()">
           <i class="pi pi-save"></i>
-          {{ isSavingVitals() ? 'Sauvegarde...' : 'Sauvegarder les constantes' }}
+          {{ (isSavingVitals() ? 'ASC.CONSULTATION_DETAIL.SAVING_VITALS' : 'ASC.CONSULTATION_DETAIL.SAVE_VITALS_BTN') | translate }}
         </button>
       }
     </div>
@@ -226,7 +226,7 @@
       <!-- Liste existante -->
       @if (consultation()?.diagnostics?.length) {
         <div class="bb-detail__list">
-          <h3 class="bb-detail__list-title">Diagnostics posés</h3>
+          <h3 class="bb-detail__list-title">{{ 'ASC.CONSULTATION_DETAIL.DIAGNOSTICS_POSED_TITLE' | translate }}</h3>
           @for (d of consultation()!.diagnostics; track d.id) {
             <div class="bb-detail__list-item">
               <div class="bb-detail__list-item-left">
@@ -247,18 +247,18 @@
       <!-- Formulaire ajout -->
       @if (!isConsultationTerminee()) {
         <div class="bb-detail__form">
-          <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> Ajouter un diagnostic</h3>
+          <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> {{ 'ASC.CONSULTATION_DETAIL.ADD_DIAGNOSTIC_TITLE' | translate }}</h3>
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label for="diag-libelle">Libellé *</label>
-              <input id="diag-libelle" pInputText [(ngModel)]="diagnosticForm.libelle" placeholder="Ex: Paludisme simple, Malnutrition aiguë..." />
+              <label for="diag-libelle">{{ 'ASC.CONSULTATION_DETAIL.LIBELLE_LABEL' | translate }}</label>
+              <input id="diag-libelle" pInputText [(ngModel)]="diagnosticForm.libelle" [placeholder]="'ASC.CONSULTATION_DETAIL.LIBELLE_PH' | translate" />
             </div>
             <div class="bb-detail__form-field">
-              <label for="diag-icd11">Code ICD-11</label>
-              <input id="diag-icd11" pInputText [(ngModel)]="diagnosticForm.codeIcd11" placeholder="Ex: 1F40" />
+              <label for="diag-icd11">{{ 'ASC.CONSULTATION_DETAIL.ICD11_LABEL' | translate }}</label>
+              <input id="diag-icd11" pInputText [(ngModel)]="diagnosticForm.codeIcd11" [placeholder]="'ASC.CONSULTATION_DETAIL.ICD11_PH' | translate" />
             </div>
             <div class="bb-detail__form-field">
-              <label id="diag-type-label" for="diag-type">Type</label>
+              <label id="diag-type-label" for="diag-type">{{ 'ASC.CONSULTATION_DETAIL.TYPE_LABEL' | translate }}</label>
               <p-select
                 inputId="diag-type"
                 [(ngModel)]="diagnosticForm.typeDiagnostic"
@@ -268,20 +268,20 @@
               />
             </div>
             <div class="bb-detail__form-field">
-              <label id="diag-severite-label" for="diag-severite">Sévérité</label>
+              <label id="diag-severite-label" for="diag-severite">{{ 'ASC.CONSULTATION_DETAIL.SEVERITE_LABEL' | translate }}</label>
               <p-select
                 inputId="diag-severite"
                 [(ngModel)]="diagnosticForm.severite"
                 [options]="severites"
                 optionLabel="label"
                 optionValue="value"
-                placeholder="Sélectionner"
+                [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate"
               />
             </div>
           </div>
           <button class="bb-detail__submit-btn" (click)="saveDiagnostic()" [disabled]="isSavingDiagnostic() || !diagnosticForm.libelle">
             <i class="pi pi-plus"></i>
-            {{ isSavingDiagnostic() ? 'Ajout...' : 'Ajouter le diagnostic' }}
+            {{ (isSavingDiagnostic() ? 'ASC.CONSULTATION_DETAIL.ADDING' : 'ASC.CONSULTATION_DETAIL.ADD_DIAGNOSTIC_BTN') | translate }}
           </button>
         </div>
       }
@@ -295,7 +295,7 @@
       <!-- Liste existante -->
       @if (consultation()?.ordonnances?.length) {
         <div class="bb-detail__list">
-          <h3 class="bb-detail__list-title">Ordonnances prescrites</h3>
+          <h3 class="bb-detail__list-title">{{ 'ASC.CONSULTATION_DETAIL.ORDONNANCES_PRESCRIBED_TITLE' | translate }}</h3>
           @for (o of consultation()!.ordonnances; track o.id) {
             <div class="bb-detail__list-item">
               <div class="bb-detail__list-item-left">
@@ -316,41 +316,41 @@
       <!-- Formulaire ajout -->
       @if (!isConsultationTerminee()) {
         <div class="bb-detail__form">
-          <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> Ajouter une ordonnance</h3>
+          <h3 class="bb-detail__form-title"><i class="pi pi-plus"></i> {{ 'ASC.CONSULTATION_DETAIL.ADD_ORDONNANCE_TITLE' | translate }}</h3>
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label id="ordo-medicament-label" for="ordo-medicament">Médicament *</label>
+              <label id="ordo-medicament-label" for="ordo-medicament">{{ 'ASC.CONSULTATION_DETAIL.MEDICAMENT_LABEL' | translate }}</label>
               <p-select
                 inputId="ordo-medicament"
                 [(ngModel)]="ordonnanceForm.idMedicament"
                 [options]="medicaments()"
                 [optionLabel]="'dci'"
                 optionValue="id"
-                placeholder="Sélectionner un médicament"
+                [placeholder]="'ASC.CONSULTATION_DETAIL.MEDICAMENT_PH' | translate"
                 [filter]="true"
                 filterBy="dci,nomCommercial"
               />
             </div>
             <div class="bb-detail__form-field">
-              <label for="ordo-posologie">Posologie *</label>
-              <input id="ordo-posologie" pInputText [(ngModel)]="ordonnanceForm.posologie" placeholder="Ex: 1 comprimé" />
+              <label for="ordo-posologie">{{ 'ASC.CONSULTATION_DETAIL.POSOLOGIE_LABEL' | translate }}</label>
+              <input id="ordo-posologie" pInputText [(ngModel)]="ordonnanceForm.posologie" [placeholder]="'ASC.CONSULTATION_DETAIL.POSOLOGIE_PH' | translate" />
             </div>
             <div class="bb-detail__form-field">
-              <label for="ordo-frequence">Fréquence *</label>
-              <input id="ordo-frequence" pInputText [(ngModel)]="ordonnanceForm.frequence" placeholder="Ex: 3x/jour" />
+              <label for="ordo-frequence">{{ 'ASC.CONSULTATION_DETAIL.FREQUENCE_LABEL' | translate }}</label>
+              <input id="ordo-frequence" pInputText [(ngModel)]="ordonnanceForm.frequence" [placeholder]="'ASC.CONSULTATION_DETAIL.FREQUENCE_PH' | translate" />
             </div>
             <div class="bb-detail__form-field">
-              <label for="ordo-duree">Durée (jours)</label>
+              <label for="ordo-duree">{{ 'ASC.CONSULTATION_DETAIL.DUREE_LABEL' | translate }}</label>
               <p-inputnumber inputId="ordo-duree" [(ngModel)]="ordonnanceForm.dureeJours" [min]="1" [max]="365" />
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label for="ordo-instructions">Instructions particulières</label>
-              <textarea pTextarea id="ordo-instructions" [(ngModel)]="ordonnanceForm.instructions" placeholder="Ex: À prendre pendant les repas..." rows="2"></textarea>
+              <label for="ordo-instructions">{{ 'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_LABEL' | translate }}</label>
+              <textarea pTextarea id="ordo-instructions" [(ngModel)]="ordonnanceForm.instructions" [placeholder]="'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_PH' | translate" rows="2"></textarea>
             </div>
           </div>
           <button class="bb-detail__submit-btn" (click)="saveOrdonnance()" [disabled]="isSavingOrdonnance() || !ordonnanceForm.idMedicament">
             <i class="pi pi-plus"></i>
-            {{ isSavingOrdonnance() ? 'Ajout...' : 'Ajouter l\'ordonnance' }}
+            {{ (isSavingOrdonnance() ? 'ASC.CONSULTATION_DETAIL.ADDING' : 'ASC.CONSULTATION_DETAIL.ADD_ORDONNANCE_BTN') | translate }}
           </button>
         </div>
       }
@@ -366,14 +366,14 @@
         <div class="bb-detail__referral-card">
           <div class="bb-detail__referral-header">
             <i class="pi pi-send"></i>
-            <span>Référencement effectué</span>
+            <span>{{ 'ASC.CONSULTATION_DETAIL.REFERRAL_DONE' | translate }}</span>
             <p-tag
               [value]="consultation()!.referencement!.urgence"
               [severity]="getUrgenceSeverity(consultation()!.referencement!.urgence)"
             />
           </div>
           <p class="bb-detail__referral-structure">
-            <strong>Structure cible :</strong>
+            <strong>{{ 'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_LABEL' | translate }}</strong>
             {{ consultation()!.referencement!.structureCible.nom }} —
             {{ consultation()!.referencement!.structureCible.prefecture }}
           </p>
@@ -384,24 +384,24 @@
       } @else if (!isConsultationTerminee()) {
         <!-- Formulaire référencement -->
         <div class="bb-detail__form">
-          <h3 class="bb-detail__form-title"><i class="pi pi-send"></i> Créer un référencement</h3>
-          <p class="bb-detail__form-note">Le référencement changera le statut de la consultation en "Référencée".</p>
+          <h3 class="bb-detail__form-title"><i class="pi pi-send"></i> {{ 'ASC.CONSULTATION_DETAIL.CREATE_REFERRAL_TITLE' | translate }}</h3>
+          <p class="bb-detail__form-note">{{ 'ASC.CONSULTATION_DETAIL.REFERRAL_NOTE' | translate }}</p>
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label id="ref-structure-label" for="ref-structure">Structure de santé cible *</label>
+              <label id="ref-structure-label" for="ref-structure">{{ 'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_SELECT_LABEL' | translate }}</label>
               <p-select
                 inputId="ref-structure"
                 [(ngModel)]="referralForm.idStructureCible"
                 [options]="structures()"
                 optionLabel="nom"
                 optionValue="id"
-                placeholder="Sélectionner une structure"
+                [placeholder]="'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_PH' | translate"
                 [filter]="true"
                 filterBy="nom,prefecture"
               />
             </div>
             <div class="bb-detail__form-field">
-              <label id="ref-urgence-label" for="ref-urgence">Niveau d'urgence</label>
+              <label id="ref-urgence-label" for="ref-urgence">{{ 'ASC.CONSULTATION_DETAIL.URGENCE_LEVEL_LABEL' | translate }}</label>
               <p-select
                 inputId="ref-urgence"
                 [(ngModel)]="referralForm.urgence"
@@ -411,8 +411,8 @@
               />
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
-              <label for="ref-resume">Résumé clinique *</label>
-              <textarea pTextarea id="ref-resume" [(ngModel)]="referralForm.resumeClinique" placeholder="Résumé de l'état clinique du patient et motif du référencement..." rows="4"></textarea>
+              <label for="ref-resume">{{ 'ASC.CONSULTATION_DETAIL.RESUME_CLINIQUE_LABEL' | translate }}</label>
+              <textarea pTextarea id="ref-resume" [(ngModel)]="referralForm.resumeClinique" [placeholder]="'ASC.CONSULTATION_DETAIL.RESUME_CLINIQUE_PH' | translate" rows="4"></textarea>
             </div>
           </div>
           <button
@@ -421,13 +421,13 @@
             [disabled]="isSavingReferral() || !referralForm.idStructureCible || !referralForm.resumeClinique"
           >
             <i class="pi pi-send"></i>
-            {{ isSavingReferral() ? 'Référencement...' : 'Créer le référencement' }}
+            {{ (isSavingReferral() ? 'ASC.CONSULTATION_DETAIL.REFERRING' : 'ASC.CONSULTATION_DETAIL.CREATE_REFERRAL_BTN') | translate }}
           </button>
         </div>
       } @else {
         <div class="bb-detail__empty">
           <i class="pi pi-send"></i>
-          <p>Aucun référencement pour cette consultation</p>
+          <p>{{ 'ASC.CONSULTATION_DETAIL.EMPTY_REFERRAL' | translate }}</p>
         </div>
       }
     </div>

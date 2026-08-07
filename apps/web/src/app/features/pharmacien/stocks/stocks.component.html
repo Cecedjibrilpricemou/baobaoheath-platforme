@@ -3,11 +3,11 @@
 
   <div class="bb-ph-stocks__header">
     <div>
-      <h1 class="bb-ph-stocks__title"><i class="pi pi-box"></i> Stocks de la pharmacie</h1>
-      <p class="bb-ph-stocks__subtitle">Gérez les médicaments disponibles dans votre pharmacie</p>
+      <h1 class="bb-ph-stocks__title"><i class="pi pi-box"></i> {{ 'PHARMACIEN.STOCKS.TITLE' | translate }}</h1>
+      <p class="bb-ph-stocks__subtitle">{{ 'PHARMACIEN.STOCKS.SUBTITLE' | translate }}</p>
     </div>
     <button class="bb-ph-stocks__add-btn" (click)="showForm.set(true)">
-      <i class="pi pi-plus"></i> Réapprovisionner
+      <i class="pi pi-plus"></i> {{ 'PHARMACIEN.STOCKS.REAPPRO_BTN' | translate }}
     </button>
   </div>
 
@@ -26,40 +26,40 @@
   <!-- Formulaire réapprovisionnement -->
   @if (showForm()) {
     <div class="bb-ph-stocks__form">
-      <h3><i class="pi pi-cart-plus" aria-hidden="true"></i> Réapprovisionner le stock</h3>
+      <h3><i class="pi pi-cart-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.STOCKS.FORM_TITLE' | translate }}</h3>
       <div class="bb-ph-stocks__form-grid">
         <div class="bb-ph-stocks__field bb-ph-stocks__field--full">
-          <label id="reappro-med-label" for="reappro-med">Médicament *</label>
+          <label id="reappro-med-label" for="reappro-med">{{ 'PHARMACIEN.STOCKS.FIELD_MEDICAMENT' | translate }}</label>
           <p-select
             inputId="reappro-med"
             [(ngModel)]="formReappro.idMedicament"
             [options]="medicamentOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="Sélectionner un médicament"
+            [placeholder]="'PHARMACIEN.STOCKS.FIELD_MEDICAMENT_PLACEHOLDER' | translate"
             [filter]="true"
-            filterPlaceholder="Rechercher..."
+            [filterPlaceholder]="'PHARMACIEN.STOCKS.FILTER_PLACEHOLDER' | translate"
             styleClass="w-full"
           />
         </div>
         <div class="bb-ph-stocks__field">
-          <label for="reappro-qty">Quantité ajoutée (Boîtes) *</label>
-          <p-inputnumber inputId="reappro-qty" [(ngModel)]="formReappro.quantiteAjoutee" placeholder="Ex: 100" [min]="1" styleClass="w-full" />
+          <label for="reappro-qty">{{ 'PHARMACIEN.STOCKS.FIELD_QTY' | translate }}</label>
+          <p-inputnumber inputId="reappro-qty" [(ngModel)]="formReappro.quantiteAjoutee" [placeholder]="'PHARMACIEN.STOCKS.FIELD_QTY_PLACEHOLDER' | translate" [min]="1" styleClass="w-full" />
         </div>
         <div class="bb-ph-stocks__field">
-          <label for="reappro-date">Date de péremption</label>
+          <label for="reappro-date">{{ 'PHARMACIEN.STOCKS.FIELD_EXPIRY' | translate }}</label>
           <input id="reappro-date" pInputText type="date" [(ngModel)]="formReappro.datePeremption" class="w-full" />
         </div>
         <div class="bb-ph-stocks__field">
-          <label for="reappro-marge">Marge Bénéficiaire (GNF)</label>
-          <p-inputnumber inputId="reappro-marge" [(ngModel)]="formReappro.margeGnf" placeholder="Ex: 5000" [min]="0" styleClass="w-full" />
+          <label for="reappro-marge">{{ 'PHARMACIEN.STOCKS.FIELD_MARGIN' | translate }}</label>
+          <p-inputnumber inputId="reappro-marge" [(ngModel)]="formReappro.margeGnf" [placeholder]="'PHARMACIEN.STOCKS.FIELD_MARGIN_PLACEHOLDER' | translate" [min]="0" styleClass="w-full" />
         </div>
       </div>
       <div class="bb-ph-stocks__form-actions">
-        <button class="bb-ph-stocks__cancel-btn" (click)="showForm.set(false); errorMsg.set('')">Annuler</button>
+        <button class="bb-ph-stocks__cancel-btn" (click)="showForm.set(false); errorMsg.set('')">{{ 'COMMON.CANCEL' | translate }}</button>
         <button class="bb-ph-stocks__save-btn" (click)="reapprovisionner()" [disabled]="isSaving()">
           <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
-          {{ isSaving() ? 'Enregistrement...' : 'Confirmer le réapprovisionnement' }}
+          {{ (isSaving() ? 'PHARMACIEN.STOCKS.SAVING' : 'PHARMACIEN.STOCKS.CONFIRM_REAPPRO') | translate }}
         </button>
       </div>
     </div>
@@ -70,17 +70,17 @@
     <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--blue">
       <i class="pi pi-box"></i>
       <div class="bb-ph-stocks__kpi-val">{{ totalMedicaments() }}</div>
-      <div class="bb-ph-stocks__kpi-lbl">Total Médicaments</div>
+      <div class="bb-ph-stocks__kpi-lbl">{{ 'PHARMACIEN.STOCKS.KPI_TOTAL' | translate }}</div>
     </div>
     <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--red">
       <i class="pi pi-exclamation-triangle"></i>
       <div class="bb-ph-stocks__kpi-val">{{ stocksCritiques() }}</div>
-      <div class="bb-ph-stocks__kpi-lbl">Rupture / Critique</div>
+      <div class="bb-ph-stocks__kpi-lbl">{{ 'PHARMACIEN.STOCKS.KPI_CRITICAL' | translate }}</div>
     </div>
     <div class="bb-ph-stocks__kpi bb-ph-stocks__kpi--green">
       <i class="pi pi-check-circle"></i>
       <div class="bb-ph-stocks__kpi-val">{{ stocksNormaux() }}</div>
-      <div class="bb-ph-stocks__kpi-lbl">Stock Normal</div>
+      <div class="bb-ph-stocks__kpi-lbl">{{ 'PHARMACIEN.STOCKS.KPI_NORMAL' | translate }}</div>
     </div>
   </div>
 
@@ -88,8 +88,8 @@
   <div class="bb-ph-stocks__search">
     <p-iconfield>
       <p-inputicon styleClass="pi pi-search" />
-      <input pInputText placeholder="Rechercher un médicament (DCI, nom commercial)..."
-        aria-label="Rechercher un médicament"
+      <input pInputText [placeholder]="'PHARMACIEN.STOCKS.SEARCH_PLACEHOLDER' | translate"
+        [attr.aria-label]="'PHARMACIEN.STOCKS.SEARCH_ARIA' | translate"
         [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
     </p-iconfield>
   </div>
@@ -104,8 +104,8 @@
   } @else if (stocksFiltres.length === 0) {
     <div class="bb-ph-stocks__empty">
       <i class="pi pi-inbox"></i>
-      <p>Aucun médicament trouvé</p>
-      <span>Cliquez sur "Réapprovisionner" pour ajouter de nouveaux stocks.</span>
+      <p>{{ 'PHARMACIEN.STOCKS.EMPTY_TITLE' | translate }}</p>
+      <span>{{ 'PHARMACIEN.STOCKS.EMPTY_SUB' | translate }}</span>
     </div>
   } @else {
     <div class="bb-ph-stocks__list">
@@ -128,7 +128,7 @@
 
           <div class="bb-ph-stocks__bar-wrap">
             <div class="bb-ph-stocks__bar-top">
-              <span>Niveau de stock</span>
+              <span>{{ 'PHARMACIEN.STOCKS.STOCK_LEVEL' | translate }}</span>
               <span class="bb-ph-stocks__bar-qty">{{ s.quantite }} {{ s.unite }}</span>
             </div>
             <div class="bb-ph-stocks__bar-track">
@@ -140,13 +140,13 @@
           </div>
 
           <div class="bb-ph-stocks__card-footer">
-            <span><i class="pi pi-bell"></i> Seuil d'alerte : {{ s.seuilAlerte }} {{ s.unite }}</span>
+            <span><i class="pi pi-bell"></i> {{ 'PHARMACIEN.STOCKS.ALERT_THRESHOLD' | translate: { value: s.seuilAlerte, unit: s.unite } }}</span>
             @if (s.datePeremption) {
               <span [class.bb-ph-stocks__expire]="isExpireSoon(s)">
-                <i class="pi pi-calendar-times"></i> Exp: {{ formatDate(s.datePeremption) }}
+                <i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.EXPIRY_LABEL' | translate: { date: formatDate(s.datePeremption) } }}
               </span>
             } @else {
-              <span><i class="pi pi-calendar-times"></i> Sans péremption</span>
+              <span><i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.NO_EXPIRY' | translate }}</span>
             }
           </div>
         </div>

@@ -34,7 +34,7 @@ services:
     container_name: baobao_api
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3000
       DATABASE_URL: postgresql://baobao_user:baobao_password@postgres:5432/baobaoheath_db
       REDIS_URL: redis://redis:6379

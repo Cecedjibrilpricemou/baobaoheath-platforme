@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-sync',
   standalone: true,
-  imports: [CommonModule, ButtonModule, ProgressBarModule, TagModule],
+  imports: [CommonModule, ButtonModule, ProgressBarModule, TagModule, TranslatePipe],
   templateUrl: './sync.html',
   styleUrl: './sync.scss',
 })
@@ -15,11 +16,11 @@ export class Sync {
   isOnline = signal(navigator.onLine);
   isSyncing = signal(false);
   syncProgress = signal(0);
-  
+
   pendingItems = signal([
-    { id: '1', type: 'Consultation', patient: 'Aissatou Barry', date: 'Il y a 2h', status: 'pending' },
-    { id: '2', type: 'Nouveau Patient', patient: 'Ibrahima Diallo', date: 'Il y a 3h', status: 'pending' },
-    { id: '3', type: 'Mise à jour stock', patient: 'Paracétamol', date: 'Il y a 5h', status: 'pending' }
+    { id: '1', type: 'Consultation', typeKey: 'ASC.SYNC.TYPE_CONSULTATION', patient: 'Aissatou Barry', hoursAgo: 2, status: 'pending' },
+    { id: '2', type: 'Nouveau Patient', typeKey: 'ASC.SYNC.TYPE_NEW_PATIENT', patient: 'Ibrahima Diallo', hoursAgo: 3, status: 'pending' },
+    { id: '3', type: 'Mise à jour stock', typeKey: 'ASC.SYNC.TYPE_STOCK_UPDATE', patient: 'Paracétamol', hoursAgo: 5, status: 'pending' }
   ]);
 
   constructor() {

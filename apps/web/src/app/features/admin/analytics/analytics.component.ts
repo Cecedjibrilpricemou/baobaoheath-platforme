@@ -9,6 +9,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { SelectModule } from 'primeng/select';
 import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface KPIs {
   totalPatients: number;
@@ -66,12 +67,13 @@ interface StatsStructures {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TagModule, SkeletonModule, SelectModule],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TagModule, SkeletonModule, SelectModule, TranslatePipe],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss'
 })
 export class AnalyticsComponent implements OnInit {
   private adminService = inject(AdminService);
+  private i18n = inject(I18nService);
 
   dashboard = signal<DashboardData | null>(null);
   heatmap = signal<HeatmapPoint[]>([]);
@@ -89,28 +91,32 @@ export class AnalyticsComponent implements OnInit {
 
   activeTab = signal<'kpis' | 'heatmap' | 'alertes' | 'tendances' | 'vaccins'>('kpis');
 
-  prefiltreOptions = [
-    { label: 'Toute la Guinée', value: '' },
-    { label: 'Conakry', value: 'Conakry' },
-    { label: 'Kindia', value: 'Kindia' },
-    { label: 'Boké', value: 'Boké' },
-    { label: 'Mamou', value: 'Mamou' },
-    { label: 'Labé', value: 'Labé' },
-    { label: 'Faranah', value: 'Faranah' },
-    { label: 'Kankan', value: 'Kankan' },
-    { label: 'Nzérékoré', value: 'Nzérékoré' }
-  ];
+  get prefiltreOptions() {
+    return [
+      { label: this.i18n.t('ADMIN.ANALYTICS.PREFILTRE_ALL'), value: '' },
+      { label: 'Conakry', value: 'Conakry' },
+      { label: 'Kindia', value: 'Kindia' },
+      { label: 'Boké', value: 'Boké' },
+      { label: 'Mamou', value: 'Mamou' },
+      { label: 'Labé', value: 'Labé' },
+      { label: 'Faranah', value: 'Faranah' },
+      { label: 'Kankan', value: 'Kankan' },
+      { label: 'Nzérékoré', value: 'Nzérékoré' }
+    ];
+  }
   prefiltreSelectionne = '';
 
-  readonly typeLabels: Record<string, string> = {
-    'CHU': 'CHU',
-    'HOPITAL_REG': 'Hôpitaux Régionaux',
-    'HOPITAL_PREF': 'Hôpitaux Préfectoraux',
-    'CENTRE': 'Centres de Santé',
-    'POSTE': 'Postes de Santé',
-    'CLINIQUE': 'Cliniques Privées',
-    'PHARMACIE': 'Pharmacies'
-  };
+  get typeLabels(): Record<string, string> {
+    return {
+      'CHU': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_CHU'),
+      'HOPITAL_REG': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_HOPITAL_REG'),
+      'HOPITAL_PREF': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_HOPITAL_PREF'),
+      'CENTRE': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_CENTRE'),
+      'POSTE': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_POSTE'),
+      'CLINIQUE': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_CLINIQUE'),
+      'PHARMACIE': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_PHARMACIE')
+    };
+  }
 
   readonly typeColors: Record<string, string> = {
     'CHU': '#EF4444',
@@ -239,11 +245,8 @@ export class AnalyticsComponent implements OnInit {
   getTypeColor(type: string): string { return this.typeColors[type] ?? '#6B7280'; }
 
   getStatutLabel(s: string): string {
-    const map: Record<string, string> = {
-      'EN_COURS': 'En cours', 'TERMINEE': 'Terminée',
-      'PLANIFIEE': 'Planifiée', 'ANNULEE': 'Annulée', 'REFERENCEE': 'Référencée'
-    };
-    return map[s] ?? s;
+    const known = ['EN_COURS', 'TERMINEE', 'PLANIFIEE', 'ANNULEE', 'REFERENCEE'];
+    return known.includes(s) ? this.i18n.t(`STATUT.${s}`) : s;
   }
 
   getStatutColor(s: string): string {

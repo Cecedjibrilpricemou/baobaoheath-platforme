@@ -7,16 +7,16 @@
   @if (!patient()) {
     <div class="bb-ordo__empty-scanner">
       <div class="bb-ordo__empty-icon"><i class="pi pi-qrcode"></i></div>
-      <h2>Rechercher un Patient</h2>
-      <p>Saisissez ou scannez le QR Code d'un patient pour afficher ses ordonnances en attente.</p>
-      
+      <h2>{{ 'PHARMACIEN.ORDONNANCES.SEARCH_TITLE' | translate }}</h2>
+      <p>{{ 'PHARMACIEN.ORDONNANCES.SEARCH_SUB' | translate }}</p>
+
       <div class="bb-ordo__search-box">
         <div class="bb-ordo__search-wrapper">
           <input
             type="text"
             [(ngModel)]="qrCode"
-            placeholder="Saisissez ou scannez le QR Code du patient..."
-            aria-label="QR Code du patient"
+            [placeholder]="'PHARMACIEN.ORDONNANCES.SEARCH_PLACEHOLDER' | translate"
+            [attr.aria-label]="'PHARMACIEN.ORDONNANCES.SEARCH_ARIA' | translate"
             (keydown)="onKeyDown($event)"
             [disabled]="isScanning()"
             class="bb-ordo__search-input"
@@ -27,7 +27,7 @@
             [disabled]="isScanning() || !qrCode.trim()"
           >
             <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-qrcode'" aria-hidden="true"></i>
-            {{ isScanning() ? 'Recherche...' : 'Rechercher' }}
+            {{ (isScanning() ? 'PHARMACIEN.ORDONNANCES.SEARCHING' : 'PHARMACIEN.ORDONNANCES.SEARCH_BTN') | translate }}
           </button>
         </div>
       </div>
@@ -47,7 +47,7 @@
     <!-- Header -->
     <div class="bb-ordo__header">
       <button class="bb-ordo__back" (click)="resetScan()">
-        <i class="pi pi-refresh"></i> Nouveau scan
+        <i class="pi pi-refresh"></i> {{ 'PHARMACIEN.ORDONNANCES.NEW_SCAN' | translate }}
       </button>
       <div class="bb-ordo__patient">
         <div class="bb-ordo__patient-avatar" aria-hidden="true">
@@ -76,7 +76,7 @@
     @if (patient()?.allergiesCritiques?.length) {
       <div class="bb-ordo__allergies" role="alert">
         <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-        <strong>Allergies connues :</strong> {{ patient()!.allergiesCritiques.join(', ') }}
+        <strong>{{ 'PHARMACIEN.ORDONNANCES.ALLERGIES_LABEL' | translate }}</strong> {{ patient()!.allergiesCritiques.join(', ') }}
       </div>
     }
 
@@ -84,12 +84,12 @@
 
       <!-- Liste ordonnances -->
       <div class="bb-ordo__list">
-        <h2 class="bb-ordo__list-title">Ordonnances à délivrer ({{ ordonnances().length }})</h2>
+        <h2 class="bb-ordo__list-title">{{ 'PHARMACIEN.ORDONNANCES.LIST_TITLE' | translate: { count: ordonnances().length } }}</h2>
 
         @if (ordonnances().length === 0) {
           <div class="bb-ordo__empty-state">
             <div class="bb-ordo__empty-icon success"><i class="pi pi-check-circle"></i></div>
-            <p>Toutes les ordonnances de ce patient ont été délivrées avec succès.</p>
+            <p>{{ 'PHARMACIEN.ORDONNANCES.EMPTY_ALL_DELIVERED' | translate }}</p>
           </div>
         } @else {
           @for (o of ordonnances(); track o.id) {
@@ -101,7 +101,7 @@
             >
               @if (o.alerteAllergie) {
                 <div class="bb-ordo__item-alerte" role="alert">
-                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Risque d'allergie
+                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.ALLERGY_RISK' | translate }}
                 </div>
               }
               <div class="bb-ordo__item-content">
@@ -111,7 +111,7 @@
                   </span>
                   <span class="bb-ordo__item-details">
                     <i class="pi pi-clock" aria-hidden="true"></i> {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j <br>
-                    <strong>Qté : {{ o.quantite }} boîtes</strong>
+                    <strong>{{ 'PHARMACIEN.ORDONNANCES.QTY_LABEL' | translate: { qty: o.quantite } }}</strong>
                   </span>
                   <span class="bb-ordo__item-medecin"><i class="pi pi-user-edit" aria-hidden="true"></i> {{ o.medecinNom }} · {{ formatDate(o.signeLe) }}</span>
                 </div>
@@ -120,9 +120,9 @@
                   <button
                     class="bb-ordo__btn-select"
                     (click)="selectionner(o)"
-                    [attr.aria-label]="'Délivrer ' + (o.medicament.nomCommercial ?? o.medicament.dci) + (o.alerteAllergie ? ' — risque d\'allergie' : '')"
+                    [attr.aria-label]="('PHARMACIEN.ORDONNANCES.DELIVER_ARIA' | translate: { med: o.medicament.nomCommercial ?? o.medicament.dci }) + (o.alerteAllergie ? ('PHARMACIEN.ORDONNANCES.DELIVER_ARIA_ALLERGY_SUFFIX' | translate) : '')"
                   >
-                    Délivrer <i class="pi pi-chevron-right" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.ORDONNANCES.DELIVER' | translate }} <i class="pi pi-chevron-right" aria-hidden="true"></i>
                   </button>
                 </div>
               </div>
@@ -135,7 +135,7 @@
       @if (selected()) {
         <div class="bb-ordo__form">
           <h3 class="bb-ordo__form-title">
-            <i class="pi pi-shopping-cart" aria-hidden="true"></i> Délivrance
+            <i class="pi pi-shopping-cart" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.FORM_TITLE' | translate }}
           </h3>
 
           <div class="bb-ordo__form-med">
@@ -145,7 +145,7 @@
 
           <!-- Quantité -->
           <div class="bb-ordo__form-field mt-4">
-            <label id="ordo-qty-label" for="ordo-qty">Quantité à délivrer (sur {{ selected()!.quantite }} prescrites)</label>
+            <label id="ordo-qty-label" for="ordo-qty">{{ 'PHARMACIEN.ORDONNANCES.QTY_TO_DELIVER' | translate: { qty: selected()!.quantite } }}</label>
             <p-inputnumber
               inputId="ordo-qty"
               [(ngModel)]="quantiteDelivree"
@@ -158,7 +158,7 @@
 
           <!-- Mode de paiement -->
           <div class="bb-ordo__form-field mt-4">
-            <span id="ordo-mode-label" class="form-label">Mode de paiement</span>
+            <span id="ordo-mode-label" class="form-label">{{ 'PHARMACIEN.ORDONNANCES.PAYMENT_MODE' | translate }}</span>
             <div class="bb-ordo__modes" role="radiogroup" aria-labelledby="ordo-mode-label">
               @for (mode of modesPaiement; track mode.value) {
                 <div
@@ -179,7 +179,7 @@
 
           <!-- Montant calculé -->
           <div class="bb-ordo__montant">
-            <span>Montant à encaisser</span>
+            <span>{{ 'PHARMACIEN.ORDONNANCES.AMOUNT_LABEL' | translate }}</span>
             <span class="bb-ordo__montant-value">
               {{ formatMontant(getMontantAvecQuantite(selected()!)) }}
             </span>
@@ -187,20 +187,20 @@
 
           <!-- Boutons -->
           <div class="bb-ordo__form-actions mt-4">
-            <button class="bb-ordo__cancel-btn" (click)="annuler()">Annuler</button>
+            <button class="bb-ordo__cancel-btn" (click)="annuler()">{{ 'COMMON.CANCEL' | translate }}</button>
             <button
               class="bb-ordo__deliver-btn"
               (click)="delivrer()"
               [disabled]="isDelivering() || selected()!.alerteAllergie"
             >
               <i [class]="isDelivering() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
-              {{ isDelivering() ? 'Traitement...' : 'Confirmer l\'encaissement' }}
+              {{ (isDelivering() ? 'PHARMACIEN.ORDONNANCES.PROCESSING' : 'PHARMACIEN.ORDONNANCES.CONFIRM_PAYMENT') | translate }}
             </button>
           </div>
 
           @if (selected()!.alerteAllergie) {
             <div class="bb-ordo__alert-block mt-3" role="alert">
-              <i class="pi pi-lock" aria-hidden="true"></i> Délivrance bloquée pour raison médicale (Allergie).
+              <i class="pi pi-lock" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.BLOCKED_ALLERGY' | translate }}
             </div>
           }
         </div>

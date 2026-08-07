@@ -11,6 +11,7 @@ import { PatientService } from '../../../core/services/patient.service';
 import { VaccinationService } from '../../../core/services/vaccination.service';
 import { PaiementService } from '../../../core/services/paiement.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient, Vaccination as ApiVaccination, Paiement } from '../../../core/models/patient.model';
 
 // Interface alignée sur les champs utilisés dans le template HTML
@@ -49,6 +50,7 @@ export class DashboardComponent implements OnInit {
   private patientService = inject(PatientService);
   private vaccinationService = inject(VaccinationService);
   private paiementService = inject(PaiementService);
+  private i18n = inject(I18nService);
 
   currentUser = this.authService.currentUser;
 
@@ -157,14 +159,8 @@ export class DashboardComponent implements OnInit {
   }
 
   getStatutLabel(statut: string): string {
-    const map: Record<string, string> = {
-      'TERMINEE':   'Terminée',
-      'EN_COURS':   'En cours',
-      'PLANIFIEE':  'Planifiée',
-      'ANNULEE':    'Annulée',
-      'REFERENCEE': 'Référencée'
-    };
-    return map[statut] ?? statut;
+    const known = ['TERMINEE', 'EN_COURS', 'PLANIFIEE', 'ANNULEE', 'REFERENCEE'];
+    return known.includes(statut) ? this.i18n.t(`STATUT.${statut}`) : statut;
   }
 
   getStatutFactureSeverity(statut: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

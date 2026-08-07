@@ -1,25 +1,25 @@
 <section class="contact-section" id="contact">
   <div class="section-header">
     <div class="section-tag">{{ 'LANDING.FOOTER_CONTACT' | translate }}</div>
-    <h2 class="section-title">Nous Contacter</h2>
-    <p class="section-sub">Vous avez des questions sur BaoBaoHealth ou vous souhaitez intégrer notre plateforme dans votre structure ? Notre équipe est à votre disposition.</p>
+    <h2 class="section-title">{{ 'LANDING.CONTACT_TITLE' | translate }}</h2>
+    <p class="section-sub">{{ 'LANDING.CONTACT_SUB' | translate }}</p>
   </div>
-  
+
   <div class="contact-container">
     <div class="contact-info">
       <div class="info-card">
         <i class="pi pi-map-marker" aria-hidden="true"></i>
-        <h3>Adresse</h3>
-        <p>Conakry, République de Guinée</p>
+        <h3>{{ 'LANDING.CONTACT_ADDRESS_LABEL' | translate }}</h3>
+        <p>{{ 'LANDING.CONTACT_ADDRESS_VALUE' | translate }}</p>
       </div>
       <div class="info-card">
         <i class="pi pi-envelope" aria-hidden="true"></i>
-        <h3>Email</h3>
-        <p>contact@baobaohealth.org</p>
+        <h3>{{ 'LANDING.CONTACT_EMAIL_LABEL' | translate }}</h3>
+        <p>contact&#64;baobaohealth.org</p>
       </div>
       <div class="info-card">
         <i class="pi pi-phone" aria-hidden="true"></i>
-        <h3>Téléphone</h3>
+        <h3>{{ 'LANDING.CONTACT_PHONE_LABEL' | translate }}</h3>
         <p>+224 620 00 00 00</p>
       </div>
     </div>
@@ -27,24 +27,24 @@
     <div class="contact-form">
       <div class="form-grid">
         <div class="form-group">
-          <label for="contact-nom">Nom complet</label>
-          <input id="contact-nom" type="text" class="bb-input" placeholder="Ex: Dr. Mamadou Diallo">
+          <label for="contact-nom">{{ 'LANDING.CONTACT_FORM_NAME' | translate }}</label>
+          <input id="contact-nom" type="text" class="bb-input" [placeholder]="'LANDING.CONTACT_FORM_NAME_PLACEHOLDER' | translate">
         </div>
         <div class="form-group">
-          <label for="contact-email">Email</label>
-          <input id="contact-email" type="email" class="bb-input" placeholder="Ex: m.diallo@email.com">
+          <label for="contact-email">{{ 'LANDING.CONTACT_FORM_EMAIL' | translate }}</label>
+          <input id="contact-email" type="email" class="bb-input" [placeholder]="'LANDING.CONTACT_FORM_EMAIL_PLACEHOLDER' | translate">
         </div>
       </div>
       <div class="form-group">
-        <label for="contact-sujet">Sujet</label>
-        <input id="contact-sujet" type="text" class="bb-input" placeholder="Ex: Intégration de clinique">
+        <label for="contact-sujet">{{ 'LANDING.CONTACT_FORM_SUBJECT' | translate }}</label>
+        <input id="contact-sujet" type="text" class="bb-input" [placeholder]="'LANDING.CONTACT_FORM_SUBJECT_PLACEHOLDER' | translate">
       </div>
       <div class="form-group">
-        <label for="contact-message">Message</label>
-        <textarea id="contact-message" class="bb-input bb-textarea" rows="4" placeholder="Comment pouvons-nous vous aider ?"></textarea>
+        <label for="contact-message">{{ 'LANDING.CONTACT_FORM_MESSAGE' | translate }}</label>
+        <textarea id="contact-message" class="bb-input bb-textarea" rows="4" [placeholder]="'LANDING.CONTACT_FORM_MESSAGE_PLACEHOLDER' | translate"></textarea>
       </div>
       <button class="btn-primary w-full mt-2">
-        Envoyer le message <i class="pi pi-send" aria-hidden="true"></i>
+        {{ 'LANDING.CONTACT_SEND' | translate }} <i class="pi pi-send" aria-hidden="true"></i>
       </button>
     </div>
   </div>

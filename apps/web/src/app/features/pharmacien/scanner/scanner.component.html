@@ -2,8 +2,8 @@
 <div class="bb-scanner">
 
   <div class="bb-scanner__header">
-    <h1 class="bb-scanner__title"><i class="pi pi-qrcode"></i> Scanner QR Code</h1>
-    <p class="bb-scanner__subtitle">Scannez le QR Code du patient pour accéder à ses ordonnances</p>
+    <h1 class="bb-scanner__title"><i class="pi pi-qrcode"></i> {{ 'PHARMACIEN.SCANNER.TITLE' | translate }}</h1>
+    <p class="bb-scanner__subtitle">{{ 'PHARMACIEN.SCANNER.SUBTITLE' | translate }}</p>
   </div>
 
   <!-- Zone de saisie QR Code -->
@@ -16,8 +16,8 @@
         <input
           pInputText
           [(ngModel)]="qrCode"
-          placeholder="Saisir ou scanner le QR Code du patient..."
-          aria-label="QR Code du patient"
+          [placeholder]="'PHARMACIEN.SCANNER.PLACEHOLDER' | translate"
+          [attr.aria-label]="'PHARMACIEN.SCANNER.ARIA' | translate"
           (keydown)="onKeyDown($event)"
           [disabled]="isScanning()"
           class="bb-scanner__input"
@@ -28,10 +28,10 @@
           [disabled]="isScanning() || !qrCode.trim()"
         >
           <i [class]="isScanning() ? 'pi pi-spinner pi-spin' : 'pi pi-search'" aria-hidden="true"></i>
-          {{ isScanning() ? 'Recherche...' : 'Rechercher' }}
+          {{ (isScanning() ? 'PHARMACIEN.SCANNER.SEARCHING' : 'PHARMACIEN.SCANNER.SEARCH_BTN') | translate }}
         </button>
       </div>
-      <small class="bb-scanner__hint">Appuyez sur Entrée ou cliquez sur Rechercher</small>
+      <small class="bb-scanner__hint">{{ 'PHARMACIEN.SCANNER.HINT' | translate }}</small>
     </div>
   </div>
 
@@ -56,7 +56,7 @@
             {{ scanResult()!.patient.prenom }} {{ scanResult()!.patient.nom }}
           </h2>
           <div class="bb-scanner__patient-meta">
-            <span><i class="pi pi-calendar"></i> {{ getAge(scanResult()!.patient.dateNaissance) }} ans</span>
+            <span><i class="pi pi-calendar"></i> {{ 'PHARMACIEN.SCANNER.AGE_YEARS' | translate: { age: getAge(scanResult()!.patient.dateNaissance) } }}</span>
             @if (scanResult()!.patient.groupeSanguin) {
               <span class="bb-scanner__blood"><i class="pi pi-heart"></i> {{ scanResult()!.patient.groupeSanguin }}</span>
             }
@@ -64,7 +64,7 @@
         </div>
         <div class="bb-scanner__patient-badge">
           <p-tag
-            [value]="scanResult()!.totalOrdonnances + ' ordonnance(s)'"
+            [value]="'PHARMACIEN.SCANNER.ORDO_COUNT' | translate: { count: scanResult()!.totalOrdonnances }"
             severity="info"
           />
         </div>
@@ -74,7 +74,7 @@
       @if (scanResult()!.patient.allergiesCritiques.length > 0) {
         <div class="bb-scanner__allergies" role="alert">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-          <strong>Allergies connues :</strong>
+          <strong>{{ 'PHARMACIEN.ORDONNANCES.ALLERGIES_LABEL' | translate }}</strong>
           {{ scanResult()!.patient.allergiesCritiques.join(', ') }}
         </div>
       }
@@ -83,11 +83,11 @@
       @if (scanResult()!.ordonnances.length === 0) {
         <div class="bb-scanner__empty">
           <i class="pi pi-check-circle"></i>
-          <p>Aucune ordonnance en attente de délivrance</p>
+          <p>{{ 'PHARMACIEN.SCANNER.EMPTY' | translate }}</p>
         </div>
       } @else {
         <div class="bb-scanner__ordonnances">
-          <h3 class="bb-scanner__ordonnances-title">Ordonnances à délivrer</h3>
+          <h3 class="bb-scanner__ordonnances-title">{{ 'PHARMACIEN.SCANNER.LIST_TITLE' | translate }}</h3>
 
           @for (o of scanResult()!.ordonnances; track o.id) {
             <div class="bb-scanner__ordo" [class.bb-scanner__ordo--alerte]="o.alerteAllergie">
@@ -96,7 +96,7 @@
               @if (o.alerteAllergie) {
                 <div class="bb-scanner__ordo-alerte" role="alert">
                   <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-                  Conflit allergie détecté — Contactez le médecin prescripteur avant de délivrer
+                  {{ 'PHARMACIEN.SCANNER.ALLERGY_CONFLICT' | translate }}
                 </div>
               }
 
@@ -106,9 +106,9 @@
                     {{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}
                   </span>
                   <span class="bb-scanner__ordo-details">
-                    {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }} jours · Qté : {{ o.quantite }}
+                    {{ o.posologie }} · {{ o.frequence }} · {{ 'PHARMACIEN.SCANNER.DURATION_QTY' | translate: { days: o.dureeJours, qty: o.quantite } }}
                   </span>
-                  <span class="bb-scanner__ordo-medecin">Prescrit par {{ o.medecinNom }}</span>
+                  <span class="bb-scanner__ordo-medecin">{{ 'PHARMACIEN.SCANNER.PRESCRIBED_BY' | translate: { name: o.medecinNom } }}</span>
                 </div>
                 <div class="bb-scanner__ordo-right">
                   <span class="bb-scanner__ordo-prix">{{ formatMontant(o.prixTotalGnf) }}</span>
@@ -119,21 +119,21 @@
 
           <!-- Total -->
           <div class="bb-scanner__total">
-            <span>Total estimé</span>
+            <span>{{ 'PHARMACIEN.SCANNER.TOTAL_LABEL' | translate }}</span>
             <span class="bb-scanner__total-montant">{{ formatMontant(getTotalOrdonnances()) }}</span>
           </div>
 
           <!-- Bouton délivrer -->
           <button class="bb-scanner__deliver-btn" (click)="voirOrdonnances()">
             <i class="pi pi-check-circle"></i>
-            Procéder à la délivrance
+            {{ 'PHARMACIEN.SCANNER.DELIVER_BTN' | translate }}
           </button>
         </div>
       }
 
       <!-- Nouveau scan -->
       <button class="bb-scanner__reset-btn" (click)="reset()">
-        <i class="pi pi-refresh"></i> Nouveau scan
+        <i class="pi pi-refresh"></i> {{ 'PHARMACIEN.SCANNER.NEW_SCAN' | translate }}
       </button>
 
     </div>

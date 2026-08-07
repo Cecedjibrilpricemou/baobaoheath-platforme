@@ -58,11 +58,11 @@ export class ResetPasswordComponent implements OnInit {
 
   onSubmit() {
     if (!this.nouveauMotDePasse || this.nouveauMotDePasse.length < 6) {
-      this.toastr.error(this.i18nService.t('AUTH.RESET.ERR_PWD_SHORT'), 'Erreur');
+      this.toastr.error(this.i18nService.t('AUTH.RESET.ERR_PWD_SHORT'), this.i18nService.t('COMMON.ERROR_TITLE'));
       return;
     }
     if (this.nouveauMotDePasse !== this.confirmMotDePasse) {
-      this.toastr.error(this.i18nService.t('AUTH.RESET.ERR_PWD_MATCH'), 'Erreur');
+      this.toastr.error(this.i18nService.t('AUTH.RESET.ERR_PWD_MATCH'), this.i18nService.t('COMMON.ERROR_TITLE'));
       return;
     }
 
@@ -80,7 +80,7 @@ export class ResetPasswordComponent implements OnInit {
         } else {
           this.toastr.error(
             err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.RESET.ERR_GENERIC'),
-            'Erreur'
+            this.i18nService.t('COMMON.ERROR_TITLE')
           );
         }
       }

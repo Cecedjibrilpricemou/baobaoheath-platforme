@@ -2,7 +2,7 @@
 <div class="bb-msg">
 
   <div class="bb-msg__header">
-    <h1 class="bb-msg__title"><i class="pi pi-comments"></i> Messagerie</h1>
+    <h1 class="bb-msg__title"><i class="pi pi-comments"></i> {{ 'MEDECIN.MESSAGERIE.TITLE' | translate }}</h1>
   </div>
 
   @if (isLoading()) {
@@ -21,7 +21,7 @@
         @if (conversations().length === 0) {
           <div class="bb-msg__empty">
             <i class="pi pi-comments" aria-hidden="true"></i>
-            <p>Aucune conversation</p>
+            <p>{{ 'MEDECIN.MESSAGERIE.EMPTY' | translate }}</p>
           </div>
         } @else {
           @for (conv of conversations(); track conv.utilisateur.id) {
@@ -31,7 +31,7 @@
               tabindex="0"
               [class.bb-msg__conv--active]="selectedConv()?.utilisateur?.id === conv.utilisateur.id"
               [attr.aria-pressed]="selectedConv()?.utilisateur?.id === conv.utilisateur.id"
-              [attr.aria-label]="conv.utilisateur.prenom + ' ' + conv.utilisateur.nom + (conv.nonLus > 0 ? ', ' + conv.nonLus + ' message(s) non lu(s)' : '')"
+              [attr.aria-label]="getConvAriaLabel(conv)"
               (click)="selectionnerConv(conv)"
               (keydown.enter)="selectionnerConv(conv)"
               (keydown.space)="$event.preventDefault(); selectionnerConv(conv)"
@@ -61,7 +61,7 @@
         <div class="bb-msg__chat">
           <!-- Header chat -->
           <div class="bb-msg__chat-header">
-            <button class="bb-msg__back" (click)="selectedConv.set(null)" aria-label="Retour aux conversations">
+            <button class="bb-msg__back" (click)="selectedConv.set(null)" [attr.aria-label]="'MEDECIN.MESSAGERIE.BACK_ARIA' | translate">
               <i class="pi pi-arrow-left" aria-hidden="true"></i>
             </button>
             <div class="bb-msg__chat-avatar" aria-hidden="true">{{ getInitiales(selectedConv()!.utilisateur) }}</div>
@@ -74,7 +74,7 @@
           </div>
 
           <!-- Messages -->
-          <div class="bb-msg__messages" #messagesContainer role="log" aria-live="polite" aria-relevant="additions" aria-label="Messages de la conversation">
+          <div class="bb-msg__messages" #messagesContainer role="log" aria-live="polite" aria-relevant="additions" [attr.aria-label]="'MEDECIN.MESSAGERIE.MESSAGES_ARIA' | translate">
             @for (m of selectedConv()!.messages; track m.id) {
               <div class="bb-msg__message" [class.bb-msg__message--sent]="estEnvoye(m)">
                 @if (!estEnvoye(m)) {
@@ -93,8 +93,8 @@
             <input
               pInputText
               [(ngModel)]="newMessage"
-              placeholder="Écrivez votre message... (Entrée pour envoyer)"
-              aria-label="Écrivez votre message"
+              [placeholder]="'MEDECIN.MESSAGERIE.INPUT_PLACEHOLDER' | translate"
+              [attr.aria-label]="'MEDECIN.MESSAGERIE.INPUT_ARIA' | translate"
               (keydown)="onKeyDown($event)"
               [disabled]="isSending()"
               class="bb-msg__input"
@@ -103,7 +103,7 @@
               class="bb-msg__send-btn"
               (click)="envoyerMessage()"
               [disabled]="isSending() || !newMessage.trim()"
-              aria-label="Envoyer le message"
+              [attr.aria-label]="'MEDECIN.MESSAGERIE.SEND_ARIA' | translate"
             >
               <i class="pi pi-send" aria-hidden="true"></i>
             </button>
@@ -112,7 +112,7 @@
       } @else {
         <div class="bb-msg__placeholder">
           <i class="pi pi-comments" aria-hidden="true"></i>
-          <p>Sélectionnez une conversation</p>
+          <p>{{ 'MEDECIN.MESSAGERIE.SELECT_CONV' | translate }}</p>
         </div>
       }
 

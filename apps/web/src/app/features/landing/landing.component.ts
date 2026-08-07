@@ -74,11 +74,11 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Trust bar ────────────────────────────────────────────────────
   trustItems = [
-    { icon: 'pi-shield',  label: 'Données chiffrées et sécurisées' },
-    { icon: 'pi-mobile',  label: 'Accessible sur mobile' },
-    { icon: 'pi-wifi',    label: 'Fonctionne en faible débit' },
-    { icon: 'pi-users',   label: 'Multi-rôles, un seul système' },
-    { icon: 'pi-globe',   label: 'Made for Guinea 🇬🇳' }
+    { icon: 'pi-shield',  labelKey: 'LANDING.TRUST_SECURE' },
+    { icon: 'pi-mobile',  labelKey: 'LANDING.TRUST_MOBILE' },
+    { icon: 'pi-wifi',    labelKey: 'LANDING.TRUST_OFFLINE' },
+    { icon: 'pi-users',   labelKey: 'LANDING.TRUST_MULTIROLE' },
+    { icon: 'pi-globe',   labelKey: 'LANDING.TRUST_MADE' }
   ];
 
   // ── Lifecycle ────────────────────────────────────────────────────

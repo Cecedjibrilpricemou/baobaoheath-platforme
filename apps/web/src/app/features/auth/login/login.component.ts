@@ -81,7 +81,7 @@ export class LoginComponent implements OnDestroy {
 
   onSubmit() {
     if (!this.formData.identifiant || !this.formData.motDePasse) {
-      this.toastr.error(this.i18nService.t('AUTH.LOGIN.ERR_FIELDS'), 'Erreur');
+      this.toastr.error(this.i18nService.t('AUTH.LOGIN.ERR_FIELDS'), this.i18nService.t('AUTH.LOGIN.ERR_TITLE'));
       return;
     }
     this.isLoading.set(true);
@@ -102,7 +102,7 @@ export class LoginComponent implements OnDestroy {
         this.isLoading.set(false);
         this.toastr.error(
           err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_CREDENTIALS'),
-          'Erreur de connexion'
+          this.i18nService.t('AUTH.LOGIN.ERR_LOGIN_TITLE')
         );
       }
     });
@@ -110,7 +110,7 @@ export class LoginComponent implements OnDestroy {
 
   verifyOtp() {
     if (!this.otpCode || this.otpCode.length !== 6) {
-      this.toastr.error('Veuillez entrer un code à 6 chiffres.', 'Code invalide');
+      this.toastr.error(this.i18nService.t('AUTH.LOGIN.ERR_OTP_INCOMPLETE'), this.i18nService.t('AUTH.LOGIN.ERR_OTP_INVALID_TITLE'));
       return;
     }
     this.isLoading.set(true);
@@ -124,8 +124,8 @@ export class LoginComponent implements OnDestroy {
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.error ?? err?.error?.message ?? 'Code OTP incorrect.',
-          'Erreur de vérification'
+          err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_OTP_INCORRECT'),
+          this.i18nService.t('AUTH.LOGIN.ERR_OTP_VERIFY_TITLE')
         );
         this.otpCode = '';
         this.otpDigits = ['', '', '', '', '', ''];
@@ -145,12 +145,12 @@ export class LoginComponent implements OnDestroy {
         this.isLoading.set(false);
         if (response.requiresOtp) {
           this.startOtpTimer(response.expiresInMinutes ?? 10);
-          this.toastr.success(this.i18nService.t('AUTH.LOGIN.OTP_RESENT'), 'Code renvoyé');
+          this.toastr.success(this.i18nService.t('AUTH.LOGIN.OTP_RESENT'), this.i18nService.t('AUTH.LOGIN.OTP_RESENT_TITLE'));
         }
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.toastr.error(err?.error?.error ?? 'Impossible de renvoyer le code.', 'Erreur');
+        this.toastr.error(err?.error?.error ?? this.i18nService.t('AUTH.LOGIN.ERR_OTP_RESEND'), this.i18nService.t('AUTH.LOGIN.ERR_TITLE'));
       }
     });
   }

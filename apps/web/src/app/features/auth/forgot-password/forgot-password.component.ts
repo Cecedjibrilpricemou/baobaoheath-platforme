@@ -39,7 +39,7 @@ export class ForgotPasswordComponent {
 
   onSubmit() {
     if (!this.email || !this.email.includes('@')) {
-      this.toastr.error(this.i18nService.t('AUTH.FORGOT.ERR_EMAIL'), 'Erreur');
+      this.toastr.error(this.i18nService.t('AUTH.FORGOT.ERR_EMAIL'), this.i18nService.t('COMMON.ERROR_TITLE'));
       return;
     }
     this.isLoading.set(true);

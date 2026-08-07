@@ -10,6 +10,8 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { SkeletonModule } from 'primeng/skeleton';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastrService } from 'ngx-toastr';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface Structure {
   id: string; nom: string; type: string; prefecture: string;
@@ -36,13 +38,14 @@ interface CreateStructureResponse {
 @Component({
   selector: 'app-structures',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SelectModule, InputTextModule, InputNumberModule, SkeletonModule],
+  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SelectModule, InputTextModule, InputNumberModule, SkeletonModule, TranslatePipe],
   templateUrl: './structures.component.html',
   styleUrl: './structures.component.scss'
 })
 export class StructuresComponent implements OnInit {
   private adminService = inject(AdminService);
   private toastr       = inject(ToastrService);
+  private i18n         = inject(I18nService);
 
   structures        = signal<Structure[]>([]);
   isLoading         = signal(true);
@@ -59,15 +62,17 @@ export class StructuresComponent implements OnInit {
     admin: { prenom: '', nom: '', telephone: '', email: '' }
   };
 
-  typeOptions = [
-    { label: 'Poste de Santé',      value: 'POSTE'        },
-    { label: 'Centre de Santé',     value: 'CENTRE'       },
-    { label: 'Hôpital Préfectoral', value: 'HOPITAL_PREF' },
-    { label: 'Hôpital Régional',    value: 'HOPITAL_REG'  },
-    { label: 'CHU',                 value: 'CHU'          },
-    { label: 'Clinique Privée',     value: 'CLINIQUE'     },
-    { label: 'Pharmacie Privée',    value: 'PHARMACIE'    }
-  ];
+  get typeOptions() {
+    return [
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_POSTE'),        value: 'POSTE'        },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CENTRE'),       value: 'CENTRE'       },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_HOPITAL_PREF'), value: 'HOPITAL_PREF' },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_HOPITAL_REG'),  value: 'HOPITAL_REG'  },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CHU'),          value: 'CHU'          },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CLINIQUE'),     value: 'CLINIQUE'     },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_PHARMACIE'),    value: 'PHARMACIE'    }
+    ];
+  }
 
   prefectures = ['Conakry','Kindia','Boké','Mamou','Labé','Faranah','Kankan','Nzérékoré','Coyah','Dubréka','Forécariah','Fria','Télimélé','Pita','Dalaba','Tougué','Dinguiraye','Kouroussa','Siguiri','Mandiana','Kérouané','Macenta','Guékédou','Kissidougou','Beyla','Lola','Yomou'].map(p => ({ label: p, value: p }));
 
@@ -89,11 +94,12 @@ export class StructuresComponent implements OnInit {
   }
 
   creerStructure() {
+    const validationTitle = this.i18n.t('ADMIN.STRUCTURES.VALIDATION_TITLE');
     if (!this.newStructure.nom || !this.newStructure.prefecture) {
-      this.toastr.error('Nom et préfecture sont obligatoires.', 'Validation'); return;
+      this.toastr.error(this.i18n.t('ADMIN.STRUCTURES.ERR_VALIDATION_STRUCT'), validationTitle); return;
     }
     if (!this.newStructure.admin.prenom || !this.newStructure.admin.nom || !this.newStructure.admin.telephone) {
-      this.toastr.error('Prénom, nom et téléphone du responsable sont obligatoires.', 'Validation'); return;
+      this.toastr.error(this.i18n.t('ADMIN.STRUCTURES.ERR_VALIDATION_ADMIN'), validationTitle); return;
     }
     this.isSaving.set(true);
 
@@ -151,8 +157,9 @@ export class StructuresComponent implements OnInit {
         const adminData = data?.admin ?? data?.pharmacien;
         const structureData = data?.structure ?? data?.pharmacie;
 
+        const successTitle = this.i18n.t('ADMIN.STRUCTURES.SUCCESS_TITLE');
         if (adminData?.email) {
-          this.toastr.success(`Structure créée ! Les identifiants ont été envoyés par email à ${adminData.email}`, 'Succès');
+          this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_EMAIL_SENT', { email: adminData.email }), successTitle);
         } else {
           this.mdpAffiche.set({
             structureNom: structureData?.nom ?? nomStructureCree,
@@ -160,13 +167,13 @@ export class StructuresComponent implements OnInit {
             adminTelephone: adminData?.telephone ?? telephoneAdminSaisi,
             motDePasse: data?.motDePasseTemporaire ?? ''
           });
-          this.toastr.success(`Structure ${nomStructureCree} créée avec succès.`, 'Succès');
+          this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_CREATED', { nom: nomStructureCree }), successTitle);
         }
         this.loadStructures();
       },
-      error: err => { 
-        this.isSaving.set(false); 
-        this.toastr.error(err?.error?.error ?? err?.error?.message ?? 'Erreur lors de la création.', 'Erreur'); 
+      error: err => {
+        this.isSaving.set(false);
+        this.toastr.error(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ADMIN.STRUCTURES.ERR_CREATE'), this.i18n.t('COMMON.ERROR_TITLE'));
       }
     });
   }
@@ -189,12 +196,12 @@ export class StructuresComponent implements OnInit {
     this.adminService.deleteStructure(s.id).subscribe({
       next: () => {
         this.isToggling.set(null);
-        this.toastr.success(`Structure "${s.nom}" désactivée.`, 'Succès');
+        this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_DEACTIVATED', { nom: s.nom }), this.i18n.t('ADMIN.STRUCTURES.SUCCESS_TITLE'));
         this.loadStructures();
       },
       error: err => {
         this.isToggling.set(null);
-        this.toastr.error(err?.error?.error ?? err?.error?.message ?? 'Erreur lors de la désactivation.', 'Erreur');
+        this.toastr.error(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ADMIN.STRUCTURES.ERR_DEACTIVATE'), this.i18n.t('COMMON.ERROR_TITLE'));
       }
     });
   }
@@ -205,12 +212,12 @@ export class StructuresComponent implements OnInit {
     this.adminService.updateStructure(s.id, { estActive: true }).subscribe({
       next: () => {
         this.isToggling.set(null);
-        this.toastr.success(`Structure "${s.nom}" réactivée.`, 'Succès');
+        this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_REACTIVATED', { nom: s.nom }), this.i18n.t('ADMIN.STRUCTURES.SUCCESS_TITLE'));
         this.loadStructures();
       },
       error: err => {
         this.isToggling.set(null);
-        this.toastr.error(err?.error?.error ?? err?.error?.message ?? 'Erreur lors de la réactivation.', 'Erreur');
+        this.toastr.error(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ADMIN.STRUCTURES.ERR_REACTIVATE'), this.i18n.t('COMMON.ERROR_TITLE'));
       }
     });
   }

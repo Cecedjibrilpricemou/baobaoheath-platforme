@@ -8,8 +8,8 @@
     @for (step of steps; track step.num) {
     <div class="step">
       <div class="step__num">{{ step.num }}</div>
-      <h3 class="step__title">{{ step.title }}</h3>
-      <p class="step__desc">{{ step.desc }}</p>
+      <h3 class="step__title">{{ step.titleKey | translate }}</h3>
+      <p class="step__desc">{{ step.descKey | translate }}</p>
     </div>
     }
   </div>

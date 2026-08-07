@@ -5,16 +5,19 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { AdminService } from '../../../core/services/admin.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-export',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, SelectModule],
+  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, TranslatePipe],
   templateUrl: './export.component.html',
   styleUrl: './export.component.scss'
 })
 export class ExportComponent {
   private adminService = inject(AdminService);
+  private i18n = inject(I18nService);
 
   isExporting  = signal(false);
   successMsg   = signal('');
@@ -25,12 +28,14 @@ export class ExportComponent {
     { label: 'CSV',  value: 'csv'  }
   ];
 
-  periodeOptions = [
-    { label: '7 derniers jours',  value: '7j'  },
-    { label: '30 derniers jours', value: '30j' },
-    { label: '3 derniers mois',   value: '3m'  },
-    { label: 'Toutes les données',value: 'all' }
-  ];
+  get periodeOptions() {
+    return [
+      { label: this.i18n.t('ADMIN.EXPORT.PERIODE_7J'), value: '7j' },
+      { label: this.i18n.t('ADMIN.EXPORT.PERIODE_30J'), value: '30j' },
+      { label: this.i18n.t('ADMIN.EXPORT.PERIODE_3M'), value: '3m' },
+      { label: this.i18n.t('ADMIN.EXPORT.PERIODE_ALL'), value: 'all' }
+    ];
+  }
 
   formatSelectionne  = 'json';
   periodeSelectionnee = '30j';
@@ -57,12 +62,12 @@ export class ExportComponent {
         URL.revokeObjectURL(url);
 
         this.isExporting.set(false);
-        this.successMsg.set('Export téléchargé avec succès !');
+        this.successMsg.set(this.i18n.t('ADMIN.EXPORT.SUCCESS_EXPORT'));
         setTimeout(() => this.successMsg.set(''), 3000);
       },
       error: (err) => {
         this.isExporting.set(false);
-        this.errorMsg.set(err?.error?.message ?? err?.error?.error ?? 'Erreur lors de l\'export.');
+        this.errorMsg.set(err?.error?.message ?? err?.error?.error ?? this.i18n.t('ADMIN.EXPORT.ERR_EXPORT'));
       }
     });
   }

@@ -110,12 +110,12 @@
         <div class="stock-card__quantity">
           @if (editingId() === stock.id) {
           <div class="qty-edit">
-            <button class="qty-btn" (click)="editQuantite.update(v => Math.max(0, v - 1))" aria-label="Diminuer la quantité">
+            <button class="qty-btn" (click)="editQuantite.update(v => Math.max(0, v - 1))" [attr.aria-label]="'ASC.STOCKS.DECREASE_QTY_ARIA' | translate">
               <i class="pi pi-minus" aria-hidden="true"></i>
             </button>
             <!-- ✅ -->
-            <p-inputNumber [ngModel]="editQuantite()" (ngModelChange)="editQuantite.set($event)" ariaLabel="Quantité en stock"></p-inputNumber>
-            <button class="qty-btn" (click)="editQuantite.update(v => v + 1)" aria-label="Augmenter la quantité">
+            <p-inputNumber [ngModel]="editQuantite()" (ngModelChange)="editQuantite.set($event)" [ariaLabel]="'ASC.STOCKS.QTY_IN_STOCK_ARIA' | translate"></p-inputNumber>
+            <button class="qty-btn" (click)="editQuantite.update(v => v + 1)" [attr.aria-label]="'ASC.STOCKS.INCREASE_QTY_ARIA' | translate">
               <i class="pi pi-plus" aria-hidden="true"></i>
             </button>
           </div>

@@ -8,6 +8,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TextareaModule } from 'primeng/textarea';
 import { MedecinService } from '../../../core/services/medecin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface Constantes {
   temperature?: number; poidsKg?: number; tensionSystolique?: number;
@@ -41,12 +42,13 @@ interface Consultation {
 @Component({
   selector: 'app-medecin-consultations',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule, TextareaModule],
+  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule, TextareaModule, TranslatePipe],
   templateUrl: './consultations.component.html',
   styleUrl: './consultations.component.scss'
 })
 export class MedecinConsultationsComponent implements OnInit {
   private medecinService = inject(MedecinService);
+  private i18n = inject(I18nService);
 
   consultations   = signal<Consultation[]>([]);
   selected        = signal<Consultation | null>(null);
@@ -111,12 +113,12 @@ export class MedecinConsultationsComponent implements OnInit {
       next: () => {
         this.isValidating.set(false);
         this.selected.set(null);
-        this.showSuccess('Consultation validée avec succès !');
+        this.showSuccess(this.i18n.t('MEDECIN.CONSULTATIONS.SUCCESS_VALIDATE'));
         this.loadConsultations();
       },
       error: (err) => {
         this.isValidating.set(false);
-        this.showError(err?.error?.message ?? 'Erreur lors de la validation.');
+        this.showError(err?.error?.message ?? this.i18n.t('MEDECIN.CONSULTATIONS.ERR_VALIDATE'));
       }
     });
   }

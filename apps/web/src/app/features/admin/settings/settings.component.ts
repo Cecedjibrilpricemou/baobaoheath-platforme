@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -6,27 +6,33 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { SliderModule } from 'primeng/slider';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ButtonModule, 
-    ToggleSwitchModule, SelectModule, InputTextModule, SliderModule
+    CommonModule, FormsModule, ButtonModule,
+    ToggleSwitchModule, SelectModule, InputTextModule, SliderModule, TranslatePipe
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent {
+  private i18n = inject(I18nService);
+
   // Navigation
   activeTab = signal('structure');
 
-  tabs = [
-    { id: 'structure', label: 'Structure', icon: 'pi pi-building' },
-    { id: 'security', label: 'Sécurité & Accès', icon: 'pi pi-lock' },
-    { id: 'alerts', label: 'Alertes & IA', icon: 'pi pi-bolt' },
-    { id: 'sync', label: 'Hors-ligne & USSD', icon: 'pi pi-sync' }
-  ];
+  get tabs() {
+    return [
+      { id: 'structure', label: this.i18n.t('ADMIN.SETTINGS.TAB_STRUCTURE'), icon: 'pi pi-building' },
+      { id: 'security', label: this.i18n.t('ADMIN.SETTINGS.TAB_SECURITY'), icon: 'pi pi-lock' },
+      { id: 'alerts', label: this.i18n.t('ADMIN.SETTINGS.TAB_ALERTS'), icon: 'pi pi-bolt' },
+      { id: 'sync', label: this.i18n.t('ADMIN.SETTINGS.TAB_SYNC'), icon: 'pi pi-sync' }
+    ];
+  }
 
   // Modèles de données pour les formulaires
   structure = {
@@ -61,20 +67,24 @@ export class SettingsComponent {
     offlineMode: true
   };
 
-  typeOptions = [
-    { label: 'Poste de santé', value: 'POSTE' },
-    { label: 'Centre de santé', value: 'CENTRE' },
-    { label: 'Hôpital Préfectoral', value: 'HOPITAL_PREF' },
-    { label: 'Hôpital Régional', value: 'HOPITAL_REG' },
-    { label: 'Pharmacie', value: 'PHARMACIE' }
-  ];
+  get typeOptions() {
+    return [
+      { label: this.i18n.t('ADMIN.SETTINGS.TYPE_POSTE'), value: 'POSTE' },
+      { label: this.i18n.t('ADMIN.SETTINGS.TYPE_CENTRE'), value: 'CENTRE' },
+      { label: this.i18n.t('ADMIN.SETTINGS.TYPE_HOPITAL_PREF'), value: 'HOPITAL_PREF' },
+      { label: this.i18n.t('ADMIN.SETTINGS.TYPE_HOPITAL_REG'), value: 'HOPITAL_REG' },
+      { label: this.i18n.t('ADMIN.SETTINGS.TYPE_PHARMACIE'), value: 'PHARMACIE' }
+    ];
+  }
 
-  timeoutOptions = [
-    { label: '15 minutes', value: 15 },
-    { label: '30 minutes', value: 30 },
-    { label: '1 heure', value: 60 },
-    { label: '4 heures', value: 240 }
-  ];
+  get timeoutOptions() {
+    return [
+      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_15MIN'), value: 15 },
+      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_30MIN'), value: 30 },
+      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_1H'), value: 60 },
+      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_4H'), value: 240 }
+    ];
+  }
 
   setTab(id: string) {
     this.activeTab.set(id);

@@ -10,8 +10,8 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 })
 export class HowItWorksComponent {
   steps = [
-    { num: '1', title: 'Créez votre compte', desc: 'Inscrivez-vous avec votre numéro de téléphone en moins de 2 minutes.' },
-    { num: '2', title: 'Complétez votre profil', desc: 'Renseignez vos informations. Votre QR Code est généré automatiquement.' },
-    { num: '3', title: 'Accédez à vos services', desc: 'Dashboard personnalisé, consultations, stocks, planning — tout est prêt.' }
+    { num: '1', titleKey: 'LANDING.HOW_STEP1_TITLE', descKey: 'LANDING.HOW_STEP1_DESC' },
+    { num: '2', titleKey: 'LANDING.HOW_STEP2_TITLE', descKey: 'LANDING.HOW_STEP2_DESC' },
+    { num: '3', titleKey: 'LANDING.HOW_STEP3_TITLE', descKey: 'LANDING.HOW_STEP3_DESC' }
   ];
 }

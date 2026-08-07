@@ -10,6 +10,7 @@ import { MedecinService } from '../../../core/services/medecin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface Utilisateur {
   id?: string;
@@ -40,7 +41,7 @@ interface Conversation {
 @Component({
   selector: 'app-messagerie',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SkeletonModule],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SkeletonModule, TranslatePipe],
   templateUrl: './messagerie.component.html',
   styleUrl: './messagerie.component.scss'
 })
@@ -50,6 +51,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
   private medecinService = inject(MedecinService);
   private authService    = inject(AuthService);
   private socketService  = inject(SocketService);
+  private i18n           = inject(I18nService);
   private destroyRef      = inject(DestroyRef);
 
   currentUser     = this.authService.currentUser;
@@ -213,6 +215,13 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
+  getConvAriaLabel(conv: Conversation): string {
+    const base = `${conv.utilisateur.prenom} ${conv.utilisateur.nom}`;
+    return conv.nonLus > 0
+      ? base + this.i18n.t('MEDECIN.MESSAGERIE.UNREAD_SUFFIX_ARIA', { count: conv.nonLus })
+      : base;
+  }
+
   formatHeure(d: string): string {
     if (!d) return '';
     return new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -222,7 +231,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     if (!d) return '';
     const date = new Date(d);
     const today = new Date();
-    if (date.toDateString() === today.toDateString()) return 'Aujourd\'hui';
+    if (date.toDateString() === today.toDateString()) return this.i18n.t('COMMON.TODAY');
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 

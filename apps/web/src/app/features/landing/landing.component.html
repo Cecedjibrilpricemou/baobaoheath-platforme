@@ -17,7 +17,7 @@
 
     <div class="lnav__actions">
       <!-- Toggle thème -->
-      <button class="lnav__icon-btn" (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Activer le thème clair' : 'Activer le thème sombre'">
+      <button class="lnav__icon-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
         <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
       </button>
       <!-- Toggle langue -->
@@ -101,38 +101,38 @@
           <div class="hero-card__avatar">MD</div>
           <div>
             <span class="hero-card__name">Mamadou Diallo</span>
-            <div class="hero-card__role">Patient · Conakry</div>
+            <div class="hero-card__role">{{ 'LANDING.HERO_CARD_ROLE' | translate }}</div>
           </div>
           <div class="hero-card__badge">
-            <i class="pi pi-check-circle"></i> Actif
+            <i class="pi pi-check-circle"></i> {{ 'LANDING.HERO_CARD_ACTIVE' | translate }}
           </div>
         </div>
         <div class="hero-card__metrics">
           <div class="hero-card__metric">
             <span class="hero-card__metric-val">12</span>
-            <span class="hero-card__metric-lbl">Consultations</span>
+            <span class="hero-card__metric-lbl">{{ 'LANDING.HERO_CARD_CONSULTATIONS' | translate }}</span>
           </div>
           <div class="hero-card__metric">
             <span class="hero-card__metric-val">8</span>
-            <span class="hero-card__metric-lbl">Vaccins</span>
+            <span class="hero-card__metric-lbl">{{ 'LANDING.HERO_CARD_VACCINS' | translate }}</span>
           </div>
           <div class="hero-card__metric">
             <span class="hero-card__metric-val">O+</span>
-            <span class="hero-card__metric-lbl">Groupe</span>
+            <span class="hero-card__metric-lbl">{{ 'LANDING.HERO_CARD_GROUPE' | translate }}</span>
           </div>
         </div>
       </div>
 
       <div class="hero-card hero-card--notif">
         <i class="pi pi-bell"></i>
-        <span>Rappel vaccination BCG — dans 3 jours</span>
+        <span>{{ 'LANDING.HERO_CARD_NOTIF' | translate }}</span>
       </div>
 
       <div class="hero-card hero-card--kpi">
         <i class="pi pi-chart-bar"></i>
         <div>
           <div class="hero-card__kpi-val">94%</div>
-          <div class="hero-card__kpi-lbl">Couverture vaccinale régionale</div>
+          <div class="hero-card__kpi-lbl">{{ 'LANDING.HERO_CARD_KPI_LABEL' | translate }}</div>
         </div>
       </div>
     </div>
@@ -140,10 +140,10 @@
 
   <!-- ── TRUST BAR ─────────────────────────────────────────────── -->
   <div class="trust-bar">
-    @for (item of trustItems; track item.label) {
+    @for (item of trustItems; track item.labelKey) {
     <div class="trust-bar__item">
       <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
-      <span>{{ item.label }}</span>
+      <span>{{ item.labelKey | translate }}</span>
     </div>
     @if (!$last) { <div class="trust-bar__sep"></div> }
     }

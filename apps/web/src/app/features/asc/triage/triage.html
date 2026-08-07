@@ -4,26 +4,26 @@
       <i class="pi pi-bolt"></i>
     </div>
     <div class="header-content">
-      <h1>Triage Intelligent IA</h1>
-      <p>Évaluez rapidement l'état du patient pour prendre la bonne décision.</p>
+      <h1>{{ 'ASC.TRIAGE.TITLE' | translate }}</h1>
+      <p>{{ 'ASC.TRIAGE.SUBTITLE' | translate }}</p>
     </div>
   </div>
 
   <!-- WIZARD STEPS INDICATOR -->
-  <div class="wizard-steps" role="list" aria-label="Étapes du triage">
+  <div class="wizard-steps" role="list" [attr.aria-label]="'ASC.TRIAGE.STEPS_ARIA' | translate">
     <div class="step" role="listitem" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1" [attr.aria-current]="currentStep() === 1 ? 'step' : null">
       <div class="step-circle" aria-hidden="true">1</div>
-      <span>Patient</span>
+      <span>{{ 'ASC.TRIAGE.STEP1_LABEL' | translate }}</span>
     </div>
     <div class="step-line" aria-hidden="true"></div>
     <div class="step" role="listitem" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2" [attr.aria-current]="currentStep() === 2 ? 'step' : null">
       <div class="step-circle" aria-hidden="true">2</div>
-      <span>Symptômes</span>
+      <span>{{ 'ASC.TRIAGE.STEP2_LABEL' | translate }}</span>
     </div>
     <div class="step-line" aria-hidden="true"></div>
     <div class="step" role="listitem" [class.active]="currentStep() === 3" [attr.aria-current]="currentStep() === 3 ? 'step' : null">
       <div class="step-circle" aria-hidden="true"><i class="pi pi-sparkles"></i></div>
-      <span>Analyse IA</span>
+      <span>{{ 'ASC.TRIAGE.STEP3_LABEL' | translate }}</span>
     </div>
   </div>
 
@@ -32,15 +32,15 @@
     <!-- STEP 1: PATIENT -->
     @if (currentStep() === 1) {
       <div class="step-panel">
-        <h2>Identification du Patient</h2>
-        <p class="text-secondary">Recherchez le patient par son code QR ou son numéro de téléphone.</p>
-        
+        <h2>{{ 'ASC.TRIAGE.STEP1_TITLE' | translate }}</h2>
+        <p class="text-secondary">{{ 'ASC.TRIAGE.STEP1_SUB' | translate }}</p>
+
         <div class="search-box">
           <span class="p-input-icon-left w-full">
             <i class="pi pi-search" aria-hidden="true"></i>
-            <input type="text" pInputText [(ngModel)]="patientRecherche" placeholder="Numéro de téléphone ou ID..." aria-label="Numéro de téléphone ou ID du patient" class="w-full" />
+            <input type="text" pInputText [(ngModel)]="patientRecherche" [placeholder]="'ASC.TRIAGE.SEARCH_PLACEHOLDER' | translate" [attr.aria-label]="'ASC.TRIAGE.SEARCH_ARIA' | translate" class="w-full" />
           </span>
-          <p-button label="Rechercher" icon="pi pi-search" (onClick)="rechercherPatient()"></p-button>
+          <p-button [label]="'COMMON.SEARCH' | translate" icon="pi pi-search" (onClick)="rechercherPatient()"></p-button>
         </div>
 
         @if (searchResults().length > 0) {
@@ -73,7 +73,7 @@
         }
 
         <div class="step-actions">
-          <p-button label="Suivant" icon="pi pi-arrow-right" iconPos="right" [disabled]="!patientTrouve()" (onClick)="nextStep()"></p-button>
+          <p-button [label]="'ASC.TRIAGE.NEXT_BTN' | translate" icon="pi pi-arrow-right" iconPos="right" [disabled]="!patientTrouve()" (onClick)="nextStep()"></p-button>
         </div>
       </div>
     }
@@ -81,28 +81,28 @@
     <!-- STEP 2: SYMPTOMES -->
     @if (currentStep() === 2) {
       <div class="step-panel">
-        <h2>Symptômes & Constantes</h2>
-        
+        <h2>{{ 'ASC.TRIAGE.STEP2_TITLE' | translate }}</h2>
+
         <div class="form-grid mt-4">
           <div class="field">
-            <label id="triage-symptomes-label" for="triage-symptomes">Symptômes observés</label>
-            <p-multiSelect inputId="triage-symptomes" [options]="symptomesList" [(ngModel)]="selectedSymptomes" defaultLabel="Sélectionner les symptômes" optionLabel="label" optionValue="value" display="chip" styleClass="w-full"></p-multiSelect>
+            <label id="triage-symptomes-label" for="triage-symptomes">{{ 'ASC.TRIAGE.SYMPTOMES_LABEL' | translate }}</label>
+            <p-multiSelect inputId="triage-symptomes" [options]="symptomesList" [(ngModel)]="selectedSymptomes" [defaultLabel]="'ASC.TRIAGE.SYMPTOMES_PLACEHOLDER' | translate" optionLabel="label" optionValue="value" display="chip" styleClass="w-full"></p-multiSelect>
           </div>
 
           <div class="field">
-            <label id="triage-temp-label">Température (°C) : {{ temperature() }}</label>
+            <label id="triage-temp-label">{{ 'ASC.TRIAGE.TEMP_LABEL' | translate: { value: temperature() } }}</label>
             <p-slider [(ngModel)]="temperature" [min]="35" [max]="42" [step]="0.1" styleClass="w-full mt-2" [ariaLabelledBy]="'triage-temp-label'"></p-slider>
           </div>
 
           <div class="field">
-            <label for="triage-tension">Tension artérielle</label>
-            <input id="triage-tension" type="text" pInputText [(ngModel)]="tension" placeholder="Ex: 12/8" class="w-full" />
+            <label for="triage-tension">{{ 'ASC.TRIAGE.TENSION_LABEL' | translate }}</label>
+            <input id="triage-tension" type="text" pInputText [(ngModel)]="tension" [placeholder]="'ASC.TRIAGE.TENSION_PLACEHOLDER' | translate" class="w-full" />
           </div>
         </div>
 
         <div class="step-actions">
-          <p-button label="Retour" icon="pi pi-arrow-left" styleClass="p-button-outlined" (onClick)="prevStep()"></p-button>
-          <p-button label="Lancer l'Analyse IA" icon="pi pi-sparkles" styleClass="p-button-primary" (onClick)="nextStep()"></p-button>
+          <p-button [label]="'COMMON.BACK' | translate" icon="pi pi-arrow-left" styleClass="p-button-outlined" (onClick)="prevStep()"></p-button>
+          <p-button [label]="'ASC.TRIAGE.LAUNCH_ANALYSIS' | translate" icon="pi pi-sparkles" styleClass="p-button-primary" (onClick)="nextStep()"></p-button>
         </div>
       </div>
     }
@@ -115,9 +115,9 @@
           <div class="ia-loading" role="status" aria-live="polite">
             <div class="pulse-ring" aria-hidden="true"></div>
             <i class="pi pi-sparkles ia-icon" aria-hidden="true"></i>
-            <h2>BaoBao IA analyse les données...</h2>
+            <h2>{{ 'ASC.TRIAGE.ANALYZING_TITLE' | translate }}</h2>
             <p-progressBar [value]="iaProgress()" styleClass="w-full mt-4"></p-progressBar>
-            <p class="mt-2 text-secondary">Comparaison avec les directives OMS en cours... {{ iaProgress() }}%</p>
+            <p class="mt-2 text-secondary">{{ 'ASC.TRIAGE.ANALYZING_SUB' | translate: { percent: iaProgress() } }}</p>
           </div>
         } @else if (analysisResult()) {
           <div class="ia-result" role="status" aria-live="polite">
@@ -127,13 +127,13 @@
                 <small>/100</small>
               </div>
               <div class="gravity-text">
-                <h3>Gravité Évaluée</h3>
+                <h3>{{ 'ASC.TRIAGE.GRAVITY_TITLE' | translate }}</h3>
                 <h2>{{ analysisResult()?.gravity }}</h2>
               </div>
             </div>
 
             <div class="recommendations">
-              <h3><i class="pi pi-list" aria-hidden="true"></i> Recommandations de l'IA</h3>
+              <h3><i class="pi pi-list" aria-hidden="true"></i> {{ 'ASC.TRIAGE.RECOMMENDATIONS_TITLE' | translate }}</h3>
               <ul>
                 @for (rec of analysisResult()?.recommendations; track rec) {
                   <li><i class="pi pi-check-circle" aria-hidden="true"></i> {{ rec }}</li>
@@ -142,7 +142,7 @@
             </div>
 
             <div class="step-actions">
-              <p-button label="Créer la consultation" icon="pi pi-check" styleClass="w-full" (onClick)="creerConsultation()" [loading]="isCreating()"></p-button>
+              <p-button [label]="'ASC.TRIAGE.CREATE_CONSULTATION' | translate" icon="pi pi-check" styleClass="w-full" (onClick)="creerConsultation()" [loading]="isCreating()"></p-button>
             </div>
           </div>
         }

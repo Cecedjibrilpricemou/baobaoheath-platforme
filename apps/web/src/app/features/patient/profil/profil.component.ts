@@ -15,6 +15,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient } from '../../../core/models/patient.model';
 
 interface Structure {
@@ -37,6 +38,7 @@ export class ProfilComponent implements OnInit {
   private api = inject(ApiService);
   private authService = inject(AuthService);
   private patientService = inject(PatientService);
+  private i18n = inject(I18nService);
 
   currentUser = this.authService.currentUser;
   profil = signal<Patient | null>(null);
@@ -51,12 +53,18 @@ export class ProfilComponent implements OnInit {
   formData: Partial<Patient> = {};
   idStructureSelectionnee = '';
 
-  sexeOptions = [{ label: 'Masculin', value: 'M' }, { label: 'Féminin', value: 'F' }];
   bloodOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(v => ({ label: v, value: v }));
+
+  get sexeOptions() {
+    return [
+      { label: this.i18n.t('PATIENT.PROFILE.GENDER_M'), value: 'M' },
+      { label: this.i18n.t('PATIENT.PROFILE.GENDER_F'), value: 'F' }
+    ];
+  }
 
   get structureOptions() {
     return [
-      { label: '— Aucune structure (accès libre) —', value: '' },
+      { label: this.i18n.t('PATIENT.PROFILE.STRUCTURE_SELECT_PLACEHOLDER'), value: '' },
       ...this.structures().map(s => ({
         label: `${s.nom} — ${s.prefecture}`,
         value: s.id
@@ -79,7 +87,7 @@ export class ProfilComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Impossible de charger votre profil.');
+        this.errorMessage.set(this.i18n.t('PATIENT.PROFILE.ERR_LOAD'));
         this.isLoading.set(false);
       }
     });
@@ -126,12 +134,12 @@ export class ProfilComponent implements OnInit {
       next: () => {
         this.isSaving.set(false);
         this.editMode.set(false);
-        this.showSuccess('Profil mis à jour avec succès !');
+        this.showSuccess(this.i18n.t('PATIENT.PROFILE.SUCCESS_SAVE'));
         this.loadProfil();
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Erreur lors de la mise à jour.');
+        this.errorMessage.set(err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
       }
     });
   }
@@ -143,14 +151,14 @@ export class ProfilComponent implements OnInit {
         this.isSavingStructure.set(false);
         this.showSuccess(
           this.idStructureSelectionnee
-            ? 'Structure préférée mise à jour !'
-            : 'Vous n\'êtes plus rattaché à une structure.'
+            ? this.i18n.t('PATIENT.PROFILE.STRUCTURE_UPDATED')
+            : this.i18n.t('PATIENT.PROFILE.STRUCTURE_UNLINKED')
         );
         this.loadProfil();
       },
       error: (err) => {
         this.isSavingStructure.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Erreur lors de la mise à jour.');
+        this.errorMessage.set(err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
       }
     });
   }
@@ -193,12 +201,8 @@ export class ProfilComponent implements OnInit {
   }
 
   getTypeLabel(type: string): string {
-    const map: Record<string, string> = {
-      'POSTE': 'Poste de Santé', 'CENTRE': 'Centre de Santé',
-      'HOPITAL_PREF': 'Hôpital Préfectoral', 'HOPITAL_REG': 'Hôpital Régional',
-      'CHU': 'CHU', 'CLINIQUE': 'Clinique Privée'
-    };
-    return map[type] ?? type;
+    const known = ['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'];
+    return known.includes(type) ? this.i18n.t(`PATIENT.PROFILE.STRUCTURE_TYPE_${type}`) : type;
   }
 
   private showSuccess(msg: string) {

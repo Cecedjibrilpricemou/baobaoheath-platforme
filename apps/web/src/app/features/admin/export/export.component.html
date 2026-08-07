@@ -2,8 +2,8 @@
 <div class="bb-export">
 
   <div class="bb-export__header">
-    <h1 class="bb-export__title"><i class="pi pi-download"></i> Export des données</h1>
-    <p class="bb-export__subtitle">Exportez les données de la plateforme pour DHIS2 ou analyse externe</p>
+    <h1 class="bb-export__title"><i class="pi pi-download"></i> {{ 'ADMIN.EXPORT.TITLE' | translate }}</h1>
+    <p class="bb-export__subtitle">{{ 'ADMIN.EXPORT.SUBTITLE' | translate }}</p>
   </div>
 
   @if (successMsg()) {
@@ -18,57 +18,57 @@
   }
 
   <div class="bb-export__card">
-    <h3 class="bb-export__card-title">Configuration de l'export</h3>
+    <h3 class="bb-export__card-title">{{ 'ADMIN.EXPORT.CONFIG_TITLE' | translate }}</h3>
 
     <div class="bb-export__form">
       <div class="bb-export__field">
-        <label id="export-format-label" for="export-format">Format</label>
+        <label id="export-format-label" for="export-format">{{ 'ADMIN.EXPORT.FORMAT_LABEL' | translate }}</label>
         <p-select inputId="export-format" [(ngModel)]="formatSelectionne" [options]="formatOptions" optionLabel="label" optionValue="value" />
       </div>
       <div class="bb-export__field">
-        <label id="export-periode-label" for="export-periode">Période</label>
+        <label id="export-periode-label" for="export-periode">{{ 'ADMIN.EXPORT.PERIODE_LABEL' | translate }}</label>
         <p-select inputId="export-periode" [(ngModel)]="periodeSelectionnee" [options]="periodeOptions" optionLabel="label" optionValue="value" />
       </div>
     </div>
 
     <div class="bb-export__info">
       <i class="pi pi-info-circle"></i>
-      <p>L'export inclut les consultations, diagnostics, vaccinations et référencements selon la période sélectionnée. Les données personnelles des patients sont anonymisées.</p>
+      <p>{{ 'ADMIN.EXPORT.INFO_TEXT' | translate }}</p>
     </div>
 
     <button class="bb-export__btn" (click)="exporter()" [disabled]="isExporting()">
       <i class="pi pi-download"></i>
-      {{ isExporting() ? 'Export en cours...' : 'Télécharger l\'export' }}
+      {{ (isExporting() ? 'ADMIN.EXPORT.EXPORTING' : 'ADMIN.EXPORT.DOWNLOAD_BTN') | translate }}
     </button>
   </div>
 
   <!-- Données incluses -->
   <div class="bb-export__included">
-    <h3 class="bb-export__included-title">Données incluses dans l'export</h3>
+    <h3 class="bb-export__included-title">{{ 'ADMIN.EXPORT.INCLUDED_TITLE' | translate }}</h3>
     <div class="bb-export__included-grid">
       <div class="bb-export__included-item">
         <i class="pi pi-heart-fill"></i>
-        <span>Consultations</span>
+        <span>{{ 'ADMIN.EXPORT.INCLUDED_CONSULTATIONS' | translate }}</span>
       </div>
       <div class="bb-export__included-item">
         <i class="pi pi-search"></i>
-        <span>Diagnostics</span>
+        <span>{{ 'ADMIN.EXPORT.INCLUDED_DIAGNOSTICS' | translate }}</span>
       </div>
       <div class="bb-export__included-item">
         <i class="pi pi-shield"></i>
-        <span>Vaccinations</span>
+        <span>{{ 'ADMIN.EXPORT.INCLUDED_VACCINATIONS' | translate }}</span>
       </div>
       <div class="bb-export__included-item">
         <i class="pi pi-send"></i>
-        <span>Référencements</span>
+        <span>{{ 'ADMIN.EXPORT.INCLUDED_REFERENCEMENTS' | translate }}</span>
       </div>
       <div class="bb-export__included-item">
         <i class="pi pi-chart-bar"></i>
-        <span>Statistiques</span>
+        <span>{{ 'ADMIN.EXPORT.INCLUDED_STATS' | translate }}</span>
       </div>
       <div class="bb-export__included-item">
         <i class="pi pi-map"></i>
-        <span>Données géo</span>
+        <span>{{ 'ADMIN.EXPORT.INCLUDED_GEO' | translate }}</span>
       </div>
     </div>
   </div>

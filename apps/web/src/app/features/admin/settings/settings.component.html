@@ -1,12 +1,12 @@
 <div class="settings-page">
   <div class="settings-header">
     <div class="header-content">
-      <h1>Paramètres de la Plateforme</h1>
-      <p>Configurez les règles globales, la sécurité et le comportement du système.</p>
+      <h1>{{ 'ADMIN.SETTINGS.TITLE' | translate }}</h1>
+      <p>{{ 'ADMIN.SETTINGS.SUBTITLE' | translate }}</p>
     </div>
     <div class="header-actions">
-      <p-button label="Annuler" styleClass="p-button-outlined p-button-secondary"></p-button>
-      <p-button label="Sauvegarder" icon="pi pi-check" (onClick)="sauvegarder()"></p-button>
+      <p-button [label]="'COMMON.CANCEL' | translate" styleClass="p-button-outlined p-button-secondary"></p-button>
+      <p-button [label]="'ADMIN.SETTINGS.SAVE' | translate" icon="pi pi-check" (onClick)="sauvegarder()"></p-button>
     </div>
   </div>
 
@@ -37,56 +37,56 @@
       <!-- ONGLET : STRUCTURE -->
       @if (activeTab() === 'structure') {
         <div class="settings-panel">
-          <h2>Profil de la Structure</h2>
-          <p class="panel-desc">Gérez les informations générales de l'établissement.</p>
-          
+          <h2>{{ 'ADMIN.SETTINGS.STRUCTURE_PROFILE_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.STRUCTURE_PROFILE_DESC' | translate }}</p>
+
           <div class="form-grid">
             <div class="field">
-              <label for="structure-nom">Nom de l'établissement</label>
+              <label for="structure-nom">{{ 'ADMIN.SETTINGS.STRUCTURE_NAME_LABEL' | translate }}</label>
               <input id="structure-nom" type="text" pInputText [(ngModel)]="structure.nom" class="w-full">
             </div>
             <div class="field">
-              <label id="structure-type-label" for="structure-type">Type de structure</label>
+              <label id="structure-type-label" for="structure-type">{{ 'ADMIN.SETTINGS.STRUCTURE_TYPE_LABEL' | translate }}</label>
               <p-select inputId="structure-type" [options]="typeOptions" [(ngModel)]="structure.type" styleClass="w-full"></p-select>
             </div>
           </div>
 
           <div class="field">
-            <label for="structure-adresse">Adresse complète</label>
+            <label for="structure-adresse">{{ 'ADMIN.SETTINGS.STRUCTURE_ADDRESS_LABEL' | translate }}</label>
             <input id="structure-adresse" type="text" pInputText [(ngModel)]="structure.adresse" class="w-full">
           </div>
 
           <div class="divider"></div>
 
-          <h2>Facturation & Finances</h2>
-          <p class="panel-desc">Moyens de paiements acceptés et paramètres financiers.</p>
+          <h2>{{ 'ADMIN.SETTINGS.BILLING_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.BILLING_DESC' | translate }}</p>
 
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-especes-label">Paiement par Espèces</span>
-              <span class="setting-sub">Accepter les paiements physiques au guichet.</span>
+              <span class="setting-title" id="setting-especes-label">{{ 'ADMIN.SETTINGS.PAY_CASH_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_CASH_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="structure.paiementEspeces" [ariaLabelledBy]="'setting-especes-label'"></p-toggleSwitch>
           </div>
 
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-om-label">Paiement par Orange Money</span>
-              <span class="setting-sub">Intégration directe de l'API Orange Money Guinée.</span>
+              <span class="setting-title" id="setting-om-label">{{ 'ADMIN.SETTINGS.PAY_OM_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_OM_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="structure.paiementOrangeMoney" [ariaLabelledBy]="'setting-om-label'"></p-toggleSwitch>
           </div>
 
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-momo-label">Paiement par MTN MoMo</span>
-              <span class="setting-sub">Intégration directe de l'API MTN Mobile Money.</span>
+              <span class="setting-title" id="setting-momo-label">{{ 'ADMIN.SETTINGS.PAY_MOMO_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_MOMO_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="structure.paiementMomo" [ariaLabelledBy]="'setting-momo-label'"></p-toggleSwitch>
           </div>
 
           <div class="field mt-4">
-            <label id="structure-marge-label">Marge bénéficiaire Pharmacie (%) : {{ structure.marge }}%</label>
+            <label id="structure-marge-label">{{ 'ADMIN.SETTINGS.MARGE_LABEL' | translate: { value: structure.marge } }}</label>
             <p-slider [(ngModel)]="structure.marge" [min]="0" [max]="50" styleClass="w-full mt-2" [ariaLabelledBy]="'structure-marge-label'"></p-slider>
           </div>
         </div>
@@ -95,30 +95,30 @@
       <!-- ONGLET : SECURITE -->
       @if (activeTab() === 'security') {
         <div class="settings-panel">
-          <h2>Sécurité & Accès</h2>
-          <p class="panel-desc">Gouvernance des accès et protection des données.</p>
-          
+          <h2>{{ 'ADMIN.SETTINGS.SECURITY_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.SECURITY_DESC' | translate }}</p>
+
           <div class="setting-row warning-bg">
             <div class="setting-info">
-              <span class="setting-title" id="setting-2fa-label">Forcer l'Authentification à 2 Facteurs (2FA)</span>
-              <span class="setting-sub">Obliger tous les médecins et administrateurs à utiliser le 2FA.</span>
+              <span class="setting-title" id="setting-2fa-label">{{ 'ADMIN.SETTINGS.2FA_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.2FA_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="security.force2FA" [ariaLabelledBy]="'setting-2fa-label'"></p-toggleSwitch>
           </div>
 
           <div class="field mt-4">
-            <label id="security-timeout-label" for="security-timeout">Expiration des sessions inactives</label>
+            <label id="security-timeout-label" for="security-timeout">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_LABEL' | translate }}</label>
             <p-select inputId="security-timeout" [options]="timeoutOptions" [(ngModel)]="security.sessionTimeout" styleClass="w-full"></p-select>
-            <small class="text-secondary mt-1 block">Déconnecte automatiquement l'utilisateur après ce délai.</small>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_HINT' | translate }}</small>
           </div>
 
           <div class="divider"></div>
 
-          <h2>Confidentialité Patient</h2>
+          <h2>{{ 'ADMIN.SETTINGS.PRIVACY_TITLE' | translate }}</h2>
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-consentement-label">Recueil du Consentement Automatique</span>
-              <span class="setting-sub">Demander le consentement électronique lors de la création du dossier.</span>
+              <span class="setting-title" id="setting-consentement-label">{{ 'ADMIN.SETTINGS.CONSENT_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.CONSENT_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="security.consentementDefaut" [ariaLabelledBy]="'setting-consentement-label'"></p-toggleSwitch>
           </div>
@@ -128,27 +128,27 @@
       <!-- ONGLET : ALERTES -->
       @if (activeTab() === 'alerts') {
         <div class="settings-panel">
-          <h2>Alertes Épidémiologiques</h2>
-          <p class="panel-desc">Configuration des seuils de détection automatique.</p>
-          
+          <h2>{{ 'ADMIN.SETTINGS.EPIDEMIO_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.EPIDEMIO_DESC' | translate }}</p>
+
           <div class="field">
-            <label id="alert-paludisme-label">Seuil d'Alerte Paludisme (cas/semaine) : {{ alerts.seuilPaludisme }}</label>
+            <label id="alert-paludisme-label">{{ 'ADMIN.SETTINGS.PALUDISME_LABEL' | translate: { value: alerts.seuilPaludisme } }}</label>
             <p-slider [(ngModel)]="alerts.seuilPaludisme" [min]="10" [max]="200" styleClass="w-full mt-2" [ariaLabelledBy]="'alert-paludisme-label'"></p-slider>
           </div>
 
           <div class="field mt-4">
-            <label id="alert-ebola-label">Seuil d'Alerte Fièvres Hémorragiques (Ebola, Marburg) : {{ alerts.seuilEbola }}</label>
+            <label id="alert-ebola-label">{{ 'ADMIN.SETTINGS.EBOLA_LABEL' | translate: { value: alerts.seuilEbola } }}</label>
             <p-slider [(ngModel)]="alerts.seuilEbola" [min]="1" [max]="10" styleClass="w-full mt-2" [ariaLabelledBy]="'alert-ebola-label'"></p-slider>
-            <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Toute détection déclenche une urgence nationale immédiate.</small>
+            <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ADMIN.SETTINGS.EBOLA_WARNING' | translate }}</small>
           </div>
 
           <div class="divider"></div>
 
-          <h2>Intelligence Artificielle</h2>
+          <h2>{{ 'ADMIN.SETTINGS.AI_TITLE' | translate }}</h2>
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-ia-label">Activer l'assistant IA de Triage</span>
-              <span class="setting-sub">Permet aux ASC d'utiliser BaoBao IA sur le terrain.</span>
+              <span class="setting-title" id="setting-ia-label">{{ 'ADMIN.SETTINGS.AI_ENABLE_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.AI_ENABLE_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="alerts.activerIA" [ariaLabelledBy]="'setting-ia-label'"></p-toggleSwitch>
           </div>
@@ -158,30 +158,30 @@
       <!-- ONGLET : HORS LIGNE -->
       @if (activeTab() === 'sync') {
         <div class="settings-panel">
-          <h2>Hors-ligne (PWA) & USSD</h2>
-          <p class="panel-desc">Paramètres de connectivité pour les zones isolées.</p>
-          
+          <h2>{{ 'ADMIN.SETTINGS.OFFLINE_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.OFFLINE_DESC' | translate }}</p>
+
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-offline-label">Autoriser le mode Hors-ligne (PWA)</span>
-              <span class="setting-sub">Permet aux applications mobiles de stocker les données localement sans internet.</span>
+              <span class="setting-title" id="setting-offline-label">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_SUB' | translate }}</span>
             </div>
             <p-toggleSwitch [(ngModel)]="sync.offlineMode" [ariaLabelledBy]="'setting-offline-label'"></p-toggleSwitch>
           </div>
 
           <div class="field mt-4">
-            <label id="sync-frequence-label">Fréquence de Synchronisation Auto (minutes) : {{ sync.frequence }}</label>
+            <label id="sync-frequence-label">{{ 'ADMIN.SETTINGS.SYNC_FREQ_LABEL' | translate: { value: sync.frequence } }}</label>
             <p-slider [(ngModel)]="sync.frequence" [min]="5" [max]="120" [step]="5" styleClass="w-full mt-2" [ariaLabelledBy]="'sync-frequence-label'"></p-slider>
-            <small class="text-secondary mt-1 block">Si le réseau est disponible, l'app enverra les données selon cet intervalle.</small>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SYNC_FREQ_HINT' | translate }}</small>
           </div>
 
           <div class="divider"></div>
 
-          <h2>Services USSD</h2>
+          <h2>{{ 'ADMIN.SETTINGS.USSD_TITLE' | translate }}</h2>
           <div class="field">
-            <label for="ussd-timeout">Timeout des sessions USSD (secondes)</label>
+            <label for="ussd-timeout">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_LABEL' | translate }}</label>
             <input id="ussd-timeout" type="number" pInputText [(ngModel)]="sync.ussdTimeout" class="w-full">
-            <small class="text-secondary mt-1 block">Délai avant l'expiration du menu sur les téléphones basiques.</small>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_HINT' | translate }}</small>
           </div>
         </div>
       }

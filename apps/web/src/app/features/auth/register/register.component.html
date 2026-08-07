@@ -27,21 +27,21 @@
 
         <div class="register-left__roles">
           <div class="role-badge">
-            <i class="pi pi-user"></i> Espace Patient
+            <i class="pi pi-user"></i> {{ 'AUTH.REGISTER.ROLE_PATIENT_BADGE' | translate }}
           </div>
           <div class="role-badge role-badge--info">
-            <i class="pi pi-info-circle"></i> Inscription libre
+            <i class="pi pi-info-circle"></i> {{ 'AUTH.REGISTER.ROLE_OPEN_BADGE' | translate }}
           </div>
         </div>
 
         <div class="register-left__note">
           <i class="pi pi-shield"></i>
-          <span>Vous êtes soignant ? Contactez l'administrateur de votre structure de santé pour obtenir votre accès.</span>
+          <span>{{ 'AUTH.REGISTER.CONTACT_ADMIN_NOTE' | translate }}</span>
         </div>
       </div>
 
       <div class="register-left__controls">
-        <button type="button" class="ctrl-btn" (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Activer le thème clair' : 'Activer le thème sombre'">
+        <button type="button" class="ctrl-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
           <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
         </button>
         <button type="button" class="ctrl-btn" (click)="toggleLang()">
@@ -66,26 +66,26 @@
               <label class="form-label" for="nom">{{ 'AUTH.REGISTER.LAST_NAME' | translate }}</label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
-                <input pInputText id="nom" type="text" placeholder="Ex: Diallo" [(ngModel)]="formData.nom" name="nom"
+                <input pInputText id="nom" type="text" [placeholder]="'AUTH.REGISTER.LAST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.nom" name="nom"
                   required autocomplete="family-name" #nomInput="ngModel"
                   [attr.aria-invalid]="nomInput.invalid && (nomInput.dirty || nomInput.touched) ? true : null"
                   aria-describedby="nom-msg" />
               </div>
               @if (nomInput.invalid && (nomInput.dirty || nomInput.touched)) {
-                <small id="nom-msg" class="bb-error-text" role="alert">Le nom est requis</small>
+                <small id="nom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.LAST_NAME_REQUIRED' | translate }}</small>
               }
             </div>
             <div class="form-field-wrap">
               <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
-                <input pInputText id="prenom" type="text" placeholder="Ex: Mamadou" [(ngModel)]="formData.prenom"
+                <input pInputText id="prenom" type="text" [placeholder]="'AUTH.REGISTER.FIRST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.prenom"
                   name="prenom" required autocomplete="given-name" #prenomInput="ngModel"
                   [attr.aria-invalid]="prenomInput.invalid && (prenomInput.dirty || prenomInput.touched) ? true : null"
                   aria-describedby="prenom-msg" />
               </div>
               @if (prenomInput.invalid && (prenomInput.dirty || prenomInput.touched)) {
-                <small id="prenom-msg" class="bb-error-text" role="alert">Le prénom est requis</small>
+                <small id="prenom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.FIRST_NAME_REQUIRED' | translate }}</small>
               }
             </div>
           </div>
@@ -99,13 +99,13 @@
               </label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
-                <input pInputText id="telephone" type="tel" placeholder="Ex: 620123456" [(ngModel)]="formData.telephone"
+                <input pInputText id="telephone" type="tel" [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" [(ngModel)]="formData.telephone"
                   name="telephone" required autocomplete="tel" #telInput="ngModel"
                   [attr.aria-invalid]="telInput.invalid && (telInput.dirty || telInput.touched) ? true : null"
                   aria-describedby="telephone-msg" />
               </div>
               @if (telInput.invalid && (telInput.dirty || telInput.touched)) {
-                <small id="telephone-msg" class="bb-error-text" role="alert">Le téléphone est requis</small>
+                <small id="telephone-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PHONE_REQUIRED' | translate }}</small>
               }
             </div>
 
@@ -113,17 +113,17 @@
             <div class="form-field-wrap">
               <label class="form-label" for="email">
                 {{ 'AUTH.REGISTER.EMAIL' | translate }}
-                <span class="form-optional">(optionnel)</span>
+                <span class="form-optional">{{ 'AUTH.REGISTER.EMAIL_OPTIONAL' | translate }}</span>
               </label>
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-envelope"></i></span>
-                <input pInputText id="email" type="email" placeholder="Ex: email@mail.com" [(ngModel)]="formData.email"
+                <input pInputText id="email" type="email" [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" [(ngModel)]="formData.email"
                   name="email" autocomplete="email" email #emailInput="ngModel"
                   [attr.aria-invalid]="emailInput.invalid && (emailInput.dirty || emailInput.touched) ? true : null"
                   aria-describedby="email-msg" />
               </div>
               @if (emailInput.invalid && (emailInput.dirty || emailInput.touched)) {
-                <small id="email-msg" class="bb-error-text" role="alert">Format invalide</small>
+                <small id="email-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.EMAIL_INVALID' | translate }}</small>
               }
             </div>
           </div>
@@ -135,18 +135,18 @@
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
                 <input pInputText id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
-                  placeholder="Min 6 caractères" [(ngModel)]="formData.motDePasse" name="motDePasse" required
+                  [placeholder]="'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate" [(ngModel)]="formData.motDePasse" name="motDePasse" required
                   minlength="6" autocomplete="new-password" #mdpInput="ngModel"
                   [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
                   aria-describedby="motDePasse-msg" />
                 <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()"
-                  [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                  [attr.aria-label]="(showPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
                   [attr.aria-pressed]="showPassword()">
                   <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
                 </button>
               </div>
               @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
-                <small id="motDePasse-msg" class="bb-error-text" role="alert">Min 6 caractères</small>
+                <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate }}</small>
               }
             </div>
 
@@ -156,21 +156,21 @@
               <div class="p-inputgroup">
                 <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
                 <input pInputText id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
-                  placeholder="Répétez" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
+                  [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
                   autocomplete="new-password" #confirmMdpInput="ngModel"
                   [attr.aria-invalid]="(confirmMdpInput.invalid || formData.motDePasse !== confirmMotDePasse) && (confirmMdpInput.dirty || confirmMdpInput.touched) ? true : null"
                   aria-describedby="confirmMotDePasse-msg" />
                 <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()"
-                  [attr.aria-label]="showConfirmPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                  [attr.aria-label]="(showConfirmPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
                   [attr.aria-pressed]="showConfirmPassword()">
                   <i [class]="showConfirmPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
                 </button>
               </div>
               @if (confirmMdpInput.dirty || confirmMdpInput.touched) {
                 @if (confirmMdpInput.invalid) {
-                  <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">Veuillez confirmer</small>
+                  <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_REQUIRED' | translate }}</small>
                 } @else if (formData.motDePasse !== confirmMotDePasse) {
-                  <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">Non identique</small>
+                  <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_MISMATCH' | translate }}</small>
                 }
               }
             </div>
@@ -184,7 +184,7 @@
 
           <div class="form-separator">
             <span class="form-separator__line"></span>
-            <span class="form-separator__text">ou</span>
+            <span class="form-separator__text">{{ 'COMMON.OR' | translate }}</span>
             <span class="form-separator__line"></span>
           </div>
 
@@ -197,7 +197,7 @@
 
         <p class="register-form__footer">
           <i class="pi pi-shield"></i>
-          Vos données sont chiffrées et conformes à la réglementation.
+          {{ 'AUTH.REGISTER.FOOTER_ENCRYPTED' | translate }}
         </p>
       </div>
     </div>

@@ -1,10 +1,10 @@
 <div class="bb-struct">
   <div class="bb-struct__header">
     <div>
-      <h1 class="bb-struct__title"><i class="pi pi-building"></i> Structures de santé</h1>
-      <p class="bb-struct__sub">Gérez toutes les structures de la plateforme</p>
+      <h1 class="bb-struct__title"><i class="pi pi-building"></i> {{ 'ADMIN.STRUCTURES.TITLE' | translate }}</h1>
+      <p class="bb-struct__sub">{{ 'ADMIN.STRUCTURES.SUBTITLE' | translate }}</p>
     </div>
-    <button class="bb-struct__add-btn" (click)="showForm.set(true)"><i class="pi pi-plus"></i> Nouvelle structure</button>
+    <button class="bb-struct__add-btn" (click)="showForm.set(true)"><i class="pi pi-plus"></i> {{ 'ADMIN.STRUCTURES.NEW_BTN' | translate }}</button>
   </div>
 
   <!-- Modal MDP temporaire -->
@@ -12,27 +12,27 @@
     <div class="bb-logout-overlay" (click)="fermerMdp()">
       <div class="bb-mdp-modal" role="dialog" aria-modal="true" aria-labelledby="struct-mdp-title" (click)="$event.stopPropagation()">
         <div class="bb-mdp-modal__icon" aria-hidden="true">✅</div>
-        <h3 id="struct-mdp-title" class="bb-mdp-modal__title">Structure créée avec succès !</h3>
+        <h3 id="struct-mdp-title" class="bb-mdp-modal__title">{{ 'ADMIN.STRUCTURES.CREATED_TITLE' | translate }}</h3>
         <p class="bb-mdp-modal__structure">{{ mdpAffiche()!.structureNom }}</p>
         <div class="bb-mdp-modal__info">
           <div class="bb-mdp-modal__row">
-            <span class="bb-mdp-modal__label">Responsable</span>
+            <span class="bb-mdp-modal__label">{{ 'ADMIN.STRUCTURES.RESPONSABLE_LABEL' | translate }}</span>
             <span class="bb-mdp-modal__value">{{ mdpAffiche()!.adminNom }}</span>
           </div>
           <div class="bb-mdp-modal__row">
-            <span class="bb-mdp-modal__label">Téléphone</span>
+            <span class="bb-mdp-modal__label">{{ 'ADMIN.STRUCTURES.PHONE_LABEL' | translate }}</span>
             <span class="bb-mdp-modal__value">{{ mdpAffiche()!.adminTelephone }}</span>
           </div>
           <div class="bb-mdp-modal__row bb-mdp-modal__row--mdp">
-            <span class="bb-mdp-modal__label">Mot de passe temporaire</span>
+            <span class="bb-mdp-modal__label">{{ 'ADMIN.STRUCTURES.TEMP_PASSWORD_LABEL' | translate }}</span>
             <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
           </div>
         </div>
         <div class="bb-mdp-modal__warning">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-          Ce mot de passe ne sera plus affiché. Communiquez-le au responsable maintenant.
+          {{ 'ADMIN.STRUCTURES.PASSWORD_WARNING' | translate }}
         </div>
-        <button class="bb-mdp-modal__btn" (click)="fermerMdp()">J'ai noté le mot de passe</button>
+        <button class="bb-mdp-modal__btn" (click)="fermerMdp()">{{ 'ADMIN.STRUCTURES.NOTED_PASSWORD_BTN' | translate }}</button>
       </div>
     </div>
   }
@@ -44,15 +44,14 @@
         <div class="bb-logout-modal__icon" style="background:rgba(239,68,68,.12)">
           <i class="pi pi-ban" style="color:#EF4444" aria-hidden="true"></i>
         </div>
-        <h3 id="struct-deactivate-title" class="bb-logout-modal__title">Désactiver la structure ?</h3>
+        <h3 id="struct-deactivate-title" class="bb-logout-modal__title">{{ 'ADMIN.STRUCTURES.DEACTIVATE_CONFIRM_TITLE' | translate }}</h3>
         <p id="struct-deactivate-text" class="bb-logout-modal__text">
-          La structure <strong>{{ confirmDesactiver()!.nom }}</strong> sera désactivée.
-          Ses agents ne pourront plus se connecter.
+          <strong>{{ confirmDesactiver()!.nom }}</strong> {{ 'ADMIN.STRUCTURES.DEACTIVATE_TEXT_SUFFIX' | translate }}
         </p>
         <div class="bb-logout-modal__actions">
-          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="annulerDesactivation()">Annuler</button>
+          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="annulerDesactivation()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button class="bb-logout-modal__btn bb-logout-modal__btn--confirm" style="background:#EF4444" (click)="confirmerDesactivation()">
-            <i class="pi pi-ban" aria-hidden="true"></i> Désactiver
+            <i class="pi pi-ban" aria-hidden="true"></i> {{ 'ADMIN.STRUCTURES.DEACTIVATE_BTN' | translate }}
           </button>
         </div>
       </div>
@@ -61,51 +60,51 @@
 
   @if (showForm()) {
     <div class="bb-struct__form">
-      <h3>Nouvelle structure</h3>
+      <h3>{{ 'ADMIN.STRUCTURES.NEW_BTN' | translate }}</h3>
       <div class="bb-struct__form-grid">
         <div class="bb-struct__field">
-          <label for="struct-nom">Nom *</label>
-          <input id="struct-nom" pInputText [(ngModel)]="newStructure.nom" placeholder="Ex: Centre de Santé de Matam" #structNom="ngModel" required aria-describedby="struct-nom-msg" />
-          @if (structNom.invalid && (structNom.dirty || structNom.touched)) { <small id="struct-nom-msg" class="bb-error-text" role="alert">Obligatoire</small> }
+          <label for="struct-nom">{{ 'ADMIN.STRUCTURES.NOM_LABEL' | translate }}</label>
+          <input id="struct-nom" pInputText [(ngModel)]="newStructure.nom" [placeholder]="'ADMIN.STRUCTURES.NOM_PH' | translate" #structNom="ngModel" required aria-describedby="struct-nom-msg" />
+          @if (structNom.invalid && (structNom.dirty || structNom.touched)) { <small id="struct-nom-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
-          <label id="struct-type-label" for="struct-type">Type *</label>
+          <label id="struct-type-label" for="struct-type">{{ 'ADMIN.STRUCTURES.TYPE_LABEL' | translate }}</label>
           <p-select inputId="struct-type" [(ngModel)]="newStructure.type" [options]="typeOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="bb-struct__field">
-          <label id="struct-pref-label" for="struct-pref">Préfecture *</label>
-          <p-select inputId="struct-pref" [(ngModel)]="newStructure.prefecture" [options]="prefectures" optionLabel="label" optionValue="value" placeholder="Sélectionner" #structPref="ngModel" required />
-          @if (structPref.invalid && (structPref.dirty || structPref.touched)) { <small class="bb-error-text" role="alert">Obligatoire</small> }
+          <label id="struct-pref-label" for="struct-pref">{{ 'ADMIN.STRUCTURES.PREFECTURE_LABEL' | translate }}</label>
+          <p-select inputId="struct-pref" [(ngModel)]="newStructure.prefecture" [options]="prefectures" optionLabel="label" optionValue="value" [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate" #structPref="ngModel" required />
+          @if (structPref.invalid && (structPref.dirty || structPref.touched)) { <small class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
-        <div class="bb-struct__field"><label for="struct-adresse">Adresse</label><input id="struct-adresse" pInputText [(ngModel)]="newStructure.adresse" placeholder="Ex: Quartier Ratoma" /></div>
-        <div class="bb-struct__field"><label for="struct-tel">Téléphone</label><input id="struct-tel" pInputText [(ngModel)]="newStructure.telephone" placeholder="Ex: 620000000" /></div>
-        <div class="bb-struct__field"><label id="struct-lat-label" for="struct-lat">Latitude</label><p-inputnumber inputId="struct-lat" [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" placeholder="Ex: 9.5370" /></div>
-        <div class="bb-struct__field"><label id="struct-lng-label" for="struct-lng">Longitude</label><p-inputnumber inputId="struct-lng" [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" placeholder="Ex: -13.6773" /></div>
+        <div class="bb-struct__field"><label for="struct-adresse">{{ 'ADMIN.STRUCTURES.ADRESSE_LABEL' | translate }}</label><input id="struct-adresse" pInputText [(ngModel)]="newStructure.adresse" [placeholder]="'ADMIN.STRUCTURES.ADRESSE_PH' | translate" /></div>
+        <div class="bb-struct__field"><label for="struct-tel">{{ 'ADMIN.STRUCTURES.PHONE_LABEL' | translate }}</label><input id="struct-tel" pInputText [(ngModel)]="newStructure.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_PH' | translate" /></div>
+        <div class="bb-struct__field"><label id="struct-lat-label" for="struct-lat">{{ 'ADMIN.STRUCTURES.LAT_LABEL' | translate }}</label><p-inputnumber inputId="struct-lat" [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" [placeholder]="'ADMIN.STRUCTURES.LAT_PH' | translate" /></div>
+        <div class="bb-struct__field"><label id="struct-lng-label" for="struct-lng">{{ 'ADMIN.STRUCTURES.LNG_LABEL' | translate }}</label><p-inputnumber inputId="struct-lng" [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" [placeholder]="'ADMIN.STRUCTURES.LNG_PH' | translate" /></div>
       </div>
-      <h4 class="bb-struct__section-label">Responsable (Admin de structure)</h4>
-      <p class="bb-struct__section-note">Un mot de passe temporaire sera généré automatiquement</p>
+      <h4 class="bb-struct__section-label">{{ 'ADMIN.STRUCTURES.RESPONSABLE_SECTION_TITLE' | translate }}</h4>
+      <p class="bb-struct__section-note">{{ 'ADMIN.STRUCTURES.RESPONSABLE_SECTION_NOTE' | translate }}</p>
       <div class="bb-struct__form-grid">
         <div class="bb-struct__field">
-          <label for="struct-admin-prenom">Prénom *</label>
-          <input id="struct-admin-prenom" pInputText [(ngModel)]="newStructure.admin.prenom" placeholder="Ex: Ibrahima" #adminPrenom="ngModel" required aria-describedby="struct-admin-prenom-msg" />
-          @if (adminPrenom.invalid && (adminPrenom.dirty || adminPrenom.touched)) { <small id="struct-admin-prenom-msg" class="bb-error-text" role="alert">Obligatoire</small> }
+          <label for="struct-admin-prenom">{{ 'ADMIN.STRUCTURES.PRENOM_LABEL' | translate }}</label>
+          <input id="struct-admin-prenom" pInputText [(ngModel)]="newStructure.admin.prenom" [placeholder]="'ADMIN.STRUCTURES.PRENOM_PH' | translate" #adminPrenom="ngModel" required aria-describedby="struct-admin-prenom-msg" />
+          @if (adminPrenom.invalid && (adminPrenom.dirty || adminPrenom.touched)) { <small id="struct-admin-prenom-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
-          <label for="struct-admin-nom">Nom *</label>
-          <input id="struct-admin-nom" pInputText [(ngModel)]="newStructure.admin.nom" placeholder="Ex: Bah" #adminNom="ngModel" required aria-describedby="struct-admin-nom-msg" />
-          @if (adminNom.invalid && (adminNom.dirty || adminNom.touched)) { <small id="struct-admin-nom-msg" class="bb-error-text" role="alert">Obligatoire</small> }
+          <label for="struct-admin-nom">{{ 'ADMIN.STRUCTURES.NOM_LABEL' | translate }}</label>
+          <input id="struct-admin-nom" pInputText [(ngModel)]="newStructure.admin.nom" [placeholder]="'ADMIN.STRUCTURES.NOM_ADMIN_PH' | translate" #adminNom="ngModel" required aria-describedby="struct-admin-nom-msg" />
+          @if (adminNom.invalid && (adminNom.dirty || adminNom.touched)) { <small id="struct-admin-nom-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
-          <label for="struct-admin-tel">Téléphone *</label>
-          <input id="struct-admin-tel" pInputText [(ngModel)]="newStructure.admin.telephone" placeholder="Ex: 622000001" #adminPhone="ngModel" required aria-describedby="struct-admin-tel-msg" />
-          @if (adminPhone.invalid && (adminPhone.dirty || adminPhone.touched)) { <small id="struct-admin-tel-msg" class="bb-error-text" role="alert">Obligatoire</small> }
+          <label for="struct-admin-tel">{{ 'ADMIN.STRUCTURES.TEL_ADMIN_LABEL' | translate }}</label>
+          <input id="struct-admin-tel" pInputText [(ngModel)]="newStructure.admin.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_ADMIN_PH' | translate" #adminPhone="ngModel" required aria-describedby="struct-admin-tel-msg" />
+          @if (adminPhone.invalid && (adminPhone.dirty || adminPhone.touched)) { <small id="struct-admin-tel-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
-        <div class="bb-struct__field"><label for="struct-admin-email">Email (optionnel)</label><input id="struct-admin-email" pInputText [(ngModel)]="newStructure.admin.email" type="email" placeholder="Ex: admin@structure.gn" /></div>
+        <div class="bb-struct__field"><label for="struct-admin-email">{{ 'ADMIN.STRUCTURES.EMAIL_ADMIN_LABEL' | translate }}</label><input id="struct-admin-email" pInputText [(ngModel)]="newStructure.admin.email" type="email" [placeholder]="'ADMIN.STRUCTURES.EMAIL_ADMIN_PH' | translate" /></div>
       </div>
       <div class="bb-struct__form-actions">
-        <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">Annuler</button>
+        <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
         <button class="bb-struct__save-btn" (click)="creerStructure()" [disabled]="isSaving()">
-          <i class="pi pi-building"></i> {{ isSaving() ? 'Création...' : 'Créer la structure' }}
+          <i class="pi pi-building"></i> {{ (isSaving() ? 'ADMIN.STRUCTURES.CREATING' : 'ADMIN.STRUCTURES.CREATE_BTN') | translate }}
         </button>
       </div>
     </div>
@@ -123,13 +122,13 @@
               <div class="bb-struct__name-row">
                 <p class="bb-struct__name">{{ s.nom }}</p>
                 @if (!s.estActive) {
-                  <span class="bb-struct__badge-inactive"><i class="pi pi-ban"></i> Désactivée</span>
+                  <span class="bb-struct__badge-inactive"><i class="pi pi-ban"></i> {{ 'ADMIN.STRUCTURES.INACTIVE_BADGE' | translate }}</span>
                 } @else {
-                  <span class="bb-struct__badge-active"><i class="pi pi-check-circle"></i> Active</span>
+                  <span class="bb-struct__badge-active"><i class="pi pi-check-circle"></i> {{ 'ADMIN.STRUCTURES.ACTIVE_BADGE' | translate }}</span>
                 }
               </div>
               <p class="bb-struct__meta">{{ s.prefecture }} · {{ getTypeLabel(s.type) }}</p>
-              @if (s._count) { <p class="bb-struct__agents">{{ s._count.utilisateurs }} utilisateur(s)</p> }
+              @if (s._count) { <p class="bb-struct__agents">{{ 'ADMIN.STRUCTURES.USER_COUNT' | translate: { count: s._count.utilisateurs } }}</p> }
               @if (s.utilisateurs?.length) {
                 <p class="bb-struct__admin-info"><i class="pi pi-user"></i> {{ getAdmin(s) }}</p>
               }
@@ -141,20 +140,20 @@
                 class="bb-struct__deactivate-btn"
                 (click)="demanderDesactivation(s)"
                 [disabled]="isToggling() === s.id"
-                title="Désactiver"
+                [attr.title]="'ADMIN.STRUCTURES.DEACTIVATE_BTN' | translate"
               >
                 <i [class]="isToggling() === s.id ? 'pi pi-spinner pi-spin' : 'pi pi-ban'"></i>
-                Désactiver
+                {{ 'ADMIN.STRUCTURES.DEACTIVATE_BTN' | translate }}
               </button>
             } @else {
               <button
                 class="bb-struct__activate-btn"
                 (click)="reactiver(s)"
                 [disabled]="isToggling() === s.id"
-                title="Réactiver"
+                [attr.title]="'ADMIN.STRUCTURES.REACTIVATE_BTN' | translate"
               >
                 <i [class]="isToggling() === s.id ? 'pi pi-spinner pi-spin' : 'pi pi-check-circle'"></i>
-                Réactiver
+                {{ 'ADMIN.STRUCTURES.REACTIVATE_BTN' | translate }}
               </button>
             }
           </div>

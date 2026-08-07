@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface Stats {
   structure: { nom: string; type: string; prefecture: string };
@@ -13,7 +14,7 @@ interface Stats {
 @Component({
   selector: 'app-admin-structure-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, SkeletonModule],
+  imports: [CommonModule, RouterLink, SkeletonModule, TranslatePipe],
   template: `
 <div class="bb-as-dash">
   <div class="bb-as-dash__header">
@@ -28,18 +29,18 @@ interface Stats {
     <div class="bb-as-dash__stat">
       <i class="pi pi-users"></i>
       <div class="bb-as-dash__stat-val">{{ stats()?.totalAgents ?? 0 }}</div>
-      <div class="bb-as-dash__stat-lbl">Agents actifs</div>
-      <a routerLink="/admin-structure/agents" class="bb-as-dash__stat-link">Gérer →</a>
+      <div class="bb-as-dash__stat-lbl">{{ 'ADMIN_STRUCTURE.DASHBOARD.ACTIVE_AGENTS' | translate }}</div>
+      <a routerLink="/admin-structure/agents" class="bb-as-dash__stat-link">{{ 'ADMIN_STRUCTURE.DASHBOARD.MANAGE_LINK' | translate }}</a>
     </div>
     <div class="bb-as-dash__stat">
       <i class="pi pi-heart-fill"></i>
       <div class="bb-as-dash__stat-val">{{ stats()?.totalConsultations ?? 0 }}</div>
-      <div class="bb-as-dash__stat-lbl">Consultations</div>
+      <div class="bb-as-dash__stat-lbl">{{ 'ADMIN_STRUCTURE.DASHBOARD.CONSULTATIONS' | translate }}</div>
     </div>
     <div class="bb-as-dash__stat">
       <i class="pi pi-user"></i>
       <div class="bb-as-dash__stat-val">{{ stats()?.totalPatients ?? 0 }}</div>
-      <div class="bb-as-dash__stat-lbl">Patients rattachés</div>
+      <div class="bb-as-dash__stat-lbl">{{ 'ADMIN_STRUCTURE.DASHBOARD.PATIENTS_LINKED' | translate }}</div>
     </div>
   </div>
 </div>`,

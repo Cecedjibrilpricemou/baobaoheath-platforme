@@ -8,6 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { CardModule } from 'primeng/card';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
 
 interface Medicament {
   id: string; dci: string; nomCommercial?: string;
@@ -38,13 +40,14 @@ interface ScanResult {
 @Component({
   selector: 'app-scanner',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TagModule, CardModule],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TagModule, CardModule, TranslatePipe],
   templateUrl: './scanner.component.html',
   styleUrl: './scanner.component.scss'
 })
 export class ScannerComponent {
   private pharmacienService = inject(PharmacienService);
   private router = inject(Router);
+  private i18n = inject(I18nService);
 
   qrCode       = '';
   isScanning   = signal(false);
@@ -53,7 +56,7 @@ export class ScannerComponent {
 
   scan() {
     if (!this.qrCode.trim()) {
-      this.errorMessage.set('Veuillez saisir un QR Code.');
+      this.errorMessage.set(this.i18n.t('PHARMACIEN.ORDONNANCES.ERR_QR_REQUIRED'));
       return;
     }
     this.isScanning.set(true);
@@ -71,7 +74,7 @@ export class ScannerComponent {
       },
       error: (err) => {
         this.isScanning.set(false);
-        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? 'Patient non trouvé — QR Code invalide');
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('PHARMACIEN.ORDONNANCES.ERR_PATIENT_NOT_FOUND'));
       }
     });
   }

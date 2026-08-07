@@ -211,7 +211,7 @@
           <div class="profil-card__header-icon profil-card__header-icon--blue">
             <i class="pi pi-building"></i>
           </div>
-          <h3 class="profil-card__title">Ma structure de santé préférée</h3>
+          <h3 class="profil-card__title">{{ 'PATIENT.PROFILE.STRUCTURE_TITLE' | translate }}</h3>
         </div>
 
         <!-- Structure actuelle -->
@@ -227,24 +227,24 @@
         } @else {
         <div class="structure-aucune">
           <i class="pi pi-info-circle"></i>
-          <span>Aucune structure préférée — vous êtes accessible par tous les soignants via votre QR Code.</span>
+          <span>{{ 'PATIENT.PROFILE.STRUCTURE_NONE' | translate }}</span>
         </div>
         }
 
         <!-- Sélection -->
         <div class="structure-select">
-          <label class="form-field__label" id="profil-structure-label" for="profil-structure">Choisir ou changer ma structure</label>
+          <label class="form-field__label" id="profil-structure-label" for="profil-structure">{{ 'PATIENT.PROFILE.STRUCTURE_SELECT_LABEL' | translate }}</label>
           <div class="structure-select__row">
             <p-select inputId="profil-structure" [(ngModel)]="idStructureSelectionnee" [options]="structureOptions" optionLabel="label"
-              optionValue="value" placeholder="— Aucune structure (accès libre) —" styleClass="w-full" />
+              optionValue="value" [placeholder]="'PATIENT.PROFILE.STRUCTURE_SELECT_PLACEHOLDER' | translate" styleClass="w-full" />
             <button class="structure-select__btn" (click)="saveStructurePreferee()" [disabled]="isSavingStructure()">
               <i [class]="isSavingStructure() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
-              {{ isSavingStructure() ? 'Enregistrement...' : 'Enregistrer' }}
+              {{ (isSavingStructure() ? 'PATIENT.PROFILE.STRUCTURE_SAVING' : 'PATIENT.PROFILE.STRUCTURE_SAVE') | translate }}
             </button>
           </div>
           <small class="structure-select__hint">
             <i class="pi pi-info-circle" aria-hidden="true"></i>
-            En zone rurale sans structure, vous serez rattaché automatiquement selon votre zone géographique.
+            {{ 'PATIENT.PROFILE.STRUCTURE_HINT' | translate }}
           </small>
         </div>
       </div>
@@ -257,7 +257,7 @@
         <div class="quick-action__icon quick-action__icon--green"><i class="pi pi-qrcode"></i></div>
         <div class="quick-action__body">
           <span class="quick-action__label">{{ 'PATIENT.PROFILE.QUICK_QR' | translate }}</span>
-          <span class="quick-action__sub">Partager mon dossier en un scan</span>
+          <span class="quick-action__sub">{{ 'PATIENT.PROFILE.QUICK_QR_SUB' | translate }}</span>
         </div>
         <i class="pi pi-arrow-right quick-action__arrow"></i>
       </a>
@@ -265,7 +265,7 @@
         <div class="quick-action__icon quick-action__icon--blue"><i class="pi pi-home"></i></div>
         <div class="quick-action__body">
           <span class="quick-action__label">{{ 'PATIENT.PROFILE.QUICK_DASHBOARD' | translate }}</span>
-          <span class="quick-action__sub">Aperçu de ma santé</span>
+          <span class="quick-action__sub">{{ 'PATIENT.PROFILE.QUICK_DASHBOARD_SUB' | translate }}</span>
         </div>
         <i class="pi pi-arrow-right quick-action__arrow"></i>
       </a>

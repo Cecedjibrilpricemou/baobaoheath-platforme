@@ -64,7 +64,7 @@
             <div class="qr-corner qr-corner--br"></div>
 
             @if (qrCodeUrl()) {
-              <img [src]="qrCodeUrl()" alt="QR Code d'identification patient à présenter en pharmacie ou structure de santé" class="qr-code-img" />
+              <img [src]="qrCodeUrl()" [attr.alt]="'PATIENT.QR.IMG_ALT' | translate" class="qr-code-img" />
               <div class="qr-code-logo">🌳</div>
             } @else {
               <div class="qr-placeholder">
