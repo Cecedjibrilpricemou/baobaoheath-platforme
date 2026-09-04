@@ -192,7 +192,7 @@
       <h2 class="bb-analytics__section-title">{{ 'ADMIN.ANALYTICS.GEO_DISTRIB_TITLE' | translate }}</h2>
 
       @if (isLoadingHeatmap()) {
-        <p-skeleton height="400px" borderRadius="12px" />
+        <div class="bb-skeleton" style="height:400px;border-radius:12px"></div>
       } @else if (heatmap().length === 0) {
         <div class="bb-analytics__empty-large">
           <i class="pi pi-map"></i>
@@ -232,7 +232,7 @@
 
       @if (isLoadingAlertes()) {
         @for (i of [1,2,3]; track i) {
-          <p-skeleton height="70px" borderRadius="8px" styleClass="mb-2" />
+          <div class="bb-skeleton" style="height:70px;border-radius:8px"></div>
         }
       } @else if (alertes().length === 0) {
         <div class="bb-analytics__empty-large">
@@ -250,7 +250,7 @@
                 <p class="bb-analytics__alerte-meta">{{ a.prefecture }} · {{ a.count }} {{ 'ADMIN.ANALYTICS.CASES_UNIT' | translate }}</p>
               </div>
             </div>
-            <p-tag [value]="'+' + a.evolution + '%'" [severity]="getAlerteSeverity(a.evolution)" />
+            <span [class]="'bb-badge bb-badge--' + (getAlerteSeverity(a.evolution) | severiteVariante)">{{ '+' + a.evolution + '%' }}</span>
           </div>
         }
       }
@@ -265,7 +265,7 @@
       <h2 class="bb-analytics__section-title">{{ 'ADMIN.ANALYTICS.TIME_TRENDS_TITLE' | translate }}</h2>
 
       @if (isLoadingTend()) {
-        <p-skeleton height="300px" borderRadius="12px" />
+        <div class="bb-skeleton" style="height:300px;border-radius:12px"></div>
       } @else if (tendances().length === 0) {
         <div class="bb-analytics__empty-large">
           <i class="pi pi-chart-line"></i>
@@ -308,7 +308,7 @@
 
       @if (isLoadingCouv()) {
         @for (i of [1,2,3,4]; track i) {
-          <p-skeleton height="60px" borderRadius="8px" styleClass="mb-2" />
+          <div class="bb-skeleton" style="height:60px;border-radius:8px"></div>
         }
       } @else if (couverture().length === 0) {
         <div class="bb-analytics__empty-large">

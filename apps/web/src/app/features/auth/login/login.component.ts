@@ -1,11 +1,10 @@
 // features/auth/login/login.component.ts
 import { Component, inject, signal, ViewChildren, ElementRef, QueryList, OnDestroy } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginPayload } from '../../../core/models/user.model';
 
@@ -25,9 +24,9 @@ import { ToastrService } from 'ngx-toastr';
   selector: 'app-login',
   standalone: true,
   imports: [
+    MatButtonModule,
+    MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink,
-    ButtonModule, InputTextModule,
-    InputGroupModule, InputGroupAddonModule,
     TranslatePipe
   ],
   templateUrl: './login.component.html',

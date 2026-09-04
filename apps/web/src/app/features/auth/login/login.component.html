@@ -64,12 +64,10 @@
               <label class="form-label" for="identifiant">
                 {{ 'AUTH.LOGIN.IDENTIFIANT' | translate }}
               </label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon">
-                  <i [class]="identifiantIcon"></i>
-                </span>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix [class]="identifiantIcon"></i>
                 <input
-                  pInputText
+                  matInput
                   id="identifiant"
                   type="text"
                   placeholder="{{ 'AUTH.LOGIN.IDENTIFIANT_PLACEHOLDER' | translate }}"
@@ -77,12 +75,11 @@
                   name="identifiant"
                   required
                   autocomplete="username"
-                  class="w-full"
                   #identifiantInput="ngModel"
                   [attr.aria-invalid]="identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched) ? true : null"
                   aria-describedby="identifiant-msg"
                 />
-              </div>
+              </mat-form-field>
               @if (identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched)) {
                 <small id="identifiant-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.IDENTIFIANT_REQUIRED' | translate }}</small>
               }
@@ -96,12 +93,10 @@
               <label class="form-label" for="motDePasse">
                 {{ 'AUTH.LOGIN.PASSWORD' | translate }}
               </label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon">
-                  <i class="pi pi-lock"></i>
-                </span>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-lock"></i>
                 <input
-                  pInputText
+                  matInput
                   id="motDePasse"
                   [type]="showPassword() ? 'text' : 'password'"
                   [placeholder]="'AUTH.LOGIN.PASSWORD' | translate"
@@ -109,14 +104,11 @@
                   name="motDePasse"
                   required
                   autocomplete="current-password"
-                  class="w-full"
                   #mdpInput="ngModel"
                   [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
                   aria-describedby="motDePasse-msg"
                 />
-                <button
-                  type="button"
-                  class="p-inputgroup-addon toggle-btn"
+                <button matSuffix type="button" class="toggle-btn"
                   (click)="togglePassword()"
                   [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
                   [attr.aria-pressed]="showPassword()"
@@ -125,7 +117,7 @@
                     {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
                   </span>
                 </button>
-              </div>
+              </mat-form-field>
               @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
                 <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.PASSWORD_REQUIRED' | translate }}</small>
               }
@@ -139,14 +131,15 @@
             </div>
 
             <!-- Bouton connexion -->
-            <p-button
+            <button
+              matButton="filled"
               type="submit"
-              [label]="isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate)"
-              [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'"
-              [loading]="isLoading()"
+              class="bb-field-full login-submit-btn"
               [disabled]="isLoading()"
-              styleClass="w-full login-submit-btn"
-            ></p-button>
+            >
+              <i [class]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'" aria-hidden="true"></i>
+              {{ isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate) }}
+            </button>
 
             <div class="form-separator">
               <span class="form-separator__line"></span>
@@ -206,14 +199,15 @@
             </div>
 
             <!-- Bouton vérifier -->
-            <p-button
+            <button
+              matButton="filled"
               type="submit"
-              [label]="'AUTH.LOGIN.OTP_SUBMIT' | translate"
-              icon="pi pi-check"
-              [loading]="isLoading()"
+              class="bb-field-full login-submit-btn"
               [disabled]="isLoading() || otpCode.length !== 6 || otpExpired"
-              styleClass="w-full login-submit-btn"
-            ></p-button>
+            >
+              <i class="pi pi-check" aria-hidden="true"></i>
+              {{ 'AUTH.LOGIN.OTP_SUBMIT' | translate }}
+            </button>
 
             <!-- Actions secondaires -->
             <div class="otp-actions">

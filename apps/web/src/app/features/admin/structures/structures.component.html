@@ -70,44 +70,93 @@
       <div class="bb-struct__form-grid">
         <div class="bb-struct__field">
           <label for="struct-nom">{{ 'ADMIN.STRUCTURES.NOM_LABEL' | translate }}</label>
-          <input id="struct-nom" pInputText [(ngModel)]="newStructure.nom" [placeholder]="'ADMIN.STRUCTURES.NOM_PH' | translate" #structNom="ngModel" required aria-describedby="struct-nom-msg" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="struct-nom" [(ngModel)]="newStructure.nom" [placeholder]="'ADMIN.STRUCTURES.NOM_PH' | translate" #structNom="ngModel" required aria-describedby="struct-nom-msg" />
+          </mat-form-field>
           @if (structNom.invalid && (structNom.dirty || structNom.touched)) { <small id="struct-nom-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
           <label id="struct-type-label" for="struct-type">{{ 'ADMIN.STRUCTURES.TYPE_LABEL' | translate }}</label>
-          <p-select inputId="struct-type" [(ngModel)]="newStructure.type" [options]="typeOptions" optionLabel="label" optionValue="value" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="struct-type"
+    [(ngModel)]="newStructure.type"
+  >
+    @for (opt of typeOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
         </div>
         <div class="bb-struct__field">
           <label id="struct-pref-label" for="struct-pref">{{ 'ADMIN.STRUCTURES.PREFECTURE_LABEL' | translate }}</label>
-          <p-select inputId="struct-pref" [(ngModel)]="newStructure.prefecture" [options]="prefectures" optionLabel="label" optionValue="value" [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate" #structPref="ngModel" required />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="struct-pref"
+    [(ngModel)]="newStructure.prefecture"
+    [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate"
+    #structPref="ngModel"
+    required
+  >
+    @for (opt of prefectures; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
           @if (structPref.invalid && (structPref.dirty || structPref.touched)) { <small class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
-        <div class="bb-struct__field"><label for="struct-adresse">{{ 'ADMIN.STRUCTURES.ADRESSE_LABEL' | translate }}</label><input id="struct-adresse" pInputText [(ngModel)]="newStructure.adresse" [placeholder]="'ADMIN.STRUCTURES.ADRESSE_PH' | translate" /></div>
-        <div class="bb-struct__field"><label for="struct-tel">{{ 'ADMIN.STRUCTURES.PHONE_LABEL' | translate }}</label><input id="struct-tel" pInputText [(ngModel)]="newStructure.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_PH' | translate" /></div>
-        <div class="bb-struct__field"><label id="struct-lat-label" for="struct-lat">{{ 'ADMIN.STRUCTURES.LAT_LABEL' | translate }}</label><p-inputnumber inputId="struct-lat" [(ngModel)]="newStructure.latitude" [minFractionDigits]="4" [placeholder]="'ADMIN.STRUCTURES.LAT_PH' | translate" /></div>
-        <div class="bb-struct__field"><label id="struct-lng-label" for="struct-lng">{{ 'ADMIN.STRUCTURES.LNG_LABEL' | translate }}</label><p-inputnumber inputId="struct-lng" [(ngModel)]="newStructure.longitude" [minFractionDigits]="4" [placeholder]="'ADMIN.STRUCTURES.LNG_PH' | translate" /></div>
+        <div class="bb-struct__field"><label for="struct-adresse">{{ 'ADMIN.STRUCTURES.ADRESSE_LABEL' | translate }}</label><mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput id="struct-adresse" [(ngModel)]="newStructure.adresse" [placeholder]="'ADMIN.STRUCTURES.ADRESSE_PH' | translate" />
+</mat-form-field></div>
+        <div class="bb-struct__field"><label for="struct-tel">{{ 'ADMIN.STRUCTURES.PHONE_LABEL' | translate }}</label><mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput id="struct-tel" [(ngModel)]="newStructure.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_PH' | translate" />
+</mat-form-field></div>
+        <div class="bb-struct__field"><label id="struct-lat-label" for="struct-lat">{{ 'ADMIN.STRUCTURES.LAT_LABEL' | translate }}</label><mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput type="number"
+    id="struct-lat"
+    step="0.0001"
+    [(ngModel)]="newStructure.latitude"
+    [placeholder]="'ADMIN.STRUCTURES.LAT_PH' | translate"
+  />
+</mat-form-field></div>
+        <div class="bb-struct__field"><label id="struct-lng-label" for="struct-lng">{{ 'ADMIN.STRUCTURES.LNG_LABEL' | translate }}</label><mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput type="number"
+    id="struct-lng"
+    step="0.0001"
+    [(ngModel)]="newStructure.longitude"
+    [placeholder]="'ADMIN.STRUCTURES.LNG_PH' | translate"
+  />
+</mat-form-field></div>
       </div>
       <h4 class="bb-struct__section-label">{{ 'ADMIN.STRUCTURES.RESPONSABLE_SECTION_TITLE' | translate }}</h4>
       <p class="bb-struct__section-note">{{ 'ADMIN.STRUCTURES.RESPONSABLE_SECTION_NOTE' | translate }}</p>
       <div class="bb-struct__form-grid">
         <div class="bb-struct__field">
           <label for="struct-admin-prenom">{{ 'ADMIN.STRUCTURES.PRENOM_LABEL' | translate }}</label>
-          <input id="struct-admin-prenom" pInputText [(ngModel)]="newStructure.admin.prenom" [placeholder]="'ADMIN.STRUCTURES.PRENOM_PH' | translate" #adminPrenom="ngModel" required aria-describedby="struct-admin-prenom-msg" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="struct-admin-prenom" [(ngModel)]="newStructure.admin.prenom" [placeholder]="'ADMIN.STRUCTURES.PRENOM_PH' | translate" #adminPrenom="ngModel" required aria-describedby="struct-admin-prenom-msg" />
+          </mat-form-field>
           @if (adminPrenom.invalid && (adminPrenom.dirty || adminPrenom.touched)) { <small id="struct-admin-prenom-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
           <label for="struct-admin-nom">{{ 'ADMIN.STRUCTURES.NOM_LABEL' | translate }}</label>
-          <input id="struct-admin-nom" pInputText [(ngModel)]="newStructure.admin.nom" [placeholder]="'ADMIN.STRUCTURES.NOM_ADMIN_PH' | translate" #adminNom="ngModel" required aria-describedby="struct-admin-nom-msg" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="struct-admin-nom" [(ngModel)]="newStructure.admin.nom" [placeholder]="'ADMIN.STRUCTURES.NOM_ADMIN_PH' | translate" #adminNom="ngModel" required aria-describedby="struct-admin-nom-msg" />
+          </mat-form-field>
           @if (adminNom.invalid && (adminNom.dirty || adminNom.touched)) { <small id="struct-admin-nom-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
           <label for="struct-admin-tel">{{ 'ADMIN.STRUCTURES.TEL_ADMIN_LABEL' | translate }}</label>
-          <input id="struct-admin-tel" pInputText [(ngModel)]="newStructure.admin.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_ADMIN_PH' | translate" #adminPhone="ngModel" required aria-describedby="struct-admin-tel-msg" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="struct-admin-tel" [(ngModel)]="newStructure.admin.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_ADMIN_PH' | translate" #adminPhone="ngModel" required aria-describedby="struct-admin-tel-msg" />
+          </mat-form-field>
           @if (adminPhone.invalid && (adminPhone.dirty || adminPhone.touched)) { <small id="struct-admin-tel-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
         <div class="bb-struct__field">
           <label for="struct-admin-email">{{ 'ADMIN.STRUCTURES.EMAIL_ADMIN_LABEL' | translate }}</label>
-          <input id="struct-admin-email" pInputText [(ngModel)]="newStructure.admin.email" type="email" [placeholder]="'ADMIN.STRUCTURES.EMAIL_ADMIN_PH' | translate" #adminEmail="ngModel" required aria-describedby="struct-admin-email-msg" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="struct-admin-email" [(ngModel)]="newStructure.admin.email" type="email" [placeholder]="'ADMIN.STRUCTURES.EMAIL_ADMIN_PH' | translate" #adminEmail="ngModel" required aria-describedby="struct-admin-email-msg" />
+          </mat-form-field>
           @if (adminEmail.invalid && (adminEmail.dirty || adminEmail.touched)) { <small id="struct-admin-email-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
       </div>
@@ -121,7 +170,7 @@
   }
 
   @if (isLoading()) {
-    @for (i of [1,2,3,4]; track i) { <p-skeleton height="90px" borderRadius="8px" styleClass="mb-2" /> }
+    @for (i of [1,2,3,4]; track i) { <div class="bb-skeleton" style="height:90px;border-radius:8px"></div> }
   } @else {
     <div class="bb-struct__list">
       @for (s of structures(); track s.id) {

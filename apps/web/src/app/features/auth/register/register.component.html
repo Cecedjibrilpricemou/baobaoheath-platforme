@@ -64,26 +64,26 @@
           <div class="form-row">
             <div class="form-field-wrap">
               <label class="form-label" for="nom">{{ 'AUTH.REGISTER.LAST_NAME' | translate }}</label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
-                <input pInputText id="nom" type="text" [placeholder]="'AUTH.REGISTER.LAST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.nom" name="nom"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-user"></i>
+                <input matInput id="nom" type="text" [placeholder]="'AUTH.REGISTER.LAST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.nom" name="nom"
                   required autocomplete="family-name" #nomInput="ngModel"
                   [attr.aria-invalid]="nomInput.invalid && (nomInput.dirty || nomInput.touched) ? true : null"
                   aria-describedby="nom-msg" />
-              </div>
+              </mat-form-field>
               @if (nomInput.invalid && (nomInput.dirty || nomInput.touched)) {
                 <small id="nom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.LAST_NAME_REQUIRED' | translate }}</small>
               }
             </div>
             <div class="form-field-wrap">
               <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
-                <input pInputText id="prenom" type="text" [placeholder]="'AUTH.REGISTER.FIRST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.prenom"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-user"></i>
+                <input matInput id="prenom" type="text" [placeholder]="'AUTH.REGISTER.FIRST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.prenom"
                   name="prenom" required autocomplete="given-name" #prenomInput="ngModel"
                   [attr.aria-invalid]="prenomInput.invalid && (prenomInput.dirty || prenomInput.touched) ? true : null"
                   aria-describedby="prenom-msg" />
-              </div>
+              </mat-form-field>
               @if (prenomInput.invalid && (prenomInput.dirty || prenomInput.touched)) {
                 <small id="prenom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.FIRST_NAME_REQUIRED' | translate }}</small>
               }
@@ -97,13 +97,13 @@
                 {{ 'AUTH.REGISTER.PHONE' | translate }}
                 <span class="form-required">*</span>
               </label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-phone"></i></span>
-                <input pInputText id="telephone" type="tel" [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" [(ngModel)]="formData.telephone"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-phone"></i>
+                <input matInput id="telephone" type="tel" [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" [(ngModel)]="formData.telephone"
                   name="telephone" required autocomplete="tel" #telInput="ngModel"
                   [attr.aria-invalid]="telInput.invalid && (telInput.dirty || telInput.touched) ? true : null"
                   aria-describedby="telephone-msg" />
-              </div>
+              </mat-form-field>
               @if (telInput.invalid && (telInput.dirty || telInput.touched)) {
                 <small id="telephone-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PHONE_REQUIRED' | translate }}</small>
               }
@@ -115,13 +115,13 @@
                 {{ 'AUTH.REGISTER.EMAIL' | translate }}
                 <span class="form-optional">{{ 'AUTH.REGISTER.EMAIL_OPTIONAL' | translate }}</span>
               </label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-envelope"></i></span>
-                <input pInputText id="email" type="email" [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" [(ngModel)]="formData.email"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-envelope"></i>
+                <input matInput id="email" type="email" [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" [(ngModel)]="formData.email"
                   name="email" autocomplete="email" email #emailInput="ngModel"
                   [attr.aria-invalid]="emailInput.invalid && (emailInput.dirty || emailInput.touched) ? true : null"
                   aria-describedby="email-msg" />
-              </div>
+              </mat-form-field>
               @if (emailInput.invalid && (emailInput.dirty || emailInput.touched)) {
                 <small id="email-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.EMAIL_INVALID' | translate }}</small>
               }
@@ -132,19 +132,19 @@
             <!-- Mot de passe -->
             <div class="form-field-wrap">
               <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
-                <input pInputText id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-lock"></i>
+                <input matInput id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
                   [placeholder]="'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate" [(ngModel)]="formData.motDePasse" name="motDePasse" required
                   minlength="6" autocomplete="new-password" #mdpInput="ngModel"
                   [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
                   aria-describedby="motDePasse-msg" />
-                <button type="button" class="p-inputgroup-addon toggle-btn" (click)="togglePassword()"
+                <button matSuffix type="button" class="toggle-btn" (click)="togglePassword()"
                   [attr.aria-label]="(showPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
                   [attr.aria-pressed]="showPassword()">
                   <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
                 </button>
-              </div>
+              </mat-form-field>
               @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
                 <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate }}</small>
               }
@@ -153,19 +153,19 @@
             <!-- Confirmation mot de passe -->
             <div class="form-field-wrap">
               <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
-              <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-lock"></i></span>
-                <input pInputText id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <i matPrefix class="pi pi-lock"></i>
+                <input matInput id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
                   [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
                   autocomplete="new-password" #confirmMdpInput="ngModel"
                   [attr.aria-invalid]="(confirmMdpInput.invalid || formData.motDePasse !== confirmMotDePasse) && (confirmMdpInput.dirty || confirmMdpInput.touched) ? true : null"
                   aria-describedby="confirmMotDePasse-msg" />
-                <button type="button" class="p-inputgroup-addon toggle-btn" (click)="toggleConfirmPassword()"
+                <button matSuffix type="button" class="toggle-btn" (click)="toggleConfirmPassword()"
                   [attr.aria-label]="(showConfirmPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
                   [attr.aria-pressed]="showConfirmPassword()">
                   <i [class]="showConfirmPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
                 </button>
-              </div>
+              </mat-form-field>
               @if (confirmMdpInput.dirty || confirmMdpInput.touched) {
                 @if (confirmMdpInput.invalid) {
                   <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_REQUIRED' | translate }}</small>
@@ -177,10 +177,15 @@
           </div>
 
           <!-- Bouton submit -->
-          <p-button type="submit"
-            [label]="isLoading() ? ('AUTH.REGISTER.LOADING' | translate) : ('AUTH.REGISTER.SUBMIT' | translate)"
-            [icon]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'" [loading]="isLoading()"
-            [disabled]="isLoading()" styleClass="w-full register-submit-btn"></p-button>
+          <button
+            matButton="filled"
+            type="submit"
+            class="bb-field-full register-submit-btn"
+            [disabled]="isLoading()"
+          >
+            <i [class]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'" aria-hidden="true"></i>
+            {{ isLoading() ? ('AUTH.REGISTER.LOADING' | translate) : ('AUTH.REGISTER.SUBMIT' | translate) }}
+          </button>
 
           <div class="form-separator">
             <span class="form-separator__line"></span>

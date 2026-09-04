@@ -1,9 +1,9 @@
 // features/admin/export/export.component.ts
 import { Component, inject, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -11,7 +11,8 @@ import { I18nService } from '../../../shared/services/i18n.service';
 @Component({
   selector: 'app-export',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, TranslatePipe],
+  imports: [
+    MatFormFieldModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './export.component.html',
   styleUrl: './export.component.scss'
 })

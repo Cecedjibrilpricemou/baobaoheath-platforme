@@ -3,13 +3,12 @@
 // Les autres rôles (ASC, Médecin, Pharmacien) sont créés par l'ADMIN_STRUCTURE
 
 import { Component, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegisterPayload } from '../../../core/models/user.model';
 import { ThemeService } from '../../../shared/services/theme.service';
@@ -21,9 +20,9 @@ import { ToastrService } from 'ngx-toastr';
   selector: 'app-register',
   standalone: true,
   imports: [
+    MatButtonModule,
+    MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink, CommonModule,
-    ButtonModule, InputTextModule,
-    InputGroupModule, InputGroupAddonModule,
     TranslatePipe
   ],
   templateUrl: './register.component.html',

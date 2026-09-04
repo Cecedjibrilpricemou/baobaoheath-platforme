@@ -1,11 +1,10 @@
 // features/auth/forgot-password/forgot-password.component.ts
 import { Component, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputGroupModule } from 'primeng/inputgroup';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../shared/services/theme.service';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -16,9 +15,9 @@ import { ToastrService } from 'ngx-toastr';
   selector: 'app-forgot-password',
   standalone: true,
   imports: [
+    MatButtonModule,
+    MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink,
-    ButtonModule, InputTextModule,
-    InputGroupModule, InputGroupAddonModule,
     TranslatePipe
   ],
   templateUrl: './forgot-password.component.html',

@@ -5,7 +5,6 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
 import { ThemeService } from '../../shared/services/theme.service';
 import { I18nService } from '../../shared/services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
@@ -27,7 +26,7 @@ interface PublicStats {
   selector: 'app-landing',
   standalone: true,
   imports: [
-    RouterLink, CommonModule, ButtonModule, TranslatePipe,
+    RouterLink, CommonModule, TranslatePipe,
     FeaturesComponent, RolesComponent, HowItWorksComponent, ContactComponent
   ],
   templateUrl: './landing.component.html',

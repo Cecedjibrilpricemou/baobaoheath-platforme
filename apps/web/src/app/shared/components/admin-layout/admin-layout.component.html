@@ -130,11 +130,13 @@
       <router-outlet></router-outlet>
     </main>
   </mat-sidenav-content>
+</mat-sidenav-container>
 
-  @if (showProfil()) {
-    <app-profil-modal
+<!-- Hors du mat-sidenav-container : ce dernier ne projette que
+     mat-sidenav et mat-sidenav-content, tout autre enfant est ignore. -->
+@if (showProfil()) {
+  <app-profil-modal
       [forcerChangement]="doitChangerMotDePasse()"
       (fermer)="showProfil.set(false)"
     />
-  }
-</mat-sidenav-container>
+}

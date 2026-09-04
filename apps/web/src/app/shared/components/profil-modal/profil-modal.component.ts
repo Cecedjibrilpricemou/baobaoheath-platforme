@@ -1,9 +1,9 @@
 // shared/components/profil-modal/profil-modal.component.ts
 import { Component, inject, signal, OnInit, input, output } from '@angular/core';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { I18nService } from '../../services/i18n.service';
@@ -17,7 +17,9 @@ const TYPES_PHOTO_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp'];
 @Component({
   selector: 'app-profil-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TranslatePipe, AvatarComponent],
+  imports: [
+    MatInputModule,
+    MatFormFieldModule,CommonModule, FormsModule, TranslatePipe, AvatarComponent],
   templateUrl: './profil-modal.component.html',
   styleUrl: './profil-modal.component.scss'
 })

@@ -5,8 +5,18 @@
       <p>{{ 'ADMIN.SETTINGS.SUBTITLE' | translate }}</p>
     </div>
     <div class="header-actions">
-      <p-button [label]="'COMMON.CANCEL' | translate" styleClass="p-button-outlined p-button-secondary"></p-button>
-      <p-button [label]="'ADMIN.SETTINGS.SAVE' | translate" icon="pi pi-check" (onClick)="sauvegarder()"></p-button>
+      <button
+  matButton="outlined"
+>
+  {{ 'COMMON.CANCEL' | translate }}
+</button>
+      <button
+  matButton="filled"
+  (click)="sauvegarder()"
+>
+  <i class="pi pi-check" aria-hidden="true"></i>
+  {{ 'ADMIN.SETTINGS.SAVE' | translate }}
+</button>
     </div>
   </div>
 
@@ -43,17 +53,30 @@
           <div class="form-grid">
             <div class="field">
               <label for="structure-nom">{{ 'ADMIN.SETTINGS.STRUCTURE_NAME_LABEL' | translate }}</label>
-              <input id="structure-nom" type="text" pInputText [(ngModel)]="structure.nom" class="w-full">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="structure-nom" type="text" [(ngModel)]="structure.nom" />
+              </mat-form-field>
             </div>
             <div class="field">
               <label id="structure-type-label" for="structure-type">{{ 'ADMIN.SETTINGS.STRUCTURE_TYPE_LABEL' | translate }}</label>
-              <p-select inputId="structure-type" [options]="typeOptions" [(ngModel)]="structure.type" styleClass="w-full"></p-select>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="structure-type"
+    [(ngModel)]="structure.type"
+  >
+    @for (opt of typeOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
             </div>
           </div>
 
           <div class="field">
             <label for="structure-adresse">{{ 'ADMIN.SETTINGS.STRUCTURE_ADDRESS_LABEL' | translate }}</label>
-            <input id="structure-adresse" type="text" pInputText [(ngModel)]="structure.adresse" class="w-full">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="structure-adresse" type="text" [(ngModel)]="structure.adresse" />
+            </mat-form-field>
           </div>
 
           <div class="divider"></div>
@@ -66,7 +89,9 @@
               <span class="setting-title" id="setting-especes-label">{{ 'ADMIN.SETTINGS.PAY_CASH_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_CASH_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="structure.paiementEspeces" [ariaLabelledBy]="'setting-especes-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="structure.paiementEspeces"
+></mat-slide-toggle>
           </div>
 
           <div class="setting-row">
@@ -74,7 +99,9 @@
               <span class="setting-title" id="setting-om-label">{{ 'ADMIN.SETTINGS.PAY_OM_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_OM_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="structure.paiementOrangeMoney" [ariaLabelledBy]="'setting-om-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="structure.paiementOrangeMoney"
+></mat-slide-toggle>
           </div>
 
           <div class="setting-row">
@@ -82,12 +109,19 @@
               <span class="setting-title" id="setting-momo-label">{{ 'ADMIN.SETTINGS.PAY_MOMO_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_MOMO_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="structure.paiementMomo" [ariaLabelledBy]="'setting-momo-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="structure.paiementMomo"
+></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
             <label id="structure-marge-label">{{ 'ADMIN.SETTINGS.MARGE_LABEL' | translate: { value: structure.marge } }}</label>
-            <p-slider [(ngModel)]="structure.marge" [min]="0" [max]="50" styleClass="w-full mt-2" [ariaLabelledBy]="'structure-marge-label'"></p-slider>
+            <mat-slider class="bb-field-full"
+  [min]="0"
+  [max]="50"
+  discrete>
+  <input matSliderThumb [(ngModel)]="structure.marge" />
+</mat-slider>
           </div>
         </div>
       }
@@ -103,12 +137,23 @@
               <span class="setting-title" id="setting-2fa-label">{{ 'ADMIN.SETTINGS.2FA_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.2FA_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="security.force2FA" [ariaLabelledBy]="'setting-2fa-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="security.force2FA"
+></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
             <label id="security-timeout-label" for="security-timeout">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_LABEL' | translate }}</label>
-            <p-select inputId="security-timeout" [options]="timeoutOptions" [(ngModel)]="security.sessionTimeout" styleClass="w-full"></p-select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="security-timeout"
+    [(ngModel)]="security.sessionTimeout"
+  >
+    @for (opt of timeoutOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_HINT' | translate }}</small>
           </div>
 
@@ -120,7 +165,9 @@
               <span class="setting-title" id="setting-consentement-label">{{ 'ADMIN.SETTINGS.CONSENT_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.CONSENT_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="security.consentementDefaut" [ariaLabelledBy]="'setting-consentement-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="security.consentementDefaut"
+></mat-slide-toggle>
           </div>
         </div>
       }
@@ -133,12 +180,22 @@
 
           <div class="field">
             <label id="alert-paludisme-label">{{ 'ADMIN.SETTINGS.PALUDISME_LABEL' | translate: { value: alerts.seuilPaludisme } }}</label>
-            <p-slider [(ngModel)]="alerts.seuilPaludisme" [min]="10" [max]="200" styleClass="w-full mt-2" [ariaLabelledBy]="'alert-paludisme-label'"></p-slider>
+            <mat-slider class="bb-field-full"
+  [min]="10"
+  [max]="200"
+  discrete>
+  <input matSliderThumb [(ngModel)]="alerts.seuilPaludisme" />
+</mat-slider>
           </div>
 
           <div class="field mt-4">
             <label id="alert-ebola-label">{{ 'ADMIN.SETTINGS.EBOLA_LABEL' | translate: { value: alerts.seuilEbola } }}</label>
-            <p-slider [(ngModel)]="alerts.seuilEbola" [min]="1" [max]="10" styleClass="w-full mt-2" [ariaLabelledBy]="'alert-ebola-label'"></p-slider>
+            <mat-slider class="bb-field-full"
+  [min]="1"
+  [max]="10"
+  discrete>
+  <input matSliderThumb [(ngModel)]="alerts.seuilEbola" />
+</mat-slider>
             <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ADMIN.SETTINGS.EBOLA_WARNING' | translate }}</small>
           </div>
 
@@ -150,7 +207,9 @@
               <span class="setting-title" id="setting-ia-label">{{ 'ADMIN.SETTINGS.AI_ENABLE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.AI_ENABLE_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="alerts.activerIA" [ariaLabelledBy]="'setting-ia-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="alerts.activerIA"
+></mat-slide-toggle>
           </div>
         </div>
       }
@@ -166,12 +225,20 @@
               <span class="setting-title" id="setting-offline-label">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_SUB' | translate }}</span>
             </div>
-            <p-toggleSwitch [(ngModel)]="sync.offlineMode" [ariaLabelledBy]="'setting-offline-label'"></p-toggleSwitch>
+            <mat-slide-toggle
+  [(ngModel)]="sync.offlineMode"
+></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
             <label id="sync-frequence-label">{{ 'ADMIN.SETTINGS.SYNC_FREQ_LABEL' | translate: { value: sync.frequence } }}</label>
-            <p-slider [(ngModel)]="sync.frequence" [min]="5" [max]="120" [step]="5" styleClass="w-full mt-2" [ariaLabelledBy]="'sync-frequence-label'"></p-slider>
+            <mat-slider class="bb-field-full"
+  [min]="5"
+  [max]="120"
+  [step]="5"
+  discrete>
+  <input matSliderThumb [(ngModel)]="sync.frequence" />
+</mat-slider>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SYNC_FREQ_HINT' | translate }}</small>
           </div>
 
@@ -180,7 +247,9 @@
           <h2>{{ 'ADMIN.SETTINGS.USSD_TITLE' | translate }}</h2>
           <div class="field">
             <label for="ussd-timeout">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_LABEL' | translate }}</label>
-            <input id="ussd-timeout" type="number" pInputText [(ngModel)]="sync.ussdTimeout" class="w-full">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="ussd-timeout" type="number" [(ngModel)]="sync.ussdTimeout" />
+            </mat-form-field>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_HINT' | translate }}</small>
           </div>
         </div>

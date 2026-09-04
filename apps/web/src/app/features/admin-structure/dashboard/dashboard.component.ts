@@ -1,7 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { SkeletonModule } from 'primeng/skeleton';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -14,7 +13,7 @@ interface Stats {
 @Component({
   selector: 'app-admin-structure-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, SkeletonModule, TranslatePipe],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   template: `
 <div class="bb-as-dash">
   <div class="bb-as-dash__header">
@@ -22,7 +21,7 @@ interface Stats {
       <h1 class="bb-as-dash__title">{{ stats()!.structure.nom }}</h1>
       <p class="bb-as-dash__sub">{{ stats()!.structure.prefecture }} · {{ stats()!.structure.type }}</p>
     } @else {
-      <p-skeleton width="300px" height="32px" />
+      <div class="bb-skeleton" style="width:300px;height:32px"></div>
     }
   </div>
   <div class="bb-as-dash__stats">

@@ -1,5 +1,6 @@
 // features/admin/analytics/analytics.component.ts
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,10 +9,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { SkeletonModule } from 'primeng/skeleton';
-import { SelectModule } from 'primeng/select';
 import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -73,10 +70,10 @@ interface StatsStructures {
   selector: 'app-analytics',
   standalone: true,
   imports: [
+    SeveriteVariantePipe,
     CommonModule, FormsModule, RouterLink, TranslatePipe,
-    MatCardModule, MatIconModule, MatButtonModule, MatFormFieldModule, MatSelectModule,
-    ButtonModule, TagModule, SkeletonModule, SelectModule,
-  ],
+    MatCardModule, MatIconModule, MatButtonModule, MatFormFieldModule, MatSelectModule
+    ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss'
 })
@@ -105,7 +102,7 @@ export class AnalyticsComponent implements OnInit {
     { id: 'heatmap'   as const, icon: 'pi-map',                   labelKey: 'ADMIN.ANALYTICS.TAB_HEATMAP'   },
     { id: 'alertes'   as const, icon: 'pi-exclamation-triangle',  labelKey: 'ADMIN.ANALYTICS.TAB_ALERTES'   },
     { id: 'tendances' as const, icon: 'pi-chart-line',            labelKey: 'ADMIN.ANALYTICS.TAB_TENDANCES' },
-    { id: 'vaccins'   as const, icon: 'pi-heart',                 labelKey: 'ADMIN.ANALYTICS.TAB_VACCINS'   },
+    { id: 'vaccins'   as const, icon: 'pi-heart',                 labelKey: 'ADMIN.ANALYTICS.TAB_VACCINS'   }
   ];
 
   /** Cartes de synthèse — la première est mise en avant (fond plein). */
@@ -116,7 +113,7 @@ export class AnalyticsComponent implements OnInit {
       { labelKey: 'ADMIN.ANALYTICS.KPI_CONSULTATIONS',  valeur: k?.totalConsultations ?? 0,  icon: 'pi-heart-fill', couleur: '#22C55E' },
       { labelKey: 'ADMIN.ANALYTICS.KPI_VACCINATIONS',   valeur: k?.totalVaccinations ?? 0,   icon: 'pi-shield',     couleur: '#8B5CF6' },
       { labelKey: 'ADMIN.ANALYTICS.KPI_REFERENCEMENTS', valeur: k?.totalReferencements ?? 0, icon: 'pi-send',       couleur: '#F97316' },
-      { labelKey: 'ADMIN.ANALYTICS.KPI_ASC',            valeur: k?.totalAsc ?? 0,            icon: 'pi-user',       couleur: '#14B8A6' },
+      { labelKey: 'ADMIN.ANALYTICS.KPI_ASC',            valeur: k?.totalAsc ?? 0,            icon: 'pi-user',       couleur: '#14B8A6' }
     ];
   });
 

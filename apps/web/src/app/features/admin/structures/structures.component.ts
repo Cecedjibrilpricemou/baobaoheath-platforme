@@ -1,13 +1,10 @@
 // features/admin/structures/structures.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { SelectModule } from 'primeng/select';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SkeletonModule } from 'primeng/skeleton';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastrService } from 'ngx-toastr';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -39,7 +36,8 @@ interface CreateStructureResponse {
 @Component({
   selector: 'app-structures',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SelectModule, InputTextModule, InputNumberModule, SkeletonModule, TranslatePipe],
+  imports: [
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './structures.component.html',
   styleUrl: './structures.component.scss'
 })

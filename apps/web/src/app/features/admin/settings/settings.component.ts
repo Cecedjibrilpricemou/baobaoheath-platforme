@@ -1,11 +1,11 @@
 import { Component, signal, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSliderModule } from '@angular/material/slider';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { SelectModule } from 'primeng/select';
-import { InputTextModule } from 'primeng/inputtext';
-import { SliderModule } from 'primeng/slider';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
@@ -13,8 +13,8 @@ import { I18nService } from '../../../shared/services/i18n.service';
   selector: 'app-settings',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ButtonModule,
-    ToggleSwitchModule, SelectModule, InputTextModule, SliderModule, TranslatePipe
+    MatButtonModule, MatFormFieldModule, MatSelectModule, MatSlideToggleModule, MatSliderModule,
+    CommonModule, FormsModule, TranslatePipe
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'

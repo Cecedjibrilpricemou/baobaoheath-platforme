@@ -23,11 +23,29 @@
     <div class="bb-export__form">
       <div class="bb-export__field">
         <label id="export-format-label" for="export-format">{{ 'ADMIN.EXPORT.FORMAT_LABEL' | translate }}</label>
-        <p-select inputId="export-format" [(ngModel)]="formatSelectionne" [options]="formatOptions" optionLabel="label" optionValue="value" />
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="export-format"
+    [(ngModel)]="formatSelectionne"
+  >
+    @for (opt of formatOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
       </div>
       <div class="bb-export__field">
         <label id="export-periode-label" for="export-periode">{{ 'ADMIN.EXPORT.PERIODE_LABEL' | translate }}</label>
-        <p-select inputId="export-periode" [(ngModel)]="periodeSelectionnee" [options]="periodeOptions" optionLabel="label" optionValue="value" />
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="export-periode"
+    [(ngModel)]="periodeSelectionnee"
+  >
+    @for (opt of periodeOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
       </div>
     </div>
 
