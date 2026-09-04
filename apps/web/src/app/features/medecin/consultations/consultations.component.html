@@ -27,7 +27,7 @@
     <div class="bb-med-cons__list" [class.bb-med-cons__list--hidden]="selected()">
       @if (isLoading()) {
         @for (i of [1,2,3,4]; track i) {
-          <p-skeleton height="90px" borderRadius="8px" styleClass="mb-2" />
+          <div class="bb-skeleton" style="height:90px;border-radius:8px"></div>
         }
       } @else if (consultations().length === 0) {
         <div class="bb-med-cons__empty">
@@ -123,7 +123,7 @@
               <div class="bb-med-cons__diag">
                 <span class="bb-med-cons__diag-type">{{ d.typeDiagnostic }}</span>
                 <span class="bb-med-cons__diag-label">{{ d.libelle }}</span>
-                @if (d.severite) { <p-tag [value]="d.severite" severity="warn" /> }
+                @if (d.severite) { <span class="bb-badge bb-badge--warning">{{ d.severite }}</span> }
               </div>
             }
           </div>

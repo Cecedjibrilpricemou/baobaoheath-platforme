@@ -6,6 +6,8 @@
 // ═══════════════════════════════════════════════════════════════════
 
 @use 'ngx-toastr/toastr';
+@use './styles/material-theme';
+@use './styles/shell';
 @import 'primeicons/primeicons.css';
 @import 'primeflex/primeflex.css';
 
@@ -195,6 +197,19 @@ body {
 }
 
 // ── BADGES SÉMANTIQUES ────────────────────────────────────────────
+// Bloc de chargement (remplace p-skeleton)
+.bb-skeleton {
+  display: block;
+  border-radius: var(--bb-radius);
+  background: linear-gradient(90deg, var(--bb-surface-1) 25%, var(--bb-surface-2) 50%, var(--bb-surface-1) 75%);
+  background-size: 200% 100%;
+  animation: bb-shimmer 1.4s infinite;
+  margin-bottom: 8px;
+}
+
+// Champ Material occupant toute la largeur de son conteneur
+.bb-field-full { width: 100%; }
+
 .bb-badge {
   display: inline-flex;
   align-items: center;
@@ -206,6 +221,12 @@ body {
   font-weight: 600;
   white-space: nowrap;
   border: 1px solid transparent;
+
+  // Les mat-icon font 24px par defaut : a l'echelle du badge ici.
+  mat-icon, .mat-icon {
+    font-size: 11px; width: 11px; height: 11px;
+    line-height: 11px;
+  }
 
   &--success {
     background: var(--bb-success-bg);
@@ -223,6 +244,13 @@ body {
     background: var(--bb-warning-bg);
     color: var(--bb-warning);
     border-color: var(--bb-warning-border);
+  }
+
+  // Statut sans charge semantique (ex. consultation referencee)
+  &--neutral {
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+    border-color: var(--bb-border);
   }
 
   &--info {
@@ -1031,6 +1059,12 @@ body {
   }
 }
 
+// Animation de chargement partagee (cartes, blocs squelettes)
+@keyframes bb-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
 .bb-fade-in {
   animation: bb-fade-in 0.3s ease forwards;
 }
@@ -1134,6 +1168,86 @@ body {
   }
 }
 
+// ── MODAL "MOT DE PASSE TEMPORAIRE" ─────────────────────────────────
+// Réutilisée par plusieurs écrans de création d'utilisateur
+// (admin/structures, admin-structure/agents, ...)
+.bb-mdp-modal {
+  background: var(--bb-surface-0);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.30);
+  border: 1px solid var(--bb-border);
+
+  &__icon {
+    width: 56px; height: 56px; margin: 0 auto 1rem;
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  &__title {
+    font-family: var(--bb-font-display); font-size: 1.125rem; font-weight: 700;
+    margin: 0 0 0.5rem; color: var(--bb-text-primary);
+  }
+
+  &__structure {
+    font-size: 0.875rem; color: var(--bb-text-muted); margin: 0 0 1.25rem;
+  }
+
+  &__info {
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg); padding: 14px 16px; margin-bottom: 1rem;
+    text-align: left;
+  }
+
+  &__row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+
+    &--mdp { padding-top: 10px; border-top: 1px dashed var(--bb-border); }
+  }
+
+  &__label {
+    font-size: 12px; font-weight: 600; color: var(--bb-text-muted);
+  }
+
+  &__value {
+    font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
+  }
+
+  &__mdp {
+    font-family: var(--bb-font-mono, monospace); font-size: 14px; font-weight: 800;
+    color: var(--bb-primary); letter-spacing: 0.4px; user-select: all;
+  }
+
+  &__email-note {
+    display: flex; align-items: center; gap: 8px; text-align: left;
+    background: var(--bb-info-bg); border: 1px solid var(--bb-info-border);
+    color: var(--bb-info); border-radius: var(--bb-radius); padding: 10px 12px;
+    font-size: 12px; line-height: 1.45; margin-bottom: 0.75rem;
+    i { font-size: 14px; flex-shrink: 0; }
+  }
+
+  &__warning {
+    display: flex; align-items: center; gap: 8px; text-align: left;
+    background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+    color: var(--bb-warning); border-radius: var(--bb-radius); padding: 10px 12px;
+    font-size: 12px; line-height: 1.45; margin-bottom: 1.25rem;
+    i { font-size: 14px; flex-shrink: 0; }
+  }
+
+  &__btn {
+    width: 100%; padding: 0.7rem 1rem; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 0.875rem; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover { background: var(--bb-mid); transform: translateY(-1px); }
+  }
+}
+
 
 
 /* À ajouter dans styles.scss ou dans chaque layout SCSS */
@@ -1174,7 +1288,7 @@ p-select.ng-invalid.ng-dirty .p-select {
   gap: 4px;
 
   &::before {
-    content: '\\e946'; /* pi-exclamation-circle in primeicons */
+    content: '\e946'; /* pi-exclamation-circle in primeicons */
     font-family: 'primeicons';
     font-size: 13px;
   }

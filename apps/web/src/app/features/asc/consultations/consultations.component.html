@@ -15,12 +15,10 @@
         <h1 class="page-hero__title">{{ 'ASC.CONSULTATIONS.TITLE' | translate }}</h1>
         <p class="page-hero__sub">{{ 'ASC.CONSULTATIONS.SUBTITLE' | translate }}</p>
       </div>
-      <p-button
-        [label]="'ASC.CONSULTATIONS.NEW' | translate"
-        icon="pi pi-plus"
-        styleClass="hero-btn-new"
-        (onClick)="openNewForm()"
-      ></p-button>
+      <button matButton="filled" class="hero-btn-new" (click)="openNewForm()">
+        <mat-icon fontSet="pi" fontIcon="pi-plus" aria-hidden="true"></mat-icon>
+        {{ 'ASC.CONSULTATIONS.NEW' | translate }}
+      </button>
     </div>
 
     <div class="page-hero__stats">
@@ -72,45 +70,40 @@
         <div class="form-grid-2">
           <div class="form-field-wrap">
             <label class="form-label" id="consult-patient-label" for="consult-patient">{{ 'ASC.CONSULTATIONS.FORM_PATIENT' | translate }}</label>
-            <p-select
-              inputId="consult-patient"
-              [options]="patients()"
-              [(ngModel)]="newConsultation.patientId"
-              optionValue="id"
-              [placeholder]="'ASC.CONSULTATIONS.FORM_SELECT_PH' | translate"
-              styleClass="w-full"
-            >
-              <ng-template pTemplate="selectedItem" let-p>
-                @if (p) {
-                  {{ p.utilisateur.prenom }} {{ p.utilisateur.nom }} — {{ p.utilisateur.telephone }}
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field-full">
+              <mat-select
+                id="consult-patient"
+                [(ngModel)]="newConsultation.patientId"
+                [placeholder]="'ASC.CONSULTATIONS.FORM_SELECT_PH' | translate"
+              >
+                @for (p of patients(); track p.id) {
+                  <mat-option [value]="p.id">
+                    {{ p.utilisateur?.prenom }} {{ p.utilisateur?.nom }} — {{ p.utilisateur?.telephone }}
+                  </mat-option>
                 }
-              </ng-template>
-              <ng-template pTemplate="item" let-p>
-                {{ p.utilisateur.prenom }} {{ p.utilisateur.nom }} — {{ p.utilisateur.telephone }}
-              </ng-template>
-            </p-select>
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <div class="form-field-wrap">
             <label class="form-label" for="consult-motif">{{ 'ASC.CONSULTATIONS.FORM_MOTIF' | translate }}</label>
-            <input pInputText id="consult-motif" class="w-full"
-              [(ngModel)]="newConsultation.motif"
-              [placeholder]="'ASC.CONSULTATIONS.FORM_MOTIF_PH' | translate" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field-full">
+              <input
+                matInput
+                id="consult-motif"
+                [(ngModel)]="newConsultation.motif"
+                [placeholder]="'ASC.CONSULTATIONS.FORM_MOTIF_PH' | translate"
+              />
+            </mat-form-field>
           </div>
         </div>
 
         <div class="form-card__actions">
-          <p-button
-            [label]="'COMMON.CANCEL' | translate"
-            severity="secondary" [outlined]="true"
-            (onClick)="closeNewForm()"
-          ></p-button>
-          <p-button
-            [label]="isSaving() ? ('COMMON.SAVING' | translate) : ('ASC.CONSULTATIONS.FORM_SUBMIT' | translate)"
-            [icon]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"
-            [loading]="isSaving()"
-            (onClick)="createConsultation()"
-          ></p-button>
+          <button matButton (click)="closeNewForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button matButton="filled" [disabled]="isSaving()" (click)="createConsultation()">
+            <mat-icon fontSet="pi" [fontIcon]="isSaving() ? 'pi-spinner pi-spin' : 'pi-check'" aria-hidden="true"></mat-icon>
+            {{ (isSaving() ? 'COMMON.SAVING' : 'ASC.CONSULTATIONS.FORM_SUBMIT') | translate }}
+          </button>
         </div>
       </div>
     }
@@ -146,7 +139,10 @@
         <div class="empty-state__icon">🩺</div>
         <h3 class="empty-state__title">{{ 'ASC.CONSULTATIONS.EMPTY_TITLE' | translate }}</h3>
         <p class="empty-state__sub">{{ 'ASC.CONSULTATIONS.EMPTY_SUB' | translate }}</p>
-        <p-button [label]="'ASC.CONSULTATIONS.NEW' | translate" icon="pi pi-plus" (onClick)="openNewForm()"></p-button>
+        <button matButton="filled" (click)="openNewForm()">
+          <mat-icon fontSet="pi" fontIcon="pi-plus" aria-hidden="true"></mat-icon>
+          {{ 'ASC.CONSULTATIONS.NEW' | translate }}
+        </button>
       </div>
     } @else {
       <div class="consult-list">
@@ -180,11 +176,9 @@
               </div>
             </div>
 
-            <p-tag
-              [value]="getStatutLabel(c.statut)"
-              [severity]="getStatutSeverity(c.statut)"
-              styleClass="consult-tag"
-            ></p-tag>
+            <span [class]="'bb-badge bb-badge--' + getStatutVariante(c.statut)">
+              {{ getStatutLabel(c.statut) }}
+            </span>
 
           </div>
         }

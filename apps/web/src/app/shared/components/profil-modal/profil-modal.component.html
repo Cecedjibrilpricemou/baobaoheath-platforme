@@ -4,7 +4,13 @@
 
       <!-- Header -->
       <div class="bb-profil-modal__header">
-        <div class="bb-profil-modal__avatar" aria-hidden="true">{{ getInitiales() }}</div>
+        <div class="bb-profil-modal__avatar-wrap">
+          <app-avatar class="bb-profil-modal__avatar" [photoUrl]="currentUser()?.photoUrl" [initiales]="getInitiales()" />
+          <button type="button" class="bb-profil-modal__avatar-edit" (click)="photoInput.click()" [disabled]="isUploadingPhoto()" [attr.aria-label]="'PROFIL_MODAL.CHANGE_PHOTO_ARIA' | translate">
+            <i [class]="isUploadingPhoto() ? 'pi pi-spinner pi-spin' : 'pi pi-camera'" aria-hidden="true"></i>
+          </button>
+          <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onPhotoSelected($event)" />
+        </div>
         <div class="bb-profil-modal__info">
           <h3 id="profil-modal-title" class="bb-profil-modal__name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</h3>
           <span class="bb-profil-modal__role">{{ getRoleLabel() }}</span>

@@ -1,12 +1,10 @@
 // features/pharmacien/scanner/scanner.component.ts
 import { Component, inject, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TagModule } from 'primeng/tag';
-import { CardModule } from 'primeng/card';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -40,7 +38,8 @@ interface ScanResult {
 @Component({
   selector: 'app-scanner',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TagModule, CardModule, TranslatePipe],
+  imports: [
+    MatFormFieldModule, MatInputModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './scanner.component.html',
   styleUrl: './scanner.component.scss'
 })

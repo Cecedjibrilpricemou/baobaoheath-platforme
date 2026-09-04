@@ -133,11 +133,9 @@
                 </div>
 
                 <!-- Statut -->
-                <p-tag
-                  [value]="getStatutLabel(rdv.statut)"
-                  [severity]="getStatutSeverity(rdv.statut)"
-                  styleClass="rdv-tag"
-                ></p-tag>
+                <span [class]="'bb-badge bb-badge--' + getStatutVariante(rdv.statut)">
+                  {{ getStatutLabel(rdv.statut) }}
+                </span>
               </div>
 
               <!-- Détails -->

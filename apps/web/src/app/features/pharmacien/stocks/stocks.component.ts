@@ -1,15 +1,11 @@
 // features/pharmacien/stocks/stocks.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { SkeletonModule } from 'primeng/skeleton';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SelectModule } from 'primeng/select';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -28,8 +24,9 @@ interface Stock {
 @Component({
   selector: 'app-pharmacien-stocks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule,
-    InputTextModule, InputNumberModule, SelectModule, IconFieldModule, InputIconModule, TranslatePipe],
+  imports: [
+    SeveriteVariantePipe,
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })

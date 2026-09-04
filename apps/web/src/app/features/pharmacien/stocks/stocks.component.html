@@ -30,29 +30,47 @@
       <div class="bb-ph-stocks__form-grid">
         <div class="bb-ph-stocks__field bb-ph-stocks__field--full">
           <label id="reappro-med-label" for="reappro-med">{{ 'PHARMACIEN.STOCKS.FIELD_MEDICAMENT' | translate }}</label>
-          <p-select
-            inputId="reappro-med"
-            [(ngModel)]="formReappro.idMedicament"
-            [options]="medicamentOptions"
-            optionLabel="label"
-            optionValue="value"
-            [placeholder]="'PHARMACIEN.STOCKS.FIELD_MEDICAMENT_PLACEHOLDER' | translate"
-            [filter]="true"
-            [filterPlaceholder]="'PHARMACIEN.STOCKS.FILTER_PLACEHOLDER' | translate"
-            styleClass="w-full"
-          />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="reappro-med"
+    [(ngModel)]="formReappro.idMedicament"
+    [placeholder]="'PHARMACIEN.STOCKS.FIELD_MEDICAMENT_PLACEHOLDER' | translate"
+  >
+    @for (opt of medicamentOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
         </div>
         <div class="bb-ph-stocks__field">
           <label for="reappro-qty">{{ 'PHARMACIEN.STOCKS.FIELD_QTY' | translate }}</label>
-          <p-inputnumber inputId="reappro-qty" [(ngModel)]="formReappro.quantiteAjoutee" [placeholder]="'PHARMACIEN.STOCKS.FIELD_QTY_PLACEHOLDER' | translate" [min]="1" styleClass="w-full" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput type="number"
+    id="reappro-qty"
+    [min]="1"
+    step="1"
+    [(ngModel)]="formReappro.quantiteAjoutee"
+    [placeholder]="'PHARMACIEN.STOCKS.FIELD_QTY_PLACEHOLDER' | translate"
+  />
+</mat-form-field>
         </div>
         <div class="bb-ph-stocks__field">
           <label for="reappro-date">{{ 'PHARMACIEN.STOCKS.FIELD_EXPIRY' | translate }}</label>
-          <input id="reappro-date" pInputText type="date" [(ngModel)]="formReappro.datePeremption" class="w-full" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="reappro-date" type="date" [(ngModel)]="formReappro.datePeremption" />
+          </mat-form-field>
         </div>
         <div class="bb-ph-stocks__field">
           <label for="reappro-marge">{{ 'PHARMACIEN.STOCKS.FIELD_MARGIN' | translate }}</label>
-          <p-inputnumber inputId="reappro-marge" [(ngModel)]="formReappro.margeGnf" [placeholder]="'PHARMACIEN.STOCKS.FIELD_MARGIN_PLACEHOLDER' | translate" [min]="0" styleClass="w-full" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput type="number"
+    id="reappro-marge"
+    [min]="0"
+    step="1"
+    [(ngModel)]="formReappro.margeGnf"
+    [placeholder]="'PHARMACIEN.STOCKS.FIELD_MARGIN_PLACEHOLDER' | translate"
+  />
+</mat-form-field>
         </div>
       </div>
       <div class="bb-ph-stocks__form-actions">
@@ -86,19 +104,16 @@
 
   <!-- Recherche -->
   <div class="bb-ph-stocks__search">
-    <p-iconfield>
-      <p-inputicon styleClass="pi pi-search" />
-      <input pInputText [placeholder]="'PHARMACIEN.STOCKS.SEARCH_PLACEHOLDER' | translate"
-        [attr.aria-label]="'PHARMACIEN.STOCKS.SEARCH_ARIA' | translate"
-        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
-    </p-iconfield>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+        <input matInput [placeholder]="'PHARMACIEN.STOCKS.SEARCH_PLACEHOLDER' | translate" [attr.aria-label]="'PHARMACIEN.STOCKS.SEARCH_ARIA' | translate" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+      </mat-form-field>
   </div>
 
   <!-- Liste -->
   @if (isLoading()) {
     <div class="bb-ph-stocks__list">
       @for (i of [1,2,3,4,5,6]; track i) {
-        <p-skeleton height="160px" borderRadius="16px" styleClass="mb-2" />
+        <div class="bb-skeleton" style="height:160px;border-radius:16px"></div>
       }
     </div>
   } @else if (stocksFiltres.length === 0) {
@@ -121,7 +136,7 @@
               }
             </div>
             <div class="bb-ph-stocks__card-right">
-              <p-tag [value]="getNiveauLabel(s)" [severity]="getNiveauSeverity(s)" [rounded]="true" />
+              <span [class]="'bb-badge bb-badge--' + (getNiveauSeverity(s) | severiteVariante)">{{ getNiveauLabel(s) }}</span>
               <span class="bb-ph-stocks__card-prix">{{ formatMontant(getPrixVente(s)) }}</span>
             </div>
           </div>

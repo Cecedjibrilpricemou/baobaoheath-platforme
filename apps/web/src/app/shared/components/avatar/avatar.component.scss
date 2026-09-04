@@ -1,0 +1,25 @@
+// Le host reprend la classe posée par l'appelant (taille, fond, radius,
+// display flex centré) — ce composant se contente de remplir cette boîte.
+// Par défaut (aucune classe de taille fournie, ex: nichée dans un wrapper
+// déjà stylé), il remplit 100% de son parent — une classe posée par
+// l'appelant directement sur <app-avatar> prend le dessus (spécificité CSS).
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.bb-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+.bb-avatar__fallback {
+  line-height: 1;
+}

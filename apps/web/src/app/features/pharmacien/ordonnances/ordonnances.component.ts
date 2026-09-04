@@ -1,13 +1,10 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { RadioButtonModule } from 'primeng/radiobutton';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SkeletonModule } from 'primeng/skeleton';
-import { InputTextModule } from 'primeng/inputtext';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -35,7 +32,9 @@ interface PatientInfo {
 @Component({
   selector: 'app-ordonnances',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, RadioButtonModule, InputNumberModule, SkeletonModule, InputTextModule, TranslatePipe],
+  imports: [
+    MatRadioModule,
+    MatFormFieldModule, MatInputModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './ordonnances.component.html',
   styleUrl: './ordonnances.component.scss'
 })

@@ -31,7 +31,7 @@
   @if (isLoading()) {
     <div class="bb-med-dash__stats">
       @for (i of [1,2,3,4]; track i) {
-        <p-skeleton height="128px" borderRadius="16px" />
+        <div class="bb-skeleton" style="height:128px;border-radius:16px"></div>
       }
     </div>
   } @else {
@@ -90,7 +90,7 @@
     @if (isLoading()) {
       <div class="bb-med-dash__list">
         @for (i of [1,2,3]; track i) {
-          <p-skeleton height="74px" borderRadius="12px" styleClass="mb-2" />
+          <div class="bb-skeleton" style="height:74px;border-radius:12px"></div>
         }
       </div>
     } @else if (consultationsRecentes().length === 0) {

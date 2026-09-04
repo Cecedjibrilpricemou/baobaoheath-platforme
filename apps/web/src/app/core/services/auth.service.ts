@@ -102,7 +102,7 @@ export class AuthService {
     return this.api.post<void>('/auth/reset-password', { token, nouveauMotDePasse });
   }
 
-  updateProfil(dto: { prenom?: string; nom?: string; email?: string; telephone?: string; }): Observable<User> {
+  updateProfil(dto: { prenom?: string; nom?: string; email?: string; telephone?: string; photoUrl?: string; }): Observable<User> {
     return this.api.put<BackendMeResponse>('/auth/profile', dto).pipe(
       map(response => response.data),
       tap(user => {
@@ -111,6 +111,14 @@ export class AuthService {
           localStorage.setItem('currentUser', JSON.stringify(user));
         }
       })
+    );
+  }
+
+  uploadAvatar(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return this.api.post<{ success: boolean; data: { url: string }; }>('/uploads/avatar', formData).pipe(
+      map(response => response.data)
     );
   }
 

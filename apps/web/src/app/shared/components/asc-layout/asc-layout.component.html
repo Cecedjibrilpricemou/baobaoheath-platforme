@@ -1,125 +1,174 @@
 <!-- shared/components/asc-layout/asc-layout.component.html -->
-<div class="bb-layout" [class.bb-layout--sidebar-open]="sidebarOpen()">
+<mat-sidenav-container class="bb-shell" autosize>
 
-  @if (sidebarOpen()) {
-    <div class="bb-layout__overlay" (click)="closeSidebar()"></div>
-  }
+  <!-- ── NAVIGATION LATÉRALE ──────────────────────────────────── -->
+  <mat-sidenav class="bb-nav" [mode]="'side'" [opened]="true" disableClose>
+    <div class="bb-nav__brand">
+      <span class="bb-nav__brand-mark" aria-hidden="true">🌳</span>
+      <span class="bb-nav__brand-name">{{ 'APP.NAME' | translate }}</span>
+    </div>
 
-  @if (showLogoutConfirm()) {
-    <div class="bb-logout-overlay" (click)="cancelLogout()">
-      <div class="bb-logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title" aria-describedby="logout-modal-text" (click)="$event.stopPropagation()">
-        <div class="bb-logout-modal__icon"><i class="pi pi-sign-out" aria-hidden="true"></i></div>
-        <h3 id="logout-modal-title" class="bb-logout-modal__title">{{ 'COMMON.LOGOUT_CONFIRM_TITLE' | translate }}</h3>
-        <p id="logout-modal-text" class="bb-logout-modal__text">{{ 'COMMON.LOGOUT_CONFIRM_TEXT' | translate }}</p>
-        <div class="bb-logout-modal__actions">
-          <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="cancelLogout()">{{ 'COMMON.CANCEL' | translate }}</button>
-          <button class="bb-logout-modal__btn bb-logout-modal__btn--confirm" (click)="confirmLogout()">
-            <i class="pi pi-sign-out" aria-hidden="true"></i>{{ 'COMMON.LOGOUT' | translate }}
-          </button>
-        </div>
-      </div>
-    </div>
-  }
+    <button
+      type="button"
+      class="bb-nav__profile"
+      (click)="showProfil.set(true)"
+      [attr.aria-label]="'COMMON.PROFILE_OF_ARIA' | translate: { name: (currentUser()?.prenom + ' ' + currentUser()?.nom) }"
+    >
+      <app-avatar
+        class="bb-nav__avatar"
+        [photoUrl]="currentUser()?.photoUrl"
+        [initiales]="getInitiales()"
+      />
+      <span class="bb-nav__profile-info">
+        <span class="bb-nav__profile-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+        <span class="bb-nav__profile-role">{{ 'ASC.ROLE' | translate }}</span>
+      </span>
+      <mat-icon fontSet="pi" fontIcon="pi-pencil" class="bb-nav__profile-edit" aria-hidden="true"></mat-icon>
+    </button>
 
-  <aside class="bb-sidebar" [class.bb-sidebar--open]="sidebarOpen()">
-    <div class="bb-sidebar__logo">
-      <div class="bb-sidebar__logo-icon" aria-hidden="true">🌳</div>
-      <span class="bb-sidebar__logo-name">{{ 'APP.NAME' | translate }}</span>
-    </div>
-    <div class="bb-sidebar__profile">
-      <div class="bb-sidebar__avatar" aria-hidden="true">{{ getInitiales() }}</div>
-      <div class="bb-sidebar__profile-info">
-        <span class="bb-sidebar__profile-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
-        <span class="bb-sidebar__profile-role">{{ 'ASC.ROLE' | translate }}</span>
-      </div>
-    </div>
-    <nav class="bb-sidebar__nav" aria-label="{{ 'COMMON.NAVIGATION' | translate }}">
-      <p class="bb-sidebar__nav-label">{{ 'COMMON.NAVIGATION' | translate }}</p>
+    <p class="bb-nav__section">{{ 'COMMON.NAVIGATION' | translate }}</p>
+
+    <mat-nav-list class="bb-nav__list">
       @for (item of navItems; track item.route) {
-        <a [routerLink]="item.route" routerLinkActive="bb-sidebar__nav-item--active" class="bb-sidebar__nav-item" (click)="closeSidebar()">
-          <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
-          <span>{{ item.labelKey | translate }}</span>
+        <a
+          mat-list-item
+          class="bb-nav__item"
+          [routerLink]="item.route"
+          routerLinkActive="bb-nav__item--active"
+          (click)="closeSidebar()"
+        >
+          <mat-icon matListItemIcon fontSet="pi" [fontIcon]="item.icon" aria-hidden="true"></mat-icon>
+          <span matListItemTitle>{{ item.labelKey | translate }}</span>
+          <!-- Compteur d'éléments en attente sur l'entrée Synchronisation -->
+          @if (item.route === '/asc/sync' && pendingCount() > 0) {
+            <span matListItemMeta class="bb-nav__badge">{{ pendingCount() }}</span>
+          }
         </a>
       }
-    </nav>
-    <div class="bb-sidebar__footer">
-      <button class="bb-sidebar__footer-btn" (click)="toggleTheme()">
-        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-        <span>{{ themeService.isDark() ? ('COMMON.LIGHT_MODE' | translate) : ('COMMON.DARK_MODE' | translate) }}</span>
-      </button>
-      <button class="bb-sidebar__footer-btn" (click)="toggleLang()">
-        <i class="pi pi-globe" aria-hidden="true"></i>
-        <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
-      </button>
-      <button class="bb-sidebar__logout" (click)="askLogout()">
-        <i class="pi pi-sign-out" aria-hidden="true"></i>
-        <span>{{ 'COMMON.LOGOUT' | translate }}</span>
-      </button>
+    </mat-nav-list>
+
+    <div class="bb-nav__footer">
+      <p class="bb-nav__section">{{ 'COMMON.GENERAL' | translate }}</p>
+
+      <mat-nav-list class="bb-nav__list">
+        <button mat-list-item class="bb-nav__item" type="button" (click)="toggleTheme()">
+          <mat-icon matListItemIcon fontSet="pi" [fontIcon]="themeService.isDark() ? 'pi-sun' : 'pi-moon'" aria-hidden="true"></mat-icon>
+          <span matListItemTitle>{{ themeService.isDark() ? ('COMMON.LIGHT_MODE' | translate) : ('COMMON.DARK_MODE' | translate) }}</span>
+        </button>
+
+        <button mat-list-item class="bb-nav__item" type="button" (click)="toggleLang()">
+          <mat-icon matListItemIcon fontSet="pi" fontIcon="pi-globe" aria-hidden="true"></mat-icon>
+          <span matListItemTitle>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
+        </button>
+
+        <button mat-list-item class="bb-nav__item bb-nav__item--danger" type="button" (click)="askLogout()">
+          <mat-icon matListItemIcon fontSet="pi" fontIcon="pi-sign-out" aria-hidden="true"></mat-icon>
+          <span matListItemTitle>{{ 'COMMON.LOGOUT' | translate }}</span>
+        </button>
+      </mat-nav-list>
     </div>
-  </aside>
+  </mat-sidenav>
 
-  <main class="bb-layout__main">
-    <header class="bb-topbar">
-      <button class="bb-topbar__menu" (click)="toggleSidebar()" [attr.aria-label]="'COMMON.OPEN_MENU_ARIA' | translate"><i class="pi pi-bars" aria-hidden="true"></i></button>
-      <div class="bb-topbar__logo"><span aria-hidden="true">🌳</span><span class="bb-topbar__logo-name">{{ 'APP.NAME' | translate }}</span></div>
-      <div class="bb-topbar__right">
-        <button class="bb-topbar__icon-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate"><i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i></button>
-        <button class="bb-topbar__icon-btn bb-topbar__lang" (click)="toggleLang()">{{ 'COMMON.LANG_TOGGLE' | translate }}</button>
-        <div class="bb-topbar__avatar" aria-hidden="true">{{ getInitiales() }}</div>
-      </div>
-    </header>
+  <!-- ── CONTENU ──────────────────────────────────────────────── -->
+  <mat-sidenav-content class="bb-shell__content">
 
-    <header class="bb-topbar-desktop">
-      <div class="bb-topbar-desktop__breadcrumb">
-        <span class="bb-topbar-desktop__page-title">{{ 'ASC.ROLE' | translate }}</span>
-        <span class="bb-topbar-desktop__sep" aria-hidden="true">/</span>
-        <span class="bb-topbar-desktop__page-sub">{{ pageLabel() | translate }}</span>
+    <mat-toolbar class="bb-topbar">
+      <button
+        matIconButton
+        class="bb-topbar__burger"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="'COMMON.OPEN_MENU_ARIA' | translate"
+      >
+        <mat-icon fontSet="pi" fontIcon="pi-bars" aria-hidden="true"></mat-icon>
+      </button>
+
+      <div class="bb-crumb">
+        <span class="bb-crumb__root">{{ 'ASC.ROLE' | translate }}</span>
+        <span class="bb-crumb__sep" aria-hidden="true">/</span>
+        <span class="bb-crumb__page">{{ pageLabel() | translate }}</span>
       </div>
-      <div class="bb-topbar-desktop__search">
-        <i class="pi pi-search" aria-hidden="true"></i>
-        <input type="text" [placeholder]="'COMMON.SEARCH' | translate" readonly tabindex="-1" aria-hidden="true" />
-      </div>
-      <div class="bb-topbar-desktop__right">
-        <button class="bb-topbar-desktop__icon-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
-          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-        </button>
-        <button class="bb-topbar-desktop__icon-btn" (click)="toggleLang()" [attr.aria-label]="'COMMON.CHANGE_LANG_ARIA' | translate">
-          <i class="pi pi-globe" aria-hidden="true"></i>
-        </button>
-        <div class="bb-topbar-desktop__user">
-          <div class="bb-topbar-desktop__user-avatar" aria-hidden="true">{{ getInitiales() }}</div>
-          <div class="bb-topbar-desktop__user-info">
-            <div class="bb-topbar-desktop__user-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</div>
-            <div class="bb-topbar-desktop__user-role">{{ 'ASC.ROLE' | translate }}</div>
-          </div>
-          <i class="pi pi-chevron-down bb-topbar-desktop__chevron" aria-hidden="true"></i>
+
+      <span class="bb-topbar__spacer"></span>
+
+      <!-- État de connexion, central pour un agent de terrain -->
+      <span
+        class="bb-net"
+        [class.bb-net--offline]="!isOnline()"
+        [matTooltip]="(isOnline() ? 'ASC.ONLINE_MSG' : 'ASC.OFFLINE_MSG') | translate"
+      >
+        <mat-icon fontSet="pi" [fontIcon]="isOnline() ? 'pi-wifi' : 'pi-wifi-slash'" aria-hidden="true"></mat-icon>
+        @if (pendingCount() > 0) {
+          <span class="bb-net__count">{{ pendingCount() }}</span>
+        }
+      </span>
+
+      <button
+        matIconButton
+        [matTooltip]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate"
+        (click)="toggleTheme()"
+      >
+        <mat-icon fontSet="pi" [fontIcon]="themeService.isDark() ? 'pi-sun' : 'pi-moon'" aria-hidden="true"></mat-icon>
+      </button>
+
+      <button matIconButton [matTooltip]="'COMMON.CHANGE_LANG_ARIA' | translate" (click)="toggleLang()">
+        <mat-icon fontSet="pi" fontIcon="pi-globe" aria-hidden="true"></mat-icon>
+      </button>
+
+      <button matIconButton [matMenuTriggerFor]="userMenu" class="bb-topbar__user">
+        <app-avatar
+          class="bb-topbar__avatar"
+          [photoUrl]="currentUser()?.photoUrl"
+          [initiales]="getInitiales()"
+        />
+      </button>
+
+      <mat-menu #userMenu="matMenu" class="bb-user-menu">
+        <div class="bb-user-menu__head">
+          <span class="bb-user-menu__name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+          <span class="bb-user-menu__mail">{{ currentUser()?.email }}</span>
         </div>
-      </div>
-    </header>
+        <button mat-menu-item (click)="showProfil.set(true)">
+          <mat-icon fontSet="pi" fontIcon="pi-user" aria-hidden="true"></mat-icon>
+          <span>{{ 'PROFIL_MODAL.TAB_PROFIL' | translate }}</span>
+        </button>
+        <button mat-menu-item (click)="askLogout()">
+          <mat-icon fontSet="pi" fontIcon="pi-sign-out" aria-hidden="true"></mat-icon>
+          <span>{{ 'COMMON.LOGOUT' | translate }}</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
 
-    <div class="bb-layout__content">
+    <main class="bb-shell__page">
 
       @if (!isOnline()) {
-        <div class="bb-connectivity-banner bb-connectivity-banner--offline" role="status" aria-live="polite">
-          <i class="pi pi-wifi-slash bb-connectivity-banner__icon" aria-hidden="true"></i>
-          <div class="bb-connectivity-banner__text">
-            <span class="bb-connectivity-banner__title">{{ 'ASC.OFFLINE_MSG' | translate }}</span>
-            <span class="bb-connectivity-banner__sub">{{ 'ASC.OFFLINE_PENDING' | translate: { count: pendingCount() } }}</span>
+        <div class="bb-banner bb-banner--offline" role="status" aria-live="polite">
+          <mat-icon fontSet="pi" fontIcon="pi-wifi-slash" aria-hidden="true"></mat-icon>
+          <div class="bb-banner__text">
+            <span class="bb-banner__title">{{ 'ASC.OFFLINE_MSG' | translate }}</span>
+            <span class="bb-banner__sub">{{ 'ASC.OFFLINE_PENDING' | translate: { count: pendingCount() } }}</span>
           </div>
-          <a routerLink="/asc/sync" class="bb-connectivity-banner__action">
-            {{ 'ASC.OFFLINE_SYNC_LINK' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          <a matButton routerLink="/asc/sync" class="bb-banner__action">
+            {{ 'ASC.OFFLINE_SYNC_LINK' | translate }}
+            <mat-icon fontSet="pi" fontIcon="pi-arrow-right" iconPositionEnd aria-hidden="true"></mat-icon>
           </a>
         </div>
       }
 
       @if (justCameOnline()) {
-        <div class="bb-connectivity-banner bb-connectivity-banner--online" role="status" aria-live="polite">
-          <i class="pi pi-check-circle bb-connectivity-banner__icon" aria-hidden="true"></i>
-          <span class="bb-connectivity-banner__title">{{ 'ASC.ONLINE_MSG' | translate }}</span>
+        <div class="bb-banner bb-banner--online" role="status" aria-live="polite">
+          <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+          <span class="bb-banner__title">{{ 'ASC.ONLINE_MSG' | translate }}</span>
         </div>
       }
 
       <router-outlet></router-outlet>
-    </div>
-  </main>
-</div>
+    </main>
+  </mat-sidenav-content>
+
+  @if (showProfil()) {
+    <app-profil-modal
+      [forcerChangement]="doitChangerMotDePasse()"
+      (fermer)="showProfil.set(false)"
+    />
+  }
+</mat-sidenav-container>

@@ -392,6 +392,7 @@ export async function updateProfil(userId: string, dto: {
   nom?: string;
   email?: string;
   telephone?: string;
+  photoUrl?: string;
 }): Promise<void> {
   if (dto.email) {
     const existing = await prisma.utilisateur.findFirst({

@@ -28,6 +28,12 @@
             <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
           </div>
         </div>
+        @if (mdpAffiche()!.emailEnvoye) {
+          <div class="bb-mdp-modal__email-note">
+            <i class="pi pi-envelope" aria-hidden="true"></i>
+            {{ 'ADMIN.STRUCTURES.SUCCESS_EMAIL_SENT' | translate: { email: mdpAffiche()!.emailEnvoye } }}
+          </div>
+        }
         <div class="bb-mdp-modal__warning">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
           {{ 'ADMIN.STRUCTURES.PASSWORD_WARNING' | translate }}
@@ -99,7 +105,11 @@
           <input id="struct-admin-tel" pInputText [(ngModel)]="newStructure.admin.telephone" [placeholder]="'ADMIN.STRUCTURES.TEL_ADMIN_PH' | translate" #adminPhone="ngModel" required aria-describedby="struct-admin-tel-msg" />
           @if (adminPhone.invalid && (adminPhone.dirty || adminPhone.touched)) { <small id="struct-admin-tel-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
         </div>
-        <div class="bb-struct__field"><label for="struct-admin-email">{{ 'ADMIN.STRUCTURES.EMAIL_ADMIN_LABEL' | translate }}</label><input id="struct-admin-email" pInputText [(ngModel)]="newStructure.admin.email" type="email" [placeholder]="'ADMIN.STRUCTURES.EMAIL_ADMIN_PH' | translate" /></div>
+        <div class="bb-struct__field">
+          <label for="struct-admin-email">{{ 'ADMIN.STRUCTURES.EMAIL_ADMIN_LABEL' | translate }}</label>
+          <input id="struct-admin-email" pInputText [(ngModel)]="newStructure.admin.email" type="email" [placeholder]="'ADMIN.STRUCTURES.EMAIL_ADMIN_PH' | translate" #adminEmail="ngModel" required aria-describedby="struct-admin-email-msg" />
+          @if (adminEmail.invalid && (adminEmail.dirty || adminEmail.touched)) { <small id="struct-admin-email-msg" class="bb-error-text" role="alert">{{ 'ADMIN.STRUCTURES.REQUIRED' | translate }}</small> }
+        </div>
       </div>
       <div class="bb-struct__form-actions">
         <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>

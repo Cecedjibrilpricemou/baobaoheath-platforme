@@ -2,14 +2,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { TagModule } from 'primeng/tag';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { SkeletonModule } from 'primeng/skeleton';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { AscService } from '../../../core/services/asc.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -39,9 +33,7 @@ interface Stock {
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ButtonModule, InputTextModule, InputNumberModule,
-    TagModule, ProgressBarModule, SkeletonModule,
-    IconFieldModule, InputIconModule,
+    MatButtonModule, MatIconModule,
     TranslatePipe
   ],
   templateUrl: './stocks.component.html',
@@ -128,13 +120,14 @@ export class StocksComponent implements OnInit {
     return 'normal';
   }
 
-  getNiveauSeverity(s: Stock): 'danger' | 'warn' | 'success' {
-    const n = this.getNiveauStock(s);
-    return n === 'critique' ? 'danger' : n === 'faible' ? 'warn' : 'success';
-  }
-
   getStockPourcentage(s: Stock): number {
     return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100);
+  }
+
+  /** Variante de badge correspondant au niveau de stock. */
+  getNiveauVariante(s: Stock): string {
+    const n = this.getNiveauStock(s);
+    return n === 'critique' ? 'danger' : n === 'faible' ? 'warning' : 'success';
   }
 
   getBarColor(s: Stock): string {
@@ -147,18 +140,44 @@ export class StocksComponent implements OnInit {
 
   saveStock(stockId: string) {
     this.isSaving.set(true); this.errorMessage.set('');
-    this.ascService.updateStock(stockId, this.editQuantite()).subscribe({
-      next: (response) => {
+    const stock = this.stocks().find(s => s.id === stockId);
+    const libelle = stock
+      ? `${stock.medicament.nomCommercial || stock.medicament.dci} — ${this.editQuantite()} ${stock.unite}`
+      : undefined;
+
+    const nouvelleQuantite = this.editQuantite();
+
+    this.ascService.updateStock(stockId, nouvelleQuantite, libelle).subscribe({
+      next: (resultat) => {
         this.isSaving.set(false); this.editingId.set(null);
-        this.successMessage.set(this.i18n.t('ASC.STOCKS.SUCCESS_UPDATE'));
-        setTimeout(() => this.successMessage.set(''), 3000);
-        this.loadStocks();
+        this.successMessage.set(this.i18n.t(
+          resultat.synchronise ? 'ASC.STOCKS.SUCCESS_UPDATE' : 'ASC.STOCKS.SUCCESS_QUEUED'
+        ));
+        setTimeout(() => this.successMessage.set(''), resultat.synchronise ? 3000 : 5000);
+
+        if (resultat.synchronise) {
+          this.loadStocks();
+          return;
+        }
+        // Hors connexion : le rechargement échouerait et réafficherait
+        // l'ancienne quantité, laissant croire à l'agent que sa saisie est
+        // perdue. On applique donc la valeur localement en attendant l'envoi.
+        this.appliquerQuantiteLocale(stockId, nouvelleQuantite);
       },
       error: (err) => {
         this.isSaving.set(false);
         this.errorMessage.set(err?.error?.message ?? this.i18n.t('ASC.STOCKS.ERR_UPDATE'));
       }
     });
+  }
+
+  private appliquerQuantiteLocale(stockId: string, quantite: number) {
+    this.stocks.update(liste =>
+      liste.map(s => (s.id === stockId ? { ...s, quantite } : s))
+    );
+    const liste = this.stocks();
+    this.stocksCritiques.set(liste.filter(s => s.quantite <= s.seuilAlerte).length);
+    this.stocksNormaux.set(liste.filter(s => s.quantite > s.seuilAlerte).length);
   }
 
   formatDate(d?: string): string {

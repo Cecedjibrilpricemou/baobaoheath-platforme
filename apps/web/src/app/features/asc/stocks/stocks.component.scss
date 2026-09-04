@@ -42,6 +42,11 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
+  &__posologie {
+    display: block; font-size: 11.5px; color: var(--bb-text-muted);
+    margin-bottom: 4px;
+  }
+
   &__cat {
     font-size: 11.5px; color: var(--bb-text-muted);
     display: inline-block; background: var(--bb-surface-2);
@@ -105,6 +110,28 @@
 
 .expiry-warning { font-size: 11.5px; font-weight: 700; }
 
-.stock-card__actions { display: flex; gap: 8px; }
+.stock-card__actions {
+  display: flex; gap: 8px;
 
-.stock-level-tag { font-size: 11px !important; }
+  // Le bouton Modifier occupe toute la largeur quand il est seul.
+  .stock-card__edit { flex: 1; }
+}
+
+// Champ de saisie de quantite (remplace p-inputNumber)
+.qty-edit__input {
+  flex: 1; min-width: 0;
+  height: 38px; padding: 0 12px;
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius);
+  background: var(--bb-surface-0);
+  color: var(--bb-text-primary);
+  font-family: var(--bb-font-display);
+  font-size: 15px; font-weight: 700;
+  text-align: center;
+
+  &:focus {
+    outline: none;
+    border-color: var(--bb-primary);
+    box-shadow: 0 0 0 3px rgba(62, 187, 112, 0.18);
+  }
+}

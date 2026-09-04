@@ -7,13 +7,17 @@ import { InputTextModule } from 'primeng/inputtext';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { I18nService } from '../../services/i18n.service';
+import { AvatarComponent } from '../avatar/avatar.component';
 
 type Tab = 'profil' | 'password';
+
+const TAILLE_MAX_PHOTO = 3 * 1024 * 1024;
+const TYPES_PHOTO_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp'];
 
 @Component({
   selector: 'app-profil-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, TranslatePipe, AvatarComponent],
   templateUrl: './profil-modal.component.html',
   styleUrl: './profil-modal.component.scss'
 })
@@ -33,6 +37,7 @@ export class ProfilModalComponent implements OnInit {
 
   // Formulaire profil
   profilForm = { prenom: '', nom: '', email: '', telephone: '' };
+  isUploadingPhoto = signal(false);
 
   // Formulaire mot de passe
   passwordForm = { ancienMotDePasse: '', nouveauMotDePasse: '', confirmation: '' };
@@ -111,6 +116,41 @@ export class ProfilModalComponent implements OnInit {
       error: err => {
         this.isSaving.set(false);
         this.errorMsg.set(err?.error?.error ?? this.i18n.t('PROFIL_MODAL.ERR_PWD_CHANGE'));
+      }
+    });
+  }
+
+  // ── Photo de profil ──────────────────────────────────────────────
+  onPhotoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // permet de resélectionner le même fichier plus tard
+    if (!file) return;
+
+    if (!TYPES_PHOTO_ACCEPTES.includes(file.type)) {
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PHOTO_TYPE')); return;
+    }
+    if (file.size > TAILLE_MAX_PHOTO) {
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PHOTO_SIZE')); return;
+    }
+
+    this.isUploadingPhoto.set(true); this.errorMsg.set('');
+    this.authService.uploadAvatar(file).subscribe({
+      next: ({ url }) => {
+        this.authService.updateProfil({ photoUrl: url }).subscribe({
+          next: () => {
+            this.isUploadingPhoto.set(false);
+            this.showSuccess(this.i18n.t('PROFIL_MODAL.SUCCESS_PHOTO_UPDATED'));
+          },
+          error: err => {
+            this.isUploadingPhoto.set(false);
+            this.errorMsg.set(err?.error?.error ?? this.i18n.t('PROFIL_MODAL.ERR_UPDATE'));
+          }
+        });
+      },
+      error: err => {
+        this.isUploadingPhoto.set(false);
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PROFIL_MODAL.ERR_PHOTO_UPLOAD'));
       }
     });
   }

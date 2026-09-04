@@ -1,11 +1,9 @@
 // features/patient/dashboard/dashboard.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
+import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CardModule } from 'primeng/card';
-import { TagModule } from 'primeng/tag';
-import { ButtonModule } from 'primeng/button';
-import { SkeletonModule } from 'primeng/skeleton';
 import { AuthService } from '../../../core/services/auth.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { VaccinationService } from '../../../core/services/vaccination.service';
@@ -41,7 +39,9 @@ interface RendezVous {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, CardModule, TagModule, ButtonModule, SkeletonModule, TranslatePipe],
+  imports: [
+    SeveriteVariantePipe,
+    MatIconModule,CommonModule, RouterLink, TranslatePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

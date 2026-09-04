@@ -146,14 +146,15 @@
           <!-- Quantité -->
           <div class="bb-ordo__form-field mt-4">
             <label id="ordo-qty-label" for="ordo-qty">{{ 'PHARMACIEN.ORDONNANCES.QTY_TO_DELIVER' | translate: { qty: selected()!.quantite } }}</label>
-            <p-inputnumber
-              inputId="ordo-qty"
-              [(ngModel)]="quantiteDelivree"
-              [min]="1"
-              [max]="selected()!.quantite"
-              [showButtons]="true"
-              styleClass="w-full"
-            />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <input matInput type="number"
+    id="ordo-qty"
+    [min]="1"
+    [max]="selected()!.quantite"
+    step="1"
+    [(ngModel)]="quantiteDelivree"
+  />
+</mat-form-field>
           </div>
 
           <!-- Mode de paiement -->
@@ -166,12 +167,9 @@
                   [class.bb-ordo__mode--selected]="modePaiement === mode.value"
                   (click)="modePaiement = mode.value"
                 >
-                  <p-radiobutton
-                    [value]="mode.value"
-                    [(ngModel)]="modePaiement"
-                    [inputId]="mode.value"
-                  />
-                  <label [for]="mode.value" class="cursor-pointer">{{ mode.label }}</label>
+                  <mat-radio-button [value]="mode.value" [(ngModel)]="modePaiement">
+                    {{ mode.label }}
+                  </mat-radio-button>
                 </div>
               }
             </div>

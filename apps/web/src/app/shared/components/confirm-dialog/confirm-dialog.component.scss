@@ -1,0 +1,41 @@
+.bb-confirm {
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+
+  &__icon {
+    width: 56px; height: 56px; margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bb-success-bg);
+    border: 1px solid var(--bb-success-border);
+    color: var(--bb-primary);
+
+    &--danger {
+      background: var(--bb-danger-bg);
+      border-color: var(--bb-danger-border);
+      color: var(--bb-danger);
+    }
+  }
+
+  &__title {
+    font-family: var(--bb-font-display);
+    font-size: 1.125rem; font-weight: 700;
+    color: var(--bb-text-primary);
+    padding: 0; margin: 0 0 0.5rem;
+  }
+
+  &__text {
+    font-size: 0.875rem; color: var(--bb-text-muted);
+    line-height: 1.55; padding: 0 0 1.25rem;
+  }
+
+  &__actions {
+    display: flex; gap: 0.75rem; padding: 0;
+    button { flex: 1; }
+  }
+
+  &__confirm--danger {
+    --mat-button-filled-container-color: var(--bb-danger);
+    --mat-button-filled-label-text-color: #fff;
+  }
+}

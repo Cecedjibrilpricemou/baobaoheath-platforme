@@ -33,6 +33,12 @@
             <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
           </div>
         </div>
+        @if (mdpAffiche()!.emailEnvoye) {
+          <div class="bb-mdp-modal__email-note">
+            <i class="pi pi-envelope" aria-hidden="true"></i>
+            {{ 'ADMIN_STRUCTURE.AGENTS.SUCCESS_EMAIL_SENT' | translate: { email: mdpAffiche()!.emailEnvoye } }}
+          </div>
+        }
         <div class="bb-mdp-modal__warning">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
           {{ 'ADMIN_STRUCTURE.AGENTS.PASSWORD_WARNING' | translate }}
@@ -52,23 +58,40 @@
       <div class="bb-agents__form-grid">
         <div class="bb-agents__field">
           <label for="agent-prenom">{{ 'ADMIN_STRUCTURE.AGENTS.PRENOM_LABEL' | translate }}</label>
-          <input id="agent-prenom" pInputText [(ngModel)]="newAgent.prenom" [placeholder]="'ADMIN_STRUCTURE.AGENTS.PRENOM_PH' | translate" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="agent-prenom" [(ngModel)]="newAgent.prenom" [placeholder]="'ADMIN_STRUCTURE.AGENTS.PRENOM_PH' | translate" />
+          </mat-form-field>
         </div>
         <div class="bb-agents__field">
           <label for="agent-nom">{{ 'ADMIN_STRUCTURE.AGENTS.NOM_LABEL' | translate }}</label>
-          <input id="agent-nom" pInputText [(ngModel)]="newAgent.nom" [placeholder]="'ADMIN_STRUCTURE.AGENTS.NOM_PH' | translate" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="agent-nom" [(ngModel)]="newAgent.nom" [placeholder]="'ADMIN_STRUCTURE.AGENTS.NOM_PH' | translate" />
+          </mat-form-field>
         </div>
         <div class="bb-agents__field">
           <label for="agent-tel">{{ 'ADMIN_STRUCTURE.AGENTS.TEL_LABEL' | translate }}</label>
-          <input id="agent-tel" pInputText [(ngModel)]="newAgent.telephone" [placeholder]="'ADMIN_STRUCTURE.AGENTS.TEL_PH' | translate" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="agent-tel" [(ngModel)]="newAgent.telephone" [placeholder]="'ADMIN_STRUCTURE.AGENTS.TEL_PH' | translate" />
+          </mat-form-field>
         </div>
         <div class="bb-agents__field">
           <label for="agent-email">{{ 'ADMIN_STRUCTURE.AGENTS.EMAIL_LABEL' | translate }}</label>
-          <input id="agent-email" pInputText [(ngModel)]="newAgent.email" type="email" [placeholder]="'ADMIN_STRUCTURE.AGENTS.EMAIL_PH' | translate" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="agent-email" [(ngModel)]="newAgent.email" type="email" [placeholder]="'ADMIN_STRUCTURE.AGENTS.EMAIL_PH' | translate" />
+          </mat-form-field>
         </div>
         <div class="bb-agents__field">
           <label id="agent-role-label" for="agent-role">{{ 'ADMIN_STRUCTURE.AGENTS.ROLE_LABEL' | translate }}</label>
-          <p-select inputId="agent-role" [(ngModel)]="newAgent.role" [options]="rolesOptions" optionLabel="label" optionValue="value" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="agent-role"
+    [(ngModel)]="newAgent.role"
+  >
+    @for (opt of rolesOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
         </div>
         <!-- Mot de passe supprimé — généré automatiquement par le backend -->
         <div class="bb-agents__field bb-agents__field--info">
@@ -87,7 +110,7 @@
 
   <!-- Liste des agents -->
   @if (isLoading()) {
-    @for (i of [1,2,3]; track i) { <p-skeleton height="72px" borderRadius="8px" styleClass="mb-2" /> }
+    @for (i of [1,2,3]; track i) { <div class="bb-skeleton" style="height:72px;border-radius:8px"></div> }
   } @else if (agents().length === 0) {
     <div class="bb-agents__empty">
       <i class="pi pi-users" aria-hidden="true"></i>
@@ -107,7 +130,7 @@
             <p class="bb-agents__meta">{{ 'ADMIN_STRUCTURE.AGENTS.ADDED_ON' | translate: { date: formatDate(agent.creeLe) } }}</p>
           </div>
           <div class="bb-agents__actions">
-            <p-tag [value]="getRoleLabel(agent.role)" severity="info" />
+            <span class="bb-badge bb-badge--info">{{ getRoleLabel(agent.role) }}</span>
             <button class="bb-agents__deactivate" (click)="desactiver(agent.id)" [attr.title]="'ADMIN_STRUCTURE.AGENTS.DEACTIVATE_TITLE' | translate" [attr.aria-label]="'ADMIN_STRUCTURE.AGENTS.DEACTIVATE_ARIA' | translate: { nom: agent.prenom + ' ' + agent.nom }">
               <i class="pi pi-ban" aria-hidden="true"></i>
             </button>

@@ -1,11 +1,10 @@
 // features/medecin/messagerie/messagerie.component.ts
 import { Component, inject, signal, OnInit, ElementRef, ViewChild, AfterViewChecked, DestroyRef } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SkeletonModule } from 'primeng/skeleton';
 import { MedecinService } from '../../../core/services/medecin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocketService } from '../../../core/services/socket.service';
@@ -41,7 +40,8 @@ interface Conversation {
 @Component({
   selector: 'app-messagerie',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SkeletonModule, TranslatePipe],
+  imports: [
+    MatFormFieldModule, MatInputModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './messagerie.component.html',
   styleUrl: './messagerie.component.scss'
 })

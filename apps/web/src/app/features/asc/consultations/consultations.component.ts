@@ -3,12 +3,11 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { TagModule } from 'primeng/tag';
-import { TableModule } from 'primeng/table';
-import { SkeletonModule } from 'primeng/skeleton';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { AscService } from '../../../core/services/asc.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -21,8 +20,7 @@ import { Patient } from '../../../core/models/patient.model';
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ButtonModule, InputTextModule, SelectModule,
-    TagModule, TableModule, SkeletonModule,
+    MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     TranslatePipe
   ],
   templateUrl: './consultations.component.html',
@@ -112,12 +110,22 @@ export class ConsultationsComponent implements OnInit {
       motifPrincipal: this.newConsultation.motif,
       symptomes: [] // Require symptoms to be captured in the detail view or logic later
     }).subscribe({
-      next: (response) => {
+      next: (resultat) => {
         this.isSaving.set(false); this.showNewForm.set(false);
+
+        if (!resultat.synchronise) {
+          // Hors connexion : la saisie est conservée localement. Pas de
+          // navigation vers le détail, la consultation n'a pas encore d'id
+          // serveur.
+          this.successMessage.set(this.i18n.t('ASC.CONSULTATIONS.SUCCESS_QUEUED'));
+          setTimeout(() => this.successMessage.set(''), 5000);
+          return;
+        }
+
         this.successMessage.set(this.i18n.t('ASC.CONSULTATIONS.SUCCESS_CREATE'));
         setTimeout(() => this.successMessage.set(''), 3000);
         // Naviguer directement vers le détail de la nouvelle consultation
-        const id = response?.data?.id;
+        const id = resultat.data?.data?.id;
         if (id) {
           this.router.navigate(['/asc/consultations', id]);
         } else {
@@ -131,6 +139,15 @@ export class ConsultationsComponent implements OnInit {
   formatDate(dateStr: string): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** Variante de badge correspondant au statut d'une consultation. */
+  getStatutVariante(statut: string): string {
+    const map: Record<string, string> = {
+      'EN_COURS': 'warning', 'TERMINEE': 'success', 'PLANIFIEE': 'info',
+      'ANNULEE': 'danger', 'REFERENCEE': 'neutral'
+    };
+    return map[statut] ?? 'neutral';
   }
 
   getStatutSeverity(statut: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

@@ -1,223 +1,187 @@
 <!-- features/admin/analytics/analytics.component.html -->
-<div class="bb-analytics">
+<div class="bb-dash">
 
-  <!-- ── HEADER ──────────────────────────────────────────────────── -->
-  <div class="bb-analytics__header">
+  <!-- ── EN-TÊTE ─────────────────────────────────────────────────── -->
+  <header class="bb-dash__header">
     <div>
-      <h1 class="bb-analytics__title">
-        <i class="pi pi-chart-bar"></i>
-        Analytics
-      </h1>
-      <p class="bb-analytics__subtitle">{{ 'ADMIN.ANALYTICS.SUBTITLE' | translate }}</p>
+      <h1 class="bb-dash__title">{{ 'ADMIN.NAV_ANALYTICS' | translate }}</h1>
+      <p class="bb-dash__subtitle">{{ 'ADMIN.ANALYTICS.SUBTITLE' | translate }}</p>
     </div>
-    <div class="bb-analytics__filters">
-      <p-select
-        [(ngModel)]="prefiltreSelectionne"
-        [options]="prefiltreOptions"
-        optionLabel="label"
-        optionValue="value"
-        (onChange)="onPrefiltreChange()"
-      />
-      <a routerLink="/admin/export" class="bb-analytics__export-btn">
-        <i class="pi pi-download"></i> {{ 'ADMIN.ANALYTICS.EXPORT' | translate }}
+
+    <div class="bb-dash__actions">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-dash__filter">
+        <mat-select [(ngModel)]="prefiltreSelectionne" (selectionChange)="onPrefiltreChange()">
+          @for (opt of prefiltreOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <a matButton="filled" routerLink="/admin/export" class="bb-dash__cta">
+        <mat-icon fontSet="pi" fontIcon="pi-download" aria-hidden="true"></mat-icon>
+        {{ 'ADMIN.ANALYTICS.EXPORT' | translate }}
       </a>
     </div>
-  </div>
+  </header>
 
-  <!-- ── TABS ────────────────────────────────────────────────────── -->
-  <div class="bb-analytics__tabs">
-    <button
-      class="bb-analytics__tab"
-      [class.bb-analytics__tab--active]="activeTab() === 'kpis'"
-      [attr.aria-pressed]="activeTab() === 'kpis'"
-      (click)="activeTab.set('kpis')"
-    >
-      <i class="pi pi-home" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_OVERVIEW' | translate }}
-    </button>
-    <button
-      class="bb-analytics__tab"
-      [class.bb-analytics__tab--active]="activeTab() === 'heatmap'"
-      [attr.aria-pressed]="activeTab() === 'heatmap'"
-      (click)="activeTab.set('heatmap')"
-    >
-      <i class="pi pi-map" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_HEATMAP' | translate }}
-    </button>
-    <button
-      class="bb-analytics__tab"
-      [class.bb-analytics__tab--active]="activeTab() === 'alertes'"
-      [attr.aria-pressed]="activeTab() === 'alertes'"
-      (click)="activeTab.set('alertes')"
-    >
-      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_ALERTES' | translate }}
-    </button>
-    <button
-      class="bb-analytics__tab"
-      [class.bb-analytics__tab--active]="activeTab() === 'tendances'"
-      [attr.aria-pressed]="activeTab() === 'tendances'"
-      (click)="activeTab.set('tendances')"
-    >
-      <i class="pi pi-chart-line" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_TENDANCES' | translate }}
-    </button>
-    <button
-      class="bb-analytics__tab"
-      [class.bb-analytics__tab--active]="activeTab() === 'vaccins'"
-      [attr.aria-pressed]="activeTab() === 'vaccins'"
-      (click)="activeTab.set('vaccins')"
-    >
-      <i class="pi pi-heart" aria-hidden="true"></i> {{ 'ADMIN.ANALYTICS.TAB_VACCINS' | translate }}
-    </button>
-  </div>
+  <!-- ── ONGLETS ─────────────────────────────────────────────────── -->
+  <nav class="bb-dash__tabs" role="tablist">
+    @for (t of tabs; track t.id) {
+      <button
+        type="button"
+        role="tab"
+        class="bb-dash__tab"
+        [class.bb-dash__tab--active]="activeTab() === t.id"
+        [attr.aria-selected]="activeTab() === t.id"
+        (click)="activeTab.set(t.id)"
+      >
+        <mat-icon fontSet="pi" [fontIcon]="t.icon" aria-hidden="true"></mat-icon>
+        {{ t.labelKey | translate }}
+      </button>
+    }
+  </nav>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       VUE D'ENSEMBLE
-  ════════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'kpis') {
-    <div class="bb-analytics__section">
 
-      <!-- KPIs -->
+    <!-- ── CARTES DE SYNTHÈSE ───────────────────────────────────── -->
+    <section class="bb-kpis">
       @if (isLoadingDash()) {
-        <div class="bb-analytics__kpis">
-          @for (i of [1,2,3,4,5]; track i) {
-            <p-skeleton height="110px" borderRadius="12px" />
-          }
-        </div>
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="bb-kpi bb-kpi--skeleton"></div>
+        }
       } @else {
-        <div class="bb-analytics__kpis">
-          <div class="bb-analytics__kpi bb-analytics__kpi--blue">
-            <i class="pi pi-users"></i>
-            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalPatients ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_PATIENTS' | translate }}</div>
-          </div>
-          <div class="bb-analytics__kpi bb-analytics__kpi--green">
-            <i class="pi pi-heart-fill"></i>
-            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalConsultations ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_CONSULTATIONS' | translate }}</div>
-          </div>
-          <div class="bb-analytics__kpi bb-analytics__kpi--purple">
-            <i class="pi pi-shield"></i>
-            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalVaccinations ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_VACCINATIONS' | translate }}</div>
-          </div>
-          <div class="bb-analytics__kpi bb-analytics__kpi--orange">
-            <i class="pi pi-send"></i>
-            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalReferencements ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_REFERENCEMENTS' | translate }}</div>
-          </div>
-          <div class="bb-analytics__kpi bb-analytics__kpi--teal">
-            <i class="pi pi-user"></i>
-            <div class="bb-analytics__kpi-value">{{ dashboard()?.kpis?.totalAsc ?? 0 }}</div>
-            <div class="bb-analytics__kpi-label">{{ 'ADMIN.ANALYTICS.KPI_ASC' | translate }}</div>
-          </div>
-        </div>
-      }
-
-      <!-- Structures de santé -->
-      <div class="bb-analytics__struct-section">
-        <div class="bb-analytics__struct-header">
-          <div class="bb-analytics__struct-title">
-            <i class="pi pi-building"></i>
-            <span>{{ 'ADMIN.ANALYTICS.STRUCTURES_TITLE' | translate }}</span>
-          </div>
-          @if (statsStructures()) {
-            <div class="bb-analytics__struct-total">
-              <span class="bb-analytics__struct-total-num">{{ statsStructures()!.total }}</span>
-              <span class="bb-analytics__struct-total-lbl">{{ 'ADMIN.ANALYTICS.STRUCTURES_TOTAL' | translate }}</span>
+        @for (k of kpiCards(); track k.labelKey; let first = $first) {
+          <mat-card appearance="outlined" class="bb-kpi" [class.bb-kpi--featured]="first">
+            <div class="bb-kpi__top">
+              <span class="bb-kpi__icon" [style.--kpi-accent]="k.couleur">
+                <mat-icon fontSet="pi" [fontIcon]="k.icon" aria-hidden="true"></mat-icon>
+              </span>
+              <button matIconButton class="bb-kpi__go" [attr.aria-label]="k.labelKey | translate">
+                <mat-icon fontSet="pi" fontIcon="pi-arrow-up-right" aria-hidden="true"></mat-icon>
+              </button>
             </div>
-          }
+            <div class="bb-kpi__value">{{ k.valeur }}</div>
+            <div class="bb-kpi__label">{{ k.labelKey | translate }}</div>
+          </mat-card>
+        }
+      }
+    </section>
+
+    <!-- ── GRILLE PRINCIPALE ────────────────────────────────────── -->
+    <section class="bb-grid">
+
+      <mat-card appearance="outlined" class="bb-panel bb-panel--wide">
+        <div class="bb-panel__head">
+          <h2 class="bb-panel__title">{{ 'ADMIN.ANALYTICS.CONSULT_BY_STATUS_TITLE' | translate }}</h2>
         </div>
 
-        @if (isLoadingStructures()) {
-          <div class="bb-analytics__struct-grid">
-            @for (i of [1,2,3,4,5,6,7]; track i) {
-              <p-skeleton height="100px" borderRadius="12px" />
-            }
+        @if (isLoadingDash()) {
+          <div class="bb-panel__skeleton"></div>
+        } @else if (!dashboard()?.consultationsParStatut?.length) {
+          <div class="bb-empty">
+            <mat-icon fontSet="pi" fontIcon="pi-chart-bar" aria-hidden="true"></mat-icon>
+            <p>{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</p>
           </div>
-        } @else if (!statsStructures()?.parType?.length) {
-          <div class="bb-analytics__empty">{{ 'ADMIN.ANALYTICS.NO_STRUCTURES' | translate }}</div>
         } @else {
-          <div class="bb-analytics__struct-grid">
-            @for (s of statsStructures()!.parType; track s.type) {
-              <div class="bb-analytics__struct-card" [style.--struct-color]="getTypeColor(s.type)">
-                <div class="bb-analytics__struct-card-icon">
-                  <i [class]="'pi ' + getTypeIcon(s.type)"></i>
-                </div>
-                <div class="bb-analytics__struct-card-count">{{ s.count }}</div>
-                <div class="bb-analytics__struct-card-label">{{ getTypeLabel(s.type) }}</div>
-                <div class="bb-analytics__struct-card-bar">
+          <div class="bb-cols">
+            @for (s of dashboard()!.consultationsParStatut; track s.statut) {
+              <div class="bb-cols__item">
+                <div class="bb-cols__track">
                   <div
-                    class="bb-analytics__struct-card-fill"
-                    [style.width.%]="getBarWidth(s.count, getMaxStructure())"
-                  ></div>
+                    class="bb-cols__fill"
+                    [style.height.%]="getBarWidth(s.count, getMaxStatut())"
+                    [style.background]="getStatutColor(s.statut)"
+                  >
+                    <span class="bb-cols__value">{{ s.count }}</span>
+                  </div>
                 </div>
+                <span class="bb-cols__label">{{ getStatutLabel(s.statut) }}</span>
               </div>
             }
           </div>
         }
-      </div>
+      </mat-card>
 
-      <!-- Graphiques -->
-      <div class="bb-analytics__charts">
-
-        <!-- Consultations par statut -->
-        <div class="bb-analytics__chart-card">
-          <h3 class="bb-analytics__chart-title">
-            <i class="pi pi-chart-bar"></i>
-            {{ 'ADMIN.ANALYTICS.CONSULT_BY_STATUS_TITLE' | translate }}
-          </h3>
-          @if (isLoadingDash()) {
-            <p-skeleton height="200px" />
-          } @else if (!dashboard()?.consultationsParStatut?.length) {
-            <div class="bb-analytics__empty">{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</div>
-          } @else {
-            <div class="bb-analytics__bars">
-              @for (s of dashboard()!.consultationsParStatut; track s.statut) {
-                <div class="bb-analytics__bar-row">
-                  <span class="bb-analytics__bar-label">{{ getStatutLabel(s.statut) }}</span>
-                  <div class="bb-analytics__bar-track">
-                    <div
-                      class="bb-analytics__bar-fill"
-                      [style.width.%]="getBarWidth(s.count, getMaxStatut())"
-                      [style.background]="getStatutColor(s.statut)"
-                    ></div>
-                  </div>
-                  <span class="bb-analytics__bar-count">{{ s.count }}</span>
-                </div>
-              }
-            </div>
+      <mat-card appearance="outlined" class="bb-panel">
+        <div class="bb-panel__head">
+          <h2 class="bb-panel__title">{{ 'ADMIN.ANALYTICS.STRUCTURES_TITLE' | translate }}</h2>
+          @if (statsStructures()) {
+            <span class="bb-chip">{{ statsStructures()!.total }}</span>
           }
         </div>
 
-        <!-- Top 10 pathologies -->
-        <div class="bb-analytics__chart-card">
-          <h3 class="bb-analytics__chart-title">
-            <i class="pi pi-search"></i>
-            {{ 'ADMIN.ANALYTICS.TOP_PATHOLOGIES_TITLE' | translate }}
-          </h3>
-          @if (isLoadingDash()) {
-            <p-skeleton height="200px" />
-          } @else if (!dashboard()?.topPathologies?.length) {
-            <div class="bb-analytics__empty">{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</div>
-          } @else {
-            <div class="bb-analytics__bars">
-              @for (p of dashboard()!.topPathologies; track p.pathologie) {
-                <div class="bb-analytics__bar-row">
-                  <span class="bb-analytics__bar-label">{{ p.pathologie }}</span>
-                  <div class="bb-analytics__bar-track">
-                    <div
-                      class="bb-analytics__bar-fill"
-                      [style.width.%]="getBarWidth(p.count, getMaxPathologie())"
-                      style="background: #3EBB70"
-                    ></div>
-                  </div>
-                  <span class="bb-analytics__bar-count">{{ p.count }}</span>
-                </div>
-              }
-            </div>
-          }
+        @if (isLoadingStructures()) {
+          <div class="bb-panel__skeleton"></div>
+        } @else if (!statsStructures()?.parType?.length) {
+          <div class="bb-empty">
+            <mat-icon fontSet="pi" fontIcon="pi-building" aria-hidden="true"></mat-icon>
+            <p>{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</p>
+          </div>
+        } @else {
+          <ul class="bb-legend">
+            @for (s of statsStructures()!.parType; track s.type) {
+              <li class="bb-legend__row">
+                <span class="bb-legend__dot" [style.background]="typeColors[s.type]"></span>
+                <span class="bb-legend__label">{{ typeLabels[s.type] ?? s.type }}</span>
+                <span class="bb-legend__count">{{ s.count }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card>
+
+      <mat-card appearance="outlined" class="bb-panel bb-panel--wide">
+        <div class="bb-panel__head">
+          <h2 class="bb-panel__title">{{ 'ADMIN.ANALYTICS.TOP_PATHOLOGIES_TITLE' | translate }}</h2>
         </div>
 
-      </div>
-    </div>
+        @if (isLoadingDash()) {
+          <div class="bb-panel__skeleton"></div>
+        } @else if (!dashboard()?.topPathologies?.length) {
+          <div class="bb-empty">
+            <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
+            <p>{{ 'ADMIN.ANALYTICS.NO_DATA' | translate }}</p>
+          </div>
+        } @else {
+          <ul class="bb-ranked">
+            @for (p of dashboard()!.topPathologies; track p.pathologie; let i = $index) {
+              <li class="bb-ranked__row">
+                <span class="bb-ranked__rank">{{ i + 1 }}</span>
+                <span class="bb-ranked__label">{{ p.pathologie }}</span>
+                <span class="bb-ranked__track">
+                  <span class="bb-ranked__fill" [style.width.%]="getBarWidth(p.count, getMaxPathologie())"></span>
+                </span>
+                <span class="bb-ranked__count">{{ p.count }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card>
+
+      <mat-card appearance="outlined" class="bb-panel bb-panel--gauge">
+        <div class="bb-panel__head">
+          <h2 class="bb-panel__title">{{ 'ADMIN.ANALYTICS.TAB_VACCINS' | translate }}</h2>
+        </div>
+
+        <div class="bb-gauge">
+          <svg viewBox="0 0 120 120" class="bb-gauge__svg" aria-hidden="true">
+            <circle class="bb-gauge__rail" cx="60" cy="60" r="52" />
+            @if (tauxVaccination() > 0) {
+              <circle
+                class="bb-gauge__value"
+                cx="60" cy="60" r="52"
+                [style.stroke-dasharray]="gaugeDasharray()"
+              />
+            }
+          </svg>
+          <div class="bb-gauge__center">
+            <span class="bb-gauge__pct">{{ tauxVaccination() }}%</span>
+            <span class="bb-gauge__cap">{{ 'ADMIN.ANALYTICS.KPI_VACCINATIONS' | translate }}</span>
+          </div>
+        </div>
+      </mat-card>
+
+    </section>
   }
 
   <!-- ═══════════════════════════════════════════════════════════════

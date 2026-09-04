@@ -36,11 +36,20 @@
         <p class="text-secondary">{{ 'ASC.TRIAGE.STEP1_SUB' | translate }}</p>
 
         <div class="search-box">
-          <span class="p-input-icon-left w-full">
-            <i class="pi pi-search" aria-hidden="true"></i>
-            <input type="text" pInputText [(ngModel)]="patientRecherche" [placeholder]="'ASC.TRIAGE.SEARCH_PLACEHOLDER' | translate" [attr.aria-label]="'ASC.TRIAGE.SEARCH_ARIA' | translate" class="w-full" />
-          </span>
-          <p-button [label]="'COMMON.SEARCH' | translate" icon="pi pi-search" (onClick)="rechercherPatient()"></p-button>
+          <label class="bb-search bb-search--wide">
+            <mat-icon fontSet="pi" fontIcon="pi-search" class="bb-search__icon" aria-hidden="true"></mat-icon>
+            <input
+              class="bb-search__input"
+              type="search"
+              [(ngModel)]="patientRecherche"
+              [placeholder]="'ASC.TRIAGE.SEARCH_PLACEHOLDER' | translate"
+              [attr.aria-label]="'ASC.TRIAGE.SEARCH_ARIA' | translate"
+            />
+          </label>
+          <button matButton="filled" (click)="rechercherPatient()">
+            <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
+            {{ 'COMMON.SEARCH' | translate }}
+          </button>
         </div>
 
         @if (searchResults().length > 0) {
@@ -73,7 +82,10 @@
         }
 
         <div class="step-actions">
-          <p-button [label]="'ASC.TRIAGE.NEXT_BTN' | translate" icon="pi pi-arrow-right" iconPos="right" [disabled]="!patientTrouve()" (onClick)="nextStep()"></p-button>
+          <button matButton="filled" [disabled]="!patientTrouve()" (click)="nextStep()">
+            {{ 'ASC.TRIAGE.NEXT_BTN' | translate }}
+            <mat-icon fontSet="pi" fontIcon="pi-arrow-right" iconPositionEnd aria-hidden="true"></mat-icon>
+          </button>
         </div>
       </div>
     }
@@ -86,23 +98,44 @@
         <div class="form-grid mt-4">
           <div class="field">
             <label id="triage-symptomes-label" for="triage-symptomes">{{ 'ASC.TRIAGE.SYMPTOMES_LABEL' | translate }}</label>
-            <p-multiSelect inputId="triage-symptomes" [options]="symptomesList" [(ngModel)]="selectedSymptomes" [defaultLabel]="'ASC.TRIAGE.SYMPTOMES_PLACEHOLDER' | translate" optionLabel="label" optionValue="value" display="chip" styleClass="w-full"></p-multiSelect>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field__full">
+              <mat-select
+                id="triage-symptomes"
+                multiple
+                [(ngModel)]="selectedSymptomes"
+                [placeholder]="'ASC.TRIAGE.SYMPTOMES_PLACEHOLDER' | translate"
+              >
+                @for (s of symptomesList; track s.value) {
+                  <mat-option [value]="s.value">{{ s.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <div class="field">
             <label id="triage-temp-label">{{ 'ASC.TRIAGE.TEMP_LABEL' | translate: { value: temperature() } }}</label>
-            <p-slider [(ngModel)]="temperature" [min]="35" [max]="42" [step]="0.1" styleClass="w-full mt-2" [ariaLabelledBy]="'triage-temp-label'"></p-slider>
+            <mat-slider class="field__full" [min]="35" [max]="42" [step]="0.1" discrete>
+              <input matSliderThumb [(ngModel)]="temperature" [attr.aria-labelledby]="'triage-temp-label'" />
+            </mat-slider>
           </div>
 
           <div class="field">
             <label for="triage-tension">{{ 'ASC.TRIAGE.TENSION_LABEL' | translate }}</label>
-            <input id="triage-tension" type="text" pInputText [(ngModel)]="tension" [placeholder]="'ASC.TRIAGE.TENSION_PLACEHOLDER' | translate" class="w-full" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="triage-tension" type="text" [(ngModel)]="tension" [placeholder]="'ASC.TRIAGE.TENSION_PLACEHOLDER' | translate" />
+            </mat-form-field>
           </div>
         </div>
 
         <div class="step-actions">
-          <p-button [label]="'COMMON.BACK' | translate" icon="pi pi-arrow-left" styleClass="p-button-outlined" (onClick)="prevStep()"></p-button>
-          <p-button [label]="'ASC.TRIAGE.LAUNCH_ANALYSIS' | translate" icon="pi pi-sparkles" styleClass="p-button-primary" (onClick)="nextStep()"></p-button>
+          <button matButton="outlined" (click)="prevStep()">
+            <mat-icon fontSet="pi" fontIcon="pi-arrow-left" aria-hidden="true"></mat-icon>
+            {{ 'COMMON.BACK' | translate }}
+          </button>
+          <button matButton="filled" (click)="nextStep()">
+            <mat-icon fontSet="pi" fontIcon="pi-bolt" aria-hidden="true"></mat-icon>
+            {{ 'ASC.TRIAGE.LAUNCH_ANALYSIS' | translate }}
+          </button>
         </div>
       </div>
     }
@@ -116,7 +149,7 @@
             <div class="pulse-ring" aria-hidden="true"></div>
             <i class="pi pi-sparkles ia-icon" aria-hidden="true"></i>
             <h2>{{ 'ASC.TRIAGE.ANALYZING_TITLE' | translate }}</h2>
-            <p-progressBar [value]="iaProgress()" styleClass="w-full mt-4"></p-progressBar>
+            <mat-progress-bar class="mt-4" mode="determinate" [value]="iaProgress()"></mat-progress-bar>
             <p class="mt-2 text-secondary">{{ 'ASC.TRIAGE.ANALYZING_SUB' | translate: { percent: iaProgress() } }}</p>
           </div>
         } @else if (analysisResult()) {
@@ -142,7 +175,10 @@
             </div>
 
             <div class="step-actions">
-              <p-button [label]="'ASC.TRIAGE.CREATE_CONSULTATION' | translate" icon="pi pi-check" styleClass="w-full" (onClick)="creerConsultation()" [loading]="isCreating()"></p-button>
+              <button matButton="filled" class="field__full" [disabled]="isCreating()" (click)="creerConsultation()">
+                <mat-icon fontSet="pi" [fontIcon]="isCreating() ? 'pi-spinner pi-spin' : 'pi-check'" aria-hidden="true"></mat-icon>
+                {{ 'ASC.TRIAGE.CREATE_CONSULTATION' | translate }}
+              </button>
             </div>
           </div>
         }

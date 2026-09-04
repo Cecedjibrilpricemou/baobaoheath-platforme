@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
+import path from 'path';
 import { env } from './config/env';
 
 import authRoutes from './routes/auth.routes';
@@ -23,6 +24,7 @@ import triageRoutes from './routes/triage.routes';
 import privacyRoutes from './routes/privacy.routes';
 import ussdRoutes from './routes/ussd.routes';
 import statsRoutes from './routes/stats.routes';
+import uploadRoutes from './routes/upload.routes';
 import { setupSwagger } from './config/swagger';
 import { logger } from './config/logger';
 import { prisma } from './config/prisma';
@@ -96,6 +98,15 @@ app.use(requestContextMiddleware);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Fichiers uploadés (photos de profil) — servis sur une origine différente du
+// front (localhost:4200 vs localhost:3000), donc CORP explicite requis sinon
+// helmet() bloque le chargement de l'image côté navigateur.
+app.use('/uploads', (_req: Request, res: Response, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(process.cwd(), 'uploads')));
+
 app.use('/api/v1', apiLimiter);
 
 app.get('/health', async (_req: Request, res: Response) => {
@@ -148,6 +159,7 @@ app.use('/api/v1/triage', triageRoutes);
 app.use('/api/v1/privacy', privacyRoutes);
 app.use('/api/v1/ussd', ussdRoutes);
 app.use('/api/v1/stats', statsRoutes);
+app.use('/api/v1/uploads', uploadRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

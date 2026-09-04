@@ -9,7 +9,11 @@
     <div class="page-hero__content">
       <div class="profil-hero__identity">
         <div class="profil-hero__avatar">
-          <span class="profil-hero__avatar-initials">{{ getInitiales() }}</span>
+          <app-avatar class="profil-hero__avatar-initials" [photoUrl]="currentUser()?.photoUrl" [initiales]="getInitiales()" />
+          <button type="button" class="profil-hero__avatar-edit" (click)="photoInput.click()" [disabled]="isUploadingPhoto()" [attr.aria-label]="'PROFIL_MODAL.CHANGE_PHOTO_ARIA' | translate">
+            <i [class]="isUploadingPhoto() ? 'pi pi-spinner pi-spin' : 'pi pi-camera'" aria-hidden="true"></i>
+          </button>
+          <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onPhotoSelected($event)" />
           <div class="profil-hero__avatar-badge"><i class="pi pi-check"></i></div>
         </div>
         <div class="profil-hero__info">
@@ -101,8 +105,9 @@
           <div class="form-field">
             <label class="form-field__label" for="profil-nom">{{ 'PATIENT.PROFILE.LAST_NAME' | translate }}</label>
             @if (editMode()) {
-            <input id="profil-nom" pInputText class="form-field__input w-full" [(ngModel)]="formData.nom"
-              [placeholder]="'PATIENT.PROFILE.LAST_NAME' | translate" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="profil-nom" class="form-field__input w-full" [(ngModel)]="formData.nom" [placeholder]="'PATIENT.PROFILE.LAST_NAME' | translate" />
+            </mat-form-field>
             } @else {
             <span id="profil-nom" class="form-field__value">{{ profil()?.nom || currentUser()?.nom || '—' }}</span>
             }
@@ -110,8 +115,9 @@
           <div class="form-field">
             <label class="form-field__label" for="profil-prenom">{{ 'PATIENT.PROFILE.FIRST_NAME' | translate }}</label>
             @if (editMode()) {
-            <input id="profil-prenom" pInputText class="form-field__input w-full" [(ngModel)]="formData.prenom"
-              [placeholder]="'PATIENT.PROFILE.FIRST_NAME' | translate" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="profil-prenom" class="form-field__input w-full" [(ngModel)]="formData.prenom" [placeholder]="'PATIENT.PROFILE.FIRST_NAME' | translate" />
+            </mat-form-field>
             } @else {
             <span id="profil-prenom" class="form-field__value">{{ profil()?.prenom || currentUser()?.prenom || '—' }}</span>
             }
@@ -119,7 +125,9 @@
           <div class="form-field">
             <label class="form-field__label" for="profil-tel">{{ 'PATIENT.PROFILE.PHONE' | translate }}</label>
             @if (editMode()) {
-            <input id="profil-tel" pInputText type="tel" class="form-field__input w-full" [(ngModel)]="formData.telephone" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="profil-tel" type="tel" class="form-field__input w-full" [(ngModel)]="formData.telephone" />
+            </mat-form-field>
             } @else {
             <span id="profil-tel" class="form-field__value">{{ profil()?.telephone || currentUser()?.telephone || '—' }}</span>
             }
@@ -127,7 +135,9 @@
           <div class="form-field">
             <label class="form-field__label" for="profil-naissance">{{ 'PATIENT.PROFILE.BIRTH_DATE' | translate }}</label>
             @if (editMode()) {
-            <input id="profil-naissance" pInputText type="date" class="form-field__input w-full" [(ngModel)]="formData.dateNaissance" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="profil-naissance" type="date" class="form-field__input w-full" [(ngModel)]="formData.dateNaissance" />
+            </mat-form-field>
             } @else {
             <span id="profil-naissance" class="form-field__value">{{ formatDate(profil()?.dateNaissance) }}</span>
             }
@@ -135,8 +145,17 @@
           <div class="form-field">
             <label class="form-field__label" id="profil-sexe-label" for="profil-sexe">{{ 'PATIENT.PROFILE.GENDER' | translate }}</label>
             @if (editMode()) {
-            <p-select inputId="profil-sexe" [options]="sexeOptions" [(ngModel)]="formData.sexe" optionLabel="label" optionValue="value"
-              [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate" styleClass="w-full"></p-select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <mat-select
+                id="profil-sexe"
+                [(ngModel)]="formData.sexe"
+                [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate"
+              >
+                @for (opt of sexeOptions; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
             } @else {
             <span class="form-field__value">
               {{ profil()?.sexe === 'M' ? ('PATIENT.PROFILE.GENDER_M' | translate) : profil()?.sexe === 'F' ?
@@ -147,8 +166,9 @@
           <div class="form-field">
             <label class="form-field__label" for="profil-adresse">{{ 'PATIENT.PROFILE.ADDRESS' | translate }}</label>
             @if (editMode()) {
-            <input id="profil-adresse" pInputText class="form-field__input w-full" [(ngModel)]="formData.adresse"
-              [placeholder]="'PATIENT.PROFILE.ADDRESS_PLACEHOLDER' | translate" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="profil-adresse" class="form-field__input w-full" [(ngModel)]="formData.adresse" [placeholder]="'PATIENT.PROFILE.ADDRESS_PLACEHOLDER' | translate" />
+            </mat-form-field>
             } @else {
             <span id="profil-adresse" class="form-field__value">{{ profil()?.adresse || '—' }}</span>
             }
@@ -168,9 +188,17 @@
           <div class="form-field form-field--full">
             <label class="form-field__label" id="profil-sang-label" for="profil-sang">{{ 'PATIENT.PROFILE.BLOOD_TYPE' | translate }}</label>
             @if (editMode()) {
-            <p-select inputId="profil-sang" [options]="bloodOptions" [(ngModel)]="formData.groupeSanguin" optionLabel="label"
-              optionValue="value" [placeholder]="'PATIENT.PROFILE.BLOOD_SELECT' | translate"
-              styleClass="w-full"></p-select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <mat-select
+                id="profil-sang"
+                [(ngModel)]="formData.groupeSanguin"
+                [placeholder]="'PATIENT.PROFILE.BLOOD_SELECT' | translate"
+              >
+                @for (opt of bloodOptions; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
             } @else {
             @if (profil()?.groupeSanguin) {
             <div class="blood-badge">
@@ -235,8 +263,17 @@
         <div class="structure-select">
           <label class="form-field__label" id="profil-structure-label" for="profil-structure">{{ 'PATIENT.PROFILE.STRUCTURE_SELECT_LABEL' | translate }}</label>
           <div class="structure-select__row">
-            <p-select inputId="profil-structure" [(ngModel)]="idStructureSelectionnee" [options]="structureOptions" optionLabel="label"
-              optionValue="value" [placeholder]="'PATIENT.PROFILE.STRUCTURE_SELECT_PLACEHOLDER' | translate" styleClass="w-full" />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+  <mat-select
+    id="profil-structure"
+    [(ngModel)]="idStructureSelectionnee"
+    [placeholder]="'PATIENT.PROFILE.STRUCTURE_SELECT_PLACEHOLDER' | translate"
+  >
+    @for (opt of structureOptions; track opt.value) {
+      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
             <button class="structure-select__btn" (click)="saveStructurePreferee()" [disabled]="isSavingStructure()">
               <i [class]="isSavingStructure() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
               {{ (isSavingStructure() ? 'PATIENT.PROFILE.STRUCTURE_SAVING' : 'PATIENT.PROFILE.STRUCTURE_SAVE') | translate }}

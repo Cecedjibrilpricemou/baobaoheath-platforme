@@ -1,0 +1,22 @@
+<div class="bb-confirm">
+  @if (data.icone) {
+    <div class="bb-confirm__icon" [class.bb-confirm__icon--danger]="data.danger">
+      <mat-icon fontSet="pi" [fontIcon]="data.icone" aria-hidden="true"></mat-icon>
+    </div>
+  }
+
+  <h2 mat-dialog-title class="bb-confirm__title">{{ data.titre }}</h2>
+
+  <mat-dialog-content class="bb-confirm__text">{{ data.texte }}</mat-dialog-content>
+
+  <mat-dialog-actions class="bb-confirm__actions">
+    <button matButton (click)="annuler()">{{ data.annuler }}</button>
+    <button
+      matButton="filled"
+      class="bb-confirm__confirm"
+      [class.bb-confirm__confirm--danger]="data.danger"
+      cdkFocusInitial
+      (click)="confirmer()"
+    >{{ data.confirmer }}</button>
+  </mat-dialog-actions>
+</div>

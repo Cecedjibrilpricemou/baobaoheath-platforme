@@ -13,15 +13,9 @@
     </div>
     <div class="bb-scanner__input-wrap">
       <div class="p-inputgroup">
-        <input
-          pInputText
-          [(ngModel)]="qrCode"
-          [placeholder]="'PHARMACIEN.SCANNER.PLACEHOLDER' | translate"
-          [attr.aria-label]="'PHARMACIEN.SCANNER.ARIA' | translate"
-          (keydown)="onKeyDown($event)"
-          [disabled]="isScanning()"
-          class="bb-scanner__input"
-        />
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+          <input matInput [(ngModel)]="qrCode" [placeholder]="'PHARMACIEN.SCANNER.PLACEHOLDER' | translate" [attr.aria-label]="'PHARMACIEN.SCANNER.ARIA' | translate" (keydown)="onKeyDown($event)" [disabled]="isScanning()" class="bb-scanner__input" />
+        </mat-form-field>
         <button
           class="bb-scanner__btn"
           (click)="scan()"
@@ -63,10 +57,7 @@
           </div>
         </div>
         <div class="bb-scanner__patient-badge">
-          <p-tag
-            [value]="'PHARMACIEN.SCANNER.ORDO_COUNT' | translate: { count: scanResult()!.totalOrdonnances }"
-            severity="info"
-          />
+          <span class="bb-badge bb-badge--info">{{ 'PHARMACIEN.SCANNER.ORDO_COUNT' | translate: { count: scanResult()!.totalOrdonnances } }}</span>
         </div>
       </div>
 

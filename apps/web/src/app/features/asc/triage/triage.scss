@@ -287,3 +287,5 @@
   0% { transform: scale(0.5); opacity: 1; }
   100% { transform: scale(1.5); opacity: 0; }
 }
+// Champs Material occupant toute la largeur de leur colonne
+.field__full { width: 100%; }

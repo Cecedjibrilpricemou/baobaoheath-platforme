@@ -1,35 +1,33 @@
 // features/patient/profil/profil.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { TextareaModule } from 'primeng/textarea';
-import { CardModule } from 'primeng/card';
-import { TagModule } from 'primeng/tag';
-import { SkeletonModule } from 'primeng/skeleton';
-import { DividerModule } from 'primeng/divider';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient } from '../../../core/models/patient.model';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 
 interface Structure {
   id: string; nom: string; type: string; prefecture: string;
 }
 
+const TAILLE_MAX_PHOTO = 3 * 1024 * 1024;
+const TYPES_PHOTO_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp'];
+
 @Component({
   selector: 'app-profil',
   standalone: true,
   imports: [
+    MatFormFieldModule, MatInputModule, MatSelectModule,
     CommonModule, FormsModule, RouterLink,
-    ButtonModule, InputTextModule, SelectModule,
-    TextareaModule, CardModule, TagModule, SkeletonModule, DividerModule,
-    TranslatePipe
+    TranslatePipe, AvatarComponent
   ],
   templateUrl: './profil.component.html',
   styleUrl: './profil.component.scss'
@@ -52,6 +50,7 @@ export class ProfilComponent implements OnInit {
   errorMessage = signal('');
   formData: Partial<Patient> = {};
   idStructureSelectionnee = '';
+  isUploadingPhoto = signal(false);
 
   bloodOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(v => ({ label: v, value: v }));
 
@@ -185,6 +184,41 @@ export class ProfilComponent implements OnInit {
     const prenom = p?.utilisateur?.prenom ?? p?.prenom ?? u?.prenom ?? '';
     const nom = p?.utilisateur?.nom ?? p?.nom ?? u?.nom ?? '';
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase() || '??';
+  }
+
+  onPhotoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    if (!TYPES_PHOTO_ACCEPTES.includes(file.type)) {
+      this.errorMessage.set(this.i18n.t('PROFIL_MODAL.ERR_PHOTO_TYPE')); return;
+    }
+    if (file.size > TAILLE_MAX_PHOTO) {
+      this.errorMessage.set(this.i18n.t('PROFIL_MODAL.ERR_PHOTO_SIZE')); return;
+    }
+
+    this.isUploadingPhoto.set(true); this.errorMessage.set('');
+    this.authService.uploadAvatar(file).subscribe({
+      next: ({ url }) => {
+        this.authService.updateProfil({ photoUrl: url }).subscribe({
+          next: () => {
+            this.isUploadingPhoto.set(false);
+            this.successMessage.set(this.i18n.t('PROFIL_MODAL.SUCCESS_PHOTO_UPDATED'));
+            setTimeout(() => this.successMessage.set(''), 3000);
+          },
+          error: () => {
+            this.isUploadingPhoto.set(false);
+            this.errorMessage.set(this.i18n.t('PROFIL_MODAL.ERR_UPDATE'));
+          }
+        });
+      },
+      error: () => {
+        this.isUploadingPhoto.set(false);
+        this.errorMessage.set(this.i18n.t('PROFIL_MODAL.ERR_PHOTO_UPLOAD'));
+      }
+    });
   }
 
   formatDate(dateStr?: string): string {

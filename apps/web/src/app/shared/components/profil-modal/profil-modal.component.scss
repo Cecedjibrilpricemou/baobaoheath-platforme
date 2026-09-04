@@ -41,6 +41,11 @@
       background: var(--bb-surface-1);
     }
   
+    &__avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
     &__avatar {
       width: 48px; height: 48px;
       border-radius: 50%;
@@ -49,9 +54,19 @@
       font-family: var(--bb-font-display);
       font-size: 18px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
     }
-  
+
+    &__avatar-edit {
+      position: absolute; bottom: -2px; right: -2px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--bb-primary); border: 2px solid var(--bb-surface-1);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0; transition: background var(--bb-transition);
+      font-size: 10px;
+      &:hover:not(:disabled) { background: var(--bb-mid); }
+      &:disabled { opacity: .7; cursor: not-allowed; }
+    }
+
     &__info { flex: 1; }
   
     &__name {

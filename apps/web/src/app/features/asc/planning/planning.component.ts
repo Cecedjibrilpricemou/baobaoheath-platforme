@@ -1,9 +1,6 @@
 // features/asc/planning/planning.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { SkeletonModule } from 'primeng/skeleton';
 import { AscService } from '../../../core/services/asc.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
@@ -15,7 +12,7 @@ interface RendezVous {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, ButtonModule, TagModule, SkeletonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './planning.component.html',
   styleUrl: './planning.component.scss'
 })
@@ -76,6 +73,14 @@ export class PlanningComponent implements OnInit {
   }
 
   isPasse(dateStr: string): boolean { return new Date(dateStr) < new Date(); }
+
+  /** Variante de badge correspondant au statut d'un rendez-vous. */
+  getStatutVariante(statut: string): string {
+    const map: Record<string, string> = {
+      'PLANIFIE': 'info', 'CONFIRME': 'success', 'ANNULE': 'danger', 'TERMINE': 'neutral'
+    };
+    return map[statut] ?? 'neutral';
+  }
 
   getStatutSeverity(statut: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     const map: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary'> = {

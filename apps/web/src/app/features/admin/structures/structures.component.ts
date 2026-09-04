@@ -25,6 +25,7 @@ interface MotDePasseAffiche {
   adminNom: string;
   adminTelephone: string;
   motDePasse: string;
+  emailEnvoye?: string;
 }
 
 interface CreateStructureResponse {
@@ -98,7 +99,7 @@ export class StructuresComponent implements OnInit {
     if (!this.newStructure.nom || !this.newStructure.prefecture) {
       this.toastr.error(this.i18n.t('ADMIN.STRUCTURES.ERR_VALIDATION_STRUCT'), validationTitle); return;
     }
-    if (!this.newStructure.admin.prenom || !this.newStructure.admin.nom || !this.newStructure.admin.telephone) {
+    if (!this.newStructure.admin.prenom || !this.newStructure.admin.nom || !this.newStructure.admin.telephone || !this.newStructure.admin.email) {
       this.toastr.error(this.i18n.t('ADMIN.STRUCTURES.ERR_VALIDATION_ADMIN'), validationTitle); return;
     }
     this.isSaving.set(true);
@@ -157,18 +158,17 @@ export class StructuresComponent implements OnInit {
         const adminData = data?.admin ?? data?.pharmacien;
         const structureData = data?.structure ?? data?.pharmacie;
 
-        const successTitle = this.i18n.t('ADMIN.STRUCTURES.SUCCESS_TITLE');
-        if (adminData?.email) {
-          this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_EMAIL_SENT', { email: adminData.email }), successTitle);
-        } else {
-          this.mdpAffiche.set({
-            structureNom: structureData?.nom ?? nomStructureCree,
-            adminNom: `${adminData?.prenom ?? ''} ${adminData?.nom ?? ''}`.trim(),
-            adminTelephone: adminData?.telephone ?? telephoneAdminSaisi,
-            motDePasse: data?.motDePasseTemporaire ?? ''
-          });
-          this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_CREATED', { nom: nomStructureCree }), successTitle);
-        }
+        // Le mot de passe temporaire est toujours affiché ici : l'envoi d'email
+        // peut échouer silencieusement côté serveur (SMTP indisponible, etc.),
+        // il ne faut jamais faire dépendre l'accès au compte de sa réception.
+        this.mdpAffiche.set({
+          structureNom: structureData?.nom ?? nomStructureCree,
+          adminNom: `${adminData?.prenom ?? ''} ${adminData?.nom ?? ''}`.trim(),
+          adminTelephone: adminData?.telephone ?? telephoneAdminSaisi,
+          motDePasse: data?.motDePasseTemporaire ?? '',
+          emailEnvoye: adminData?.email
+        });
+        this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_CREATED', { nom: nomStructureCree }), this.i18n.t('ADMIN.STRUCTURES.SUCCESS_TITLE'));
         this.loadStructures();
       },
       error: err => {

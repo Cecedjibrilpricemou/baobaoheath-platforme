@@ -179,7 +179,7 @@
   }
 }
 
-[data-theme="dark"] .lnav {
+:host-context([data-theme="dark"]) .lnav {
   background: rgba(15, 31, 20, 0.97);
 }
 

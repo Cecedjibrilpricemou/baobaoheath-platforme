@@ -2,13 +2,13 @@ import { Component, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { SliderModule } from 'primeng/slider';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { TagModule } from 'primeng/tag';
-import { CardModule } from 'primeng/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSliderModule } from '@angular/material/slider';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AscService } from '../../../core/services/asc.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { Patient } from '../../../core/models/patient.model';
@@ -20,9 +20,10 @@ import { I18nService } from '../../../shared/services/i18n.service';
   selector: 'app-triage',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ButtonModule, InputTextModule,
-    MultiSelectModule, SliderModule,
-    ProgressBarModule, TagModule, CardModule, TranslatePipe
+    CommonModule, FormsModule,
+    MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
+    MatSelectModule, MatSliderModule, MatProgressBarModule,
+    TranslatePipe
   ],
   templateUrl: './triage.html',
   styleUrl: './triage.scss',
@@ -285,7 +286,9 @@ export class Triage {
       symptomes: this.selectedSymptomes()
     };
 
-    this.ascService.saveConsultation(payload).subscribe({
+    const nomPatient = `${patient.utilisateur?.prenom ?? patient.prenom ?? ''} ${patient.utilisateur?.nom ?? patient.nom ?? ''}`.trim();
+
+    this.ascService.saveConsultation(payload, nomPatient || payload.motifPrincipal).subscribe({
       next: () => {
         this.isCreating.set(false);
         this.router.navigate(['/asc']);

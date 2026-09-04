@@ -1,63 +1,65 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { TagModule } from 'primeng/tag';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../shared/services/i18n.service';
+import { OfflineQueueService, MutationEnAttente } from '../../../core/services/offline-queue.service';
 
 @Component({
   selector: 'app-sync',
   standalone: true,
-  imports: [CommonModule, ButtonModule, ProgressBarModule, TagModule, TranslatePipe],
+  imports: [CommonModule, MatButtonModule, MatIconModule, TranslatePipe],
   templateUrl: './sync.html',
   styleUrl: './sync.scss',
 })
 export class Sync {
-  isOnline = signal(navigator.onLine);
-  isSyncing = signal(false);
-  syncProgress = signal(0);
+  private queue = inject(OfflineQueueService);
+  private i18n = inject(I18nService);
 
-  pendingItems = signal([
-    { id: '1', type: 'Consultation', typeKey: 'ASC.SYNC.TYPE_CONSULTATION', patient: 'Aissatou Barry', hoursAgo: 2, status: 'pending' },
-    { id: '2', type: 'Nouveau Patient', typeKey: 'ASC.SYNC.TYPE_NEW_PATIENT', patient: 'Ibrahima Diallo', hoursAgo: 3, status: 'pending' },
-    { id: '3', type: 'Mise à jour stock', typeKey: 'ASC.SYNC.TYPE_STOCK_UPDATE', patient: 'Paracétamol', hoursAgo: 5, status: 'pending' }
-  ]);
+  isOnline = this.queue.isOnline;
+  isSyncing = this.queue.isSyncing;
+  derniereSync = this.queue.derniereSync;
+  derniereErreur = this.queue.derniereErreur;
 
-  constructor() {
-    window.addEventListener('online', () => this.isOnline.set(true));
-    window.addEventListener('offline', () => this.isOnline.set(false));
-  }
+  pendingItems = this.queue.file;
+  nbEnAttente = this.queue.nbEnAttente;
+  peutSynchroniser = computed(() => this.isOnline() && this.nbEnAttente() > 0 && !this.isSyncing());
 
   startSync() {
-    if (!this.isOnline() || this.pendingItems().length === 0) return;
-    
-    this.isSyncing.set(true);
-    this.syncProgress.set(0);
-
-    const interval = setInterval(() => {
-      this.syncProgress.update(v => v + 20);
-      
-      // Mettre à jour progressivement le statut des items
-      const progress = this.syncProgress();
-      if (progress === 40) {
-        this.updateItemStatus('1', 'synced');
-      } else if (progress === 80) {
-        this.updateItemStatus('2', 'synced');
-      } else if (progress >= 100) {
-        this.updateItemStatus('3', 'synced');
-        clearInterval(interval);
-        
-        setTimeout(() => {
-          this.isSyncing.set(false);
-          this.pendingItems.set([]); // Vider la liste
-        }, 1000);
-      }
-    }, 500);
+    this.queue.synchroniser();
   }
 
-  private updateItemStatus(id: string, status: string) {
-    this.pendingItems.update(items => 
-      items.map(item => item.id === id ? { ...item, status } : item)
-    );
+  abandonner(item: MutationEnAttente) {
+    this.queue.retirer(item.clientMutationId);
+  }
+
+  /** Icône par type d'entité mis en file. */
+  iconeEntite(entityType: string): string {
+    // Types alignés sur ceux acceptés par applyMutation() côté API.
+    const map: Record<string, string> = {
+      Consultation: 'pi-file-edit text-blue-500',
+      PatientProfile: 'pi-user-plus text-green-500',
+      ConstantesVitales: 'pi-heart text-rose-500',
+      Vaccination: 'pi-shield text-teal-500',
+      Stock: 'pi-box text-purple-500',
+    };
+    return map[entityType] ?? 'pi-database text-gray-500';
+  }
+
+  /** « il y a 2 h », « il y a 5 min »… à partir de l'horodatage de mise en file. */
+  depuis(queuedAt: string): string {
+    const minutes = Math.max(0, Math.round((Date.now() - new Date(queuedAt).getTime()) / 60000));
+    if (minutes < 1) return this.i18n.t('ASC.SYNC.JUST_NOW');
+    if (minutes < 60) return this.i18n.t('ASC.SYNC.MINUTES_AGO', { m: minutes });
+    return this.i18n.t('ASC.SYNC.HOURS_AGO', { h: Math.round(minutes / 60) });
+  }
+
+  formatDerniereSync(): string {
+    const iso = this.derniereSync();
+    if (!iso) return this.i18n.t('ASC.SYNC.NEVER_SYNCED');
+    return new Date(iso).toLocaleString(this.i18n.lang() === 'en' ? 'en-GB' : 'fr-FR', {
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
   }
 }

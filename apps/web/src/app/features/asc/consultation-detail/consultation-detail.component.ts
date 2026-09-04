@@ -1,17 +1,13 @@
 // features/asc/consultation-detail/consultation-detail.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { CardModule } from 'primeng/card';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SkeletonModule } from 'primeng/skeleton';
-import { DividerModule } from 'primeng/divider';
-import { SelectModule } from 'primeng/select';
 import { ApiService } from '../../../core/services/api.service';
 import { ConsultationService } from '../../../core/services/consultation.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -110,9 +106,9 @@ interface Structure {
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ButtonModule, TagModule, CardModule,
-    InputTextModule, TextareaModule, InputNumberModule,
-    SkeletonModule, DividerModule, SelectModule, TranslatePipe
+    MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatIconModule, MatButtonModule,
+    TranslatePipe
   ],
   templateUrl: './consultation-detail.component.html',
   styleUrl: './consultation-detail.component.scss'
@@ -388,6 +384,23 @@ export class ConsultationDetailComponent implements OnInit {
   // ── Helpers ──────────────────────────────────────────────
   isConsultationTerminee(): boolean {
     return this.consultation()?.statut === 'TERMINEE' || this.consultation()?.statut === 'REFERENCEE';
+  }
+
+  /** Variante de badge correspondant au statut d'une consultation. */
+  getStatutVariante(statut: string): string {
+    const map: Record<string, string> = {
+      'TERMINEE': 'success', 'EN_COURS': 'warning',
+      'PLANIFIEE': 'info', 'ANNULEE': 'danger', 'REFERENCEE': 'neutral'
+    };
+    return map[statut] ?? 'neutral';
+  }
+
+  /** Variante de badge correspondant au degre d'urgence d'un referencement. */
+  getUrgenceVariante(urgence: string): string {
+    const map: Record<string, string> = {
+      'ROUTINE': 'info', 'URGENT': 'warning', 'URGENCE_VITALE': 'danger'
+    };
+    return map[urgence] ?? 'info';
   }
 
   getStatutSeverity(statut: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

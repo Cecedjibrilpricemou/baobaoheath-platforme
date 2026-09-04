@@ -2,10 +2,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TextareaModule } from 'primeng/textarea';
 import { MedecinService } from '../../../core/services/medecin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -42,7 +38,7 @@ interface Consultation {
 @Component({
   selector: 'app-medecin-consultations',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, SkeletonModule, TextareaModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './consultations.component.html',
   styleUrl: './consultations.component.scss'
 })

@@ -9,7 +9,7 @@
     <div class="bb-msg__layout">
       <div class="bb-msg__sidebar">
         @for (i of [1,2,3]; track i) {
-          <p-skeleton height="72px" borderRadius="8px" styleClass="mb-2" />
+          <div class="bb-skeleton" style="height:72px;border-radius:8px"></div>
         }
       </div>
     </div>
@@ -90,15 +90,9 @@
 
           <!-- Input -->
           <div class="bb-msg__input-bar">
-            <input
-              pInputText
-              [(ngModel)]="newMessage"
-              [placeholder]="'MEDECIN.MESSAGERIE.INPUT_PLACEHOLDER' | translate"
-              [attr.aria-label]="'MEDECIN.MESSAGERIE.INPUT_ARIA' | translate"
-              (keydown)="onKeyDown($event)"
-              [disabled]="isSending()"
-              class="bb-msg__input"
-            />
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput [(ngModel)]="newMessage" [placeholder]="'MEDECIN.MESSAGERIE.INPUT_PLACEHOLDER' | translate" [attr.aria-label]="'MEDECIN.MESSAGERIE.INPUT_ARIA' | translate" (keydown)="onKeyDown($event)" [disabled]="isSending()" class="bb-msg__input" />
+            </mat-form-field>
             <button
               class="bb-msg__send-btn"
               (click)="envoyerMessage()"

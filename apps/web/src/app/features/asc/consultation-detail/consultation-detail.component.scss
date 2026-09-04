@@ -267,3 +267,13 @@
     }
   }
 }
+
+// ── Champs Material et bloc de chargement ──────────────────────────
+.bb-detail__field-full { width: 100%; }
+
+.bb-detail__skeleton {
+  border-radius: var(--bb-radius);
+  background: linear-gradient(90deg, var(--bb-surface-1) 25%, var(--bb-surface-2) 50%, var(--bb-surface-1) 75%);
+  background-size: 200% 100%;
+  animation: bb-shimmer 1.4s infinite;
+}

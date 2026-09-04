@@ -52,6 +52,7 @@ export const updateProfileSchema = z.object({
   nom: z.string().trim().min(1).max(80).optional(),
   email: optionalEmail,
   telephone: phone.optional(),
+  photoUrl: z.string().trim().url().max(500).optional(),
 }).strict();
 
 export const createPatientSchema = z.object({

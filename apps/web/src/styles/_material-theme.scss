@@ -1,0 +1,35 @@
+// ═══════════════════════════════════════════════════════════════════
+// _material-theme.scss — Thème Angular Material 3 (BaoBaoHealth)
+// Palettes tonales générées depuis le vert de marque (#2D7D46).
+// Le mode sombre suit `data-theme="dark"` déjà utilisé par ThemeService :
+// on bascule `color-scheme`, et les tokens M3 (basés sur light-dark())
+// suivent automatiquement — pas de second thème à maintenir.
+// ═══════════════════════════════════════════════════════════════════
+@use '@angular/material' as mat;
+@use './theme-colors' as brand;
+
+html {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      primary: brand.$primary-palette,
+      tertiary: brand.$tertiary-palette,
+    ),
+    typography: (
+      brand-family: 'Sora, sans-serif',
+      plain-family: '"DM Sans", "Segoe UI", sans-serif',
+    ),
+    density: 0,
+  ));
+
+  // Coins arrondis généreux, dans l'esprit de la référence.
+  --mat-sys-corner-large: 20px;
+  --mat-sys-corner-medium: 16px;
+  --mat-sys-corner-small: 12px;
+  --mat-sys-corner-extra-small: 10px;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}

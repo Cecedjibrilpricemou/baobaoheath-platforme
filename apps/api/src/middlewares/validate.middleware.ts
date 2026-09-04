@@ -27,7 +27,15 @@ export function validateQuery(schema: ZodTypeAny) {
       return;
     }
 
-    Object.assign(req, { query: result.data });
+    // Express 5 expose `req.query` en lecture seule (getter sans setter) :
+    // une affectation directe lève une TypeError. On redéfinit donc la
+    // propriété pour exposer les valeurs validées aux contrôleurs.
+    Object.defineProperty(req, 'query', {
+      value: result.data,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
     next();
   };
 }

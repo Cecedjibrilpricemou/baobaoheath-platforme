@@ -12,29 +12,31 @@
           <span class="text-orange-500 font-medium">{{ 'ASC.SYNC.OFFLINE_TEXT' | translate }}</span> {{ 'ASC.SYNC.OFFLINE_SUB' | translate }}
         }
       </p>
+      <p class="sync-last">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        {{ 'ASC.SYNC.LAST_SYNC' | translate: { date: formatDerniereSync() } }}
+      </p>
     </div>
     <div class="header-actions">
-      <p-button
-        [label]="(isSyncing() ? 'ASC.SYNC.SYNCING' : 'ASC.SYNC.SYNC_NOW') | translate"
-        [icon]="isSyncing() ? 'pi pi-sync pi-spin' : 'pi pi-cloud-upload'" 
-        [disabled]="!isOnline() || pendingItems().length === 0 || isSyncing()"
-        (onClick)="startSync()">
-      </p-button>
+      <button matButton="filled" class="bb-sync__cta" [disabled]="!peutSynchroniser()" (click)="startSync()">
+        <mat-icon fontSet="pi" [fontIcon]="isSyncing() ? 'pi-sync pi-spin' : 'pi-cloud-upload'" aria-hidden="true"></mat-icon>
+        {{ (isSyncing() ? 'ASC.SYNC.SYNCING' : 'ASC.SYNC.SYNC_NOW') | translate }}
+      </button>
     </div>
   </div>
+
+  @if (derniereErreur()) {
+    <div class="sync-error" role="alert">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <span>{{ derniereErreur() }}</span>
+    </div>
+  }
 
   <div class="sync-content section-card">
     <div class="section-title">
       <i class="pi pi-database"></i>
-      <h2>{{ 'ASC.SYNC.PENDING_TITLE' | translate: { count: pendingItems().length } }}</h2>
+      <h2>{{ 'ASC.SYNC.PENDING_TITLE' | translate: { count: nbEnAttente() } }}</h2>
     </div>
-
-    @if (isSyncing()) {
-      <div class="sync-progress mb-4" role="status" aria-live="polite">
-        <p-progressBar [value]="syncProgress()" styleClass="w-full"></p-progressBar>
-        <p class="text-sm text-secondary mt-2 text-center">{{ 'ASC.SYNC.SYNCING_PROGRESS' | translate: { percent: syncProgress() } }}</p>
-      </div>
-    }
 
     @if (pendingItems().length === 0) {
       <div class="empty-state">
@@ -44,24 +46,35 @@
       </div>
     } @else {
       <div class="pending-list">
-        @for (item of pendingItems(); track item.id) {
-          <div class="pending-item">
+        @for (item of pendingItems(); track item.clientMutationId) {
+          <div class="pending-item" [class.pending-item--rejected]="item.statut === 'rejected'">
             <div class="item-icon">
-              <i class="pi" [ngClass]="{
-                'pi-file-edit text-blue-500': item.type === 'Consultation',
-                'pi-user-plus text-green-500': item.type === 'Nouveau Patient',
-                'pi-box text-purple-500': item.type === 'Mise à jour stock'
-              }"></i>
+              <i class="pi" [ngClass]="iconeEntite(item.entityType)" aria-hidden="true"></i>
             </div>
             <div class="item-info">
-              <h3>{{ item.typeKey | translate }}</h3>
-              <p>{{ item.patient }} &bull; {{ 'ASC.SYNC.ENTERED_AT' | translate: { date: ('ASC.SYNC.HOURS_AGO' | translate: { h: item.hoursAgo }) } }}</p>
+              <h3>{{ item.libelle }}</h3>
+              <p>
+                {{ item.entityType }} &bull;
+                {{ 'ASC.SYNC.ENTERED_AT' | translate: { date: depuis(item.queuedAt) } }}
+              </p>
+              @if (item.statut === 'rejected' && item.erreur) {
+                <p class="item-error">{{ item.erreur }}</p>
+              }
             </div>
             <div class="item-status">
-              @if (item.status === 'pending') {
-                <p-tag severity="warning" [value]="'ASC.SYNC.STATUS_PENDING' | translate" icon="pi pi-clock"></p-tag>
+              @if (item.statut === 'rejected') {
+                <span class="bb-badge bb-badge--danger">
+                  <mat-icon fontSet="pi" fontIcon="pi-times" aria-hidden="true"></mat-icon>
+                  {{ 'ASC.SYNC.STATUS_REJECTED' | translate }}
+                </span>
+                <button type="button" class="item-discard" (click)="abandonner(item)">
+                  {{ 'ASC.SYNC.DISCARD' | translate }}
+                </button>
               } @else {
-                <p-tag severity="success" [value]="'ASC.SYNC.STATUS_SYNCED' | translate" icon="pi pi-check"></p-tag>
+                <span class="bb-badge bb-badge--warning">
+                  <mat-icon fontSet="pi" fontIcon="pi-clock" aria-hidden="true"></mat-icon>
+                  {{ 'ASC.SYNC.STATUS_PENDING' | translate }}
+                </span>
               }
             </div>
           </div>

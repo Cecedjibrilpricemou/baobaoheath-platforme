@@ -42,7 +42,7 @@
 
           <!-- Header patient -->
           <div class="qr-patient-header">
-            <div class="qr-patient-avatar">{{ getInitiales() }}</div>
+            <app-avatar class="qr-patient-avatar" [photoUrl]="currentUser()?.photoUrl" [initiales]="getInitiales()" />
             <div class="qr-patient-info">
               <h2 class="qr-patient-name">
                 {{ patientInfo()?.prenom }} {{ patientInfo()?.nom }}
@@ -78,20 +78,14 @@
 
           <!-- Boutons -->
           <div class="qr-actions">
-            <p-button
-              [label]="'COMMON.DOWNLOAD' | translate"
-              icon="pi pi-download"
-              styleClass="qr-btn"
-              (onClick)="downloadQrCode()"
-            ></p-button>
-            <p-button
-              [label]="'COMMON.SHARE' | translate"
-              icon="pi pi-share-alt"
-              severity="secondary"
-              [outlined]="true"
-              styleClass="qr-btn"
-              (onClick)="shareQrCode()"
-            ></p-button>
+            <button matButton="filled" (click)="downloadQrCode()">
+  <mat-icon fontSet="pi" fontIcon="pi-download" aria-hidden="true"></mat-icon>
+  {{ 'COMMON.DOWNLOAD' | translate }}
+</button>
+            <button matButton="outlined" (click)="shareQrCode()">
+  <mat-icon fontSet="pi" fontIcon="pi-share-alt" aria-hidden="true"></mat-icon>
+  {{ 'COMMON.SHARE' | translate }}
+</button>
           </div>
 
         </div>

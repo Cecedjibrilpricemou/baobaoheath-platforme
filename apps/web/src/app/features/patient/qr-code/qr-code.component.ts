@@ -1,22 +1,22 @@
 // features/patient/qr-code/qr-code.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { TagModule } from 'primeng/tag';
-import { SkeletonModule } from 'primeng/skeleton';
 import { AuthService } from '../../../core/services/auth.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient } from '../../../core/models/patient.model';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import QRCode from 'qrcode';
 
 @Component({
   selector: 'app-qr-code',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule, CardModule, TagModule, SkeletonModule, TranslatePipe],
+  imports: [
+    MatIconModule, MatButtonModule,CommonModule, RouterLink, TranslatePipe, AvatarComponent],
   templateUrl: './qr-code.component.html',
   styleUrl: './qr-code.component.scss'
 })
@@ -25,6 +25,7 @@ export class QrCodeComponent implements OnInit {
   private patientService = inject(PatientService);
   private i18n = inject(I18nService);
 
+  currentUser  = this.authService.currentUser;
   patientInfo  = signal<Patient | null>(null);
   qrCodeUrl    = signal<string | null>(null); // data URL base64 générée côté frontend
   isLoading    = signal(true);

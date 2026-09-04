@@ -1,8 +1,13 @@
 // features/admin/analytics/analytics.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -67,7 +72,11 @@ interface StatsStructures {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TagModule, SkeletonModule, SelectModule, TranslatePipe],
+  imports: [
+    CommonModule, FormsModule, RouterLink, TranslatePipe,
+    MatCardModule, MatIconModule, MatButtonModule, MatFormFieldModule, MatSelectModule,
+    ButtonModule, TagModule, SkeletonModule, SelectModule,
+  ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss'
 })
@@ -90,6 +99,40 @@ export class AnalyticsComponent implements OnInit {
   isLoadingStructures = signal(true);
 
   activeTab = signal<'kpis' | 'heatmap' | 'alertes' | 'tendances' | 'vaccins'>('kpis');
+
+  readonly tabs = [
+    { id: 'kpis'      as const, icon: 'pi-home',                  labelKey: 'ADMIN.ANALYTICS.TAB_OVERVIEW'  },
+    { id: 'heatmap'   as const, icon: 'pi-map',                   labelKey: 'ADMIN.ANALYTICS.TAB_HEATMAP'   },
+    { id: 'alertes'   as const, icon: 'pi-exclamation-triangle',  labelKey: 'ADMIN.ANALYTICS.TAB_ALERTES'   },
+    { id: 'tendances' as const, icon: 'pi-chart-line',            labelKey: 'ADMIN.ANALYTICS.TAB_TENDANCES' },
+    { id: 'vaccins'   as const, icon: 'pi-heart',                 labelKey: 'ADMIN.ANALYTICS.TAB_VACCINS'   },
+  ];
+
+  /** Cartes de synthèse — la première est mise en avant (fond plein). */
+  readonly kpiCards = computed(() => {
+    const k = this.dashboard()?.kpis;
+    return [
+      { labelKey: 'ADMIN.ANALYTICS.KPI_PATIENTS',       valeur: k?.totalPatients ?? 0,       icon: 'pi-users',      couleur: '#3EBB70' },
+      { labelKey: 'ADMIN.ANALYTICS.KPI_CONSULTATIONS',  valeur: k?.totalConsultations ?? 0,  icon: 'pi-heart-fill', couleur: '#22C55E' },
+      { labelKey: 'ADMIN.ANALYTICS.KPI_VACCINATIONS',   valeur: k?.totalVaccinations ?? 0,   icon: 'pi-shield',     couleur: '#8B5CF6' },
+      { labelKey: 'ADMIN.ANALYTICS.KPI_REFERENCEMENTS', valeur: k?.totalReferencements ?? 0, icon: 'pi-send',       couleur: '#F97316' },
+      { labelKey: 'ADMIN.ANALYTICS.KPI_ASC',            valeur: k?.totalAsc ?? 0,            icon: 'pi-user',       couleur: '#14B8A6' },
+    ];
+  });
+
+  /** Part des patients ayant au moins une vaccination enregistrée. */
+  readonly tauxVaccination = computed(() => {
+    const k = this.dashboard()?.kpis;
+    if (!k?.totalPatients) return 0;
+    return Math.min(100, Math.round((k.totalVaccinations / k.totalPatients) * 100));
+  });
+
+  /** Arc de la jauge : rayon 52 -> circonférence ≈ 326.7. */
+  readonly gaugeDasharray = computed(() => {
+    const circonference = 2 * Math.PI * 52;
+    const rempli = (this.tauxVaccination() / 100) * circonference;
+    return `${rempli} ${circonference - rempli}`;
+  });
 
   get prefiltreOptions() {
     return [

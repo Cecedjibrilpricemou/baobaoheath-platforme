@@ -30,7 +30,7 @@
     </button>
 
     @if (isLoading()) {
-      <p-skeleton width="300px" height="32px" />
+      <div class="bb-detail__skeleton" style="width:300px;height:32px"></div>
     } @else if (consultation()) {
       <div class="bb-detail__header-content">
         <div class="bb-detail__patient">
@@ -41,10 +41,7 @@
           </div>
         </div>
         <div class="bb-detail__meta">
-          <p-tag
-            [value]="getStatutLabel(consultation()!.statut)"
-            [severity]="getStatutSeverity(consultation()!.statut)"
-          />
+          <span [class]="'bb-badge bb-badge--' + getStatutVariante(consultation()!.statut)">{{ getStatutLabel(consultation()!.statut) }}</span>
           <span class="bb-detail__date">{{ formatDate(consultation()!.consulteeLE) }}</span>
         </div>
         @if (!isConsultationTerminee()) {
@@ -170,43 +167,169 @@
       <div class="bb-detail__vitals-grid">
         <div class="bb-detail__vital-field">
           <label for="vital-temperature">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TEMP' | translate }}</label>
-          <p-inputnumber inputId="vital-temperature" [(ngModel)]="vitalsForm.temperature" (ngModelChange)="onVitalsChange()" [min]="30" [max]="45" [minFractionDigits]="1" [maxFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TEMP_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-temperature"
+              [min]="30"
+              [max]="45"
+              step="0.1"
+              [(ngModel)]="vitalsForm.temperature"
+              (ngModelChange)="onVitalsChange()"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TEMP_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-poids">{{ 'ASC.CONSULTATION_DETAIL.VITAL_POIDS' | translate }}</label>
-          <p-inputnumber inputId="vital-poids" [(ngModel)]="vitalsForm.poidsKg" [min]="0" [max]="300" [minFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_POIDS_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-poids"
+              [min]="0"
+              [max]="300"
+              step="0.1"
+              [(ngModel)]="vitalsForm.poidsKg"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_POIDS_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-taille">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TAILLE' | translate }}</label>
-          <p-inputnumber inputId="vital-taille" [(ngModel)]="vitalsForm.tailleCm" [min]="0" [max]="250" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TAILLE_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-taille"
+              [min]="0"
+              [max]="250"
+              step="1"
+              [(ngModel)]="vitalsForm.tailleCm"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TAILLE_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-perimetre">{{ 'ASC.CONSULTATION_DETAIL.VITAL_PERIMETRE' | translate }}</label>
-          <p-inputnumber inputId="vital-perimetre" [(ngModel)]="vitalsForm.perimetreBrachial" [min]="0" [max]="50" [minFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_PERIMETRE_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-perimetre"
+              [min]="0"
+              [max]="50"
+              step="0.1"
+              [(ngModel)]="vitalsForm.perimetreBrachial"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_PERIMETRE_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-tension-sys">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TENSION_SYS' | translate }}</label>
-          <p-inputnumber inputId="vital-tension-sys" [(ngModel)]="vitalsForm.tensionSystolique" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TENSION_SYS_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-tension-sys"
+              [min]="0"
+              [max]="300"
+              step="1"
+              [(ngModel)]="vitalsForm.tensionSystolique"
+              (ngModelChange)="onVitalsChange()"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TENSION_SYS_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-tension-dia">{{ 'ASC.CONSULTATION_DETAIL.VITAL_TENSION_DIA' | translate }}</label>
-          <p-inputnumber inputId="vital-tension-dia" [(ngModel)]="vitalsForm.tensionDiastolique" [min]="0" [max]="200" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TENSION_DIA_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-tension-dia"
+              [min]="0"
+              [max]="200"
+              step="1"
+              [(ngModel)]="vitalsForm.tensionDiastolique"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_TENSION_DIA_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-fc">{{ 'ASC.CONSULTATION_DETAIL.VITAL_FC' | translate }}</label>
-          <p-inputnumber inputId="vital-fc" [(ngModel)]="vitalsForm.frequenceCardiaque" (ngModelChange)="onVitalsChange()" [min]="0" [max]="300" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_FC_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-fc"
+              [min]="0"
+              [max]="300"
+              step="1"
+              [(ngModel)]="vitalsForm.frequenceCardiaque"
+              (ngModelChange)="onVitalsChange()"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_FC_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-fr">{{ 'ASC.CONSULTATION_DETAIL.VITAL_FR' | translate }}</label>
-          <p-inputnumber inputId="vital-fr" [(ngModel)]="vitalsForm.frequenceRespiratoire" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_FR_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-fr"
+              [min]="0"
+              [max]="100"
+              step="1"
+              [(ngModel)]="vitalsForm.frequenceRespiratoire"
+              (ngModelChange)="onVitalsChange()"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_FR_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-spo2">{{ 'ASC.CONSULTATION_DETAIL.VITAL_SPO2' | translate }}</label>
-          <p-inputnumber inputId="vital-spo2" [(ngModel)]="vitalsForm.spo2" (ngModelChange)="onVitalsChange()" [min]="0" [max]="100" [minFractionDigits]="1" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_SPO2_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-spo2"
+              [min]="0"
+              [max]="100"
+              step="0.1"
+              [(ngModel)]="vitalsForm.spo2"
+              (ngModelChange)="onVitalsChange()"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_SPO2_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
         <div class="bb-detail__vital-field">
           <label for="vital-glycemie">{{ 'ASC.CONSULTATION_DETAIL.VITAL_GLYCEMIE' | translate }}</label>
-          <p-inputnumber inputId="vital-glycemie" [(ngModel)]="vitalsForm.glycemie" (ngModelChange)="onVitalsChange()" [min]="0" [max]="10" [minFractionDigits]="2" [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_GLYCEMIE_PH' | translate" [disabled]="isConsultationTerminee()" />
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="vital-glycemie"
+              [min]="0"
+              [max]="10"
+              step="0.1"
+              [(ngModel)]="vitalsForm.glycemie"
+              (ngModelChange)="onVitalsChange()"
+              [placeholder]="'ASC.CONSULTATION_DETAIL.VITAL_GLYCEMIE_PH' | translate"
+              [disabled]="isConsultationTerminee()"
+            />
+          </mat-form-field>
         </div>
       </div>
 
@@ -237,7 +360,7 @@
                 }
               </div>
               @if (d.severite) {
-                <p-tag [value]="d.severite" severity="warn" />
+                <span class="bb-badge bb-badge--warning">{{ d.severite }}</span>
               }
             </div>
           }
@@ -251,32 +374,42 @@
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label for="diag-libelle">{{ 'ASC.CONSULTATION_DETAIL.LIBELLE_LABEL' | translate }}</label>
-              <input id="diag-libelle" pInputText [(ngModel)]="diagnosticForm.libelle" [placeholder]="'ASC.CONSULTATION_DETAIL.LIBELLE_PH' | translate" />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="diag-libelle" [(ngModel)]="diagnosticForm.libelle" [placeholder]="'ASC.CONSULTATION_DETAIL.LIBELLE_PH' | translate" />
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label for="diag-icd11">{{ 'ASC.CONSULTATION_DETAIL.ICD11_LABEL' | translate }}</label>
-              <input id="diag-icd11" pInputText [(ngModel)]="diagnosticForm.codeIcd11" [placeholder]="'ASC.CONSULTATION_DETAIL.ICD11_PH' | translate" />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="diag-icd11" [(ngModel)]="diagnosticForm.codeIcd11" [placeholder]="'ASC.CONSULTATION_DETAIL.ICD11_PH' | translate" />
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label id="diag-type-label" for="diag-type">{{ 'ASC.CONSULTATION_DETAIL.TYPE_LABEL' | translate }}</label>
-              <p-select
-                inputId="diag-type"
-                [(ngModel)]="diagnosticForm.typeDiagnostic"
-                [options]="typesDiagnostic"
-                optionLabel="label"
-                optionValue="value"
-              />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <mat-select
+                  id="diag-type"
+                  [(ngModel)]="diagnosticForm.typeDiagnostic"
+                >
+                  @for (opt of typesDiagnostic; track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label id="diag-severite-label" for="diag-severite">{{ 'ASC.CONSULTATION_DETAIL.SEVERITE_LABEL' | translate }}</label>
-              <p-select
-                inputId="diag-severite"
-                [(ngModel)]="diagnosticForm.severite"
-                [options]="severites"
-                optionLabel="label"
-                optionValue="value"
-                [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate"
-              />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <mat-select
+                  id="diag-severite"
+                  [(ngModel)]="diagnosticForm.severite"
+                  [placeholder]="'PATIENT.PROFILE.GENDER_SELECT' | translate"
+                >
+                  @for (opt of severites; track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             </div>
           </div>
           <button class="bb-detail__submit-btn" (click)="saveDiagnostic()" [disabled]="isSavingDiagnostic() || !diagnosticForm.libelle">
@@ -307,7 +440,7 @@
                   <span class="bb-detail__ordo-note">{{ o.instructions }}</span>
                 }
               </div>
-              <p-tag [value]="o.statut" severity="info" />
+              <span class="bb-badge bb-badge--info">{{ o.statut }}</span>
             </div>
           }
         </div>
@@ -320,28 +453,43 @@
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label id="ordo-medicament-label" for="ordo-medicament">{{ 'ASC.CONSULTATION_DETAIL.MEDICAMENT_LABEL' | translate }}</label>
-              <p-select
-                inputId="ordo-medicament"
-                [(ngModel)]="ordonnanceForm.idMedicament"
-                [options]="medicaments()"
-                [optionLabel]="'dci'"
-                optionValue="id"
-                [placeholder]="'ASC.CONSULTATION_DETAIL.MEDICAMENT_PH' | translate"
-                [filter]="true"
-                filterBy="dci,nomCommercial"
-              />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <mat-select
+                  id="ordo-medicament"
+                  [(ngModel)]="ordonnanceForm.idMedicament"
+                  [placeholder]="'ASC.CONSULTATION_DETAIL.MEDICAMENT_PH' | translate"
+                >
+                  @for (opt of medicaments(); track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label for="ordo-posologie">{{ 'ASC.CONSULTATION_DETAIL.POSOLOGIE_LABEL' | translate }}</label>
-              <input id="ordo-posologie" pInputText [(ngModel)]="ordonnanceForm.posologie" [placeholder]="'ASC.CONSULTATION_DETAIL.POSOLOGIE_PH' | translate" />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="ordo-posologie" [(ngModel)]="ordonnanceForm.posologie" [placeholder]="'ASC.CONSULTATION_DETAIL.POSOLOGIE_PH' | translate" />
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label for="ordo-frequence">{{ 'ASC.CONSULTATION_DETAIL.FREQUENCE_LABEL' | translate }}</label>
-              <input id="ordo-frequence" pInputText [(ngModel)]="ordonnanceForm.frequence" [placeholder]="'ASC.CONSULTATION_DETAIL.FREQUENCE_PH' | translate" />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="ordo-frequence" [(ngModel)]="ordonnanceForm.frequence" [placeholder]="'ASC.CONSULTATION_DETAIL.FREQUENCE_PH' | translate" />
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label for="ordo-duree">{{ 'ASC.CONSULTATION_DETAIL.DUREE_LABEL' | translate }}</label>
-              <p-inputnumber inputId="ordo-duree" [(ngModel)]="ordonnanceForm.dureeJours" [min]="1" [max]="365" />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+            <input
+              matInput
+              type="number"
+              id="ordo-duree"
+              [min]="1"
+              [max]="365"
+              step="1"
+              [(ngModel)]="ordonnanceForm.dureeJours"
+            />
+          </mat-form-field>
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label for="ordo-instructions">{{ 'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_LABEL' | translate }}</label>
@@ -367,10 +515,7 @@
           <div class="bb-detail__referral-header">
             <i class="pi pi-send"></i>
             <span>{{ 'ASC.CONSULTATION_DETAIL.REFERRAL_DONE' | translate }}</span>
-            <p-tag
-              [value]="consultation()!.referencement!.urgence"
-              [severity]="getUrgenceSeverity(consultation()!.referencement!.urgence)"
-            />
+            <span [class]="'bb-badge bb-badge--' + getUrgenceVariante(consultation()!.referencement!.urgence)">{{ consultation()!.referencement!.urgence }}</span>
           </div>
           <p class="bb-detail__referral-structure">
             <strong>{{ 'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_LABEL' | translate }}</strong>
@@ -389,26 +534,30 @@
           <div class="bb-detail__form-grid">
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label id="ref-structure-label" for="ref-structure">{{ 'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_SELECT_LABEL' | translate }}</label>
-              <p-select
-                inputId="ref-structure"
-                [(ngModel)]="referralForm.idStructureCible"
-                [options]="structures()"
-                optionLabel="nom"
-                optionValue="id"
-                [placeholder]="'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_PH' | translate"
-                [filter]="true"
-                filterBy="nom,prefecture"
-              />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <mat-select
+                  id="ref-structure"
+                  [(ngModel)]="referralForm.idStructureCible"
+                  [placeholder]="'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_PH' | translate"
+                >
+                  @for (opt of structures(); track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field">
               <label id="ref-urgence-label" for="ref-urgence">{{ 'ASC.CONSULTATION_DETAIL.URGENCE_LEVEL_LABEL' | translate }}</label>
-              <p-select
-                inputId="ref-urgence"
-                [(ngModel)]="referralForm.urgence"
-                [options]="urgences"
-                optionLabel="label"
-                optionValue="value"
-              />
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <mat-select
+                  id="ref-urgence"
+                  [(ngModel)]="referralForm.urgence"
+                >
+                  @for (opt of urgences; track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label for="ref-resume">{{ 'ASC.CONSULTATION_DETAIL.RESUME_CLINIQUE_LABEL' | translate }}</label>
