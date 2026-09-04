@@ -409,6 +409,8 @@
       "SUBTITLE": "Find your full consultation history and vaccination record here.",
       "EXPORT_FHIR": "Export FHIR",
       "HISTORY_TITLE": "Consultation history",
+      "HISTORY_EMPTY": "No consultation recorded yet.",
+      "VACCIN_EMPTY": "No vaccination recorded yet.",
       "MEDECIN_AGENT_LABEL": "Doctor/Worker:",
       "DIAGNOSTIC_LABEL": "Diagnosis:",
       "VACCIN_BOOK_TITLE": "Vaccination Record",

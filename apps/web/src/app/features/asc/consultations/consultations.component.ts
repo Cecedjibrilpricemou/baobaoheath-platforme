@@ -61,7 +61,7 @@ export class ConsultationsComponent implements OnInit {
     this.ascService.getHistoriqueConsultations(1, 100).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data.items || [];
+          const data = response.data ?? [];
           this.consultations.set(data);
           this.totalConsultations.set(data.length);
           this.enCours.set(data.filter((c: Consultation) => c.statut === 'EN_COURS').length);

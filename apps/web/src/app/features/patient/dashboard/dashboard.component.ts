@@ -84,7 +84,7 @@ export class DashboardComponent implements OnInit {
     // Consultations récentes
     this.patientService.getMyConsultations(5).subscribe({
       next: (response) => {
-        const items = response?.data?.items ?? [];
+        const items = response?.data ?? [];
         const list: Consultation[] = items.map((c) => ({
           id: c.id,
           date: c.consulteeLE,
@@ -93,7 +93,8 @@ export class DashboardComponent implements OnInit {
           asc: c.asc ? { nom: c.asc.utilisateur.nom, prenom: c.asc.utilisateur.prenom } : undefined,
         }));
         this.consultations.set(list);
-        this.totalConsultations.set(response?.data?.total ?? list.length);
+        // Le total pagine est dans meta, pas dans data (qui est le tableau).
+        this.totalConsultations.set(response?.meta?.total ?? list.length);
       },
       error: () => {}
     });

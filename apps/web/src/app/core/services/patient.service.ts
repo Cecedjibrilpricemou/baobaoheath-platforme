@@ -36,8 +36,10 @@ export class PatientService {
     return this.api.get<ApiResponse<PaginatedData<Patient>>>('/patients', params);
   }
 
-  getMyConsultations(limit = 5): Observable<ApiResponse<PaginatedData<Consultation>>> {
-    return this.api.get<ApiResponse<PaginatedData<Consultation>>>('/patients/me/consultations', { limit: limit.toString() });
+  // L'API renvoie { success, data: Consultation[], meta } : `data` est un
+  // tableau, pas une enveloppe paginee.
+  getMyConsultations(limit = 5): Observable<ApiResponse<Consultation[]>> {
+    return this.api.get<ApiResponse<Consultation[]>>('/patients/me/consultations', { limit: limit.toString() });
   }
 
   getPatientByQr(qrCode: string): Observable<ApiResponse<Patient>> {

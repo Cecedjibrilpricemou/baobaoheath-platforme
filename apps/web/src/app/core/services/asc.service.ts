@@ -60,8 +60,9 @@ export class AscService {
     return this.api.post<ApiResponse<Consultation>>(`/consultations/${idConsultation}/referral`, payload);
   }
 
-  getHistoriqueConsultations(page = 1, limit = 20): Observable<ApiResponse<PaginatedData<Consultation>>> {
-    return this.api.get<ApiResponse<PaginatedData<Consultation>>>('/consultations', { 
+  // `data` est un tableau (voir patient.service.ts).
+  getHistoriqueConsultations(page = 1, limit = 20): Observable<ApiResponse<Consultation[]>> {
+    return this.api.get<ApiResponse<Consultation[]>>('/consultations', { 
       page: page.toString(), 
       limit: limit.toString() 
     });

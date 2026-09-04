@@ -5,59 +5,99 @@
       <p>{{ 'PATIENT.DOSSIER.SUBTITLE' | translate }}</p>
     </div>
     <div class="header-actions">
-      <p-button icon="pi pi-download" [label]="'PATIENT.DOSSIER.EXPORT_FHIR' | translate" styleClass="p-button-outlined" />
-      <p-button icon="pi pi-qrcode" [label]="'PATIENT.NAV_QR_CODE' | translate" routerLink="/patient/qr-code" />
+      <button matButton="outlined">
+        <mat-icon fontSet="pi" fontIcon="pi-download" aria-hidden="true"></mat-icon>
+        {{ 'PATIENT.DOSSIER.EXPORT_FHIR' | translate }}
+      </button>
+      <a matButton="filled" routerLink="/patient/qr-code">
+        <mat-icon fontSet="pi" fontIcon="pi-qrcode" aria-hidden="true"></mat-icon>
+        {{ 'PATIENT.NAV_QR_CODE' | translate }}
+      </a>
     </div>
   </div>
 
   <div class="dossier-content">
 
-    <!-- SECTION HISTORIQUE MÉDICAL (TIMELINE) -->
-    <div class="section-card timeline-section">
+    <!-- ── HISTORIQUE MÉDICAL ──────────────────────────────────── -->
+    <mat-card appearance="outlined" class="section-card">
       <div class="section-title">
-        <i class="pi pi-history"></i>
+        <mat-icon fontSet="pi" fontIcon="pi-history" aria-hidden="true"></mat-icon>
         <h2>{{ 'PATIENT.DOSSIER.HISTORY_TITLE' | translate }}</h2>
       </div>
 
-      <p-timeline [value]="historique()" align="alternate" styleClass="custom-timeline">
-        <ng-template pTemplate="marker" let-event>
-          <span class="custom-marker" [style.backgroundColor]="event.color">
-            <i [class]="event.icon"></i>
-          </span>
-        </ng-template>
-        <ng-template pTemplate="content" let-event>
-          <p-card [header]="event.type" [subheader]="event.date" styleClass="timeline-card">
-            <p><strong>{{ 'PATIENT.DOSSIER.MEDECIN_AGENT_LABEL' | translate }}</strong> {{ event.medecin }}</p>
-            <p><strong>{{ 'PATIENT.DOSSIER.DIAGNOSTIC_LABEL' | translate }}</strong> {{ event.diagnostic }}</p>
-            <p-tag [value]="event.statut" severity="success" styleClass="mt-2"></p-tag>
-          </p-card>
-        </ng-template>
-      </p-timeline>
-    </div>
+      @if (historique().length === 0) {
+        <div class="bb-empty">
+          <mat-icon fontSet="pi" fontIcon="pi-history" aria-hidden="true"></mat-icon>
+          <p>{{ 'PATIENT.DOSSIER.HISTORY_EMPTY' | translate }}</p>
+        </div>
+      } @else {
+        <!-- Timeline verticale : un rail chronologique, plus lisible qu'un
+             zigzag alterné pour un historique médical, et tenable en mobile. -->
+        <ol class="bb-timeline">
+          @for (event of historique(); track $index) {
+            <li class="bb-timeline__item">
+              <span class="bb-timeline__marker" [style.background]="event.color" aria-hidden="true">
+                <i [class]="event.icon"></i>
+              </span>
 
-    <!-- SECTION CARNET VACCINAL (GRILLE) -->
-    <div class="section-card vaccins-section">
+              <div class="bb-timeline__body">
+                <div class="bb-timeline__head">
+                  <h3 class="bb-timeline__type">{{ event.type }}</h3>
+                  <span [class]="'bb-badge bb-badge--' + event.variante">{{ event.statut }}</span>
+                </div>
+                <time class="bb-timeline__date">{{ event.date }}</time>
+
+                <dl class="bb-timeline__facts">
+                  <div class="bb-timeline__fact">
+                    <dt>{{ 'PATIENT.DOSSIER.MEDECIN_AGENT_LABEL' | translate }}</dt>
+                    <dd>{{ event.medecin }}</dd>
+                  </div>
+                  <div class="bb-timeline__fact">
+                    <dt>{{ 'PATIENT.DOSSIER.DIAGNOSTIC_LABEL' | translate }}</dt>
+                    <dd>{{ event.diagnostic }}</dd>
+                  </div>
+                </dl>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </mat-card>
+
+    <!-- ── CARNET VACCINAL ─────────────────────────────────────── -->
+    <mat-card appearance="outlined" class="section-card">
       <div class="section-title">
-        <i class="pi pi-shield"></i>
+        <mat-icon fontSet="pi" fontIcon="pi-shield" aria-hidden="true"></mat-icon>
         <h2>{{ 'PATIENT.DOSSIER.VACCIN_BOOK_TITLE' | translate }}</h2>
       </div>
-      
-      <div class="vaccins-grid">
-        @for (vaccin of vaccins(); track vaccin.nom) {
-          <div class="vaccin-card" [class.vaccin-danger]="vaccin.severity === 'danger'">
-            <div class="vaccin-icon" aria-hidden="true">
-              <i class="pi pi-check-circle" *ngIf="vaccin.severity === 'success'"></i>
-              <i class="pi pi-exclamation-circle" *ngIf="vaccin.severity === 'danger'"></i>
+
+      @if (vaccins().length === 0) {
+        <div class="bb-empty">
+          <mat-icon fontSet="pi" fontIcon="pi-shield" aria-hidden="true"></mat-icon>
+          <p>{{ 'PATIENT.DOSSIER.VACCIN_EMPTY' | translate }}</p>
+        </div>
+      } @else {
+        <div class="vaccins-grid">
+          @for (vaccin of vaccins(); track vaccin.nom) {
+            <div class="vaccin-card" [class.vaccin-danger]="vaccin.severity === 'danger'">
+              <div class="vaccin-icon" aria-hidden="true">
+                <mat-icon
+                  fontSet="pi"
+                  [fontIcon]="vaccin.severity === 'success' ? 'pi-check-circle' : 'pi-exclamation-circle'"
+                ></mat-icon>
+              </div>
+              <div class="vaccin-details">
+                <h3>{{ vaccin.nom }}</h3>
+                <p>{{ vaccin.date }}</p>
+              </div>
+              <span [class]="'bb-badge bb-badge--' + (vaccin.severity | severiteVariante)">
+                {{ vaccin.statut }}
+              </span>
             </div>
-            <div class="vaccin-details">
-              <h3>{{ vaccin.nom }}</h3>
-              <p>{{ vaccin.date }}</p>
-            </div>
-            <p-tag [value]="vaccin.statut" [severity]="vaccin.severity"></p-tag>
-          </div>
-        }
-      </div>
-    </div>
+          }
+        </div>
+      }
+    </mat-card>
 
   </div>
 </div>

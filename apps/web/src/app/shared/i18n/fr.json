@@ -409,6 +409,8 @@
       "SUBTITLE": "Retrouvez ici tout votre historique de consultations et votre carnet vaccinal.",
       "EXPORT_FHIR": "Exporter FHIR",
       "HISTORY_TITLE": "Historique des consultations",
+      "HISTORY_EMPTY": "Aucune consultation enregistrée pour le moment.",
+      "VACCIN_EMPTY": "Aucune vaccination enregistrée pour le moment.",
       "MEDECIN_AGENT_LABEL": "Médecin/Agent :",
       "DIAGNOSTIC_LABEL": "Diagnostic :",
       "VACCIN_BOOK_TITLE": "Carnet Vaccinal",

@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TimelineModule } from 'primeng/timeline';
-import { CardModule } from 'primeng/card';
-import { TagModule } from 'primeng/tag';
-import { ButtonModule } from 'primeng/button';
+import { RouterLink } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
+import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
 import { PatientService } from '../../../core/services/patient.service';
 import { VaccinationService } from '../../../core/services/vaccination.service';
 import { Consultation, Vaccination } from '../../../core/models/patient.model';
@@ -18,6 +19,8 @@ interface TimelineItem {
   statut: string;
   color: string;
   icon: string;
+  /** Variante de badge, alignee sur la couleur du marqueur. */
+  variante: string;
 }
 
 interface VaccinItem {
@@ -27,18 +30,21 @@ interface VaccinItem {
   severity: 'success' | 'warn' | 'danger';
 }
 
-const STATUT_STYLE: Record<string, { statutKey: string; color: string; icon: string }> = {
-  TERMINEE:   { statutKey: 'STATUT.TERMINEE',   color: '#3EBB70', icon: 'pi pi-check' },
-  EN_COURS:   { statutKey: 'STATUT.EN_COURS',   color: '#F59E0B', icon: 'pi pi-clock' },
-  PLANIFIEE:  { statutKey: 'STATUT.PLANIFIEE',  color: '#3B82F6', icon: 'pi pi-calendar' },
-  ANNULEE:    { statutKey: 'STATUT.ANNULEE',    color: '#EF4444', icon: 'pi pi-times' },
-  REFERENCEE: { statutKey: 'STATUT.REFERENCEE', color: '#8B5CF6', icon: 'pi pi-share-alt' },
+const STATUT_STYLE: Record<string, { statutKey: string; color: string; icon: string; variante: string }> = {
+  TERMINEE:   { statutKey: 'STATUT.TERMINEE',   color: '#3EBB70', icon: 'pi pi-check',      variante: 'success' },
+  EN_COURS:   { statutKey: 'STATUT.EN_COURS',   color: '#F59E0B', icon: 'pi pi-clock',      variante: 'warning' },
+  PLANIFIEE:  { statutKey: 'STATUT.PLANIFIEE',  color: '#3B82F6', icon: 'pi pi-calendar',   variante: 'info' },
+  ANNULEE:    { statutKey: 'STATUT.ANNULEE',    color: '#EF4444', icon: 'pi pi-times',      variante: 'danger' },
+  REFERENCEE: { statutKey: 'STATUT.REFERENCEE', color: '#8B5CF6', icon: 'pi pi-share-alt',  variante: 'neutral' },
 };
 
 @Component({
   selector: 'app-dossier',
   standalone: true,
-  imports: [CommonModule, TimelineModule, CardModule, TagModule, ButtonModule, TranslatePipe],
+  imports: [
+    CommonModule, RouterLink, TranslatePipe,
+    MatCardModule, MatButtonModule, MatIconModule, SeveriteVariantePipe,
+  ],
   templateUrl: './dossier.html',
   styleUrl: './dossier.scss',
 })
@@ -46,6 +52,10 @@ export class Dossier implements OnInit {
   private patientService = inject(PatientService);
   private vaccinationService = inject(VaccinationService);
   private i18n = inject(I18nService);
+
+  constructor(iconRegistry: MatIconRegistry) {
+    iconRegistry.registerFontClassAlias('pi', 'pi');
+  }
 
   historique = signal<TimelineItem[]>([]);
   vaccins = signal<VaccinItem[]>([]);
@@ -58,7 +68,7 @@ export class Dossier implements OnInit {
   private loadHistorique() {
     this.patientService.getMyConsultations(20).subscribe({
       next: (response) => {
-        const items = response?.data?.items ?? [];
+        const items = response?.data ?? [];
         this.historique.set(items.map((c) => this.toTimelineItem(c)));
       },
       error: () => {},
@@ -81,6 +91,7 @@ export class Dossier implements OnInit {
       statut: label,
       color: style?.color ?? '#64748B',
       icon: style?.icon ?? 'pi pi-circle',
+      variante: style?.variante ?? 'neutral',
     };
   }
 
