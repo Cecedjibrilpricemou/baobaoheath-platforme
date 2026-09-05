@@ -88,7 +88,7 @@
   }
 }
 
-[data-theme="dark"] {
+:host-context([data-theme="dark"]) {
   .stat-card {
     &--green  { background: linear-gradient(135deg, var(--bb-success-bg), rgba(21,128,61,.15)); }
     &--blue   { background: linear-gradient(135deg, rgba(30,64,175,.12), rgba(30,64,175,.22)); border-color: rgba(30,64,175,.40); }

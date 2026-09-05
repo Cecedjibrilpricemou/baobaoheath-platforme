@@ -1,6 +1,17 @@
 import { Response } from 'express';
+import type {
+  AlerteEpidemiqueView,
+  CouvertureVaccinaleView,
+  DashboardAnalyticsView,
+  HeatmapPointView,
+  TendanceView,
+} from '@baobaoheath/shared-types';
 import * as analyticsService from '../services/analytics.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+
+// Les reponses sont annotees avec les vues partagees : c'est ici que se noue
+// le contrat avec le front. Renommer un champ dans le service casse desormais
+// la compilation de l'API, au lieu de vider un onglet sans aucun signal.
 
 // ─── Dashboard global ─────────────────────────────────────
 export async function getDashboardGlobalController(
@@ -12,7 +23,7 @@ export async function getDashboardGlobalController(
       debut: req.query.debut as string | undefined,
       fin: req.query.fin as string | undefined,
     };
-    const data = await analyticsService.getDashboardGlobal(filters);
+    const data: DashboardAnalyticsView = await analyticsService.getDashboardGlobal(filters);
     res.status(200).json({ success: true, data });
 }
 
@@ -26,7 +37,7 @@ export async function getHeatmapController(
       debut: req.query.debut as string | undefined,
       fin: req.query.fin as string | undefined,
     };
-    const data = await analyticsService.getHeatmapData(filters);
+    const data: HeatmapPointView[] = await analyticsService.getHeatmapData(filters);
     res.status(200).json({ success: true, data });
 }
 
@@ -35,7 +46,13 @@ export async function getAlertesEpidemiquesController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  const data = await analyticsService.getAlertesEpidemiques();
+  const alertes = await analyticsService.getAlertesEpidemiques();
+    // dateDetection circule en ISO sur le fil : on l'expose explicitement
+    // plutot que de laisser JSON.stringify convertir un Date en douce.
+    const data: AlerteEpidemiqueView[] = alertes.map((alerte) => ({
+      ...alerte,
+      dateDetection: alerte.dateDetection.toISOString(),
+    }));
     res.status(200).json({ success: true, data });
 }
 
@@ -47,7 +64,7 @@ export async function getCouvertureVaccinaleController(
   const filters = {
       prefecture: req.query.prefecture as string | undefined,
     };
-    const data = await analyticsService.getCouvertureVaccinale(filters);
+    const data: CouvertureVaccinaleView = await analyticsService.getCouvertureVaccinale(filters);
     res.status(200).json({ success: true, data });
 }
 
@@ -59,7 +76,7 @@ export async function getTendancesController(
   const filters = {
       prefecture: req.query.prefecture as string | undefined,
     };
-    const data = await analyticsService.getTendances(filters);
+    const data: TendanceView[] = await analyticsService.getTendances(filters);
     res.status(200).json({ success: true, data });
 }
 

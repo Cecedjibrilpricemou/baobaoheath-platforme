@@ -521,3 +521,75 @@ export interface ExportFilters {
   page?: number;
   limit?: number;
 }
+
+// ─── Analytics — vues renvoyees par l'API ─────────────────────────────────────
+// Ces formes sont le contrat entre analytics.service.ts (qui les declare comme
+// type de retour) et le tableau de bord admin. Les declarer ici plutot que de
+// les redeclarer dans le composant evite la derive silencieuse : un champ
+// renomme cote API casse desormais le build de l'API, au lieu de vider un
+// onglet sans aucun signal.
+
+export interface AnalyticsKpisView {
+  totalPatients: number;
+  totalConsultations: number;
+  totalVaccinations: number;
+  totalReferencements: number;
+  totalAsc: number;
+}
+
+export interface ConsultationsParStatutView {
+  statut: string;
+  count: number;
+}
+
+export interface TopPathologieView {
+  pathologie: string;
+  count: number;
+}
+
+export interface DashboardAnalyticsView {
+  kpis: AnalyticsKpisView;
+  consultationsParStatut: ConsultationsParStatutView[];
+  topPathologies: TopPathologieView[];
+}
+
+export interface HeatmapPointView {
+  prefecture: string;
+  count: number;
+  pathologies: Record<string, number>;
+  latitude?: number;
+  longitude?: number;
+}
+
+export type NiveauAlerte = 'ATTENTION' | 'ALERTE' | 'URGENCE';
+
+export interface AlerteEpidemiqueView {
+  pathologie: string;
+  prefecture: string;
+  nombre: number;
+  seuil: number;
+  niveau: NiveauAlerte;
+  /** Serialise en chaine ISO par la reponse JSON. */
+  dateDetection: string;
+}
+
+export interface CouvertureVaccinView {
+  vaccin: string;
+  patientsVaccines: number;
+  totalPatients: number;
+  tauxCouverture: number;
+}
+
+/** GET /analytics/vaccinations/couverture renvoie un objet, pas un tableau. */
+export interface CouvertureVaccinaleView {
+  totalPatients: number;
+  couverture: CouvertureVaccinView[];
+  prefecture: string;
+}
+
+export interface TendanceView {
+  mois: string;
+  consultations: number;
+  vaccinations: number;
+  referencements: number;
+}

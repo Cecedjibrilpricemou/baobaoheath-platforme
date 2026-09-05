@@ -165,8 +165,7 @@
   // ── Variantes (dark) — surface neutre + accent garde sa couleur ─
   // On vise lisibilité parfaite : fond proche surface-card, jamais
   // un wash pastel délavé.
-  :host-context([data-theme="dark"]) &__stat-card,
-  [data-theme="dark"] &__stat-card {
+  :host-context([data-theme="dark"]) &__stat-card {
     --c-bg-from: var(--bb-surface-1);
     --c-bg-to: var(--bb-surface-card);
     --c-icon-bg: rgba(255, 255, 255, .06);

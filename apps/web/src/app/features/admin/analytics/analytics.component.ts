@@ -12,61 +12,17 @@ import { MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import type {
+  AlerteEpidemiqueView,
+  CouvertureVaccinView,
+  CouvertureVaccinaleView,
+  DashboardAnalyticsView,
+  HeatmapPointView,
+  NiveauAlerte,
+  TendanceView,
+} from '@baobaoheath/shared-types';
 
-interface KPIs {
-  totalPatients: number;
-  totalConsultations: number;
-  totalVaccinations: number;
-  totalReferencements: number;
-  totalAsc: number;
-}
-
-interface StatutCount { statut: string; count: number; }
-interface Pathologie { pathologie: string; count: number; }
-
-interface DashboardData {
-  kpis: KPIs;
-  consultationsParStatut: StatutCount[];
-  topPathologies: Pathologie[];
-}
-
-interface HeatmapPoint {
-  prefecture: string;
-  count: number;
-  latitude?: number;
-  longitude?: number;
-}
-
-interface Alerte {
-  pathologie: string;
-  count: number;
-  prefecture: string;
-  evolution: number;
-}
-
-// Ces deux formes reprennent exactement ce que renvoie l'API
-// (analytics.service.ts : getTendances / getCouvertureVaccinale).
-interface Tendance {
-  mois: string;
-  consultations: number;
-  vaccinations: number;
-  referencements: number;
-}
-
-interface Couverture {
-  vaccin: string;
-  patientsVaccines: number;
-  totalPatients: number;
-  tauxCouverture: number;
-}
-
-/** GET /analytics/vaccinations/couverture renvoie un objet, pas un tableau. */
-interface ReponseCouverture {
-  totalPatients: number;
-  couverture: Couverture[];
-  prefecture: string;
-}
-
+// Formes derivees cote client, sans equivalent dans une reponse d'API.
 interface StructureCount {
   type: string;
   count: number;
@@ -92,11 +48,11 @@ export class AnalyticsComponent implements OnInit {
   private adminService = inject(AdminService);
   private i18n = inject(I18nService);
 
-  dashboard = signal<DashboardData | null>(null);
-  heatmap = signal<HeatmapPoint[]>([]);
-  alertes = signal<Alerte[]>([]);
-  tendances = signal<Tendance[]>([]);
-  couverture = signal<Couverture[]>([]);
+  dashboard = signal<DashboardAnalyticsView | null>(null);
+  heatmap = signal<HeatmapPointView[]>([]);
+  alertes = signal<AlerteEpidemiqueView[]>([]);
+  tendances = signal<TendanceView[]>([]);
+  couverture = signal<CouvertureVaccinView[]>([]);
   statsStructures = signal<StatsStructures | null>(null);
 
   isLoadingDash = signal(true);
@@ -204,7 +160,7 @@ export class AnalyticsComponent implements OnInit {
     const params = this.prefiltreSelectionne ? { prefecture: this.prefiltreSelectionne } : undefined;
     this.adminService.getAnalyticsDashboard(params).subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.dashboard.set(response.data as DashboardData);
+        if (response.success && response.data) this.dashboard.set(response.data as DashboardAnalyticsView);
         this.isLoadingDash.set(false); 
       },
       error: () => { this.isLoadingDash.set(false); }
@@ -216,16 +172,8 @@ export class AnalyticsComponent implements OnInit {
     this.adminService.getAnalyticsHeatmap().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data;
-          const map = new Map<string, number>();
-          (Array.isArray(data) ? data : []).forEach((p) => {
-            const pref = (p as { prefecture?: string }).prefecture ?? 'Inconnue';
-            map.set(pref, (map.get(pref) ?? 0) + 1);
-          });
-          const points: HeatmapPoint[] = Array.from(map.entries())
-            .map(([prefecture, count]) => ({ prefecture, count }))
-            .sort((a, b) => b.count - a.count);
-          this.heatmap.set(points);
+          const points = (Array.isArray(response.data) ? response.data : []) as HeatmapPointView[];
+          this.heatmap.set([...points].sort((a, b) => b.count - a.count));
         }
         this.isLoadingHeatmap.set(false);
       },
@@ -237,7 +185,7 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingAlertes.set(true);
     this.adminService.getAnalyticsAlertes().subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.alertes.set(response.data as Alerte[]);
+        if (response.success && response.data) this.alertes.set(response.data as AlerteEpidemiqueView[]);
         this.isLoadingAlertes.set(false); 
       },
       error: () => { this.isLoadingAlertes.set(false); }
@@ -251,7 +199,7 @@ export class AnalyticsComponent implements OnInit {
         // Un cast seul ne protège de rien : @for sur un non-itérable lève une
         // TypeError qui vide tout l'onglet. On vérifie donc la forme reçue.
         const donnees = response.data as unknown;
-        this.tendances.set(Array.isArray(donnees) ? (donnees as Tendance[]) : []);
+        this.tendances.set(Array.isArray(donnees) ? (donnees as TendanceView[]) : []);
         this.isLoadingTend.set(false);
       },
       error: () => { this.isLoadingTend.set(false); }
@@ -262,7 +210,7 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingCouv.set(true);
     this.adminService.getAnalyticsCouverture().subscribe({
       next: (response) => { 
-        const donnees = response.data as unknown as ReponseCouverture | undefined;
+        const donnees = response.data as unknown as CouvertureVaccinaleView | undefined;
         this.couverture.set(Array.isArray(donnees?.couverture) ? donnees.couverture : []);
         this.isLoadingCouv.set(false);
       },
@@ -326,13 +274,29 @@ export class AnalyticsComponent implements OnInit {
   }
 
   getMaxHeatmap(): number { return Math.max(...this.heatmap().map(p => p.count), 1); }
+
+  /**
+   * Intensite de la tuile portee par le fond seul.
+   *
+   * L'opacite s'appliquait auparavant a toute la tuile : une prefecture a
+   * faible volume voyait son libelle tomber a 30% d'opacite, illisible. Un
+   * vert translucide se pose aussi bien sur le fond clair que sombre.
+   */
+  getHeatBackground(count: number): string {
+    const ratio = this.getBarWidth(count, this.getMaxHeatmap()) / 100;
+    return `rgba(62, 187, 112, ${(0.12 + ratio * 0.36).toFixed(3)})`;
+  }
   getMaxPathologie(): number { return Math.max(...(this.dashboard()?.topPathologies ?? []).map(p => p.count), 1); }
   getMaxStatut(): number { return Math.max(...(this.dashboard()?.consultationsParStatut ?? []).map(s => s.count), 1); }
   getMaxStructure(): number { return Math.max(...(this.statsStructures()?.parType ?? []).map(s => s.count), 1); }
 
-  getAlerteSeverity(evolution: number): 'danger' | 'warn' | 'success' {
-    if (evolution > 50) return 'danger';
-    if (evolution > 20) return 'warn';
-    return 'success';
+  getAlerteSeverity(niveau: NiveauAlerte): 'danger' | 'warn' | 'info' {
+    if (niveau === 'URGENCE') return 'danger';
+    if (niveau === 'ALERTE') return 'warn';
+    return 'info';
+  }
+
+  getAlerteNiveauLabel(niveau: NiveauAlerte): string {
+    return this.i18n.t('ADMIN.ANALYTICS.ALERTE_NIVEAU_' + niveau);
   }
 }

@@ -976,7 +976,9 @@
   }
 
   &__map-cell {
-    background: linear-gradient(135deg, var(--bb-success-bg), #DCFCE7);
+    // Le fond reel est pose en ligne par getHeatBackground() : un vert
+    // translucide dont l'alpha porte l'intensite, lisible sur les deux themes.
+    background: var(--bb-surface-1);
     border: 1px solid var(--bb-success-border);
     border-radius: var(--bb-radius-lg);
     padding: 1rem;
@@ -1000,18 +1002,21 @@
       letter-spacing: 0.4px;
     }
 
+    // Le fond de la tuile est un vert d'intensite variable : un texte vert ou
+    // attenue s'y noie. Les tokens de texte suivent le theme et restent
+    // lisibles sur toute la plage d'intensite.
     &-count {
       font-family: var(--bb-font-display);
       font-size: 26px;
       font-weight: 800;
-      color: var(--bb-primary);
+      color: var(--bb-text-primary);
       line-height: 1;
       letter-spacing: -0.5px;
     }
 
     &-label {
       font-size: 11px;
-      color: var(--bb-text-muted);
+      color: var(--bb-text-secondary);
       font-weight: 500;
     }
   }
@@ -1058,6 +1063,15 @@
     &:hover {
       transform: translateX(2px);
       box-shadow: var(--bb-shadow);
+    }
+
+    // Le fond rose est fige, alors que le texte suit --bb-text-primary qui
+    // s'eclaircit en mode sombre : sans cette surcharge, le nom de la
+    // pathologie devenait quasi illisible sur la carte.
+    :host-context([data-theme="dark"]) & {
+      background: linear-gradient(135deg, #3B1212, #450A0A);
+      border-color: #7F1D1D;
+      border-left-color: #DC2626;
     }
   }
 

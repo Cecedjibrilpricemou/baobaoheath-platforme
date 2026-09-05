@@ -18,7 +18,7 @@
   &--critique { border-color: var(--bb-danger-border); background: linear-gradient(135deg, #fff, #FEF2F2); }
   &--faible   { border-color: var(--bb-warning-border); }
 
-  [data-theme="dark"] &--critique { background: linear-gradient(135deg, var(--bb-surface-card), var(--bb-danger-bg)); }
+  :host-context([data-theme="dark"]) &--critique { background: linear-gradient(135deg, var(--bb-surface-card), var(--bb-danger-bg)); }
 
   &__header {
     display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;

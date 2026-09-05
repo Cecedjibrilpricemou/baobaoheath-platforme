@@ -205,7 +205,7 @@
             @for (point of heatmap(); track point.prefecture) {
               <div
                 class="bb-analytics__map-cell"
-                [style.opacity]="0.3 + (getBarWidth(point.count, getMaxHeatmap()) / 100) * 0.7"
+                [style.background]="getHeatBackground(point.count)"
               >
                 <div class="bb-analytics__map-cell-name">{{ point.prefecture }}</div>
                 <div class="bb-analytics__map-cell-count">{{ point.count }}</div>
@@ -241,16 +241,24 @@
           <span>{{ 'ADMIN.ANALYTICS.NO_ALERTS_SUB' | translate }}</span>
         </div>
       } @else {
-        @for (a of alertes(); track a.pathologie) {
+        @for (a of alertes(); track a.pathologie + a.prefecture) {
           <div class="bb-analytics__alerte-card">
             <div class="bb-analytics__alerte-left">
               <i class="pi pi-exclamation-triangle"></i>
               <div>
                 <p class="bb-analytics__alerte-patho">{{ a.pathologie }}</p>
-                <p class="bb-analytics__alerte-meta">{{ a.prefecture }} · {{ a.count }} {{ 'ADMIN.ANALYTICS.CASES_UNIT' | translate }}</p>
+                <!-- L'API fournit le nombre de cas et le seuil de declenchement :
+                     bien plus utile qu'un pourcentage d'evolution, qu'elle ne
+                     renvoie pas et qui s'affichait « +undefined% ». -->
+                <p class="bb-analytics__alerte-meta">
+                  {{ a.prefecture }} · {{ a.nombre }} {{ 'ADMIN.ANALYTICS.CASES_UNIT' | translate }}
+                  · {{ 'ADMIN.ANALYTICS.ALERTE_SEUIL' | translate: { seuil: a.seuil } }}
+                </p>
               </div>
             </div>
-            <span [class]="'bb-badge bb-badge--' + (getAlerteSeverity(a.evolution) | severiteVariante)">{{ '+' + a.evolution + '%' }}</span>
+            <span [class]="'bb-badge bb-badge--' + (getAlerteSeverity(a.niveau) | severiteVariante)">
+              {{ getAlerteNiveauLabel(a.niveau) }}
+            </span>
           </div>
         }
       }
