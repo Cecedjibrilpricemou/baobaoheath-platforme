@@ -802,3 +802,20 @@ export interface StockPharmacieView {
   margeGnf: number;
   medicament: MedicamentTarifeView;
 }
+
+// ─── Vaccinations ─────────────────────────────────────────────────────────────
+// GET /vaccinations/me renvoie les lignes Prisma avec l'agent administrant.
+// Les noms sont ceux du schema : `vaccinNom` et `administreLe`. Le front a
+// longtemps tente `nomVaccin` et `dateAdministration`, qui n'existent pas.
+export interface VaccinationView {
+  id: string;
+  vaccinNom: string;
+  codeEpi?: string | null;
+  numeroLot?: string | null;
+  siteInjection?: string | null;
+  reaction?: string | null;
+  urlCertificat?: string | null;
+  dateProchaineD?: HorodatageApi | null;
+  administreLe: HorodatageApi;
+  administrePar?: { prenom: string; nom: string; role?: string };
+}

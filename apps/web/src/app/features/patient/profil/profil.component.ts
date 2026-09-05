@@ -12,11 +12,8 @@ import { PatientService } from '../../../core/services/patient.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient } from '../../../core/models/patient.model';
+import type { StructureView } from '@baobaoheath/shared-types';
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
-
-interface Structure {
-  id: string; nom: string; type: string; prefecture: string;
-}
 
 const TAILLE_MAX_PHOTO = 3 * 1024 * 1024;
 const TYPES_PHOTO_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -40,7 +37,7 @@ export class ProfilComponent implements OnInit {
 
   currentUser = this.authService.currentUser;
   profil = signal<Patient | null>(null);
-  structures = signal<Structure[]>([]);
+  structures = signal<StructureView[]>([]);
   isLoading = signal(true);
   isSaving = signal(false);
   isSavingStructure = signal(false);
@@ -87,10 +84,10 @@ export class ProfilComponent implements OnInit {
 
   private loadStructures() {
     // Keep this one using api.service since we haven't created AdminStructureService yet
-    this.api.get<{ data?: Structure[]; success?: boolean } | Structure[]>('/admin-structure/structures/publiques').subscribe({
+    this.api.get<{ data?: StructureView[]; success?: boolean } | StructureView[]>('/admin-structure/structures/publiques').subscribe({
       next: (response) => {
-        const data = Array.isArray(response) ? response : (response as { data?: Structure[] })?.data ?? [];
-        this.structures.set(data.filter((s: Structure) => s.type !== 'PHARMACIE'));
+        const data = Array.isArray(response) ? response : (response as { data?: StructureView[] })?.data ?? [];
+        this.structures.set(data.filter((s: StructureView) => s.type !== 'PHARMACIE'));
       },
       error: () => { }
     });

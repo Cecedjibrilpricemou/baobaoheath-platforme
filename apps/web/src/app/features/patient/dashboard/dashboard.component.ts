@@ -11,6 +11,7 @@ import { PaiementService } from '../../../core/services/paiement.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { Patient, Vaccination as ApiVaccination, Paiement } from '../../../core/models/patient.model';
+import type { HorodatageApi } from '@baobaoheath/shared-types';
 
 // Interface alignée sur les champs utilisés dans le template HTML
 interface Consultation {
@@ -25,15 +26,8 @@ interface Consultation {
 interface DashboardVaccination {
   id: string;
   vaccin: string;           
-  dateAdministration: string; 
-  prochainRappel?: string;  
-}
-
-interface RendezVous {
-  id: string;
-  date: string;
-  motif?: string;
-  statut: string;
+  dateAdministration: HorodatageApi;
+  prochainRappel?: HorodatageApi | null;
 }
 
 @Component({
@@ -58,7 +52,6 @@ export class DashboardComponent implements OnInit {
   consultations      = signal<Consultation[]>([]); 
   vaccinations       = signal<DashboardVaccination[]>([]);
   factures           = signal<Paiement[]>([]);
-  prochainRdv        = signal<RendezVous | null>(null);
   isLoading          = signal(true);
   errorMessage       = signal('');
   totalConsultations = signal(0);  
@@ -106,9 +99,9 @@ export class DashboardComponent implements OnInit {
           const raw = response.data;
           const list: DashboardVaccination[] = raw.map((v: ApiVaccination) => ({
             id: v.id,
-            vaccin: v.nomVaccin ?? v.vaccinNom ?? '—',
-            dateAdministration: v.administreLe ?? v.dateAdministration ?? '',
-            prochainRappel: v.prochaineDose ?? v.dateProchaineD
+            vaccin: v.vaccinNom,
+            dateAdministration: v.administreLe,
+            prochainRappel: v.dateProchaineD
           }));
           this.vaccinations.set(list.slice(0, 3));
           this.totalVaccinations.set(list.length);
@@ -175,7 +168,7 @@ export class DashboardComponent implements OnInit {
     return map[statut] ?? 'secondary';
   }
 
-  formatDate(dateStr: string): string {
+  formatDate(dateStr: HorodatageApi | null | undefined): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }

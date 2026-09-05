@@ -79,16 +79,10 @@ export interface OrdonnanceLigne {
   medicament?: { id: string; nom: string; forme?: string };
 }
 
-export interface Vaccination {
-  id: string;
-  nomVaccin?: string;         // legacy field name
-  vaccinNom?: string;         // API field name (Prisma schema)
-  administreLe?: string;      // API field name (Prisma schema)
-  dateAdministration?: string; // legacy field name — jamais renvoyé par l'API
-  prochaineDose?: string;     // alternative field name
-  dateProchaineD?: string;    // API field name (Prisma schema)
-  lieu?: string;
-}
+// La forme reelle vit desormais dans shared-types (VaccinationView), figee par
+// l'annotation du controleur : les alias legacy (nomVaccin, dateAdministration,
+// prochaineDose) n'etaient jamais renvoyes par l'API et sont supprimes.
+export type { VaccinationView as Vaccination } from '@baobaoheath/shared-types';
 
 export interface Paiement {
   id: string;

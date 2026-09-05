@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { Request as ExpressRequest } from 'express';
 import * as vaccinationService from '../services/vaccination.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import type { VaccinationView } from '@baobaoheath/shared-types';
 
 type RequestWithId = ExpressRequest<{ id: string }>;
 
@@ -40,7 +41,7 @@ export async function getMonCarnetVaccinalController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  const vaccinations = await vaccinationService.getMonCarnetVaccinal(
+  const vaccinations: VaccinationView[] = await vaccinationService.getMonCarnetVaccinal(
       req.user!.userId
     );
     res.status(200).json({ success: true, data: vaccinations });

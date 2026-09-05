@@ -8,6 +8,7 @@ import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pi
 import { PatientService } from '../../../core/services/patient.service';
 import { VaccinationService } from '../../../core/services/vaccination.service';
 import { Consultation, Vaccination } from '../../../core/models/patient.model';
+import type { HorodatageApi } from '@baobaoheath/shared-types';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
@@ -106,7 +107,7 @@ export class Dossier implements OnInit {
   }
 
   private toVaccinItem(v: Vaccination): VaccinItem {
-    const rappel = v.prochaineDose ?? v.dateProchaineD;
+    const rappel = v.dateProchaineD;
     let statut: VaccinItem['statut'] = this.i18n.t('PATIENT.DOSSIER.VACCIN_UP_TO_DATE');
     let severity: VaccinItem['severity'] = 'success';
     if (rappel) {
@@ -119,14 +120,14 @@ export class Dossier implements OnInit {
       }
     }
     return {
-      nom: v.nomVaccin ?? v.vaccinNom ?? '—',
-      date: this.formatDate(v.administreLe ?? v.dateAdministration),
+      nom: v.vaccinNom,
+      date: this.formatDate(v.administreLe),
       statut,
       severity,
     };
   }
 
-  private formatDate(dateStr: string | undefined): string {
+  private formatDate(dateStr: HorodatageApi | null | undefined): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }
