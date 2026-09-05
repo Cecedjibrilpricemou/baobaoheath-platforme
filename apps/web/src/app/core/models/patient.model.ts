@@ -62,11 +62,12 @@ export interface OrdonnanceLigne {
 
 export interface Vaccination {
   id: string;
-  nomVaccin?: string;       // legacy field name
-  vaccinNom?: string;       // API field name (Prisma schema)
-  dateAdministration: string;
-  prochaineDose?: string;   // alternative field name
-  dateProchaineD?: string;  // API field name (Prisma schema)
+  nomVaccin?: string;         // legacy field name
+  vaccinNom?: string;         // API field name (Prisma schema)
+  administreLe?: string;      // API field name (Prisma schema)
+  dateAdministration?: string; // legacy field name — jamais renvoyé par l'API
+  prochaineDose?: string;     // alternative field name
+  dateProchaineD?: string;    // API field name (Prisma schema)
   lieu?: string;
 }
 

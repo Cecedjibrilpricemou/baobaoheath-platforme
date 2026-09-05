@@ -10,7 +10,12 @@
   height: 100vh;
   background: var(--bb-surface-ground);
 
-  &__content {
+  // Classe doublee : mat-sidenav-content impose display:block a specificite
+  // egale et gagne, car ses styles sont injectes apres la feuille globale.
+  // Sans ce renforcement la colonne flex n'existe pas : .bb-shell__page perd
+  // sa hauteur, son overflow interne ne sert a rien, et toute page en pleine
+  // hauteur (messagerie, listes scrollables) se replie sur son contenu.
+  &__content#{&}__content {
     display: flex;
     flex-direction: column;
     background: var(--bb-surface-ground);
@@ -18,6 +23,7 @@
 
   &__page {
     flex: 1;
+    min-height: 0; // sans quoi un enfant scrollable pousse la colonne
     overflow-y: auto;
     padding: 1.75rem;
 
@@ -27,7 +33,9 @@
 
 // ── NAVIGATION LATÉRALE ────────────────────────────────────────────
 .bb-nav {
-  width: var(--bb-sidebar-width);
+  // En superposition (mobile) la barre doit laisser une zone tactile
+  // suffisante sur le fond pour pouvoir la refermer d'un doigt.
+  width: min(var(--bb-sidebar-width), 78vw);
   padding: 1.25rem 0.875rem;
   display: flex;
   flex-direction: column;
@@ -163,7 +171,10 @@
 
   &__spacer { flex: 1; }
 
-  &__burger { display: none; }
+  // Classe doublee : les styles de mat-icon-button sont injectes apres la
+  // feuille globale et gagnent a specificite egale. Meme raison que pour
+  // app-avatar plus bas.
+  &__burger#{&}__burger { display: none; }
 
   &__user { margin-left: 0.25rem; }
 
@@ -178,7 +189,7 @@
   }
 
   @media (max-width: 768px) {
-    &__burger { display: inline-flex; }
+    &__burger#{&}__burger { display: inline-flex; }
   }
 }
 

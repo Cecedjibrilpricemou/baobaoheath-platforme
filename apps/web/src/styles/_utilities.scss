@@ -1,0 +1,33 @@
+// ═══════════════════════════════════════════════════════════════════
+// _utilities.scss — Utilitaires internes
+//
+// Remplace primeflex, dont l'application n'utilisait qu'une quinzaine
+// de classes sur ~450 Ko. Les variantes de couleur pointaient vers les
+// variables du thème PrimeNG Aura : elles seraient devenues nulles en
+// retirant providePrimeNG, donc elles sont remappées sur nos tokens
+// bb-*, ce qui les rend au passage compatibles avec le mode sombre.
+//
+// N'ajouter ici qu'une classe réellement utilisée dans un template.
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Espacement (échelle primeflex conservée pour ne rien décaler) ───
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+
+// ── Affichage / dimension ──────────────────────────────────────────
+.block    { display: block; }
+.w-full   { width: 100%; }
+
+// ── Typographie ────────────────────────────────────────────────────
+.text-2xl     { font-size: 1.5rem; }
+.font-medium  { font-weight: 500; }
+
+// ── Couleurs de texte ──────────────────────────────────────────────
+.text-primary      { color: var(--bb-primary); }
+.text-secondary    { color: var(--bb-text-secondary); }
+.text-red          { color: var(--bb-danger); }
+.text-green-500,
+.text-green-600    { color: var(--bb-success); }
+.text-orange-500   { color: var(--bb-warning); }

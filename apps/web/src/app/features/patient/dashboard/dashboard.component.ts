@@ -107,7 +107,7 @@ export class DashboardComponent implements OnInit {
           const list: DashboardVaccination[] = raw.map((v: ApiVaccination) => ({
             id: v.id,
             vaccin: v.nomVaccin ?? v.vaccinNom ?? '—',
-            dateAdministration: v.dateAdministration,
+            dateAdministration: v.administreLe ?? v.dateAdministration ?? '',
             prochainRappel: v.prochaineDose ?? v.dateProchaineD
           }));
           this.vaccinations.set(list.slice(0, 3));

@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { LayoutService } from '../../services/layout.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ProfilModalComponent } from '../profil-modal/profil-modal.component';
@@ -43,6 +44,7 @@ const ROUTE_LABELS: Record<string, string> = {
 export class AscLayoutComponent {
   private authService   = inject(AuthService);
   readonly themeService = inject(ThemeService);
+  readonly layout        = inject(LayoutService);
   private i18nService   = inject(I18nService);
   private router        = inject(Router);
   private dialog        = inject(MatDialog);
@@ -118,9 +120,9 @@ export class AscLayoutComponent {
 
   navItems = [
     { labelKey: 'ASC.NAV_CONSULTATIONS', icon: 'pi-heart',     route: '/asc/consultations' },
-    { labelKey: 'Triage IA',             icon: 'pi-bolt',      route: '/asc/triage'        },
+    { labelKey: 'ASC.NAV_TRIAGE',        icon: 'pi-bolt',      route: '/asc/triage'        },
     { labelKey: 'ASC.NAV_STOCKS',        icon: 'pi-box',       route: '/asc/stocks'        },
     { labelKey: 'ASC.NAV_PLANNING',      icon: 'pi-calendar',  route: '/asc/planning'      },
-    { labelKey: 'Synchronisation',       icon: 'pi-sync',      route: '/asc/sync'          }
+    { labelKey: 'ASC.NAV_SYNC',          icon: 'pi-sync',      route: '/asc/sync'          }
   ];
 }

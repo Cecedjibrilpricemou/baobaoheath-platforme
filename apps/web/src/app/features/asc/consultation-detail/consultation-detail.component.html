@@ -493,7 +493,9 @@
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label for="ordo-instructions">{{ 'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_LABEL' | translate }}</label>
-              <textarea pTextarea id="ordo-instructions" [(ngModel)]="ordonnanceForm.instructions" [placeholder]="'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_PH' | translate" rows="2"></textarea>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <textarea matInput id="ordo-instructions" [(ngModel)]="ordonnanceForm.instructions" [placeholder]="'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_PH' | translate" rows="2"></textarea>
+              </mat-form-field>
             </div>
           </div>
           <button class="bb-detail__submit-btn" (click)="saveOrdonnance()" [disabled]="isSavingOrdonnance() || !ordonnanceForm.idMedicament">
@@ -561,7 +563,9 @@
             </div>
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label for="ref-resume">{{ 'ASC.CONSULTATION_DETAIL.RESUME_CLINIQUE_LABEL' | translate }}</label>
-              <textarea pTextarea id="ref-resume" [(ngModel)]="referralForm.resumeClinique" [placeholder]="'ASC.CONSULTATION_DETAIL.RESUME_CLINIQUE_PH' | translate" rows="4"></textarea>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
+                <textarea matInput id="ref-resume" [(ngModel)]="referralForm.resumeClinique" [placeholder]="'ASC.CONSULTATION_DETAIL.RESUME_CLINIQUE_PH' | translate" rows="4"></textarea>
+              </mat-form-field>
             </div>
           </div>
           <button

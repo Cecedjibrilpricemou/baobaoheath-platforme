@@ -273,21 +273,21 @@
         </div>
       } @else {
         <div class="bb-analytics__tendances">
-          @for (t of tendances(); track t.periode) {
+          @for (t of tendances(); track t.mois) {
             <div class="bb-analytics__tendance-row">
-              <span class="bb-analytics__tendance-periode">{{ t.periode }}</span>
+              <span class="bb-analytics__tendance-periode">{{ t.mois }}</span>
               <div class="bb-analytics__tendance-bars">
                 <div class="bb-analytics__tendance-bar">
                   <div
                     class="bb-analytics__tendance-fill bb-analytics__tendance-fill--cons"
-                    [style.width.%]="t.consultations"
+                    [style.width.%]="(t.consultations / maxTendance()) * 100"
                   ></div>
                   <span>{{ 'ADMIN.ANALYTICS.CONSULTATIONS_LABEL' | translate: { count: t.consultations } }}</span>
                 </div>
                 <div class="bb-analytics__tendance-bar">
                   <div
                     class="bb-analytics__tendance-fill bb-analytics__tendance-fill--vacc"
-                    [style.width.%]="t.vaccinations"
+                    [style.width.%]="(t.vaccinations / maxTendance()) * 100"
                   ></div>
                   <span>{{ 'ADMIN.ANALYTICS.VACCINATIONS_LABEL' | translate: { count: t.vaccinations } }}</span>
                 </div>
@@ -321,14 +321,12 @@
             <div class="bb-analytics__vaccin-card">
               <div class="bb-analytics__vaccin-header">
                 <span class="bb-analytics__vaccin-nom">{{ v.vaccin }}</span>
-                <span class="bb-analytics__vaccin-total">{{ v.total }} {{ 'ADMIN.ANALYTICS.DOSES_UNIT' | translate }}</span>
+                <span class="bb-analytics__vaccin-total">{{ v.patientsVaccines }} {{ (v.patientsVaccines > 1 ? 'ADMIN.ANALYTICS.PATIENTS_UNIT' : 'ADMIN.ANALYTICS.PATIENT_UNIT') | translate }}</span>
               </div>
-              @if (v.pourcentage !== undefined) {
-                <div class="bb-analytics__vaccin-bar">
-                  <div class="bb-analytics__vaccin-fill" [style.width.%]="v.pourcentage"></div>
-                </div>
-                <span class="bb-analytics__vaccin-pct">{{ v.pourcentage }}%</span>
-              }
+              <div class="bb-analytics__vaccin-bar">
+                <div class="bb-analytics__vaccin-fill" [style.width.%]="v.tauxCouverture"></div>
+              </div>
+              <span class="bb-analytics__vaccin-pct">{{ v.tauxCouverture }}%</span>
             </div>
           }
         </div>

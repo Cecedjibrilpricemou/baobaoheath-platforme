@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { LayoutService } from '../../services/layout.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ProfilModalComponent } from '../profil-modal/profil-modal.component';
@@ -33,6 +34,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/con
 export class AdminLayoutComponent {
   private authService   = inject(AuthService);
   readonly themeService = inject(ThemeService);
+  readonly layout        = inject(LayoutService);
   private i18nService   = inject(I18nService);
   private dialog        = inject(MatDialog);
 
@@ -76,6 +78,6 @@ export class AdminLayoutComponent {
     { labelKey: 'ADMIN.NAV_ANALYTICS',  icon: 'pi-chart-bar', route: '/admin/analytics'  },
     { labelKey: 'ADMIN.NAV_STRUCTURES', icon: 'pi-building',  route: '/admin/structures' },
     { labelKey: 'ADMIN.NAV_EXPORT',     icon: 'pi-download',  route: '/admin/export'     },
-    { labelKey: 'Paramètres',           icon: 'pi-cog',       route: '/admin/settings'   }
+    { labelKey: 'ADMIN.NAV_SETTINGS',   icon: 'pi-cog',       route: '/admin/settings'   }
   ];
 }

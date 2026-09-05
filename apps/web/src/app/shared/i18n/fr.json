@@ -450,6 +450,8 @@
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_STOCKS": "Stocks",
     "NAV_PLANNING": "Planning",
+    "NAV_TRIAGE": "Triage IA",
+    "NAV_SYNC": "Synchronisation",
     "CONSULTATIONS": {
       "TITLE": "Mes Consultations",
       "SUBTITLE": "Gérez les consultations des patients de votre zone",
@@ -851,6 +853,7 @@
     "NAV_ANALYTICS": "Analytics",
     "NAV_EXPORT": "Export DHIS2",
     "NAV_STRUCTURES": "Structures",
+    "NAV_SETTINGS": "Paramètres",
     "EXPORT": {
       "TITLE": "Export des données",
       "SUBTITLE": "Exportez les données de la plateforme pour DHIS2 ou analyse externe",
@@ -1026,7 +1029,8 @@
       "VACCINATIONS_LABEL": "{{count}} vaccinations",
       "VACCINE_COVERAGE_TITLE": "Couverture vaccinale",
       "NO_COVERAGE_DATA": "Aucune donnée de couverture vaccinale",
-      "DOSES_UNIT": "doses",
+      "PATIENT_UNIT": "patient vacciné",
+      "PATIENTS_UNIT": "patients vaccinés",
       "PREFILTRE_ALL": "Toute la Guinée",
       "TYPE_GROUP_CHU": "CHU",
       "TYPE_GROUP_HOPITAL_REG": "Hôpitaux Régionaux",

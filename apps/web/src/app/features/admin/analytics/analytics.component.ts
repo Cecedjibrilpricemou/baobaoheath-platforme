@@ -44,16 +44,27 @@ interface Alerte {
   evolution: number;
 }
 
+// Ces deux formes reprennent exactement ce que renvoie l'API
+// (analytics.service.ts : getTendances / getCouvertureVaccinale).
 interface Tendance {
-  periode: string;
+  mois: string;
   consultations: number;
   vaccinations: number;
+  referencements: number;
 }
 
 interface Couverture {
   vaccin: string;
-  total: number;
-  pourcentage?: number;
+  patientsVaccines: number;
+  totalPatients: number;
+  tauxCouverture: number;
+}
+
+/** GET /analytics/vaccinations/couverture renvoie un objet, pas un tableau. */
+interface ReponseCouverture {
+  totalPatients: number;
+  couverture: Couverture[];
+  prefecture: string;
 }
 
 interface StructureCount {
@@ -104,6 +115,15 @@ export class AnalyticsComponent implements OnInit {
     { id: 'tendances' as const, icon: 'pi-chart-line',            labelKey: 'ADMIN.ANALYTICS.TAB_TENDANCES' },
     { id: 'vaccins'   as const, icon: 'pi-heart',                 labelKey: 'ADMIN.ANALYTICS.TAB_VACCINS'   }
   ];
+
+  /**
+   * Échelle des barres de tendance. Sans normalisation, le compteur brut était
+   * utilisé comme pourcentage : au-delà de 100 consultations la barre débordait.
+   */
+  readonly maxTendance = computed(() => {
+    const valeurs = this.tendances().flatMap(t => [t.consultations, t.vaccinations]);
+    return Math.max(1, ...valeurs);
+  });
 
   /** Cartes de synthèse — la première est mise en avant (fond plein). */
   readonly kpiCards = computed(() => {
@@ -228,8 +248,11 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingTend.set(true);
     this.adminService.getAnalyticsTendances().subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.tendances.set(response.data as Tendance[]);
-        this.isLoadingTend.set(false); 
+        // Un cast seul ne protège de rien : @for sur un non-itérable lève une
+        // TypeError qui vide tout l'onglet. On vérifie donc la forme reçue.
+        const donnees = response.data as unknown;
+        this.tendances.set(Array.isArray(donnees) ? (donnees as Tendance[]) : []);
+        this.isLoadingTend.set(false);
       },
       error: () => { this.isLoadingTend.set(false); }
     });
@@ -239,8 +262,9 @@ export class AnalyticsComponent implements OnInit {
     this.isLoadingCouv.set(true);
     this.adminService.getAnalyticsCouverture().subscribe({
       next: (response) => { 
-        if (response.success && response.data) this.couverture.set(response.data as Couverture[]);
-        this.isLoadingCouv.set(false); 
+        const donnees = response.data as unknown as ReponseCouverture | undefined;
+        this.couverture.set(Array.isArray(donnees?.couverture) ? donnees.couverture : []);
+        this.isLoadingCouv.set(false);
       },
       error: () => { this.isLoadingCouv.set(false); }
     });

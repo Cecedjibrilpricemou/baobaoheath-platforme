@@ -450,6 +450,8 @@
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_STOCKS": "Stock",
     "NAV_PLANNING": "Schedule",
+    "NAV_TRIAGE": "AI Triage",
+    "NAV_SYNC": "Synchronisation",
     "CONSULTATIONS": {
       "TITLE": "My Consultations",
       "SUBTITLE": "Manage consultations for patients in your area",
@@ -762,6 +764,7 @@
     "NAV_ANALYTICS": "Analytics",
     "NAV_EXPORT": "DHIS2 Export",
     "NAV_STRUCTURES": "Health Facilities",
+    "NAV_SETTINGS": "Settings",
     "EXPORT": {
       "TITLE": "Data Export",
       "SUBTITLE": "Export platform data for DHIS2 or external analysis",
@@ -937,7 +940,8 @@
       "VACCINATIONS_LABEL": "{{count}} vaccinations",
       "VACCINE_COVERAGE_TITLE": "Vaccine coverage",
       "NO_COVERAGE_DATA": "No vaccine coverage data",
-      "DOSES_UNIT": "doses",
+      "PATIENT_UNIT": "patient vaccinated",
+      "PATIENTS_UNIT": "patients vaccinated",
       "PREFILTRE_ALL": "All of Guinea",
       "TYPE_GROUP_CHU": "University Hospitals",
       "TYPE_GROUP_HOPITAL_REG": "Regional Hospitals",

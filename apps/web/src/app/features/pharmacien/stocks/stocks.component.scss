@@ -73,9 +73,10 @@
   &__kpi-lbl { font-size: 14px; color: var(--bb-text-secondary); font-weight: 600; position: relative; z-index: 1; text-transform: uppercase; letter-spacing: 0.5px; }
 
   // ── Recherche ────────────────────────────────────────────────
-  &__search { 
-    display: block; margin-bottom: 24px; max-width: 400px;
-    input { width: 100%; border-radius: 100px; padding-left: 40px; box-shadow: var(--bb-shadow-sm); border: 1px solid var(--bb-border); }
+  // Le cadre est desormais dessine par mat-form-field : styler l'input brut
+  // superposait deux bordures et reservait 40px pour une icone disparue.
+  &__search {
+    display: block; margin-bottom: 24px; max-width: 420px;
   }
 
   // ── Formulaire ────────────────────────────────────────────────

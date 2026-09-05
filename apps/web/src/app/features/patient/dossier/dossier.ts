@@ -120,13 +120,13 @@ export class Dossier implements OnInit {
     }
     return {
       nom: v.nomVaccin ?? v.vaccinNom ?? '—',
-      date: this.formatDate(v.dateAdministration),
+      date: this.formatDate(v.administreLe ?? v.dateAdministration),
       statut,
       severity,
     };
   }
 
-  private formatDate(dateStr: string): string {
+  private formatDate(dateStr: string | undefined): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }

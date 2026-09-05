@@ -153,14 +153,15 @@
         <!-- Notes médecin -->
         <div class="bb-med-cons__block">
           <h3 id="notes-medecin-title" class="bb-med-cons__block-title"><i class="pi pi-pencil" aria-hidden="true"></i> {{ 'MEDECIN.CONSULTATIONS.NOTES_TITLE' | translate }}</h3>
-          <textarea
-            pTextarea
-            [(ngModel)]="notesMedecin"
-            [placeholder]="'MEDECIN.CONSULTATIONS.NOTES_PLACEHOLDER' | translate"
-            aria-labelledby="notes-medecin-title"
-            rows="4"
-            style="width:100%"
-          ></textarea>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <textarea
+              matInput
+              [(ngModel)]="notesMedecin"
+              [placeholder]="'MEDECIN.CONSULTATIONS.NOTES_PLACEHOLDER' | translate"
+              aria-labelledby="notes-medecin-title"
+              rows="4"
+            ></textarea>
+          </mat-form-field>
         </div>
 
         <!-- Bouton valider -->

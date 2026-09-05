@@ -53,15 +53,8 @@
   &__field {
     display: flex; flex-direction: column; gap: 6px;
     label { font-size: 12px; font-weight: 600; color: var(--bb-text-secondary); }
-
-    input {
-      padding: 9px 12px; border-radius: var(--bb-radius);
-      border: 1.5px solid var(--bb-border); background: var(--bb-surface-1);
-      color: var(--bb-text-primary); font-family: var(--bb-font-body); font-size: 13.5px; outline: none;
-      transition: all var(--bb-transition);
-      &:focus { border-color: var(--bb-bright); box-shadow: 0 0 0 3px rgba(62,187,112,.12); }
-      &::placeholder { color: var(--bb-text-muted); }
-    }
+    // Les champs sont enveloppes dans mat-form-field : habiller l'input brut
+    // superposait une seconde bordure a celle du contour Material.
   }
 
   &__form-actions {

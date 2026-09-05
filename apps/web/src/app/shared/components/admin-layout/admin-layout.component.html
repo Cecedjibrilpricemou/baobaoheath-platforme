@@ -3,9 +3,10 @@
   <!-- ── NAVIGATION LATÉRALE ──────────────────────────────────── -->
   <mat-sidenav
     class="bb-nav"
-    [mode]="'side'"
-    [opened]="true"
-    disableClose
+    [mode]="layout.estMobile() ? 'over' : 'side'"
+    [opened]="layout.estMobile() ? sidebarOpen() : true"
+    [disableClose]="!layout.estMobile()"
+    (closedStart)="closeSidebar()"
   >
     <div class="bb-nav__brand">
       <span class="bb-nav__brand-mark" aria-hidden="true">🌳</span>

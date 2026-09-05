@@ -213,7 +213,7 @@
           <div class="form-field form-field--full">
             <label class="form-field__label" for="profil-allergies">{{ 'PATIENT.PROFILE.ALLERGIES' | translate }}</label>
             @if (editMode()) {
-            <textarea pTextarea id="profil-allergies" class="form-field__input w-full" [ngModel]="formData.allergies?.join(', ')"
+            <textarea id="profil-allergies" class="form-field__input w-full" [ngModel]="formData.allergies?.join(', ')"
               (ngModelChange)="formData.allergies = $any($event)"
               [placeholder]="'PATIENT.PROFILE.ALLERGIES_PH' | translate" rows="3"></textarea>
             } @else {
@@ -223,7 +223,7 @@
           <div class="form-field form-field--full">
             <label class="form-field__label" for="profil-antecedents">{{ 'PATIENT.PROFILE.ANTECEDENTS' | translate }}</label>
             @if (editMode()) {
-            <textarea pTextarea id="profil-antecedents" class="form-field__input w-full" [ngModel]="formData.maladiesChroniques?.join(', ')"
+            <textarea id="profil-antecedents" class="form-field__input w-full" [ngModel]="formData.maladiesChroniques?.join(', ')"
               (ngModelChange)="formData.maladiesChroniques = $any($event)"
               [placeholder]="'PATIENT.PROFILE.ANTECEDENTS_PH' | translate" rows="3"></textarea>
             } @else {
