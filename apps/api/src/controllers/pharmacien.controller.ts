@@ -1,9 +1,10 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as pharmacienService from '../services/pharmacien.service';
+import type { ScanPatientView, StockPharmacieView } from '@baobaoheath/shared-types';
 
 export async function scanPatientController(req: AuthRequest, res: Response): Promise<void> {
-  const data = await pharmacienService.scanPatient(String(req.params.qrCode), req.user!.userId);
+  const data: ScanPatientView = await pharmacienService.scanPatient(String(req.params.qrCode), req.user!.userId);
     res.json({ success: true, data });
 }
 
@@ -13,7 +14,7 @@ export async function delivrerOrdonnanceController(req: AuthRequest, res: Respon
 }
 
 export async function getStocksController(req: AuthRequest, res: Response): Promise<void> {
-  const data = await pharmacienService.getStocksPharmacie(req.user!.userId);
+  const data: StockPharmacieView[] = await pharmacienService.getStocksPharmacie(req.user!.userId);
     res.json({ success: true, data });
 }
 

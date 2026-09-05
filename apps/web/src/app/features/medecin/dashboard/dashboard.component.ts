@@ -5,23 +5,7 @@ import { RouterLink } from '@angular/router';
 import { MedecinService } from '../../../core/services/medecin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
-
-interface DashboardStats {
-  consultationsValidees: number;
-  consultationsEnAttente: number;
-  referencementsEnAttente: number;
-  messagesNonLus: number;
-  structure: { nom: string; type: string; prefecture: string } | null;
-}
-
-interface ConsultationRecente {
-  id: string;
-  statut: string;
-  motifPrincipal: string;
-  consulteeLE: string;
-  patient?: { utilisateur: { prenom: string; nom: string; } };
-  asc?: { utilisateur: { prenom: string; nom: string; } };
-}
+import type { ConsultationAValiderView, HorodatageApi, MedecinDashboardView } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-medecin-dashboard',
@@ -35,8 +19,8 @@ export class MedecinDashboardComponent implements OnInit {
   private authService    = inject(AuthService);
 
   currentUser          = this.authService.currentUser;
-  stats                = signal<DashboardStats | null>(null);
-  consultationsRecentes = signal<ConsultationRecente[]>([]);
+  stats                = signal<MedecinDashboardView | null>(null);
+  consultationsRecentes = signal<ConsultationAValiderView[]>([]);
   isLoading            = signal(true);
 
   ngOnInit() { this.loadDashboard(); }
@@ -48,7 +32,7 @@ export class MedecinDashboardComponent implements OnInit {
     this.medecinService.getDashboard().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.stats.set(response.data as unknown as DashboardStats);
+          this.stats.set(response.data as unknown as MedecinDashboardView);
         }
         this.isLoading.set(false);
       },
@@ -59,19 +43,19 @@ export class MedecinDashboardComponent implements OnInit {
     this.medecinService.getConsultationsRecentes().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.consultationsRecentes.set(response.data as ConsultationRecente[]);
+          this.consultationsRecentes.set(response.data as unknown as ConsultationAValiderView[]);
         }
       },
       error: () => {}
     });
   }
 
-  getPatientNom(c: ConsultationRecente): string {
+  getPatientNom(c: ConsultationAValiderView): string {
     const u = c.patient?.utilisateur;
     return u ? `${u.prenom} ${u.nom}` : '—';
   }
 
-  getAscNom(c: ConsultationRecente): string {
+  getAscNom(c: ConsultationAValiderView): string {
     const u = c.asc?.utilisateur;
     return u ? `${u.prenom} ${u.nom}` : '—';
   }
@@ -82,7 +66,7 @@ export class MedecinDashboardComponent implements OnInit {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  formatDate(d: string): string {
+  formatDate(d: HorodatageApi): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }

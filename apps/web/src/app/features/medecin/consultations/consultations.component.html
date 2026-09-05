@@ -142,7 +142,7 @@
               >
                 <input type="checkbox" [id]="'ordo-check-' + o.id" [checked]="isOrdonnanceSelectionnee(o.id)" (click)="$event.stopPropagation()" (change)="toggleOrdonnance(o.id)" />
                 <label [for]="'ordo-check-' + o.id" (click)="$event.stopPropagation()">
-                  <p class="bb-med-cons__ordo-med">{{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}</p>
+                  <p class="bb-med-cons__ordo-med">{{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}</p>
                   <p class="bb-med-cons__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j</p>
                 </label>
               </div>

@@ -10,31 +10,14 @@ import { AuthService } from '../../../core/services/auth.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import type { HorodatageApi, MessageView, UtilisateurResumeView } from '@baobaoheath/shared-types';
 
-interface Utilisateur {
-  id?: string;
-  prenom: string;
-  nom: string;
-  photoUrl?: string;
-  role?: string;
-}
-
-interface Message {
-  id: string;
-  contenu: string;
-  envoyeLe: string;
-  lu: boolean;
-  idExpediteur: string;
-  idDestinataire: string;
-  expediteur: Utilisateur;
-  destinataire: Utilisateur;
-}
-
+/** Regroupement client : l'API renvoie des messages a plat. */
 interface Conversation {
-  utilisateur: Utilisateur & { id: string };
-  messages: Message[];
+  utilisateur: UtilisateurResumeView & { id: string };
+  messages: MessageView[];
   nonLus: number;
-  dernierMessage?: Message;
+  dernierMessage?: MessageView;
 }
 
 @Component({
@@ -55,7 +38,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
   private destroyRef      = inject(DestroyRef);
 
   currentUser     = this.authService.currentUser;
-  messages        = signal<Message[]>([]);
+  messages        = signal<MessageView[]>([]);
   conversations   = signal<Conversation[]>([]);
   selectedConv    = signal<Conversation | null>(null);
   isLoading       = signal(true);
@@ -65,12 +48,12 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
 
   ngOnInit() {
     this.loadMessages();
-    this.socketService.on<Message>('message:new')
+    this.socketService.on<MessageView>('message:new')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((msg) => this.handleIncomingMessage(msg));
   }
 
-  private handleIncomingMessage(msg: Message) {
+  private handleIncomingMessage(msg: MessageView) {
     const userId = this.currentUser()?.id;
     // The server only ever emits to the recipient's own room, but a stale
     // socket surviving a user switch (rare, but cheap to guard) shouldn't
@@ -118,7 +101,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     this.medecinService.getMessages().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as Message[];
+          const data = response.data as unknown as MessageView[];
           this.messages.set(data);
           this.buildConversations(data);
         }
@@ -128,7 +111,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     });
   }
 
-  private buildConversations(messages: Message[]) {
+  private buildConversations(messages: MessageView[]) {
     const userId = this.currentUser()?.id;
     const map = new Map<string, Conversation>();
 
@@ -141,7 +124,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
 
       if (!map.has(interlocuteur.id)) {
         map.set(interlocuteur.id, {
-          utilisateur: interlocuteur as Utilisateur & { id: string },
+          utilisateur: interlocuteur as UtilisateurResumeView & { id: string },
           messages: [],
           nonLus: 0
         });
@@ -175,7 +158,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     this.shouldScroll = true;
   }
 
-  estEnvoye(m: Message): boolean {
+  estEnvoye(m: MessageView): boolean {
     return m.idExpediteur === this.currentUser()?.id;
   }
 
@@ -190,7 +173,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const msg = response.data as Message;
+          const msg = response.data as unknown as MessageView;
           // Ajouter le message à la conversation
           const updatedConv = {
             ...conv,
@@ -211,7 +194,7 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
     });
   }
 
-  getInitiales(u: Utilisateur): string {
+  getInitiales(u: UtilisateurResumeView): string {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
@@ -222,12 +205,12 @@ export class MessagerieComponent implements OnInit, AfterViewChecked {
       : base;
   }
 
-  formatHeure(d: string): string {
+  formatHeure(d: HorodatageApi): string {
     if (!d) return '';
     return new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  formatDate(d: string): string {
+  formatDate(d: HorodatageApi): string {
     if (!d) return '';
     const date = new Date(d);
     const today = new Date();

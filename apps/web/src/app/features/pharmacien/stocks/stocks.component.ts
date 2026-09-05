@@ -9,17 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-
-interface Medicament {
-  id: string; dci: string; nomCommercial?: string;
-  forme: string; dosage: string; categorie?: string; prixUnitaireGnf: number;
-}
-
-interface Stock {
-  id: string; quantite: number; seuilAlerte: number;
-  unite: string; datePeremption?: string; margeGnf: number;
-  medicament: Medicament;
-}
+import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-pharmacien-stocks',
@@ -35,8 +25,8 @@ export class PharmacienStocksComponent implements OnInit {
   private i18n = inject(I18nService);
   protected Math = Math;
 
-  stocks           = signal<Stock[]>([]);
-  medicaments      = signal<Medicament[]>([]);
+  stocks           = signal<StockPharmacieView[]>([]);
+  medicaments      = signal<MedicamentTarifeView[]>([]);
   isLoading        = signal(true);
   isSaving         = signal(false);
   searchQuery      = signal('');
@@ -62,11 +52,11 @@ export class PharmacienStocksComponent implements OnInit {
     this.pharmacienService.getStocks().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as unknown as Stock[];
+          const data = response.data as unknown as StockPharmacieView[];
           this.stocks.set(data);
           this.totalMedicaments.set(data.length);
-          this.stocksCritiques.set(data.filter((s: Stock) => s.quantite <= s.seuilAlerte).length);
-          this.stocksNormaux.set(data.filter((s: Stock) => s.quantite > s.seuilAlerte).length);
+          this.stocksCritiques.set(data.filter((s: StockPharmacieView) => s.quantite <= s.seuilAlerte).length);
+          this.stocksNormaux.set(data.filter((s: StockPharmacieView) => s.quantite > s.seuilAlerte).length);
         }
         this.isLoading.set(false);
       },
@@ -78,7 +68,7 @@ export class PharmacienStocksComponent implements OnInit {
     this.pharmacienService.getMedicaments().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.medicaments.set(response.data as unknown as Medicament[]);
+          this.medicaments.set(response.data as unknown as MedicamentTarifeView[]);
         }
       },
       error: () => {}
@@ -92,7 +82,7 @@ export class PharmacienStocksComponent implements OnInit {
     }));
   }
 
-  get stocksFiltres(): Stock[] {
+  get stocksFiltres(): StockPharmacieView[] {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s =>
@@ -131,34 +121,34 @@ export class PharmacienStocksComponent implements OnInit {
     });
   }
 
-  getMedicamentLabel(s: Stock): string {
+  getMedicamentLabel(s: StockPharmacieView): string {
     return s.medicament.nomCommercial
       ? `${s.medicament.nomCommercial} (${s.medicament.dci})`
       : `${s.medicament.dci} ${s.medicament.dosage}`;
   }
 
-  getPrixVente(s: Stock): number { return s.medicament.prixUnitaireGnf + (s.margeGnf ?? 0); }
+  getPrixVente(s: StockPharmacieView): number { return s.medicament.prixUnitaireGnf + (s.margeGnf ?? 0); }
 
-  getNiveauSeverity(s: Stock): 'danger' | 'warn' | 'success' {
+  getNiveauSeverity(s: StockPharmacieView): 'danger' | 'warn' | 'success' {
     if (s.quantite <= s.seuilAlerte) return 'danger';
     if (s.quantite <= s.seuilAlerte * 2) return 'warn';
     return 'success';
   }
 
-  getNiveauLabel(s: Stock): string {
+  getNiveauLabel(s: StockPharmacieView): string {
     if (s.quantite <= s.seuilAlerte) return this.i18n.t('PHARMACIEN.STOCKS.NIVEAU_CRITIQUE');
     if (s.quantite <= s.seuilAlerte * 2) return this.i18n.t('PHARMACIEN.STOCKS.NIVEAU_FAIBLE');
     return this.i18n.t('PHARMACIEN.STOCKS.NIVEAU_NORMAL');
   }
 
-  getBarWidth(s: Stock): number { return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100); }
-  getBarColor(s: Stock): string {
+  getBarWidth(s: StockPharmacieView): number { return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100); }
+  getBarColor(s: StockPharmacieView): string {
     if (s.quantite <= s.seuilAlerte) return '#EF4444';
     if (s.quantite <= s.seuilAlerte * 2) return '#F97316';
     return '#3EBB70';
   }
 
-  formatDate(d?: string): string {
+  formatDate(d?: HorodatageApi | null): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }
@@ -167,7 +157,7 @@ export class PharmacienStocksComponent implements OnInit {
     return new Intl.NumberFormat('fr-GN', { style: 'currency', currency: 'GNF', maximumFractionDigits: 0 }).format(m);
   }
 
-  isExpireSoon(s: Stock): boolean {
+  isExpireSoon(s: StockPharmacieView): boolean {
     if (!s.datePeremption) return false;
     return new Date(s.datePeremption).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
   }

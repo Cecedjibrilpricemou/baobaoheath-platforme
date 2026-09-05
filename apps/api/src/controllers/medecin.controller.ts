@@ -3,6 +3,11 @@ import { Request as ExpressRequest } from 'express';
 import * as medecinService from '../services/medecin.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { ReferralStatus } from '@baobaoheath/shared-types';
+import type {
+  ConsultationAValiderView,
+  MedecinDashboardView,
+  MessageView,
+} from '@baobaoheath/shared-types';
 
 type RequestWithId = ExpressRequest<{ id: string }>;
 
@@ -20,7 +25,7 @@ export async function getDashboardStatsController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  const stats = await medecinService.getDashboardStats(req.user!.userId);
+  const stats: MedecinDashboardView = await medecinService.getDashboardStats(req.user!.userId);
     res.status(200).json({ success: true, data: stats });
 }
 
@@ -38,7 +43,8 @@ export async function getConsultationsAValiderController(
       req.user!.userId,
       filters
     );
-    res.status(200).json({ success: true, ...result });
+    const data: ConsultationAValiderView[] = result.data;
+    res.status(200).json({ success: true, ...result, data });
 }
 
 // ─── Valider une consultation ─────────────────────────────
@@ -101,6 +107,6 @@ export async function getMessagesController(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  const messages = await medecinService.getMessages(req.user!.userId);
+  const messages: MessageView[] = await medecinService.getMessages(req.user!.userId);
     res.status(200).json({ success: true, data: messages });
 }

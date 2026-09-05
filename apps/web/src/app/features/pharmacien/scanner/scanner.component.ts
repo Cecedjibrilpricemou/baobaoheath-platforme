@@ -8,32 +8,7 @@ import { Router } from '@angular/router';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-
-interface Medicament {
-  id: string; dci: string; nomCommercial?: string;
-  forme: string; dosage: string; prixUnitaireGnf: number;
-}
-
-interface Ordonnance {
-  id: string; posologie: string; frequence: string;
-  dureeJours: number; quantite: number; statut: string;
-  signeLe: string; medecinNom: string;
-  medicament: Medicament;
-  prixTotalGnf: number;
-  alerteAllergie: boolean;
-}
-
-interface PatientInfo {
-  prenom: string; nom: string;
-  dateNaissance: string; groupeSanguin?: string;
-  allergiesCritiques: string[];
-}
-
-interface ScanResult {
-  patient: PatientInfo;
-  ordonnances: Ordonnance[];
-  totalOrdonnances: number;
-}
+import type { ScanPatientView } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-scanner',
@@ -51,7 +26,7 @@ export class ScannerComponent {
   qrCode       = '';
   isScanning   = signal(false);
   errorMessage = signal('');
-  scanResult   = signal<ScanResult | null>(null);
+  scanResult   = signal<ScanPatientView | null>(null);
 
   scan() {
     if (!this.qrCode.trim()) {
@@ -66,9 +41,9 @@ export class ScannerComponent {
       next: (response) => {
         this.isScanning.set(false);
         if (response.success && response.data) {
-          this.scanResult.set(response.data as unknown as ScanResult);
+          this.scanResult.set(response.data as unknown as ScanPatientView);
         } else {
-          this.scanResult.set((response.data as unknown as ScanResult) ?? null);
+          this.scanResult.set((response.data as unknown as ScanPatientView) ?? null);
         }
       },
       error: (err) => {

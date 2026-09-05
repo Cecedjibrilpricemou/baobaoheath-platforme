@@ -700,3 +700,105 @@ export interface RendezVousAscView {
     utilisateur?: { prenom: string; nom: string; telephone: string };
   };
 }
+
+// ─── Espace medecin ───────────────────────────────────────────────────────────
+
+/** GET /medecin/consultations — consultations terminees en attente de validation. */
+export interface ConsultationAValiderView {
+  id: string;
+  statut: EncounterStatus;
+  motifPrincipal: string;
+  consulteeLE: HorodatageApi;
+  notesMedecin?: string | null;
+  idMedecinValideur?: string | null;
+  patient?: PatientResumeView;
+  // La relation ASC est optionnelle en base : une consultation saisie hors
+  // parcours agent arrive avec `asc: null`.
+  asc?: { utilisateur: { prenom: string; nom: string } } | null;
+  constantes?: ConstantesVitalesView | null;
+  diagnostics: DiagnosticDetailView[];
+  ordonnances: OrdonnanceView[];
+}
+
+/** GET /medecin/dashboard. `structure` est la structure de rattachement. */
+export interface MedecinDashboardView {
+  consultationsValidees: number;
+  consultationsEnAttente: number;
+  referencementsEnAttente: number;
+  messagesNonLus: number;
+  structure: { nom: string; type: string; prefecture: string } | null;
+}
+
+/**
+ * Interlocuteur d'un message. `id` est absent du select cote API : le client
+ * le reconstruit depuis idExpediteur / idDestinataire du message porteur.
+ */
+export interface UtilisateurResumeView {
+  id?: string;
+  prenom: string;
+  nom: string;
+  photoUrl?: string | null;
+  role?: string;
+}
+
+/** GET /medecin/messages. */
+export interface MessageView {
+  id: string;
+  contenu: string;
+  envoyeLe: HorodatageApi;
+  lu: boolean;
+  idExpediteur: string;
+  idDestinataire: string;
+  expediteur: UtilisateurResumeView;
+  destinataire: UtilisateurResumeView;
+}
+
+// ─── Espace pharmacien ────────────────────────────────────────────────────────
+// Medicament + tarif : le catalogue porte un prix national de reference.
+export interface MedicamentTarifeView extends MedicamentView {
+  categorie?: string | null;
+  prixUnitaireGnf: number;
+}
+
+/** Ordonnance telle que presentee au comptoir (GET /pharmacien/scan/:qrCode). */
+export interface OrdonnanceDelivranceView {
+  id: string;
+  posologie: string;
+  frequence: string;
+  dureeJours: number;
+  quantite: number;
+  statut: string;
+  signeLe: string;
+  /** Calcule par l'API : signataire de l'ordonnance, ou l'agent a defaut. */
+  medecinNom: string;
+  medicament: MedicamentTarifeView;
+  /** Calcule par l'API : quantite x prix unitaire. */
+  prixTotalGnf: number;
+  /** Calcule par l'API : le principe actif figure dans les allergies du patient. */
+  alerteAllergie: boolean;
+}
+
+export interface PatientScanView {
+  prenom: string;
+  nom: string;
+  dateNaissance: string;
+  groupeSanguin?: string;
+  allergiesCritiques: string[];
+}
+
+export interface ScanPatientView {
+  patient: PatientScanView;
+  ordonnances: OrdonnanceDelivranceView[];
+  totalOrdonnances: number;
+}
+
+/** GET /pharmacien/stocks — ligne de stock d'une officine. */
+export interface StockPharmacieView {
+  id: string;
+  quantite: number;
+  seuilAlerte: number;
+  unite: string;
+  datePeremption?: HorodatageApi | null;
+  margeGnf: number;
+  medicament: MedicamentTarifeView;
+}

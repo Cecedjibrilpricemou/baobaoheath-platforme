@@ -8,26 +8,11 @@ import { Router } from '@angular/router';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-
-interface Medicament {
-  id: string; dci: string; nomCommercial?: string;
-  forme: string; dosage: string; prixUnitaireGnf: number;
-}
-
-interface Ordonnance {
-  id: string; posologie: string; frequence: string;
-  dureeJours: number; quantite: number; statut: string;
-  signeLe: string; medecinNom: string;
-  medicament: Medicament;
-  prixTotalGnf: number;
-  alerteAllergie: boolean;
-}
-
-interface PatientInfo {
-  prenom: string; nom: string;
-  dateNaissance: string; groupeSanguin?: string;
-  allergiesCritiques: string[];
-}
+import type {
+  HorodatageApi,
+  OrdonnanceDelivranceView,
+  PatientScanView,
+} from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-ordonnances',
@@ -49,9 +34,9 @@ export class OrdonnancesComponent implements OnInit {
   errorMessage = signal('');
 
   // Patient & Ordonnances State
-  patient          = signal<PatientInfo | null>(null);
-  ordonnances      = signal<Ordonnance[]>([]);
-  selected         = signal<Ordonnance | null>(null);
+  patient          = signal<PatientScanView | null>(null);
+  ordonnances      = signal<OrdonnanceDelivranceView[]>([]);
+  selected         = signal<OrdonnanceDelivranceView | null>(null);
   isDelivering     = signal(false);
   successMessage   = signal('');
 
@@ -69,7 +54,7 @@ export class OrdonnancesComponent implements OnInit {
 
   ngOnInit() {
     const nav = this.router.getCurrentNavigation();
-    const state = nav?.extras?.state as { scanResult?: { patient?: PatientInfo; ordonnances?: Ordonnance[] } } | undefined;
+    const state = nav?.extras?.state as { scanResult?: { patient?: PatientScanView; ordonnances?: OrdonnanceDelivranceView[] } } | undefined;
 
     if (state?.scanResult) {
       this.patient.set(state.scanResult.patient ?? null);
@@ -92,7 +77,7 @@ export class OrdonnancesComponent implements OnInit {
     this.pharmacienService.scanQrCode(this.qrCode.trim()).subscribe({
       next: (response) => {
         this.isScanning.set(false);
-        const raw = response.data as unknown as { patient?: PatientInfo; ordonnances?: Ordonnance[] } | null;
+        const raw = response.data as unknown as { patient?: PatientScanView; ordonnances?: OrdonnanceDelivranceView[] } | null;
         this.patient.set(raw?.patient ?? null);
         this.ordonnances.set(raw?.ordonnances ?? []);
       },
@@ -116,7 +101,7 @@ export class OrdonnancesComponent implements OnInit {
     this.selected.set(null);
   }
 
-  selectionner(o: Ordonnance) {
+  selectionner(o: OrdonnanceDelivranceView) {
     this.selected.set(o);
     this.quantiteDelivree = o.quantite;
     this.modePaiement = 'ESPECES';
@@ -151,7 +136,7 @@ export class OrdonnancesComponent implements OnInit {
     });
   }
 
-  getMontantAvecQuantite(o: Ordonnance): number {
+  getMontantAvecQuantite(o: OrdonnanceDelivranceView): number {
     return o.medicament.prixUnitaireGnf * this.quantiteDelivree;
   }
 

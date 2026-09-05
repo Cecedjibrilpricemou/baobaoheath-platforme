@@ -7,35 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MedecinService } from '../../../core/services/medecin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-
-interface Constantes {
-  temperature?: number; poidsKg?: number; tensionSystolique?: number;
-  tensionDiastolique?: number; frequenceCardiaque?: number; spo2?: number;
-  alertes?: string[];
-}
-
-interface Diagnostic {
-  id: string; libelle: string; typeDiagnostic: string; severite?: string;
-}
-
-interface Ordonnance {
-  id: string; posologie: string; frequence: string; dureeJours: number;
-  medicament: { dci: string; nomCommercial?: string; dosage: string };
-}
-
-interface Consultation {
-  id: string;
-  statut: string;
-  motifPrincipal: string;
-  consulteeLE: string;
-  notesMedecin?: string;
-  idMedecinValideur?: string;
-  patient?: { utilisateur: { prenom: string; nom: string; telephone: string } };
-  asc?: { utilisateur: { prenom: string; nom: string } };
-  constantes?: Constantes;
-  diagnostics: Diagnostic[];
-  ordonnances: Ordonnance[];
-}
+import type { ConsultationAValiderView, HorodatageApi } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-medecin-consultations',
@@ -48,8 +20,8 @@ export class MedecinConsultationsComponent implements OnInit {
   private medecinService = inject(MedecinService);
   private i18n = inject(I18nService);
 
-  consultations   = signal<Consultation[]>([]);
-  selected        = signal<Consultation | null>(null);
+  consultations   = signal<ConsultationAValiderView[]>([]);
+  selected        = signal<ConsultationAValiderView | null>(null);
   isLoading       = signal(true);
   isValidating    = signal(false);
   successMessage  = signal('');
@@ -67,7 +39,7 @@ export class MedecinConsultationsComponent implements OnInit {
     this.medecinService.getConsultations().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as Consultation[];
+          const data = response.data as ConsultationAValiderView[];
           this.consultations.set(data);
           this.total.set(response.meta?.total ?? data.length);
         }
@@ -77,7 +49,7 @@ export class MedecinConsultationsComponent implements OnInit {
     });
   }
 
-  selectionner(c: Consultation) {
+  selectionner(c: ConsultationAValiderView) {
     this.selected.set(c);
     this.notesMedecin = '';
     this.ordonnancesSelectionnees = [];
@@ -121,23 +93,23 @@ export class MedecinConsultationsComponent implements OnInit {
     });
   }
 
-  getPatientNom(c: Consultation): string {
+  getPatientNom(c: ConsultationAValiderView): string {
     const u = c.patient?.utilisateur;
     return u ? `${u.prenom} ${u.nom}` : '—';
   }
 
-  getAscNom(c: Consultation): string {
+  getAscNom(c: ConsultationAValiderView): string {
     const u = c.asc?.utilisateur;
     return u ? `${u.prenom} ${u.nom}` : '—';
   }
 
-  getInitiales(c: Consultation): string {
+  getInitiales(c: ConsultationAValiderView): string {
     const u = c.patient?.utilisateur;
     if (!u) return '?';
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  formatDate(d: string): string {
+  formatDate(d: HorodatageApi): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
