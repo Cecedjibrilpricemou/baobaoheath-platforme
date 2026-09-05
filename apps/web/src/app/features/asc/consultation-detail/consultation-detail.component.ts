@@ -9,97 +9,21 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
-import { ConsultationService } from '../../../core/services/consultation.service';
+import { ConsultationService, VitalsPayload } from '../../../core/services/consultation.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import type {
+  ConsultationDetailView,
+  ConstantesVitalesView,
+  HorodatageApi,
+  DiagnosticDetailView,
+  MedicamentView,
+  OrdonnanceView,
+  ReferencementView,
+  StructureView,
+} from '@baobaoheath/shared-types';
 
 // ─── Interfaces alignées avec le backend ─────────────────
-
-interface PatientInfo {
-  id: string;
-  qrCode?: string;
-  dateNaissance?: string;
-  sexe?: string;
-  groupeSanguin?: string;
-  allergies?: string[];
-  utilisateur?: { prenom: string; nom: string; telephone: string; photoUrl?: string };
-}
-
-interface ConstantesVitales {
-  id?: string;
-  temperature?: number;
-  poidsKg?: number;
-  tailleCm?: number;
-  perimetreBrachial?: number;
-  tensionSystolique?: number;
-  tensionDiastolique?: number;
-  frequenceCardiaque?: number;
-  frequenceRespiratoire?: number;
-  spo2?: number;
-  glycemie?: number;
-  alertes?: string[];
-}
-
-interface Diagnostic {
-  id: string;
-  libelle: string;
-  codeIcd11?: string;
-  typeDiagnostic: string;
-  severite?: string;
-  statutClinique: string;
-  source: string;
-  creeLe: string;
-}
-
-interface Ordonnance {
-  id: string;
-  posologie: string;
-  frequence: string;
-  dureeJours: number;
-  instructions?: string;
-  statut: string;
-  medicament: { dci: string; nomCommercial?: string; forme: string; dosage: string };
-}
-
-interface Referencement {
-  id: string;
-  urgence: string;
-  statut: string;
-  resumeClinique: string;
-  structureCible: { nom: string; type: string; prefecture: string };
-}
-
-interface Consultation {
-  id: string;
-  statut: string;
-  motifPrincipal: string;
-  symptomes: string[];
-  notesAsc?: string;
-  protocoleUtilise?: string;
-  confianceIa?: number;
-  resumeIa?: string;
-  consulteeLE: string;
-  patient: PatientInfo;
-  constantes?: ConstantesVitales;
-  diagnostics: Diagnostic[];
-  ordonnances: Ordonnance[];
-  referencement?: Referencement;
-}
-
-interface Medicament {
-  id: string;
-  dci: string;
-  nomCommercial?: string;
-  forme: string;
-  dosage: string;
-}
-
-interface Structure {
-  id: string;
-  nom: string;
-  type: string;
-  prefecture: string;
-}
 
 @Component({
   selector: 'app-consultation-detail',
@@ -120,14 +44,17 @@ export class ConsultationDetailComponent implements OnInit {
   private router = inject(Router);
   private i18n   = inject(I18nService);
 
-  consultation    = signal<Consultation | null>(null);
+  consultation    = signal<ConsultationDetailView | null>(null);
   isLoading       = signal(true);
   errorMessage    = signal('');
   successMessage  = signal('');
   activeSection   = signal<'vitals' | 'diagnostics' | 'ordonnances' | 'referral'>('vitals');
 
   // ── Constantes vitales ──────────────────────────────────
-  vitalsForm: ConstantesVitales = {};
+  // Le formulaire est une charge d'ecriture, pas la vue de lecture : l'API
+  // renvoie `null` pour une constante non saisie, un champ de saisie attend
+  // `undefined`. La conversion se fait au chargement (versFormulaire).
+  vitalsForm: VitalsPayload = {};
   isSavingVitals  = signal(false);
   vitalsAlerts    = signal<{ level: 'danger' | 'warn'; message: string }[]>([]);
 
@@ -200,7 +127,7 @@ export class ConsultationDetailComponent implements OnInit {
     dureeJours: 7,
     instructions: ''
   };
-  medicaments     = signal<Medicament[]>([]);
+  medicaments     = signal<MedicamentView[]>([]);
   isSavingOrdonnance = signal(false);
 
   // ── Référencement ────────────────────────────────────────
@@ -209,7 +136,7 @@ export class ConsultationDetailComponent implements OnInit {
     urgence: 'ROUTINE' | 'URGENT' | 'URGENCE_VITALE';
     resumeClinique: string;
   } = { idStructureCible: '', urgence: 'ROUTINE', resumeClinique: '' };
-  structures      = signal<Structure[]>([]);
+  structures      = signal<StructureView[]>([]);
   isSavingReferral = signal(false);
   // Les deux listes deroulantes lisaient opt.value / opt.label directement sur
   // les objets de l'API, qui ne portent pas ces champs : elles etaient vides,
@@ -258,11 +185,11 @@ export class ConsultationDetailComponent implements OnInit {
     this.consultationService.getConsultationById(id).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as unknown as Consultation;
+          const data = response.data as unknown as ConsultationDetailView;
           this.consultation.set(data);
           // Pré-remplir le formulaire vitaux si déjà saisis
           if (data.constantes) {
-            this.vitalsForm = { ...data.constantes };
+            this.vitalsForm = this.versFormulaire(data.constantes);
             this.onVitalsChange();
           }
         }
@@ -277,7 +204,7 @@ export class ConsultationDetailComponent implements OnInit {
 
   private loadMedicaments() {
     this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/medicaments').subscribe({
-      next: (r) => this.medicaments.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as Medicament[]),
+      next: (r) => this.medicaments.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as MedicamentView[]),
       // Un echec silencieux laissait la liste vide sans rien signaler : les
       // deux appels renvoyaient 404 et la prescription etait impossible.
       error: () => this.erreurCatalogue.set(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CATALOGUE'))
@@ -287,7 +214,7 @@ export class ConsultationDetailComponent implements OnInit {
   private loadStructures() {
     // Seule route de structures ouverte aux roles soignants.
     this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/admin-structure/structures/publiques').subscribe({
-      next: (r) => this.structures.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as Structure[]),
+      next: (r) => this.structures.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as StructureView[]),
       error: () => this.erreurCatalogue.set(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CATALOGUE'))
     });
   }
@@ -327,7 +254,7 @@ export class ConsultationDetailComponent implements OnInit {
         if (response.success && response.data) {
           const data = response.data;
           const c = this.consultation();
-          if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data as unknown as Diagnostic] });
+          if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data as unknown as DiagnosticDetailView] });
           this.diagnosticForm = { libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC' };
           this.isSavingDiagnostic.set(false);
           this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_DIAGNOSTIC'));
@@ -350,7 +277,7 @@ export class ConsultationDetailComponent implements OnInit {
         if (response.success && response.data) {
           const data = response.data;
           const c = this.consultation();
-          if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data as unknown as Ordonnance] });
+          if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data as unknown as OrdonnanceView] });
           this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
           this.isSavingOrdonnance.set(false);
           this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_ORDONNANCE'));
@@ -373,7 +300,7 @@ export class ConsultationDetailComponent implements OnInit {
         if (response.success && response.data) {
           const ref = response.data;
           const c = this.consultation();
-          if (c) this.consultation.set({ ...c, referencement: ref as unknown as Referencement, statut: 'REFERENCEE' });
+          if (c) this.consultation.set({ ...c, referencement: ref as unknown as ReferencementView, statut: 'REFERENCEE' });
           this.isSavingReferral.set(false);
           this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_REFERRAL'));
         }
@@ -447,7 +374,7 @@ export class ConsultationDetailComponent implements OnInit {
     return map[urgence] ?? 'info';
   }
 
-  getMedicamentLabel(m: Medicament): string {
+  getMedicamentLabel(m: MedicamentView): string {
     return m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} ${m.dosage}`;
   }
 
@@ -462,9 +389,27 @@ export class ConsultationDetailComponent implements OnInit {
     return `${p.prenom?.charAt(0) ?? ''}${p.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  formatDate(d: string): string {
+  formatDate(d: HorodatageApi | null | undefined): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** Convertit les `null` de l'API en `undefined`, attendus par les champs. */
+  private versFormulaire(c: ConstantesVitalesView | null | undefined): VitalsPayload {
+    if (!c) return {};
+    const n = (v: number | null | undefined) => v ?? undefined;
+    return {
+      temperature: n(c.temperature),
+      poidsKg: n(c.poidsKg),
+      tailleCm: n(c.tailleCm),
+      perimetreBrachial: n(c.perimetreBrachial),
+      tensionSystolique: n(c.tensionSystolique),
+      tensionDiastolique: n(c.tensionDiastolique),
+      frequenceCardiaque: n(c.frequenceCardiaque),
+      frequenceRespiratoire: n(c.frequenceRespiratoire),
+      spo2: n(c.spo2),
+      glycemie: n(c.glycemie),
+    };
   }
 
   private showSuccess(msg: string) {

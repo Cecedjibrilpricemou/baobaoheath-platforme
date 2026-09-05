@@ -102,8 +102,8 @@
             @if (stock.medicament.dosage || stock.medicament.forme) {
             <span class="stock-card__posologie">{{ stock.medicament.forme }} {{ stock.medicament.dosage }}</span>
             }
-            @if (stock.categorie) {
-            <span class="stock-card__cat">{{ stock.categorie }}</span>
+            @if (stock.medicament.categorie) {
+            <span class="stock-card__cat">{{ stock.medicament.categorie }}</span>
             }
           </div>
           <span class="bb-badge" [class]="'bb-badge bb-badge--' + getNiveauVariante(stock)">
@@ -153,11 +153,11 @@
         </div>
 
         <!-- Date expiration -->
-        @if (stock.dateExpiration) {
-        <div class="stock-card__expiry" [class.stock-card__expiry--soon]="isExpireSoon(stock.dateExpiration)">
+        @if (stock.datePeremption) {
+        <div class="stock-card__expiry" [class.stock-card__expiry--soon]="isExpireSoon(stock.datePeremption)">
           <i class="pi pi-calendar"></i>
-          {{ 'ASC.STOCKS.EXPIRES' | translate }} {{ formatDate(stock.dateExpiration) }}
-          @if (isExpireSoon(stock.dateExpiration)) {
+          {{ 'ASC.STOCKS.EXPIRES' | translate }} {{ formatDate(stock.datePeremption) }}
+          @if (isExpireSoon(stock.datePeremption)) {
           <span class="expiry-warning">⚠️ {{ 'ASC.STOCKS.EXPIRES_SOON' | translate }}</span>
           }
         </div>

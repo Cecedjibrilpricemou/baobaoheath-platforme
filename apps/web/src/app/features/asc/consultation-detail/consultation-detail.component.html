@@ -440,7 +440,7 @@
             <div class="bb-detail__list-item">
               <div class="bb-detail__list-item-left">
                 <span class="bb-detail__ordo-med">
-                  {{ o.medicament.nomCommercial ?? o.medicament.dci }} — {{ o.medicament.dosage }}
+                  {{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}
                 </span>
                 <span class="bb-detail__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }} jours</span>
                 @if (o.instructions) {
@@ -526,11 +526,12 @@
             <span>{{ 'ASC.CONSULTATION_DETAIL.REFERRAL_DONE' | translate }}</span>
             <span [class]="'bb-badge bb-badge--' + getUrgenceVariante(consultation()!.referencement!.urgence)">{{ consultation()!.referencement!.urgence }}</span>
           </div>
-          <p class="bb-detail__referral-structure">
-            <strong>{{ 'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_LABEL' | translate }}</strong>
-            {{ consultation()!.referencement!.structureCible.nom }} —
-            {{ consultation()!.referencement!.structureCible.prefecture }}
-          </p>
+          @if (consultation()!.referencement!.structureCible; as cible) {
+            <p class="bb-detail__referral-structure">
+              <strong>{{ 'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_LABEL' | translate }}</strong>
+              {{ cible.nom }} — {{ cible.prefecture }}
+            </p>
+          }
           <p class="bb-detail__referral-resume">
             {{ consultation()!.referencement!.resumeClinique }}
           </p>

@@ -3,6 +3,7 @@ import { Request as ExpressRequest } from 'express';
 import * as consultationService from '../services/consultation.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { EncounterStatus } from '@baobaoheath/shared-types';
+import type { ConsultationDetailView } from '@baobaoheath/shared-types';
 
 type RequestWithId = ExpressRequest<{ id: string }> & AuthRequest;
 
@@ -12,7 +13,10 @@ export async function createConsultationController(req: AuthRequest, res: Respon
 }
 
 export async function getConsultationByIdController(req: RequestWithId, res: Response): Promise<void> {
-    const consultation = await consultationService.getConsultationById(req.user!, req.params.id);
+    // Annotation = contrat : un champ renomme ou une relation retiree de la
+    // requete Prisma casse ici, au lieu de vider un bloc de la fiche.
+    const consultation: ConsultationDetailView =
+        await consultationService.getConsultationById(req.user!, req.params.id);
     res.status(200).json({ success: true, data: consultation });
 }
 

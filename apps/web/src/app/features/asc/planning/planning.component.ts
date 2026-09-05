@@ -2,12 +2,9 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AscService } from '../../../core/services/asc.service';
+import type { HorodatageApi, RendezVousAscView } from '@baobaoheath/shared-types';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
-interface RendezVous {
-  id: string; date: string; heure?: string; motif?: string; statut: string;
-  patient?: { utilisateur: { nom: string; prenom: string; telephone: string; }; };
-}
 
 @Component({
   selector: 'app-planning',
@@ -19,7 +16,7 @@ interface RendezVous {
 export class PlanningComponent implements OnInit {
   private ascService = inject(AscService);
 
-  rendezVous    = signal<RendezVous[]>([]);
+  rendezVous    = signal<RendezVousAscView[]>([]);
   isLoading     = signal(true);
   errorMessage  = signal('');
   totalRdv      = signal(0);
@@ -34,15 +31,15 @@ export class PlanningComponent implements OnInit {
     this.ascService.getPlanning().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data as RendezVous[];
+          const data = response.data as RendezVousAscView[];
           this.rendezVous.set(data);
           this.totalRdv.set(data.length);
           const today = new Date().toDateString();
-          this.rdvAujourdhui.set(data.filter((r) => new Date(r.date).toDateString() === today).length);
+          this.rdvAujourdhui.set(data.filter((r) => new Date(r.prevuLe).toDateString() === today).length);
           const now = new Date();
           const endWeek = new Date(now);
           endWeek.setDate(now.getDate() + 7);
-          this.rdvCetteSemaine.set(data.filter((r) => { const d = new Date(r.date); return d >= now && d <= endWeek; }).length);
+          this.rdvCetteSemaine.set(data.filter((r) => { const d = new Date(r.prevuLe); return d >= now && d <= endWeek; }).length);
         }
         this.isLoading.set(false);
       },
@@ -50,29 +47,29 @@ export class PlanningComponent implements OnInit {
     });
   }
 
-  get rdvFiltres(): RendezVous[] {
+  get rdvFiltres(): RendezVousAscView[] {
     if (this.vue() === 'aujourd-hui') {
       const today = new Date().toDateString();
-      return this.rendezVous().filter(r => new Date(r.date).toDateString() === today);
+      return this.rendezVous().filter(r => new Date(r.prevuLe).toDateString() === today);
     }
     return this.rendezVous();
   }
 
-  formatDate(dateStr: string): string {
+  formatDate(dateStr: HorodatageApi): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
   }
 
-  formatHeure(dateStr: string): string {
+  formatHeure(dateStr: HorodatageApi): string {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  isAujourdhui(dateStr: string): boolean {
+  isAujourdhui(dateStr: HorodatageApi): boolean {
     return new Date(dateStr).toDateString() === new Date().toDateString();
   }
 
-  isPasse(dateStr: string): boolean { return new Date(dateStr) < new Date(); }
+  isPasse(dateStr: HorodatageApi): boolean { return new Date(dateStr) < new Date(); }
 
   /** Variante de badge correspondant au statut d'un rendez-vous. */
   getStatutVariante(statut: string): string {
@@ -96,7 +93,7 @@ export class PlanningComponent implements OnInit {
     return map[statut] ?? statut;
   }
 
-  getInitiales(rdv: RendezVous): string {
+  getInitiales(rdv: RendezVousAscView): string {
     const u = rdv.patient?.utilisateur;
     if (!u) return '??';
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();

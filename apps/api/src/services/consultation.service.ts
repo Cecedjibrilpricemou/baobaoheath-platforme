@@ -122,7 +122,15 @@ export async function getConsultationById(user: JwtPayload, id: string) {
       ordonnances: {
         include: { medicament: true },
       },
-      referencement: true,
+      // La structure cible est affichee sur la fiche : sans cette relation,
+      // referencement.structureCible etait undefined cote client.
+      referencement: {
+        include: {
+          structureCible: {
+            select: { id: true, nom: true, type: true, prefecture: true },
+          },
+        },
+      },
       facture: true,
     },
   });

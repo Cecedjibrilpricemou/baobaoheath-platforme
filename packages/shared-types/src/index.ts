@@ -453,39 +453,43 @@ export interface DelivrancePayload {
 
 // ─── Canonical view models (API response shapes) ──────────────────────────────
 
+// Les colonnes nullables de Prisma arrivent en `null`, pas en `undefined`.
 export interface DiagnosticView {
   id: string;
   libelle: string;
-  codeIcd11?: string;
+  codeIcd11?: string | null;
   typeDiagnostic?: string;
-  severite?: string;
+  severite?: string | null;
   source: string;
 }
 
 export interface OrdonnanceView {
   id: string;
   statut: string;
-  signeLe?: string;
+  signeLe?: HorodatageApi | null;
   posologie: string;
   frequence: string;
   dureeJours: number;
-  quantite?: number;
-  instructions?: string;
-  medicament?: { id: string; dci: string; nomCommercial?: string; forme: string; dosage: string };
+  quantite?: number | null;
+  instructions?: string | null;
+  medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string };
 }
 
+// Une constante non saisie arrive en `null` (colonne nullable Prisma serialisee
+// telle quelle), pas en `undefined` : le type le dit desormais, pour que le
+// client traite le cas au lieu de le supposer absent.
 export interface ConstantesVitalesView {
   id?: string;
-  temperature?: number;
-  poidsKg?: number;
-  tailleCm?: number;
-  perimetreBrachial?: number;
-  tensionSystolique?: number;
-  tensionDiastolique?: number;
-  frequenceCardiaque?: number;
-  frequenceRespiratoire?: number;
-  spo2?: number;
-  glycemie?: number;
+  temperature?: number | null;
+  poidsKg?: number | null;
+  tailleCm?: number | null;
+  perimetreBrachial?: number | null;
+  tensionSystolique?: number | null;
+  tensionDiastolique?: number | null;
+  frequenceCardiaque?: number | null;
+  frequenceRespiratoire?: number | null;
+  spo2?: number | null;
+  glycemie?: number | null;
   alertes?: string[];
 }
 
@@ -592,4 +596,107 @@ export interface TendanceView {
   consultations: number;
   vaccinations: number;
   referencements: number;
+}
+
+// ─── Consultation — vue detaillee (GET /consultations/:id) ────────────────────
+// ConsultationView ci-dessus decrit la vue liste. Le detail renvoie davantage :
+// le patient, les constantes, les diagnostics, les ordonnances et le
+// referencement avec sa structure cible.
+//
+// Les champs de date sont typees `HorodatageApi` : le fil transporte toujours
+// une chaine ISO, mais le meme type annote aussi le controleur, ou Prisma
+// fournit un Date. L'union laisse passer les deux. Ce qui est garanti — et
+// c'est le point — ce sont les noms et la presence des champs.
+export type HorodatageApi = string | Date;
+
+export interface PatientResumeView {
+  id: string;
+  qrCode?: string;
+  dateNaissance?: HorodatageApi;
+  sexe?: string;
+  groupeSanguin?: string | null;
+  allergies?: string[];
+  utilisateur?: {
+    prenom: string;
+    nom: string;
+    telephone: string;
+    photoUrl?: string | null;
+  };
+}
+
+export interface DiagnosticDetailView extends DiagnosticView {
+  statutClinique: string;
+  creeLe: HorodatageApi;
+}
+
+export interface ReferencementView {
+  id: string;
+  urgence: string;
+  statut: string;
+  resumeClinique: string;
+  structureCible?: {
+    id: string;
+    nom: string;
+    type: string;
+    prefecture: string;
+  };
+}
+
+export interface ConsultationDetailView {
+  id: string;
+  statut: EncounterStatus;
+  motifPrincipal: string;
+  symptomes: string[];
+  notesAsc?: string | null;
+  protocoleUtilise?: string | null;
+  confianceIa?: number | null;
+  resumeIa?: string | null;
+  consulteeLE: HorodatageApi;
+  patient: PatientResumeView;
+  constantes?: ConstantesVitalesView | null;
+  diagnostics: DiagnosticDetailView[];
+  ordonnances: OrdonnanceView[];
+  referencement?: ReferencementView | null;
+}
+
+// ─── Catalogues (listes deroulantes) ──────────────────────────────────────────
+export interface MedicamentView {
+  id: string;
+  dci: string;
+  nomCommercial?: string | null;
+  forme: string;
+  dosage: string;
+}
+
+export interface StructureView {
+  id: string;
+  nom: string;
+  type: string;
+  prefecture: string;
+}
+
+// ─── Stocks (poste ASC) ───────────────────────────────────────────────────────
+// GET /asc/stocks renvoie la ligne de stock avec son medicament, plus un
+// indicateur `enAlerte` calcule par le service.
+export interface StockAscView {
+  id: string;
+  quantite: number;
+  seuilAlerte: number;
+  unite: string;
+  datePeremption?: HorodatageApi | null;
+  enAlerte: boolean;
+  medicament: MedicamentView & { categorie?: string | null };
+}
+
+// ─── Planning (rendez-vous d'un agent) ────────────────────────────────────────
+// GET /asc/planning renvoie les rendez-vous a venir avec leur patient.
+// L'horodatage s'appelle `prevuLe` : il n'y a ni `date` ni `heure` separes.
+export interface RendezVousAscView {
+  id: string;
+  statut: string;
+  motif?: string | null;
+  prevuLe: HorodatageApi;
+  patient?: {
+    utilisateur?: { prenom: string; nom: string; telephone: string };
+  };
 }

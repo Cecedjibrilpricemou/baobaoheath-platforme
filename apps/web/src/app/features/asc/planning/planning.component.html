@@ -82,14 +82,14 @@
         @for (rdv of rdvFiltres; track rdv.id) {
           <div
             class="rdv-card"
-            [class.rdv-card--today]="isAujourdhui(rdv.date)"
-            [class.rdv-card--passe]="isPasse(rdv.date)"
+            [class.rdv-card--today]="isAujourdhui(rdv.prevuLe)"
+            [class.rdv-card--passe]="isPasse(rdv.prevuLe)"
           >
 
             <!-- Bloc heure / date -->
             <div class="rdv-card__time-block">
-              <span class="rdv-card__heure">{{ formatHeure(rdv.date) }}</span>
-              @if (isAujourdhui(rdv.date)) {
+              <span class="rdv-card__heure">{{ formatHeure(rdv.prevuLe) }}</span>
+              @if (isAujourdhui(rdv.prevuLe)) {
                 <span class="rdv-card__today-pill">{{ 'ASC.PLANNING.TODAY_BADGE' | translate }}</span>
               }
             </div>
@@ -97,8 +97,8 @@
             <!-- Ligne de connexion -->
             <div class="rdv-card__connector">
               <div class="rdv-card__dot"
-                [class.rdv-card__dot--today]="isAujourdhui(rdv.date)"
-                [class.rdv-card__dot--passe]="isPasse(rdv.date)"
+                [class.rdv-card__dot--today]="isAujourdhui(rdv.prevuLe)"
+                [class.rdv-card__dot--passe]="isPasse(rdv.prevuLe)"
               ></div>
               <div class="rdv-card__line"></div>
             </div>
@@ -109,7 +109,7 @@
               <div class="rdv-card__header">
                 <!-- Avatar -->
                 <div class="rdv-card__avatar"
-                  [class.rdv-card__avatar--today]="isAujourdhui(rdv.date)"
+                  [class.rdv-card__avatar--today]="isAujourdhui(rdv.prevuLe)"
                   aria-hidden="true"
                 >
                   {{ getInitiales(rdv) }}
@@ -119,11 +119,11 @@
                 <div class="rdv-card__patient">
                   @if (rdv.patient) {
                     <span class="rdv-card__name">
-                      {{ rdv.patient.utilisateur.prenom }} {{ rdv.patient.utilisateur.nom }}
+                      {{ rdv.patient?.utilisateur?.prenom }} {{ rdv.patient?.utilisateur?.nom }}
                     </span>
                     <span class="rdv-card__phone">
                       <i class="pi pi-phone"></i>
-                      {{ rdv.patient.utilisateur.telephone }}
+                      {{ rdv.patient?.utilisateur?.telephone }}
                     </span>
                   } @else {
                     <span class="rdv-card__name">{{ 'ASC.PLANNING.PATIENT_UNKNOWN' | translate }}</span>
@@ -140,7 +140,7 @@
               <div class="rdv-card__details">
                 <div class="rdv-detail">
                   <i class="pi pi-calendar"></i>
-                  <span>{{ formatDate(rdv.date) }}</span>
+                  <span>{{ formatDate(rdv.prevuLe) }}</span>
                 </div>
                 @if (rdv.motif) {
                   <div class="rdv-detail">

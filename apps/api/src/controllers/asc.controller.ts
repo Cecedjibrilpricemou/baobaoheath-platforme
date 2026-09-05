@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { Request as ExpressRequest } from 'express';
 import * as ascService from '../services/asc.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import type { RendezVousAscView, StockAscView } from '@baobaoheath/shared-types';
 
 type RequestWithId = ExpressRequest<{ id: string }>;
 
@@ -37,7 +38,7 @@ export async function getAscPlanningController(
     req: AuthRequest,
     res: Response
 ): Promise<void> {
-    const planning = await ascService.getAscPlanning(req.user!.userId);
+    const planning: RendezVousAscView[] = await ascService.getAscPlanning(req.user!.userId);
         res.status(200).json({ success: true, data: planning });
 }
 
@@ -52,7 +53,9 @@ export async function getAscStocksController(
             limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
         };
         const result = await ascService.getAscStocks(req.user!.userId, filters);
-        res.status(200).json({ success: true, ...result });
+        // Annotation = contrat avec l'ecran Stocks de l'agent.
+        const data: StockAscView[] = result.data;
+        res.status(200).json({ success: true, ...result, data });
 }
 
 // ─── Créer un stock ───────────────────────────────────────

@@ -7,26 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { AscService } from '../../../core/services/asc.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-
-interface Medicament {
-  id: string;
-  dci: string;
-  nomCommercial?: string;
-  forme: string;
-  dosage: string;
-  categorie?: string;
-}
-
-// Interface aplatie pour correspondre exactement au template HTML
-interface Stock {
-  id: string;
-  quantite: number;
-  seuilAlerte: number;
-  unite: string;
-  dateExpiration?: string;  // mappé depuis datePeremption du backend
-  categorie?: string;       // mappé depuis medicament.categorie du backend
-  medicament: Medicament;
-}
+import type { HorodatageApi, StockAscView } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-stocks',
@@ -44,7 +25,7 @@ export class StocksComponent implements OnInit {
   private i18n = inject(I18nService);
   protected Math = Math;
 
-  stocks           = signal<Stock[]>([]);
+  stocks           = signal<StockAscView[]>([]);
   isLoading        = signal(true);
   isSaving         = signal(false);
   successMessage   = signal('');
@@ -63,27 +44,9 @@ export class StocksComponent implements OnInit {
     this.ascService.getStocks().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const raw = response.data;
-          // Aplatir les données pour que le template fonctionne directement
-          const data: Stock[] = (raw as Record<string, unknown>[]).map((s) => {
-            const med = s['medicament'] as Record<string, unknown> | null | undefined;
-            return {
-              id: s['id'] as string,
-              quantite: s['quantite'] as number,
-              seuilAlerte: s['seuilAlerte'] as number,
-              unite: s['unite'] as string,
-              dateExpiration: (s['datePeremption'] ?? s['dateExpiration']) as string | undefined,
-              categorie: (med?.['categorie'] ?? s['categorie']) as string | undefined,
-              medicament: {
-                id: (med?.['id'] ?? '') as string,
-                dci: (med?.['dci'] ?? s['medicamentNom'] ?? '—') as string,
-                nomCommercial: med?.['nomCommercial'] as string | undefined,
-                forme: (med?.['forme'] ?? '') as string,
-                dosage: (med?.['dosage'] ?? '') as string,
-                categorie: (med?.['categorie'] ?? s['categorie']) as string | undefined
-              }
-            };
-          });
+          // GET /asc/stocks renvoie deja la ligne avec son medicament :
+          // aucun remappage necessaire (cf. StockAscView).
+          const data = response.data as unknown as StockAscView[];
           this.stocks.set(data);
           this.totalMedicaments.set(data.length);
           this.stocksCritiques.set(data.filter(s => s.quantite <= s.seuilAlerte).length);
@@ -95,13 +58,13 @@ export class StocksComponent implements OnInit {
     });
   }
 
-  getMedicamentLabel(s: Stock): string {
+  getMedicamentLabel(s: StockAscView): string {
     const m = s.medicament;
     if (!m) return '—';
     return m.nomCommercial ? `${m.nomCommercial} (${m.dci})` : `${m.dci} ${m.dosage}`;
   }
 
-  get stocksFiltres(): Stock[] {
+  get stocksFiltres(): StockAscView[] {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s => {
@@ -109,33 +72,33 @@ export class StocksComponent implements OnInit {
       return (
         m?.dci?.toLowerCase().includes(q) ||
         m?.nomCommercial?.toLowerCase().includes(q) ||
-        s.categorie?.toLowerCase().includes(q)
+        s.medicament.categorie?.toLowerCase().includes(q)
       );
     });
   }
 
-  getNiveauStock(s: Stock): 'critique' | 'faible' | 'normal' {
+  getNiveauStock(s: StockAscView): 'critique' | 'faible' | 'normal' {
     if (s.quantite <= s.seuilAlerte) return 'critique';
     if (s.quantite <= s.seuilAlerte * 2) return 'faible';
     return 'normal';
   }
 
-  getStockPourcentage(s: Stock): number {
+  getStockPourcentage(s: StockAscView): number {
     return Math.min(Math.round((s.quantite / (s.seuilAlerte * 4)) * 100), 100);
   }
 
   /** Variante de badge correspondant au niveau de stock. */
-  getNiveauVariante(s: Stock): string {
+  getNiveauVariante(s: StockAscView): string {
     const n = this.getNiveauStock(s);
     return n === 'critique' ? 'danger' : n === 'faible' ? 'warning' : 'success';
   }
 
-  getBarColor(s: Stock): string {
+  getBarColor(s: StockAscView): string {
     const n = this.getNiveauStock(s);
     return n === 'critique' ? '#EF4444' : n === 'faible' ? '#F97316' : '#3EBB70';
   }
 
-  startEdit(s: Stock) { this.editingId.set(s.id); this.editQuantite.set(s.quantite); }
+  startEdit(s: StockAscView) { this.editingId.set(s.id); this.editQuantite.set(s.quantite); }
   cancelEdit()        { this.editingId.set(null); this.editQuantite.set(0); }
 
   saveStock(stockId: string) {
@@ -180,12 +143,12 @@ export class StocksComponent implements OnInit {
     this.stocksNormaux.set(liste.filter(s => s.quantite > s.seuilAlerte).length);
   }
 
-  formatDate(d?: string): string {
+  formatDate(d?: HorodatageApi | null): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  isExpireSoon(dateStr?: string): boolean {
+  isExpireSoon(dateStr?: HorodatageApi | null): boolean {
     if (!dateStr) return false;
     return new Date(dateStr).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
   }
