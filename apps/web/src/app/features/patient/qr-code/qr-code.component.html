@@ -106,8 +106,11 @@
                 <div class="info-item__icon info-item__icon--green"><i class="pi pi-user"></i></div>
                 <div class="info-item__body">
                   <span class="info-item__label">{{ 'PATIENT.QR.FULL_NAME' | translate }}</span>
+                  <!-- /patients/me imbrique l'identite sous `utilisateur` ;
+                       les champs a plat ne viennent que des reponses de recherche. -->
                   <span class="info-item__value">
-                    {{ patientInfo()?.prenom }} {{ patientInfo()?.nom }}
+                    {{ patientInfo()?.utilisateur?.prenom ?? patientInfo()?.prenom }}
+                    {{ patientInfo()?.utilisateur?.nom ?? patientInfo()?.nom }}
                   </span>
                 </div>
               </div>
@@ -116,7 +119,7 @@
                 <div class="info-item__icon info-item__icon--blue"><i class="pi pi-phone"></i></div>
                 <div class="info-item__body">
                   <span class="info-item__label">{{ 'PATIENT.QR.PHONE' | translate }}</span>
-                  <span class="info-item__value">{{ patientInfo()?.telephone }}</span>
+                  <span class="info-item__value">{{ patientInfo()?.utilisateur?.telephone ?? patientInfo()?.telephone }}</span>
                 </div>
               </div>
 

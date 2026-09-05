@@ -20,6 +20,10 @@ const COMPTES_DEMO = [
   'medecin.demo@baobaohealth.test',
   'pharmacien.demo@baobaohealth.test',
   'admin.demo@baobaohealth.test',
+  'ibrahima.conde@baobaotest.local',
+  'sekou.traore@baobaotest.local',
+  'mariam.sylla@baobaotest.local',
+  'kadiatou.barry@baobaotest.local',
 ];
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
