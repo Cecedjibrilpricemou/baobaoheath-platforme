@@ -54,13 +54,6 @@ export class ProfilComponent implements OnInit {
 
   bloodOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(v => ({ label: v, value: v }));
 
-  get sexeOptions() {
-    return [
-      { label: this.i18n.t('PATIENT.PROFILE.GENDER_M'), value: 'M' },
-      { label: this.i18n.t('PATIENT.PROFILE.GENDER_F'), value: 'F' }
-    ];
-  }
-
   get structureOptions() {
     return [
       { label: this.i18n.t('PATIENT.PROFILE.STRUCTURE_SELECT_PLACEHOLDER'), value: '' },

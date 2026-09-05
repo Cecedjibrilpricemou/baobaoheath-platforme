@@ -7,6 +7,11 @@ export interface Consultation extends ConsultationView {
   patient?: { utilisateur?: { prenom: string; nom: string; telephone: string } };
 }
 
+/**
+ * Forme renvoyee par /patients/me (patient.service.ts : getMyProfile) :
+ * les champs du profil sont a plat, l'identite est imbriquee sous
+ * `utilisateur`, et `structurePreferee` est un objet complet.
+ */
 export interface Patient {
   id: string;
   numeroPatient?: string;
@@ -15,24 +20,38 @@ export interface Patient {
   tailleCm?: number;
   allergies?: string[];
   maladiesChroniques?: string[];
-  // Some endpoints return nested utilisateur, others return flat fields
+  // Champs du profil patient, toujours a plat
+  dateNaissance?: string;
+  sexe?: string;
+  prefecture?: string;
+  sousPrefecture?: string;
+  village?: string;
+  photoUrl?: string;
+  urgenceNom?: string;
+  urgenceTelephone?: string;
+  qrCode?: string;
+  // Identite : imbriquee ici, a plat dans les reponses de recherche
   utilisateur?: {
     prenom: string;
     nom: string;
     telephone: string;
     email?: string;
-    dateNaissance?: string;
-    genre?: string;
-    adresse?: string;
+    photoUrl?: string;
+    langue?: string;
   };
-  // Flat alternatives present in some search/list responses
   prenom?: string;
   nom?: string;
   telephone?: string;
-  sexe?: string;
-  prefecture?: string;
+  // Modele hybride : structure de sante choisie par le patient
   idStructurePreferee?: string;
-  qrCode?: string;
+  structurePreferee?: {
+    id: string;
+    nom: string;
+    type: string;
+    prefecture: string;
+    adresse?: string;
+    telephone?: string;
+  };
 }
 
 export interface PatientCreatePayload {

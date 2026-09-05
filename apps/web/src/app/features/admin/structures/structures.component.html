@@ -28,10 +28,10 @@
             <span class="bb-mdp-modal__mdp">{{ mdpAffiche()!.motDePasse }}</span>
           </div>
         </div>
-        @if (mdpAffiche()!.emailEnvoye) {
+        @if (mdpAffiche()!.emailEnvoye; as email) {
           <div class="bb-mdp-modal__email-note">
             <i class="pi pi-envelope" aria-hidden="true"></i>
-            {{ 'ADMIN.STRUCTURES.SUCCESS_EMAIL_SENT' | translate: { email: mdpAffiche()!.emailEnvoye } }}
+            {{ 'ADMIN.STRUCTURES.SUCCESS_EMAIL_SENT' | translate: { email: email } }}
           </div>
         }
         <div class="bb-mdp-modal__warning">

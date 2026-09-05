@@ -153,10 +153,10 @@
               <div class="consult-card__patient">
                 @if (c.patient) {
                   <span class="consult-card__name">
-                    {{ c.patient.utilisateur.prenom }} {{ c.patient.utilisateur.nom }}
+                    {{ c.patient.utilisateur?.prenom }} {{ c.patient.utilisateur?.nom }}
                   </span>
                   <span class="consult-card__phone">
-                    <i class="pi pi-phone"></i> {{ c.patient.utilisateur.telephone }}
+                    <i class="pi pi-phone"></i> {{ c.patient.utilisateur?.telephone }}
                   </span>
                 } @else {
                   <span class="consult-card__name">{{ 'ASC.CONSULTATIONS.PATIENT_UNKNOWN' | translate }}</span>

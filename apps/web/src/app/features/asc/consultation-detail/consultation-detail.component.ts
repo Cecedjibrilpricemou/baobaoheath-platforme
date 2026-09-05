@@ -1,5 +1,5 @@
 // features/asc/consultation-detail/consultation-detail.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -211,6 +211,27 @@ export class ConsultationDetailComponent implements OnInit {
   } = { idStructureCible: '', urgence: 'ROUTINE', resumeClinique: '' };
   structures      = signal<Structure[]>([]);
   isSavingReferral = signal(false);
+  // Les deux listes deroulantes lisaient opt.value / opt.label directement sur
+  // les objets de l'API, qui ne portent pas ces champs : elles etaient vides,
+  // rendant impossibles la prescription et le referencement. On expose la meme
+  // forme { value, label } que `urgences` ci-dessous.
+  /** Affiche lorsqu'un catalogue (medicaments, structures) n'a pas pu etre charge. */
+  erreurCatalogue = signal('');
+
+  readonly medicamentOptions = computed(() =>
+    this.medicaments().map(m => ({
+      value: m.id,
+      label: [m.dci, m.dosage, m.forme].filter(Boolean).join(' · '),
+    }))
+  );
+
+  readonly structureOptions = computed(() =>
+    this.structures().map(s => ({
+      value: s.id,
+      label: [s.nom, s.prefecture].filter(Boolean).join(' · '),
+    }))
+  );
+
   get urgences() {
     return [
       { label: this.i18n.t('ASC.CONSULTATION_DETAIL.URGENCE_ROUTINE'), value: 'ROUTINE' },
@@ -257,14 +278,17 @@ export class ConsultationDetailComponent implements OnInit {
   private loadMedicaments() {
     this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/medicaments').subscribe({
       next: (r) => this.medicaments.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as Medicament[]),
-      error: () => {}
+      // Un echec silencieux laissait la liste vide sans rien signaler : les
+      // deux appels renvoyaient 404 et la prescription etait impossible.
+      error: () => this.erreurCatalogue.set(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CATALOGUE'))
     });
   }
 
   private loadStructures() {
-    this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/structures').subscribe({
+    // Seule route de structures ouverte aux roles soignants.
+    this.api.get<{ data?: unknown[]; success?: boolean } | unknown[]>('/admin-structure/structures/publiques').subscribe({
       next: (r) => this.structures.set((Array.isArray(r) ? r : (r as { data?: unknown[] })?.data ?? []) as Structure[]),
-      error: () => {}
+      error: () => this.erreurCatalogue.set(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CATALOGUE'))
     });
   }
 

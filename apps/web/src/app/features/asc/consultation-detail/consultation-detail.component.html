@@ -1,6 +1,13 @@
 <!-- features/asc/consultation-detail/consultation-detail.component.html -->
 <div class="bb-detail">
 
+  @if (erreurCatalogue()) {
+    <div class="bb-alert bb-alert--warning" role="status" aria-live="polite">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <span>{{ erreurCatalogue() }}</span>
+    </div>
+  }
+
   <!-- ── Modal confirmation clôture ───────────────────────── -->
   @if (showCloseConfirm()) {
     <div class="bb-logout-overlay" (click)="showCloseConfirm.set(false)">
@@ -459,7 +466,7 @@
                   [(ngModel)]="ordonnanceForm.idMedicament"
                   [placeholder]="'ASC.CONSULTATION_DETAIL.MEDICAMENT_PH' | translate"
                 >
-                  @for (opt of medicaments(); track opt.value) {
+                  @for (opt of medicamentOptions(); track opt.value) {
                     <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
                   }
                 </mat-select>
@@ -542,7 +549,7 @@
                   [(ngModel)]="referralForm.idStructureCible"
                   [placeholder]="'ASC.CONSULTATION_DETAIL.STRUCTURE_TARGET_PH' | translate"
                 >
-                  @for (opt of structures(); track opt.value) {
+                  @for (opt of structureOptions(); track opt.value) {
                     <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
                   }
                 </mat-select>

@@ -520,6 +520,7 @@
       "LOADING": "Loading schedule..."
     },
     "CONSULTATION_DETAIL": {
+      "ERR_CATALOGUE": "Could not load the catalogue. Some lists may be empty.",
       "CLOSE_CONFIRM_TITLE": "Close the consultation?",
       "CLOSE_CONFIRM_TEXT": "This action is irreversible. The consultation will move to \"Completed\" status.",
       "BACK": "Consultations",

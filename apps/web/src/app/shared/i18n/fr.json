@@ -520,6 +520,7 @@
       "LOADING": "Chargement du planning..."
     },
     "CONSULTATION_DETAIL": {
+      "ERR_CATALOGUE": "Impossible de charger le catalogue. Certaines listes peuvent être vides.",
       "CLOSE_CONFIRM_TITLE": "Clôturer la consultation ?",
       "CLOSE_CONFIRM_TEXT": "Cette action est irréversible. La consultation passera en statut « Terminée ».",
       "BACK": "Consultations",
