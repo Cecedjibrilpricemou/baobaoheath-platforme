@@ -236,7 +236,7 @@ export class ConsultationDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isSavingVitals.set(false);
-        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_SAVE_GENERIC'));
+        this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_SAVE_GENERIC'));
       }
     });
   }
@@ -262,7 +262,7 @@ export class ConsultationDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isSavingDiagnostic.set(false);
-        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ADD_GENERIC'));
+        this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ADD_GENERIC'));
       }
     });
   }
@@ -285,7 +285,7 @@ export class ConsultationDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isSavingOrdonnance.set(false);
-        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ADD_GENERIC'));
+        this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ADD_GENERIC'));
       }
     });
   }
@@ -307,7 +307,7 @@ export class ConsultationDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isSavingReferral.set(false);
-        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_REFERRAL'));
+        this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_REFERRAL'));
       }
     });
   }
@@ -327,7 +327,7 @@ export class ConsultationDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isClosing.set(false);
-        this.showError(err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CLOSE'));
+        this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CLOSE'));
       }
     });
   }

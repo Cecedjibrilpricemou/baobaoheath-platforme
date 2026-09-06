@@ -92,7 +92,7 @@ export class RegisterComponent {
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.message ?? err?.error?.error ?? this.i18nService.t('AUTH.REGISTER.ERR_GENERIC'),
+          err?.error?.error ?? err?.error?.message ?? err?.error?.error ?? this.i18nService.t('AUTH.REGISTER.ERR_GENERIC'),
           this.i18nService.t('AUTH.REGISTER.ERR_REGISTER_TITLE')
         );
       }

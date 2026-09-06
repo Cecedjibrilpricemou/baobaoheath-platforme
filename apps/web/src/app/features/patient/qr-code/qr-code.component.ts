@@ -52,7 +52,7 @@ export class QrCodeComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.errorMessage.set(err?.error?.message ?? 'Impossible de charger le QR Code.');
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? 'Impossible de charger le QR Code.');
         this.isLoading.set(false);
       }
     });

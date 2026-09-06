@@ -68,7 +68,7 @@ export class ExportComponent {
       },
       error: (err) => {
         this.isExporting.set(false);
-        this.errorMsg.set(err?.error?.message ?? err?.error?.error ?? this.i18n.t('ADMIN.EXPORT.ERR_EXPORT'));
+        this.errorMsg.set(err?.error?.error ?? err?.error?.message ?? err?.error?.error ?? this.i18n.t('ADMIN.EXPORT.ERR_EXPORT'));
       }
     });
   }

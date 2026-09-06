@@ -181,6 +181,32 @@ export async function creerPharmacieAvecPharmacien(dto: {
 }
 
 // ── SUPER_ADMIN : lister toutes les structures ────────────────────
+/**
+ * Liste ouverte, servie sans authentification : elle alimente le choix de
+ * structure preferee cote patient.
+ *
+ * Deux raisons de ne pas reutiliser getStructures() :
+ *  - elle renvoie aussi les structures desactivees, que le patient pouvait
+ *    donc selectionner avant de se voir refuser par l'API ;
+ *  - elle joint le nom et le telephone de l'administrateur de chaque
+ *    structure, qui n'ont rien a faire sur un endpoint public.
+ */
+export async function getStructuresPubliques() {
+    return prisma.structureSante.findMany({
+        where: { estActive: true },
+        orderBy: { nom: 'asc' },
+        select: {
+            id: true,
+            nom: true,
+            type: true,
+            prefecture: true,
+            adresse: true,
+            telephone: true,
+        },
+    });
+}
+
+// ── SUPER_ADMIN : liste complete, structures desactivees comprises ────
 export async function getStructures() {
     return prisma.structureSante.findMany({
         orderBy: { creeLe: 'desc' },

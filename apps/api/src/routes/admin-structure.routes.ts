@@ -14,7 +14,7 @@ const router = Router();
 
 router.get('/structures/publiques', async (_req: Request, res: Response) => {
   try {
-    const data = await service.getStructures();
+    const data = await service.getStructuresPubliques();
     res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });

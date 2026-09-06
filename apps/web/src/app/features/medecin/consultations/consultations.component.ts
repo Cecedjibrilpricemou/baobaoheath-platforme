@@ -88,7 +88,7 @@ export class MedecinConsultationsComponent implements OnInit {
       },
       error: (err) => {
         this.isValidating.set(false);
-        this.showError(err?.error?.message ?? this.i18n.t('MEDECIN.CONSULTATIONS.ERR_VALIDATE'));
+        this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('MEDECIN.CONSULTATIONS.ERR_VALIDATE'));
       }
     });
   }

@@ -128,7 +128,7 @@ export class ProfilComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.errorMessage.set(err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
       }
     });
   }
@@ -147,7 +147,7 @@ export class ProfilComponent implements OnInit {
       },
       error: (err) => {
         this.isSavingStructure.set(false);
-        this.errorMessage.set(err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
       }
     });
   }

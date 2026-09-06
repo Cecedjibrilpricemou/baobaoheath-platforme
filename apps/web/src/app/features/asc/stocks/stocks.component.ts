@@ -129,7 +129,7 @@ export class StocksComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.errorMessage.set(err?.error?.message ?? this.i18n.t('ASC.STOCKS.ERR_UPDATE'));
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.STOCKS.ERR_UPDATE'));
       }
     });
   }

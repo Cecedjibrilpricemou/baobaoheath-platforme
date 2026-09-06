@@ -132,7 +132,7 @@ export class ConsultationsComponent implements OnInit {
           this.loadConsultations();
         }
       },
-      error: (err) => { this.isSaving.set(false); this.errorMessage.set(err?.error?.message ?? this.i18n.t('ASC.CONSULTATIONS.ERR_CREATE')); }
+      error: (err) => { this.isSaving.set(false); this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATIONS.ERR_CREATE')); }
     });
   }
 
