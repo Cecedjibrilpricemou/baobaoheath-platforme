@@ -57,49 +57,8 @@
     }
   }
 
-  &__profile {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 0.625rem;
-    margin-bottom: 1.25rem;
-    border: 1px solid var(--bb-border-light);
-    border-radius: var(--bb-radius-lg);
-    background: var(--bb-surface-1);
-    cursor: pointer; text-align: left;
-    transition: background var(--bb-transition), border-color var(--bb-transition);
-
-    &:hover {
-      background: var(--bb-surface-2);
-      border-color: var(--bb-success-border);
-    }
-  }
-
-  // Selecteur element + classe : le composant app-avatar declare
-  // :host { width: 100% }, il faut une specificite superieure pour le dimensionner.
-  &__avatar,
-  app-avatar#{&}__avatar {
-    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, var(--bb-primary), var(--bb-mid));
-    color: #fff;
-    font-family: var(--bb-font-display);
-    font-size: 13px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  &__profile-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-
-  &__profile-name {
-    font-family: var(--bb-font-display);
-    font-size: 13px; font-weight: 700;
-    color: var(--bb-text-primary);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-
-  &__profile-role { font-size: 11px; color: var(--bb-text-muted); }
-
-  &__profile-edit {
-    font-size: 12px; width: 12px; height: 12px;
-    color: var(--bb-text-muted); flex-shrink: 0;
-  }
+  // La carte profil du menu lateral a ete retiree : le profil s'ouvre
+  // desormais uniquement depuis l'avatar de la barre superieure.
 
   &__section {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;

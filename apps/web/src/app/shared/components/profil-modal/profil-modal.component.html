@@ -1,28 +1,87 @@
 <!-- shared/components/profil-modal/profil-modal.component.html -->
 <div class="bb-profil-overlay" (click)="fermerModal()">
-    <div class="bb-profil-modal" role="dialog" aria-modal="true" aria-labelledby="profil-modal-title" (click)="$event.stopPropagation()">
+  <div
+    class="bb-profil-modal"
+    [class.bb-profil-modal--forcee]="forcerChangement()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="profil-modal-title"
+    (click)="$event.stopPropagation()"
+  >
 
-      <!-- Header -->
-      <div class="bb-profil-modal__header">
-        <div class="bb-profil-modal__avatar-wrap">
-          <app-avatar class="bb-profil-modal__avatar" [photoUrl]="currentUser()?.photoUrl" [initiales]="getInitiales()" />
-          <button type="button" class="bb-profil-modal__avatar-edit" (click)="photoInput.click()" [disabled]="isUploadingPhoto()" [attr.aria-label]="'PROFIL_MODAL.CHANGE_PHOTO_ARIA' | translate">
-            <i [class]="isUploadingPhoto() ? 'pi pi-spinner pi-spin' : 'pi pi-camera'" aria-hidden="true"></i>
-          </button>
-          <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onPhotoSelected($event)" />
-        </div>
-        <div class="bb-profil-modal__info">
-          <h3 id="profil-modal-title" class="bb-profil-modal__name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</h3>
-          <span class="bb-profil-modal__role">{{ getRoleLabel() }}</span>
-        </div>
-        @if (!forcerChangement()) {
-          <button class="bb-profil-modal__close" (click)="fermerModal()" [attr.aria-label]="'PROFIL_MODAL.CLOSE_ARIA' | translate">
-            <i class="pi pi-times" aria-hidden="true"></i>
-          </button>
-        }
+    <!-- ── RAIL : identité + sections ────────────────────────────── -->
+    <aside class="bb-profil-modal__rail">
+      <div class="bb-profil-modal__photo-wrap">
+        <app-avatar
+          class="bb-profil-modal__photo"
+          [photoUrl]="currentUser()?.photoUrl"
+          [initiales]="getInitiales()"
+        />
+        <button
+          type="button"
+          class="bb-profil-modal__photo-btn"
+          (click)="photoInput.click()"
+          [disabled]="isUploadingPhoto()"
+          [attr.aria-label]="'PROFIL_MODAL.CHANGE_PHOTO_ARIA' | translate"
+        >
+          <i [class]="isUploadingPhoto() ? 'pi pi-spinner pi-spin' : 'pi pi-camera'" aria-hidden="true"></i>
+          <span>{{ 'PROFIL_MODAL.CHANGE_PHOTO_HINT' | translate }}</span>
+        </button>
+        <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onPhotoSelected($event)" />
       </div>
 
-      <!-- Alerte changement forcé -->
+      <h3 id="profil-modal-title" class="bb-profil-modal__name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</h3>
+      <span class="bb-profil-modal__role">{{ getRoleLabel() }}</span>
+
+      <!-- Pendant un changement force, la navigation est verrouillee. -->
+      @if (!forcerChangement()) {
+        <nav class="bb-profil-modal__nav" [attr.aria-label]="'PROFIL_MODAL.SECTIONS_ARIA' | translate">
+          <button
+            type="button"
+            class="bb-profil-modal__nav-item"
+            [class.bb-profil-modal__nav-item--active]="activeTab() === 'profil'"
+            [attr.aria-current]="activeTab() === 'profil' ? 'true' : null"
+            (click)="setTab('profil')"
+          >
+            <i class="pi pi-user" aria-hidden="true"></i>
+            <span>{{ 'PROFIL_MODAL.TAB_PROFIL' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="bb-profil-modal__nav-item"
+            [class.bb-profil-modal__nav-item--active]="activeTab() === 'password'"
+            [attr.aria-current]="activeTab() === 'password' ? 'true' : null"
+            (click)="setTab('password')"
+          >
+            <i class="pi pi-lock" aria-hidden="true"></i>
+            <span>{{ 'PROFIL_MODAL.TAB_PASSWORD' | translate }}</span>
+          </button>
+        </nav>
+      }
+    </aside>
+
+    <!-- ── CONTENU ───────────────────────────────────────────────── -->
+    <section class="bb-profil-modal__content">
+      @if (!forcerChangement()) {
+        <button
+          type="button"
+          class="bb-profil-modal__close"
+          (click)="fermerModal()"
+          [attr.aria-label]="'PROFIL_MODAL.CLOSE_ARIA' | translate"
+        >
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      }
+
+      <header class="bb-profil-modal__head">
+        <h4 class="bb-profil-modal__title">
+          {{ (activeTab() === 'profil' ? 'PROFIL_MODAL.TAB_PROFIL' : 'PROFIL_MODAL.TAB_PASSWORD') | translate }}
+        </h4>
+        <p class="bb-profil-modal__sub">
+          {{ (activeTab() === 'profil' ? 'PROFIL_MODAL.PROFIL_HINT' : 'PROFIL_MODAL.PASSWORD_HINT') | translate }}
+        </p>
+      </header>
+
       @if (forcerChangement()) {
         <div class="bb-profil-modal__forced" role="alert">
           <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
@@ -30,19 +89,6 @@
         </div>
       }
 
-      <!-- Tabs -->
-      @if (!forcerChangement()) {
-        <div class="bb-profil-modal__tabs">
-          <button class="bb-profil-modal__tab" [class.bb-profil-modal__tab--active]="activeTab() === 'profil'" [attr.aria-pressed]="activeTab() === 'profil'" (click)="setTab('profil')">
-            <i class="pi pi-user" aria-hidden="true"></i> {{ 'PROFIL_MODAL.TAB_PROFIL' | translate }}
-          </button>
-          <button class="bb-profil-modal__tab" [class.bb-profil-modal__tab--active]="activeTab() === 'password'" [attr.aria-pressed]="activeTab() === 'password'" (click)="setTab('password')">
-            <i class="pi pi-lock" aria-hidden="true"></i> {{ 'PROFIL_MODAL.TAB_PASSWORD' | translate }}
-          </button>
-        </div>
-      }
-
-      <!-- Alerts -->
       @if (successMsg()) {
         <div class="bb-profil-modal__alert bb-profil-modal__alert--success" role="status" aria-live="polite">
           <i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMsg() }}
@@ -54,7 +100,7 @@
         </div>
       }
 
-      <!-- ── ONGLET PROFIL ─────────────────────────────────────── -->
+      <!-- ── SECTION PROFIL ─────────────────────────────────────── -->
       @if (activeTab() === 'profil') {
         <div class="bb-profil-modal__body">
           <div class="bb-profil-modal__grid">
@@ -77,20 +123,26 @@
               </mat-form-field>
             </div>
             <div class="bb-profil-modal__field">
-              <label for="profil-email">{{ 'PROFIL_MODAL.EMAIL_LABEL' | translate }} <span class="bb-profil-modal__optional">{{ 'PROFIL_MODAL.EMAIL_OPTIONAL' | translate }}</span></label>
+              <label for="profil-email">
+                {{ 'PROFIL_MODAL.EMAIL_LABEL' | translate }}
+                <span class="bb-profil-modal__optional">{{ 'PROFIL_MODAL.EMAIL_OPTIONAL' | translate }}</span>
+              </label>
               <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
                 <input matInput id="profil-email" [(ngModel)]="profilForm.email" [placeholder]="'PROFIL_MODAL.EMAIL_PH' | translate" type="email" />
               </mat-form-field>
             </div>
           </div>
-          <button class="bb-profil-modal__save-btn" (click)="saveProfil()" [disabled]="isSaving()">
-            <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
-            {{ (isSaving() ? 'PROFIL_MODAL.SAVING' : 'COMMON.SAVE') | translate }}
-          </button>
+
+          <div class="bb-profil-modal__actions">
+            <button class="bb-profil-modal__save-btn" (click)="saveProfil()" [disabled]="isSaving()">
+              <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
+              {{ (isSaving() ? 'PROFIL_MODAL.SAVING' : 'COMMON.SAVE') | translate }}
+            </button>
+          </div>
         </div>
       }
 
-      <!-- ── ONGLET MOT DE PASSE ──────────────────────────────── -->
+      <!-- ── SECTION MOT DE PASSE ───────────────────────────────── -->
       @if (activeTab() === 'password') {
         <div class="bb-profil-modal__body">
           @if (!forcerChangement()) {
@@ -131,12 +183,16 @@
               </button>
             </div>
           </div>
-          <button class="bb-profil-modal__save-btn" (click)="savePassword()" [disabled]="isSaving()">
-            <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-lock'" aria-hidden="true"></i>
-            {{ (isSaving() ? 'PROFIL_MODAL.CHANGING' : 'PROFIL_MODAL.CHANGE_PASSWORD_BTN') | translate }}
-          </button>
+
+          <div class="bb-profil-modal__actions">
+            <button class="bb-profil-modal__save-btn" (click)="savePassword()" [disabled]="isSaving()">
+              <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-lock'" aria-hidden="true"></i>
+              {{ (isSaving() ? 'PROFIL_MODAL.CHANGING' : 'PROFIL_MODAL.CHANGE_PASSWORD_BTN') | translate }}
+            </button>
+          </div>
         </div>
       }
+    </section>
 
-    </div>
   </div>
+</div>

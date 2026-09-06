@@ -79,6 +79,10 @@
     "ROLE_ADMIN_NATIONAL": "National Admin",
     "ROLE_SUPER_ADMIN": "Super Admin",
     "CHANGE_PHOTO_ARIA": "Change profile photo",
+    "CHANGE_PHOTO_HINT": "Change photo",
+    "SECTIONS_ARIA": "Profile sections",
+    "PROFIL_HINT": "This information identifies you to other professionals.",
+    "PASSWORD_HINT": "Choose a password you do not use anywhere else.",
     "ERR_PHOTO_TYPE": "Unsupported format — use a JPEG, PNG or WebP image.",
     "ERR_PHOTO_SIZE": "Image too large (3 MB maximum).",
     "SUCCESS_PHOTO_UPDATED": "Profile photo updated!",
@@ -96,6 +100,10 @@
     "TERMINE": "Completed"
   },
   "AUTH": {
+    "VISUAL": {
+      "TITLE": "Community health, connected.",
+      "TEXT": "Health workers, doctors and pharmacists share the same patient record, online and offline."
+    },
     "LOGIN": {
       "TITLE": "Sign in",
       "SUBTITLE": "Access your account",

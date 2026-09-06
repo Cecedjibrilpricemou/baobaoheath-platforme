@@ -8,6 +8,7 @@
 @use 'ngx-toastr/toastr';
 @use './styles/material-theme';
 @use './styles/shell';
+@use './styles/auth';
 @use './styles/utilities';
 // primeicons est conservé : jeu d'icônes local et léger, utilisé via
 // mat-icon fontSet="pi" dans toute l'application.

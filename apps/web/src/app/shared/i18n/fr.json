@@ -79,6 +79,10 @@
     "ROLE_ADMIN_NATIONAL": "Admin National",
     "ROLE_SUPER_ADMIN": "Super Administrateur",
     "CHANGE_PHOTO_ARIA": "Changer la photo de profil",
+    "CHANGE_PHOTO_HINT": "Changer la photo",
+    "SECTIONS_ARIA": "Sections du profil",
+    "PROFIL_HINT": "Ces informations vous identifient auprès des autres professionnels.",
+    "PASSWORD_HINT": "Choisissez un mot de passe que vous n'utilisez nulle part ailleurs.",
     "ERR_PHOTO_TYPE": "Format non supporté — utilisez une image JPEG, PNG ou WebP.",
     "ERR_PHOTO_SIZE": "Image trop volumineuse (3 Mo maximum).",
     "SUCCESS_PHOTO_UPDATED": "Photo de profil mise à jour !",
@@ -96,6 +100,10 @@
     "TERMINE": "Terminé"
   },
   "AUTH": {
+    "VISUAL": {
+      "TITLE": "La santé de proximité, reliée.",
+      "TEXT": "Agents de santé, médecins et pharmaciens partagent le même dossier patient, en ligne comme hors ligne."
+    },
     "LOGIN": {
       "TITLE": "Connexion",
       "SUBTITLE": "Accédez à votre espace personnel",

@@ -14,23 +14,6 @@
       <span class="bb-nav__brand-name">{{ 'APP.NAME' | translate }}</span>
     </div>
 
-    <button
-      type="button"
-      class="bb-nav__profile"
-      (click)="showProfil.set(true)"
-      [attr.aria-label]="'COMMON.PROFILE_OF_ARIA' | translate: { name: (currentUser()?.prenom + ' ' + currentUser()?.nom) }"
-    >
-      <app-avatar
-        class="bb-nav__avatar"
-        [photoUrl]="currentUser()?.photoUrl"
-        [initiales]="getInitiales()"
-      />
-      <span class="bb-nav__profile-info">
-        <span class="bb-nav__profile-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
-        <span class="bb-nav__profile-role">{{ 'ASC.ROLE' | translate }}</span>
-      </span>
-      <mat-icon fontSet="pi" fontIcon="pi-pencil" class="bb-nav__profile-edit" aria-hidden="true"></mat-icon>
-    </button>
 
     <p class="bb-nav__section">{{ 'COMMON.NAVIGATION' | translate }}</p>
 

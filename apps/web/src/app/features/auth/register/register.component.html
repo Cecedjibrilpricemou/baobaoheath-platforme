@@ -1,211 +1,195 @@
 <!-- features/auth/register/register.component.html -->
 <!-- Register public — PATIENT uniquement -->
-<div class="register-page">
-  <div class="register-card">
+<div class="bb-auth">
 
-    <!-- ── Panneau gauche ─────────────────────────────────────── -->
-    <div class="register-left">
-      <div class="register-left__deco register-left__deco--1"></div>
-      <div class="register-left__deco register-left__deco--2"></div>
-      <div class="register-left__deco register-left__deco--3"></div>
+  <!-- ── FORMULAIRE ───────────────────────────────────────────── -->
+  <div class="bb-auth__panel">
 
-      <div class="register-left__content">
-        <div class="register-left__logo">
-          <div class="register-left__logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 21V12"/>
-              <path d="M12 12c-3 0-5-2-5-5s2-5 5-5 5 2 5 5"/>
-              <path d="M12 12c3 0 5-2 5-5"/>
-              <path d="M7 12c-2 0-4 1.5-4 4s2 3 4 3h10c2 0 4-1 4-3s-2-4-4-4"/>
-            </svg>
-          </div>
-          <span class="register-left__logo-name">{{ 'APP.NAME' | translate }}</span>
-        </div>
-
-        <h1 class="register-left__title">{{ 'AUTH.REGISTER.WELCOME_TITLE' | translate }}</h1>
-        <p class="register-left__sub">{{ 'AUTH.REGISTER.WELCOME_SUBTITLE' | translate }}</p>
-
-        <div class="register-left__roles">
-          <div class="role-badge">
-            <i class="pi pi-user"></i> {{ 'AUTH.REGISTER.ROLE_PATIENT_BADGE' | translate }}
-          </div>
-          <div class="role-badge role-badge--info">
-            <i class="pi pi-info-circle"></i> {{ 'AUTH.REGISTER.ROLE_OPEN_BADGE' | translate }}
-          </div>
-        </div>
-
-        <div class="register-left__note">
-          <i class="pi pi-shield"></i>
-          <span>{{ 'AUTH.REGISTER.CONTACT_ADMIN_NOTE' | translate }}</span>
-        </div>
-      </div>
-
-      <div class="register-left__controls">
-        <button type="button" class="ctrl-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
-          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-        </button>
-        <button type="button" class="ctrl-btn" (click)="toggleLang()">
-          <i class="pi pi-globe" aria-hidden="true"></i>
-          <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
-        </button>
-      </div>
+    <div class="bb-auth__controls">
+      <button type="button" class="bb-auth__ctrl" (click)="toggleTheme()"
+        [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
+        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="bb-auth__ctrl" (click)="toggleLang()">
+        <i class="pi pi-globe" aria-hidden="true"></i>
+        <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
+      </button>
     </div>
 
-    <!-- ── Panneau droit — formulaire ────────────────────────── -->
-    <div class="register-right">
-      <div class="register-form-wrap">
+    <div class="bb-auth__inner bb-auth__inner--large">
 
-        <h2 class="register-form__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h2>
-        <p class="register-form__sub">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
-
-        <form (ngSubmit)="onSubmit()" #registerForm="ngForm" novalidate>
-
-          <!-- Nom + Prénom -->
-          <div class="form-row">
-            <div class="form-field-wrap">
-              <label class="form-label" for="nom">{{ 'AUTH.REGISTER.LAST_NAME' | translate }}</label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <i matPrefix class="pi pi-user"></i>
-                <input matInput id="nom" type="text" [placeholder]="'AUTH.REGISTER.LAST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.nom" name="nom"
-                  required autocomplete="family-name" #nomInput="ngModel"
-                  [attr.aria-invalid]="nomInput.invalid && (nomInput.dirty || nomInput.touched) ? true : null"
-                  aria-describedby="nom-msg" />
-              </mat-form-field>
-              @if (nomInput.invalid && (nomInput.dirty || nomInput.touched)) {
-                <small id="nom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.LAST_NAME_REQUIRED' | translate }}</small>
-              }
-            </div>
-            <div class="form-field-wrap">
-              <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <i matPrefix class="pi pi-user"></i>
-                <input matInput id="prenom" type="text" [placeholder]="'AUTH.REGISTER.FIRST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.prenom"
-                  name="prenom" required autocomplete="given-name" #prenomInput="ngModel"
-                  [attr.aria-invalid]="prenomInput.invalid && (prenomInput.dirty || prenomInput.touched) ? true : null"
-                  aria-describedby="prenom-msg" />
-              </mat-form-field>
-              @if (prenomInput.invalid && (prenomInput.dirty || prenomInput.touched)) {
-                <small id="prenom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.FIRST_NAME_REQUIRED' | translate }}</small>
-              }
-            </div>
-          </div>
-
-          <div class="form-row">
-            <!-- Téléphone -->
-            <div class="form-field-wrap">
-              <label class="form-label" for="telephone">
-                {{ 'AUTH.REGISTER.PHONE' | translate }}
-                <span class="form-required">*</span>
-              </label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <i matPrefix class="pi pi-phone"></i>
-                <input matInput id="telephone" type="tel" [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" [(ngModel)]="formData.telephone"
-                  name="telephone" required autocomplete="tel" #telInput="ngModel"
-                  [attr.aria-invalid]="telInput.invalid && (telInput.dirty || telInput.touched) ? true : null"
-                  aria-describedby="telephone-msg" />
-              </mat-form-field>
-              @if (telInput.invalid && (telInput.dirty || telInput.touched)) {
-                <small id="telephone-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PHONE_REQUIRED' | translate }}</small>
-              }
-            </div>
-
-            <!-- Email (optionnel) -->
-            <div class="form-field-wrap">
-              <label class="form-label" for="email">
-                {{ 'AUTH.REGISTER.EMAIL' | translate }}
-                <span class="form-optional">{{ 'AUTH.REGISTER.EMAIL_OPTIONAL' | translate }}</span>
-              </label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <i matPrefix class="pi pi-envelope"></i>
-                <input matInput id="email" type="email" [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" [(ngModel)]="formData.email"
-                  name="email" autocomplete="email" email #emailInput="ngModel"
-                  [attr.aria-invalid]="emailInput.invalid && (emailInput.dirty || emailInput.touched) ? true : null"
-                  aria-describedby="email-msg" />
-              </mat-form-field>
-              @if (emailInput.invalid && (emailInput.dirty || emailInput.touched)) {
-                <small id="email-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.EMAIL_INVALID' | translate }}</small>
-              }
-            </div>
-          </div>
-
-          <div class="form-row">
-            <!-- Mot de passe -->
-            <div class="form-field-wrap">
-              <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <i matPrefix class="pi pi-lock"></i>
-                <input matInput id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
-                  [placeholder]="'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate" [(ngModel)]="formData.motDePasse" name="motDePasse" required
-                  minlength="6" autocomplete="new-password" #mdpInput="ngModel"
-                  [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
-                  aria-describedby="motDePasse-msg" />
-                <button matSuffix type="button" class="toggle-btn" (click)="togglePassword()"
-                  [attr.aria-label]="(showPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
-                  [attr.aria-pressed]="showPassword()">
-                  <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
-                </button>
-              </mat-form-field>
-              @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
-                <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate }}</small>
-              }
-            </div>
-
-            <!-- Confirmation mot de passe -->
-            <div class="form-field-wrap">
-              <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <i matPrefix class="pi pi-lock"></i>
-                <input matInput id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
-                  [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
-                  autocomplete="new-password" #confirmMdpInput="ngModel"
-                  [attr.aria-invalid]="(confirmMdpInput.invalid || formData.motDePasse !== confirmMotDePasse) && (confirmMdpInput.dirty || confirmMdpInput.touched) ? true : null"
-                  aria-describedby="confirmMotDePasse-msg" />
-                <button matSuffix type="button" class="toggle-btn" (click)="toggleConfirmPassword()"
-                  [attr.aria-label]="(showConfirmPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
-                  [attr.aria-pressed]="showConfirmPassword()">
-                  <i [class]="showConfirmPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
-                </button>
-              </mat-form-field>
-              @if (confirmMdpInput.dirty || confirmMdpInput.touched) {
-                @if (confirmMdpInput.invalid) {
-                  <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_REQUIRED' | translate }}</small>
-                } @else if (formData.motDePasse !== confirmMotDePasse) {
-                  <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_MISMATCH' | translate }}</small>
-                }
-              }
-            </div>
-          </div>
-
-          <!-- Bouton submit -->
-          <button
-            matButton="filled"
-            type="submit"
-            class="bb-field-full register-submit-btn"
-            [disabled]="isLoading()"
-          >
-            <i [class]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'" aria-hidden="true"></i>
-            {{ isLoading() ? ('AUTH.REGISTER.LOADING' | translate) : ('AUTH.REGISTER.SUBMIT' | translate) }}
-          </button>
-
-          <div class="form-separator">
-            <span class="form-separator__line"></span>
-            <span class="form-separator__text">{{ 'COMMON.OR' | translate }}</span>
-            <span class="form-separator__line"></span>
-          </div>
-
-          <a routerLink="/auth/login" class="login-link">
-            <i class="pi pi-sign-in"></i>
-            {{ 'AUTH.REGISTER.LOGIN_LINK' | translate }}
-          </a>
-
-        </form>
-
-        <p class="register-form__footer">
-          <i class="pi pi-shield"></i>
-          {{ 'AUTH.REGISTER.FOOTER_ENCRYPTED' | translate }}
-        </p>
+      <div class="bb-auth__brand">
+        <span class="bb-auth__brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 21V12"/>
+            <path d="M12 12c-3 0-5-2-5-5s2-5 5-5 5 2 5 5"/>
+            <path d="M12 12c3 0 5-2 5-5"/>
+            <path d="M7 12c-2 0-4 1.5-4 4s2 3 4 3h10c2 0 4-1 4-3s-2-4-4-4"/>
+          </svg>
+        </span>
+        <span class="bb-auth__brand-name">{{ 'APP.NAME' | translate }}</span>
       </div>
-    </div>
 
+      <h1 class="bb-auth__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h1>
+      <p class="bb-auth__sub">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
+
+      <form (ngSubmit)="onSubmit()" #registerForm="ngForm" novalidate>
+
+        <!-- Nom + Prénom -->
+        <div class="form-row">
+          <div class="form-field-wrap">
+            <label class="form-label" for="nom">{{ 'AUTH.REGISTER.LAST_NAME' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-user"></i>
+              <input matInput id="nom" type="text" [placeholder]="'AUTH.REGISTER.LAST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.nom" name="nom"
+                required autocomplete="family-name" #nomInput="ngModel"
+                [attr.aria-invalid]="nomInput.invalid && (nomInput.dirty || nomInput.touched) ? true : null"
+                aria-describedby="nom-msg" />
+            </mat-form-field>
+            @if (nomInput.invalid && (nomInput.dirty || nomInput.touched)) {
+              <small id="nom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.LAST_NAME_REQUIRED' | translate }}</small>
+            }
+          </div>
+          <div class="form-field-wrap">
+            <label class="form-label" for="prenom">{{ 'AUTH.REGISTER.FIRST_NAME' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-user"></i>
+              <input matInput id="prenom" type="text" [placeholder]="'AUTH.REGISTER.FIRST_NAME_PLACEHOLDER' | translate" [(ngModel)]="formData.prenom"
+                name="prenom" required autocomplete="given-name" #prenomInput="ngModel"
+                [attr.aria-invalid]="prenomInput.invalid && (prenomInput.dirty || prenomInput.touched) ? true : null"
+                aria-describedby="prenom-msg" />
+            </mat-form-field>
+            @if (prenomInput.invalid && (prenomInput.dirty || prenomInput.touched)) {
+              <small id="prenom-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.FIRST_NAME_REQUIRED' | translate }}</small>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- Téléphone -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="telephone">
+              {{ 'AUTH.REGISTER.PHONE' | translate }}
+              <span class="form-required">*</span>
+            </label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-phone"></i>
+              <input matInput id="telephone" type="tel" [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" [(ngModel)]="formData.telephone"
+                name="telephone" required autocomplete="tel" #telInput="ngModel"
+                [attr.aria-invalid]="telInput.invalid && (telInput.dirty || telInput.touched) ? true : null"
+                aria-describedby="telephone-msg" />
+            </mat-form-field>
+            @if (telInput.invalid && (telInput.dirty || telInput.touched)) {
+              <small id="telephone-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PHONE_REQUIRED' | translate }}</small>
+            }
+          </div>
+
+          <!-- Email (optionnel) -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="email">
+              {{ 'AUTH.REGISTER.EMAIL' | translate }}
+              <span class="form-optional">{{ 'AUTH.REGISTER.EMAIL_OPTIONAL' | translate }}</span>
+            </label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-envelope"></i>
+              <input matInput id="email" type="email" [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" [(ngModel)]="formData.email"
+                name="email" autocomplete="email" email #emailInput="ngModel"
+                [attr.aria-invalid]="emailInput.invalid && (emailInput.dirty || emailInput.touched) ? true : null"
+                aria-describedby="email-msg" />
+            </mat-form-field>
+            @if (emailInput.invalid && (emailInput.dirty || emailInput.touched)) {
+              <small id="email-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.EMAIL_INVALID' | translate }}</small>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- Mot de passe -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="motDePasse">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-lock"></i>
+              <input matInput id="motDePasse" [type]="showPassword() ? 'text' : 'password'"
+                [placeholder]="'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate" [(ngModel)]="formData.motDePasse" name="motDePasse" required
+                minlength="6" autocomplete="new-password" #mdpInput="ngModel"
+                [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
+                aria-describedby="motDePasse-msg" />
+              <button matSuffix type="button" class="toggle-btn" (click)="togglePassword()"
+                [attr.aria-label]="(showPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
+                [attr.aria-pressed]="showPassword()">
+                <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
+              </button>
+            </mat-form-field>
+            @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
+              <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.PASSWORD_MIN_SHORT' | translate }}</small>
+            }
+          </div>
+
+          <!-- Confirmation mot de passe -->
+          <div class="form-field-wrap">
+            <label class="form-label" for="confirmMotDePasse">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-lock"></i>
+              <input matInput id="confirmMotDePasse" [type]="showConfirmPassword() ? 'text' : 'password'"
+                [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate" [(ngModel)]="confirmMotDePasse" name="confirmMotDePasse" required
+                autocomplete="new-password" #confirmMdpInput="ngModel"
+                [attr.aria-invalid]="(confirmMdpInput.invalid || formData.motDePasse !== confirmMotDePasse) && (confirmMdpInput.dirty || confirmMdpInput.touched) ? true : null"
+                aria-describedby="confirmMotDePasse-msg" />
+              <button matSuffix type="button" class="toggle-btn" (click)="toggleConfirmPassword()"
+                [attr.aria-label]="(showConfirmPassword() ? 'AUTH.REGISTER.PASSWORD_HIDE_ARIA' : 'AUTH.REGISTER.PASSWORD_SHOW_ARIA') | translate"
+                [attr.aria-pressed]="showConfirmPassword()">
+                <i [class]="showConfirmPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" style="font-size: 14px;" aria-hidden="true"></i>
+              </button>
+            </mat-form-field>
+            @if (confirmMdpInput.dirty || confirmMdpInput.touched) {
+              @if (confirmMdpInput.invalid) {
+                <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_REQUIRED' | translate }}</small>
+              } @else if (formData.motDePasse !== confirmMotDePasse) {
+                <small id="confirmMotDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.REGISTER.CONFIRM_MISMATCH' | translate }}</small>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Bouton submit -->
+        <button
+          matButton="filled"
+          type="submit"
+          class="bb-field-full register-submit-btn"
+          [disabled]="isLoading()"
+        >
+          <i [class]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'" aria-hidden="true"></i>
+          {{ isLoading() ? ('AUTH.REGISTER.LOADING' | translate) : ('AUTH.REGISTER.SUBMIT' | translate) }}
+        </button>
+
+        <div class="form-separator">
+          <span class="form-separator__line"></span>
+          <span class="form-separator__text">{{ 'COMMON.OR' | translate }}</span>
+          <span class="form-separator__line"></span>
+        </div>
+
+        <a routerLink="/auth/login" class="login-link">
+          <i class="pi pi-sign-in"></i>
+          {{ 'AUTH.REGISTER.LOGIN_LINK' | translate }}
+        </a>
+
+      </form>
+
+      <p class="bb-auth__footer">
+        <i class="pi pi-shield"></i>
+        {{ 'AUTH.REGISTER.FOOTER_ENCRYPTED' | translate }}
+      </p>
+    </div>
   </div>
+
+  <!-- ── VISUEL ─────────────────────────────────────────────── -->
+  <aside class="bb-auth__visual" aria-hidden="true">
+    <img src="assets/images/loginimage.jpeg" alt="" class="bb-auth__visual-img" />
+    <div class="bb-auth__visual-veil"></div>
+    <div class="bb-auth__visual-quote">
+      <p class="bb-auth__visual-title">{{ 'AUTH.REGISTER.WELCOME_TITLE' | translate }}</p>
+      <p class="bb-auth__visual-text">{{ 'AUTH.REGISTER.WELCOME_SUBTITLE' | translate }}</p>
+    </div>
+  </aside>
+
 </div>
