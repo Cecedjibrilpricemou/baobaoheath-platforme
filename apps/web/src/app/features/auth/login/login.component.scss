@@ -487,6 +487,29 @@
 }
 
 // ── OTP HEADER ───────────────────────────────────────────────────
+// Encart de developpement : volontairement sobre et distinct du reste, pour
+// qu'on ne le confonde jamais avec un element de l'interface de production.
+.otp-dev-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: var(--bb-radius);
+  background: var(--bb-info-bg);
+  border: 1px dashed var(--bb-info-border);
+  color: var(--bb-info);
+  font-size: 12.5px;
+
+  i { font-size: 13px; }
+
+  strong {
+    font-family: var(--bb-font-display);
+    font-size: 15px;
+    letter-spacing: 2px;
+  }
+}
+
 .otp-header {
   text-align: center;
   margin-bottom: 28px;

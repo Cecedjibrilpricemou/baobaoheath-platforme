@@ -53,6 +53,16 @@
             </div>
             <h2 class="login-form__title">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</h2>
             <p class="login-form__sub">{{ 'AUTH.LOGIN.OTP_SUBTITLE' | translate }}<br><strong>{{ otpEmail() }}</strong></p>
+
+            <!-- Uniquement en developpement : l'API ne renvoie devOtp que
+                 lorsque l'envoi de l'email a echoue et hors production. -->
+            @if (codeDeveloppement()) {
+              <p class="otp-dev-code" role="status">
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                {{ 'AUTH.LOGIN.OTP_DEV_CODE' | translate }}
+                <strong>{{ codeDeveloppement() }}</strong>
+              </p>
+            }
           </div>
         }
 

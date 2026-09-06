@@ -5,6 +5,7 @@ import { Observable, of } from 'rxjs';
 import { tap, map, switchMap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { User, LoginPayload, RegisterPayload } from '../models/user.model';
+import type { OtpLoginChallenge } from '@baobaoheath/shared-types';
 
 interface BackendAckResponse {
   success: boolean;
@@ -16,15 +17,12 @@ interface BackendMeResponse {
   data: User;
 }
 
+// POST /auth/login renvoie soit une session ouverte, soit un defi OTP.
+// La forme du defi vient de shared-types : elle porte `devOtp`, que l'API
+// renseigne en developpement quand l'envoi de l'email echoue.
 interface BackendLoginResponse {
   success: boolean;
-  data: {
-    authenticated?: boolean;
-    requiresOtp?: boolean;
-    email?: string;
-    message?: string;
-    expiresInMinutes?: number;
-  };
+  data: Partial<OtpLoginChallenge> & { authenticated?: boolean };
 }
 
 @Injectable({ providedIn: 'root' })

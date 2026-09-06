@@ -132,6 +132,7 @@
       "PLACEHOLDER_IDENTIFIANT": "Phone number or email address",
       "OTP_TITLE": "Secure verification",
       "OTP_SUBTITLE": "A 6-digit code was sent to",
+      "OTP_DEV_CODE": "Development mode — code:",
       "OTP_SUBMIT": "Verify code",
       "OTP_RESEND": "Resend code",
       "OTP_RESENT": "New code sent to your email address.",

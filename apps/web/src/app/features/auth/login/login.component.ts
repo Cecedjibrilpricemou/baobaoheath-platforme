@@ -7,14 +7,12 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginPayload } from '../../../core/models/user.model';
+import type { OtpLoginChallenge } from '@baobaoheath/shared-types';
 
-interface LoginResponseData {
-  authenticated?: boolean;
-  requiresOtp?: boolean;
-  email?: string;
-  message?: string;
-  expiresInMinutes?: number;
-}
+// La forme du defi OTP vit dans shared-types. La redeclarer ici avait un cout
+// concret : le champ devOtp — que l'API renvoie en developpement quand l'envoi
+// de l'email echoue — etait absent du type, donc jamais lu ni affiche.
+type LoginResponseData = Partial<OtpLoginChallenge> & { authenticated?: boolean };
 import { ThemeService } from '../../../shared/services/theme.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -48,6 +46,8 @@ export class LoginComponent implements OnDestroy {
 
   requiresOtp  = signal(false);
   otpEmail     = signal('');
+  /** Code OTP renvoye par l'API en developpement (jamais rempli en production). */
+  codeDeveloppement = signal('');
   otpCode      = '';
   otpDigits: string[] = ['', '', '', '', '', ''];
 
@@ -91,6 +91,9 @@ export class LoginComponent implements OnDestroy {
         if (response.requiresOtp) {
           this.requiresOtp.set(true);
           this.otpEmail.set(response.email ?? '');
+          // Present uniquement hors production, quand l'envoi de l'email a
+          // echoue : l'affichage evite d'aller chercher le code dans les logs.
+          this.codeDeveloppement.set(response.devOtp ?? '');
           this.startOtpTimer(response.expiresInMinutes ?? 10);
         } else {
           const role = this.authService.userRole();

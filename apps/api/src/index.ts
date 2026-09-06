@@ -143,7 +143,24 @@ app.get('/health', async (_req: Request, res: Response) => {
 setupSwagger(app);
 
 app.use('/api/v1', auditRequest);
-app.use('/api/v1/auth', authLimiter, authRoutes);
+
+// Le quota anti-force brute ne vise que les routes qui verifient un secret.
+// Applique a tout /auth, il etait consomme par /refresh et /me — appelees a
+// chaque chargement de page — et bloquait la connexion apres une dizaine de
+// navigations. Les routes de session restent couvertes par apiLimiter.
+const ROUTES_SENSIBLES = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/register',
+  '/api/v1/auth/verify-otp',
+  '/api/v1/auth/forgot-password',
+  '/api/v1/auth/reset-password',
+  '/api/v1/auth/change-password',
+];
+for (const route of ROUTES_SENSIBLES) {
+  app.use(route, authLimiter);
+}
+
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/consultations', consultationRoutes);
 app.use('/api/v1/medicaments', medicamentRoutes);
