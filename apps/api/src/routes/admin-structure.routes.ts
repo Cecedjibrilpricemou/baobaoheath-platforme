@@ -3,6 +3,12 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as service from '../services/admin-structure.service';
+import type {
+  CreationPharmacieView,
+  CreationStructureView,
+  StructureAdminView,
+  StructurePubliqueView,
+} from '@baobaoheath/shared-types';
 import {
   createAgentStructureSchema,
   createPharmacieSchema,
@@ -14,7 +20,9 @@ const router = Router();
 
 router.get('/structures/publiques', async (_req: Request, res: Response) => {
   try {
-    const data = await service.getStructuresPubliques();
+    // Annotation = contrat : un champ retire du select casse ici, au lieu
+    // de devenir undefined dans une liste deroulante.
+    const data: StructurePubliqueView[] = await service.getStructuresPubliques();
     res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
@@ -61,7 +69,7 @@ router.get('/stats', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, re
 
 router.get('/structures', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL'), async (_req: AuthRequest, res: Response) => {
   try {
-    const data = await service.getStructures();
+    const data: StructureAdminView[] = await service.getStructures();
     res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
@@ -70,7 +78,7 @@ router.get('/structures', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL'), async (_
 
 router.post('/structures', requireRole('SUPER_ADMIN'), validateBody(createStructureSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data = await service.creerStructureAvecAdmin(req.body);
+    const data: CreationStructureView = await service.creerStructureAvecAdmin(req.body);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
@@ -79,7 +87,7 @@ router.post('/structures', requireRole('SUPER_ADMIN'), validateBody(createStruct
 
 router.post('/pharmacies', requireRole('SUPER_ADMIN'), validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data = await service.creerPharmacieAvecPharmacien(req.body);
+    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.body);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
@@ -88,7 +96,7 @@ router.post('/pharmacies', requireRole('SUPER_ADMIN'), validateBody(createPharma
 
 router.put('/structures/:id', requireRole('SUPER_ADMIN'), validateBody(updateStructureSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data = await service.modifierStructure(String(req.params.id), req.body);
+    const data: StructureAdminView = await service.modifierStructure(String(req.params.id), req.body);
     res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });

@@ -9,28 +9,16 @@ import { AdminService } from '../../../core/services/admin.service';
 import { ToastrService } from 'ngx-toastr';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import type { CreationPharmacieView, CreationStructureView, StructureAdminView } from '@baobaoheath/shared-types';
 
-interface Structure {
-  id: string; nom: string; type: string; prefecture: string;
-  adresse?: string; latitude?: number; longitude?: number; telephone?: string;
-  estActive: boolean; _count?: { utilisateurs: number };
-  utilisateurs?: { prenom: string; nom: string; telephone: string }[];
-}
-
+// Contenu de la modale de confirmation : assemble cote client a partir de la
+// reponse de creation, il n'a pas d'equivalent dans une reponse d'API.
 interface MotDePasseAffiche {
   structureNom: string;
   adminNom: string;
   adminTelephone: string;
   motDePasse: string;
   emailEnvoye?: string;
-}
-
-interface CreateStructureResponse {
-  structure?: { nom: string };
-  pharmacie?: { nom: string };
-  admin?: { prenom: string; nom: string; telephone: string; email?: string };
-  pharmacien?: { prenom: string; nom: string; telephone: string; email?: string };
-  motDePasseTemporaire?: string;
 }
 
 @Component({
@@ -46,12 +34,12 @@ export class StructuresComponent implements OnInit {
   private toastr       = inject(ToastrService);
   private i18n         = inject(I18nService);
 
-  structures        = signal<Structure[]>([]);
+  structures        = signal<StructureAdminView[]>([]);
   isLoading         = signal(true);
   showForm          = signal(false);
   isSaving          = signal(false);
   isToggling        = signal<string | null>(null); // id de la structure en cours de toggle
-  confirmDesactiver = signal<Structure | null>(null); // modal confirmation
+  confirmDesactiver = signal<StructureAdminView | null>(null); // modal confirmation
 
   mdpAffiche = signal<MotDePasseAffiche | null>(null);
 
@@ -83,7 +71,7 @@ export class StructuresComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           const paginatedData = response.data;
-          const data = Array.isArray(paginatedData) ? paginatedData : (paginatedData as unknown as { items?: Structure[] })?.items ?? [];
+          const data = Array.isArray(paginatedData) ? paginatedData : (paginatedData as unknown as { items?: StructureAdminView[] })?.items ?? [];
           this.structures.set(data);
         }
         this.isLoading.set(false);
@@ -144,7 +132,7 @@ export class StructuresComponent implements OnInit {
 
     request$.subscribe({
       next: (response) => {
-        const data = (response?.data ?? response) as CreateStructureResponse;
+        const data = (response?.data ?? response) as Partial<CreationStructureView & CreationPharmacieView>;
         this.isSaving.set(false);
         this.showForm.set(false);
         this.newStructure = {
@@ -154,7 +142,8 @@ export class StructuresComponent implements OnInit {
         };
 
         const adminData = data?.admin ?? data?.pharmacien;
-        const structureData = data?.structure ?? data?.pharmacie;
+        // Les deux endpoints renvoient la structure sous la meme cle.
+        const structureData = data?.structure;
 
         // Le mot de passe temporaire est toujours affiché ici : l'envoi d'email
         // peut échouer silencieusement côté serveur (SMTP indisponible, etc.),
@@ -164,7 +153,8 @@ export class StructuresComponent implements OnInit {
           adminNom: `${adminData?.prenom ?? ''} ${adminData?.nom ?? ''}`.trim(),
           adminTelephone: adminData?.telephone ?? telephoneAdminSaisi,
           motDePasse: data?.motDePasseTemporaire ?? '',
-          emailEnvoye: adminData?.email
+          // L'API renvoie `null` quand aucun email n'est renseigne.
+          emailEnvoye: adminData?.email ?? undefined
         });
         this.toastr.success(this.i18n.t('ADMIN.STRUCTURES.SUCCESS_CREATED', { nom: nomStructureCree }), this.i18n.t('ADMIN.STRUCTURES.SUCCESS_TITLE'));
         this.loadStructures();
@@ -177,7 +167,7 @@ export class StructuresComponent implements OnInit {
   }
 
   // ── Demander confirmation avant désactivation ─────────────────
-  demanderDesactivation(s: Structure) {
+  demanderDesactivation(s: StructureAdminView) {
     this.confirmDesactiver.set(s);
   }
 
@@ -205,7 +195,7 @@ export class StructuresComponent implements OnInit {
   }
 
   // ── Réactiver une structure ───────────────────────────────────
-  reactiver(s: Structure) {
+  reactiver(s: StructureAdminView) {
     this.isToggling.set(s.id);
     this.adminService.updateStructure(s.id, { estActive: true }).subscribe({
       next: () => {
@@ -226,7 +216,7 @@ export class StructuresComponent implements OnInit {
     return this.typeOptions.find(t => t.value === type)?.label ?? type;
   }
 
-  getAdmin(s: Structure): string {
+  getAdmin(s: StructureAdminView): string {
     if (!s.utilisateurs?.length) return 'Aucun responsable';
     const a = s.utilisateurs[0];
     return `${a.prenom} ${a.nom} — ${a.telephone}`;

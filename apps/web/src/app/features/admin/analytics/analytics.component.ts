@@ -226,9 +226,10 @@ export class AnalyticsComponent implements OnInit {
         if (response.success && response.data) {
           const structures = response.data;
           const counts = new Map<string, number>();
+          // `type` est garanti par StructurePubliqueView : plus besoin de le
+          // supposer par transtypage.
           structures.forEach((s) => {
-            const type = (s as { type?: string }).type ?? 'INCONNU';
-            counts.set(type, (counts.get(type) ?? 0) + 1);
+            counts.set(s.type, (counts.get(s.type) ?? 0) + 1);
           });
           const parType: StructureCount[] = Array.from(counts.entries())
             .map(([type, count]) => ({ type, count }))

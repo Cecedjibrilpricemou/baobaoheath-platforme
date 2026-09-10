@@ -1,13 +1,13 @@
 // core/models/admin.model.ts
-export interface Structure {
-  id: string;
-  nom: string;
-  type: string;
-  prefecture: string;
-  sousPrefecture?: string;
-  quartier?: string;
-  contact?: string;
-}
+// La forme reelle vit dans shared-types, figee par l'annotation des routes.
+// L'ancienne declaration locale annoncait sousPrefecture, quartier et contact :
+// aucun de ces champs n'est renvoye par l'API.
+import type { StructureAdminView } from '@baobaoheath/shared-types';
+
+export type {
+  StructureAdminView as Structure,
+  StructurePubliqueView,
+} from '@baobaoheath/shared-types';
 
 export interface UtilisateurAdmin {
   id: string;
@@ -17,7 +17,7 @@ export interface UtilisateurAdmin {
   email?: string;
   role: string;
   statut: string;
-  structure?: Structure;
+  structure?: StructureAdminView;
 }
 
 export interface DashboardStatsGlobal {

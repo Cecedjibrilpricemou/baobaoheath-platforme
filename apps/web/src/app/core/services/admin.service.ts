@@ -2,7 +2,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Structure, UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
+import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
+import type {
+  CreationStructureView,
+  StructureAdminView,
+  StructurePubliqueView,
+} from '@baobaoheath/shared-types';
 import { ApiResponse, PaginatedData } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
@@ -24,15 +29,15 @@ export class AdminService {
     return this.api.post<ApiResponse<UtilisateurAdmin>>('/admin-structure/agents', payload);
   }
 
-  getStructures(page = 1, limit = 50): Observable<ApiResponse<PaginatedData<Structure>>> {
-    return this.api.get<ApiResponse<PaginatedData<Structure>>>('/admin-structure/structures', {
+  getStructures(page = 1, limit = 50): Observable<ApiResponse<PaginatedData<StructureAdminView>>> {
+    return this.api.get<ApiResponse<PaginatedData<StructureAdminView>>>('/admin-structure/structures', {
       page: page.toString(),
       limit: limit.toString()
     });
   }
 
-  createStructure(payload: Record<string, unknown>): Observable<ApiResponse<Structure>> {
-    return this.api.post<ApiResponse<Structure>>('/admin-structure/structures', payload);
+  createStructure(payload: Record<string, unknown>): Observable<ApiResponse<CreationStructureView>> {
+    return this.api.post<ApiResponse<CreationStructureView>>('/admin-structure/structures', payload);
   }
 
   createPharmacie(payload: Record<string, unknown>): Observable<ApiResponse<unknown>> {
@@ -43,12 +48,12 @@ export class AdminService {
     return this.api.delete<ApiResponse<void>>(`/admin-structure/structures/${id}`);
   }
 
-  updateStructure(id: string, payload: Record<string, unknown>): Observable<ApiResponse<Structure>> {
-    return this.api.put<ApiResponse<Structure>>(`/admin-structure/structures/${id}`, payload);
+  updateStructure(id: string, payload: Record<string, unknown>): Observable<ApiResponse<StructureAdminView>> {
+    return this.api.put<ApiResponse<StructureAdminView>>(`/admin-structure/structures/${id}`, payload);
   }
 
-  getPublicStructures(): Observable<ApiResponse<Structure[]>> {
-    return this.api.get<ApiResponse<Structure[]>>('/admin-structure/structures/publiques');
+  getPublicStructures(): Observable<ApiResponse<StructurePubliqueView[]>> {
+    return this.api.get<ApiResponse<StructurePubliqueView[]>>('/admin-structure/structures/publiques');
   }
 
   // Analytics

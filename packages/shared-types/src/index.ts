@@ -819,3 +819,73 @@ export interface VaccinationView {
   administreLe: HorodatageApi;
   administrePar?: { prenom: string; nom: string; role?: string };
 }
+
+// ─── Structures de sante ──────────────────────────────────────────────────────
+
+/**
+ * GET /admin-structure/structures/publiques — liste ouverte, servie sans
+ * authentification, qui alimente le choix de structure preferee du patient.
+ * Le select est volontairement etroit : ni `estActive` (seules les actives
+ * sortent), ni compteurs, ni utilisateurs rattaches.
+ */
+export interface StructurePubliqueView {
+  id: string;
+  nom: string;
+  type: string;
+  prefecture: string;
+  adresse?: string | null;
+  telephone?: string | null;
+}
+
+/**
+ * GET /admin-structure/structures — vue super-admin : toutes les structures,
+ * desactivees comprises, avec le nombre d'utilisateurs rattaches et les
+ * administrateurs de la structure.
+ */
+export interface StructureAdminView {
+  id: string;
+  nom: string;
+  type: string;
+  prefecture: string;
+  adresse?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  telephone?: string | null;
+  photoUrl?: string | null;
+  estActive: boolean;
+  creeLe: HorodatageApi;
+  _count?: { utilisateurs: number };
+  utilisateurs?: { prenom: string; nom: string; telephone: string }[];
+}
+
+/** Compte cree en meme temps qu'une structure ou une pharmacie. */
+export interface CompteCreeView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone: string;
+  email?: string | null;
+  role: Role;
+}
+
+/**
+ * POST /admin-structure/structures et /pharmacies.
+ *
+ * Les deux renvoient la structure sous la cle `structure` — il n'existe pas de
+ * cle `pharmacie`. Seul le compte cree change de nom : `admin` d'un cote,
+ * `pharmacien` de l'autre.
+ *
+ * `motDePasseTemporaire` n'est present que si l'API a genere le mot de passe,
+ * c'est-a-dire quand l'appelant n'en a pas fourni.
+ */
+export interface CreationStructureView {
+  structure: StructureAdminView;
+  admin: CompteCreeView;
+  motDePasseTemporaire?: string;
+}
+
+export interface CreationPharmacieView {
+  structure: StructureAdminView;
+  pharmacien: CompteCreeView;
+  motDePasseTemporaire?: string;
+}
