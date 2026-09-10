@@ -4,9 +4,12 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as service from '../services/admin-structure.service';
 import type {
+  AgentStructureView,
+  CreationAgentView,
   CreationPharmacieView,
   CreationStructureView,
   StructureAdminView,
+  StatsStructureView,
   StructurePubliqueView,
 } from '@baobaoheath/shared-types';
 import {
@@ -33,7 +36,7 @@ router.use(authenticate);
 
 router.get('/agents', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
   try {
-    const data = await service.getAgentsStructure(req.user!.userId);
+    const data: AgentStructureView[] = await service.getAgentsStructure(req.user!.userId);
     res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
@@ -42,7 +45,7 @@ router.get('/agents', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, r
 
 router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentStructureSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data = await service.creerAgent(req.user!.userId, req.body);
+    const data: CreationAgentView = await service.creerAgent(req.user!.userId, req.body);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
@@ -60,7 +63,7 @@ router.put('/agents/:id/desactiver', requireRole('ADMIN_STRUCTURE'), async (req:
 
 router.get('/stats', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
   try {
-    const data = await service.getStatsStructure(req.user!.userId);
+    const data: StatsStructureView = await service.getStatsStructure(req.user!.userId);
     res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });

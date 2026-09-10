@@ -7,23 +7,15 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import type { AgentStructureView, CreationAgentView, HorodatageApi } from '@baobaoheath/shared-types';
 
-interface Agent {
-  id: string; telephone: string; email?: string;
-  prenom: string; nom: string; role: string;
-  creeLe: string; derniereConnexion?: string;
-}
-
+// Contenu de la modale de confirmation : assemble cote client. L'adresse
+// email affichee provient de la saisie, l'API ne la renvoie pas.
 interface MotDePasseAffiche {
   agentNom: string;
   agentTelephone: string;
   motDePasse: string;
   emailEnvoye?: string;
-}
-
-interface CreateAgentResponse {
-  motDePasseTemporaire?: string;
-  agent?: { prenom: string; nom: string; telephone: string };
 }
 
 @Component({
@@ -38,7 +30,7 @@ export class AgentsComponent implements OnInit {
   private api = inject(ApiService);
   private i18n = inject(I18nService);
 
-  agents = signal<Agent[]>([]);
+  agents = signal<AgentStructureView[]>([]);
   isLoading = signal(true);
   showForm = signal(false);
   isSaving = signal(false);
@@ -61,8 +53,8 @@ export class AgentsComponent implements OnInit {
 
   loadAgents() {
     this.isLoading.set(true);
-    this.api.get<{ data?: Agent[]; success?: boolean } | Agent[]>('/admin-structure/agents').subscribe({
-      next: r => { this.agents.set(Array.isArray(r) ? r : (r as { data?: Agent[] })?.data ?? []); this.isLoading.set(false); },
+    this.api.get<{ data?: AgentStructureView[]; success?: boolean } | AgentStructureView[]>('/admin-structure/agents').subscribe({
+      next: r => { this.agents.set(Array.isArray(r) ? r : (r as { data?: AgentStructureView[] })?.data ?? []); this.isLoading.set(false); },
       error: () => { this.isLoading.set(false); }
     });
   }
@@ -81,9 +73,9 @@ export class AgentsComponent implements OnInit {
       email: this.newAgent.email || undefined
     };
 
-    this.api.post<{ data?: CreateAgentResponse } | CreateAgentResponse>('/admin-structure/agents', payload).subscribe({
+    this.api.post<{ data?: CreationAgentView } | CreationAgentView>('/admin-structure/agents', payload).subscribe({
       next: (r) => {
-        const data = ((r as { data?: CreateAgentResponse })?.data ?? r) as CreateAgentResponse;
+        const data = ((r as { data?: CreationAgentView })?.data ?? r) as CreationAgentView;
         this.isSaving.set(false);
         this.showForm.set(false);
         this.newAgent = { telephone: '', email: '', prenom: '', nom: '', role: 'ASC' };
@@ -131,7 +123,7 @@ export class AgentsComponent implements OnInit {
     return map[role] ?? role;
   }
 
-  formatDate(d: string): string {
+  formatDate(d: HorodatageApi | null | undefined): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }

@@ -889,3 +889,46 @@ export interface CreationPharmacieView {
   pharmacien: CompteCreeView;
   motDePasseTemporaire?: string;
 }
+
+// ─── Espace admin de structure ────────────────────────────────────────────────
+
+/** GET /admin-structure/agents — agents actifs rattaches a la structure. */
+export interface AgentStructureView {
+  id: string;
+  telephone: string;
+  email?: string | null;
+  prenom: string;
+  nom: string;
+  role: Role;
+  creeLe: HorodatageApi;
+  derniereConnexion?: HorodatageApi | null;
+}
+
+/**
+ * POST /admin-structure/agents.
+ *
+ * `agent` ne porte pas l'email : l'ecran affiche l'adresse saisie, pas une
+ * valeur renvoyee par l'API. `motDePasseTemporaire` n'est present que si
+ * l'API a genere le mot de passe.
+ */
+export interface CreationAgentView {
+  agent: {
+    id: string;
+    telephone: string;
+    prenom: string;
+    nom: string;
+    role: Role;
+  };
+  motDePasseTemporaire?: string;
+}
+
+/**
+ * GET /admin-structure/stats.
+ * `structure` provient d'un findUnique : le type garde la nullabilite.
+ */
+export interface StatsStructureView {
+  structure: StructureAdminView | null;
+  totalAgents: number;
+  totalConsultations: number;
+  totalPatients: number;
+}

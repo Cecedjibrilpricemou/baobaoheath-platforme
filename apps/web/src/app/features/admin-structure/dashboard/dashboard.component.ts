@@ -4,11 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
-
-interface Stats {
-  structure: { nom: string; type: string; prefecture: string };
-  totalAgents: number; totalConsultations: number; totalPatients: number;
-}
+import type { StatsStructureView } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-admin-structure-dashboard',
@@ -17,9 +13,11 @@ interface Stats {
   template: `
 <div class="bb-as-dash">
   <div class="bb-as-dash__header">
-    @if (stats()) {
-      <h1 class="bb-as-dash__title">{{ stats()!.structure.nom }}</h1>
-      <p class="bb-as-dash__sub">{{ stats()!.structure.prefecture }} · {{ stats()!.structure.type }}</p>
+    <!-- La structure vient d'un findUnique : le contrat en garde la
+         nullabilite, l'alias evite de la supposer presente partout. -->
+    @if (stats()?.structure; as structure) {
+      <h1 class="bb-as-dash__title">{{ structure.nom }}</h1>
+      <p class="bb-as-dash__sub">{{ structure.prefecture }} · {{ structure.type }}</p>
     } @else {
       <div class="bb-skeleton" style="width:300px;height:32px"></div>
     }
@@ -58,9 +56,9 @@ interface Stats {
 })
 export class AdminStructureDashboardComponent implements OnInit {
   private api = inject(ApiService);
-  stats = signal<Stats | null>(null);
+  stats = signal<StatsStructureView | null>(null);
   ngOnInit() {
-    this.api.get<{ data?: Stats }>('/admin-structure/stats').subscribe({
+    this.api.get<{ data?: StatsStructureView }>('/admin-structure/stats').subscribe({
       next: r => this.stats.set(r?.data ?? null),
       error: () => {}
     });
