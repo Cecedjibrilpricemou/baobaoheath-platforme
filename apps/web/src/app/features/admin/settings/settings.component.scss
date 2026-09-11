@@ -35,6 +35,61 @@
   }
 }
 
+// Bandeau d'etat : place avant le contenu, il doit etre lu avant qu'on
+// commence a remplir des champs qui n'enregistrent rien.
+.settings-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  margin-bottom: 1.75rem;
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-info-bg);
+  border: 1px solid var(--bb-info-border);
+  color: var(--bb-info);
+
+  > i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  &__title {
+    font-family: var(--bb-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+  }
+
+  &__text {
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 0.75rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bb-info);
+    text-decoration: none;
+
+    i { font-size: 12px; }
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// Les controles desactives restent lisibles : ils documentent ce qui est
+// prevu. On evite l'estompage habituel, qui les rendrait illisibles.
+.settings-content {
+  .mat-mdc-form-field.mat-form-field-disabled,
+  .mat-mdc-slide-toggle.mat-mdc-slide-toggle-disabled,
+  .mat-mdc-slider.mdc-slider--disabled {
+    opacity: 0.75;
+  }
+}
+
 .settings-container {
   display: flex;
   gap: 32px;

@@ -947,6 +947,9 @@
       "ERR_REACTIVATE": "Erreur lors de la réactivation."
     },
     "SETTINGS": {
+      "NOTICE_TITLE": "Ces paramètres ne sont pas encore actifs",
+      "NOTICE_TEXT": "Aucun enregistrement n'est possible pour le moment : ces réglages ne sont reliés à aucun service. Les champs sont affichés à titre indicatif et resteront désactivés jusqu'à leur mise en service.",
+      "NOTICE_LINK": "Gérer les structures de santé",
       "TITLE": "Paramètres de la Plateforme",
       "SUBTITLE": "Configurez les règles globales, la sécurité et le comportement du système.",
       "SAVE": "Sauvegarder",

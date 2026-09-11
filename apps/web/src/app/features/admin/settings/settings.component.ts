@@ -7,6 +7,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSliderModule } from '@angular/material/slider';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
@@ -15,7 +16,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
   standalone: true,
   imports: [
     MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule, MatSliderModule,
-    CommonModule, FormsModule, TranslatePipe
+    CommonModule, FormsModule, RouterLink, TranslatePipe
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
@@ -36,12 +37,14 @@ export class SettingsComponent {
   }
 
   // Modèles de données pour les formulaires
+  // Valeurs d'illustration : aucune ne provient de l'API, et aucune n'y
+  // retourne. Elles decrivent la forme attendue, pas l'etat du systeme.
   structure = {
-    nom: 'Hôpital Régional',
-    type: 'HOPITAL_REG',
-    adresse: 'Conakry, Commune de Ratoma',
-    latitude: 9.6179,
-    longitude: -13.5939,
+    nom: '',
+    type: '',
+    adresse: '',
+    latitude: 0,
+    longitude: 0,
     marge: 15,
     paiementEspeces: true,
     paiementOrangeMoney: true,
@@ -91,8 +94,4 @@ export class SettingsComponent {
     this.activeTab.set(id);
   }
 
-  sauvegarder() {
-    // Simulation d'une sauvegarde
-    console.log('Paramètres sauvegardés');
-  }
 }

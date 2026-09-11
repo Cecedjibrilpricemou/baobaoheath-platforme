@@ -858,6 +858,9 @@
       "ERR_REACTIVATE": "Error while reactivating."
     },
     "SETTINGS": {
+      "NOTICE_TITLE": "These settings are not active yet",
+      "NOTICE_TEXT": "Nothing can be saved for now: these options are not connected to any service. The fields are shown for reference and stay disabled until they go live.",
+      "NOTICE_LINK": "Manage health facilities",
       "TITLE": "Platform Settings",
       "SUBTITLE": "Configure global rules, security and system behavior.",
       "SAVE": "Save",

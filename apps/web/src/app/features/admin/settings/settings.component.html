@@ -4,19 +4,19 @@
       <h1>{{ 'ADMIN.SETTINGS.TITLE' | translate }}</h1>
       <p>{{ 'ADMIN.SETTINGS.SUBTITLE' | translate }}</p>
     </div>
-    <div class="header-actions">
-      <button
-  matButton="outlined"
->
-  {{ 'COMMON.CANCEL' | translate }}
-</button>
-      <button
-  matButton="filled"
-  (click)="sauvegarder()"
->
-  <i class="pi pi-check" aria-hidden="true"></i>
-  {{ 'ADMIN.SETTINGS.SAVE' | translate }}
-</button>
+  </div>
+
+  <!-- Aucun endpoint ne stocke ces parametres a ce jour : les controles sont
+       neutralises pour ne pas laisser croire a un enregistrement. -->
+  <div class="settings-notice" role="status">
+    <i class="pi pi-info-circle" aria-hidden="true"></i>
+    <div>
+      <p class="settings-notice__title">{{ 'ADMIN.SETTINGS.NOTICE_TITLE' | translate }}</p>
+      <p class="settings-notice__text">{{ 'ADMIN.SETTINGS.NOTICE_TEXT' | translate }}</p>
+      <a routerLink="/admin/structures" class="settings-notice__link">
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+        {{ 'ADMIN.SETTINGS.NOTICE_LINK' | translate }}
+      </a>
     </div>
   </div>
 
@@ -54,13 +54,13 @@
             <div class="field">
               <label for="structure-nom">{{ 'ADMIN.SETTINGS.STRUCTURE_NAME_LABEL' | translate }}</label>
               <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <input matInput id="structure-nom" type="text" [(ngModel)]="structure.nom" />
+                <input matInput disabled id="structure-nom" type="text" [(ngModel)]="structure.nom" />
               </mat-form-field>
             </div>
             <div class="field">
               <label id="structure-type-label" for="structure-type">{{ 'ADMIN.SETTINGS.STRUCTURE_TYPE_LABEL' | translate }}</label>
               <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-  <mat-select
+  <mat-select [disabled]="true"
     id="structure-type"
     [(ngModel)]="structure.type"
   >
@@ -75,7 +75,7 @@
           <div class="field">
             <label for="structure-adresse">{{ 'ADMIN.SETTINGS.STRUCTURE_ADDRESS_LABEL' | translate }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <input matInput id="structure-adresse" type="text" [(ngModel)]="structure.adresse" />
+              <input matInput disabled id="structure-adresse" type="text" [(ngModel)]="structure.adresse" />
             </mat-form-field>
           </div>
 
@@ -89,7 +89,7 @@
               <span class="setting-title" id="setting-especes-label">{{ 'ADMIN.SETTINGS.PAY_CASH_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_CASH_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="structure.paiementEspeces"
 ></mat-slide-toggle>
           </div>
@@ -99,7 +99,7 @@
               <span class="setting-title" id="setting-om-label">{{ 'ADMIN.SETTINGS.PAY_OM_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_OM_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="structure.paiementOrangeMoney"
 ></mat-slide-toggle>
           </div>
@@ -109,18 +109,18 @@
               <span class="setting-title" id="setting-momo-label">{{ 'ADMIN.SETTINGS.PAY_MOMO_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_MOMO_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="structure.paiementMomo"
 ></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
             <label id="structure-marge-label">{{ 'ADMIN.SETTINGS.MARGE_LABEL' | translate: { value: structure.marge } }}</label>
-            <mat-slider class="bb-field-full"
+            <mat-slider [disabled]="true" class="bb-field-full"
   [min]="0"
   [max]="50"
   discrete>
-  <input matSliderThumb [(ngModel)]="structure.marge" />
+  <input matSliderThumb disabled [(ngModel)]="structure.marge" />
 </mat-slider>
           </div>
         </div>
@@ -137,7 +137,7 @@
               <span class="setting-title" id="setting-2fa-label">{{ 'ADMIN.SETTINGS.2FA_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.2FA_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="security.force2FA"
 ></mat-slide-toggle>
           </div>
@@ -145,7 +145,7 @@
           <div class="field mt-4">
             <label id="security-timeout-label" for="security-timeout">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_LABEL' | translate }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-  <mat-select
+  <mat-select [disabled]="true"
     id="security-timeout"
     [(ngModel)]="security.sessionTimeout"
   >
@@ -165,7 +165,7 @@
               <span class="setting-title" id="setting-consentement-label">{{ 'ADMIN.SETTINGS.CONSENT_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.CONSENT_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="security.consentementDefaut"
 ></mat-slide-toggle>
           </div>
@@ -180,21 +180,21 @@
 
           <div class="field">
             <label id="alert-paludisme-label">{{ 'ADMIN.SETTINGS.PALUDISME_LABEL' | translate: { value: alerts.seuilPaludisme } }}</label>
-            <mat-slider class="bb-field-full"
+            <mat-slider [disabled]="true" class="bb-field-full"
   [min]="10"
   [max]="200"
   discrete>
-  <input matSliderThumb [(ngModel)]="alerts.seuilPaludisme" />
+  <input matSliderThumb disabled [(ngModel)]="alerts.seuilPaludisme" />
 </mat-slider>
           </div>
 
           <div class="field mt-4">
             <label id="alert-ebola-label">{{ 'ADMIN.SETTINGS.EBOLA_LABEL' | translate: { value: alerts.seuilEbola } }}</label>
-            <mat-slider class="bb-field-full"
+            <mat-slider [disabled]="true" class="bb-field-full"
   [min]="1"
   [max]="10"
   discrete>
-  <input matSliderThumb [(ngModel)]="alerts.seuilEbola" />
+  <input matSliderThumb disabled [(ngModel)]="alerts.seuilEbola" />
 </mat-slider>
             <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ADMIN.SETTINGS.EBOLA_WARNING' | translate }}</small>
           </div>
@@ -207,7 +207,7 @@
               <span class="setting-title" id="setting-ia-label">{{ 'ADMIN.SETTINGS.AI_ENABLE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.AI_ENABLE_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="alerts.activerIA"
 ></mat-slide-toggle>
           </div>
@@ -225,19 +225,19 @@
               <span class="setting-title" id="setting-offline-label">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle
+            <mat-slide-toggle [disabled]="true"
   [(ngModel)]="sync.offlineMode"
 ></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
             <label id="sync-frequence-label">{{ 'ADMIN.SETTINGS.SYNC_FREQ_LABEL' | translate: { value: sync.frequence } }}</label>
-            <mat-slider class="bb-field-full"
+            <mat-slider [disabled]="true" class="bb-field-full"
   [min]="5"
   [max]="120"
   [step]="5"
   discrete>
-  <input matSliderThumb [(ngModel)]="sync.frequence" />
+  <input matSliderThumb disabled [(ngModel)]="sync.frequence" />
 </mat-slider>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SYNC_FREQ_HINT' | translate }}</small>
           </div>
@@ -248,7 +248,7 @@
           <div class="field">
             <label for="ussd-timeout">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_LABEL' | translate }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <input matInput id="ussd-timeout" type="number" [(ngModel)]="sync.ussdTimeout" />
+              <input matInput disabled id="ussd-timeout" type="number" [(ngModel)]="sync.ussdTimeout" />
             </mat-form-field>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_HINT' | translate }}</small>
           </div>
