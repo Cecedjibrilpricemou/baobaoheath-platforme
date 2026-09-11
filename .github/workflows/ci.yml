@@ -40,6 +40,12 @@ jobs:
       DATABASE_URL: postgresql://baobaoheath:baobaoheath@localhost:5432/baobaoheath_test
       JWT_SECRET: ci-test-secret-at-least-32-chars-long
       JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars
+      # src/config/env.ts valide l'environnement a l'import et quitte le
+      # processus si une variable requise manque. Sans cette cle, toute suite
+      # qui importe un service echouait avec « process.exit called with 1 ».
+      # Valeur de test uniquement : 64 caracteres hexadecimaux, jamais utilisee
+      # pour chiffrer des donnees reelles.
+      DB_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
       NODE_ENV: test
       PORT: 3000
 
@@ -86,7 +92,7 @@ jobs:
           cache-dependency-path: package-lock.json
       - run: npm ci
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: node ../../scripts/audit-gate.mjs
 
   # ── Frontend ─────────────────────────────────────────────────────────
   web-build:
@@ -130,7 +136,7 @@ jobs:
           cache-dependency-path: package-lock.json
       - run: npm ci
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: node ../../scripts/audit-gate.mjs
 
   # ── CD — Deploy to production ─────────────────────────────────────────
   # Triggers on push to main only after all CI jobs pass.
