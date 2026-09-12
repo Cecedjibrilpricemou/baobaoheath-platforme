@@ -448,6 +448,43 @@
       "LOADING": "Loading...",
       "IMG_ALT": "Patient identification QR Code to present at a pharmacy or health facility",
       "ERR_GENERATE": "Unable to generate the QR Code."
+    },
+    "NAV_CONSENTS": "My consents",
+    "CONSENTS": {
+      "TITLE": "Privacy & consents",
+      "SUBTITLE": "Decide who can access your record and for what purpose, and see who opened it.",
+      "SECTION_TITLE": "My permissions",
+      "NOTE": "Withdrawing a consent takes effect immediately for new access requests. Your CHW and treating doctor keep the access needed for your care.",
+      "NOT_SET": "No choice recorded",
+      "GRANTED": "Consent granted",
+      "REVOKED": "Consent withdrawn",
+      "GRANTED_ON": "Granted on {{date}}",
+      "REVOKED_ON": "Withdrawn on {{date}}",
+      "ERR_LOAD": "Could not load your consents",
+      "ERR_SAVE": "Could not save your choice",
+      "ACCESS_TITLE": "Who accessed my record",
+      "ACCESS_EMPTY": "No access to your record has been recorded",
+      "ACCESS_WHEN": "When",
+      "ACCESS_WHO": "Who",
+      "ACCESS_WHAT": "Action",
+      "SCOPE": {
+        "DOSSIER_MEDICAL": {
+          "TITLE": "Access to my medical record",
+          "DESC": "Allows health professionals from other facilities to view your consultations, diagnoses and prescriptions."
+        },
+        "RAPPELS_SMS": {
+          "TITLE": "SMS reminders",
+          "DESC": "Receive appointment and vaccination reminders on your phone."
+        },
+        "FHIR_EXPORT": {
+          "TITLE": "Export of my record (FHIR)",
+          "DESC": "Allow your record to be exported in the FHIR standard format, e.g. for a transfer to another facility."
+        },
+        "RECHERCHE_ANONYMISEE": {
+          "TITLE": "Anonymised research",
+          "DESC": "Contribute, without any identifying data, to public health statistics and research."
+        }
+      }
     }
   },
   "ASC": {
@@ -858,21 +895,13 @@
       "ERR_REACTIVATE": "Error while reactivating."
     },
     "SETTINGS": {
-      "NOTICE_TITLE": "These settings are not active yet",
-      "NOTICE_TEXT": "Nothing can be saved for now: these options are not connected to any service. The fields are shown for reference and stay disabled until they go live.",
       "NOTICE_LINK": "Manage health facilities",
       "TITLE": "Platform Settings",
       "SUBTITLE": "Configure global rules, security and system behavior.",
       "SAVE": "Save",
-      "TAB_STRUCTURE": "Facility",
       "TAB_SECURITY": "Security & Access",
       "TAB_ALERTS": "Alerts & AI",
       "TAB_SYNC": "Offline & USSD",
-      "STRUCTURE_PROFILE_TITLE": "Facility Profile",
-      "STRUCTURE_PROFILE_DESC": "Manage the facility's general information.",
-      "STRUCTURE_NAME_LABEL": "Facility name",
-      "STRUCTURE_TYPE_LABEL": "Facility type",
-      "STRUCTURE_ADDRESS_LABEL": "Full address",
       "BILLING_TITLE": "Billing & Finance",
       "BILLING_DESC": "Accepted payment methods and financial settings.",
       "PAY_CASH_TITLE": "Cash Payment",
@@ -893,8 +922,8 @@
       "CONSENT_SUB": "Request electronic consent when creating the record.",
       "EPIDEMIO_TITLE": "Epidemiological Alerts",
       "EPIDEMIO_DESC": "Configure automatic detection thresholds.",
-      "PALUDISME_LABEL": "Malaria alert threshold (cases/week): {{value}}",
-      "EBOLA_LABEL": "Hemorrhagic fever alert threshold (Ebola, Marburg): {{value}}",
+      "PALUDISME_LABEL": "Malaria alert threshold (cases / prefecture / 30 days): {{value}}",
+      "EBOLA_LABEL": "Haemorrhagic fever alert threshold (Ebola, Marburg): {{value}}",
       "EBOLA_WARNING": "Any detection triggers an immediate national emergency.",
       "AI_TITLE": "Artificial Intelligence",
       "AI_ENABLE_TITLE": "Enable AI Triage Assistant",
@@ -908,15 +937,17 @@
       "USSD_TITLE": "USSD Services",
       "USSD_TIMEOUT_LABEL": "USSD session timeout (seconds)",
       "USSD_TIMEOUT_HINT": "Delay before the menu expires on basic phones.",
-      "TYPE_POSTE": "Health post",
-      "TYPE_CENTRE": "Health center",
-      "TYPE_HOPITAL_PREF": "Prefectural Hospital",
-      "TYPE_HOPITAL_REG": "Regional Hospital",
-      "TYPE_PHARMACIE": "Pharmacy",
       "TIMEOUT_15MIN": "15 minutes",
       "TIMEOUT_30MIN": "30 minutes",
       "TIMEOUT_1H": "1 hour",
-      "TIMEOUT_4H": "4 hours"
+      "TIMEOUT_4H": "4 hours",
+      "TAB_BILLING": "Billing",
+      "PENDING_EFFECT": "Saved — not yet enforced by the system",
+      "STRUCTURES_HINT": "Each facility's profile (name, type, address) is managed from the Facilities page.",
+      "SUCCESS_SAVED": "Settings saved",
+      "ERR_LOAD": "Could not load settings",
+      "ERR_SAVE": "Could not save settings",
+      "LAST_SAVED": "Last saved: {{date}}"
     },
     "ANALYTICS": {
       "SUBTITLE": "Epidemiological dashboard — BaoBaoHealth Guinea 🇬🇳",
@@ -1107,5 +1138,23 @@
       "CONSULTATIONS": "Consultations",
       "PATIENTS_LINKED": "Linked patients"
     }
+  },
+  "ROLE": {
+    "PATIENT": "Patient",
+    "ASC": "Community health worker",
+    "ASC_SUPERVISOR": "CHW supervisor",
+    "MEDECIN": "Doctor",
+    "PHARMACIEN": "Pharmacist",
+    "ADMIN_STRUCTURE": "Facility administrator",
+    "ADMIN_REGIONAL": "Regional administrator",
+    "ADMIN_NATIONAL": "National administrator",
+    "SUPER_ADMIN": "Super administrator"
+  },
+  "NOTIFICATIONS": {
+    "TITLE": "Notifications",
+    "ARIA": "Notifications, {{count}} unread",
+    "EMPTY": "No notifications yet",
+    "MARK_ALL_READ": "Mark all as read",
+    "ERR_MARK_ALL": "Could not mark notifications as read"
   }
 }

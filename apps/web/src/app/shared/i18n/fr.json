@@ -448,6 +448,43 @@
       "LOADING": "Chargement...",
       "IMG_ALT": "QR Code d'identification patient à présenter en pharmacie ou structure de santé",
       "ERR_GENERATE": "Impossible de générer le QR Code."
+    },
+    "NAV_CONSENTS": "Mes consentements",
+    "CONSENTS": {
+      "TITLE": "Confidentialité & consentements",
+      "SUBTITLE": "Décidez qui peut accéder à votre dossier et à quelles fins, et consultez qui l'a ouvert.",
+      "SECTION_TITLE": "Mes autorisations",
+      "NOTE": "Retirer un consentement prend effet immédiatement pour les nouvelles demandes d'accès. Votre ASC et votre médecin traitant conservent l'accès nécessaire à vos soins.",
+      "NOT_SET": "Aucun choix enregistré",
+      "GRANTED": "Consentement accordé",
+      "REVOKED": "Consentement retiré",
+      "GRANTED_ON": "Accordé le {{date}}",
+      "REVOKED_ON": "Retiré le {{date}}",
+      "ERR_LOAD": "Impossible de charger vos consentements",
+      "ERR_SAVE": "Impossible d'enregistrer votre choix",
+      "ACCESS_TITLE": "Qui a accédé à mon dossier",
+      "ACCESS_EMPTY": "Aucun accès enregistré à votre dossier",
+      "ACCESS_WHEN": "Quand",
+      "ACCESS_WHO": "Qui",
+      "ACCESS_WHAT": "Action",
+      "SCOPE": {
+        "DOSSIER_MEDICAL": {
+          "TITLE": "Accès à mon dossier médical",
+          "DESC": "Autorise les professionnels de santé d'autres structures à consulter vos consultations, diagnostics et ordonnances."
+        },
+        "RAPPELS_SMS": {
+          "TITLE": "Rappels par SMS",
+          "DESC": "Recevoir des rappels de rendez-vous et de vaccination sur votre téléphone."
+        },
+        "FHIR_EXPORT": {
+          "TITLE": "Export de mon dossier (FHIR)",
+          "DESC": "Permettre l'export de votre dossier au format standard FHIR, par exemple pour un transfert vers un autre établissement."
+        },
+        "RECHERCHE_ANONYMISEE": {
+          "TITLE": "Recherche anonymisée",
+          "DESC": "Contribuer, sans aucune donnée d'identité, aux statistiques de santé publique et à la recherche."
+        }
+      }
     }
   },
   "ASC": {
@@ -947,21 +984,13 @@
       "ERR_REACTIVATE": "Erreur lors de la réactivation."
     },
     "SETTINGS": {
-      "NOTICE_TITLE": "Ces paramètres ne sont pas encore actifs",
-      "NOTICE_TEXT": "Aucun enregistrement n'est possible pour le moment : ces réglages ne sont reliés à aucun service. Les champs sont affichés à titre indicatif et resteront désactivés jusqu'à leur mise en service.",
       "NOTICE_LINK": "Gérer les structures de santé",
       "TITLE": "Paramètres de la Plateforme",
       "SUBTITLE": "Configurez les règles globales, la sécurité et le comportement du système.",
       "SAVE": "Sauvegarder",
-      "TAB_STRUCTURE": "Structure",
       "TAB_SECURITY": "Sécurité & Accès",
       "TAB_ALERTS": "Alertes & IA",
       "TAB_SYNC": "Hors-ligne & USSD",
-      "STRUCTURE_PROFILE_TITLE": "Profil de la Structure",
-      "STRUCTURE_PROFILE_DESC": "Gérez les informations générales de l'établissement.",
-      "STRUCTURE_NAME_LABEL": "Nom de l'établissement",
-      "STRUCTURE_TYPE_LABEL": "Type de structure",
-      "STRUCTURE_ADDRESS_LABEL": "Adresse complète",
       "BILLING_TITLE": "Facturation & Finances",
       "BILLING_DESC": "Moyens de paiements acceptés et paramètres financiers.",
       "PAY_CASH_TITLE": "Paiement par Espèces",
@@ -982,7 +1011,7 @@
       "CONSENT_SUB": "Demander le consentement électronique lors de la création du dossier.",
       "EPIDEMIO_TITLE": "Alertes Épidémiologiques",
       "EPIDEMIO_DESC": "Configuration des seuils de détection automatique.",
-      "PALUDISME_LABEL": "Seuil d'Alerte Paludisme (cas/semaine) : {{value}}",
+      "PALUDISME_LABEL": "Seuil d'Alerte Paludisme (cas / préfecture / 30 jours) : {{value}}",
       "EBOLA_LABEL": "Seuil d'Alerte Fièvres Hémorragiques (Ebola, Marburg) : {{value}}",
       "EBOLA_WARNING": "Toute détection déclenche une urgence nationale immédiate.",
       "AI_TITLE": "Intelligence Artificielle",
@@ -997,15 +1026,17 @@
       "USSD_TITLE": "Services USSD",
       "USSD_TIMEOUT_LABEL": "Timeout des sessions USSD (secondes)",
       "USSD_TIMEOUT_HINT": "Délai avant l'expiration du menu sur les téléphones basiques.",
-      "TYPE_POSTE": "Poste de santé",
-      "TYPE_CENTRE": "Centre de santé",
-      "TYPE_HOPITAL_PREF": "Hôpital Préfectoral",
-      "TYPE_HOPITAL_REG": "Hôpital Régional",
-      "TYPE_PHARMACIE": "Pharmacie",
       "TIMEOUT_15MIN": "15 minutes",
       "TIMEOUT_30MIN": "30 minutes",
       "TIMEOUT_1H": "1 heure",
-      "TIMEOUT_4H": "4 heures"
+      "TIMEOUT_4H": "4 heures",
+      "TAB_BILLING": "Facturation",
+      "PENDING_EFFECT": "Enregistré — pas encore appliqué par le système",
+      "STRUCTURES_HINT": "Le profil de chaque établissement (nom, type, adresse) se gère depuis la page Structures.",
+      "SUCCESS_SAVED": "Paramètres enregistrés",
+      "ERR_LOAD": "Impossible de charger les paramètres",
+      "ERR_SAVE": "Impossible d'enregistrer les paramètres",
+      "LAST_SAVED": "Dernier enregistrement : {{date}}"
     },
     "ANALYTICS": {
       "SUBTITLE": "Tableau de bord épidémiologique — BaoBaoHealth Guinée 🇬🇳",
@@ -1107,5 +1138,23 @@
       "CONSULTATIONS": "Consultations",
       "PATIENTS_LINKED": "Patients rattachés"
     }
+  },
+  "ROLE": {
+    "PATIENT": "Patient",
+    "ASC": "Agent de santé communautaire",
+    "ASC_SUPERVISOR": "Superviseur ASC",
+    "MEDECIN": "Médecin",
+    "PHARMACIEN": "Pharmacien",
+    "ADMIN_STRUCTURE": "Administrateur de structure",
+    "ADMIN_REGIONAL": "Administrateur régional",
+    "ADMIN_NATIONAL": "Administrateur national",
+    "SUPER_ADMIN": "Super administrateur"
+  },
+  "NOTIFICATIONS": {
+    "TITLE": "Notifications",
+    "ARIA": "Notifications, {{count}} non lue(s)",
+    "EMPTY": "Aucune notification pour le moment",
+    "MARK_ALL_READ": "Tout marquer comme lu",
+    "ERR_MARK_ALL": "Impossible de marquer les notifications comme lues"
   }
 }
