@@ -31,11 +31,6 @@ export const PATIENT_ROUTES: Routes = [
           import('./qr-code/qr-code.component').then(m => m.QrCodeComponent)
       },
       {
-        path: 'paiements',
-        loadComponent: () =>
-          import('./profil/profil.component').then(m => m.ProfilComponent) // Placeholder
-      },
-      {
         path: 'carnet-vaccinal',
         loadComponent: () =>
           import('./dossier/dossier').then(m => m.Dossier)
@@ -43,7 +38,7 @@ export const PATIENT_ROUTES: Routes = [
       {
         path: 'consentements',
         loadComponent: () =>
-          import('./profil/profil.component').then(m => m.ProfilComponent) // Placeholder
+          import('./consentements/consentements.component').then(m => m.ConsentementsComponent)
       }
     ]
   }

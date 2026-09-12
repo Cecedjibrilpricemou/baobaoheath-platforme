@@ -92,11 +92,3 @@ export interface Paiement {
   methode: string;
   datePaiement: string;
 }
-
-export interface Consentement {
-  id: string;
-  typeConsentement: string;
-  donneLe: string;
-  retireLe?: string;
-  estActif: boolean;
-}

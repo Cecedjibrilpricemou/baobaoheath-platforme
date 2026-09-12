@@ -2,14 +2,16 @@ import { Response } from 'express';
 import { ConsentScope } from '../config/generated/client/client';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as privacyService from '../services/privacy.service';
+import type { ConsentementView } from '@baobaoheath/shared-types';
 
 export async function getMyConsentsController(req: AuthRequest, res: Response): Promise<void> {
-  const data = await privacyService.getMyConsents(req.user!.userId);
+  // Annotation = contrat : la page Consentements du patient lit ces champs.
+  const data: ConsentementView[] = await privacyService.getMyConsents(req.user!.userId);
     res.status(200).json({ success: true, data });
 }
 
 export async function setConsentController(req: AuthRequest, res: Response): Promise<void> {
-  const data = await privacyService.setConsent(
+  const data: ConsentementView = await privacyService.setConsent(
       req.user!.userId,
       req.body.scope as ConsentScope,
       req.body.actif,

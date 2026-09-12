@@ -1,0 +1,105 @@
+<div class="consents-page">
+  <div class="consents-header">
+    <div class="header-content">
+      <h1>{{ 'PATIENT.CONSENTS.TITLE' | translate }}</h1>
+      <p>{{ 'PATIENT.CONSENTS.SUBTITLE' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="consents-content">
+
+    <!-- ── CONSENTEMENTS ─────────────────────────────────────────── -->
+    <mat-card appearance="outlined" class="section-card">
+      <div class="section-title">
+        <mat-icon fontSet="pi" fontIcon="pi-shield" aria-hidden="true"></mat-icon>
+        <h2>{{ 'PATIENT.CONSENTS.SECTION_TITLE' | translate }}</h2>
+      </div>
+
+      @if (isLoading()) {
+        <div class="bb-empty" role="status">
+          <mat-spinner diameter="28"></mat-spinner>
+          <p>{{ 'COMMON.LOADING' | translate }}</p>
+        </div>
+      } @else {
+        <ul class="consent-list" role="list">
+          @for (item of scopes(); track item.scope) {
+            <li class="consent-row" [class.consent-row--on]="item.actif">
+              <mat-icon class="consent-row__icon" fontSet="pi" [fontIcon]="item.icon" aria-hidden="true"></mat-icon>
+              <div class="consent-row__info">
+                <span class="consent-row__title" [id]="'consent-' + item.scope">
+                  {{ 'PATIENT.CONSENTS.SCOPE.' + item.scope + '.TITLE' | translate }}
+                </span>
+                <span class="consent-row__sub">{{ 'PATIENT.CONSENTS.SCOPE.' + item.scope + '.DESC' | translate }}</span>
+                @if (item.modifieLe) {
+                  <span class="consent-row__meta">
+                    {{ (item.actif ? 'PATIENT.CONSENTS.GRANTED_ON' : 'PATIENT.CONSENTS.REVOKED_ON') | translate: { date: (item.modifieLe | date:'mediumDate') ?? '' } }}
+                  </span>
+                } @else {
+                  <span class="consent-row__meta">{{ 'PATIENT.CONSENTS.NOT_SET' | translate }}</span>
+                }
+              </div>
+              <mat-slide-toggle
+                [attr.aria-labelledby]="'consent-' + item.scope"
+                [checked]="item.actif"
+                [disabled]="item.saving"
+                (change)="basculer(item, $event.checked)"
+              ></mat-slide-toggle>
+            </li>
+          }
+        </ul>
+        <p class="consent-note">
+          <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+          {{ 'PATIENT.CONSENTS.NOTE' | translate }}
+        </p>
+      }
+    </mat-card>
+
+    <!-- ── QUI A ACCÉDÉ À MON DOSSIER ────────────────────────────── -->
+    <mat-card appearance="outlined" class="section-card">
+      <div class="section-title">
+        <mat-icon fontSet="pi" fontIcon="pi-eye" aria-hidden="true"></mat-icon>
+        <h2>{{ 'PATIENT.CONSENTS.ACCESS_TITLE' | translate }}</h2>
+        @if (totalAcces() > 0) {
+          <span class="section-count">{{ totalAcces() }}</span>
+        }
+      </div>
+
+      @if (isLoadingAcces()) {
+        <div class="bb-empty" role="status">
+          <mat-spinner diameter="28"></mat-spinner>
+          <p>{{ 'COMMON.LOADING' | translate }}</p>
+        </div>
+      } @else if (acces().length === 0) {
+        <div class="bb-empty">
+          <mat-icon fontSet="pi" fontIcon="pi-eye-slash" aria-hidden="true"></mat-icon>
+          <p>{{ 'PATIENT.CONSENTS.ACCESS_EMPTY' | translate }}</p>
+        </div>
+      } @else {
+        <div class="access-table-wrap">
+          <table class="access-table">
+            <thead>
+              <tr>
+                <th>{{ 'PATIENT.CONSENTS.ACCESS_WHEN' | translate }}</th>
+                <th>{{ 'PATIENT.CONSENTS.ACCESS_WHO' | translate }}</th>
+                <th>{{ 'PATIENT.CONSENTS.ACCESS_WHAT' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of acces(); track a.id) {
+                <tr>
+                  <td class="access-table__date">{{ a.creeLe | date:'short' }}</td>
+                  <td>
+                    <span class="access-table__who">{{ a.utilisateur.prenom }} {{ a.utilisateur.nom }}</span>
+                    <span class="access-table__role">{{ 'ROLE.' + a.utilisateur.role | translate }}</span>
+                  </td>
+                  <td><code class="access-table__action">{{ a.action }}</code> <span class="access-table__res">{{ a.ressource }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card>
+
+  </div>
+</div>

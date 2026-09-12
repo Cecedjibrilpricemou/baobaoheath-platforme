@@ -1,0 +1,205 @@
+// Meme squelette que dossier.scss (en-tete + cartes de section), avec les
+// variables de theme pour rester lisible en mode sombre.
+.consents-page {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.consents-header {
+  background: var(--bb-surface-card);
+  padding: 32px;
+  border-radius: var(--bb-radius-xl);
+  box-shadow: var(--bb-shadow-xs);
+
+  .header-content h1 {
+    font-family: var(--bb-font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--bb-text-primary);
+    margin: 0 0 8px 0;
+  }
+
+  .header-content p {
+    color: var(--bb-text-secondary);
+    margin: 0;
+    font-size: 15px;
+  }
+}
+
+.consents-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.section-card {
+  --mat-card-outlined-container-shape: var(--bb-radius-xl);
+  --mat-card-outlined-outline-color: var(--bb-border-light);
+  background: var(--bb-surface-card);
+  padding: 1.25rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bb-primary);
+    background: var(--bb-success-bg);
+    border-radius: var(--bb-radius);
+  }
+
+  h2 {
+    font-family: var(--bb-font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--bb-text-primary);
+    margin: 0;
+  }
+}
+
+.section-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--bb-radius-pill);
+  background: var(--bb-surface-1);
+  color: var(--bb-text-secondary);
+}
+
+// ── Liste des consentements ─────────────────────────────────────────
+.consent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.consent-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-0);
+  transition: border-color var(--bb-transition), background var(--bb-transition);
+
+  &--on {
+    border-color: var(--bb-success-border);
+    background: var(--bb-success-bg);
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--bb-primary);
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bb-text-primary);
+  }
+
+  &__sub {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--bb-text-secondary);
+  }
+
+  &__meta {
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+  }
+}
+
+.consent-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 18px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--bb-text-secondary);
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; margin-top: 2px; flex-shrink: 0; }
+}
+
+// ── Journal des acces ───────────────────────────────────────────────
+.access-table-wrap { overflow-x: auto; }
+
+.access-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--bb-border-light);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bb-text-muted);
+  }
+
+  &__date { white-space: nowrap; color: var(--bb-text-secondary); }
+  &__who  { display: block; font-weight: 600; color: var(--bb-text-primary); }
+  &__role { font-size: 11.5px; color: var(--bb-text-muted); }
+  &__action {
+    font-size: 11.5px;
+    padding: 1px 6px;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-1);
+    color: var(--bb-text-primary);
+  }
+  &__res { color: var(--bb-text-secondary); }
+}
+
+.bb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: var(--bb-text-muted);
+
+  mat-icon { font-size: 26px; width: 26px; height: 26px; opacity: 0.45; }
+  p { font-size: 0.8125rem; margin: 0; }
+}
+
+@media (max-width: 600px) {
+  .consents-header { padding: 20px; }
+  .consent-row { flex-wrap: wrap; }
+}
