@@ -6,20 +6,6 @@
     </div>
   </div>
 
-  <!-- Aucun endpoint ne stocke ces parametres a ce jour : les controles sont
-       neutralises pour ne pas laisser croire a un enregistrement. -->
-  <div class="settings-notice" role="status">
-    <i class="pi pi-info-circle" aria-hidden="true"></i>
-    <div>
-      <p class="settings-notice__title">{{ 'ADMIN.SETTINGS.NOTICE_TITLE' | translate }}</p>
-      <p class="settings-notice__text">{{ 'ADMIN.SETTINGS.NOTICE_TEXT' | translate }}</p>
-      <a routerLink="/admin/structures" class="settings-notice__link">
-        <i class="pi pi-arrow-right" aria-hidden="true"></i>
-        {{ 'ADMIN.SETTINGS.NOTICE_LINK' | translate }}
-      </a>
-    </div>
-  </div>
-
   <div class="settings-container">
     <!-- Sidebar Navigation -->
     <div class="settings-sidebar">
@@ -43,44 +29,17 @@
 
     <!-- Contenu Principal -->
     <div class="settings-content">
-      
-      <!-- ONGLET : STRUCTURE -->
-      @if (activeTab() === 'structure') {
+
+      @if (isLoading()) {
+        <div class="settings-loading" role="status">
+          <mat-spinner diameter="28"></mat-spinner>
+          <span>{{ 'COMMON.LOADING' | translate }}</span>
+        </div>
+      } @else {
+
+      <!-- ONGLET : FACTURATION -->
+      @if (activeTab() === 'facturation') {
         <div class="settings-panel">
-          <h2>{{ 'ADMIN.SETTINGS.STRUCTURE_PROFILE_TITLE' | translate }}</h2>
-          <p class="panel-desc">{{ 'ADMIN.SETTINGS.STRUCTURE_PROFILE_DESC' | translate }}</p>
-
-          <div class="form-grid">
-            <div class="field">
-              <label for="structure-nom">{{ 'ADMIN.SETTINGS.STRUCTURE_NAME_LABEL' | translate }}</label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-                <input matInput disabled id="structure-nom" type="text" [(ngModel)]="structure.nom" />
-              </mat-form-field>
-            </div>
-            <div class="field">
-              <label id="structure-type-label" for="structure-type">{{ 'ADMIN.SETTINGS.STRUCTURE_TYPE_LABEL' | translate }}</label>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-  <mat-select [disabled]="true"
-    id="structure-type"
-    [(ngModel)]="structure.type"
-  >
-    @for (opt of typeOptions; track opt.value) {
-      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-    }
-  </mat-select>
-</mat-form-field>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="structure-adresse">{{ 'ADMIN.SETTINGS.STRUCTURE_ADDRESS_LABEL' | translate }}</label>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <input matInput disabled id="structure-adresse" type="text" [(ngModel)]="structure.adresse" />
-            </mat-form-field>
-          </div>
-
-          <div class="divider"></div>
-
           <h2>{{ 'ADMIN.SETTINGS.BILLING_TITLE' | translate }}</h2>
           <p class="panel-desc">{{ 'ADMIN.SETTINGS.BILLING_DESC' | translate }}</p>
 
@@ -89,9 +48,7 @@
               <span class="setting-title" id="setting-especes-label">{{ 'ADMIN.SETTINGS.PAY_CASH_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_CASH_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="structure.paiementEspeces"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-especes-label" [(ngModel)]="facturation.paiementEspeces"></mat-slide-toggle>
           </div>
 
           <div class="setting-row">
@@ -99,9 +56,7 @@
               <span class="setting-title" id="setting-om-label">{{ 'ADMIN.SETTINGS.PAY_OM_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_OM_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="structure.paiementOrangeMoney"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-om-label" [(ngModel)]="facturation.paiementOrangeMoney"></mat-slide-toggle>
           </div>
 
           <div class="setting-row">
@@ -109,25 +64,29 @@
               <span class="setting-title" id="setting-momo-label">{{ 'ADMIN.SETTINGS.PAY_MOMO_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.PAY_MOMO_SUB' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="structure.paiementMomo"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-momo-label" [(ngModel)]="facturation.paiementMomo"></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
-            <label id="structure-marge-label">{{ 'ADMIN.SETTINGS.MARGE_LABEL' | translate: { value: structure.marge } }}</label>
-            <mat-slider [disabled]="true" class="bb-field-full"
-  [min]="0"
-  [max]="50"
-  discrete>
-  <input matSliderThumb disabled [(ngModel)]="structure.marge" />
-</mat-slider>
+            <label id="structure-marge-label">{{ 'ADMIN.SETTINGS.MARGE_LABEL' | translate: { value: facturation.margePct } }}</label>
+            <mat-slider class="bb-field-full" [min]="0" [max]="50" discrete>
+              <input matSliderThumb aria-labelledby="structure-marge-label" [(ngModel)]="facturation.margePct" />
+            </mat-slider>
+            <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
           </div>
+
+          <p class="text-secondary mt-4">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            {{ 'ADMIN.SETTINGS.STRUCTURES_HINT' | translate }}
+            <a routerLink="/admin/structures">{{ 'ADMIN.SETTINGS.NOTICE_LINK' | translate }}</a>
+          </p>
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'facturation' }"></ng-container>
         </div>
       }
 
       <!-- ONGLET : SECURITE -->
-      @if (activeTab() === 'security') {
+      @if (activeTab() === 'securite') {
         <div class="settings-panel">
           <h2>{{ 'ADMIN.SETTINGS.SECURITY_TITLE' | translate }}</h2>
           <p class="panel-desc">{{ 'ADMIN.SETTINGS.SECURITY_DESC' | translate }}</p>
@@ -136,25 +95,22 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-2fa-label">{{ 'ADMIN.SETTINGS.2FA_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.2FA_SUB' | translate }}</span>
+              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="security.force2FA"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-2fa-label" [(ngModel)]="securite.force2FA"></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
             <label id="security-timeout-label" for="security-timeout">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_LABEL' | translate }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-  <mat-select [disabled]="true"
-    id="security-timeout"
-    [(ngModel)]="security.sessionTimeout"
-  >
-    @for (opt of timeoutOptions; track opt.value) {
-      <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-    }
-  </mat-select>
-</mat-form-field>
+              <mat-select id="security-timeout" [(ngModel)]="securite.sessionTimeoutMinutes">
+                @for (opt of timeoutOptions; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_HINT' | translate }}</small>
+            <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
           </div>
 
           <div class="divider"></div>
@@ -164,38 +120,33 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-consentement-label">{{ 'ADMIN.SETTINGS.CONSENT_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.CONSENT_SUB' | translate }}</span>
+              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="security.consentementDefaut"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-consentement-label" [(ngModel)]="securite.consentementDefaut"></mat-slide-toggle>
           </div>
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'securite' }"></ng-container>
         </div>
       }
 
       <!-- ONGLET : ALERTES -->
-      @if (activeTab() === 'alerts') {
+      @if (activeTab() === 'alertes') {
         <div class="settings-panel">
           <h2>{{ 'ADMIN.SETTINGS.EPIDEMIO_TITLE' | translate }}</h2>
           <p class="panel-desc">{{ 'ADMIN.SETTINGS.EPIDEMIO_DESC' | translate }}</p>
 
           <div class="field">
-            <label id="alert-paludisme-label">{{ 'ADMIN.SETTINGS.PALUDISME_LABEL' | translate: { value: alerts.seuilPaludisme } }}</label>
-            <mat-slider [disabled]="true" class="bb-field-full"
-  [min]="10"
-  [max]="200"
-  discrete>
-  <input matSliderThumb disabled [(ngModel)]="alerts.seuilPaludisme" />
-</mat-slider>
+            <label id="alert-paludisme-label">{{ 'ADMIN.SETTINGS.PALUDISME_LABEL' | translate: { value: alertes.seuilPaludisme } }}</label>
+            <mat-slider class="bb-field-full" [min]="1" [max]="200" discrete>
+              <input matSliderThumb aria-labelledby="alert-paludisme-label" [(ngModel)]="alertes.seuilPaludisme" />
+            </mat-slider>
           </div>
 
           <div class="field mt-4">
-            <label id="alert-ebola-label">{{ 'ADMIN.SETTINGS.EBOLA_LABEL' | translate: { value: alerts.seuilEbola } }}</label>
-            <mat-slider [disabled]="true" class="bb-field-full"
-  [min]="1"
-  [max]="10"
-  discrete>
-  <input matSliderThumb disabled [(ngModel)]="alerts.seuilEbola" />
-</mat-slider>
+            <label id="alert-ebola-label">{{ 'ADMIN.SETTINGS.EBOLA_LABEL' | translate: { value: alertes.seuilEbola } }}</label>
+            <mat-slider class="bb-field-full" [min]="1" [max]="10" discrete>
+              <input matSliderThumb aria-labelledby="alert-ebola-label" [(ngModel)]="alertes.seuilEbola" />
+            </mat-slider>
             <small class="text-red mt-1 block"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ADMIN.SETTINGS.EBOLA_WARNING' | translate }}</small>
           </div>
 
@@ -206,11 +157,12 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-ia-label">{{ 'ADMIN.SETTINGS.AI_ENABLE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.AI_ENABLE_SUB' | translate }}</span>
+              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="alerts.activerIA"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-ia-label" [(ngModel)]="alertes.activerIA"></mat-slide-toggle>
           </div>
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'alertes' }"></ng-container>
         </div>
       }
 
@@ -224,22 +176,18 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-offline-label">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_SUB' | translate }}</span>
+              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
-            <mat-slide-toggle [disabled]="true"
-  [(ngModel)]="sync.offlineMode"
-></mat-slide-toggle>
+            <mat-slide-toggle aria-labelledby="setting-offline-label" [(ngModel)]="sync.offlineMode"></mat-slide-toggle>
           </div>
 
           <div class="field mt-4">
-            <label id="sync-frequence-label">{{ 'ADMIN.SETTINGS.SYNC_FREQ_LABEL' | translate: { value: sync.frequence } }}</label>
-            <mat-slider [disabled]="true" class="bb-field-full"
-  [min]="5"
-  [max]="120"
-  [step]="5"
-  discrete>
-  <input matSliderThumb disabled [(ngModel)]="sync.frequence" />
-</mat-slider>
+            <label id="sync-frequence-label">{{ 'ADMIN.SETTINGS.SYNC_FREQ_LABEL' | translate: { value: sync.frequenceMinutes } }}</label>
+            <mat-slider class="bb-field-full" [min]="5" [max]="120" [step]="5" discrete>
+              <input matSliderThumb aria-labelledby="sync-frequence-label" [(ngModel)]="sync.frequenceMinutes" />
+            </mat-slider>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SYNC_FREQ_HINT' | translate }}</small>
+            <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
           </div>
 
           <div class="divider"></div>
@@ -248,13 +196,33 @@
           <div class="field">
             <label for="ussd-timeout">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_LABEL' | translate }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <input matInput disabled id="ussd-timeout" type="number" [(ngModel)]="sync.ussdTimeout" />
+              <input matInput id="ussd-timeout" type="number" min="30" max="3600" [(ngModel)]="sync.ussdTimeoutSecondes" />
             </mat-form-field>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.USSD_TIMEOUT_HINT' | translate }}</small>
           </div>
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'sync' }"></ng-container>
         </div>
       }
 
+      }
     </div>
   </div>
 </div>
+
+<!-- Pied de panneau commun : un bouton par onglet, seule la section affichee est envoyee. -->
+<ng-template #footer let-section="section">
+  <div class="panel-footer">
+    @if (modifieLe()) {
+      <span class="panel-footer__meta">{{ 'ADMIN.SETTINGS.LAST_SAVED' | translate: { date: (modifieLe() | date:'short') ?? '' } }}</span>
+    }
+    <button matButton="filled" type="button" [disabled]="isSaving()" (click)="enregistrer(section)">
+      @if (isSaving()) {
+        <mat-spinner diameter="18"></mat-spinner>
+      } @else {
+        <i class="pi pi-check" aria-hidden="true"></i>
+      }
+      {{ (isSaving() ? 'COMMON.SAVING' : 'COMMON.SAVE') | translate }}
+    </button>
+  </div>
+</ng-template>

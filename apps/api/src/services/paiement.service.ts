@@ -5,12 +5,27 @@ import {
   PaiementFilters,
 } from '../types/paiement.types';
 import { initierPaiementSimule } from './payment-provider.service';
+import { getValeursParametres } from './parametres.service';
 import { JwtPayload } from '../types/auth.types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
 const MAX_MONTANT_GNF = 10_000_000;
+
+// Le super-admin peut desactiver un mode de paiement depuis la page
+// Parametres (onglet Facturation) : on le refuse ici, pas seulement dans l'UI.
+async function assertModePaiementActif(modePaiement: InitierPaiementDto['modePaiement']) {
+  const { facturation } = await getValeursParametres();
+  const actif = {
+    ESPECES: facturation.paiementEspeces,
+    ORANGE_MONEY: facturation.paiementOrangeMoney,
+    MTN_MOMO: facturation.paiementMomo,
+  }[modePaiement];
+  if (actif === false) {
+    throw new ValidationError(`Le mode de paiement ${modePaiement} est desactive par l'administrateur`);
+  }
+}
 
 export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
   const consultation = await prisma.consultation.findUnique({
@@ -24,6 +39,8 @@ export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
   if (consultation.patient.idUtilisateur !== userId) {
     throw new ForbiddenError("Acces refuse - ce n'est pas votre consultation");
   }
+
+  await assertModePaiementActif(dto.modePaiement);
 
   // Use server-side tariff when set; otherwise cap client-provided amount
   const montantGnf = consultation.tarifGnf != null && consultation.tarifGnf > 0

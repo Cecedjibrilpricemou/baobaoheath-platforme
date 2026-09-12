@@ -1,5 +1,6 @@
 import { UssdSessionStatus } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { getValeursParametres } from './parametres.service';
 
 interface UssdRequest {
   sessionId: string;
@@ -31,7 +32,8 @@ export async function handleUssdRequest(input: UssdRequest) {
     },
   });
 
-  const expireLe = new Date(Date.now() + 10 * 60 * 1000);
+  const { sync } = await getValeursParametres();
+  const expireLe = new Date(Date.now() + sync.ussdTimeoutSecondes * 1000);
 
   await prisma.ussdSession.upsert({
     where: { id: input.sessionId },

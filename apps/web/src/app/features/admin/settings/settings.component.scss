@@ -35,61 +35,45 @@
   }
 }
 
-// Bandeau d'etat : place avant le contenu, il doit etre lu avant qu'on
-// commence a remplir des champs qui n'enregistrent rien.
-.settings-notice {
+// Pied de panneau : le bouton Enregistrer n'envoie que la section affichee.
+.panel-footer {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: flex-end;
   gap: 14px;
-  padding: 16px 20px;
-  margin-bottom: 1.75rem;
-  border-radius: var(--bb-radius-lg);
-  background: var(--bb-info-bg);
-  border: 1px solid var(--bb-info-border);
-  color: var(--bb-info);
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--bb-border);
 
-  > i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-
-  &__title {
-    font-family: var(--bb-font-display);
-    font-size: 14px;
-    font-weight: 700;
-    margin: 0 0 0.25rem;
-  }
-
-  &__text {
-    font-size: 13px;
-    line-height: 1.6;
-    margin: 0;
-    opacity: 0.9;
-  }
-
-  &__link {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 0.75rem;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--bb-info);
-    text-decoration: none;
-
-    i { font-size: 12px; }
-
-    &:hover { text-decoration: underline; }
+  &__meta {
+    margin-right: auto;
+    font-size: 12px;
+    color: var(--bb-text-secondary);
   }
 }
 
-// Les controles desactives restent lisibles : ils documentent ce qui est
-// prevu. On evite l'estompage habituel, qui les rendrait illisibles.
-.settings-content {
-  .mat-mdc-form-field.mat-form-field-disabled,
-  .mat-mdc-slide-toggle.mat-mdc-slide-toggle-disabled,
-  .mat-mdc-slider.mdc-slider--disabled {
-    opacity: 0.75;
-  }
+// Certains reglages sont enregistres mais pas encore lus par un service :
+// on le dit a cote du controle plutot que de laisser croire a un effet.
+.setting-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bb-text-secondary);
+
+  i { font-size: 11px; }
 }
 
+.settings-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 3rem 0;
+  color: var(--bb-text-secondary);
+}
 .settings-container {
   display: flex;
   gap: 32px;

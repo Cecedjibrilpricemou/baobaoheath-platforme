@@ -3,11 +3,13 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as service from '../services/admin-structure.service';
+import * as parametresService from '../services/parametres.service';
 import type {
   AgentStructureView,
   CreationAgentView,
   CreationPharmacieView,
   CreationStructureView,
+  ParametresSystemeView,
   StructureAdminView,
   StatsStructureView,
   StructurePubliqueView,
@@ -16,6 +18,7 @@ import {
   createAgentStructureSchema,
   createPharmacieSchema,
   createStructureSchema,
+  updateParametresSystemeSchema,
   updateStructureSchema,
 } from '../validators/api.schemas';
 
@@ -110,6 +113,25 @@ router.delete('/structures/:id', requireRole('SUPER_ADMIN'), async (req: AuthReq
   try {
     await service.supprimerStructure(String(req.params.id));
     res.json({ success: true, message: 'Structure desactivee' });
+  } catch (e: unknown) {
+    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// ── Parametres globaux de la plateforme (page Parametres du super-admin) ──
+router.get('/parametres', requireRole('SUPER_ADMIN'), async (_req: AuthRequest, res: Response) => {
+  try {
+    const data: ParametresSystemeView = await parametresService.getParametres();
+    res.json({ success: true, data });
+  } catch (e: unknown) {
+    res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+router.put('/parametres', requireRole('SUPER_ADMIN'), validateBody(updateParametresSystemeSchema), async (req: AuthRequest, res: Response) => {
+  try {
+    const data: ParametresSystemeView = await parametresService.modifierParametres(req.user!.userId, req.body);
+    res.json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
   }

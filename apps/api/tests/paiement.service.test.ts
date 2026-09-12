@@ -20,6 +20,19 @@ jest.mock('../src/services/payment-provider.service', () => ({
   initierPaiementSimule: jest.fn(),
 }));
 
+// initierPaiement consulte les parametres systeme (modes de paiement actifs).
+// Les defauts activent Orange Money et especes ; un test ci-dessous couvre le refus.
+jest.mock('../src/services/parametres.service', () => ({
+  getValeursParametres: jest.fn(),
+}));
+
+const { getValeursParametres } = jest.requireMock('../src/services/parametres.service') as {
+  getValeursParametres: jest.Mock;
+};
+const { PARAMETRES_PAR_DEFAUT } = jest.requireActual('../src/services/parametres.service') as {
+  PARAMETRES_PAR_DEFAUT: { facturation: Record<string, boolean | number> };
+};
+
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     consultation: { findUnique: jest.Mock };
@@ -45,6 +58,7 @@ const PROVIDER_OK = {
 
 beforeEach(() => {
   initierPaiementSimule.mockResolvedValue(PROVIDER_OK);
+  getValeursParametres.mockResolvedValue(PARAMETRES_PAR_DEFAUT);
 });
 
 afterEach(() => jest.resetAllMocks());
@@ -73,6 +87,23 @@ describe('initierPaiement', () => {
 
     const createCall = prisma.facture.create.mock.calls[0][0];
     expect(createCall.data.montantGnf).toBe(8000);
+  });
+
+  it('refuse un mode de paiement desactive dans les parametres systeme', async () => {
+    prisma.consultation.findUnique.mockResolvedValue(baseConsultation);
+    getValeursParametres.mockResolvedValue({
+      ...PARAMETRES_PAR_DEFAUT,
+      facturation: { ...PARAMETRES_PAR_DEFAUT.facturation, paiementOrangeMoney: false },
+    });
+
+    await expect(initierPaiement('user-1', {
+      idConsultation: 'consult-1',
+      montantGnf: 5000,
+      modePaiement: 'ORANGE_MONEY',
+    })).rejects.toBeInstanceOf(ValidationError);
+
+    expect(initierPaiementSimule).not.toHaveBeenCalled();
+    expect(prisma.facture.create).not.toHaveBeenCalled();
   });
 
   it('caps client-provided amount at 10 000 000 GNF', async () => {

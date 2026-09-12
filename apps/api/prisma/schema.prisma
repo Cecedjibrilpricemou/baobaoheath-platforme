@@ -92,6 +92,18 @@ enum ConsentScope {
   RECHERCHE_ANONYMISEE
 }
 
+// Miroir de TypeNotification dans @baobaoheath/shared-types
+enum TypeNotification {
+  RAPPEL_RENDEZ_VOUS
+  REFERENCEMENT_ACCEPTE
+  REFERENCEMENT_REFUSE
+  ALERTE_STOCK
+  RAPPEL_VACCINATION
+  ORDONNANCE_SIGNEE
+  NOUVEAU_MESSAGE
+  ALERTE_VITALE
+}
+
 enum UssdSessionStatus {
   ACTIVE
   TERMINEE
@@ -145,6 +157,7 @@ model Utilisateur {
   syncMutations         SyncMutation[]
   consentementsDonnes   ConsentementPatient[]
   ussdSessions          UssdSession[]
+  notifications         Notification[]
 
   @@map("utilisateurs")
 }
@@ -703,4 +716,37 @@ model UssdSession {
   @@index([telephone, statut])
   @@index([expireLe])
   @@map("ussd_sessions")
+}
+
+// Notification in-app : une ligne par destinataire, lue quand luLe est renseigne.
+// Le SMS reste un canal a part (notification.service.ts) et n'est pas journalise ici.
+model Notification {
+  id          String           @id @default(cuid())
+  type        TypeNotification
+  titre       String
+  contenu     String
+  lienAction  String?
+  metadonnees Json?
+  luLe        DateTime?
+  creeLe      DateTime         @default(now())
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@index([idUtilisateur, luLe])
+  @@index([idUtilisateur, creeLe(sort: Desc)])
+  @@map("notifications")
+}
+
+// Parametres globaux de la plateforme (espace super-admin). Une seule ligne,
+// id = "global" ; les valeurs manquantes sont completees par les defauts du
+// service (parametres.service.ts), ce qui permet d'ajouter un parametre sans
+// migration.
+model ParametresSysteme {
+  id           String   @id @default("global")
+  valeurs      Json
+  modifieLe    DateTime @updatedAt
+  idModifiePar String?
+
+  @@map("parametres_systeme")
 }

@@ -932,3 +932,115 @@ export interface StatsStructureView {
   totalConsultations: number;
   totalPatients: number;
 }
+
+// ─── Confidentialite patient ─────────────────────────────────────────────────
+
+/** GET/PUT /privacy/me/consents — ligne de la table consentements_patient. */
+export interface ConsentementView {
+  id: string;
+  scope: ConsentScope;
+  actif: boolean;
+  donneLe: HorodatageApi;
+  retireLe: HorodatageApi | null;
+  source: string;
+  commentaire: string | null;
+  idPatient: string;
+  idUtilisateur: string;
+}
+
+/** PUT /privacy/me/consents */
+export interface SetConsentementDto {
+  scope: ConsentScope;
+  actif: boolean;
+  source?: string;
+  commentaire?: string;
+}
+
+/** GET /privacy/me/audit-logs — acces journalises au dossier du patient. */
+export interface AccesDossierView {
+  id: string;
+  action: string;
+  ressource: string;
+  idRessource: string | null;
+  creeLe: HorodatageApi;
+  utilisateur: {
+    id: string;
+    prenom: string;
+    nom: string;
+    role: Role;
+  };
+}
+
+// ─── Notifications in-app ────────────────────────────────────────────────────
+
+/** GET /notifications/me — une notification destinee a l'utilisateur connecte. */
+export interface NotificationView {
+  id: string;
+  type: TypeNotification;
+  titre: string;
+  contenu: string;
+  lienAction: string | null;
+  metadonnees: Record<string, unknown> | null;
+  luLe: HorodatageApi | null;
+  creeLe: HorodatageApi;
+}
+
+/** GET /notifications/me/non-lues */
+export interface NotificationsNonLuesView {
+  nonLues: number;
+}
+
+/** Evenement Socket.IO `notification:new` — meme forme que la vue REST. */
+export type NotificationTempsReel = NotificationView;
+
+// ─── Parametres systeme (super-admin) ────────────────────────────────────────
+
+export interface ParametresFacturationView {
+  paiementEspeces: boolean;
+  paiementOrangeMoney: boolean;
+  paiementMomo: boolean;
+  /** Marge par defaut appliquee sur les medicaments, en pourcentage. */
+  margePct: number;
+}
+
+export interface ParametresSecuriteView {
+  force2FA: boolean;
+  sessionTimeoutMinutes: number;
+  consentementDefaut: boolean;
+}
+
+export interface ParametresAlertesView {
+  /** Cas de paludisme par prefecture sur 30 jours avant alerte. */
+  seuilPaludisme: number;
+  /** Cas d'Ebola par prefecture sur 30 jours avant alerte. */
+  seuilEbola: number;
+  activerIA: boolean;
+}
+
+export interface ParametresSyncView {
+  offlineMode: boolean;
+  frequenceMinutes: number;
+  ussdTimeoutSecondes: number;
+}
+
+/** Valeurs persistees, toujours completes (defauts fusionnes cote serveur). */
+export interface ParametresSystemeValeurs {
+  facturation: ParametresFacturationView;
+  securite: ParametresSecuriteView;
+  alertes: ParametresAlertesView;
+  sync: ParametresSyncView;
+}
+
+/** GET/PUT /admin-structure/parametres */
+export interface ParametresSystemeView extends ParametresSystemeValeurs {
+  modifieLe: HorodatageApi | null;
+  idModifiePar: string | null;
+}
+
+/** PUT /admin-structure/parametres — chaque section et chaque champ est optionnel. */
+export interface UpdateParametresSystemeDto {
+  facturation?: Partial<ParametresFacturationView>;
+  securite?: Partial<ParametresSecuriteView>;
+  alertes?: Partial<ParametresAlertesView>;
+  sync?: Partial<ParametresSyncView>;
+}

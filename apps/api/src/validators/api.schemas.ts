@@ -313,12 +313,44 @@ export const validerConsultationSchema = z.object({
   tarifGnf: z.coerce.number().int().min(0).max(10_000_000).optional(),
 }).strict();
 
+// `motifRefus` : nom du champ dans RepondreReferencementDto (shared-types) et
+// dans medecin.service ; le schema strict rejetait la cle sous l'ancien nom.
 export const repondreReferencementSchema = z.object({
   statut: z.enum(['ACCEPTE', 'REFUSE', 'COMPLETE']),
-  commentaire: z.string().trim().max(1000).optional(),
+  motifRefus: z.string().trim().max(1000).optional(),
 }).strict();
 
 export const sendMessageSchema = z.object({
   contenu: z.string().trim().min(1).max(2000),
   idDestinataire: id,
 }).strict();
+
+// ─── Parametres systeme (super-admin) ────────────────────────────────────────
+// Bornes alignees sur les curseurs de la page Parametres du web.
+export const updateParametresSystemeSchema = z.object({
+  facturation: z.object({
+    paiementEspeces: z.boolean(),
+    paiementOrangeMoney: z.boolean(),
+    paiementMomo: z.boolean(),
+    margePct: z.coerce.number().int().min(0).max(50),
+  }).partial().strict().optional(),
+  securite: z.object({
+    force2FA: z.boolean(),
+    sessionTimeoutMinutes: z.coerce.number().int().min(5).max(1440),
+    consentementDefaut: z.boolean(),
+  }).partial().strict().optional(),
+  alertes: z.object({
+    seuilPaludisme: z.coerce.number().int().min(1).max(500),
+    seuilEbola: z.coerce.number().int().min(1).max(50),
+    activerIA: z.boolean(),
+  }).partial().strict().optional(),
+  sync: z.object({
+    offlineMode: z.boolean(),
+    frequenceMinutes: z.coerce.number().int().min(1).max(1440),
+    ussdTimeoutSecondes: z.coerce.number().int().min(30).max(3600),
+  }).partial().strict().optional(),
+}).strict();
+
+export const notificationsQuerySchema = paginationQuerySchema.extend({
+  lu: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
+});

@@ -5,8 +5,10 @@ import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
 import type {
   CreationStructureView,
+  ParametresSystemeView,
   StructureAdminView,
   StructurePubliqueView,
+  UpdateParametresSystemeDto,
 } from '@baobaoheath/shared-types';
 import { ApiResponse, PaginatedData } from '../models/api.model';
 
@@ -54,6 +56,15 @@ export class AdminService {
 
   getPublicStructures(): Observable<ApiResponse<StructurePubliqueView[]>> {
     return this.api.get<ApiResponse<StructurePubliqueView[]>>('/admin-structure/structures/publiques');
+  }
+
+  // Parametres globaux (SUPER_ADMIN)
+  getParametres(): Observable<ApiResponse<ParametresSystemeView>> {
+    return this.api.get<ApiResponse<ParametresSystemeView>>('/admin-structure/parametres');
+  }
+
+  updateParametres(payload: UpdateParametresSystemeDto): Observable<ApiResponse<ParametresSystemeView>> {
+    return this.api.put<ApiResponse<ParametresSystemeView>>('/admin-structure/parametres', payload);
   }
 
   // Analytics

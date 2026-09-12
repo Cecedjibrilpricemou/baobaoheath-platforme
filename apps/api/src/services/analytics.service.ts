@@ -7,6 +7,7 @@ import {
     ExportFilters,
 } from '../types/analytics.types';
 import { withCache } from '../utils/cache';
+import { getValeursParametres } from './parametres.service';
 
 // ─── Dashboard général — statistiques globales ────────────
 export async function getDashboardGlobal(filters: AnalyticsFilters) {
@@ -169,8 +170,12 @@ export async function getAlertesEpidemiques(): Promise<AlerteEpidemique[]> {
     });
 
     const alertes: AlerteEpidemique[] = [];
+    // Paludisme et Ebola sont reglables depuis la page Parametres du
+    // super-admin ; les autres seuils restent fixes pour l'instant.
+    const { alertes: seuilsConfigures } = await getValeursParametres();
     const SEUILS: Record<string, number> = {
-        'Paludisme': 20,
+        'Paludisme': seuilsConfigures.seuilPaludisme,
+        'Ebola': seuilsConfigures.seuilEbola,
         'Choléra': 5,
         'Méningite': 3,
         'Rougeole': 5,
