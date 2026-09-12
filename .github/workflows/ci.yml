@@ -141,11 +141,19 @@ jobs:
   # ── CD — Deploy to production ─────────────────────────────────────────
   # Triggers on push to main only after all CI jobs pass.
   # Requires secrets: DATABASE_URL, DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY
+  #
+  # Le job est ignore tant que la variable de depot DEPLOY_ENABLED n'est pas
+  # a 'true' (Settings > Secrets and variables > Actions > Variables). Sans
+  # cela, le job tournait sans aucun secret configure : `prisma migrate deploy`
+  # echouait sur un DATABASE_URL vide et chaque push sur main envoyait un
+  # email « CI failed » alors que la chaine de tests etait verte.
+  # (Le contexte `secrets` n'est pas accessible dans un `if` de job, d'ou une
+  # variable plutot qu'un test direct sur les secrets.)
   deploy:
     name: Deploy — Migrate + Restart
     runs-on: ubuntu-latest
     needs: [api-build-test, api-audit, web-build, web-audit]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
     environment: production
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
