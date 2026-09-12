@@ -285,6 +285,16 @@
   .bb-user-menu__mail { font-size: 11.5px; color: var(--bb-text-muted); }
 }
 
+// ── MENU NOTIFICATIONS ────────────────────────────────────────────────
+// Le panneau mat-menu est rendu dans l'overlay CDK, hors du composant
+// app-notification-bell : sa largeur se regle ici (280px par defaut).
+.bb-notif-menu.mat-mdc-menu-panel {
+  max-width: none;
+  --mat-menu-container-shape: var(--bb-radius-lg);
+
+  .mat-mdc-menu-content { padding: 0; }
+}
+
 // ── CONTRASTE EN MODE SOMBRE ───────────────────────────────────────
 // --bb-success-bg et --bb-primary sont tous deux sombres : sur fond
 // sombre l'entrée active devenait illisible.

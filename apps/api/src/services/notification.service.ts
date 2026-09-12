@@ -1,13 +1,149 @@
 import { randomBytes } from 'crypto';
+import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { logger } from '../config/logger';
 import { NotFoundError, ValidationError } from '../utils/app-error';
+import { emitToUser } from '../realtime/socket.server';
 import {
     SendSmsDto,
     SendNotificationDto,
     NotificationFilters,
     TypeNotification,
 } from '../types/notification.types';
+import type { NotificationView, PaginatedData } from '@baobaoheath/shared-types';
+
+// ─── Notifications in-app ──────────────────────────────────
+// Persistees en base (table notifications) et poussees en temps reel sur la
+// room Socket.IO de l'utilisateur (evenement `notification:new`). La cloche
+// des layouts web lit la liste au chargement puis ecoute l'evenement.
+
+export interface CreerNotificationDto {
+    idUtilisateur: string;
+    type: TypeNotification;
+    titre: string;
+    contenu: string;
+    /** Route web vers laquelle un clic sur la notification renvoie. */
+    lienAction?: string;
+    metadonnees?: Record<string, unknown>;
+}
+
+const NOTIFICATION_SELECT = {
+    id: true,
+    type: true,
+    titre: true,
+    contenu: true,
+    lienAction: true,
+    metadonnees: true,
+    luLe: true,
+    creeLe: true,
+} as const;
+
+function versVue(n: {
+    id: string; type: TypeNotification; titre: string; contenu: string;
+    lienAction: string | null; metadonnees: unknown; luLe: Date | null; creeLe: Date;
+}): NotificationView {
+    return {
+        ...n,
+        metadonnees: (n.metadonnees ?? null) as NotificationView['metadonnees'],
+    };
+}
+
+export async function creerNotification(dto: CreerNotificationDto): Promise<NotificationView> {
+    const notification = await prisma.notification.create({
+        data: {
+            idUtilisateur: dto.idUtilisateur,
+            type: dto.type,
+            titre: dto.titre,
+            contenu: dto.contenu,
+            lienAction: dto.lienAction,
+            metadonnees: dto.metadonnees as Prisma.InputJsonValue | undefined,
+        },
+        select: NOTIFICATION_SELECT,
+    });
+
+    const vue = versVue(notification);
+    emitToUser(dto.idUtilisateur, 'notification:new', vue);
+    return vue;
+}
+
+/**
+ * Variante « best effort » pour les points d'accroche metier (message envoye,
+ * referencement traite, ordonnance signee...) : l'echec de la notification ne
+ * doit jamais faire echouer l'operation qui la declenche.
+ */
+export async function notifierSansBloquer(dto: CreerNotificationDto): Promise<void> {
+    try {
+        await creerNotification(dto);
+    } catch (e: unknown) {
+        logger.warn('[NOTIF] creation in-app echouee', {
+            type: dto.type,
+            idUtilisateur: dto.idUtilisateur,
+            erreur: e instanceof Error ? e.message : String(e),
+        });
+    }
+}
+
+export async function getMesNotifications(
+    userId: string,
+    filters: NotificationFilters,
+): Promise<PaginatedData<NotificationView>> {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
+    const where = {
+        idUtilisateur: userId,
+        ...(filters.lu === true && { luLe: { not: null } }),
+        ...(filters.lu === false && { luLe: null }),
+        ...(filters.type && { type: filters.type }),
+    };
+
+    const [items, total] = await Promise.all([
+        prisma.notification.findMany({
+            where,
+            select: NOTIFICATION_SELECT,
+            orderBy: { creeLe: 'desc' },
+            skip: (page - 1) * limit,
+            take: limit,
+        }),
+        prisma.notification.count({ where }),
+    ]);
+
+    return {
+        items: items.map(versVue),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+    };
+}
+
+export async function compterNonLues(userId: string): Promise<number> {
+    return prisma.notification.count({ where: { idUtilisateur: userId, luLe: null } });
+}
+
+export async function marquerLue(userId: string, id: string): Promise<NotificationView> {
+    // Filtre sur idUtilisateur : un utilisateur ne peut pas marquer la
+    // notification d'un autre (404 plutot que 403, l'existence n'est pas revelee).
+    const existante = await prisma.notification.findFirst({
+        where: { id, idUtilisateur: userId },
+        select: { id: true, luLe: true },
+    });
+    if (!existante) throw new NotFoundError('Notification non trouvée');
+
+    const notification = await prisma.notification.update({
+        where: { id },
+        data: { luLe: existante.luLe ?? new Date() },
+        select: NOTIFICATION_SELECT,
+    });
+    return versVue(notification);
+}
+
+export async function toutMarquerLu(userId: string): Promise<number> {
+    const { count } = await prisma.notification.updateMany({
+        where: { idUtilisateur: userId, luLe: null },
+        data: { luLe: new Date() },
+    });
+    return count;
+}
 
 // ─── MOCK — Simuler envoi SMS Africa's Talking ───────────
 async function mockSendSms(

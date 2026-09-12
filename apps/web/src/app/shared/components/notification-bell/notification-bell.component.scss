@@ -1,0 +1,122 @@
+// La liste vit dans un mat-menu (overlay) : les styles du panneau sont
+// globaux via la classe .bb-notif-menu (voir styles.scss), seuls ceux du
+// bouton et du contenu projete sont encapsules ici.
+:host { display: inline-flex; }
+
+.bb-notif {
+  width: min(360px, calc(100vw - 32px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--bb-font-body);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid var(--bb-border);
+  }
+
+  &__title {
+    font-family: var(--bb-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--bb-text-primary);
+  }
+
+  &__mark-all {
+    font-size: 12px;
+    color: var(--bb-primary);
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 28px 16px;
+    font-size: 13px;
+    color: var(--bb-text-secondary);
+    text-align: center;
+
+    mat-icon { font-size: 22px; width: 22px; height: 22px; opacity: 0.6; }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    overflow-y: auto;
+  }
+
+  &__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--bb-transition);
+
+    &:hover, &:focus-visible { background: var(--bb-surface-1); outline: none; }
+
+    &--unread {
+      background: var(--bb-info-bg);
+      .bb-notif__item-title { font-weight: 700; }
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--bb-primary);
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bb-text-primary);
+  }
+
+  &__item-text {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--bb-text-secondary);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  &__item-date {
+    font-size: 11px;
+    color: var(--bb-text-muted);
+  }
+
+  &__dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--bb-primary);
+  }
+}

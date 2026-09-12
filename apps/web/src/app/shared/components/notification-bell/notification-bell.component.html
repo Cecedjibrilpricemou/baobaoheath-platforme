@@ -1,0 +1,61 @@
+<button
+  matIconButton
+  class="bb-bell"
+  [matMenuTriggerFor]="menu"
+  (menuOpened)="ouvrir()"
+  [matTooltip]="'NOTIFICATIONS.TITLE' | translate"
+  [attr.aria-label]="'NOTIFICATIONS.ARIA' | translate: { count: nonLues() }"
+>
+  <mat-icon
+    fontSet="pi"
+    fontIcon="pi-bell"
+    aria-hidden="true"
+    [matBadge]="nonLues() > 99 ? '99+' : nonLues()"
+    [matBadgeHidden]="nonLues() === 0"
+    matBadgeSize="small"
+    matBadgeColor="warn"
+  ></mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" class="bb-notif-menu" xPosition="before">
+  <div class="bb-notif" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <div class="bb-notif__head">
+      <span class="bb-notif__title">{{ 'NOTIFICATIONS.TITLE' | translate }}</span>
+      @if (nonLues() > 0) {
+        <button matButton type="button" class="bb-notif__mark-all" (click)="toutMarquerLu($event)">
+          {{ 'NOTIFICATIONS.MARK_ALL_READ' | translate }}
+        </button>
+      }
+    </div>
+
+    @if (isLoading() && notifications().length === 0) {
+      <p class="bb-notif__empty">{{ 'COMMON.LOADING' | translate }}</p>
+    } @else if (notifications().length === 0) {
+      <p class="bb-notif__empty">
+        <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+        {{ 'NOTIFICATIONS.EMPTY' | translate }}
+      </p>
+    } @else {
+      <ul class="bb-notif__list" role="list">
+        @for (n of notifications(); track n.id) {
+          <li>
+            <button
+              type="button"
+              class="bb-notif__item"
+              [class.bb-notif__item--unread]="!n.luLe"
+              (click)="ouvrirNotification(n)"
+            >
+              <mat-icon class="bb-notif__icon" fontSet="pi" [fontIcon]="icone(n)" aria-hidden="true"></mat-icon>
+              <span class="bb-notif__body">
+                <span class="bb-notif__item-title">{{ n.titre }}</span>
+                <span class="bb-notif__item-text">{{ n.contenu }}</span>
+                <span class="bb-notif__item-date">{{ n.creeLe | date:'short' }}</span>
+              </span>
+              @if (!n.luLe) { <span class="bb-notif__dot" aria-hidden="true"></span> }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</mat-menu>

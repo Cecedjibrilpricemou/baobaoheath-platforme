@@ -18,6 +18,7 @@ import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ProfilModalComponent } from '../profil-modal/profil-modal.component';
 import { AvatarComponent } from '../avatar/avatar.component';
+import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
 import { OfflineQueueService } from '../../../core/services/offline-queue.service';
 
@@ -34,7 +35,7 @@ const ROUTE_LABELS: Record<string, string> = {
   standalone: true,
   imports: [
     CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe,
-    ProfilModalComponent, AvatarComponent,
+    ProfilModalComponent, AvatarComponent, NotificationBellComponent,
     MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule,
     MatButtonModule, MatMenuModule, MatTooltipModule, MatDialogModule,
   ],

@@ -10,8 +10,21 @@ import { assertCanAccessConsultation } from './access-control.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { withCache, cacheDel } from '../utils/cache';
 import { emitToUser } from '../realtime/socket.server';
+import { notifierSansBloquer } from './notification.service';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
+
+// Route web ou un clic sur la notification renvoie, selon l'espace du destinataire.
+function lienEspace(role: string, sousChemin: string): string {
+    const espaces: Record<string, string> = {
+        PATIENT: '/patient',
+        ASC: '/asc',
+        ASC_SUPERVISOR: '/asc',
+        MEDECIN: '/medecin',
+        PHARMACIEN: '/pharmacien',
+    };
+    return `${espaces[role] ?? '/'}${sousChemin}`;
+}
 
 // ─── Récupérer le profil du médecin connecté ─────────────
 export async function getMyMedecinProfile(userId: string) {
@@ -107,7 +120,10 @@ export async function validerConsultation(
 
     const consultation = await prisma.consultation.findUnique({
         where: { id: idConsultation },
-        include: { ordonnances: true },
+        include: {
+            ordonnances: true,
+            patient: { select: { idUtilisateur: true } },
+        },
     });
 
     if (!consultation) {
@@ -118,7 +134,9 @@ export async function validerConsultation(
         throw new ValidationError('Consultation déjà validée par un médecin');
     }
 
-    return prisma.$transaction(async (tx) => {
+    const idOrdonnancesSignees = dto.idOrdonnances ?? [];
+
+    const updated = await prisma.$transaction(async (tx) => {
         const updated = await tx.consultation.update({
             where: { id: idConsultation },
             data: {
@@ -128,10 +146,10 @@ export async function validerConsultation(
             },
         });
 
-        if (dto.idOrdonnances && dto.idOrdonnances.length > 0) {
+        if (idOrdonnancesSignees.length > 0) {
             await tx.ordonnance.updateMany({
                 where: {
-                    id: { in: dto.idOrdonnances },
+                    id: { in: idOrdonnancesSignees },
                     idConsultation,
                 },
                 data: {
@@ -144,6 +162,20 @@ export async function validerConsultation(
         await cacheDel(`medecin:dashboard:${user.userId}`);
         return updated;
     });
+
+    // Apres la transaction : la notification ne doit pas pouvoir l'annuler.
+    if (idOrdonnancesSignees.length > 0) {
+        await notifierSansBloquer({
+            idUtilisateur: consultation.patient.idUtilisateur,
+            type: 'ORDONNANCE_SIGNEE',
+            titre: 'Ordonnance signée par le médecin',
+            contenu: 'Votre ordonnance est prête : présentez votre QR code en pharmacie.',
+            lienAction: '/patient/qr-code',
+            metadonnees: { idConsultation, idOrdonnances: idOrdonnancesSignees },
+        });
+    }
+
+    return updated;
 }
 
 // ─── Référencements à traiter ─────────────────────────────
@@ -239,7 +271,7 @@ export async function repondreReferencement(
         }
     }
 
-    return prisma.referencement.update({
+    const referencementTraite = await prisma.referencement.update({
         where: { id: idReferencement },
         data: {
             statut: dto.statut,
@@ -253,15 +285,52 @@ export async function repondreReferencement(
                     patient: {
                         include: {
                             utilisateur: {
-                                select: { prenom: true, nom: true },
+                                select: { id: true, prenom: true, nom: true },
                             },
                         },
                     },
+                    asc: { select: { idUtilisateur: true } },
                 },
             },
             structureCible: true,
         },
     });
+
+    if (dto.statut === 'ACCEPTE' || dto.statut === 'REFUSE') {
+        const { consultation, structureCible } = referencementTraite;
+        const accepte = dto.statut === 'ACCEPTE';
+        const type = accepte ? 'REFERENCEMENT_ACCEPTE' : 'REFERENCEMENT_REFUSE';
+        const titre = accepte
+            ? `Transfert vers ${structureCible.nom} accepté`
+            : `Transfert vers ${structureCible.nom} refusé`;
+
+        // Le patient et l'ASC qui a initie le referencement sont prevenus.
+        await notifierSansBloquer({
+            idUtilisateur: consultation.patient.utilisateur.id,
+            type,
+            titre,
+            contenu: accepte
+                ? 'Présentez-vous à la structure avec votre QR code.'
+                : `Motif : ${dto.motifRefus}. Contactez votre ASC pour la suite.`,
+            lienAction: '/patient/dashboard',
+            metadonnees: { idReferencement, idConsultation: consultation.id },
+        });
+
+        if (consultation.asc) {
+            await notifierSansBloquer({
+                idUtilisateur: consultation.asc.idUtilisateur,
+                type,
+                titre,
+                contenu: accepte
+                    ? `Patient ${consultation.patient.utilisateur.prenom} ${consultation.patient.utilisateur.nom} attendu à ${structureCible.nom}.`
+                    : `Motif : ${dto.motifRefus}`,
+                lienAction: `/asc/consultations/${consultation.id}`,
+                metadonnees: { idReferencement, idConsultation: consultation.id },
+            });
+        }
+    }
+
+    return referencementTraite;
 }
 
 // ─── Messagerie — envoyer un message ─────────────────────
@@ -292,6 +361,17 @@ export async function sendMessage(userId: string, dto: SendMessageDto) {
     });
 
     emitToUser(dto.idDestinataire, 'message:new', message);
+
+    // Le destinataire peut ne pas etre sur la page messagerie : la cloche
+    // prend le relais de l'evenement message:new.
+    await notifierSansBloquer({
+        idUtilisateur: dto.idDestinataire,
+        type: 'NOUVEAU_MESSAGE',
+        titre: `Nouveau message de ${message.expediteur.prenom} ${message.expediteur.nom}`,
+        contenu: dto.contenu.length > 120 ? `${dto.contenu.slice(0, 117)}...` : dto.contenu,
+        lienAction: destinataire.role === 'MEDECIN' ? '/medecin/messagerie' : undefined,
+        metadonnees: { idMessage: message.id, idExpediteur: userId },
+    });
 
     return message;
 }

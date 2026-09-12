@@ -711,6 +711,18 @@ export const swaggerDocument = {
     '/api/v1/notifications/referencement/{id}': {
       post: { tags: ['Notifications'], summary: "Notifier le patient d'un référencement", description: "Envoie un SMS au patient pour l'informer de l'acceptation ou du refus de son référencement", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID du référencement' }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['statut'], properties: { statut: { type: 'string', enum: ['ACCEPTE', 'REFUSE'], example: 'ACCEPTE' } } } } } }, responses: { 200: { description: 'Notification envoyée', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Statut invalide ou référencement non trouvé' } } },
     },
+    '/api/v1/notifications/me': {
+      get: { tags: ['Notifications'], summary: 'Mes notifications in-app', description: 'Notifications persistées de l\'utilisateur connecté, les plus récentes en premier. Les nouvelles arrivent aussi en temps réel via Socket.IO (événement notification:new).', security: [{ bearerAuth: [] }], parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }, { name: 'lu', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'Filtrer sur les lues / non lues' }], responses: { 200: { description: 'Page de notifications ({ items, total, page, limit, totalPages })' } } },
+    },
+    '/api/v1/notifications/me/non-lues': {
+      get: { tags: ['Notifications'], summary: 'Nombre de notifications non lues', security: [{ bearerAuth: [] }], responses: { 200: { description: '{ nonLues: number }' } } },
+    },
+    '/api/v1/notifications/{id}/lire': {
+      put: { tags: ['Notifications'], summary: 'Marquer une notification comme lue', description: 'Idempotent. 404 si la notification n\'appartient pas à l\'utilisateur connecté.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Notification mise à jour' }, 404: { description: 'Notification non trouvée' } } },
+    },
+    '/api/v1/notifications/tout-lire': {
+      put: { tags: ['Notifications'], summary: 'Marquer toutes mes notifications comme lues', security: [{ bearerAuth: [] }], responses: { 200: { description: '{ marquees: number }' } } },
+    },
     '/api/v1/notifications/rappels/verifier': {
       get: { tags: ['Notifications'], summary: 'Vérifier les rappels à envoyer', description: 'Retourne la liste des rendez-vous et vaccinations nécessitant un rappel — utile pour les CRON jobs', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Rappels identifiés', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RappelsResult' } } }] } } } }, 403: { description: 'Accès refusé — Admin requis' } } },
     },

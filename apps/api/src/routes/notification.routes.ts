@@ -7,16 +7,27 @@ import {
     envoyerRappelVaccinationController,
     envoyerSmsMasseController,
     verifierRappelsController,
+    getMesNotificationsController,
+    compterNonLuesController,
+    marquerLueController,
+    toutMarquerLuController,
 } from '../controllers/notification.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
-import { validateBody } from '../middlewares/validate.middleware';
-import { sendSmsSchema, sendSmsMasseSchema } from '../validators/api.schemas';
+import { validateBody, validateQuery } from '../middlewares/validate.middleware';
+import { notificationsQuerySchema, sendSmsSchema, sendSmsMasseSchema } from '../validators/api.schemas';
 
 const router = Router();
 
 // ─── Tous les endpoints nécessitent authentification ─────
 router.use(authenticate);
+
+// ─── Notifications in-app — tout utilisateur connecté ─────
+// Consommees par la cloche des layouts web (NotificationService cote Angular).
+router.get('/me', validateQuery(notificationsQuerySchema), getMesNotificationsController);
+router.get('/me/non-lues', compterNonLuesController);
+router.put('/tout-lire', toutMarquerLuController);
+router.put('/:id/lire', marquerLueController);
 
 // ─── SMS personnalisé — Admin uniquement ──────────────────
 router.post(

@@ -1,6 +1,12 @@
 import { Response } from 'express';
 import * as notificationService from '../services/notification.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import type { NotificationFilters } from '../types/notification.types';
+import type {
+    NotificationView,
+    NotificationsNonLuesView,
+    PaginatedData,
+} from '@baobaoheath/shared-types';
 
 // ─── Envoyer un SMS personnalisé ─────────────────────────
 export async function envoyerSmsController(
@@ -91,4 +97,45 @@ export async function verifierRappelsController(
 ): Promise<void> {
     const result = await notificationService.verifierRappelsAEnvoyer();
         res.status(200).json({ success: true, data: result });
+}
+
+// ─── Notifications in-app de l'utilisateur connecté ──────
+export async function getMesNotificationsController(
+    req: AuthRequest,
+    res: Response
+): Promise<void> {
+    // req.query est deja valide/transforme par notificationsQuerySchema
+    const filters = req.query as unknown as NotificationFilters;
+    const data: PaginatedData<NotificationView> =
+        await notificationService.getMesNotifications(req.user!.userId, filters);
+    res.status(200).json({ success: true, data });
+}
+
+export async function compterNonLuesController(
+    req: AuthRequest,
+    res: Response
+): Promise<void> {
+    const data: NotificationsNonLuesView = {
+        nonLues: await notificationService.compterNonLues(req.user!.userId),
+    };
+    res.status(200).json({ success: true, data });
+}
+
+export async function marquerLueController(
+    req: AuthRequest & { params: { id: string } },
+    res: Response
+): Promise<void> {
+    const data: NotificationView = await notificationService.marquerLue(
+        req.user!.userId,
+        req.params.id
+    );
+    res.status(200).json({ success: true, data });
+}
+
+export async function toutMarquerLuController(
+    req: AuthRequest,
+    res: Response
+): Promise<void> {
+    const marquees = await notificationService.toutMarquerLu(req.user!.userId);
+    res.status(200).json({ success: true, data: { marquees } });
 }
