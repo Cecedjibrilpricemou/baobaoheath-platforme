@@ -35,6 +35,15 @@
     color: var(--bb-text-primary); letter-spacing: -0.5px; margin: 0 0 4px;
   }
 
+  &__patient-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+  &__meta-chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+    padding: 3px 12px; border-radius: 100px;
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border); color: var(--bb-text-secondary);
+    i { font-size: 12px; }
+    &--ok { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-primary); }
+  }
   &__blood {
     display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
     background: var(--bb-danger-bg); border: 1px solid var(--bb-danger-border);
@@ -211,6 +220,9 @@
     &:hover { border-color: var(--bb-primary); background: var(--bb-surface-2); }
     &--selected { border-color: var(--bb-primary) !important; background: var(--bb-success-bg) !important; font-weight: 700; color: var(--bb-primary); }
     label { cursor: pointer; flex: 1; margin: 0; }
+    // mat-radio-button en bloc : la carte entiere est la cible, libelle compris.
+    .mdc-form-field { width: 100%; }
+    .mdc-label { cursor: pointer; }
   }
 
   &__montant {
@@ -298,6 +310,16 @@
     &::placeholder { color: #94a3b8; }
   }
 
+  // Lecture camera : action secondaire sous la recherche, la saisie reste possible.
+  &__camera-btn {
+    margin-top: 14px; padding: 10px 18px; border-radius: 100px;
+    border: 1.5px solid var(--bb-primary); background: transparent; color: var(--bb-primary);
+    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-success-bg); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+    i { font-size: 15px; }
+  }
   &__search-btn {
     background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
     border: none; color: white; padding: 14px 32px; border-radius: 100px;

@@ -32,12 +32,20 @@
         </div>
       </div>
 
+      <button type="button" class="bb-ordo__camera-btn" (click)="showScanner.set(true)" [disabled]="isScanning()">
+        <i class="pi pi-camera" aria-hidden="true"></i> {{ 'QR_SCANNER.OPEN_BTN' | translate }}
+      </button>
+
       @if (errorMessage()) {
         <div class="bb-ordo__alert bb-ordo__alert--error mt-3" role="alert">
           <i class="pi pi-times-circle" aria-hidden="true"></i> {{ errorMessage() }}
         </div>
       }
     </div>
+
+    @if (showScanner()) {
+      <app-qr-scanner (detecte)="onQrDetecte($event)" (ferme)="showScanner.set(false)" />
+    }
 
     <!-- Ordonnances en attente dans la préfecture -->
     <section class="bb-ordo__pending" aria-labelledby="pending-title">
@@ -92,9 +100,20 @@
         </div>
         <div>
           <h1 class="bb-ordo__patient-name">{{ patient()!.prenom }} {{ patient()!.nom }}</h1>
-          @if (patient()!.groupeSanguin) {
-            <span class="bb-ordo__blood">🩸 {{ patient()!.groupeSanguin }}</span>
-          }
+          <div class="bb-ordo__patient-meta">
+            @if (getAge(patient()!.dateNaissance); as age) {
+              <span class="bb-ordo__meta-chip"><i class="pi pi-calendar" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.AGE' | translate: { age: age } }}</span>
+            }
+            @if (patient()!.sexe) {
+              <span class="bb-ordo__meta-chip">{{ patient()!.sexe === 'F' ? ('PHARMACIEN.ORDONNANCES.SEXE_F' | translate) : ('PHARMACIEN.ORDONNANCES.SEXE_M' | translate) }}</span>
+            }
+            @if (patient()!.groupeSanguin) {
+              <span class="bb-ordo__blood">🩸 {{ patient()!.groupeSanguin }}</span>
+            }
+            @if (!patient()!.allergiesCritiques.length) {
+              <span class="bb-ordo__meta-chip bb-ordo__meta-chip--ok"><i class="pi pi-check" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.NO_ALLERGY' | translate }}</span>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -197,19 +216,19 @@
           <!-- Mode de paiement -->
           <div class="bb-ordo__form-field mt-4">
             <span id="ordo-mode-label" class="form-label">{{ 'PHARMACIEN.ORDONNANCES.PAYMENT_MODE' | translate }}</span>
-            <div class="bb-ordo__modes" role="radiogroup" aria-labelledby="ordo-mode-label">
+            <!-- Un seul mat-radio-group porte le modele : des boutons isoles avec
+                 chacun leur ngModel perdaient leur libelle a l'affichage. -->
+            <mat-radio-group class="bb-ordo__modes" aria-labelledby="ordo-mode-label" [(ngModel)]="modePaiement">
               @for (mode of modesPaiement; track mode.value) {
-                <div
+                <mat-radio-button
                   class="bb-ordo__mode"
                   [class.bb-ordo__mode--selected]="modePaiement === mode.value"
-                  (click)="modePaiement = mode.value"
+                  [value]="mode.value"
                 >
-                  <mat-radio-button [value]="mode.value" [(ngModel)]="modePaiement">
-                    {{ mode.label }}
-                  </mat-radio-button>
-                </div>
+                  {{ mode.label }}
+                </mat-radio-button>
               }
-            </div>
+            </mat-radio-group>
           </div>
 
           <!-- Montant calculé -->

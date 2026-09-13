@@ -782,6 +782,7 @@ export interface PatientScanView {
   prenom: string;
   nom: string;
   dateNaissance: string;
+  sexe: string;
   groupeSanguin?: string;
   allergiesCritiques: string[];
 }

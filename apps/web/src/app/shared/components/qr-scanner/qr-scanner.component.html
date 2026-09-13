@@ -1,0 +1,35 @@
+<div class="bb-qr-overlay" (click)="fermer()">
+  <div class="bb-qr" role="dialog" aria-modal="true" aria-labelledby="qr-scanner-title" (click)="$event.stopPropagation()">
+    <div class="bb-qr__head">
+      <h2 id="qr-scanner-title" class="bb-qr__title">
+        <mat-icon fontSet="pi" fontIcon="pi-qrcode" aria-hidden="true"></mat-icon>
+        {{ 'QR_SCANNER.TITLE' | translate }}
+      </h2>
+      <button matIconButton type="button" (click)="fermer()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+        <mat-icon fontSet="pi" fontIcon="pi-times" aria-hidden="true"></mat-icon>
+      </button>
+    </div>
+
+    <div class="bb-qr__viewport" [class.bb-qr__viewport--actif]="etat() === 'actif'">
+      <!-- Toujours dans le DOM : la video doit exister avant que le flux arrive. -->
+      <video #video class="bb-qr__video" muted autoplay playsinline></video>
+      @if (etat() === 'actif') {
+        <div class="bb-qr__cadre" aria-hidden="true"></div>
+      }
+      @if (etat() === 'demarrage') {
+        <p class="bb-qr__etat" role="status"><i class="pi pi-spin pi-spinner" aria-hidden="true"></i> {{ 'QR_SCANNER.STARTING' | translate }}</p>
+      }
+      @if (etat() === 'erreur') {
+        <p class="bb-qr__etat bb-qr__etat--erreur" role="alert">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ erreurKey() | translate }}
+        </p>
+      }
+    </div>
+
+    <p class="bb-qr__hint">{{ 'QR_SCANNER.HINT' | translate }}</p>
+
+    <div class="bb-qr__actions">
+      <button matButton="outlined" type="button" (click)="fermer()">{{ 'QR_SCANNER.MANUAL' | translate }}</button>
+    </div>
+  </div>
+</div>

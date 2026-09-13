@@ -1,0 +1,112 @@
+// Meme voile que .bb-logout-overlay (styles.scss) : un seul langage de modale.
+.bb-qr-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  animation: bb-fade-in 0.2s ease;
+}
+
+.bb-qr {
+  width: min(480px, 100%);
+  background: var(--bb-surface-0);
+  border-radius: var(--bb-radius-xl);
+  padding: 1.25rem;
+  box-shadow: var(--bb-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-family: var(--bb-font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--bb-text-primary);
+    mat-icon { color: var(--bb-primary); }
+  }
+
+  // Zone video carree : le QR est carre, un cadre carre guide mieux la main.
+  &__viewport {
+    position: relative;
+    aspect-ratio: 1;
+    max-width: 100%;
+    border-radius: var(--bb-radius-lg);
+    overflow: hidden;
+    background: #0b1a12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    // Invisible tant que le flux n'est pas la : evite un rectangle noir figé.
+    opacity: 0;
+    transition: opacity var(--bb-transition);
+  }
+  &__viewport--actif &__video { opacity: 1; }
+
+  // Viseur : coins verts, le reste en leger voile.
+  &__cadre {
+    position: absolute;
+    inset: 14%;
+    border-radius: 12px;
+    box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.35);
+    background:
+      linear-gradient(var(--bb-bright), var(--bb-bright)) top left / 28px 3px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) top left / 3px 28px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) top right / 28px 3px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) top right / 3px 28px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) bottom left / 28px 3px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) bottom left / 3px 28px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) bottom right / 28px 3px no-repeat,
+      linear-gradient(var(--bb-bright), var(--bb-bright)) bottom right / 3px 28px no-repeat;
+  }
+
+  &__etat {
+    position: relative;
+    margin: 0;
+    padding: 0 1.5rem;
+    text-align: center;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #e6f4ea;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &--erreur { color: #fecaca; }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--bb-text-secondary);
+    text-align: center;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: center;
+  }
+}

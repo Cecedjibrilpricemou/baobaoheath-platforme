@@ -1080,26 +1080,11 @@
       "PENDING_SUB": "Patients expected at the pharmacy. Click a patient to open dispensing without waiting for their QR code.",
       "PENDING_LOADING": "Loading…",
       "PENDING_EMPTY": "No pending prescriptions right now.",
-      "PENDING_SINCE": "Prescribed on"
-    },
-    "SCANNER": {
-      "TITLE": "Scan QR Code",
-      "SUBTITLE": "Scan the patient's QR Code to access their prescriptions",
-      "PLACEHOLDER": "Enter or scan the patient's QR Code...",
-      "ARIA": "Patient QR Code",
-      "SEARCHING": "Searching...",
-      "SEARCH_BTN": "Search",
-      "HINT": "Press Enter or click Search",
-      "AGE_YEARS": "{{age}} years old",
-      "ORDO_COUNT": "{{count}} prescription(s)",
-      "EMPTY": "No prescription pending dispensing",
-      "LIST_TITLE": "Prescriptions to dispense",
-      "ALLERGY_CONFLICT": "Allergy conflict detected — Contact the prescribing doctor before dispensing",
-      "DURATION_QTY": "{{days}} days · Qty: {{qty}}",
-      "PRESCRIBED_BY": "Prescribed by {{name}}",
-      "TOTAL_LABEL": "Estimated total",
-      "DELIVER_BTN": "Proceed to dispensing",
-      "NEW_SCAN": "New scan"
+      "PENDING_SINCE": "Prescribed on",
+      "AGE": "{{age}} y/o",
+      "SEXE_F": "Female",
+      "SEXE_M": "Male",
+      "NO_ALLERGY": "No known allergy"
     },
     "STOCKS": {
       "TITLE": "Pharmacy stock",
@@ -1202,5 +1187,16 @@
     "EMPTY": "No notifications yet",
     "MARK_ALL_READ": "Mark all as read",
     "ERR_MARK_ALL": "Could not mark notifications as read"
+  },
+  "QR_SCANNER": {
+    "OPEN_BTN": "Scan with camera",
+    "TITLE": "Scan a QR code",
+    "STARTING": "Starting camera…",
+    "HINT": "Hold the patient's QR code inside the frame. It is read automatically.",
+    "MANUAL": "Type the code instead",
+    "ERR_PERMISSION": "Camera access denied. Allow the camera in your browser, or type the code.",
+    "ERR_NO_CAMERA": "No camera found on this device. Type the code instead.",
+    "ERR_INSECURE": "The camera is only available over HTTPS. Type the code instead.",
+    "ERR_GENERIC": "Could not start the camera. Type the code instead."
   }
 }

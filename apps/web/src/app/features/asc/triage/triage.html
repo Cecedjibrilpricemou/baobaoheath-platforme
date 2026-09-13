@@ -50,7 +50,15 @@
             <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
             {{ 'COMMON.SEARCH' | translate }}
           </button>
+          <button matButton="outlined" type="button" (click)="showScanner.set(true)" [disabled]="isSearching()">
+            <mat-icon fontSet="pi" fontIcon="pi-camera" aria-hidden="true"></mat-icon>
+            {{ 'QR_SCANNER.OPEN_BTN' | translate }}
+          </button>
         </div>
+
+        @if (showScanner()) {
+          <app-qr-scanner (detecte)="onQrDetecte($event)" (ferme)="showScanner.set(false)" />
+        }
 
         @if (searchResults().length > 0) {
           <div class="search-results mt-4" style="display: flex; flex-direction: column; gap: 12px;">

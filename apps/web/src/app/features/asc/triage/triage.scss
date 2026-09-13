@@ -120,8 +120,11 @@
 
   .search-box {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin-top: 24px;
+
+    .bb-search { flex: 1 1 260px; }
   }
 
   .patient-card {

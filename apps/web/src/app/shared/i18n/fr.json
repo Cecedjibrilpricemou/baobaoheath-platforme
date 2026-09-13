@@ -891,26 +891,11 @@
       "PENDING_SUB": "Patients attendus en pharmacie. Cliquez sur un patient pour ouvrir la délivrance, sans attendre son QR code.",
       "PENDING_LOADING": "Chargement…",
       "PENDING_EMPTY": "Aucune ordonnance en attente pour le moment.",
-      "PENDING_SINCE": "Prescrite le"
-    },
-    "SCANNER": {
-      "TITLE": "Scanner QR Code",
-      "SUBTITLE": "Scannez le QR Code du patient pour accéder à ses ordonnances",
-      "PLACEHOLDER": "Saisir ou scanner le QR Code du patient...",
-      "ARIA": "QR Code du patient",
-      "SEARCHING": "Recherche...",
-      "SEARCH_BTN": "Rechercher",
-      "HINT": "Appuyez sur Entrée ou cliquez sur Rechercher",
-      "AGE_YEARS": "{{age}} ans",
-      "ORDO_COUNT": "{{count}} ordonnance(s)",
-      "EMPTY": "Aucune ordonnance en attente de délivrance",
-      "LIST_TITLE": "Ordonnances à délivrer",
-      "ALLERGY_CONFLICT": "Conflit allergie détecté — Contactez le médecin prescripteur avant de délivrer",
-      "DURATION_QTY": "{{days}} jours · Qté : {{qty}}",
-      "PRESCRIBED_BY": "Prescrit par {{name}}",
-      "TOTAL_LABEL": "Total estimé",
-      "DELIVER_BTN": "Procéder à la délivrance",
-      "NEW_SCAN": "Nouveau scan"
+      "PENDING_SINCE": "Prescrite le",
+      "AGE": "{{age}} ans",
+      "SEXE_F": "Femme",
+      "SEXE_M": "Homme",
+      "NO_ALLERGY": "Aucune allergie connue"
     },
     "STOCKS": {
       "TITLE": "Stocks de la pharmacie",
@@ -1202,5 +1187,16 @@
     "EMPTY": "Aucune notification pour le moment",
     "MARK_ALL_READ": "Tout marquer comme lu",
     "ERR_MARK_ALL": "Impossible de marquer les notifications comme lues"
+  },
+  "QR_SCANNER": {
+    "OPEN_BTN": "Scanner avec la caméra",
+    "TITLE": "Scanner un QR code",
+    "STARTING": "Démarrage de la caméra…",
+    "HINT": "Placez le QR code du patient dans le cadre. La lecture est automatique.",
+    "MANUAL": "Saisir le code à la main",
+    "ERR_PERMISSION": "Accès à la caméra refusé. Autorisez la caméra dans votre navigateur, ou saisissez le code à la main.",
+    "ERR_NO_CAMERA": "Aucune caméra détectée sur cet appareil. Saisissez le code à la main.",
+    "ERR_INSECURE": "La caméra n'est disponible qu'en HTTPS. Saisissez le code à la main.",
+    "ERR_GENERIC": "Impossible de démarrer la caméra. Saisissez le code à la main."
   }
 }

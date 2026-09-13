@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
 import type {
   HorodatageApi,
   OrdonnanceDelivranceView,
@@ -20,7 +21,7 @@ import type {
   standalone: true,
   imports: [
     MatRadioModule,
-    MatFormFieldModule, MatInputModule,CommonModule, FormsModule, TranslatePipe],
+    MatFormFieldModule, MatInputModule, CommonModule, FormsModule, TranslatePipe, QrScannerComponent],
   templateUrl: './ordonnances.component.html',
   styleUrl: './ordonnances.component.scss'
 })
@@ -31,6 +32,8 @@ export class OrdonnancesComponent implements OnInit {
 
   // Scanner State
   qrCode       = '';
+  /** Lecture camera (app-qr-scanner) ; la saisie manuelle reste possible. */
+  showScanner  = signal(false);
   isScanning   = signal(false);
   errorMessage = signal('');
 
@@ -120,6 +123,23 @@ export class OrdonnancesComponent implements OnInit {
         this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('PHARMACIEN.ORDONNANCES.ERR_PATIENT_NOT_FOUND'));
       }
     });
+  }
+
+  /** QR lu par la camera : on le traite exactement comme une saisie + Rechercher. */
+  onQrDetecte(code: string) {
+    this.showScanner.set(false);
+    this.qrCode = code;
+    this.scan();
+  }
+
+  getAge(dateNaissance: string): number | null {
+    if (!dateNaissance) return null;
+    const n = new Date(dateNaissance);
+    if (Number.isNaN(n.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - n.getFullYear();
+    if (now < new Date(now.getFullYear(), n.getMonth(), n.getDate())) age--;
+    return age;
   }
 
   onKeyDown(event: KeyboardEvent) {

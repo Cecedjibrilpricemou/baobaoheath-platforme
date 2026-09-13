@@ -108,6 +108,15 @@ test('3. Pharmacien — voit l ordonnance en attente et la delivre', async ({ pa
   await login(page, E2E.pharmacien.email);
   await expect(page).toHaveURL(/\/pharmacien\/ordonnances/);
 
+  // Le scanner camera s'ouvre et se referme proprement. Sans camera (CI,
+  // headless) il affiche un message et propose la saisie manuelle : c'est
+  // ce repli qu'on verifie, pas la lecture elle-meme.
+  await page.getByRole('button', { name: /scanner avec la caméra/i }).click();
+  const scanner = page.getByRole('dialog', { name: /scanner un qr code/i });
+  await expect(scanner).toBeVisible();
+  await scanner.getByRole('button', { name: /saisir le code/i }).click();
+  await expect(scanner).toBeHidden();
+
   // La liste de la prefecture propose la patiente ; un clic ouvre la delivrance.
   const attente = page.locator('.bb-ordo__pending-item', { hasText: `${E2E.patient.prenom} ${E2E.patient.nom}` });
   await expect(attente.first()).toBeVisible();

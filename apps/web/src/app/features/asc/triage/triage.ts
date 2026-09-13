@@ -15,6 +15,7 @@ import { Patient } from '../../../core/models/patient.model';
 import { TriageResult, TriageHypothese } from '../../../core/models/asc.model';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
 
 @Component({
   selector: 'app-triage',
@@ -23,7 +24,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatSliderModule, MatProgressBarModule,
-    TranslatePipe
+    TranslatePipe, QrScannerComponent
   ],
   templateUrl: './triage.html',
   styleUrl: './triage.scss',
@@ -100,6 +101,28 @@ export class Triage {
       error: () => {
         this.isSearching.set(false);
         this.searchError.set(this.i18n.t('ASC.TRIAGE.ERR_SEARCH'));
+      }
+    });
+  }
+
+  /** Lecture du QR code du patient par la camera : meme resultat qu'une recherche puis selection. */
+  showScanner = signal(false);
+
+  onQrDetecte(code: string) {
+    this.showScanner.set(false);
+    this.isSearching.set(true);
+    this.searchError.set('');
+    this.patientService.getPatientByQr(code).subscribe({
+      next: (response) => {
+        this.isSearching.set(false);
+        const p = response.data;
+        if (!p) { this.searchError.set(this.i18n.t('ASC.TRIAGE.ERR_NO_PATIENT_FOUND')); return; }
+        this.searchResults.set([p]);
+        this.selectPatient(p);
+      },
+      error: (err) => {
+        this.isSearching.set(false);
+        this.searchError.set(err?.error?.error ?? this.i18n.t('ASC.TRIAGE.ERR_NO_PATIENT_FOUND'));
       }
     });
   }

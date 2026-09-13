@@ -93,6 +93,7 @@ export async function scanPatient(qrCode: string, pharmacienId: string) {
       prenom: patient.utilisateur.prenom,
       nom: patient.utilisateur.nom,
       dateNaissance: patient.dateNaissance.toISOString(),
+      sexe: patient.sexe,
       groupeSanguin: patient.groupeSanguin ?? undefined,
       allergiesCritiques: patient.allergies,
     },
