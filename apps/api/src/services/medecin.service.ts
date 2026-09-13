@@ -26,31 +26,6 @@ function lienEspace(role: string, sousChemin: string): string {
     return `${espaces[role] ?? '/'}${sousChemin}`;
 }
 
-// ─── Récupérer le profil du médecin connecté ─────────────
-export async function getMyMedecinProfile(userId: string) {
-    const medecin = await prisma.utilisateur.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            telephone: true,
-            email: true,
-            prenom: true,
-            nom: true,
-            photoUrl: true,
-            langue: true,
-            role: true,
-            structure: true,
-            creeLe: true,
-        },
-    });
-
-    if (!medecin) {
-        throw new NotFoundError('Médecin non trouvé');
-    }
-
-    return medecin;
-}
-
 // ─── Consultations à valider par le médecin ───────────────
 export async function getConsultationsAValider(
     userId: string,

@@ -603,10 +603,6 @@ export const swaggerDocument = {
     '/api/v1/consultations/{id}/complete': {
       post: { tags: ['Consultations'], summary: 'Clôturer une consultation', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Consultation clôturée' }, 400: { description: 'Consultation déjà terminée' } } },
     },
-    '/api/v1/consultations/{id}/diagnostics': {
-      get: { tags: ['Consultations'], summary: 'Liste des diagnostics', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Diagnostics récupérés' } } },
-      post: { tags: ['Consultations'], summary: 'Ajouter un diagnostic', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/DiagnosticDto' } } } }, responses: { 201: { description: 'Diagnostic ajouté' }, 400: { description: 'Données invalides' } } },
-    },
     '/api/v1/consultations/{id}/ordonnances': {
       post: { tags: ['Consultations'], summary: 'Ajouter une ordonnance', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } } }, responses: { 201: { description: 'Ordonnance ajoutée' }, 400: { description: 'Médicament non trouvé' } } },
     },
@@ -614,13 +610,6 @@ export const swaggerDocument = {
       post: { tags: ['Consultations'], summary: 'Créer un référencement', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ReferralDto' } } } }, responses: { 201: { description: 'Référencement créé' }, 400: { description: 'Référencement déjà existant ou structure non trouvée' } } },
     },
     // ─── ASC ──────────────────────────────────────────────
-    '/api/v1/asc/me': {
-      get: { tags: ['ASC'], summary: 'Profil ASC connecté', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Profil récupéré' }, 404: { description: 'Profil ASC non trouvé' } } },
-      put: { tags: ['ASC'], summary: 'Mettre à jour le profil ASC', security: [{ bearerAuth: [] }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { numeroCertification: { type: 'string' }, photoUrl: { type: 'string' }, zoneCouverture: { type: 'object', properties: { prefecture: { type: 'string' }, sousPrefectures: { type: 'array', items: { type: 'string' } } } } } } } } }, responses: { 200: { description: 'Profil mis à jour' }, 400: { description: 'Données invalides' } } },
-    },
-    '/api/v1/asc/patients': {
-      get: { tags: ['ASC'], summary: 'Patients de la zone ASC', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Liste récupérée' }, 404: { description: 'Profil ASC non trouvé' } } },
-    },
     '/api/v1/asc/planning': {
       get: { tags: ['ASC'], summary: "Planning de l'ASC", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Planning récupéré' }, 404: { description: 'Profil ASC non trouvé' } } },
     },
@@ -635,9 +624,6 @@ export const swaggerDocument = {
       get: { tags: ['ASC'], summary: 'Rapport mensuel', security: [{ bearerAuth: [] }], parameters: [{ name: 'mois', in: 'query', required: true, schema: { type: 'integer', minimum: 1, maximum: 12 }, example: 4 }, { name: 'annee', in: 'query', required: true, schema: { type: 'integer' }, example: 2026 }], responses: { 200: { description: 'Rapport généré', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/RapportMensuel' } } }] } } } }, 400: { description: 'Paramètres mois et annee requis' } } },
     },
     // ─── MEDECIN ──────────────────────────────────────────
-    '/api/v1/medecin/me': {
-      get: { tags: ['Médecin'], summary: 'Profil médecin connecté', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Profil récupéré' }, 404: { description: 'Médecin non trouvé' } } },
-    },
     '/api/v1/medecin/dashboard': {
       get: { tags: ['Médecin'], summary: 'Dashboard statistiques', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Statistiques récupérées', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/DashboardStats' } } }] } } } } } },
     },

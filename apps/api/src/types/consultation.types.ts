@@ -1,1 +1,1 @@
-export type { CreateConsultationDto, UpdateConsultationDto, VitalsDto, DiagnosticDto, OrdonnanceDto, ReferralDto, ConsultationFilters } from '@baobaoheath/shared-types';
+export type { CreateConsultationDto, VitalsDto, DiagnosticDto, OrdonnanceDto, ReferralDto, ConsultationFilters } from '@baobaoheath/shared-types';

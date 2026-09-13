@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import {
-  getMyMedecinProfileController,
   getDashboardStatsController,
   getConsultationsAValiderController,
   validerConsultationController,
@@ -25,7 +24,6 @@ router.use(authenticate);
 router.use(requireRole('MEDECIN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL'));
 
 // ─── Profil et dashboard ──────────────────────────────────
-router.get('/me', getMyMedecinProfileController);
 router.get('/dashboard', getDashboardStatsController);
 
 // ─── Consultations ────────────────────────────────────────

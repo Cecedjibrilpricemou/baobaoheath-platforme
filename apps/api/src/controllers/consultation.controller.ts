@@ -32,11 +32,6 @@ export async function getConsultationsController(req: AuthRequest, res: Response
     res.status(200).json({ success: true, ...result });
 }
 
-export async function updateConsultationController(req: RequestWithId, res: Response): Promise<void> {
-    const consultation = await consultationService.updateConsultation(req.user!, req.params.id, req.body);
-    res.status(200).json({ success: true, data: consultation });
-}
-
 export async function saveVitalsController(req: RequestWithId, res: Response): Promise<void> {
     const vitals = await consultationService.saveVitals(req.user!, req.params.id, req.body);
     res.status(200).json({ success: true, data: vitals });
@@ -50,11 +45,6 @@ export async function completeConsultationController(req: RequestWithId, res: Re
 export async function addDiagnosticController(req: RequestWithId, res: Response): Promise<void> {
     const diagnostic = await consultationService.addDiagnostic(req.user!, req.params.id, req.body);
     res.status(201).json({ success: true, data: diagnostic });
-}
-
-export async function getDiagnosticsController(req: RequestWithId, res: Response): Promise<void> {
-    const diagnostics = await consultationService.getDiagnostics(req.user!, req.params.id);
-    res.status(200).json({ success: true, data: diagnostics });
 }
 
 export async function addOrdonnanceController(req: RequestWithId, res: Response): Promise<void> {

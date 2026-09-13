@@ -7,7 +7,6 @@ import {
   DiagnosticDto,
   OrdonnanceDto,
   ReferralDto,
-  UpdateConsultationDto,
   VitalsDto,
 } from '../types/consultation.types';
 import {
@@ -139,37 +138,6 @@ export async function getConsultationById(user: JwtPayload, id: string) {
   return consultation;
 }
 
-export async function updateConsultation(
-  user: JwtPayload,
-  id: string,
-  dto: UpdateConsultationDto
-) {
-  const { asc } = await assertCanModifyAsAsc(user, id);
-
-  const updated = await prisma.consultation.update({
-    where: { id },
-    data: {
-      ...(dto.motifPrincipal && { motifPrincipal: dto.motifPrincipal }),
-      ...(dto.symptomes && { symptomes: dto.symptomes }),
-      ...(dto.notesAsc && { notesAsc: dto.notesAsc }),
-      ...(dto.protocoleUtilise && { protocoleUtilise: dto.protocoleUtilise }),
-      ...(dto.confianceIa !== undefined && { confianceIa: dto.confianceIa }),
-    },
-  });
-
-  await recordSyncEvent({
-    scope: 'medical',
-    entityType: 'Consultation',
-    entityId: id,
-    operation: SyncOperation.UPDATE,
-    idUtilisateur: user.userId,
-    idStructure: asc.idStructure ?? undefined,
-    payload: dto,
-  });
-
-  return updated;
-}
-
 export async function saveVitals(user: JwtPayload, idConsultation: string, dto: VitalsDto) {
   const { asc } = await assertCanModifyAsAsc(user, idConsultation);
   const consultation = await prisma.consultation.findUnique({
@@ -278,15 +246,6 @@ export async function addDiagnostic(
   });
 
   return diagnostic;
-}
-
-export async function getDiagnostics(user: JwtPayload, idConsultation: string) {
-  await assertCanAccessConsultation(user, idConsultation);
-
-  return prisma.diagnostic.findMany({
-    where: { idConsultation },
-    orderBy: { creeLe: 'asc' },
-  });
 }
 
 export async function addOrdonnance(

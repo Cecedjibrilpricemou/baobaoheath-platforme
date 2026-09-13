@@ -14,6 +14,5 @@ router.use(requireRole('PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIE
 router.get('/config', getConfigController);
 router.get('/changes', validateQuery(syncChangesQuerySchema), getChangesController);
 router.post('/push', validateBody(syncPushSchema), pushMutationsController);
-router.post('/mutations', validateBody(syncPushSchema), pushMutationsController);
 
 export default router;

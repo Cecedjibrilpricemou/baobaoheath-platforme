@@ -1,8 +1,5 @@
 import { Router } from 'express';
 import {
-    getMyAscProfileController,
-    updateAscProfileController,
-    getAscPatientsController,
     getAscPlanningController,
     getAscStocksController,
     createStockController,
@@ -13,7 +10,6 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import {
-  updateAscProfileSchema,
   createAscStockSchema,
   updateAscStockSchema,
 } from '../validators/api.schemas';
@@ -25,11 +21,8 @@ router.use(authenticate);
 router.use(requireRole('ASC', 'ASC_SUPERVISOR'));
 
 // ─── Profil ASC ───────────────────────────────────────────
-router.get('/me', getMyAscProfileController);
-router.put('/me', validateBody(updateAscProfileSchema), updateAscProfileController);
 
 // ─── Patients de la zone ──────────────────────────────────
-router.get('/patients', getAscPatientsController);
 
 // ─── Planning ─────────────────────────────────────────────
 router.get('/planning', getAscPlanningController);

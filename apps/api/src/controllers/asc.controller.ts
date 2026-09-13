@@ -6,33 +6,6 @@ import type { RendezVousAscView, StockAscView } from '@baobaoheath/shared-types'
 
 type RequestWithId = ExpressRequest<{ id: string }>;
 
-// ─── Récupérer le profil ASC connecté ────────────────────
-export async function getMyAscProfileController(
-    req: AuthRequest,
-    res: Response
-): Promise<void> {
-    const asc = await ascService.getMyAscProfile(req.user!.userId);
-        res.status(200).json({ success: true, data: asc });
-}
-
-// ─── Mettre à jour le profil ASC ─────────────────────────
-export async function updateAscProfileController(
-    req: AuthRequest,
-    res: Response
-): Promise<void> {
-    const asc = await ascService.updateAscProfile(req.user!.userId, req.body);
-        res.status(200).json({ success: true, data: asc });
-}
-
-// ─── Patients de la zone de l'ASC ────────────────────────
-export async function getAscPatientsController(
-    req: AuthRequest,
-    res: Response
-): Promise<void> {
-    const patients = await ascService.getAscPatients(req.user!.userId);
-        res.status(200).json({ success: true, data: patients });
-}
-
 // ─── Planning de l'ASC ────────────────────────────────────
 export async function getAscPlanningController(
     req: AuthRequest,

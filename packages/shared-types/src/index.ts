@@ -203,14 +203,6 @@ export interface CreateConsultationDto {
   symptomes?: string[];
 }
 
-export interface UpdateConsultationDto {
-  motifPrincipal?: string;
-  symptomes?: string[];
-  notesAsc?: string;
-  protocoleUtilise?: string;
-  confianceIa?: number;
-}
-
 export interface VitalsDto {
   temperature?: number;
   poidsKg?: number;
@@ -379,15 +371,6 @@ export interface TriageResult {
 }
 
 // ─── ASC DTOs ─────────────────────────────────────────────────────────────────
-export interface UpdateAscProfileDto {
-  numeroCertification?: string;
-  photoUrl?: string;
-  zoneCouverture?: {
-    prefecture: string;
-    sousPrefectures: string[];
-  };
-}
-
 export interface CreateStockDto {
   idMedicament: string;
   quantite: number;

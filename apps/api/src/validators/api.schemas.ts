@@ -161,14 +161,6 @@ export const createConsultationSchema = z.object({
   symptomes: z.array(z.string().trim().min(1).max(120)).optional(),
 }).strict();
 
-export const updateConsultationSchema = z.object({
-  motifPrincipal: z.string().trim().min(2).max(500).optional(),
-  symptomes: z.array(z.string().trim().min(1).max(120)).optional(),
-  notesAsc: z.string().trim().max(2000).optional(),
-  protocoleUtilise: z.string().trim().max(200).optional(),
-  confianceIa: z.coerce.number().min(0).max(1).optional(),
-}).strict();
-
 export const vitalsSchema = z.object({
   temperature: z.coerce.number().min(20).max(45).optional(),
   poidsKg: z.coerce.number().positive().max(300).optional(),
@@ -276,12 +268,6 @@ export const updateVaccinationSchema = z.object({
   reaction: z.string().trim().max(500).optional(),
   urlCertificat: z.string().url().optional(),
   dateProchaineD: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide').optional(),
-}).strict();
-
-export const updateAscProfileSchema = z.object({
-  bio: z.string().trim().max(500).optional(),
-  photoUrl: z.string().url().optional(),
-  telephone: phone.optional(),
 }).strict();
 
 export const createAscStockSchema = z.object({

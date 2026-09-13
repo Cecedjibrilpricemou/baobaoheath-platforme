@@ -12,15 +12,6 @@ import type {
 
 type RequestWithId = ExpressRequest<{ id: string }>;
 
-// ─── Profil du médecin connecté ───────────────────────────
-export async function getMyMedecinProfileController(
-  req: AuthRequest,
-  res: Response
-): Promise<void> {
-  const medecin = await medecinService.getMyMedecinProfile(req.user!.userId);
-    res.status(200).json({ success: true, data: medecin });
-}
-
 // ─── Dashboard statistiques ───────────────────────────────
 export async function getDashboardStatsController(
   req: AuthRequest,
