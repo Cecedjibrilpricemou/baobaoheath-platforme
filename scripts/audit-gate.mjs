@@ -62,6 +62,18 @@ const EXCEPTIONS = [
   },
 ];
 
+// Ce que couvrent ces trois exceptions ne tourne pas en production : depuis
+// le Dockerfile de l'API (etape prod-deps), l'image embarque les seules
+// dependances de production — la CLI prisma, mysql2 et deepmerge-ts n'y sont
+// pas. Elles restent dans l'arbre audite ici parce que la CI et le job Deploy
+// en ont besoin (migrate deploy depuis le runner).
+//
+// Piste ecartee (13/09/2026) : `overrides` npm sur mysql2 / deepmerge-ts.
+// Avec npm 11 et les workspaces, l'override d'une dependance epinglee en
+// version exacte par prisma retire le paquet de l'arbre au lieu de le
+// remplacer, et la CLI ne demarre plus. A reessayer quand prisma > 7.10
+// relachera ses epingles.
+
 const AUTORISES = new Set(EXCEPTIONS.map((e) => e.ghsa));
 const BLOQUANTS = new Set(['high', 'critical']);
 
