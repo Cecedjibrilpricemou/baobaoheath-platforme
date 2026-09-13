@@ -2,9 +2,10 @@
 //
 //   E2E_DATABASE_URL=postgresql://... npm run e2e --workspace=apps/web
 //
-// Le setup global applique les migrations et le seed e2e sur cette base,
-// puis Playwright demarre l'API (port 3000) et le front (port 4200). En CI
-// (.github/workflows/ci.yml, job e2e) la base est un service Postgres.
+// La commande de demarrage de l'API applique d'abord les migrations et le
+// seed e2e sur cette base (Playwright lance les serveurs avant tout setup :
+// c'est le seul point ou l'ordre est garanti), puis le front (port 4200). En
+// CI (.github/workflows/ci.yml, job e2e) la base est un service Postgres.
 import { defineConfig, devices } from '@playwright/test';
 import { resolve } from 'node:path';
 
@@ -35,7 +36,6 @@ export const API_ENV: Record<string, string> = {
 
 export default defineConfig({
   testDir: './e2e',
-  globalSetup: './e2e/global-setup.ts',
   timeout: 90_000,
   expect: { timeout: 15_000 },
   // Les trois parcours partagent la meme base et s'enchainent (ASC cree ce
@@ -61,8 +61,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // Sans --watch : rien ne doit relancer l'API au milieu d'un parcours.
-      command: 'npx tsx src/index.ts',
+      // Migrations + seed (idempotent) avant l'API. Sans --watch : rien ne
+      // doit relancer l'API au milieu d'un parcours.
+      command: 'npx prisma migrate deploy --config prisma.config.ts && npx tsx prisma/seed-e2e.ts && npx tsx src/index.ts',
       cwd: resolve(RACINE, 'apps/api'),
       url: `http://localhost:${API_PORT}/health`,
       env: API_ENV,

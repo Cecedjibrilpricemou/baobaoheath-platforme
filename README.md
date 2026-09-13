@@ -88,7 +88,7 @@ npm test --workspace=apps/web     # unitaires web (vitest)
 
 ### End-to-end (Playwright)
 
-Trois parcours réels enchaînés dans un navigateur, contre la vraie API et une base PostgreSQL **jetable** — jamais la base de développement : le setup migre et seed la base, puis démarre l'API et le front lui-même.
+Trois parcours réels enchaînés dans un navigateur, contre la vraie API et une base PostgreSQL **jetable** — jamais la base de développement : Playwright migre et seed la base, puis démarre l'API et le front lui-même.
 
 ```bash
 # 1. une base vide (docker), 2. lancer
