@@ -359,10 +359,11 @@
       "NO_CONSULT": "Aucune consultation",
       "NO_CONSULT_SUB": "Vos consultations apparaîtront ici",
       "NO_VACCINE": "Aucune vaccination",
-      "NO_VACCINE_SUB": "Votre carnet vaccinal apparaîtra ici",
+      "NO_VACCINE_SUB": "Vos vaccinations sont enregistrées par votre agent de santé lors des consultations.",
       "REMINDER": "Rappel",
       "EXPORTING": "Export...",
-      "DEFAULT_MOTIF": "Consultation générale"
+      "DEFAULT_MOTIF": "Consultation générale",
+      "WITH_AGENT": "avec {{nom}}"
     },
     "PROFILE": {
       "TITLE": "Mon Profil",
@@ -539,7 +540,7 @@
       "EXPIRES_SOON": "Bientôt",
       "UNIT_DEFAULT": "unités",
       "EMPTY_TITLE": "Aucun médicament",
-      "EMPTY_SUB": "L'inventaire apparaîtra ici",
+      "EMPTY_SUB": "Ajoutez les médicaments de votre poste pour suivre les quantités et être alerté avant la rupture.",
       "EMPTY_SEARCH": "Aucun résultat pour",
       "LOADING": "Chargement des stocks...",
       "SUCCESS_UPDATE": "Stock mis à jour avec succès !",
@@ -559,7 +560,8 @@
       "SUCCESS_CREATE": "Médicament ajouté à votre stock.",
       "ERR_CREATE": "Impossible d'ajouter ce médicament.",
       "ERR_CREATE_OFFLINE": "L'ajout d'un médicament nécessite une connexion. Vous pourrez modifier les quantités hors ligne une fois la ligne créée.",
-      "ERR_CATALOGUE": "Impossible de charger le catalogue des médicaments."
+      "ERR_CATALOGUE": "Impossible de charger le catalogue des médicaments.",
+      "EMPTY_ACTION": "Ajouter mon premier médicament"
     },
     "PLANNING": {
       "TITLE": "Mon Planning",
@@ -928,7 +930,8 @@
       "NIVEAU_NORMAL": "Normal",
       "ERR_REQUIRED": "Médicament et quantité sont obligatoires.",
       "SUCCESS_REAPPRO": "Stock réapprovisionné avec succès !",
-      "ERR_REAPPRO": "Erreur lors du réapprovisionnement."
+      "ERR_REAPPRO": "Erreur lors du réapprovisionnement.",
+      "EMPTY_ACTION": "Réapprovisionner un médicament"
     }
   },
   "ADMIN": {

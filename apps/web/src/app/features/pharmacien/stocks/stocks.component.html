@@ -121,6 +121,11 @@
       <i class="pi pi-inbox"></i>
       <p>{{ 'PHARMACIEN.STOCKS.EMPTY_TITLE' | translate }}</p>
       <span>{{ 'PHARMACIEN.STOCKS.EMPTY_SUB' | translate }}</span>
+      @if (!searchQuery() && !showForm()) {
+      <button type="button" class="bb-ph-stocks__add-btn bb-ph-stocks__empty-action" (click)="showForm.set(true)">
+        <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.STOCKS.EMPTY_ACTION' | translate }}
+      </button>
+      }
     </div>
   } @else {
     <div class="bb-ph-stocks__list">

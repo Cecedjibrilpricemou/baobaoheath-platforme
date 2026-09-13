@@ -420,6 +420,10 @@ export async function getMesConsultations(
         diagnostics: true,
         ordonnances: { include: { medicament: true } },
         facture: true,
+        // Qui a vu le patient : affiche dans son dossier et son tableau de
+        // bord ("Agent Mamadou Bah"), a la place d'un motif technique.
+        asc: { select: { utilisateur: { select: { prenom: true, nom: true } } } },
+        medecinValideur: { select: { prenom: true, nom: true } },
       },
       orderBy: { consulteeLE: 'desc' },
     }),

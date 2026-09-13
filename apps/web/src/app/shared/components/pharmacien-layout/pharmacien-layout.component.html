@@ -67,11 +67,7 @@
         <mat-icon fontSet="pi" fontIcon="pi-bars" aria-hidden="true"></mat-icon>
       </button>
 
-      <label class="bb-search">
-        <mat-icon fontSet="pi" fontIcon="pi-search" class="bb-search__icon" aria-hidden="true"></mat-icon>
-        <input class="bb-search__input" type="search" [placeholder]="'COMMON.SEARCH' | translate" />
-        <kbd class="bb-search__hint" aria-hidden="true">⌘F</kbd>
-      </label>
+      <app-topbar-crumb [rootKey]="'PHARMACIEN.ROLE'" [items]="navItems" />
 
       <span class="bb-topbar__spacer"></span>
 

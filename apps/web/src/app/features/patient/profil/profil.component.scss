@@ -347,7 +347,7 @@
   &--success {
     background: var(--bb-success-bg);
     border-color: var(--bb-success-border);
-    color: var(--bb-deep);
+    color: var(--bb-text-primary);
 
     &::before {
       background: var(--bb-primary);
@@ -564,7 +564,9 @@
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  background: linear-gradient(135deg, var(--bb-success-bg), color-mix(in srgb, var(--bb-success-bg) 60%, #fff));
+  // Melange avec la surface du theme, pas avec du blanc : en sombre, le
+  // blanc eclaircissait la carte et le texte clair devenait illisible.
+  background: linear-gradient(135deg, var(--bb-success-bg), color-mix(in srgb, var(--bb-success-bg) 60%, var(--bb-surface-card)));
   border: 1px solid var(--bb-success-border);
   border-radius: var(--bb-radius-lg);
   margin-bottom: 18px;
@@ -594,7 +596,7 @@
     font-family: var(--bb-font-display);
     font-size: 14.5px;
     font-weight: 700;
-    color: var(--bb-deep);
+    color: var(--bb-text-primary);
   }
 
   &__meta {

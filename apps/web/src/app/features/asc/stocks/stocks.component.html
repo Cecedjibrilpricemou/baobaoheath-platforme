@@ -132,6 +132,12 @@
         {{ 'ASC.STOCKS.EMPTY_SUB' | translate }}
         }
       </p>
+      <!-- L'action est dans l'etat vide lui-meme : pas a chercher plus haut. -->
+      @if (!searchQuery() && !showAjout()) {
+      <button matButton="filled" type="button" class="mt-3" (click)="ouvrirAjout()">
+        <i class="pi pi-plus" aria-hidden="true"></i> {{ 'ASC.STOCKS.EMPTY_ACTION' | translate }}
+      </button>
+      }
     </div>
     } @else {
 

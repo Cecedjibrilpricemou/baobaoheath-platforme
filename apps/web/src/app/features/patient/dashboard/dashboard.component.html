@@ -103,7 +103,10 @@
                 <div class="list-item__dot list-item__dot--green"></div>
                 <div class="list-item__body">
                   <span class="list-item__title">{{ c.motif || ('PATIENT.DASHBOARD.DEFAULT_MOTIF' | translate) }}</span>
-                  <span class="list-item__sub">{{ formatDate(c.date) }}</span>
+                  <span class="list-item__sub">
+                    {{ formatDate(c.date) }}
+                    @if (c.asc) { · {{ 'PATIENT.DASHBOARD.WITH_AGENT' | translate: { nom: c.asc.prenom + ' ' + c.asc.nom } }} }
+                  </span>
                 </div>
                 <span [class]="'bb-badge bb-badge--' + (getStatutSeverity(c.statut) | severiteVariante)">{{ getStatutLabel(c.statut) }}</span>
               </div>

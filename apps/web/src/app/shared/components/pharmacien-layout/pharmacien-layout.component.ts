@@ -18,6 +18,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ProfilModalComponent } from '../profil-modal/profil-modal.component';
 import { AvatarComponent } from '../avatar/avatar.component';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
+import { TopbarCrumbComponent } from '../topbar-crumb/topbar-crumb.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -25,7 +26,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/con
   standalone: true,
   imports: [
     CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe,
-    ProfilModalComponent, AvatarComponent, NotificationBellComponent,
+    ProfilModalComponent, AvatarComponent, NotificationBellComponent, TopbarCrumbComponent,
     MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule,
     MatButtonModule, MatMenuModule, MatTooltipModule, MatDialogModule,
   ],

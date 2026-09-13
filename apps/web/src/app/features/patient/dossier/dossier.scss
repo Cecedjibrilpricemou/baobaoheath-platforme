@@ -10,7 +10,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: white;
+  background: var(--bb-surface-card);
   padding: 32px;
   border-radius: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
@@ -18,12 +18,12 @@
   .header-content h1 {
     font-size: 28px;
     font-weight: 700;
-    color: var(--bb-deep);
+    color: var(--bb-text-primary);
     margin: 0 0 8px 0;
   }
   
   .header-content p {
-    color: #64748b;
+    color: var(--bb-text-secondary);
     margin: 0;
     font-size: 15px;
   }
@@ -41,7 +41,7 @@
 }
 
 .section-card {
-  background: white;
+  background: var(--bb-surface-card);
   border-radius: 24px;
   padding: 32px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
@@ -64,7 +64,7 @@
   h2 {
     font-size: 22px;
     font-weight: 600;
-    color: var(--bb-deep);
+    color: var(--bb-text-primary);
     margin: 0;
   }
 }
@@ -95,7 +95,7 @@
   }
   .timeline-card {
     box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bb-border-light);
     border-radius: 16px;
     
     .p-card-header {
@@ -106,7 +106,7 @@
     }
     p {
       margin: 4px 0;
-      color: #475569;
+      color: var(--bb-text-secondary);
       font-size: 14px;
     }
   }
@@ -124,9 +124,9 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: #f8fafc;
+  background: var(--bb-surface-1);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--bb-border-light);
   transition: transform 0.2s, box-shadow 0.2s;
   
   &:hover {
@@ -159,13 +159,13 @@
       margin: 0 0 4px 0;
       font-size: 16px;
       font-weight: 600;
-      color: var(--bb-deep);
+      color: var(--bb-text-primary);
     }
     
     p {
       margin: 0;
       font-size: 14px;
-      color: #64748b;
+      color: var(--bb-text-secondary);
     }
   }
 }

@@ -99,8 +99,11 @@ export class Dossier implements OnInit {
   private toTimelineItem(c: Consultation): TimelineItem {
     const style = STATUT_STYLE[c.statut];
     const label = style ? this.i18n.t(style.statutKey) : c.statut;
-    const intervenant = c.medecin?.utilisateur
-      ? `${this.i18n.t('PATIENT.DOSSIER.DOCTOR_PREFIX')} ${c.medecin.utilisateur.prenom} ${c.medecin.utilisateur.nom}`
+    // L'API renvoie medecinValideur (contrat ConsultationView) ; `medecin`
+    // est la forme historique de certains ecrans.
+    const medecin = c.medecinValideur ?? c.medecin?.utilisateur;
+    const intervenant = medecin
+      ? `${this.i18n.t('PATIENT.DOSSIER.DOCTOR_PREFIX')} ${medecin.prenom} ${medecin.nom}`
       : c.asc?.utilisateur
         ? `${this.i18n.t('PATIENT.DOSSIER.AGENT_PREFIX')} ${c.asc.utilisateur.prenom} ${c.asc.utilisateur.nom}`
         : '—';
