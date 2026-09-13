@@ -9,6 +9,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 import {
+  ConfigSyncView,
   SyncService,
   SyncMutationInput,
   SyncOperation,
@@ -18,6 +19,18 @@ import {
 const CLE_FILE = 'bb-sync-queue';
 const CLE_DEVICE = 'bb-device-id';
 const CLE_DERNIERE_SYNC = 'bb-last-sync';
+
+// Memes valeurs que les defauts serveur (parametres.service.ts) : tant que
+// GET /sync/config n'a pas repondu, le comportement est celui d'avant.
+const CONFIG_PAR_DEFAUT: ConfigSyncView = { offlineMode: true, frequenceMinutes: 30 };
+
+/** Levee quand une ecriture echoue hors connexion et que la mise en file est interdite. */
+export class ModeHorsLigneDesactiveError extends Error {
+  constructor() {
+    super("Le mode hors-ligne est désactivé par l'administrateur : réessayez avec une connexion.");
+    this.name = 'ModeHorsLigneDesactiveError';
+  }
+}
 
 export interface MutationEnAttente extends SyncMutationInput {
   /** Libellé lisible affiché dans le centre de synchronisation. */
@@ -75,7 +88,12 @@ export class OfflineQueueService {
   readonly rejetees = computed(() => this._file().filter(m => m.statut === 'rejected'));
   readonly nbEnAttente = computed(() => this.enAttente().length);
 
+  private readonly _config = signal<ConfigSyncView>(CONFIG_PAR_DEFAUT);
+  /** Reglages hors-ligne de la plateforme (voir chargerConfig). */
+  readonly config = this._config.asReadonly();
+
   private readonly deviceId = this.chargerDeviceId();
+  private minuteurSyncAuto: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     window.addEventListener('online', () => {
@@ -87,15 +105,44 @@ export class OfflineQueueService {
   }
 
   /**
+   * Lit les reglages du super-admin (mode hors-ligne autorise, frequence de
+   * synchronisation) et arme la synchronisation periodique. A appeler depuis
+   * un layout authentifie : l'endpoint exige une session.
+   */
+  chargerConfig(): void {
+    this.syncService.getConfig().subscribe({
+      next: res => { if (res.data) this.appliquerConfig(res.data); },
+      error: () => { /* defauts conserves */ },
+    });
+  }
+
+  appliquerConfig(config: ConfigSyncView): void {
+    this._config.set(config);
+    this.armerSyncAuto(config.frequenceMinutes);
+  }
+
+  private armerSyncAuto(frequenceMinutes: number): void {
+    if (this.minuteurSyncAuto) clearInterval(this.minuteurSyncAuto);
+    this.minuteurSyncAuto = setInterval(() => {
+      if (navigator.onLine) this.synchroniser();
+    }, Math.max(1, frequenceMinutes) * 60_000);
+  }
+
+  /**
    * Exécute une écriture, avec repli sur la file locale si le réseau manque.
    *
    * Seules les pannes de connectivité déclenchent la mise en file : si le
    * serveur a répondu (4xx/5xx), il a rejeté la donnée en connaissance de
    * cause et la rejouer plus tard ne ferait que la faire rejeter à nouveau —
    * l'erreur remonte donc à l'appelant.
+   *
+   * Si le super-admin a désactivé le mode hors-ligne, rien n'est mis en file :
+   * l'écriture échoue avec ModeHorsLigneDesactiveError et l'agent doit
+   * réessayer connecté.
    */
   executeOrQueue<T>(requete$: Observable<T>, repli: EnqueueInput): Observable<ResultatEcriture<T>> {
     if (!navigator.onLine) {
+      if (!this._config().offlineMode) return throwError(() => new ModeHorsLigneDesactiveError());
       // Inutile de tenter l'appel : on file directement, sans faire patienter
       // l'agent derrière un timeout réseau.
       return of({ synchronise: false, mutation: this.enqueue(repli) });
@@ -105,6 +152,7 @@ export class OfflineQueueService {
       map(data => ({ synchronise: true, data }) as ResultatEcriture<T>),
       catchError((erreur: unknown) => {
         if (!this.estPanneReseau(erreur)) return throwError(() => erreur);
+        if (!this._config().offlineMode) return throwError(() => new ModeHorsLigneDesactiveError());
         return of({ synchronise: false, mutation: this.enqueue(repli) } as ResultatEcriture<T>);
       })
     );

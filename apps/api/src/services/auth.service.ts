@@ -6,6 +6,7 @@ import { ForgotPasswordDto, LoginDto, LoginResult, RegisterDto, ResetPasswordDto
 import { generateTokenPair } from '../utils/jwt.utils';
 import { hashPassword, verifyPassword } from '../utils/password.utils';
 import { envoyerEmailResetMotDePasse, envoyerOtpConnexion } from './email.service';
+import { initialiserConsentementsParDefaut } from './privacy.service';
 import {
   AppError,
   ConflictError,
@@ -71,7 +72,7 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
       },
     });
 
-    await tx.patientProfile.create({
+    const patient = await tx.patientProfile.create({
       data: {
         idUtilisateur: user.id,
         dateNaissance: new Date('2000-01-01'),
@@ -79,6 +80,8 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
         prefecture: 'Conakry',
       },
     });
+
+    await initialiserConsentementsParDefaut(tx, patient.id, user.id);
 
     return user;
   });

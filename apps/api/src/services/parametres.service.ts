@@ -28,8 +28,6 @@ export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
     margePct: 15,
   },
   securite: {
-    force2FA: false,
-    sessionTimeoutMinutes: 15,
     consentementDefaut: true,
   },
   alertes: {

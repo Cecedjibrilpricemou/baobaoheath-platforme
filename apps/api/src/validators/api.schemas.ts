@@ -335,8 +335,6 @@ export const updateParametresSystemeSchema = z.object({
     margePct: z.coerce.number().int().min(0).max(50),
   }).partial().strict().optional(),
   securite: z.object({
-    force2FA: z.boolean(),
-    sessionTimeoutMinutes: z.coerce.number().int().min(5).max(1440),
     consentementDefaut: z.boolean(),
   }).partial().strict().optional(),
   alertes: z.object({

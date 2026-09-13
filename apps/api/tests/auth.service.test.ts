@@ -26,6 +26,12 @@ jest.mock('../src/utils/jwt.utils', () => ({
   verifyToken: jest.fn(),
 }));
 
+// register() initialise les consentements de soins dans la transaction ;
+// l'effet est couvert par privacy-consentements-defaut.test.ts.
+jest.mock('../src/services/privacy.service', () => ({
+  initialiserConsentementsParDefaut: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('../src/utils/password.utils', () => ({
   hashPassword: jest.fn().mockResolvedValue('$hashed'),
   verifyPassword: jest.fn(),
@@ -268,7 +274,7 @@ describe('register', () => {
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => {
       const mockTx = {
         utilisateur: { create: jest.fn().mockResolvedValue(mockUser) },
-        patientProfile: { create: jest.fn().mockResolvedValue({}) },
+        patientProfile: { create: jest.fn().mockResolvedValue({ id: 'new-patient' }) },
       };
       return fn(mockTx);
     });

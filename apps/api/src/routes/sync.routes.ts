@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getChangesController, pushMutationsController } from '../controllers/sync.controller';
+import { getChangesController, getConfigController, pushMutationsController } from '../controllers/sync.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
@@ -10,6 +10,8 @@ const router = Router();
 router.use(authenticate);
 router.use(requireRole('PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'ADMIN_STRUCTURE'));
 
+// Lu par le client web au demarrage : mode hors-ligne autorise, frequence de rejeu.
+router.get('/config', getConfigController);
 router.get('/changes', validateQuery(syncChangesQuerySchema), getChangesController);
 router.post('/push', validateBody(syncPushSchema), pushMutationsController);
 router.post('/mutations', validateBody(syncPushSchema), pushMutationsController);

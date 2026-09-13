@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 
-import { OfflineQueueService, EnqueueInput } from './offline-queue.service';
+import { OfflineQueueService, EnqueueInput, ModeHorsLigneDesactiveError } from './offline-queue.service';
 import {
   SyncService,
   SyncMutationInput,
@@ -166,6 +166,40 @@ describe('OfflineQueueService', () => {
       );
 
       expect(erreurRecue).toBe(refus);
+      expect(service.nbEnAttente()).toBe(0);
+    });
+
+    // Le super-admin peut interdire le mode hors-ligne (Parametres > Hors-ligne) :
+    // la saisie ne doit alors ni partir en file ni disparaitre en silence.
+    it('refuse la mise en file hors ligne quand le mode hors-ligne est desactive', async () => {
+      simulerReseau(false);
+      const service = creerService();
+      service.appliquerConfig({ offlineMode: false, frequenceMinutes: 30 });
+
+      const erreurRecue = await new Promise<unknown>((resolve) =>
+        service.executeOrQueue(of({ id: 'c1' }), CONSULTATION).subscribe({
+          next: () => resolve(null),
+          error: resolve,
+        })
+      );
+
+      expect(erreurRecue).toBeInstanceOf(ModeHorsLigneDesactiveError);
+      expect(service.nbEnAttente()).toBe(0);
+    });
+
+    it('refuse aussi la mise en file sur panne reseau quand le mode hors-ligne est desactive', async () => {
+      const service = creerService();
+      service.appliquerConfig({ offlineMode: false, frequenceMinutes: 30 });
+      const panne = new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' });
+
+      const erreurRecue = await new Promise<unknown>((resolve) =>
+        service.executeOrQueue(throwError(() => panne), CONSULTATION).subscribe({
+          next: () => resolve(null),
+          error: resolve,
+        })
+      );
+
+      expect(erreurRecue).toBeInstanceOf(ModeHorsLigneDesactiveError);
       expect(service.nbEnAttente()).toBe(0);
     });
   });

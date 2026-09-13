@@ -1,6 +1,14 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as syncService from '../services/sync.service';
+import { getValeursParametres } from '../services/parametres.service';
+import type { ConfigSyncView } from '@baobaoheath/shared-types';
+
+export async function getConfigController(_req: AuthRequest, res: Response): Promise<void> {
+  const { sync } = await getValeursParametres();
+  const data: ConfigSyncView = { offlineMode: sync.offlineMode, frequenceMinutes: sync.frequenceMinutes };
+  res.status(200).json({ success: true, data });
+}
 
 export async function getChangesController(req: AuthRequest, res: Response): Promise<void> {
   const since = typeof req.query.since === 'string' ? new Date(req.query.since) : undefined;

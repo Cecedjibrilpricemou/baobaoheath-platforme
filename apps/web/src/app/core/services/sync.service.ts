@@ -3,7 +3,10 @@
 // La file d'attente locale et la logique de rejeu vivent dans OfflineQueueService.
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import type { ApiResponse, ConfigSyncView } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
+
+export type { ConfigSyncView } from '@baobaoheath/shared-types';
 
 export type SyncOperation = 'CREATE' | 'UPDATE' | 'DELETE';
 export type SyncMutationStatut = 'RECU' | 'TRAITE' | 'REJETE';
@@ -70,5 +73,10 @@ export class SyncService {
 
   pushMutations(mutations: SyncMutationInput[]): Observable<SyncPushResponse> {
     return this.api.post<SyncPushResponse>('/sync/push', { mutations });
+  }
+
+  /** Reglages hors-ligne definis par le super-admin (Parametres > Hors-ligne & USSD). */
+  getConfig(): Observable<ApiResponse<ConfigSyncView>> {
+    return this.api.get<ApiResponse<ConfigSyncView>>('/sync/config');
   }
 }

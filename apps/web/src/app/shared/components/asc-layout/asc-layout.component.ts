@@ -65,6 +65,10 @@ export class AscLayoutComponent {
   constructor(iconRegistry: MatIconRegistry) {
     iconRegistry.registerFontClassAlias('pi', 'pi');
 
+    // Reglages hors-ligne du super-admin : l'espace ASC est le seul a ecrire
+    // hors connexion, c'est ici que la session est garantie.
+    this.offlineQueue.chargerConfig();
+
     window.addEventListener('online', () => {
       this.isOnline.set(true);
       this.justCameOnline.set(true);

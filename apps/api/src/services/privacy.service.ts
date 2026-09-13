@@ -1,6 +1,41 @@
 import { ConsentScope } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { ForbiddenError, NotFoundError } from '../utils/app-error';
+import { getValeursParametres } from './parametres.service';
+
+// Consentements accordes d'office a la creation d'un dossier quand le
+// super-admin l'a choisi (securite.consentementDefaut). Uniquement ceux
+// necessaires aux soins : l'export FHIR et la recherche restent opt-in.
+const SCOPES_SOINS: ConsentScope[] = [ConsentScope.DOSSIER_MEDICAL, ConsentScope.RAPPELS_SMS];
+export const SOURCE_DEFAUT_SYSTEME = 'DEFAUT_SYSTEME';
+
+// Le client etendu (chiffrement de champs) n'est pas assignable a
+// Prisma.TransactionClient : on ne demande que ce qu'on utilise.
+type ClientConsentements = Pick<typeof prisma, 'consentementPatient'>;
+
+/**
+ * A appeler dans la transaction qui cree le PatientProfile. Le patient peut
+ * retirer chaque consentement ensuite depuis sa page Consentements.
+ */
+export async function initialiserConsentementsParDefaut(
+  tx: ClientConsentements,
+  idPatient: string,
+  idUtilisateur: string,
+): Promise<void> {
+  const { securite } = await getValeursParametres();
+  if (!securite.consentementDefaut) return;
+
+  await tx.consentementPatient.createMany({
+    data: SCOPES_SOINS.map((scope) => ({
+      idPatient,
+      idUtilisateur,
+      scope,
+      actif: true,
+      source: SOURCE_DEFAUT_SYSTEME,
+    })),
+    skipDuplicates: true,
+  });
+}
 
 export async function getPatientForUser(userId: string) {
   const patient = await prisma.patientProfile.findUnique({

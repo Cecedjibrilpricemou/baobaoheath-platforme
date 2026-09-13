@@ -7,6 +7,7 @@ import { generateTokenPair } from '../utils/jwt.utils';
 import { hashPassword } from '../utils/password.utils';
 import { assertCanAccessPatient, buildPatientWhereForUser } from './access-control.service';
 import { recordSyncEvent } from './sync.service';
+import { initialiserConsentementsParDefaut } from './privacy.service';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/app-error';
 
 export async function createPatient(dto: CreatePatientDto) {
@@ -49,6 +50,8 @@ export async function createPatient(dto: CreatePatientDto) {
         },
       },
     });
+
+    await initialiserConsentementsParDefaut(tx, patient.id, utilisateur.id);
 
     return { utilisateur, patient };
   });

@@ -3,6 +3,7 @@ import { prisma } from '../config/prisma';
 import { Role, StatutOrdonnance, TypeStructure } from '../config/generated/client/client';
 import { hashPassword } from '../utils/password.utils';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { getValeursParametres } from './parametres.service';
 
 type CreateAgentPharmacieDto = {
   telephone: string;
@@ -212,6 +213,11 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
     });
   }
 
+  // Sans marge saisie, on applique la marge par defaut de la plateforme
+  // (Parametres > Facturation) au prix national de reference du medicament.
+  const { facturation } = await getValeursParametres();
+  const margeParDefautGnf = Math.round(medicament.prixUnitaireGnf * facturation.margePct / 100);
+
   return prisma.stock.create({
     data: {
       idMedicament: dto.idMedicament,
@@ -220,7 +226,7 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
       seuilAlerte: 10,
       unite: dto.unite ?? 'unite',
       datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
-      margeGnf: dto.margeGnf ?? 0,
+      margeGnf: dto.margeGnf ?? margeParDefautGnf,
     },
     include: { medicament: true },
   });

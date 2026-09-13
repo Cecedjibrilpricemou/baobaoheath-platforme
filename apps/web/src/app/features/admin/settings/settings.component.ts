@@ -2,7 +2,6 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -29,7 +28,7 @@ type Onglet = keyof ParametresSystemeValeurs;
   selector: 'app-settings',
   standalone: true,
   imports: [
-    MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule, MatSliderModule,
+    MatButtonModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule, MatSliderModule,
     MatProgressSpinnerModule, CommonModule, FormsModule, RouterLink, TranslatePipe
   ],
   templateUrl: './settings.component.html',
@@ -66,8 +65,6 @@ export class SettingsComponent implements OnInit {
   };
 
   securite: ParametresSecuriteView = {
-    force2FA: false,
-    sessionTimeoutMinutes: 15,
     consentementDefaut: true
   };
 
@@ -82,15 +79,6 @@ export class SettingsComponent implements OnInit {
     frequenceMinutes: 30,
     ussdTimeoutSecondes: 600
   };
-
-  get timeoutOptions() {
-    return [
-      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_15MIN'), value: 15 },
-      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_30MIN'), value: 30 },
-      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_1H'), value: 60 },
-      { label: this.i18n.t('ADMIN.SETTINGS.TIMEOUT_4H'), value: 240 }
-    ];
-  }
 
   ngOnInit() {
     this.charger();

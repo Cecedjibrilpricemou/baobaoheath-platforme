@@ -72,7 +72,7 @@
             <mat-slider class="bb-field-full" [min]="0" [max]="50" discrete>
               <input matSliderThumb aria-labelledby="structure-marge-label" [(ngModel)]="facturation.margePct" />
             </mat-slider>
-            <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.MARGE_HINT' | translate }}</small>
           </div>
 
           <p class="text-secondary mt-4">
@@ -91,26 +91,14 @@
           <h2>{{ 'ADMIN.SETTINGS.SECURITY_TITLE' | translate }}</h2>
           <p class="panel-desc">{{ 'ADMIN.SETTINGS.SECURITY_DESC' | translate }}</p>
 
-          <div class="setting-row warning-bg">
+          <!-- L'OTP par email est impose a tous les comptes professionnels par
+               auth.service : ce n'est pas un reglage, on l'indique tel quel. -->
+          <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-title" id="setting-2fa-label">{{ 'ADMIN.SETTINGS.2FA_TITLE' | translate }}</span>
+              <span class="setting-title">{{ 'ADMIN.SETTINGS.2FA_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.2FA_SUB' | translate }}</span>
-              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
-            <mat-slide-toggle aria-labelledby="setting-2fa-label" [(ngModel)]="securite.force2FA"></mat-slide-toggle>
-          </div>
-
-          <div class="field mt-4">
-            <label id="security-timeout-label" for="security-timeout">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_LABEL' | translate }}</label>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <mat-select id="security-timeout" [(ngModel)]="securite.sessionTimeoutMinutes">
-                @for (opt of timeoutOptions; track opt.value) {
-                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT_HINT' | translate }}</small>
-            <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
+            <span class="bb-badge bb-badge--success"><i class="pi pi-lock" aria-hidden="true"></i> {{ 'ADMIN.SETTINGS.ALWAYS_ON' | translate }}</span>
           </div>
 
           <div class="divider"></div>
@@ -120,7 +108,6 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-consentement-label">{{ 'ADMIN.SETTINGS.CONSENT_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.CONSENT_SUB' | translate }}</span>
-              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
             <mat-slide-toggle aria-labelledby="setting-consentement-label" [(ngModel)]="securite.consentementDefaut"></mat-slide-toggle>
           </div>
@@ -157,7 +144,6 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-ia-label">{{ 'ADMIN.SETTINGS.AI_ENABLE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.AI_ENABLE_SUB' | translate }}</span>
-              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
             <mat-slide-toggle aria-labelledby="setting-ia-label" [(ngModel)]="alertes.activerIA"></mat-slide-toggle>
           </div>
@@ -176,7 +162,6 @@
             <div class="setting-info">
               <span class="setting-title" id="setting-offline-label">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_TITLE' | translate }}</span>
               <span class="setting-sub">{{ 'ADMIN.SETTINGS.OFFLINE_MODE_SUB' | translate }}</span>
-              <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
             </div>
             <mat-slide-toggle aria-labelledby="setting-offline-label" [(ngModel)]="sync.offlineMode"></mat-slide-toggle>
           </div>
@@ -187,7 +172,6 @@
               <input matSliderThumb aria-labelledby="sync-frequence-label" [(ngModel)]="sync.frequenceMinutes" />
             </mat-slider>
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.SYNC_FREQ_HINT' | translate }}</small>
-            <span class="setting-pending"><i class="pi pi-clock" aria-hidden="true"></i>{{ 'ADMIN.SETTINGS.PENDING_EFFECT' | translate }}</span>
           </div>
 
           <div class="divider"></div>

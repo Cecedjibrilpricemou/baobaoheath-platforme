@@ -1033,8 +1033,11 @@ export interface ParametresFacturationView {
 }
 
 export interface ParametresSecuriteView {
-  force2FA: boolean;
-  sessionTimeoutMinutes: number;
+  /**
+   * A la creation d'un dossier, accorder d'office les consentements
+   * necessaires aux soins (DOSSIER_MEDICAL, RAPPELS_SMS). FHIR_EXPORT et
+   * RECHERCHE_ANONYMISEE restent toujours au choix du patient.
+   */
   consentementDefaut: boolean;
 }
 
@@ -1050,6 +1053,12 @@ export interface ParametresSyncView {
   offlineMode: boolean;
   frequenceMinutes: number;
   ussdTimeoutSecondes: number;
+}
+
+/** GET /sync/config — sous-ensemble des parametres lu par le client web (file hors-ligne). */
+export interface ConfigSyncView {
+  offlineMode: boolean;
+  frequenceMinutes: number;
 }
 
 /** Valeurs persistees, toujours completes (defauts fusionnes cote serveur). */
