@@ -119,11 +119,11 @@
                 <div class="rdv-card__patient">
                   @if (rdv.patient) {
                     <span class="rdv-card__name">
-                      {{ rdv.patient?.utilisateur?.prenom }} {{ rdv.patient?.utilisateur?.nom }}
+                      {{ rdv.patient.utilisateur?.prenom }} {{ rdv.patient.utilisateur?.nom }}
                     </span>
                     <span class="rdv-card__phone">
                       <i class="pi pi-phone"></i>
-                      {{ rdv.patient?.utilisateur?.telephone }}
+                      {{ rdv.patient.utilisateur?.telephone }}
                     </span>
                   } @else {
                     <span class="rdv-card__name">{{ 'ASC.PLANNING.PATIENT_UNKNOWN' | translate }}</span>

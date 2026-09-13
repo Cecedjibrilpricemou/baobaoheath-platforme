@@ -116,7 +116,7 @@
         }
 
         <!-- Diagnostics -->
-        @if (selected()!.diagnostics?.length) {
+        @if (selected()!.diagnostics.length) {
           <div class="bb-med-cons__block">
             <h3 class="bb-med-cons__block-title"><i class="pi pi-search"></i> {{ 'MEDECIN.CONSULTATIONS.DIAGNOSTICS_TITLE' | translate }}</h3>
             @for (d of selected()!.diagnostics; track d.id) {
@@ -130,7 +130,7 @@
         }
 
         <!-- Ordonnances à signer -->
-        @if (selected()!.ordonnances?.length) {
+        @if (selected()!.ordonnances.length) {
           <div class="bb-med-cons__block">
             <h3 class="bb-med-cons__block-title"><i class="pi pi-file-edit"></i> {{ 'MEDECIN.CONSULTATIONS.ORDONNANCES_TITLE' | translate }}</h3>
             <p class="bb-med-cons__block-note">{{ 'MEDECIN.CONSULTATIONS.ORDONNANCES_HINT' | translate }}</p>

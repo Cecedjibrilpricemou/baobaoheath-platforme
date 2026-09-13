@@ -122,7 +122,8 @@ export class AnalyticsComponent implements OnInit {
   }
   prefiltreSelectionne = '';
 
-  get typeLabels(): Record<string, string> {
+  // Partial : un type de structure inconnu doit retomber sur sa valeur brute (??).
+  get typeLabels(): Partial<Record<string, string>> {
     return {
       'CHU': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_CHU'),
       'HOPITAL_REG': this.i18n.t('ADMIN.ANALYTICS.TYPE_GROUP_HOPITAL_REG'),

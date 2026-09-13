@@ -136,7 +136,7 @@
           } @else {
           <div class="qty-display">
             <span class="qty-display__value">{{ stock.quantite }}</span>
-            <span class="qty-display__unit">{{ stock.unite ?? ('ASC.STOCKS.UNIT_DEFAULT' | translate) }}</span>
+            <span class="qty-display__unit">{{ stock.unite || ('ASC.STOCKS.UNIT_DEFAULT' | translate) }}</span>
           </div>
           }
         </div>
@@ -148,7 +148,7 @@
               [style.background]="getBarColor(stock)"></div>
           </div>
           <span class="stock-progress__seuil">
-            {{ 'ASC.STOCKS.THRESHOLD' | translate }}: {{ stock.seuilAlerte }} {{ stock.unite ?? ('ASC.STOCKS.UNIT_DEFAULT' | translate) }}
+            {{ 'ASC.STOCKS.THRESHOLD' | translate }}: {{ stock.seuilAlerte }} {{ stock.unite || ('ASC.STOCKS.UNIT_DEFAULT' | translate) }}
           </span>
         </div>
 
