@@ -61,15 +61,17 @@ export async function getAscStocks(userId: string, filters: StockFilters) {
         }),
     };
 
+    // `where` porte le filtre seuilAlerte : les deux requetes doivent l'utiliser,
+    // sinon ?seuilAlerte=true renvoie tout le stock.
     const [stocks, total] = await Promise.all([
         prisma.stock.findMany({
-            where: { idAsc: asc.id },
+            where,
             skip,
             take: limit,
             include: { medicament: true },
             orderBy: { modifieLe: 'desc' },
         }),
-        prisma.stock.count({ where: { idAsc: asc.id } }),
+        prisma.stock.count({ where }),
     ]);
 
     // Identifier les stocks en alerte
