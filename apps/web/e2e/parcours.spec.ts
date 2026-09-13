@@ -1,9 +1,10 @@
-// Les trois parcours qui font la plateforme, enchaines comme sur le terrain :
+// Les parcours qui font la plateforme, enchaines comme sur le terrain :
 //
 //   1. l'ASC recoit Awa Diallo, prescrit un medicament, cloture ; puis la
 //      revoit et la refere au centre de sante ;
 //   2. le medecin du centre accepte le transfert — et Awa en est prevenue ;
-//   3. la pharmacie de la prefecture voit l'ordonnance en attente et la delivre.
+//   3. la pharmacie de la prefecture voit l'ordonnance en attente et la delivre ;
+//   4. l'admin du centre retrouve ses agents, compteur et liste d'accord.
 //
 // Chaque test depend du precedent (mode serial) : c'est voulu, on verifie la
 // chaine, pas des ecrans isoles.
@@ -79,14 +80,17 @@ test('2. Medecin — accepte le transfert, la patiente est notifiee', async ({ p
   await page.goto('/medecin/referencements');
   const ligne = page.locator('.bb-med-cons__item', { hasText: `${E2E.patient.prenom} ${E2E.patient.nom}` });
   await expect(ligne.first()).toBeVisible();
+  // Sur une base rejouee, d'autres referencements d'Awa peuvent attendre :
+  // on verifie qu'il en part exactement un.
+  const enAttenteAvant = await ligne.count();
   await ligne.first().click();
 
-  await expect(page.getByText(/fièvre persistante/i)).toBeVisible();
+  await expect(page.getByText(/fièvre persistante/i).first()).toBeVisible();
   await page.getByRole('button', { name: /accepter le transfert/i }).click();
   await expect(page.getByText(/transfert accepté/i).first()).toBeVisible();
 
-  // Plus rien a traiter pour cette patiente ; elle apparait dans "Acceptés".
-  await expect(page.locator('.bb-med-cons__item', { hasText: E2E.patient.nom })).toHaveCount(0);
+  // Un de moins a traiter ; la patiente apparait dans "Acceptés".
+  await expect(ligne).toHaveCount(enAttenteAvant - 1);
   await page.getByRole('tab', { name: /acceptés/i }).click();
   await expect(page.locator('.bb-med-cons__item', { hasText: E2E.patient.nom }).first()).toBeVisible();
 
@@ -135,4 +139,21 @@ test('3. Pharmacien — voit l ordonnance en attente et la delivre', async ({ pa
   await expect(page.getByText(/médicaments délivrés/i)).toBeVisible();
 
   await expect(lignes).toHaveCount(avant - 1);
+});
+
+test('4. Admin structure — voit ses agents, le compteur suit la liste', async ({ page }) => {
+  await login(page, E2E.adminStructure.email);
+  await expect(page).toHaveURL(/\/admin-structure\/dashboard/);
+
+  const compteur = page.locator('.bb-as-dash__stat-val').first();
+  await expect(compteur).not.toHaveText('0');
+  const attendu = Number((await compteur.textContent())?.trim());
+
+  await page.goto('/admin-structure/agents');
+  const agents = page.locator('.bb-agents__item');
+  await expect(agents.first()).toBeVisible();
+  // L'ASC et le medecin du centre, pas l'admin lui-meme.
+  await expect(agents).toHaveCount(attendu);
+  await expect(agents.filter({ hasText: 'Mamadou Bah' })).toHaveCount(1);
+  await expect(agents.filter({ hasText: 'Fatoumata Camara' })).toHaveCount(1);
 });

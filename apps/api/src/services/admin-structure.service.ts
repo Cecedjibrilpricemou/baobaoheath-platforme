@@ -352,7 +352,9 @@ export async function getStatsStructure(adminId: string) {
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
 
     const [totalAgents, totalConsultations, totalPatients, structure] = await Promise.all([
-        prisma.utilisateur.count({ where: { idStructure: admin.idStructure, estActif: true } }),
+        // Meme filtre que la liste "Mes agents" : l'admin de structure n'est
+        // pas un agent, le compteur affichait un de plus que la liste.
+        prisma.utilisateur.count({ where: { idStructure: admin.idStructure, role: { in: ROLES_AUTORISES }, estActif: true } }),
         prisma.consultation.count({ where: { asc: { idStructure: admin.idStructure } } }),
         prisma.patientProfile.count({ where: { idStructurePreferee: admin.idStructure } }),
         prisma.structureSante.findUnique({ where: { id: admin.idStructure } })

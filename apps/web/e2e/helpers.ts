@@ -6,6 +6,7 @@ export const E2E = {
   asc: { email: 'asc.e2e@baobao.test' },
   medecin: { email: 'medecin.e2e@baobao.test' },
   pharmacien: { email: 'pharma.e2e@baobao.test' },
+  adminStructure: { email: 'admin.centre.e2e@baobao.test' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
   centre: 'Centre de sante e2e',
   /** Nom commercial (liste pharmacie) et DCI (select d'ordonnance : « Paracetamol · 500mg · comprime »). */

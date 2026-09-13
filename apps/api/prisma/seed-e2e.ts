@@ -16,6 +16,7 @@ export const E2E = {
   asc: { email: 'asc.e2e@baobao.test', telephone: '690000001', prenom: 'Mamadou', nom: 'Bah' },
   medecin: { email: 'medecin.e2e@baobao.test', telephone: '690000002', prenom: 'Fatoumata', nom: 'Camara' },
   pharmacien: { email: 'pharma.e2e@baobao.test', telephone: '690000003', prenom: 'Ibrahima', nom: 'Sow' },
+  adminStructure: { email: 'admin.centre.e2e@baobao.test', telephone: '690000004', prenom: 'Aissatou', nom: 'Barry' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
   medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000 },
 } as const;
@@ -74,6 +75,9 @@ async function main() {
     update: { idStructure: centre.id },
     create: { idUtilisateur: medecin.id, idStructure: centre.id, specialite: 'Medecine generale' },
   });
+
+  // Administre le centre : voit ses agents (ASC + medecin) et ses statistiques.
+  await upsertUtilisateur(E2E.adminStructure, Role.ADMIN_STRUCTURE, motDePasseHash, centre.id);
 
   const pharmacien = await upsertUtilisateur(E2E.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
   await prisma.pharmacienProfile.upsert({
