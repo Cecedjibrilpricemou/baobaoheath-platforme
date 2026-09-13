@@ -1,7 +1,44 @@
 // features/asc/stocks/stocks.component.scss
 .stocks-page {}
 
-.search-wrap { margin-bottom: 20px; }
+.search-wrap {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 20px;
+
+  .bb-search { flex: 1; min-width: 220px; }
+  &__add { white-space: nowrap; }
+}
+
+// ── Formulaire d'ajout d'une ligne de stock ───────────────────────
+.stock-add {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
+
+  &__title {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 16px;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary);
+    i { color: var(--bb-primary); }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  // Le choix du medicament est le champ principal : pleine largeur.
+  &__med { grid-column: 1 / -1; }
+
+  &__actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 16px;
+  }
+}
 
 // ── Grille de cards stock ────────────────────────────────────────
 .stocks-grid {

@@ -761,6 +761,23 @@ export interface OrdonnanceDelivranceView {
   alerteAllergie: boolean;
 }
 
+/**
+ * GET /pharmacien/ordonnances — ordonnances en attente des patients de la
+ * prefecture de la pharmacie. `qrCode` permet d'ouvrir directement la
+ * delivrance (meme parcours que le scan).
+ */
+export interface OrdonnanceEnAttenteView {
+  id: string;
+  posologie: string;
+  frequence: string;
+  dureeJours: number;
+  quantite: number;
+  creeLe: HorodatageApi;
+  signeLe: HorodatageApi | null;
+  medicament: MedicamentView;
+  patient: { prenom: string; nom: string; qrCode: string };
+}
+
 export interface PatientScanView {
   prenom: string;
   nom: string;

@@ -4,6 +4,7 @@ import { Role, StatutOrdonnance, TypeStructure } from '../config/generated/clien
 import { hashPassword } from '../utils/password.utils';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { getValeursParametres } from './parametres.service';
+import type { OrdonnanceEnAttenteView } from '@baobaoheath/shared-types';
 
 type CreateAgentPharmacieDto = {
   telephone: string;
@@ -33,7 +34,8 @@ async function getPharmacienAvecStructure(pharmacienId: string) {
     throw new ValidationError('La structure assignee n est pas une pharmacie');
   }
 
-  return pharmacien;
+  // Les gardes ci-dessus garantissent la structure ; le type le dit aussi.
+  return { ...pharmacien, structure: pharmacien.structure };
 }
 
 export async function scanPatient(qrCode: string, pharmacienId: string) {
@@ -160,17 +162,30 @@ export async function getStocksPharmacie(pharmacienId: string) {
   });
 }
 
-export async function getOrdonnances(pharmacienId: string) {
-  await getPharmacienAvecStructure(pharmacienId);
+// Une ordonnance n'est rattachee a aucune pharmacie avant sa delivrance : on
+// restreint donc la liste a la prefecture de la pharmacie, plutot que
+// d'exposer toutes les ordonnances du pays avec le nom des patients.
+export async function getOrdonnances(pharmacienId: string): Promise<OrdonnanceEnAttenteView[]> {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
 
-  return prisma.ordonnance.findMany({
-    where: { statut: StatutOrdonnance.EN_ATTENTE },
-    include: {
-      medicament: true,
+  const ordonnances = await prisma.ordonnance.findMany({
+    where: {
+      statut: StatutOrdonnance.EN_ATTENTE,
+      consultation: { patient: { prefecture: pharmacien.structure.prefecture } },
+    },
+    select: {
+      id: true,
+      posologie: true,
+      frequence: true,
+      dureeJours: true,
+      quantite: true,
+      creeLe: true,
+      signeLe: true,
+      medicament: { select: { id: true, dci: true, nomCommercial: true, forme: true, dosage: true } },
       consultation: {
-        include: {
+        select: {
           patient: {
-            include: { utilisateur: { select: { prenom: true, nom: true, telephone: true } } },
+            select: { qrCode: true, utilisateur: { select: { prenom: true, nom: true } } },
           },
         },
       },
@@ -178,6 +193,15 @@ export async function getOrdonnances(pharmacienId: string) {
     orderBy: { creeLe: 'desc' },
     take: 50,
   });
+
+  return ordonnances.map(({ consultation, ...o }) => ({
+    ...o,
+    patient: {
+      prenom: consultation.patient.utilisateur.prenom,
+      nom: consultation.patient.utilisateur.nom,
+      qrCode: consultation.patient.qrCode,
+    },
+  }));
 }
 
 export async function reapprovisionnerStock(pharmacienId: string, dto: {

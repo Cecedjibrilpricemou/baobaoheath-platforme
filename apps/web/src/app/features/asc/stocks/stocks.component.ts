@@ -4,17 +4,21 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { AscService } from '../../../core/services/asc.service';
+import { OfflineQueueService } from '../../../core/services/offline-queue.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-import type { HorodatageApi, StockAscView } from '@baobaoheath/shared-types';
+import type { CreateStockDto, HorodatageApi, MedicamentView, StockAscView } from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-stocks',
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    MatButtonModule, MatIconModule,
+    MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     TranslatePipe
   ],
   templateUrl: './stocks.component.html',
@@ -23,6 +27,7 @@ import type { HorodatageApi, StockAscView } from '@baobaoheath/shared-types';
 export class StocksComponent implements OnInit {
   private ascService = inject(AscService);
   private i18n = inject(I18nService);
+  readonly offlineQueue = inject(OfflineQueueService);
   protected Math = Math;
 
   stocks           = signal<StockAscView[]>([]);
@@ -37,7 +42,76 @@ export class StocksComponent implements OnInit {
   stocksCritiques  = signal(0);
   stocksNormaux    = signal(0);
 
+  // Ajout d'une ligne de stock (POST /asc/stocks). Catalogue charge a
+  // l'ouverture du formulaire seulement : la plupart des visites ne l'ouvrent pas.
+  showAjout        = signal(false);
+  catalogue        = signal<MedicamentView[]>([]);
+  isLoadingCatalogue = signal(false);
+  isCreating       = signal(false);
+  nouveau: CreateStockDto = this.nouveauVide();
+
   ngOnInit() { this.loadStocks(); }
+
+  private nouveauVide(): CreateStockDto {
+    return { idMedicament: '', quantite: 0, unite: 'unite', seuilAlerte: 10, datePeremption: undefined };
+  }
+
+  /** Medicaments du catalogue qui n'ont pas encore de ligne chez cet ASC. */
+  get catalogueDisponible(): MedicamentView[] {
+    const dejaStockes = new Set(this.stocks().map(s => s.medicament.id));
+    return this.catalogue().filter(m => !dejaStockes.has(m.id));
+  }
+
+  ouvrirAjout() {
+    this.nouveau = this.nouveauVide();
+    this.errorMessage.set('');
+    this.showAjout.set(true);
+    if (this.catalogue().length > 0) return;
+    this.isLoadingCatalogue.set(true);
+    this.ascService.getMedicaments().subscribe({
+      next: res => { this.catalogue.set(res.data ?? []); this.isLoadingCatalogue.set(false); },
+      error: () => {
+        this.isLoadingCatalogue.set(false);
+        this.errorMessage.set(this.i18n.t('ASC.STOCKS.ERR_CATALOGUE'));
+      }
+    });
+  }
+
+  fermerAjout() { this.showAjout.set(false); }
+
+  creerStock() {
+    if (!this.nouveau.idMedicament || this.isCreating()) return;
+    if (!this.offlineQueue.isOnline()) {
+      this.errorMessage.set(this.i18n.t('ASC.STOCKS.ERR_CREATE_OFFLINE'));
+      return;
+    }
+    const payload: CreateStockDto = {
+      idMedicament: this.nouveau.idMedicament,
+      quantite: Number(this.nouveau.quantite) || 0,
+      unite: this.nouveau.unite?.trim() || 'unite',
+      seuilAlerte: this.nouveau.seuilAlerte !== undefined ? Number(this.nouveau.seuilAlerte) : undefined,
+      ...(this.nouveau.datePeremption ? { datePeremption: this.nouveau.datePeremption } : {}),
+    };
+
+    this.isCreating.set(true); this.errorMessage.set('');
+    this.ascService.createStock(payload).subscribe({
+      next: () => {
+        this.isCreating.set(false);
+        this.showAjout.set(false);
+        this.successMessage.set(this.i18n.t('ASC.STOCKS.SUCCESS_CREATE'));
+        setTimeout(() => this.successMessage.set(''), 3000);
+        this.loadStocks();
+      },
+      error: (err) => {
+        this.isCreating.set(false);
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.STOCKS.ERR_CREATE'));
+      }
+    });
+  }
+
+  libelleMedicament(m: MedicamentView): string {
+    return m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} — ${m.dosage}`;
+  }
 
   private loadStocks() {
     this.isLoading.set(true);

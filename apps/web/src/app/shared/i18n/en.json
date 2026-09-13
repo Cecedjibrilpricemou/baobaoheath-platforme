@@ -547,7 +547,19 @@
       "ERR_UPDATE": "Error updating stock.",
       "DECREASE_QTY_ARIA": "Decrease quantity",
       "INCREASE_QTY_ARIA": "Increase quantity",
-      "QTY_IN_STOCK_ARIA": "Quantity in stock"
+      "QTY_IN_STOCK_ARIA": "Quantity in stock",
+      "ADD_BTN": "Add a medication",
+      "ADD_TITLE": "New stock line",
+      "ADD_MEDICAMENT": "Medication",
+      "ADD_QTY": "Initial quantity",
+      "ADD_UNIT": "Unit",
+      "ADD_THRESHOLD": "Alert threshold",
+      "ADD_EXPIRY": "Expiry date",
+      "ADD_SUBMIT": "Add to stock",
+      "SUCCESS_CREATE": "Medication added to your stock.",
+      "ERR_CREATE": "Could not add this medication.",
+      "ERR_CREATE_OFFLINE": "Adding a medication requires a connection. You can update quantities offline once the line exists.",
+      "ERR_CATALOGUE": "Could not load the medication catalogue."
     },
     "PLANNING": {
       "TITLE": "My Schedule",
@@ -1063,7 +1075,12 @@
       "ERR_DELIVER": "Error while dispensing.",
       "MODE_CASH": "💵 Cash",
       "MODE_ORANGE": "🟠 Orange Money",
-      "MODE_MTN": "📱 MTN MoMo"
+      "MODE_MTN": "📱 MTN MoMo",
+      "PENDING_TITLE": "Pending prescriptions in your prefecture",
+      "PENDING_SUB": "Patients expected at the pharmacy. Click a patient to open dispensing without waiting for their QR code.",
+      "PENDING_LOADING": "Loading…",
+      "PENDING_EMPTY": "No pending prescriptions right now.",
+      "PENDING_SINCE": "Prescribed on"
     },
     "SCANNER": {
       "TITLE": "Scan QR Code",

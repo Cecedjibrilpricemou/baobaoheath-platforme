@@ -54,8 +54,54 @@
     </div>
     }
 
+    <!-- Ajout d'une ligne de stock -->
+    @if (showAjout()) {
+    <form class="stock-add" (ngSubmit)="creerStock()" aria-labelledby="stock-add-title">
+      <h3 id="stock-add-title" class="stock-add__title"><i class="pi pi-plus-circle" aria-hidden="true"></i> {{ 'ASC.STOCKS.ADD_TITLE' | translate }}</h3>
+      <div class="stock-add__grid">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="stock-add__med">
+          <mat-label>{{ 'ASC.STOCKS.ADD_MEDICAMENT' | translate }}</mat-label>
+          <mat-select name="idMedicament" [(ngModel)]="nouveau.idMedicament" required [disabled]="isLoadingCatalogue()">
+            @for (m of catalogueDisponible; track m.id) {
+              <mat-option [value]="m.id">{{ libelleMedicament(m) }}</mat-option>
+            }
+          </mat-select>
+          @if (isLoadingCatalogue()) { <mat-hint>{{ 'ASC.STOCKS.LOADING' | translate }}</mat-hint> }
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASC.STOCKS.ADD_QTY' | translate }}</mat-label>
+          <input matInput name="quantite" type="number" min="0" [(ngModel)]="nouveau.quantite" required />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASC.STOCKS.ADD_UNIT' | translate }}</mat-label>
+          <input matInput name="unite" type="text" maxlength="40" [(ngModel)]="nouveau.unite" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASC.STOCKS.ADD_THRESHOLD' | translate }}</mat-label>
+          <input matInput name="seuilAlerte" type="number" min="0" [(ngModel)]="nouveau.seuilAlerte" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASC.STOCKS.ADD_EXPIRY' | translate }}</mat-label>
+          <input matInput name="datePeremption" type="date" [(ngModel)]="nouveau.datePeremption" />
+        </mat-form-field>
+      </div>
+      <div class="stock-add__actions">
+        <button matButton type="button" (click)="fermerAjout()" [disabled]="isCreating()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button matButton="filled" type="submit" [disabled]="isCreating() || !nouveau.idMedicament">
+          <i class="pi pi-check" aria-hidden="true"></i>
+          {{ (isCreating() ? 'COMMON.SAVING' : 'ASC.STOCKS.ADD_SUBMIT') | translate }}
+        </button>
+      </div>
+    </form>
+    }
+
     <!-- Barre de recherche -->
     <div class="search-wrap">
+      @if (!showAjout()) {
+      <button matButton="filled" type="button" class="search-wrap__add" (click)="ouvrirAjout()">
+        <i class="pi pi-plus" aria-hidden="true"></i> {{ 'ASC.STOCKS.ADD_BTN' | translate }}
+      </button>
+      }
       <label class="bb-search bb-search--wide">
         <mat-icon fontSet="pi" fontIcon="pi-search" class="bb-search__icon" aria-hidden="true"></mat-icon>
         <input

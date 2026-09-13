@@ -4,10 +4,16 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { PharmacieStock, OrdonnanceDelivrance, DelivrancePayload } from '../models/pharmacien.model';
 import { ApiResponse } from '../models/api.model';
+import type { OrdonnanceEnAttenteView } from '@baobaoheath/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class PharmacienService {
   private api = inject(ApiService);
+
+  /** Ordonnances en attente des patients de la prefecture de la pharmacie. */
+  getOrdonnancesEnAttente(): Observable<ApiResponse<OrdonnanceEnAttenteView[]>> {
+    return this.api.get<ApiResponse<OrdonnanceEnAttenteView[]>>('/pharmacien/ordonnances');
+  }
 
   scanQrCode(code: string): Observable<ApiResponse<OrdonnanceDelivrance>> {
     return this.api.get<ApiResponse<OrdonnanceDelivrance>>(`/pharmacien/scan/${code}`);

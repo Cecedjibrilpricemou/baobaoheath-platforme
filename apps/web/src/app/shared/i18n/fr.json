@@ -547,7 +547,19 @@
       "ERR_UPDATE": "Erreur lors de la mise à jour.",
       "DECREASE_QTY_ARIA": "Diminuer la quantité",
       "INCREASE_QTY_ARIA": "Augmenter la quantité",
-      "QTY_IN_STOCK_ARIA": "Quantité en stock"
+      "QTY_IN_STOCK_ARIA": "Quantité en stock",
+      "ADD_BTN": "Ajouter un médicament",
+      "ADD_TITLE": "Nouvelle ligne de stock",
+      "ADD_MEDICAMENT": "Médicament",
+      "ADD_QTY": "Quantité initiale",
+      "ADD_UNIT": "Unité",
+      "ADD_THRESHOLD": "Seuil d'alerte",
+      "ADD_EXPIRY": "Date de péremption",
+      "ADD_SUBMIT": "Ajouter au stock",
+      "SUCCESS_CREATE": "Médicament ajouté à votre stock.",
+      "ERR_CREATE": "Impossible d'ajouter ce médicament.",
+      "ERR_CREATE_OFFLINE": "L'ajout d'un médicament nécessite une connexion. Vous pourrez modifier les quantités hors ligne une fois la ligne créée.",
+      "ERR_CATALOGUE": "Impossible de charger le catalogue des médicaments."
     },
     "PLANNING": {
       "TITLE": "Mon Planning",
@@ -874,7 +886,12 @@
       "ERR_DELIVER": "Erreur lors de la délivrance.",
       "MODE_CASH": "💵 Espèces",
       "MODE_ORANGE": "🟠 Orange Money",
-      "MODE_MTN": "📱 MTN MoMo"
+      "MODE_MTN": "📱 MTN MoMo",
+      "PENDING_TITLE": "Ordonnances en attente dans votre préfecture",
+      "PENDING_SUB": "Patients attendus en pharmacie. Cliquez sur un patient pour ouvrir la délivrance, sans attendre son QR code.",
+      "PENDING_LOADING": "Chargement…",
+      "PENDING_EMPTY": "Aucune ordonnance en attente pour le moment.",
+      "PENDING_SINCE": "Prescrite le"
     },
     "SCANNER": {
       "TITLE": "Scanner QR Code",

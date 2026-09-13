@@ -11,6 +11,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
 import type {
   HorodatageApi,
   OrdonnanceDelivranceView,
+  OrdonnanceEnAttenteView,
   PatientScanView,
 } from '@baobaoheath/shared-types';
 
@@ -52,6 +53,12 @@ export class OrdonnancesComponent implements OnInit {
     ];
   }
 
+  // Ordonnances en attente dans la prefecture (GET /pharmacien/ordonnances) :
+  // le pharmacien voit qui est attendu et ouvre la delivrance d'un clic,
+  // sans attendre que le patient presente son QR code.
+  enAttente          = signal<OrdonnanceEnAttenteView[]>([]);
+  isLoadingEnAttente = signal(true);
+
   ngOnInit() {
     const nav = this.router.getCurrentNavigation();
     const state = nav?.extras?.state as { scanResult?: { patient?: PatientScanView; ordonnances?: OrdonnanceDelivranceView[] } } | undefined;
@@ -62,6 +69,33 @@ export class OrdonnancesComponent implements OnInit {
     }
     // FINI LE BUG : Aucune redirection si aucun scanResult n'est présent !
     // L'interface affichera d'elle-même le composant Scanner (Empty State).
+
+    this.chargerEnAttente();
+  }
+
+  chargerEnAttente() {
+    this.isLoadingEnAttente.set(true);
+    this.pharmacienService.getOrdonnancesEnAttente().subscribe({
+      next: res => { this.enAttente.set(res.data ?? []); this.isLoadingEnAttente.set(false); },
+      error: () => { this.isLoadingEnAttente.set(false); }
+    });
+  }
+
+  /** Ouvre la delivrance d'une ordonnance de la liste : meme parcours que le scan. */
+  ouvrirDepuisListe(o: OrdonnanceEnAttenteView) {
+    this.qrCode = o.patient.qrCode;
+    this.scan();
+  }
+
+  /** Regroupe la liste par patient : un patient peut avoir plusieurs lignes. */
+  get enAttenteParPatient(): { qrCode: string; prenom: string; nom: string; lignes: OrdonnanceEnAttenteView[] }[] {
+    const groupes = new Map<string, { qrCode: string; prenom: string; nom: string; lignes: OrdonnanceEnAttenteView[] }>();
+    for (const o of this.enAttente()) {
+      const g = groupes.get(o.patient.qrCode) ?? { ...o.patient, lignes: [] };
+      g.lignes.push(o);
+      groupes.set(o.patient.qrCode, g);
+    }
+    return [...groupes.values()];
   }
 
   scan() {
@@ -125,6 +159,7 @@ export class OrdonnancesComponent implements OnInit {
         this.isDelivering.set(false);
         this.selected.set(null);
         this.ordonnances.update(list => list.filter(ord => ord.id !== o.id));
+        this.enAttente.update(list => list.filter(ord => ord.id !== o.id));
         const responseData = response?.data as { montantGnf?: number };
         this.successMessage.set(this.i18n.t('PHARMACIEN.ORDONNANCES.SUCCESS_DELIVERED', { amount: this.formatMontant(responseData?.montantGnf ?? 0) }));
         setTimeout(() => this.successMessage.set(''), 5000);

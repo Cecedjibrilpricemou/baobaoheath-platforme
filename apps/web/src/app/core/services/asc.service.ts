@@ -13,6 +13,7 @@ import {
 } from '../models/asc.model';
 import { ApiResponse, PaginatedData } from '../models/api.model';
 import { OfflineQueueService, ResultatEcriture } from './offline-queue.service';
+import type { CreateStockDto, MedicamentView, StockAscView } from '@baobaoheath/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class AscService {
@@ -74,6 +75,17 @@ export class AscService {
 
   getStocks(): Observable<ApiResponse<unknown[]>> {
     return this.api.get<ApiResponse<unknown[]>>('/asc/stocks');
+  }
+
+  /** Catalogue national des medicaments (lecture seule, tous roles soignants). */
+  getMedicaments(): Observable<ApiResponse<MedicamentView[]>> {
+    return this.api.get<ApiResponse<MedicamentView[]>>('/medicaments');
+  }
+
+  // En ligne uniquement : le rejeu hors-ligne (sync.service, updateStockFromSync)
+  // ne sait traiter qu'une mise a jour de quantite, pas une creation de ligne.
+  createStock(payload: CreateStockDto): Observable<ApiResponse<StockAscView>> {
+    return this.api.post<ApiResponse<StockAscView>>('/asc/stocks', payload);
   }
 
   updateStock(

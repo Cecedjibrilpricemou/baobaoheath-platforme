@@ -38,6 +38,43 @@
         </div>
       }
     </div>
+
+    <!-- Ordonnances en attente dans la préfecture -->
+    <section class="bb-ordo__pending" aria-labelledby="pending-title">
+      <div class="bb-ordo__pending-head">
+        <h3 id="pending-title"><i class="pi pi-clock" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.PENDING_TITLE' | translate }}</h3>
+        @if (!isLoadingEnAttente()) {
+          <span class="bb-ordo__pending-count">{{ enAttente().length }}</span>
+        }
+      </div>
+      <p class="bb-ordo__pending-sub">{{ 'PHARMACIEN.ORDONNANCES.PENDING_SUB' | translate }}</p>
+
+      @if (isLoadingEnAttente()) {
+        <p class="bb-ordo__pending-empty">{{ 'PHARMACIEN.ORDONNANCES.PENDING_LOADING' | translate }}</p>
+      } @else if (enAttente().length === 0) {
+        <p class="bb-ordo__pending-empty">{{ 'PHARMACIEN.ORDONNANCES.PENDING_EMPTY' | translate }}</p>
+      } @else {
+        <ul class="bb-ordo__pending-list" role="list">
+          @for (g of enAttenteParPatient; track g.qrCode) {
+            <li>
+              <button type="button" class="bb-ordo__pending-item" (click)="ouvrirDepuisListe(g.lignes[0])" [disabled]="isScanning()">
+                <span class="bb-ordo__pending-avatar" aria-hidden="true">{{ g.prenom.charAt(0) }}{{ g.nom.charAt(0) }}</span>
+                <span class="bb-ordo__pending-body">
+                  <span class="bb-ordo__pending-name">{{ g.prenom }} {{ g.nom }}</span>
+                  <span class="bb-ordo__pending-meds">
+                    @for (o of g.lignes; track o.id; let last = $last) {
+                      {{ o.medicament.nomCommercial || o.medicament.dci }} × {{ o.quantite }}@if (!last) {, }
+                    }
+                  </span>
+                  <span class="bb-ordo__pending-date">{{ 'PHARMACIEN.ORDONNANCES.PENDING_SINCE' | translate }} {{ g.lignes[0].creeLe | date:'mediumDate' }}</span>
+                </span>
+                <i class="pi pi-chevron-right" aria-hidden="true"></i>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
   }
 
   <!-- ============================================== -->
