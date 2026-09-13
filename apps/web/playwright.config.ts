@@ -67,7 +67,8 @@ export default defineConfig({
       cwd: resolve(RACINE, 'apps/api'),
       url: `http://localhost:${API_PORT}/health`,
       env: API_ENV,
-      timeout: 120_000,
+      // Migrations + seed + demarrage : 120 s ne suffisent pas toujours sur un poste lent.
+      timeout: 240_000,
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',
       stderr: 'pipe',
