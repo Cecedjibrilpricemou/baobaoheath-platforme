@@ -74,9 +74,8 @@ export default defineConfig({
       stderr: 'pipe',
     },
     {
-      // --prebundle=false : le pre-bundling Vite verrouille des fichiers sous
-      // Windows (EPERM rename) et laisse une page blanche.
-      command: `npx ng serve --port ${WEB_PORT} --host localhost --prebundle=false`,
+      // prebundle: false est regle dans angular.json (verrous Vite sous Windows).
+      command: `npx ng serve --port ${WEB_PORT} --host localhost`,
       cwd: __dirname,
       url: `http://localhost:${WEB_PORT}`,
       timeout: 240_000,
