@@ -54,6 +54,26 @@ export class Dossier implements OnInit {
   private vaccinationService = inject(VaccinationService);
   private i18n = inject(I18nService);
 
+  isExporting = signal(false);
+
+  /** GET /patients/me/export : le dossier complet, telecharge tel que renvoye par l'API. */
+  exportDossier() {
+    if (this.isExporting()) return;
+    this.isExporting.set(true);
+    this.patientService.exportDossier().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dossier-medical.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.isExporting.set(false);
+      },
+      error: () => { this.isExporting.set(false); }
+    });
+  }
+
   constructor(iconRegistry: MatIconRegistry) {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }

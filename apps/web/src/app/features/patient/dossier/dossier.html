@@ -5,8 +5,8 @@
       <p>{{ 'PATIENT.DOSSIER.SUBTITLE' | translate }}</p>
     </div>
     <div class="header-actions">
-      <button matButton="outlined">
-        <mat-icon fontSet="pi" fontIcon="pi-download" aria-hidden="true"></mat-icon>
+      <button matButton="outlined" type="button" (click)="exportDossier()" [disabled]="isExporting()">
+        <mat-icon fontSet="pi" [fontIcon]="isExporting() ? 'pi-spinner pi-spin' : 'pi-download'" aria-hidden="true"></mat-icon>
         {{ 'PATIENT.DOSSIER.EXPORT_FHIR' | translate }}
       </button>
       <a matButton="filled" routerLink="/patient/qr-code">

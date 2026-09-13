@@ -56,9 +56,6 @@
               <span class="bb-kpi__icon" [style.--kpi-accent]="k.couleur">
                 <mat-icon fontSet="pi" [fontIcon]="k.icon" aria-hidden="true"></mat-icon>
               </span>
-              <button matIconButton class="bb-kpi__go" [attr.aria-label]="k.labelKey | translate">
-                <mat-icon fontSet="pi" fontIcon="pi-arrow-up-right" aria-hidden="true"></mat-icon>
-              </button>
             </div>
             <div class="bb-kpi__value">{{ k.valeur }}</div>
             <div class="bb-kpi__label">{{ k.labelKey | translate }}</div>

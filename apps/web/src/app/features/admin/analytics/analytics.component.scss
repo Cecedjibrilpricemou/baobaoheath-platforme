@@ -94,14 +94,6 @@
     mat-icon { font-size: 16px; width: 16px; height: 16px; }
   }
 
-  &__go {
-    width: 32px; height: 32px;
-    border: 1px solid var(--bb-border-light);
-    border-radius: 50%;
-    color: var(--bb-text-muted);
-    mat-icon { font-size: 12px; width: 12px; height: 12px; }
-  }
-
   &__value {
     font-family: var(--bb-font-display);
     font-size: 2rem; font-weight: 800; line-height: 1;
@@ -119,7 +111,6 @@
     --mat-card-outlined-outline-color: transparent;
 
     .bb-kpi__icon { background: rgba(255, 255, 255, 0.14); color: #fff; }
-    .bb-kpi__go { border-color: rgba(255, 255, 255, 0.25); color: #fff; }
     .bb-kpi__value { color: #fff; }
     .bb-kpi__label { color: rgba(255, 255, 255, 0.72); }
   }

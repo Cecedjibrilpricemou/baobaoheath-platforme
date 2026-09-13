@@ -156,7 +156,7 @@ export class ProfilComponent implements OnInit {
     this.isExporting.set(true);
     this.patientService.exportDossier().subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(new Blob(['{}']));
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `dossier-${this.profil()?.utilisateur?.nom ?? this.profil()?.nom ?? 'patient'}.json`;
