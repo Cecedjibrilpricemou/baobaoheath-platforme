@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "types": ["node"],
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "files": ["playwright.config.ts"],
+  "include": ["e2e/**/*.ts"]
+}

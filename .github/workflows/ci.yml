@@ -138,6 +138,68 @@ jobs:
       - name: Audit dependencies
         run: node ../../scripts/audit-gate.mjs
 
+  # ── End-to-end ────────────────────────────────────────────────────────
+  # Vrai navigateur contre la vraie API et un Postgres de service : les trois
+  # parcours ASC -> medecin -> pharmacien (apps/web/e2e). Le setup Playwright
+  # migre et seed la base, puis demarre API et front lui-meme.
+  e2e:
+    name: E2E — Parcours
+    runs-on: ubuntu-latest
+    needs: [api-build-test, web-build]
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: baobaoheath
+          POSTGRES_PASSWORD: baobaoheath
+          POSTGRES_DB: baobaoheath_e2e
+        ports: ['55433:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      CI: 'true'
+      E2E_DATABASE_URL: postgresql://baobaoheath:baobaoheath@localhost:55433/baobaoheath_e2e
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate --config prisma.config.ts
+        working-directory: apps/api
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: Run e2e
+        run: npm run e2e
+        working-directory: apps/web
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+
   # ── CD — Deploy to production ─────────────────────────────────────────
   # Triggers on push to main only after all CI jobs pass.
   # Requires secrets: DATABASE_URL, DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY
@@ -152,7 +214,7 @@ jobs:
   deploy:
     name: Deploy — Migrate + Restart
     runs-on: ubuntu-latest
-    needs: [api-build-test, api-audit, web-build, web-audit]
+    needs: [api-build-test, api-audit, web-build, web-audit, e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
     environment: production
     env:

@@ -85,6 +85,7 @@
   box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition); cursor: pointer;
 
   &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); transform: translateY(-1px); }
+  &:focus-visible { outline: 2px solid var(--bb-primary); outline-offset: 2px; }
 
   &__avatar {
     width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;

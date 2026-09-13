@@ -25,3 +25,7 @@ temp/
 *.tmp
 apps/api/src/config/generated/
 apps/api/.env
+# Playwright (apps/web/e2e)
+apps/web/test-results
+apps/web/playwright-report
+apps/web/blob-report

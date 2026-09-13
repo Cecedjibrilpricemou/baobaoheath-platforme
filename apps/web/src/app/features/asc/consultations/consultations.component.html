@@ -145,7 +145,17 @@
     } @else {
       <div class="consult-list">
         @for (c of consultationsFiltrees; track c.id) {
-          <div class="consult-card">
+          <!-- Toute la carte ouvre la fiche : constantes, diagnostics,
+               ordonnances et referencement se saisissent depuis le detail. -->
+          <div
+            class="consult-card"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="(c.patient ? (c.patient.utilisateur?.prenom + ' ' + c.patient.utilisateur?.nom) : ('ASC.CONSULTATIONS.PATIENT_UNKNOWN' | translate)) + ' — ' + getStatutLabel(c.statut)"
+            (click)="voirDetail(c)"
+            (keydown.enter)="voirDetail(c)"
+            (keydown.space)="$event.preventDefault(); voirDetail(c)"
+          >
 
             <div class="consult-card__avatar" aria-hidden="true">{{ getPatientInitiales(c) }}</div>
 

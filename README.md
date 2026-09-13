@@ -79,6 +79,26 @@ npm run prisma:seed --workspace=apps/api
 
 Le seed crée uniquement un compte **SUPER_ADMIN** (voir `apps/api/prisma/seed.ts`) ; tous les autres comptes (structures, médecins, pharmaciens, agents ASC) se créent depuis l'application, une fois connecté avec ce compte.
 
+## Tests
+
+```bash
+npm test --workspace=apps/api     # unitaires API (jest, Prisma mocké)
+npm test --workspace=apps/web     # unitaires web (vitest)
+```
+
+### End-to-end (Playwright)
+
+Trois parcours réels enchaînés dans un navigateur, contre la vraie API et une base PostgreSQL **jetable** — jamais la base de développement : le setup migre et seed la base, puis démarre l'API et le front lui-même.
+
+```bash
+# 1. une base vide (docker), 2. lancer
+docker run -d --name bb-e2e-db -e POSTGRES_USER=baobaoheath -e POSTGRES_PASSWORD=baobaoheath \
+  -e POSTGRES_DB=baobaoheath_e2e -p 55433:5432 postgres:16-alpine
+npm run e2e --workspace=apps/web          # ou e2e:ui pour l'interface Playwright
+```
+
+`E2E_DATABASE_URL` remplace l'URL par défaut (`localhost:55433`). En local le Chrome installé est utilisé ; en CI (job `E2E — Parcours`), le Chromium de Playwright. Comptes et données : `apps/api/prisma/seed-e2e.ts`. Parcours : `apps/web/e2e/parcours.spec.ts`.
+
 ## Internationalisation
 
 Le frontend supporte le **français** et l'**anglais** via un service i18n maison (`shared/services/i18n.service.ts`), avec les dictionnaires dans `apps/web/src/app/shared/i18n/{fr,en}.json`. Le sélecteur de langue est disponible sur toutes les pages (accueil, authentification, et chaque espace de rôle).
