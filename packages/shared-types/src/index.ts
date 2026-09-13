@@ -933,6 +933,35 @@ export interface StatsStructureView {
   totalPatients: number;
 }
 
+// ─── Referencements (espace medecin) ─────────────────────────────────────────
+
+/**
+ * GET /medecin/referencements — referencement dirige vers la structure du
+ * medecin, avec le contexte clinique de la consultation d'origine.
+ * PUT /medecin/referencements/:id/repondre renvoie la meme forme.
+ */
+export interface ReferencementATraiterView {
+  id: string;
+  urgence: Urgence;
+  statut: ReferralStatus;
+  resumeClinique: string;
+  motifRefus: string | null;
+  urlDocument: string | null;
+  creeLe: HorodatageApi;
+  reponduLe: HorodatageApi | null;
+  consultation: {
+    id: string;
+    motifPrincipal: string;
+    symptomes: string[];
+    consulteeLE: HorodatageApi;
+    patient: PatientResumeView & { prefecture: string };
+    constantes: ConstantesVitalesView | null;
+    diagnostics: DiagnosticView[];
+  };
+  structureSource: StructureView | null;
+  structureCible: StructureView;
+}
+
 // ─── Confidentialite patient ─────────────────────────────────────────────────
 
 /** GET/PUT /privacy/me/consents — ligne de la table consentements_patient. */

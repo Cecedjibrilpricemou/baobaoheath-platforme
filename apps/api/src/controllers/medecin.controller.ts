@@ -7,6 +7,7 @@ import type {
   ConsultationAValiderView,
   MedecinDashboardView,
   MessageView,
+  ReferencementATraiterView,
 } from '@baobaoheath/shared-types';
 
 type RequestWithId = ExpressRequest<{ id: string }>;
@@ -70,7 +71,8 @@ export async function getReferencementsController(
       page: req.query.page ? parseInt(req.query.page as string) : undefined,
       limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     };
-    const result = await medecinService.getReferencements(
+    // Annotation = contrat : la page Referencements du medecin lit ces champs.
+    const result: { data: ReferencementATraiterView[]; meta: unknown } = await medecinService.getReferencements(
       req.user!.userId,
       filters
     );
@@ -82,7 +84,7 @@ export async function repondreReferencementController(
   req: AuthRequest & { params: { id: string } },
   res: Response
 ): Promise<void> {
-  const referencement = await medecinService.repondreReferencement(
+  const referencement: ReferencementATraiterView = await medecinService.repondreReferencement(
       req.user!,
       req.params.id,
       req.body

@@ -1,0 +1,70 @@
+// Complements a consultations.component.scss (classes bb-med-cons partagees).
+.bb-med-ref {
+  &__filtres {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__filtre {
+    padding: 6px 14px;
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-pill);
+    background: var(--bb-surface-card);
+    color: var(--bb-text-secondary);
+    font-family: var(--bb-font-display);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--bb-transition), color var(--bb-transition), border-color var(--bb-transition);
+
+    &:hover { background: var(--bb-surface-1); }
+
+    &--active {
+      background: var(--bb-primary);
+      border-color: var(--bb-primary);
+      color: var(--bb-text-inverse);
+    }
+  }
+
+  &__age {
+    margin-left: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--bb-text-muted);
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+
+    // Le bouton "Accepter" reprend le style du bouton Valider ; il ne doit
+    // pas prendre toute la largeur quand il partage la ligne avec Refuser.
+    .bb-med-cons__valider-btn { width: auto; margin-top: 0; }
+  }
+
+  &__btn-refuser { color: var(--bb-danger); }
+
+  &__btn-confirmer-refus {
+    --mdc-filled-button-container-color: var(--bb-danger);
+    --mdc-filled-button-label-text-color: #fff;
+  }
+
+  &__refus { border-color: var(--bb-danger-border); }
+
+  // Le badge d'urgence dans la liste suit le nom du patient sur la meme ligne.
+  .bb-med-cons__item-patient { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .bb-med-cons__detail-header { align-items: center; }
+  .bb-med-cons__detail-header > .bb-badge { margin-left: auto; }
+}

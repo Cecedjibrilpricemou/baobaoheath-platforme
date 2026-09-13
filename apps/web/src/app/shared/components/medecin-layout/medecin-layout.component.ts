@@ -77,6 +77,7 @@ export class MedecinLayoutComponent {
   navItems = [
     { labelKey: 'MEDECIN.NAV_DASHBOARD',    icon: 'pi-home',         route: '/medecin/dashboard'     },
     { labelKey: 'MEDECIN.NAV_CONSULTATIONS', icon: 'pi-check-circle', route: '/medecin/consultations' },
+    { labelKey: 'MEDECIN.NAV_REFERENCEMENTS', icon: 'pi-send',        route: '/medecin/referencements' },
     { labelKey: 'MEDECIN.NAV_MESSAGERIE',    icon: 'pi-comments',     route: '/medecin/messagerie'    }
   ];
 }

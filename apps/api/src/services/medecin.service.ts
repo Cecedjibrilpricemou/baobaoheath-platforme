@@ -279,19 +279,24 @@ export async function repondreReferencement(
             idMedecinValideur: user.userId,
             reponduLe: new Date(),
         },
+        // Meme forme que getReferencements (ReferencementATraiterView) : la page
+        // remplace la ligne traitee par la reponse sans recharger la liste.
         include: {
             consultation: {
                 include: {
                     patient: {
                         include: {
                             utilisateur: {
-                                select: { id: true, prenom: true, nom: true },
+                                select: { id: true, prenom: true, nom: true, telephone: true },
                             },
                         },
                     },
+                    constantes: true,
+                    diagnostics: true,
                     asc: { select: { idUtilisateur: true } },
                 },
             },
+            structureSource: true,
             structureCible: true,
         },
     });

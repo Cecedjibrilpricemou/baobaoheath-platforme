@@ -55,13 +55,13 @@
         <div class="bb-med-dash__stat-label">{{ 'MEDECIN.DASHBOARD.STAT_VALIDATED' | translate }}</div>
       </div>
 
-      <div class="bb-med-dash__stat-card bb-med-dash__stat-card--info">
+      <a routerLink="/medecin/referencements" class="bb-med-dash__stat-card bb-med-dash__stat-card--info">
         <div class="bb-med-dash__stat-top">
           <div class="bb-med-dash__stat-icon"><i class="pi pi-send"></i></div>
         </div>
         <div class="bb-med-dash__stat-value">{{ stats()?.referencementsEnAttente ?? 0 }}</div>
         <div class="bb-med-dash__stat-label">{{ 'MEDECIN.DASHBOARD.STAT_REFERENCEMENTS' | translate }}</div>
-      </div>
+      </a>
 
       <a routerLink="/medecin/messagerie" class="bb-med-dash__stat-card bb-med-dash__stat-card--primary">
         <div class="bb-med-dash__stat-top">

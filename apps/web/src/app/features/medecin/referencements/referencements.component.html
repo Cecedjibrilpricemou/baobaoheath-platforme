@@ -1,0 +1,198 @@
+<!-- features/medecin/referencements/referencements.component.html -->
+<div class="bb-med-cons bb-med-ref">
+
+  <!-- Header -->
+  <div class="bb-med-cons__header">
+    <div>
+      <h1 class="bb-med-cons__title"><i class="pi pi-send"></i> {{ 'MEDECIN.REFERENCEMENTS.TITLE' | translate }}</h1>
+      <p class="bb-med-cons__subtitle">{{ 'MEDECIN.REFERENCEMENTS.SUBTITLE' | translate: { count: total() } }}</p>
+    </div>
+  </div>
+
+  <!-- Filtre par statut -->
+  <div class="bb-med-ref__filtres" role="tablist">
+    @for (f of filtres; track f) {
+      <button
+        type="button"
+        role="tab"
+        class="bb-med-ref__filtre"
+        [class.bb-med-ref__filtre--active]="filtre() === f"
+        [attr.aria-selected]="filtre() === f"
+        (click)="setFiltre(f)"
+      >
+        {{ 'MEDECIN.REFERENCEMENTS.FILTRE_' + f | translate }}
+      </button>
+    }
+  </div>
+
+  <div class="bb-med-cons__layout">
+
+    <!-- Liste -->
+    <div class="bb-med-cons__list" [class.bb-med-cons__list--hidden]="selected()">
+      @if (isLoading()) {
+        @for (i of [1,2,3,4]; track i) {
+          <div class="bb-skeleton" style="height:90px;border-radius:8px"></div>
+        }
+      } @else if (referencements().length === 0) {
+        <div class="bb-med-cons__empty">
+          <i class="pi pi-send"></i>
+          <p>{{ 'MEDECIN.REFERENCEMENTS.EMPTY_TITLE' | translate }}</p>
+          <span>{{ 'MEDECIN.REFERENCEMENTS.EMPTY_SUB' | translate }}</span>
+        </div>
+      } @else {
+        @for (r of referencements(); track r.id) {
+          <div
+            class="bb-med-cons__item"
+            role="button"
+            tabindex="0"
+            [class.bb-med-cons__item--active]="selected()?.id === r.id"
+            [attr.aria-pressed]="selected()?.id === r.id"
+            [attr.aria-label]="getPatientNom(r) + ' — ' + r.consultation.motifPrincipal"
+            (click)="selectionner(r)"
+            (keydown.enter)="selectionner(r)"
+            (keydown.space)="$event.preventDefault(); selectionner(r)"
+          >
+            <div class="bb-med-cons__item-avatar" aria-hidden="true">{{ getInitiales(r) }}</div>
+            <div class="bb-med-cons__item-info">
+              <p class="bb-med-cons__item-patient">
+                {{ getPatientNom(r) }}
+                <span class="bb-badge" [class]="'bb-badge ' + urgenceClasse(r)">{{ 'MEDECIN.REFERENCEMENTS.URGENCE_' + r.urgence | translate }}</span>
+              </p>
+              <p class="bb-med-cons__item-motif">{{ r.consultation.motifPrincipal }}</p>
+              <p class="bb-med-cons__item-meta">
+                <i class="pi pi-building" aria-hidden="true"></i> {{ r.structureSource?.nom ?? ('MEDECIN.REFERENCEMENTS.SOURCE_INCONNUE' | translate) }} ·
+                {{ formatDate(r.creeLe) }}
+              </p>
+            </div>
+            <i class="pi pi-chevron-right" aria-hidden="true"></i>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Détail + réponse -->
+    @if (selected(); as r) {
+      <div class="bb-med-cons__detail">
+        <div class="bb-med-cons__detail-header">
+          <button class="bb-med-cons__back" (click)="fermerDetail()">
+            <i class="pi pi-arrow-left"></i> {{ 'COMMON.BACK' | translate }}
+          </button>
+          <div>
+            <h2 class="bb-med-cons__detail-patient">
+              {{ getPatientNom(r) }}
+              @if (getAge(r) !== null) { <span class="bb-med-ref__age">{{ 'MEDECIN.REFERENCEMENTS.AGE' | translate: { age: getAge(r) ?? '' } }}</span> }
+            </h2>
+            <p class="bb-med-cons__detail-meta">
+              {{ 'MEDECIN.REFERENCEMENTS.RECU_LE' | translate }} {{ formatDate(r.creeLe) }}
+              · {{ r.structureSource?.nom ?? ('MEDECIN.REFERENCEMENTS.SOURCE_INCONNUE' | translate) }} → {{ r.structureCible.nom }}
+            </p>
+          </div>
+          <span [class]="'bb-badge ' + urgenceClasse(r)">{{ 'MEDECIN.REFERENCEMENTS.URGENCE_' + r.urgence | translate }}</span>
+        </div>
+
+        <!-- Statut si déjà traité -->
+        @if (r.statut !== 'EN_ATTENTE') {
+          <div class="bb-med-cons__alert" [class.bb-med-cons__alert--success]="r.statut === 'ACCEPTE'" [class.bb-med-cons__alert--error]="r.statut === 'REFUSE'" role="status">
+            <i class="pi" [class.pi-check-circle]="r.statut === 'ACCEPTE'" [class.pi-times-circle]="r.statut === 'REFUSE'" aria-hidden="true"></i>
+            {{ 'MEDECIN.REFERENCEMENTS.STATUT_' + r.statut | translate }} · {{ formatDate(r.reponduLe) }}
+            @if (r.motifRefus) { — {{ r.motifRefus }} }
+          </div>
+        }
+
+        <!-- Résumé clinique de l'ASC -->
+        <div class="bb-med-cons__block">
+          <h3 class="bb-med-cons__block-title"><i class="pi pi-file"></i> {{ 'MEDECIN.REFERENCEMENTS.RESUME' | translate }}</h3>
+          <p class="bb-med-cons__block-text">{{ r.resumeClinique }}</p>
+        </div>
+
+        <!-- Consultation d'origine -->
+        <div class="bb-med-cons__block">
+          <h3 class="bb-med-cons__block-title"><i class="pi pi-stethoscope"></i> {{ 'MEDECIN.REFERENCEMENTS.CONSULTATION' | translate }}</h3>
+          <p class="bb-med-cons__block-text"><strong>{{ r.consultation.motifPrincipal }}</strong> · {{ formatDate(r.consultation.consulteeLE) }}</p>
+          @if (r.consultation.symptomes.length) {
+            <div class="bb-med-ref__tags">
+              @for (s of r.consultation.symptomes; track s) { <span class="bb-badge bb-badge--neutral">{{ s }}</span> }
+            </div>
+          }
+          @if (r.consultation.patient.allergies?.length) {
+            <p class="bb-med-cons__block-note">
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+              {{ 'MEDECIN.REFERENCEMENTS.ALLERGIES' | translate }} {{ r.consultation.patient.allergies!.join(', ') }}
+            </p>
+          }
+        </div>
+
+        <!-- Constantes -->
+        @if (r.consultation.constantes; as c) {
+          <div class="bb-med-cons__block">
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-heart-fill"></i> {{ 'MEDECIN.CONSULTATIONS.VITALS_TITLE' | translate }}</h3>
+            @if (c.alertes?.length) {
+              <div class="bb-med-cons__alertes" role="alert">
+                @for (a of c.alertes!; track a) { <span class="bb-med-cons__alerte-item">⚠️ {{ a }}</span> }
+              </div>
+            }
+            <div class="bb-med-cons__vitals">
+              @if (c.temperature) { <span>🌡️ {{ c.temperature }}°C</span> }
+              @if (c.tensionSystolique) { <span>🩺 {{ c.tensionSystolique }}/{{ c.tensionDiastolique }} mmHg</span> }
+              @if (c.frequenceCardiaque) { <span>❤️ {{ c.frequenceCardiaque }} bpm</span> }
+              @if (c.spo2) { <span>🩸 SpO2 {{ c.spo2 }}%</span> }
+              @if (c.poidsKg) { <span>⚖️ {{ c.poidsKg }} kg</span> }
+            </div>
+          </div>
+        }
+
+        <!-- Diagnostics -->
+        @if (r.consultation.diagnostics.length) {
+          <div class="bb-med-cons__block">
+            <h3 class="bb-med-cons__block-title"><i class="pi pi-search"></i> {{ 'MEDECIN.CONSULTATIONS.DIAGNOSTICS_TITLE' | translate }}</h3>
+            @for (d of r.consultation.diagnostics; track d.id) {
+              <div class="bb-med-cons__diag">
+                <span class="bb-med-cons__diag-type">{{ d.typeDiagnostic }}</span>
+                <span class="bb-med-cons__diag-label">{{ d.libelle }}</span>
+                @if (d.severite) { <span class="bb-badge bb-badge--warning">{{ d.severite }}</span> }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Réponse -->
+        @if (r.statut === 'EN_ATTENTE') {
+          @if (!refusEnCours()) {
+            <div class="bb-med-ref__actions">
+              <button matButton="outlined" type="button" class="bb-med-ref__btn-refuser" (click)="ouvrirRefus()" [disabled]="isRepondant()">
+                <i class="pi pi-times" aria-hidden="true"></i> {{ 'MEDECIN.REFERENCEMENTS.REFUSER' | translate }}
+              </button>
+              <button class="bb-med-cons__valider-btn" type="button" (click)="accepter()" [disabled]="isRepondant()">
+                <i class="pi pi-check-circle" aria-hidden="true"></i>
+                {{ (isRepondant() ? 'MEDECIN.REFERENCEMENTS.ENVOI' : 'MEDECIN.REFERENCEMENTS.ACCEPTER') | translate }}
+              </button>
+            </div>
+          } @else {
+            <div class="bb-med-cons__block bb-med-ref__refus">
+              <h3 id="motif-refus-title" class="bb-med-cons__block-title"><i class="pi pi-times-circle" aria-hidden="true"></i> {{ 'MEDECIN.REFERENCEMENTS.MOTIF_TITLE' | translate }}</h3>
+              <p class="bb-med-cons__block-note">{{ 'MEDECIN.REFERENCEMENTS.MOTIF_HINT' | translate }}</p>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <textarea
+                  matInput
+                  [(ngModel)]="motifRefus"
+                  [placeholder]="'MEDECIN.REFERENCEMENTS.MOTIF_PLACEHOLDER' | translate"
+                  aria-labelledby="motif-refus-title"
+                  rows="3"
+                  maxlength="1000"
+                ></textarea>
+              </mat-form-field>
+              <div class="bb-med-ref__actions">
+                <button matButton type="button" (click)="annulerRefus()" [disabled]="isRepondant()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button matButton="filled" type="button" class="bb-med-ref__btn-confirmer-refus" (click)="confirmerRefus()" [disabled]="isRepondant() || !motifRefus.trim()">
+                  <i class="pi pi-times" aria-hidden="true"></i>
+                  {{ (isRepondant() ? 'MEDECIN.REFERENCEMENTS.ENVOI' : 'MEDECIN.REFERENCEMENTS.CONFIRMER_REFUS') | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+
+  </div>
+</div>

@@ -5,7 +5,12 @@ import { ApiService } from './api.service';
 import { Patient } from '../models/patient.model';
 import { Consultation } from '../models/asc.model';
 import { MedecinStats, OrdonnanceCreationPayload, ValidationDiagnosticPayload } from '../models/medecin.model';
-import { ApiResponse, PaginatedData } from '../models/api.model';
+import { ApiResponse } from '../models/api.model';
+import type {
+  ReferencementATraiterView,
+  ReferralStatus,
+  RepondreReferencementDto,
+} from '@baobaoheath/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class MedecinService {
@@ -15,11 +20,15 @@ export class MedecinService {
     return this.api.get<ApiResponse<Patient>>(`/patients/${idPatient}`);
   }
 
-  getReferencements(page = 1, limit = 20): Observable<ApiResponse<PaginatedData<Consultation>>> {
-    return this.api.get<ApiResponse<PaginatedData<Consultation>>>('/medecin/referencements', {
-      page: page.toString(),
-      limit: limit.toString()
-    });
+  // L'API renvoie { success, data: [], meta } a plat (pas de PaginatedData).
+  getReferencements(page = 1, limit = 20, statut?: ReferralStatus): Observable<ApiResponse<ReferencementATraiterView[]>> {
+    const params: Record<string, string> = { page: page.toString(), limit: limit.toString() };
+    if (statut) params['statut'] = statut;
+    return this.api.get<ApiResponse<ReferencementATraiterView[]>>('/medecin/referencements', params);
+  }
+
+  repondreReferencement(id: string, payload: RepondreReferencementDto): Observable<ApiResponse<ReferencementATraiterView>> {
+    return this.api.put<ApiResponse<ReferencementATraiterView>>(`/medecin/referencements/${id}/repondre`, payload);
   }
 
   validerConsultation(idConsultation: string, payload: ValidationDiagnosticPayload): Observable<ApiResponse<Consultation>> {
