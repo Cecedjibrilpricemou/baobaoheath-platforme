@@ -6,9 +6,9 @@ import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { ThemeService } from '../../../shared/services/theme.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { AuthShellComponent } from '../../../shared/components/auth-shell/auth-shell.component';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -18,7 +18,7 @@ import { ToastrService } from 'ngx-toastr';
     MatButtonModule,
     MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink,
-    TranslatePipe
+    TranslatePipe, AuthShellComponent
   ],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss'
@@ -27,7 +27,6 @@ export class ResetPasswordComponent implements OnInit {
   private authService   = inject(AuthService);
   private router        = inject(Router);
   private route         = inject(ActivatedRoute);
-  readonly themeService = inject(ThemeService);
   private i18nService   = inject(I18nService);
   private toastr        = inject(ToastrService);
 
@@ -43,8 +42,6 @@ export class ResetPasswordComponent implements OnInit {
 
   togglePassword() { this.showPassword.update(v => !v); }
   toggleConfirm()  { this.showConfirm.update(v => !v); }
-  toggleTheme()    { this.themeService.toggle(); }
-  toggleLang()     { this.i18nService.toggle(); }
 
   ngOnInit() {
     const token = this.route.snapshot.queryParamMap.get('token');

@@ -1,244 +1,209 @@
 <!-- features/auth/login/login.component.html -->
-<div class="bb-auth">
+<app-auth-shell titleKey="AUTH.VISUAL.TITLE" textKey="AUTH.VISUAL.TEXT">
 
-  <!-- ── FORMULAIRE ─────────────────────────────────────────────── -->
-  <div class="bb-auth__panel">
+  @if (!requiresOtp()) {
+    <h1 class="bb-auth__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h1>
+    <p class="bb-auth__sub">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
+  } @else {
+    <div class="otp-header">
+      <div class="otp-header__icon">
+        <i class="pi pi-shield"></i>
+      </div>
+      <h1 class="bb-auth__title">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</h1>
+      <p class="bb-auth__sub">{{ 'AUTH.LOGIN.OTP_SUBTITLE' | translate }}<br><strong>{{ otpEmail() }}</strong></p>
 
-    <div class="bb-auth__controls">
-      <button type="button" class="bb-auth__ctrl" (click)="toggleTheme()"
-        [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
-        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-      </button>
-      <button type="button" class="bb-auth__ctrl" (click)="toggleLang()">
-        <i class="pi pi-globe" aria-hidden="true"></i>
-        <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
-      </button>
+      <!-- Uniquement en developpement : l'API ne renvoie devOtp que
+           lorsque l'envoi de l'email a echoue et hors production. -->
+      @if (codeDeveloppement()) {
+        <p class="otp-dev-code" role="status">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          {{ 'AUTH.LOGIN.OTP_DEV_CODE' | translate }}
+          <strong>{{ codeDeveloppement() }}</strong>
+        </p>
+      }
     </div>
+  }
 
-    <div class="bb-auth__inner">
+  @if (!requiresOtp()) {
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm" novalidate>
 
-      <div class="bb-auth__brand">
-        <span class="bb-auth__brand-name">{{ 'APP.NAME' | translate }}</span>
+      <!-- Téléphone OU Email — détection automatique -->
+      <div class="form-field-wrap">
+        <label class="form-label" for="identifiant">
+          {{ 'AUTH.LOGIN.IDENTIFIANT' | translate }}
+        </label>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+          <i matPrefix [class]="identifiantIcon"></i>
+          <input
+            matInput
+            id="identifiant"
+            type="text"
+            placeholder="{{ 'AUTH.LOGIN.IDENTIFIANT_PLACEHOLDER' | translate }}"
+            [(ngModel)]="formData.identifiant"
+            name="identifiant"
+            required
+            autocomplete="username"
+            #identifiantInput="ngModel"
+            [attr.aria-invalid]="identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched) ? true : null"
+            aria-describedby="identifiant-msg"
+          />
+        </mat-form-field>
+        @if (identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched)) {
+          <small id="identifiant-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.IDENTIFIANT_REQUIRED' | translate }}</small>
+        }
+        @if (!(identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched))) {
+          <small id="identifiant-msg" class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
+        }
       </div>
 
-      @if (!requiresOtp()) {
-        <h1 class="bb-auth__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h1>
-        <p class="bb-auth__sub">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
-      } @else {
-        <div class="otp-header">
-          <div class="otp-header__icon">
-            <i class="pi pi-shield"></i>
-          </div>
-          <h1 class="bb-auth__title">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</h1>
-          <p class="bb-auth__sub">{{ 'AUTH.LOGIN.OTP_SUBTITLE' | translate }}<br><strong>{{ otpEmail() }}</strong></p>
+      <!-- Mot de passe -->
+      <div class="form-field-wrap">
+        <label class="form-label" for="motDePasse">
+          {{ 'AUTH.LOGIN.PASSWORD' | translate }}
+        </label>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+          <i matPrefix class="pi pi-lock"></i>
+          <input
+            matInput
+            id="motDePasse"
+            [type]="showPassword() ? 'text' : 'password'"
+            [placeholder]="'AUTH.LOGIN.PASSWORD' | translate"
+            [(ngModel)]="formData.motDePasse"
+            name="motDePasse"
+            required
+            autocomplete="current-password"
+            #mdpInput="ngModel"
+            [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
+            aria-describedby="motDePasse-msg"
+          />
+          <button matSuffix type="button" class="toggle-btn"
+            (click)="togglePassword()"
+            [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
+            [attr.aria-pressed]="showPassword()"
+          >
+            <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+          </button>
+        </mat-form-field>
+        @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
+          <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.PASSWORD_REQUIRED' | translate }}</small>
+        }
+      </div>
 
-          <!-- Uniquement en developpement : l'API ne renvoie devOtp que
-               lorsque l'envoi de l'email a echoue et hors production. -->
-          @if (codeDeveloppement()) {
-            <p class="otp-dev-code" role="status">
-              <i class="pi pi-info-circle" aria-hidden="true"></i>
-              {{ 'AUTH.LOGIN.OTP_DEV_CODE' | translate }}
-              <strong>{{ codeDeveloppement() }}</strong>
-            </p>
+      <!-- Mot de passe oublié -->
+      <div class="bb-auth__link-row">
+        <a routerLink="/auth/forgot-password" class="bb-auth__link">
+          {{ 'AUTH.FORGOT.TITLE' | translate }}
+        </a>
+      </div>
+
+      <!-- Bouton connexion -->
+      <button
+        matButton="filled"
+        type="submit"
+        class="bb-auth__submit"
+        [disabled]="isLoading()"
+      >
+        <i [class]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'" aria-hidden="true"></i>
+        {{ isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate) }}
+      </button>
+
+      <div class="form-separator">
+        <span class="form-separator__line"></span>
+        <span class="form-separator__text">{{ 'COMMON.OR' | translate }}</span>
+        <span class="form-separator__line"></span>
+      </div>
+
+      <a routerLink="/auth/register" class="bb-auth__alt">
+        <i class="pi pi-user-plus"></i>
+        {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
+      </a>
+
+    </form>
+  } @else {
+
+    <!-- ── Status bar : countdown ou expiré ──────────────────── -->
+    @if (otpExpired) {
+      <div class="otp-status otp-status--expired" role="status" aria-live="polite">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        {{ 'AUTH.LOGIN.OTP_EXPIRED_MSG' | translate }}
+      </div>
+    } @else {
+      <div class="otp-status otp-status--timer" [class.otp-status--warning]="otpSecondsLeft() < 60" role="status" aria-live="polite">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        {{ 'AUTH.LOGIN.OTP_EXPIRES_IN' | translate }} : <strong>{{ otpTimeDisplay }}</strong>
+      </div>
+    }
+
+    <form (ngSubmit)="verifyOtp()" #otpForm="ngForm" novalidate>
+
+      <!-- Champs OTP -->
+      <div class="form-field-wrap">
+        <span id="otp-group-label" class="form-label">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</span>
+        <div class="otp-inputs-container"
+             role="group"
+             aria-labelledby="otp-group-label"
+             [style.opacity]="(isLoading() || otpExpired) ? '0.6' : '1'"
+             [style.pointer-events]="(isLoading() || otpExpired) ? 'none' : 'auto'">
+          @for (digit of otpDigits; track $index) {
+            <input
+              #otpInput
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              class="otp-digit-input"
+              [class.filled]="otpDigits[$index]"
+              [(ngModel)]="otpDigits[$index]"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="onOtpChange($index, $event)"
+              (keydown)="onOtpKeyDown($index, $event)"
+              (paste)="onOtpPaste($event)"
+              [disabled]="isLoading() || otpExpired"
+              [attr.aria-label]="'AUTH.LOGIN.OTP_DIGIT_ARIA' | translate: { n: $index + 1, total: otpDigits.length }"
+            />
           }
         </div>
-      }
+      </div>
 
-      @if (!requiresOtp()) {
-        <form (ngSubmit)="onSubmit()" #loginForm="ngForm" novalidate>
+      <!-- Bouton vérifier -->
+      <button
+        matButton="filled"
+        type="submit"
+        class="bb-auth__submit"
+        [disabled]="isLoading() || otpCode.length !== 6 || otpExpired"
+      >
+        <i class="pi pi-check" aria-hidden="true"></i>
+        {{ 'AUTH.LOGIN.OTP_SUBMIT' | translate }}
+      </button>
 
-          <!-- Téléphone OU Email — détection automatique -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="identifiant">
-              {{ 'AUTH.LOGIN.IDENTIFIANT' | translate }}
-            </label>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <i matPrefix [class]="identifiantIcon"></i>
-              <input
-                matInput
-                id="identifiant"
-                type="text"
-                placeholder="{{ 'AUTH.LOGIN.IDENTIFIANT_PLACEHOLDER' | translate }}"
-                [(ngModel)]="formData.identifiant"
-                name="identifiant"
-                required
-                autocomplete="username"
-                #identifiantInput="ngModel"
-                [attr.aria-invalid]="identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched) ? true : null"
-                aria-describedby="identifiant-msg"
-              />
-            </mat-form-field>
-            @if (identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched)) {
-              <small id="identifiant-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.IDENTIFIANT_REQUIRED' | translate }}</small>
-            }
-            @if (!(identifiantInput.invalid && (identifiantInput.dirty || identifiantInput.touched))) {
-              <small id="identifiant-msg" class="form-hint">{{ 'AUTH.LOGIN.IDENTIFIANT_HINT' | translate }}</small>
-            }
-          </div>
+      <!-- Actions secondaires -->
+      <div class="otp-actions">
+        <button
+          type="button"
+          class="otp-resend-btn"
+          (click)="resendOtp()"
+          [disabled]="isLoading()"
+        >
+          <i class="pi pi-refresh"></i>
+          {{ 'AUTH.LOGIN.OTP_RESEND' | translate }}
+        </button>
 
-          <!-- Mot de passe -->
-          <div class="form-field-wrap">
-            <label class="form-label" for="motDePasse">
-              {{ 'AUTH.LOGIN.PASSWORD' | translate }}
-            </label>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <i matPrefix class="pi pi-lock"></i>
-              <input
-                matInput
-                id="motDePasse"
-                [type]="showPassword() ? 'text' : 'password'"
-                [placeholder]="'AUTH.LOGIN.PASSWORD' | translate"
-                [(ngModel)]="formData.motDePasse"
-                name="motDePasse"
-                required
-                autocomplete="current-password"
-                #mdpInput="ngModel"
-                [attr.aria-invalid]="mdpInput.invalid && (mdpInput.dirty || mdpInput.touched) ? true : null"
-                aria-describedby="motDePasse-msg"
-              />
-              <button matSuffix type="button" class="toggle-btn"
-                (click)="togglePassword()"
-                [attr.aria-label]="(showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate"
-                [attr.aria-pressed]="showPassword()"
-              >
-                <span class="toggle-label">
-                  {{ (showPassword() ? 'AUTH.LOGIN.HIDE' : 'AUTH.LOGIN.SHOW') | translate }}
-                </span>
-              </button>
-            </mat-form-field>
-            @if (mdpInput.invalid && (mdpInput.dirty || mdpInput.touched)) {
-              <small id="motDePasse-msg" class="bb-error-text" role="alert">{{ 'AUTH.LOGIN.PASSWORD_REQUIRED' | translate }}</small>
-            }
-          </div>
+        <button
+          type="button"
+          class="otp-back-btn"
+          (click)="cancelOtp()"
+          [disabled]="isLoading()"
+        >
+          <i class="pi pi-arrow-left"></i>
+          {{ 'AUTH.LOGIN.OTP_BACK' | translate }}
+        </button>
+      </div>
 
-          <!-- Mot de passe oublié -->
-          <div class="forgot-link-wrap">
-            <a routerLink="/auth/forgot-password" class="forgot-link">
-              {{ 'AUTH.FORGOT.TITLE' | translate }}
-            </a>
-          </div>
+    </form>
+  }
 
-          <!-- Bouton connexion -->
-          <button
-            matButton="filled"
-            type="submit"
-            class="bb-field-full login-submit-btn"
-            [disabled]="isLoading()"
-          >
-            <i [class]="isLoading() ? 'pi pi-spinner pi-spin' : 'pi pi-sign-in'" aria-hidden="true"></i>
-            {{ isLoading() ? ('AUTH.LOGIN.LOADING' | translate) : ('AUTH.LOGIN.SUBMIT' | translate) }}
-          </button>
+  <p class="bb-auth__footer">
+    <i class="pi pi-shield"></i>
+    {{ 'AUTH.LOGIN.FOOTER' | translate }}
+  </p>
 
-          <div class="form-separator">
-            <span class="form-separator__line"></span>
-            <span class="form-separator__text">{{ 'COMMON.OR' | translate }}</span>
-            <span class="form-separator__line"></span>
-          </div>
-
-          <a routerLink="/auth/register" class="register-link">
-            <i class="pi pi-user-plus"></i>
-            {{ 'AUTH.LOGIN.REGISTER_LINK' | translate }}
-          </a>
-
-        </form>
-      } @else {
-
-        <!-- ── Status bar : countdown ou expiré ──────────────────── -->
-        @if (otpExpired) {
-          <div class="otp-status otp-status--expired" role="status" aria-live="polite">
-            <i class="pi pi-clock" aria-hidden="true"></i>
-            {{ 'AUTH.LOGIN.OTP_EXPIRED_MSG' | translate }}
-          </div>
-        } @else {
-          <div class="otp-status otp-status--timer" [class.otp-status--warning]="otpSecondsLeft() < 60" role="status" aria-live="polite">
-            <i class="pi pi-clock" aria-hidden="true"></i>
-            {{ 'AUTH.LOGIN.OTP_EXPIRES_IN' | translate }} : <strong>{{ otpTimeDisplay }}</strong>
-          </div>
-        }
-
-        <form (ngSubmit)="verifyOtp()" #otpForm="ngForm" novalidate>
-
-          <!-- Champs OTP -->
-          <div class="form-field-wrap">
-            <span id="otp-group-label" class="form-label">{{ 'AUTH.LOGIN.OTP_TITLE' | translate }}</span>
-            <div class="otp-inputs-container"
-                 role="group"
-                 aria-labelledby="otp-group-label"
-                 [style.opacity]="(isLoading() || otpExpired) ? '0.6' : '1'"
-                 [style.pointer-events]="(isLoading() || otpExpired) ? 'none' : 'auto'">
-              @for (digit of otpDigits; track $index) {
-                <input
-                  #otpInput
-                  type="text"
-                  inputmode="numeric"
-                  maxlength="1"
-                  class="otp-digit-input"
-                  [class.filled]="otpDigits[$index]"
-                  [(ngModel)]="otpDigits[$index]"
-                  [ngModelOptions]="{standalone: true}"
-                  (ngModelChange)="onOtpChange($index, $event)"
-                  (keydown)="onOtpKeyDown($index, $event)"
-                  (paste)="onOtpPaste($event)"
-                  [disabled]="isLoading() || otpExpired"
-                  [attr.aria-label]="'AUTH.LOGIN.OTP_DIGIT_ARIA' | translate: { n: $index + 1, total: otpDigits.length }"
-                />
-              }
-            </div>
-          </div>
-
-          <!-- Bouton vérifier -->
-          <button
-            matButton="filled"
-            type="submit"
-            class="bb-field-full login-submit-btn"
-            [disabled]="isLoading() || otpCode.length !== 6 || otpExpired"
-          >
-            <i class="pi pi-check" aria-hidden="true"></i>
-            {{ 'AUTH.LOGIN.OTP_SUBMIT' | translate }}
-          </button>
-
-          <!-- Actions secondaires -->
-          <div class="otp-actions">
-            <button
-              type="button"
-              class="otp-resend-btn"
-              (click)="resendOtp()"
-              [disabled]="isLoading()"
-            >
-              <i class="pi pi-refresh"></i>
-              {{ 'AUTH.LOGIN.OTP_RESEND' | translate }}
-            </button>
-
-            <button
-              type="button"
-              class="otp-back-btn"
-              (click)="cancelOtp()"
-              [disabled]="isLoading()"
-            >
-              <i class="pi pi-arrow-left"></i>
-              {{ 'AUTH.LOGIN.OTP_BACK' | translate }}
-            </button>
-          </div>
-
-        </form>
-      }
-
-      <p class="bb-auth__footer">
-        <i class="pi pi-shield"></i>
-        {{ 'AUTH.LOGIN.FOOTER' | translate }}
-      </p>
-
-    </div>
-  </div>
-
-  <!-- ── VISUEL ─────────────────────────────────────────────────── -->
-  <aside class="bb-auth__visual" aria-hidden="true">
-    <img src="assets/images/loginimage.jpeg" alt="" class="bb-auth__visual-img" />
-    <div class="bb-auth__visual-veil"></div>
-    <div class="bb-auth__visual-quote">
-      <p class="bb-auth__visual-title">{{ 'AUTH.VISUAL.TITLE' | translate }}</p>
-      <p class="bb-auth__visual-text">{{ 'AUTH.VISUAL.TEXT' | translate }}</p>
-    </div>
-  </aside>
-
-</div>
+</app-auth-shell>

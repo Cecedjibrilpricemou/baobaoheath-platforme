@@ -11,9 +11,9 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegisterPayload } from '../../../core/models/user.model';
-import { ThemeService } from '../../../shared/services/theme.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { AuthShellComponent } from '../../../shared/components/auth-shell/auth-shell.component';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -23,7 +23,7 @@ import { ToastrService } from 'ngx-toastr';
     MatButtonModule,
     MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink, CommonModule,
-    TranslatePipe
+    TranslatePipe, AuthShellComponent
   ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
@@ -31,7 +31,6 @@ import { ToastrService } from 'ngx-toastr';
 export class RegisterComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
-  readonly themeService = inject(ThemeService);
   private i18nService = inject(I18nService);
   private toastr = inject(ToastrService);
 
@@ -47,8 +46,6 @@ export class RegisterComponent {
 
   togglePassword() { this.showPassword.update(v => !v); }
   toggleConfirmPassword() { this.showConfirmPassword.update(v => !v); }
-  toggleTheme() { this.themeService.toggle(); }
-  toggleLang() { this.i18nService.toggle(); }
 
   private validate(): boolean {
     const errTitle = this.i18nService.t('AUTH.REGISTER.ERR_TITLE');

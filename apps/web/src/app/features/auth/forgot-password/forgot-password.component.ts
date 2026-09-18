@@ -6,9 +6,9 @@ import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { ThemeService } from '../../../shared/services/theme.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { AuthShellComponent } from '../../../shared/components/auth-shell/auth-shell.component';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -18,23 +18,19 @@ import { ToastrService } from 'ngx-toastr';
     MatButtonModule,
     MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink,
-    TranslatePipe
+    TranslatePipe, AuthShellComponent
   ],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss'
 })
 export class ForgotPasswordComponent {
   private authService   = inject(AuthService);
-  readonly themeService = inject(ThemeService);
   private i18nService   = inject(I18nService);
   private toastr        = inject(ToastrService);
 
   email     = '';
   isLoading = signal(false);
   submitted = signal(false);
-
-  toggleTheme() { this.themeService.toggle(); }
-  toggleLang()  { this.i18nService.toggle(); }
 
   onSubmit() {
     if (!this.email || !this.email.includes('@')) {

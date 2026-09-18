@@ -102,7 +102,10 @@
   "AUTH": {
     "VISUAL": {
       "TITLE": "Community health, connected.",
-      "TEXT": "Health workers, doctors and pharmacists share the same patient record, online and offline."
+      "TEXT": "Health workers, doctors and pharmacists share the same patient record, online and offline.",
+      "POINT_1": "One record, shared by your caregivers",
+      "POINT_2": "Personal QR Code for instant access",
+      "POINT_3": "Works even on low bandwidth"
     },
     "LOGIN": {
       "TITLE": "Sign in",
@@ -186,7 +189,7 @@
     },
     "REGISTER": {
       "TITLE": "Create account",
-      "SUBTITLE": "All fields are required",
+      "SUBTITLE": "Create your patient record in under 2 minutes.",
       "ROLE_LABEL": "I am a...",
       "FIRST_NAME": "First name",
       "LAST_NAME": "Last name",
@@ -200,7 +203,7 @@
       "LOADING": "Creating account...",
       "LOGIN_LINK": "Already have an account? Sign in",
       "WELCOME_TITLE": "Join us",
-      "WELCOME_SUBTITLE": "Create your account and access Guinea's digital health platform.",
+      "WELCOME_SUBTITLE": "Your health record follows you across Guinea: consultations, vaccines, prescriptions.",
       "SUCCESS": "Account created successfully! Redirecting...",
       "ERR_NAME": "Please enter your first and last name.",
       "ERR_PHONE": "Please enter your phone number.",

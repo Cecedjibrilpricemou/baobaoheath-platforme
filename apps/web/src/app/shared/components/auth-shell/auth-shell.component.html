@@ -1,0 +1,55 @@
+<div class="bb-auth">
+
+  <!-- ── FORMULAIRE ─────────────────────────────────────────────── -->
+  <div class="bb-auth__panel">
+
+    <div class="bb-auth__top">
+      <a routerLink="/" class="bb-auth__brand" [attr.aria-label]="'LANDING.NAV_HOME' | translate">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        <span class="bb-auth__brand-name">{{ 'APP.NAME' | translate }}</span>
+      </a>
+      <div class="bb-auth__controls">
+        <button type="button" class="bb-auth__ctrl" (click)="toggleTheme()"
+          [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="bb-auth__ctrl" (click)="toggleLang()">
+          <i class="pi pi-globe" aria-hidden="true"></i>
+          <span>{{ 'COMMON.LANG_TOGGLE' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="bb-auth__inner" [class.bb-auth__inner--large]="large()">
+      <ng-content></ng-content>
+    </div>
+  </div>
+
+  <!-- ── VISUEL ─────────────────────────────────────────────────── -->
+  <aside class="bb-auth__visual" aria-hidden="true">
+    <div class="bb-auth__visual-card">
+      <div class="bb-auth__visual-photo">
+        <img src="assets/images/loginimage.jpeg" alt="" width="1024" height="1024" />
+      </div>
+      <span class="bb-auth__visual-chip bb-auth__visual-chip--top">
+        <i class="pi pi-shield"></i> {{ 'LANDING.TRUST_SECURE' | translate }}
+      </span>
+      <span class="bb-auth__visual-chip bb-auth__visual-chip--bottom">
+        <i class="pi pi-wifi"></i> {{ 'LANDING.TRUST_OFFLINE' | translate }}
+      </span>
+    </div>
+
+    <div class="bb-auth__visual-quote">
+      <p class="bb-auth__visual-title">{{ titleKey() | translate }}</p>
+      <p class="bb-auth__visual-text">{{ textKey() | translate }}</p>
+      <ul class="bb-auth__visual-points">
+        @for (p of points; track p) {
+          <li><i class="pi pi-check-circle"></i> {{ p | translate }}</li>
+        }
+      </ul>
+    </div>
+
+    <p class="bb-auth__visual-foot">{{ 'LANDING.TRUST_MADE' | translate }}</p>
+  </aside>
+
+</div>

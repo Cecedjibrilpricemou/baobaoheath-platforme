@@ -1,0 +1,32 @@
+// shared/components/auth-shell/auth-shell.component.ts
+// Coquille commune des pages d'authentification (connexion, inscription,
+// mot de passe oublie, reinitialisation) : en-tete marque + theme/langue,
+// formulaire projete a gauche, panneau visuel de marque a droite.
+import { Component, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ThemeService } from '../../services/theme.service';
+import { I18nService } from '../../services/i18n.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+
+@Component({
+  selector: 'app-auth-shell',
+  standalone: true,
+  imports: [RouterLink, TranslatePipe],
+  templateUrl: './auth-shell.component.html',
+  // Styles globaux : styles/_auth.scss (les pages y font aussi reference).
+})
+export class AuthShellComponent {
+  readonly themeService = inject(ThemeService);
+  private i18nService   = inject(I18nService);
+
+  /** Cles i18n du message pose sous la photo. */
+  titleKey = input('AUTH.VISUAL.TITLE');
+  textKey  = input('AUTH.VISUAL.TEXT');
+  /** Formulaire large (champs par deux) : inscription. */
+  large = input(false);
+
+  readonly points = ['AUTH.VISUAL.POINT_1', 'AUTH.VISUAL.POINT_2', 'AUTH.VISUAL.POINT_3'];
+
+  toggleTheme() { this.themeService.toggle(); }
+  toggleLang()  { this.i18nService.toggle(); }
+}

@@ -13,9 +13,9 @@ import type { OtpLoginChallenge } from '@baobaoheath/shared-types';
 // concret : le champ devOtp — que l'API renvoie en developpement quand l'envoi
 // de l'email echoue — etait absent du type, donc jamais lu ni affiche.
 type LoginResponseData = Partial<OtpLoginChallenge> & { authenticated?: boolean };
-import { ThemeService } from '../../../shared/services/theme.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { AuthShellComponent } from '../../../shared/components/auth-shell/auth-shell.component';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -25,7 +25,7 @@ import { ToastrService } from 'ngx-toastr';
     MatButtonModule,
     MatFormFieldModule, MatInputModule,
     FormsModule, RouterLink,
-    TranslatePipe
+    TranslatePipe, AuthShellComponent
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
@@ -34,7 +34,6 @@ export class LoginComponent implements OnDestroy {
   private authService   = inject(AuthService);
   private router        = inject(Router);
   private route         = inject(ActivatedRoute);
-  readonly themeService = inject(ThemeService);
   private i18nService   = inject(I18nService);
   private toastr        = inject(ToastrService);
 
@@ -73,8 +72,6 @@ export class LoginComponent implements OnDestroy {
   }
 
   togglePassword() { this.showPassword.update(v => !v); }
-  toggleTheme()    { this.themeService.toggle(); }
-  toggleLang()     { this.i18nService.toggle(); }
 
   ngOnDestroy() { this.clearOtpTimer(); }
 

@@ -102,7 +102,10 @@
   "AUTH": {
     "VISUAL": {
       "TITLE": "La santé de proximité, reliée.",
-      "TEXT": "Agents de santé, médecins et pharmaciens partagent le même dossier patient, en ligne comme hors ligne."
+      "TEXT": "Agents de santé, médecins et pharmaciens partagent le même dossier patient, en ligne comme hors ligne.",
+      "POINT_1": "Un seul dossier, partagé par vos soignants",
+      "POINT_2": "QR Code personnel pour un accès instantané",
+      "POINT_3": "Fonctionne même en faible débit"
     },
     "LOGIN": {
       "TITLE": "Connexion",
@@ -186,7 +189,7 @@
     },
     "REGISTER": {
       "TITLE": "Créer un compte",
-      "SUBTITLE": "Tous les champs sont obligatoires",
+      "SUBTITLE": "Créez votre dossier patient en moins de 2 minutes.",
       "ROLE_LABEL": "Je suis un(e)...",
       "FIRST_NAME": "Prénom",
       "LAST_NAME": "Nom",
@@ -200,7 +203,7 @@
       "LOADING": "Création en cours...",
       "LOGIN_LINK": "Déjà un compte ? Se connecter",
       "WELCOME_TITLE": "Rejoignez-nous",
-      "WELCOME_SUBTITLE": "Créez votre compte et accédez à la plateforme de santé numérique de la Guinée.",
+      "WELCOME_SUBTITLE": "Votre dossier de santé vous suit partout en Guinée : consultations, vaccins, ordonnances.",
       "SUCCESS": "Compte créé avec succès ! Redirection...",
       "ERR_NAME": "Veuillez entrer votre nom et prénom.",
       "ERR_PHONE": "Veuillez entrer votre numéro de téléphone.",
