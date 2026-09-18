@@ -1,51 +1,61 @@
 <section class="contact-section" id="contact">
-  <div class="section-header">
-    <div class="section-tag">{{ 'LANDING.FOOTER_CONTACT' | translate }}</div>
-    <h2 class="section-title">{{ 'LANDING.CONTACT_TITLE' | translate }}</h2>
-    <p class="section-sub">{{ 'LANDING.CONTACT_SUB' | translate }}</p>
-  </div>
-
-  <div class="contact-container">
-    <div class="contact-info">
-      <div class="info-card">
-        <i class="pi pi-map-marker" aria-hidden="true"></i>
-        <h3>{{ 'LANDING.CONTACT_ADDRESS_LABEL' | translate }}</h3>
-        <p>{{ 'LANDING.CONTACT_ADDRESS_VALUE' | translate }}</p>
-      </div>
-      <div class="info-card">
-        <i class="pi pi-envelope" aria-hidden="true"></i>
-        <h3>{{ 'LANDING.CONTACT_EMAIL_LABEL' | translate }}</h3>
-        <p><a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a></p>
-      </div>
-      <div class="info-card">
-        <i class="pi pi-phone" aria-hidden="true"></i>
-        <h3>{{ 'LANDING.CONTACT_PHONE_LABEL' | translate }}</h3>
-        <p>+224 620 00 00 00</p>
-      </div>
+  <div class="contact-inner">
+    <div class="section-header">
+      <div class="section-tag">{{ 'LANDING.FOOTER_CONTACT' | translate }}</div>
+      <h2 class="section-title">
+        {{ 'LANDING.CONTACT_TITLE_A' | translate }} <span class="section-title__accent">{{ 'LANDING.CONTACT_TITLE_B' | translate }}</span>
+      </h2>
+      <p class="section-sub">{{ 'LANDING.CONTACT_SUB' | translate }}</p>
     </div>
 
-    <div class="contact-form">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="contact-nom">{{ 'LANDING.CONTACT_FORM_NAME' | translate }}</label>
-          <input id="contact-nom" type="text" class="bb-input" name="nom" [(ngModel)]="formulaire.nom" [placeholder]="'LANDING.CONTACT_FORM_NAME_PLACEHOLDER' | translate">
+    <div class="contact-container">
+      <div class="contact-info">
+        <div class="info-card">
+          <span class="info-card__icon info-card__icon--green" aria-hidden="true"><i class="pi pi-map-marker"></i></span>
+          <div>
+            <h3>{{ 'LANDING.CONTACT_ADDRESS_LABEL' | translate }}</h3>
+            <p>{{ 'LANDING.CONTACT_ADDRESS_VALUE' | translate }}</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <span class="info-card__icon info-card__icon--purple" aria-hidden="true"><i class="pi pi-envelope"></i></span>
+          <div>
+            <h3>{{ 'LANDING.CONTACT_EMAIL_LABEL' | translate }}</h3>
+            <p><a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a></p>
+          </div>
+        </div>
+        <div class="info-card">
+          <span class="info-card__icon info-card__icon--orange" aria-hidden="true"><i class="pi pi-phone"></i></span>
+          <div>
+            <h3>{{ 'LANDING.CONTACT_PHONE_LABEL' | translate }}</h3>
+            <p>+224 620 00 00 00</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="contact-nom">{{ 'LANDING.CONTACT_FORM_NAME' | translate }}</label>
+            <input id="contact-nom" type="text" class="bb-input" name="nom" [(ngModel)]="formulaire.nom" [placeholder]="'LANDING.CONTACT_FORM_NAME_PLACEHOLDER' | translate">
+          </div>
+          <div class="form-group">
+            <label for="contact-email">{{ 'LANDING.CONTACT_FORM_EMAIL' | translate }}</label>
+            <input id="contact-email" type="email" class="bb-input" name="email" [(ngModel)]="formulaire.email" [placeholder]="'LANDING.CONTACT_FORM_EMAIL_PLACEHOLDER' | translate">
+          </div>
         </div>
         <div class="form-group">
-          <label for="contact-email">{{ 'LANDING.CONTACT_FORM_EMAIL' | translate }}</label>
-          <input id="contact-email" type="email" class="bb-input" name="email" [(ngModel)]="formulaire.email" [placeholder]="'LANDING.CONTACT_FORM_EMAIL_PLACEHOLDER' | translate">
+          <label for="contact-sujet">{{ 'LANDING.CONTACT_FORM_SUBJECT' | translate }}</label>
+          <input id="contact-sujet" type="text" class="bb-input" name="sujet" [(ngModel)]="formulaire.sujet" [placeholder]="'LANDING.CONTACT_FORM_SUBJECT_PLACEHOLDER' | translate">
         </div>
+        <div class="form-group">
+          <label for="contact-message">{{ 'LANDING.CONTACT_FORM_MESSAGE' | translate }}</label>
+          <textarea id="contact-message" class="bb-input bb-textarea" rows="4" name="message" [(ngModel)]="formulaire.message" [placeholder]="'LANDING.CONTACT_FORM_MESSAGE_PLACEHOLDER' | translate"></textarea>
+        </div>
+        <button type="button" class="btn-primary w-full" (click)="envoyer()" [disabled]="!peutEnvoyer">
+          {{ 'LANDING.CONTACT_SEND' | translate }} <i class="pi pi-send" aria-hidden="true"></i>
+        </button>
       </div>
-      <div class="form-group">
-        <label for="contact-sujet">{{ 'LANDING.CONTACT_FORM_SUBJECT' | translate }}</label>
-        <input id="contact-sujet" type="text" class="bb-input" name="sujet" [(ngModel)]="formulaire.sujet" [placeholder]="'LANDING.CONTACT_FORM_SUBJECT_PLACEHOLDER' | translate">
-      </div>
-      <div class="form-group">
-        <label for="contact-message">{{ 'LANDING.CONTACT_FORM_MESSAGE' | translate }}</label>
-        <textarea id="contact-message" class="bb-input bb-textarea" rows="4" name="message" [(ngModel)]="formulaire.message" [placeholder]="'LANDING.CONTACT_FORM_MESSAGE_PLACEHOLDER' | translate"></textarea>
-      </div>
-      <button type="button" class="btn-primary w-full mt-2" (click)="envoyer()" [disabled]="!peutEnvoyer">
-        {{ 'LANDING.CONTACT_SEND' | translate }} <i class="pi pi-send" aria-hidden="true"></i>
-      </button>
     </div>
   </div>
 </section>

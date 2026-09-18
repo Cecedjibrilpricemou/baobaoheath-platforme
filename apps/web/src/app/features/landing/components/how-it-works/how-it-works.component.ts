@@ -10,8 +10,8 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 })
 export class HowItWorksComponent {
   steps = [
-    { num: '1', titleKey: 'LANDING.HOW_STEP1_TITLE', descKey: 'LANDING.HOW_STEP1_DESC' },
-    { num: '2', titleKey: 'LANDING.HOW_STEP2_TITLE', descKey: 'LANDING.HOW_STEP2_DESC' },
-    { num: '3', titleKey: 'LANDING.HOW_STEP3_TITLE', descKey: 'LANDING.HOW_STEP3_DESC' }
+    { num: '01', icon: 'pi-user-plus',   titleKey: 'LANDING.HOW_STEP1_TITLE', descKey: 'LANDING.HOW_STEP1_DESC' },
+    { num: '02', icon: 'pi-qrcode',      titleKey: 'LANDING.HOW_STEP2_TITLE', descKey: 'LANDING.HOW_STEP2_DESC' },
+    { num: '03', icon: 'pi-check-circle', titleKey: 'LANDING.HOW_STEP3_TITLE', descKey: 'LANDING.HOW_STEP3_DESC' }
   ];
 }

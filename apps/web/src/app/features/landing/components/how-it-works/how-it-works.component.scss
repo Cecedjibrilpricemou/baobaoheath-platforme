@@ -1,13 +1,30 @@
-.section-header { text-align: center; margin-bottom: 48px; }
+// Trois etapes : grand numero estompe en fond, icone ronde, titre, texte.
+.section-header { text-align: center; margin-bottom: 44px; }
 .section-tag { display: inline-block; padding: 4px 14px; border-radius: var(--bb-radius-pill); background: var(--bb-success-bg); border: 1px solid var(--bb-success-border); font-family: var(--bb-font-display); font-size: 11px; font-weight: 700; color: var(--bb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-.section-title { font-family: var(--bb-font-display); font-size: 36px; font-weight: 800; color: var(--bb-text-primary); letter-spacing: -1px; margin-bottom: 12px; text-wrap: balance; @media (max-width: 768px) { font-size: 28px; } }
+.section-title { font-family: var(--bb-font-display); font-size: clamp(28px, 3.6vw, 38px); font-weight: 800; color: var(--bb-text-primary); letter-spacing: -1px; margin: 0 0 12px; text-wrap: balance; }
+.section-title__accent { color: var(--bb-primary); }
 .section-sub { font-size: 15px; color: var(--bb-text-muted); max-width: 520px; margin: 0 auto; line-height: 1.65; }
 
-.how-section { padding: 72px 48px; @media (max-width: 768px) { padding: 56px 20px; } }
+.how-section { max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; @media (max-width: 768px) { padding: 56px 20px 40px; } }
 .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; @media (max-width: 768px) { grid-template-columns: 1fr; } }
-.step { position: relative; padding: 28px 24px; background: var(--bb-surface-0); border: 1px solid var(--bb-border); border-radius: var(--bb-radius-xl); transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-.step:not(:last-child)::after { content: ''; position: absolute; top: 44px; right: -13px; width: 2px; height: 0%; background: linear-gradient(to bottom, var(--bb-success-border), transparent); @media (max-width: 768px) { display: none; } }
-.step:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow), 0 0 0 4px rgba(62, 187, 112, .05); transform: translateY(-3px); }
-.step__num { width: 40px; height: 40px; border-radius: 12px; background: var(--bb-deep); color: var(--bb-bright); font-family: var(--bb-font-display); font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(10, 28, 16, .25); }
-.step__title { font-family: var(--bb-font-display); font-size: 15px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 8px; }
-.step__desc { font-size: 13.5px; color: var(--bb-text-secondary); line-height: 1.62; }
+
+.step {
+  position: relative; overflow: hidden;
+  padding: 36px 26px 30px;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 22px;
+  transition: transform var(--bb-transition), box-shadow var(--bb-transition), border-color var(--bb-transition);
+  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow); transform: translateY(-3px); }
+}
+// Le numero : gros, en filigrane, colle en haut a droite.
+.step__num {
+  position: absolute; top: 6px; right: 18px;
+  font-family: var(--bb-font-display); font-size: 84px; font-weight: 800; line-height: 1;
+  color: var(--bb-primary); opacity: .10; pointer-events: none; user-select: none;
+}
+.step__icon {
+  position: relative; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--bb-success-bg); color: var(--bb-primary);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px;
+}
+.step__title { position: relative; font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 8px; }
+.step__desc { position: relative; font-size: 14px; color: var(--bb-text-secondary); line-height: 1.65; margin: 0; }

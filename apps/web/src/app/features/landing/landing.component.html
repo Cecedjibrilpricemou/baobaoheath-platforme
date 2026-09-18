@@ -1,183 +1,163 @@
 <!-- features/landing/landing.component.html -->
 <div class="landing">
 
-  <!-- ── NAVBAR ──────────────────────────────────────────────────────── -->
+  <!-- ── NAVBAR ──────────────────────────────────────────────────── -->
   <nav class="lnav">
-    <div class="lnav__logo">
-      <div class="lnav__logo-icon">🌳</div>
+    <a href="#top" class="lnav__logo">
+      <span class="lnav__logo-icon" aria-hidden="true">🌳</span>
       <span class="lnav__logo-name">{{ 'APP.NAME' | translate }}</span>
-    </div>
+    </a>
 
     <div class="lnav__links">
-      <a href="#features" class="lnav__link">{{ 'LANDING.NAV_FEATURES' | translate }}</a>
-      <a href="#roles" class="lnav__link">{{ 'LANDING.NAV_ROLES' | translate }}</a>
+      <a href="#top" class="lnav__link lnav__link--active">{{ 'LANDING.NAV_HOME' | translate }}</a>
       <a href="#how" class="lnav__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
+      <a href="#structures" class="lnav__link">{{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
       <a href="#contact" class="lnav__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
     </div>
 
     <div class="lnav__actions">
-      <!-- Toggle thème -->
-      <button class="lnav__icon-btn" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
+      <button class="lnav__icon-btn" type="button" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
         <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
       </button>
-      <!-- Toggle langue -->
-      <button class="lnav__icon-btn lnav__lang" (click)="toggleLang()">
+      <button class="lnav__icon-btn lnav__lang" type="button" (click)="toggleLang()">
         {{ 'COMMON.LANG_TOGGLE' | translate }}
       </button>
-      <a routerLink="/auth/login" class="lnav__login">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
-      <a routerLink="/auth/register" class="lnav__register">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
+      <a routerLink="/auth/login" class="btn-outline">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
+      <a routerLink="/auth/register" class="btn-primary">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
     </div>
   </nav>
 
-  <!-- ── HERO ────────────────────────────────────────────────────────── -->
-  <section class="hero">
-
-    <!-- Carousel d'images en arrière-plan -->
-    <div class="hero__carousel" aria-hidden="true">
-
-      <!-- Slides générés dynamiquement -->
-      <div class="hero__carousel-track">
-        @for (i of slideIndices; track i) {
-        <div class="hero__carousel-slide" [class]="'hero__carousel-slide hero__carousel-slide--' + (i + 1)"
-          [class.is-active]="activeSlide() === i">
-          <div class="hero__carousel-overlay"></div>
-        </div>
-        }
-      </div>
-
-      <!-- Dots de navigation dynamiques -->
-      <div class="hero__carousel-dots">
-        @for (i of slideIndices; track i) {
-        <span class="hero__carousel-dot" [class.hero__carousel-dot--active]="activeSlide() === i"
-          (click)="goToSlide(i)"></span>
-        }
-      </div>
-    </div>
-
-    <!-- Deco cercles -->
-    <div class="hero__deco hero__deco--1"></div>
-    <div class="hero__deco hero__deco--2"></div>
-
-    <!-- Contenu gauche -->
+  <!-- ── HERO ────────────────────────────────────────────────────── -->
+  <section class="hero" id="top">
     <div class="hero__content">
-      <div class="hero__badge">
-        <span class="hero__badge-dot"></span>
-        {{ 'LANDING.HERO_BADGE' | translate }}
-      </div>
-
       <h1 class="hero__title">
-        {{ 'LANDING.HERO_TITLE_1' | translate }}<br>
-        <span class="hero__title-accent">{{ 'LANDING.HERO_TITLE_2' | translate }}</span><br>
-        {{ 'LANDING.HERO_TITLE_3' | translate }}<br>
-        {{ 'LANDING.HERO_TITLE_4' | translate }}
+        {{ 'LANDING.HERO_TITLE_A' | translate }}<br>
+        <span class="hero__title-accent">{{ 'LANDING.HERO_TITLE_B' | translate }}</span>
       </h1>
 
       <p class="hero__desc">{{ 'LANDING.HERO_DESC' | translate }}</p>
 
       <div class="hero__actions">
-        <a routerLink="/auth/register" class="btn-primary">
-          {{ 'LANDING.HERO_CTA' | translate }} <i class="pi pi-arrow-right"></i>
+        <a routerLink="/auth/register" class="hero-btn hero-btn--primary">
+          <i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'LANDING.HERO_BTN_PATIENT' | translate }}
         </a>
-        <a routerLink="/auth/login" class="btn-ghost">
-          {{ 'LANDING.HERO_LOGIN' | translate }}
+        <a href="#structures" class="hero-btn">
+          <i class="pi pi-map-marker" aria-hidden="true"></i> {{ 'LANDING.HERO_BTN_STRUCTURE' | translate }}
         </a>
-      </div>
-
-      <!-- Stats -->
-      <div class="hero__stats">
-        @for (stat of stats(); track stat.labelKey) {
-        <div class="hero-stat">
-          <span class="hero-stat__value">{{ stat.value }}</span>
-          <span class="hero-stat__label">{{ stat.labelKey | translate }}</span>
-        </div>
-        }
+        <a routerLink="/auth/login" class="hero-btn">
+          <i class="pi pi-id-card" aria-hidden="true"></i> {{ 'LANDING.HERO_BTN_AGENT' | translate }}
+        </a>
+        <a href="#how" class="hero-btn">
+          <i class="pi pi-question-circle" aria-hidden="true"></i> {{ 'LANDING.HERO_BTN_HOW' | translate }}
+        </a>
       </div>
     </div>
 
-    <!-- Illustration droite -->
-    <div class="hero__visual" aria-hidden="true">
-      <div class="hero-card hero-card--main">
-        <div class="hero-card__header">
-          <div class="hero-card__avatar">MD</div>
-          <div>
-            <span class="hero-card__name">Mamadou Diallo</span>
-            <div class="hero-card__role">{{ 'LANDING.HERO_CARD_ROLE' | translate }}</div>
-          </div>
-          <div class="hero-card__badge">
-            <i class="pi pi-check-circle"></i> {{ 'LANDING.HERO_CARD_ACTIVE' | translate }}
-          </div>
-        </div>
-        <div class="hero-card__metrics">
-          <div class="hero-card__metric">
-            <span class="hero-card__metric-val">12</span>
-            <span class="hero-card__metric-lbl">{{ 'LANDING.HERO_CARD_CONSULTATIONS' | translate }}</span>
-          </div>
-          <div class="hero-card__metric">
-            <span class="hero-card__metric-val">8</span>
-            <span class="hero-card__metric-lbl">{{ 'LANDING.HERO_CARD_VACCINS' | translate }}</span>
-          </div>
-          <div class="hero-card__metric">
-            <span class="hero-card__metric-val">O+</span>
-            <span class="hero-card__metric-lbl">{{ 'LANDING.HERO_CARD_GROUPE' | translate }}</span>
-          </div>
-        </div>
+    <div class="hero__visual">
+      <div class="hero__photo">
+        <img src="assets/images/login-hero.png" [alt]="'LANDING.HERO_PHOTO_ALT' | translate" width="1024" height="1024" />
       </div>
-
-      <div class="hero-card hero-card--notif">
-        <i class="pi pi-bell"></i>
-        <span>{{ 'LANDING.HERO_CARD_NOTIF' | translate }}</span>
+      <div class="hero__chip hero__chip--top">
+        <i class="pi pi-shield" aria-hidden="true"></i> {{ 'LANDING.TRUST_SECURE' | translate }}
       </div>
-
-      <div class="hero-card hero-card--kpi">
-        <i class="pi pi-chart-bar"></i>
-        <div>
-          <div class="hero-card__kpi-val">94%</div>
-          <div class="hero-card__kpi-lbl">{{ 'LANDING.HERO_CARD_KPI_LABEL' | translate }}</div>
-        </div>
+      <div class="hero__chip hero__chip--bottom">
+        <i class="pi pi-wifi" aria-hidden="true"></i> {{ 'LANDING.TRUST_OFFLINE' | translate }}
       </div>
     </div>
   </section>
 
-  <!-- ── TRUST BAR ─────────────────────────────────────────────── -->
-  <div class="trust-bar">
-    @for (item of trustItems; track item.labelKey) {
-    <div class="trust-bar__item">
-      <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
-      <span>{{ item.labelKey | translate }}</span>
-    </div>
-    @if (!$last) { <div class="trust-bar__sep"></div> }
+  <!-- ── CHIFFRES ────────────────────────────────────────────────── -->
+  <section class="stats-band" aria-label="Chiffres de la plateforme">
+    @for (stat of stats(); track stat.labelKey) {
+      <div class="stats-band__item">
+        <span class="stats-band__icon" aria-hidden="true"><i [class]="'pi ' + stat.icon"></i></span>
+        <div>
+          <div class="stats-band__value">{{ stat.value }}</div>
+          <div class="stats-band__label">{{ stat.labelKey | translate }}</div>
+        </div>
+      </div>
     }
-  </div>
+  </section>
 
-  <!-- ── SECTIONS (EXTRAITES DANS LEURS COMPOSANTS) ───────────── -->
-  <app-features></app-features>
-  <app-roles></app-roles>
+  <!-- ── COMMENT ÇA FONCTIONNE ───────────────────────────────────── -->
   <app-how-it-works></app-how-it-works>
+
+  <!-- ── STRUCTURES DE SANTÉ ─────────────────────────────────────── -->
+  <section class="structures" id="structures">
+    <div class="structures__band">
+      <h2 class="structures__title">{{ 'LANDING.STRUCT_TITLE' | translate }}</h2>
+      <p class="structures__sub">{{ 'LANDING.STRUCT_SUB' | translate }}</p>
+      <label class="structures__search">
+        <i class="pi pi-search" aria-hidden="true"></i>
+        <input
+          type="search"
+          [placeholder]="'LANDING.STRUCT_SEARCH_PH' | translate"
+          [attr.aria-label]="'LANDING.STRUCT_SEARCH_PH' | translate"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+        />
+        <span class="structures__search-btn">{{ 'COMMON.SEARCH' | translate }}</span>
+      </label>
+    </div>
+
+    <div class="structures__carousel" [class.structures__carousel--auto]="defileAuto()">
+      @if (isLoadingStructures()) {
+        <p class="structures__empty">{{ 'COMMON.LOADING' | translate }}</p>
+      } @else if (piste().length === 0) {
+        <p class="structures__empty">{{ 'LANDING.STRUCT_EMPTY' | translate }}</p>
+      } @else {
+        <!-- Le defilement est en CSS (animation sur la piste) : rien a toucher,
+             il s'arrete au survol pour laisser lire. -->
+        <div class="structures__track" [style.--nb-cartes]="piste().length">
+          @for (s of piste(); track $index) {
+            <article class="struct-card">
+              <div class="struct-card__head">
+                <span class="struct-card__icon" aria-hidden="true"><i [class]="'pi ' + iconeType(s.type)"></i></span>
+                <span class="struct-card__type">{{ libelleType(s.type) }}</span>
+              </div>
+              <h3 class="struct-card__nom">{{ s.nom }}</h3>
+              @if (s.telephone) {
+                <p class="struct-card__line"><i class="pi pi-phone" aria-hidden="true"></i> {{ s.telephone }}</p>
+              }
+              <p class="struct-card__line"><i class="pi pi-map-marker" aria-hidden="true"></i> {{ s.adresse || s.prefecture }}@if (s.adresse) { · {{ s.prefecture }} }</p>
+              <a routerLink="/auth/register" class="struct-card__btn">
+                <i class="pi pi-arrow-right" aria-hidden="true"></i> {{ 'LANDING.STRUCT_CARD_BTN' | translate }}
+              </a>
+            </article>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ── APPEL À L'ACTION ────────────────────────────────────────── -->
+  <section class="cta">
+    <div class="cta__inner">
+      <div class="cta__text">
+        <h2 class="cta__title">{{ 'LANDING.CTA_TITLE' | translate }}</h2>
+        <p class="cta__sub">{{ 'LANDING.CTA_SUB' | translate }}</p>
+        <div class="cta__chips">
+          <span class="cta__chip"><i class="pi pi-mobile" aria-hidden="true"></i> {{ 'LANDING.TRUST_MOBILE' | translate }}</span>
+          <span class="cta__chip"><i class="pi pi-wifi" aria-hidden="true"></i> {{ 'LANDING.TRUST_OFFLINE' | translate }}</span>
+          <span class="cta__chip"><i class="pi pi-globe" aria-hidden="true"></i> {{ 'LANDING.TRUST_MADE' | translate }}</span>
+        </div>
+      </div>
+      <div class="cta__actions">
+        <a routerLink="/auth/register" class="btn-white">{{ 'LANDING.CTA_PRIMARY' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+        <a routerLink="/auth/login" class="btn-ghost-white">{{ 'LANDING.CTA_LOGIN' | translate }}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT ─────────────────────────────────────────────────── -->
   <app-contact></app-contact>
 
-  <!-- ── CTA FINAL ─────────────────────────────────────────────── -->
-  <section class="cta-section">
-    <div class="cta-section__inner">
-      <div class="section-tag">{{ 'LANDING.CTA_TAG' | translate }}</div>
-      <h2 class="cta-section__title">{{ 'LANDING.CTA_TITLE' | translate }}</h2>
-      <p class="cta-section__sub">{{ 'LANDING.CTA_SUB' | translate }}</p>
-      <div class="cta-section__actions">
-        <a routerLink="/auth/register" class="btn-primary btn-primary--dark">
-          {{ 'LANDING.CTA_PRIMARY' | translate }} <i class="pi pi-arrow-right"></i>
-        </a>
-        <a routerLink="/auth/login" class="btn-ghost btn-ghost--border">
-          {{ 'LANDING.CTA_LOGIN' | translate }}
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── FOOTER ─────────────────────────────────────────────────── -->
+  <!-- ── FOOTER ──────────────────────────────────────────────────── -->
   <footer class="lfooter">
     <div class="lfooter__top">
       <div class="lfooter__brand">
         <div class="lfooter__logo">
-          <span>🌳</span>
+          <span aria-hidden="true">🌳</span>
           <span class="lfooter__logo-name">{{ 'APP.NAME' | translate }}</span>
         </div>
         <p class="lfooter__desc">{{ 'LANDING.FOOTER_DESC' | translate }}</p>
@@ -185,9 +165,9 @@
 
       <div class="lfooter__col">
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_PLATFORM' | translate }}</div>
-        <a href="#features" class="lfooter__link">{{ 'LANDING.NAV_FEATURES' | translate }}</a>
-        <a href="#roles" class="lfooter__link">{{ 'LANDING.NAV_ROLES' | translate }}</a>
         <a href="#how" class="lfooter__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
+        <a href="#structures" class="lfooter__link">{{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
+        <a href="#contact" class="lfooter__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
       </div>
 
       <div class="lfooter__col">
@@ -200,7 +180,6 @@
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_LEGAL' | translate }}</div>
         <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_PRIVACY' | translate }}</a>
         <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_TERMS' | translate }}</a>
-        <a href="#contact" class="lfooter__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
       </div>
     </div>
 

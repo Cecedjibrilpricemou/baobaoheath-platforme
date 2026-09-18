@@ -1,17 +1,15 @@
 // features/landing/landing.component.ts
-import {
-  Component, inject, OnInit, OnDestroy, AfterViewInit,
-  ElementRef, signal, computed
-} from '@angular/core';
+// Page d'accueil publique : hero, chiffres de la plateforme, trois etapes,
+// structures de sante (carrousel automatique), appel a l'action, contact.
+import { Component, inject, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import type { StructurePubliqueView } from '@baobaoheath/shared-types';
 import { ThemeService } from '../../shared/services/theme.service';
 import { I18nService } from '../../shared/services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { ApiService } from '../../core/services/api.service';
-
-import { FeaturesComponent } from './components/features/features.component';
-import { RolesComponent } from './components/roles/roles.component';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { ContactComponent } from './components/contact/contact.component';
 
@@ -22,86 +20,85 @@ interface PublicStats {
   structures: number;
 }
 
+const ICONES_TYPE: Record<string, string> = {
+  POSTE: 'pi-home',
+  CENTRE: 'pi-building',
+  HOPITAL_PREF: 'pi-building-columns',
+  HOPITAL_REG: 'pi-building-columns',
+  CHU: 'pi-building-columns',
+  CLINIQUE: 'pi-heart',
+  PHARMACIE: 'pi-shopping-bag',
+};
+
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [
-    RouterLink, CommonModule, TranslatePipe,
-    FeaturesComponent, RolesComponent, HowItWorksComponent, ContactComponent
-  ],
+  imports: [RouterLink, CommonModule, FormsModule, TranslatePipe, HowItWorksComponent, ContactComponent],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss'
 })
-export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
+export class LandingComponent implements OnInit {
   readonly themeService = inject(ThemeService);
   private i18nService  = inject(I18nService);
-  private el           = inject(ElementRef);
   private api          = inject(ApiService);
 
-  // ── Carousel ────────────────────────────────────────────────────
-  readonly SLIDE_COUNT = 5;
-  readonly SLIDE_DELAY = 5000;
-
-  activeSlide  = signal(0);
-  private carouselTimer?: ReturnType<typeof setInterval>;
-  slideIndices = Array.from({ length: this.SLIDE_COUNT }, (_, i) => i);
-
-  // ── Platform stats (API) ─────────────────────────────────────────
+  // ── Chiffres de la plateforme (GET /stats/public) ───────────────────
   private platformStats = signal<PublicStats | null>(null);
 
   readonly stats = computed(() => {
     const s = this.platformStats();
     return [
-      {
-        value: s ? this.formatCount(s.patients) : '—',
-        labelKey: 'LANDING.STAT_PATIENTS'
-      },
-      {
-        value: s ? this.formatCount(s.consultations) : '—',
-        labelKey: 'LANDING.STAT_CONSULTATIONS'
-      },
-      {
-        value: s ? this.formatCount(s.asc) : '—',
-        labelKey: 'LANDING.STAT_ASC'
-      },
-      {
-        value: s ? s.structures.toString() : '—',
-        labelKey: 'LANDING.STAT_STRUCTURES'
-      }
+      { icon: 'pi-users',      value: s ? this.formatCount(s.patients) : '—',      labelKey: 'LANDING.STAT_PATIENTS' },
+      { icon: 'pi-heart-fill', value: s ? this.formatCount(s.consultations) : '—', labelKey: 'LANDING.STAT_CONSULTATIONS' },
+      { icon: 'pi-id-card',    value: s ? this.formatCount(s.asc) : '—',           labelKey: 'LANDING.STAT_ASC' },
+      { icon: 'pi-building',   value: s ? s.structures.toString() : '—',          labelKey: 'LANDING.STAT_STRUCTURES' },
     ];
   });
 
-  // ── Trust bar ────────────────────────────────────────────────────
-  trustItems = [
-    { icon: 'pi-shield',  labelKey: 'LANDING.TRUST_SECURE' },
-    { icon: 'pi-mobile',  labelKey: 'LANDING.TRUST_MOBILE' },
-    { icon: 'pi-wifi',    labelKey: 'LANDING.TRUST_OFFLINE' },
-    { icon: 'pi-users',   labelKey: 'LANDING.TRUST_MULTIROLE' },
-    { icon: 'pi-globe',   labelKey: 'LANDING.TRUST_MADE' }
-  ];
+  // ── Structures de sante (GET /admin-structure/structures/publiques) ──
+  structures = signal<StructurePubliqueView[]>([]);
+  isLoadingStructures = signal(true);
+  recherche = signal('');
 
-  // ── Lifecycle ────────────────────────────────────────────────────
+  /** Filtre client : nom, prefecture, adresse. Vide = toutes. */
+  readonly structuresFiltrees = computed(() => {
+    const q = this.recherche().trim().toLowerCase();
+    const liste = this.structures();
+    if (!q) return liste;
+    return liste.filter(s =>
+      s.nom.toLowerCase().includes(q) ||
+      s.prefecture.toLowerCase().includes(q) ||
+      (s.adresse ?? '').toLowerCase().includes(q)
+    );
+  });
+
+  /**
+   * Le carrousel defile en boucle par translation CSS : on double la liste
+   * pour que la fin rejoigne le debut sans saut. Inutile (et immobile) sous
+   * quatre cartes : tout tient a l'ecran.
+   */
+  readonly piste = computed(() => {
+    const liste = this.structuresFiltrees();
+    return liste.length > 4 ? [...liste, ...liste] : liste;
+  });
+  readonly defileAuto = computed(() => this.structuresFiltrees().length > 4);
+
   ngOnInit(): void {
-    this.startCarousel();
-    this.loadPlatformStats();
+    this.chargerStats();
+    this.chargerStructures();
   }
 
-  ngAfterViewInit(): void {
-    requestAnimationFrame(() => {
-      const hero = this.el.nativeElement.querySelector('.hero');
-      if (hero) hero.classList.add('anim-ready');
+  private chargerStats(): void {
+    this.api.get<{ success: boolean; data: PublicStats }>('/stats/public').subscribe({
+      next: (r) => { if (r.success && r.data) this.platformStats.set(r.data); },
+      error: () => { /* les tirets restent */ }
     });
   }
 
-  ngOnDestroy(): void {
-    this.stopCarousel();
-  }
-
-  // ── API stats ────────────────────────────────────────────────────
-  private loadPlatformStats(): void {
-    this.api.get<{ success: boolean; data: PublicStats }>('/stats/public').subscribe({
-      next: (r) => { if (r.success && r.data) this.platformStats.set(r.data); },
-      error: () => { /* fallback: keep '—' placeholders */ }
+  private chargerStructures(): void {
+    this.api.get<{ success: boolean; data: StructurePubliqueView[] }>('/admin-structure/structures/publiques').subscribe({
+      next: (r) => { this.structures.set(r.data ?? []); this.isLoadingStructures.set(false); },
+      error: () => { this.isLoadingStructures.set(false); }
     });
   }
 
@@ -110,24 +107,15 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     return n > 0 ? `${n}+` : '0';
   }
 
-  // ── Carousel helpers ─────────────────────────────────────────────
-  startCarousel(): void {
-    this.carouselTimer = setInterval(() => {
-      this.activeSlide.update(i => (i + 1) % this.SLIDE_COUNT);
-    }, this.SLIDE_DELAY);
+  iconeType(type: string): string {
+    return ICONES_TYPE[type] ?? 'pi-building';
   }
 
-  stopCarousel(): void {
-    if (this.carouselTimer) clearInterval(this.carouselTimer);
+  libelleType(type: string): string {
+    return this.i18nService.t(`LANDING.STRUCT_TYPE_${type}`);
   }
 
-  goToSlide(index: number): void {
-    this.activeSlide.set(index);
-    this.stopCarousel();
-    this.startCarousel();
-  }
-
-  // ── Helpers navbar ───────────────────────────────────────────────
+  // ── Navbar ────────────────────────────────────────────────────────
   toggleTheme() { this.themeService.toggle(); }
   toggleLang()  { this.i18nService.toggle(); }
 }
