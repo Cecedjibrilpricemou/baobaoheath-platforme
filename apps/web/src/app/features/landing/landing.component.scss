@@ -14,8 +14,6 @@ $largeur: 1200px;
   --land-band-2: #1A5C35;                    // fin de degrade (CTA)
   --land-band-text: #FFFFFF;
   --land-on-band-btn: var(--bb-deep);        // texte du bouton blanc sur bandeau
-  --land-num-color: var(--bb-primary);       // grands numeros estompes
-  --land-num-opacity: .10;
   // Footer : meme vert que les bandeaux et le CTA, legerement assombri vers le bas.
   --land-footer-bg: linear-gradient(180deg, var(--land-band-2), #14472A);
   --land-footer-text: #E4F3EA;
@@ -35,8 +33,6 @@ $largeur: 1200px;
   --land-band-2: #0F2E1C;
   --land-band-text: #EAF6EE;
   --land-on-band-btn: #0B2618;
-  --land-num-color: var(--bb-bright);
-  --land-num-opacity: .16;
   --land-footer-bg: linear-gradient(180deg, var(--land-band-2), #0A2114);
   --land-footer-text: #C3DECB;
   --land-photo-bg: #142219;

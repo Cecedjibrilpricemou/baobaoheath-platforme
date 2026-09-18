@@ -6,14 +6,18 @@
     </h2>
     <p class="section-sub">{{ 'LANDING.HOW_SUB' | translate }}</p>
   </div>
-  <div class="steps-grid">
-    @for (step of steps; track step.num) {
-    <div class="step">
-      <div class="step__num" aria-hidden="true">{{ step.num }}</div>
+  <ol class="steps-grid">
+    @for (step of steps; track step.num; let last = $last) {
+    <li class="step">
+      <!-- Piste d'etape : pastille numerotee + ligne qui file vers l'etape suivante -->
+      <div class="step__track" aria-hidden="true">
+        <span class="step__num">{{ step.num }}</span>
+        <span class="step__line" [class.step__line--end]="last"></span>
+      </div>
       <span class="step__icon" aria-hidden="true"><i [class]="'pi ' + step.icon"></i></span>
       <h3 class="step__title">{{ step.titleKey | translate }}</h3>
       <p class="step__desc">{{ step.descKey | translate }}</p>
-    </div>
+    </li>
     }
-  </div>
+  </ol>
 </section>
