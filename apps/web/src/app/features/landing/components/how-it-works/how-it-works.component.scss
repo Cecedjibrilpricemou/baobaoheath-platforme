@@ -1,8 +1,8 @@
 // Trois etapes : grand numero estompe en fond, icone ronde, titre, texte.
 .section-header { text-align: center; margin-bottom: 44px; }
-.section-tag { display: inline-block; padding: 4px 14px; border-radius: var(--bb-radius-pill); background: var(--bb-success-bg); border: 1px solid var(--bb-success-border); font-family: var(--bb-font-display); font-size: 11px; font-weight: 700; color: var(--bb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+.section-tag { display: inline-block; padding: 4px 14px; border-radius: var(--bb-radius-pill); background: var(--land-accent-soft); border: 1px solid var(--bb-success-border); font-family: var(--bb-font-display); font-size: 11px; font-weight: 700; color: var(--land-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
 .section-title { font-family: var(--bb-font-display); font-size: clamp(28px, 3.6vw, 38px); font-weight: 800; color: var(--bb-text-primary); letter-spacing: -1px; margin: 0 0 12px; text-wrap: balance; }
-.section-title__accent { color: var(--bb-primary); }
+.section-title__accent { color: var(--land-accent); }
 .section-sub { font-size: 15px; color: var(--bb-text-muted); max-width: 520px; margin: 0 auto; line-height: 1.65; }
 
 .how-section { max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; @media (max-width: 768px) { padding: 56px 20px 40px; } }
@@ -19,11 +19,11 @@
 .step__num {
   position: absolute; top: 6px; right: 18px;
   font-family: var(--bb-font-display); font-size: 84px; font-weight: 800; line-height: 1;
-  color: var(--bb-primary); opacity: .10; pointer-events: none; user-select: none;
+  color: var(--land-num-color); opacity: var(--land-num-opacity); pointer-events: none; user-select: none;
 }
 .step__icon {
   position: relative; width: 56px; height: 56px; border-radius: 50%;
-  background: var(--bb-success-bg); color: var(--bb-primary);
+  background: var(--land-accent-soft); color: var(--land-accent);
   display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px;
 }
 .step__title { position: relative; font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 8px; }
