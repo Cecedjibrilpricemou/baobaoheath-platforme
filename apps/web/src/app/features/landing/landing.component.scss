@@ -16,8 +16,9 @@ $largeur: 1200px;
   --land-on-band-btn: var(--bb-deep);        // texte du bouton blanc sur bandeau
   --land-num-color: var(--bb-primary);       // grands numeros estompes
   --land-num-opacity: .10;
-  --land-footer-bg: var(--bb-deep);
-  --land-footer-text: #CFE6D6;
+  // Footer : meme vert que les bandeaux et le CTA, legerement assombri vers le bas.
+  --land-footer-bg: linear-gradient(180deg, var(--land-band-2), #14472A);
+  --land-footer-text: #E4F3EA;
   --land-photo-bg: var(--bb-surface-1);
 
   background: var(--bb-surface-ground);
@@ -36,8 +37,8 @@ $largeur: 1200px;
   --land-on-band-btn: #0B2618;
   --land-num-color: var(--bb-bright);
   --land-num-opacity: .16;
-  --land-footer-bg: #050C08;
-  --land-footer-text: #9BBFAB;
+  --land-footer-bg: linear-gradient(180deg, var(--land-band-2), #0A2114);
+  --land-footer-text: #C3DECB;
   --land-photo-bg: #142219;
 }
 
@@ -259,7 +260,6 @@ $largeur: 1200px;
 // ── Footer ───────────────────────────────────────────────────────────
 .lfooter {
   background: var(--land-footer-bg); color: var(--land-footer-text);
-  border-top: 1px solid rgba(255, 255, 255, .06);
   padding: 48px 24px 24px;
 
   &__top { max-width: $largeur; margin: 0 auto 32px; display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 32px; @media (max-width: 768px) { grid-template-columns: 1fr 1fr; } }
