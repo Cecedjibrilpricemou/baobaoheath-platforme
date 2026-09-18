@@ -8,10 +8,19 @@
 // ═══════════════════════════════════════════════════════════════════
 
 .bb-auth {
+  // Memes reperes que la landing (--land-*) : accent vert de marque en clair,
+  // vert clair en sombre ; panneau visuel dans le vert des bandeaux.
+  --auth-accent: var(--bb-primary);
+  --auth-accent-soft: var(--bb-success-bg);
+  --auth-panel: linear-gradient(160deg, #2D7D46 0%, #1A5C35 55%, #0B2618 100%);
+  --auth-chip-bg: #FFFFFF;
+  --auth-chip-text: #0B2618;
+  --auth-chip-icon: #2D7D46;
+
   display: grid;
   grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
   min-height: 100vh;
-  background: var(--bb-surface-0);
+  background: var(--bb-surface-ground);
 
   @media (max-width: 980px) { grid-template-columns: 1fr; min-height: 100dvh; }
 
@@ -47,7 +56,7 @@
       color: var(--bb-text-muted);
       transition: transform var(--bb-transition), color var(--bb-transition);
     }
-    &:hover i { color: var(--bb-primary); transform: translateX(-2px); }
+    &:hover i { color: var(--auth-accent); transform: translateX(-2px); }
   }
 
   &__brand-name {
@@ -67,7 +76,7 @@
     padding: 0 12px;
     border-radius: var(--bb-radius-pill);
     border: 1px solid var(--bb-border);
-    background: var(--bb-surface-0);
+    background: var(--bb-surface-card);
     color: var(--bb-text-secondary);
     cursor: pointer;
     font-family: var(--bb-font-body);
@@ -77,7 +86,7 @@
 
     i { font-size: 13px; }
 
-    &:hover { background: var(--bb-surface-1); border-color: var(--bb-primary); color: var(--bb-primary); }
+    &:hover { background: var(--bb-surface-1); border-color: var(--auth-accent); color: var(--auth-accent); }
   }
 
   // Le formulaire est centre verticalement dans l'espace restant ; une
@@ -126,7 +135,7 @@
     line-height: 1.5;
     color: var(--bb-text-secondary);
 
-    i { color: var(--bb-primary); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+    i { color: var(--auth-accent); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
     strong { color: var(--bb-text-primary); }
   }
 
@@ -139,7 +148,7 @@
     font-size: 11.5px;
     color: var(--bb-text-muted);
 
-    i { font-size: 12px; color: var(--bb-primary); }
+    i { font-size: 12px; color: var(--auth-accent); }
   }
 
   // ── PANNEAU VISUEL ──────────────────────────────────────────────
@@ -153,7 +162,7 @@
     gap: 1.75rem;
     padding: 2.5rem 3rem;
     color: #fff;
-    background: linear-gradient(160deg, #2D7D46 0%, #1A5C35 55%, #0B2618 100%);
+    background: var(--auth-panel);
 
     // Trame de points, comme le bandeau des structures de la landing.
     &::before {
@@ -192,15 +201,15 @@
     gap: 8px;
     padding: 9px 14px;
     border-radius: var(--bb-radius-pill);
-    background: #fff;
-    color: #0B2618;
+    background: var(--auth-chip-bg);
+    color: var(--auth-chip-text);
     box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
     font-family: var(--bb-font-display);
     font-size: 12.5px;
     font-weight: 700;
     white-space: nowrap;
 
-    i { color: #2D7D46; }
+    i { color: var(--auth-chip-icon); }
     &--top    { top: 22px; left: -26px; }
     &--bottom { bottom: 26px; right: -22px; }
   }
@@ -282,7 +291,7 @@
   }
 
   // Champ Material : icone de prefixe aeree et colorée, suffixe compact.
-  .mat-mdc-form-field-icon-prefix > i { display: inline-block; padding: 0 4px 0 14px; color: var(--bb-primary); font-size: 15px; }
+  .mat-mdc-form-field-icon-prefix > i { display: inline-block; padding: 0 4px 0 14px; color: var(--auth-accent); font-size: 15px; }
   .mat-mdc-form-field-icon-suffix { padding-right: 6px; }
 
   .toggle-btn {
@@ -299,7 +308,7 @@
     transition: background var(--bb-transition), color var(--bb-transition);
 
     i { font-size: 15px; }
-    &:hover { background: var(--bb-surface-1); color: var(--bb-primary); }
+    &:hover { background: var(--bb-surface-1); color: var(--auth-accent); }
   }
 
   // Bouton principal (mat filled) : plein, vert de marque, pleine largeur.
@@ -313,9 +322,21 @@
     font-weight: 700;
     box-shadow: 0 6px 16px rgba(45, 125, 70, .25);
     transition: transform var(--bb-transition), box-shadow var(--bb-transition);
+    // Vert de marche et texte blanc dans les deux modes, comme la landing :
+    // on ecrase les jetons Material (v20+ et anciens) et les proprietes finales.
+    --mat-button-filled-container-color: var(--bb-primary);
+    --mat-button-filled-label-text-color: #fff;
+    --mat-button-filled-state-layer-color: #fff;
+    --mat-button-filled-disabled-container-color: var(--bb-primary);
+    --mat-button-filled-disabled-label-text-color: rgba(255, 255, 255, .85);
+    --mdc-filled-button-container-color: var(--bb-primary);
+    --mdc-filled-button-label-text-color: #fff;
+    background-color: var(--bb-primary);
+    color: #fff;
 
     i { margin-right: 6px; }
-    &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(45, 125, 70, .3); }
+    &:hover:not(:disabled) { background-color: var(--bb-mid); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(45, 125, 70, .3); }
+    &:disabled { opacity: .55; background-color: var(--bb-primary); color: #fff; }
   }
 
   // Bouton secondaire (autre parcours : s'inscrire / se connecter).
@@ -328,7 +349,7 @@
     padding: 12px;
     border: 1.5px solid var(--bb-border);
     border-radius: 12px;
-    background: var(--bb-surface-0);
+    background: var(--bb-surface-card);
     font-family: var(--bb-font-display);
     font-size: 13px;
     font-weight: 700;
@@ -337,7 +358,7 @@
     transition: border-color var(--bb-transition), color var(--bb-transition), background var(--bb-transition);
 
     i { font-size: 12px; }
-    &:hover { border-color: var(--bb-primary); background: var(--bb-surface-1); color: var(--bb-primary); }
+    &:hover { border-color: var(--auth-accent); background: var(--bb-surface-1); color: var(--auth-accent); }
   }
 
   .form-separator {
@@ -363,13 +384,21 @@
     gap: 6px;
 
     i { font-size: 11px; }
-    &:hover { color: var(--bb-primary); }
+    &:hover { color: var(--auth-accent); }
   }
   .bb-auth__link-row { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
   .bb-auth__back { display: flex; justify-content: center; margin-top: 1.25rem; }
 }
 
-// Mode sombre : panneau visuel plus profond, comme les bandeaux de la landing.
-[data-theme="dark"] .bb-auth__visual {
-  background: linear-gradient(160deg, #17422A 0%, #0F2E1C 55%, #06140C 100%);
+// Mode sombre : memes valeurs que la landing (accent vert clair, bandeaux
+// vert profond, puces sur fond de carte sombre).
+[data-theme="dark"] .bb-auth {
+  --auth-accent: var(--bb-bright);
+  --auth-accent-soft: rgba(62, 187, 112, .14);
+  --auth-panel: linear-gradient(160deg, #17422A 0%, #0F2E1C 55%, #06140C 100%);
+  --auth-chip-bg: #142219;
+  --auth-chip-text: #E2F0E8;
+  --auth-chip-icon: var(--bb-bright);
+
+  .bb-auth__visual-photo { box-shadow: 0 24px 60px rgba(0, 0, 0, .55); }
 }
