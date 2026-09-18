@@ -5,11 +5,11 @@ import { logger } from './logger';
 export const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'BaoBaoHealth API',
+    title: 'KÈNÈYA API',
     version: '1.0.0',
-    description: 'API de la plateforme de santé numérique BaoBaoHealth — Guinée',
+    description: 'API de la plateforme de santé numérique KÈNÈYA — Guinée',
     contact: {
-      name: 'BaoBaoHealth Team',
+      name: 'KÈNÈYA Team',
       email: 'dev@baobaoheath.com',
     },
   },
@@ -358,7 +358,7 @@ export const swaggerDocument = {
         required: ['telephone', 'message'],
         properties: {
           telephone: { type: 'string', example: '+224621000000', description: 'Numéro de téléphone destinataire' },
-          message: { type: 'string', example: 'BaoBaoHealth: Votre rendez-vous est demain à 9h00.', description: 'Contenu du SMS (max 160 caractères)' },
+          message: { type: 'string', example: 'KENEYA: Votre rendez-vous est demain à 9h00.', description: 'Contenu du SMS (max 160 caractères)' },
         },
       },
       SmsMasseDto: {
@@ -366,7 +366,7 @@ export const swaggerDocument = {
         required: ['prefecture', 'message'],
         properties: {
           prefecture: { type: 'string', example: 'Conakry', description: 'Préfecture cible pour envoi en masse' },
-          message: { type: 'string', example: 'BaoBaoHealth: Campagne de vaccination contre la rougeole — rendez-vous ce samedi.', description: 'Message à envoyer à tous les patients de la préfecture' },
+          message: { type: 'string', example: 'KENEYA: Campagne de vaccination contre la rougeole — rendez-vous ce samedi.', description: 'Message à envoyer à tous les patients de la préfecture' },
         },
       },
       SmsResult: {
@@ -969,7 +969,7 @@ export function setupSwagger(app: Express): void {
     '/api/docs',
     swaggerUi.serve,
     swaggerUi.setup(swaggerDocument, {
-      customSiteTitle: 'BaoBaoHealth API Docs',
+      customSiteTitle: 'KÈNÈYA API Docs',
       customCss: '.swagger-ui .topbar { background-color: #085041; }',
     })
   );

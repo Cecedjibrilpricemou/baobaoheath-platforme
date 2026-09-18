@@ -132,7 +132,7 @@ app.get('/health', async (_req: Request, res: Response) => {
   const allOk = Object.values(checks).every((s) => s === 'ok');
   res.status(allOk ? 200 : 503).json({
     success: allOk,
-    message: allOk ? 'BaoBaoHealth API operationnelle' : 'Degraded',
+    message: allOk ? 'KÈNÈYA API operationnelle' : 'Degraded',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: env.NODE_ENV,
@@ -193,7 +193,7 @@ initSocketServer(httpServer);
 
 httpServer.listen(env.PORT, () => {
   logger.info(`Documentation API : http://localhost:${env.PORT}/api/docs`);
-  logger.info(`BaoBaoHealth API : http://localhost:${env.PORT}`);
+  logger.info(`KÈNÈYA API : http://localhost:${env.PORT}`);
   logger.info(`Environnement   : ${env.NODE_ENV}`);
   logger.info(`CORS origins    : ${env.ALLOWED_ORIGINS.join(', ')}`);
   logger.info(`WebSocket       : ws://localhost:${env.PORT}`);

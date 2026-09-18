@@ -64,7 +64,6 @@ $largeur: 1200px;
   border-bottom: 1px solid var(--bb-border-light);
 
   &__logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-  &__logo-icon { font-size: 22px; }
   &__logo-name { font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); }
 
   &__links { display: flex; gap: 26px; @media (max-width: 900px) { display: none; } }
@@ -83,8 +82,8 @@ $largeur: 1200px;
     }
   }
   @media (max-width: 600px) { padding: 10px 16px; gap: 10px; &__logo-name { font-size: 15px; } }
-  // Tres petit ecran : l'arbre suffit comme logo, le bouton d'inscription reste entier.
-  @media (max-width: 420px) { &__logo-name { display: none; } &__logo-icon { font-size: 26px; } }
+  // Tres petit ecran : nom plus compact pour que le bouton d'inscription reste entier.
+  @media (max-width: 420px) { &__logo-name { font-size: 14px; letter-spacing: .02em; } }
   &__icon-btn {
     width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--bb-border); background: var(--bb-surface-card);
     color: var(--bb-text-secondary); font-family: var(--bb-font-display); font-size: 12px; font-weight: 700; cursor: pointer;

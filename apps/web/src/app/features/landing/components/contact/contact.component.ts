@@ -23,7 +23,7 @@ export class ContactComponent {
   envoyer() {
     const { nom, email, sujet, message } = this.formulaire;
     const corps = [message.trim(), '', '—', nom.trim(), email.trim()].join('\n');
-    const url = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(sujet.trim() || 'Contact BaoBaoHealth')}&body=${encodeURIComponent(corps)}`;
+    const url = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(sujet.trim() || 'Contact KÈNÈYA')}&body=${encodeURIComponent(corps)}`;
     window.location.href = url;
   }
 

@@ -65,7 +65,6 @@
 
             @if (qrCodeUrl()) {
               <img [src]="qrCodeUrl()" [attr.alt]="'PATIENT.QR.IMG_ALT' | translate" class="qr-code-img" />
-              <div class="qr-code-logo">🌳</div>
             } @else {
               <div class="qr-placeholder">
                 <i class="pi pi-qrcode"></i>

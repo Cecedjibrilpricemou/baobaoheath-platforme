@@ -54,12 +54,12 @@ export async function handleUssdRequest(input: UssdRequest) {
 
   if (!utilisateur?.patientProfile) {
     await finish(input.sessionId);
-    return end('BaoBaoHealth: numero non associe a un patient. Contactez votre ASC.');
+    return end('KENEYA: numero non associe a un patient. Contactez votre ASC.');
   }
 
   if (!choice) {
     return con([
-      'BaoBaoHealth',
+      'KENEYA',
       '1. Mon profil',
       '2. Mes rendez-vous',
       '3. Mes vaccins',
@@ -70,7 +70,7 @@ export async function handleUssdRequest(input: UssdRequest) {
 
   if (choice === '0') {
     await finish(input.sessionId);
-    return end('Merci d avoir utilise BaoBaoHealth.');
+    return end('Merci d avoir utilise KENEYA.');
   }
 
   if (choice === '1') {

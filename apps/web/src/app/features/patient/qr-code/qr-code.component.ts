@@ -96,7 +96,7 @@ export class QrCodeComponent implements OnInit {
   shareQrCode() {
     const url = this.qrCodeUrl();
     if (url && navigator.share) {
-      navigator.share({ title: 'Mon QR Code BaoBaoHealth', url }).catch(() => {});
+      navigator.share({ title: 'Mon QR Code KÈNÈYA', url }).catch(() => {});
     }
   }
 }

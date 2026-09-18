@@ -1,6 +1,6 @@
 {
   "APP": {
-    "NAME": "BaoBaoHealth",
+    "NAME": "KÈNÈYA",
     "TAGLINE": "Digital health for Guinea"
   },
   "COMMON": {
@@ -242,7 +242,7 @@
     "NAV_REGISTER": "Create account",
     "HERO_TITLE_A": "Your health,",
     "HERO_TITLE_B": "made simple.",
-    "HERO_DESC": "BaoBaoHealth connects patients, community health workers, doctors and pharmacies across Guinea: one record, one QR Code, and follow-up that goes wherever you go.",
+    "HERO_DESC": "KÈNÈYA connects patients, community health workers, doctors and pharmacies across Guinea: one record, one QR Code, and follow-up that goes wherever you go.",
     "HERO_BTN_PATIENT": "Create my patient record",
     "HERO_BTN_STRUCTURE": "Find a facility",
     "HERO_BTN_AGENT": "Professional area",
@@ -263,7 +263,7 @@
     "HOW_STEP3_TITLE": "Access your services",
     "HOW_STEP3_DESC": "Consultations, vaccines, prescriptions, pharmacy — everything is ready, everywhere.",
     "STRUCT_TITLE": "Find a health facility near you",
-    "STRUCT_SUB": "Health posts, centres, hospitals and pharmacies partnering with BaoBaoHealth.",
+    "STRUCT_SUB": "Health posts, centres, hospitals and pharmacies partnering with KÈNÈYA.",
     "STRUCT_SEARCH_PH": "Name, prefecture or address…",
     "STRUCT_EMPTY": "No facility matches your search.",
     "STRUCT_CARD_BTN": "Join this facility",
@@ -274,7 +274,7 @@
     "STRUCT_TYPE_CHU": "University hospital",
     "STRUCT_TYPE_CLINIQUE": "Clinic",
     "STRUCT_TYPE_PHARMACIE": "Pharmacy",
-    "CTA_TITLE": "Ready to join BaoBaoHealth?",
+    "CTA_TITLE": "Ready to join KÈNÈYA?",
     "CTA_SUB": "Create your free account and find your health record anywhere in Guinea, even on a slow connection.",
     "CTA_PRIMARY": "Create a free account",
     "CTA_LOGIN": "Sign in",
@@ -284,7 +284,7 @@
     "TRUST_MADE": "Made for Guinea 🇬🇳",
     "CONTACT_TITLE_A": "Contact",
     "CONTACT_TITLE_B": "us",
-    "CONTACT_SUB": "Have questions about BaoBaoHealth, or want to bring the platform to your facility? Our team is here to help.",
+    "CONTACT_SUB": "Have questions about KÈNÈYA, or want to bring the platform to your facility? Our team is here to help.",
     "CONTACT_ADDRESS_LABEL": "Address",
     "CONTACT_ADDRESS_VALUE": "Conakry, Republic of Guinea",
     "CONTACT_EMAIL_LABEL": "Email",
@@ -305,7 +305,7 @@
     "FOOTER_PRIVACY": "Privacy",
     "FOOTER_TERMS": "Terms of use",
     "FOOTER_CONTACT": "Contact",
-    "FOOTER_COPY": "© 2026 BaoBaoHealth — All rights reserved",
+    "FOOTER_COPY": "© 2026 KÈNÈYA — All rights reserved",
     "FOOTER_SECURE": "Secure data",
     "FOOTER_MADE": "Made in Guinea 🇬🇳"
   },
@@ -407,7 +407,7 @@
       "TITLE": "My QR Code",
       "SUBTITLE": "Show this code to your health worker for instant record access",
       "BADGE": "Patient QR Code",
-      "ROLE_LABEL": "Patient · BaoBaoHealth",
+      "ROLE_LABEL": "Patient · KÈNÈYA",
       "SCAN_LABEL": "Scan to access medical record",
       "INFO_VISIBLE": "Information visible on scan",
       "FULL_NAME": "Full name",
@@ -415,7 +415,7 @@
       "BIRTH_DATE": "Date of birth",
       "BLOOD_TYPE": "Blood type",
       "SECURITY_TITLE": "Secure QR Code",
-      "SECURITY_TEXT": "This code is personal and encrypted. Only share with authorised BaoBaoHealth healthcare professionals.",
+      "SECURITY_TEXT": "This code is personal and encrypted. Only share with authorised KÈNÈYA healthcare professionals.",
       "NOT_AVAILABLE": "QR Code not available",
       "LOADING": "Loading...",
       "IMG_ALT": "Patient identification QR Code to present at a pharmacy or health facility",
@@ -964,7 +964,7 @@
       "MARGE_HINT": "Applied to the national reference price when a pharmacist adds a medication to stock without entering a margin."
     },
     "ANALYTICS": {
-      "SUBTITLE": "Epidemiological dashboard — BaoBaoHealth Guinea 🇬🇳",
+      "SUBTITLE": "Epidemiological dashboard — KÈNÈYA Guinea 🇬🇳",
       "EXPORT": "Export",
       "TAB_OVERVIEW": "Overview",
       "TAB_HEATMAP": "Heatmap",
