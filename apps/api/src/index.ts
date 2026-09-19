@@ -28,6 +28,8 @@ import statsRoutes from './routes/stats.routes';
 import uploadRoutes from './routes/upload.routes';
 import parametresRoutes from './routes/parametres.routes';
 import hopitalRoutes from './routes/hopital.routes';
+import laboratoireRoutes from './routes/laboratoire.routes';
+import resultatsRoutes from './routes/resultats.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -187,6 +189,8 @@ app.use('/api/v1/stats', statsRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/v1/parametres', parametresRoutes);
 app.use('/api/v1/hopital', hopitalRoutes);
+app.use('/api/v1/laboratoire', laboratoireRoutes);
+app.use('/api/v1/resultats', resultatsRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

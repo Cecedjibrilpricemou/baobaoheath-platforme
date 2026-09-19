@@ -73,6 +73,11 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
     return { OR: parEpisode };
   }
 
+  // Le laboratoire ne voit que les patients dont une demande lui est adressee (EF-04).
+  if ((user.role === 'TECHNICIEN_LABO' || user.role === 'BIOLOGISTE') && idStructure) {
+    return { demandesAnalyse: { some: { idLaboratoire: idStructure } } };
+  }
+
   if (user.role === 'ADMIN_STRUCTURE' && idStructure) {
     return {
       OR: [

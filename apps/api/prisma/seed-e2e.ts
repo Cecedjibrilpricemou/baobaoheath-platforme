@@ -20,6 +20,7 @@ export const E2E = {
   pharmacien: { email: 'pharma.e2e@baobao.test', telephone: '690000003', prenom: 'Ibrahima', nom: 'Sow' },
   adminStructure: { email: 'admin.centre.e2e@baobao.test', telephone: '690000004', prenom: 'Aissatou', nom: 'Barry' },
   accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
+  biologiste: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
   medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000 },
 } as const;
@@ -64,7 +65,7 @@ async function main() {
 
   const centre = await upsertStructure(E2E.centre.nom, TypeStructure.CENTRE, E2E.centre.telephone);
   const pharmacie = await upsertStructure(E2E.pharmacie.nom, TypeStructure.PHARMACIE, E2E.pharmacie.telephone);
-  await upsertStructure(E2E.laboratoire.nom, TypeStructure.LABORATOIRE, E2E.laboratoire.telephone);
+  const laboratoire = await upsertStructure(E2E.laboratoire.nom, TypeStructure.LABORATOIRE, E2E.laboratoire.telephone);
   await seedExamens(prisma);
 
   const asc = await upsertUtilisateur(E2E.asc, Role.ASC, motDePasseHash, centre.id);
@@ -86,6 +87,8 @@ async function main() {
 
   // Accueil du centre : admission, episodes, demandes d'analyse (P1).
   await upsertUtilisateur(E2E.accueil, Role.AGENT_ACCUEIL, motDePasseHash, centre.id);
+  // Biologiste du laboratoire : prelevement, resultats, validation (P2).
+  await upsertUtilisateur(E2E.biologiste, Role.BIOLOGISTE, motDePasseHash, laboratoire.id);
 
   const pharmacien = await upsertUtilisateur(E2E.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
   await prisma.pharmacienProfile.upsert({

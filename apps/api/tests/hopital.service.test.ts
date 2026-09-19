@@ -168,7 +168,7 @@ describe('creerDemandeAnalyse (EF-03-03 / EF-03-04)', () => {
     episode: { numero: 'EP-2026-000001' }, patient: { id: 'pat-1', utilisateur: { prenom: 'Awa', nom: 'Diallo' } },
     prescripteur: { id: 'agent-1', prenom: 'K', nom: 'T', role: 'AGENT_ACCUEIL' },
     laboratoire: { id: 'labo-1', nom: 'Labo Kindia', type: 'LABORATOIRE', prefecture: 'Kindia' },
-    lignes: [],
+    lignes: [], echantillons: [], valideur: null, _count: { alertesCritiques: 0 },
   };
 
   it('refuse un laboratoire inconnu ou inactif', async () => {

@@ -54,14 +54,16 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
 - [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
 
-### P2 — Laboratoire · L · EF-04
-- [ ] Rôle `BIOLOGISTE` ; type de structure `LABORATOIRE`.
-- [ ] File des demandes triée par urgence et ancienneté (EF-04-01).
-- [ ] Prélèvement sur place ou à domicile avec créneau (EF-04-02) ; `Echantillon` codé sans ambiguïté (EF-04-03).
-- [ ] `ResultatAnalyse` : valeur, unité, valeurs de référence ; saisie ou import (EF-04-04/06).
-- [ ] Validation nominative du biologiste **bloquante** avant toute diffusion (EF-04-05).
-- [ ] Résultats critiques : liste paramétrable, alerte prioritaire au prescripteur avec accusé de lecture, escalade automatique par job, diffusion patient différée (EF-04-07/08/09).
-- [ ] Courbe d'évolution d'une valeur (EF-04-10) ; saisie hors connexion via la sync existante (EF-04-11).
+### P2 — Laboratoire · L · EF-04 · 🟡 API livrée le 2026-09-19, front en cours
+- [x] Rôles `BIOLOGISTE` (validation) et `TECHNICIEN_LABO` (réception, prélèvement, saisie) ; type de structure `LABORATOIRE` (P1).
+- [x] File des demandes triée par urgence puis ancienneté (EF-04-01) ; tableau de bord du laboratoire.
+- [x] Prélèvement sur place ou à domicile avec créneau, patient notifié (EF-04-02) ; `Echantillon` codé `EC-AAAA-NNNNNN` (EF-04-03).
+- [x] `ResultatAnalyse` : valeur, unité, références figées à la saisie, lecture NORMAL/ANORMAL/CRITIQUE calculée ; saisie par ligne ou import par code LOINC (EF-04-04/06).
+- [x] Validation nominative du biologiste **bloquante** (toutes les lignes renseignées) avant toute diffusion (EF-04-05) ; compte rendu imprimable avec filigrane « NON VALIDÉ » avant validation.
+- [x] Résultats critiques : seuils `critiqueMin/Max` par examen, alerte prioritaire au prescripteur avec accusé de lecture, escalade automatique vers l'admin de structure par job (30 min), diffusion patient différée jusqu'à l'accusé ou 24 h (EF-04-07/08/09).
+- [x] Courbe d'évolution d'une valeur, côté patient et côté professionnel (EF-04-10).
+- [ ] Saisie hors connexion via la sync existante (EF-04-11) — reporté : la sync ne couvre que l'ASC pour l'instant.
+- [ ] Front : espace « Laboratoire » (file, fiche demande, prélèvement, saisie, validation), alertes critiques côté accueil/médecin, résultats et courbes côté patient.
 
 ### P3 — Ordonnance infalsifiable + sécurité de prescription · M · EF-05
 - [ ] Numéro unique + code de vérification, durée de validité, statut `SERVIE`, vérification côté pharmacie (EF-05-07/08, EF-07-01).

@@ -16,6 +16,8 @@ enum Role {
   MEDECIN
   PHARMACIEN
   AGENT_ACCUEIL    // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
+  TECHNICIEN_LABO  // Laboratoire : reception, prelevement, saisie des resultats (EF-04)
+  BIOLOGISTE       // Laboratoire : idem + validation nominative des resultats (EF-04-05)
   ADMIN_STRUCTURE
   ADMIN_REGIONAL
   ADMIN_NATIONAL
@@ -67,6 +69,20 @@ enum StatutDemandeAnalyse {
   EN_ANALYSE
   VALIDEE
   ANNULEE
+}
+
+// Prelevement sur place ou a domicile (EF-04-02)
+enum LieuPrelevement {
+  SUR_PLACE
+  DOMICILE
+}
+
+// Lecture d'un resultat par rapport aux valeurs de reference et aux seuils
+// critiques de l'examen (EF-04-04, EF-04-07)
+enum InterpretationResultat {
+  NORMAL
+  ANORMAL
+  CRITIQUE
 }
 
 enum TypeStructure {
@@ -125,6 +141,10 @@ enum TypeNotification {
   EPISODE_OUVERT
   DEMANDE_ANALYSE
   ORIENTATION
+  PRELEVEMENT_PLANIFIE
+  RESULTATS_DISPONIBLES
+  RESULTAT_CRITIQUE
+  ESCALADE_CRITIQUE
 }
 
 enum UssdSessionStatus {
@@ -179,6 +199,11 @@ model Utilisateur {
   episodesOuverts      EpisodeSoins[]  @relation("EpisodeOuvertPar")
   episodesResponsable  EpisodeSoins[]  @relation("EpisodeResponsable")
   demandesPrescrites   DemandeAnalyse[] @relation("Prescripteur")
+  demandesValidees     DemandeAnalyse[] @relation("Valideur")
+  echantillonsPreleves Echantillon[]    @relation("Preleveur")
+  resultatsSaisis      ResultatAnalyse[] @relation("SaisiPar")
+  alertesCritiques     AlerteResultatCritique[] @relation("DestinataireAlerte")
+  alertesEscaladees    AlerteResultatCritique[] @relation("EscaladeVers")
   rendezVousMedecin    RendezVous[]    @relation("RendezVousMedecin")
   syncEvents            SyncEvent[]
   syncMutations         SyncMutation[]
@@ -854,6 +879,14 @@ model Examen {
   prixGnf   Int?
   actif     Boolean @default(true)
 
+  // Valeurs de reference (EF-04-04) et seuils critiques (EF-04-07), en unite
+  // de l'examen. refTexte sert aux resultats qualitatifs (Negatif, Positif...).
+  refMin      Float?
+  refMax      Float?
+  refTexte    String?
+  critiqueMin Float?
+  critiqueMax Float?
+
   lignes LigneDemandeAnalyse[]
 
   @@index([categorie, actif])
@@ -872,6 +905,23 @@ model DemandeAnalyse {
   modifieLe          DateTime             @updatedAt
   annuleeLe          DateTime?
   motifAnnulation    String?
+
+  // Cycle laboratoire (EF-04)
+  lieuPrelevement       LieuPrelevement?
+  creneauPrelevement    DateTime?
+  recueLe               DateTime?
+  preleveeLe            DateTime?
+  valideeLe             DateTime?
+  commentaireBiologiste String?
+  // Diffusion au patient : immediate apres validation, differee si un
+  // resultat critique attend l'accuse de lecture du prescripteur (EF-04-09).
+  diffuseePatientLe     DateTime?
+
+  idValideur String?
+  valideur   Utilisateur? @relation("Valideur", fields: [idValideur], references: [id])
+
+  echantillons     Echantillon[]
+  alertesCritiques AlerteResultatCritique[]
 
   idEpisode String
   episode   EpisodeSoins @relation(fields: [idEpisode], references: [id], onDelete: Restrict)
@@ -903,6 +953,82 @@ model LigneDemandeAnalyse {
   idExamen String
   examen   Examen @relation(fields: [idExamen], references: [id])
 
+  resultat ResultatAnalyse?
+
   @@unique([idDemande, idExamen])
   @@map("lignes_demande_analyse")
+}
+
+// Echantillon code sans ambiguite (EF-04-03) : EC-2026-000123
+model Echantillon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  specimen    String    // SANG, URINE, SELLES, CRACHATS...
+  preleveLe   DateTime  @default(now())
+  commentaire String?
+
+  idDemande String
+  demande   DemandeAnalyse @relation(fields: [idDemande], references: [id], onDelete: Cascade)
+
+  idPreleveur String
+  preleveur   Utilisateur @relation("Preleveur", fields: [idPreleveur], references: [id], onDelete: Restrict)
+
+  resultats ResultatAnalyse[]
+
+  @@index([idDemande])
+  @@map("echantillons")
+}
+
+// Resultat d'une ligne de demande (EF-04-04) : valeur brute, lecture
+// numerique quand elle existe, references figees au moment de la saisie.
+model ResultatAnalyse {
+  id              String                 @id @default(cuid())
+  valeur          String
+  valeurNumerique Float?
+  unite           String?
+  refMin          Float?
+  refMax          Float?
+  refTexte        String?
+  interpretation  InterpretationResultat @default(NORMAL)
+  commentaire     String?
+  saisiLe         DateTime               @default(now())
+  modifieLe       DateTime               @updatedAt
+
+  idLigne String              @unique
+  ligne   LigneDemandeAnalyse @relation(fields: [idLigne], references: [id], onDelete: Cascade)
+
+  idEchantillon String?
+  echantillon   Echantillon? @relation(fields: [idEchantillon], references: [id])
+
+  idSaisiPar String
+  saisiPar   Utilisateur @relation("SaisiPar", fields: [idSaisiPar], references: [id], onDelete: Restrict)
+
+  alertes AlerteResultatCritique[]
+
+  @@map("resultats_analyse")
+}
+
+// Alerte prioritaire au prescripteur pour un resultat critique, avec accuse
+// de lecture et escalade automatique (EF-04-07, EF-04-08).
+model AlerteResultatCritique {
+  id          String    @id @default(cuid())
+  creeLe      DateTime  @default(now())
+  accuseeLe   DateTime?
+  escaladeeLe DateTime?
+
+  idDemande String
+  demande   DemandeAnalyse @relation(fields: [idDemande], references: [id], onDelete: Cascade)
+
+  idResultat String
+  resultat   ResultatAnalyse @relation(fields: [idResultat], references: [id], onDelete: Cascade)
+
+  idDestinataire String
+  destinataire   Utilisateur @relation("DestinataireAlerte", fields: [idDestinataire], references: [id], onDelete: Restrict)
+
+  idEscaladeVers String?
+  escaladeVers   Utilisateur? @relation("EscaladeVers", fields: [idEscaladeVers], references: [id])
+
+  @@index([idDestinataire, accuseeLe])
+  @@index([accuseeLe, escaladeeLe, creeLe])
+  @@map("alertes_resultat_critique")
 }

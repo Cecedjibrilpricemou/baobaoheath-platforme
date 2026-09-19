@@ -1,12 +1,12 @@
 // src/services/numero.service.ts
 // Numeros lisibles et continus pour les pieces du parcours : EP-2026-000123
-// (episode), DA-2026-000045 (demande d'analyse), plus tard OR- (ordonnance),
+// (episode), DA-2026-000045 (demande d'analyse), EC- (echantillon), plus tard OR- (ordonnance),
 // CM- (commande), LV- (livraison). Un compteur par prefixe et par annee,
 // incremente en une seule instruction SQL : deux agents qui admettent un
 // patient au meme instant ne peuvent pas obtenir le meme numero.
 import { prisma } from '../config/prisma';
 
-export type PrefixeNumero = 'EP' | 'DA' | 'OR' | 'CM' | 'LV';
+export type PrefixeNumero = 'EP' | 'DA' | 'EC' | 'OR' | 'CM' | 'LV';
 
 // Seule capacite requise : $queryRaw. Le client Prisma (etendu) et le client
 // de transaction la fournissent tous deux.

@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { detecterEtPersisterAlertesEpidemiques } from './analytics.service';
 import { verifierRappelsAEnvoyer } from './notification.service';
 import { expirerSessionsUssd } from './ussd.service';
+import { traiterAlertesCritiques } from './laboratoire.service';
 import { logger } from '../config/logger';
 
 let started = false;
@@ -65,9 +66,21 @@ export function startBackgroundJobs() {
     }).catch((error: unknown) => logger.error('[JOB] ussd cleanup failed', { error }));
   };
 
+  // Resultats critiques (EF-04-08/09) : escalade sans accuse, diffusion differee.
+  const runCritiques = () => {
+    void withOptionalRedisLock('resultats-critiques', async () => {
+      const result = await traiterAlertesCritiques();
+      if (result.escaladees > 0 || result.diffusees > 0 || isVerboseJobsEnabled()) {
+        logger.info('[JOB] resultats critiques', result);
+      }
+    }).catch((error: unknown) => logger.error('[JOB] resultats critiques failed', { error }));
+  };
+
   runRappels();
   runAlertes();
   runUssdCleanup();
+  runCritiques();
+  setInterval(runCritiques, 5 * 60 * 1000);
   setInterval(runRappels, 60 * 60 * 1000);
   setInterval(runAlertes, 6 * 60 * 60 * 1000);
   setInterval(runUssdCleanup, 10 * 60 * 1000);

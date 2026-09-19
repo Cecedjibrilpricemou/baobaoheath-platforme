@@ -7,7 +7,7 @@ import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
 import { logger } from '../config/logger';
 import { ConflictError, ForbiddenError, ValidationError } from '../utils/app-error';
 
-const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN, Role.AGENT_ACCUEIL];
+const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO, Role.BIOLOGISTE];
 
 // ── Générer un mot de passe temporaire ───────────────────────────
 function genererMotDePasseTemp(): string {

@@ -29,19 +29,27 @@ import type {
 } from '@baobaoheath/shared-types';
 
 // ── Selections partagees ─────────────────────────────────────────────
-const PERSONNE_SELECT = { id: true, prenom: true, nom: true, role: true } as const;
-const STRUCTURE_SELECT = { id: true, nom: true, type: true, prefecture: true } as const;
-const EXAMEN_SELECT = {
+// Partagees avec laboratoire.service (P2) : une seule forme de demande.
+export const PERSONNE_SELECT = { id: true, prenom: true, nom: true, role: true } as const;
+export const STRUCTURE_SELECT = { id: true, nom: true, type: true, prefecture: true } as const;
+export const EXAMEN_SELECT = {
   id: true, codeLoinc: true, libelle: true, categorie: true, specimen: true,
   unite: true, aJeun: true, consignes: true, prixGnf: true,
+  refMin: true, refMax: true, refTexte: true, critiqueMin: true, critiqueMax: true,
 } as const;
 
-const DEMANDE_INCLUDE = {
+export const DEMANDE_INCLUDE = {
   episode: { select: { numero: true } },
   patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
   prescripteur: { select: PERSONNE_SELECT },
   laboratoire: { select: STRUCTURE_SELECT },
-  lignes: { include: { examen: { select: EXAMEN_SELECT } }, orderBy: { examen: { libelle: 'asc' } } },
+  valideur: { select: PERSONNE_SELECT },
+  echantillons: { include: { preleveur: { select: PERSONNE_SELECT } }, orderBy: { preleveLe: 'asc' } },
+  lignes: {
+    include: { examen: { select: EXAMEN_SELECT }, resultat: { include: { saisiPar: { select: PERSONNE_SELECT }, echantillon: { select: { code: true } } } } },
+    orderBy: { examen: { libelle: 'asc' } },
+  },
+  _count: { select: { alertesCritiques: { where: { accuseeLe: null } } } },
 } satisfies Prisma.DemandeAnalyseInclude;
 
 const RDV_SELECT = {
@@ -59,7 +67,7 @@ const EPISODE_INCLUDE = {
   _count: { select: { consultations: true, demandesAnalyse: true } },
 } satisfies Prisma.EpisodeSoinsInclude;
 
-type DemandeRow = Prisma.DemandeAnalyseGetPayload<{ include: typeof DEMANDE_INCLUDE }>;
+export type DemandeRow = Prisma.DemandeAnalyseGetPayload<{ include: typeof DEMANDE_INCLUDE }>;
 type EpisodeRow = Prisma.EpisodeSoinsGetPayload<{ include: typeof EPISODE_INCLUDE }>;
 
 // Types de structures pouvant recevoir une demande d'analyse : laboratoires
@@ -67,7 +75,7 @@ type EpisodeRow = Prisma.EpisodeSoinsGetPayload<{ include: typeof EPISODE_INCLUD
 const TYPES_LABO = ['LABORATOIRE', 'CHU', 'HOPITAL_REG', 'HOPITAL_PREF'] as const;
 
 // ── Mappeurs ─────────────────────────────────────────────────────────
-function versDemandeView(d: DemandeRow): DemandeAnalyseView {
+export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
   return {
     id: d.id,
     numero: d.numero,
@@ -84,8 +92,40 @@ function versDemandeView(d: DemandeRow): DemandeAnalyseView {
     patient: { id: d.patient.id, prenom: d.patient.utilisateur.prenom, nom: d.patient.utilisateur.nom },
     prescripteur: d.prescripteur,
     laboratoire: d.laboratoire,
-    lignes: d.lignes.map((l) => ({ id: l.id, examen: l.examen, commentaire: l.commentaire })),
+    lignes: d.lignes.map((l) => ({
+      id: l.id,
+      examen: l.examen,
+      commentaire: l.commentaire,
+      resultat: l.resultat
+        ? {
+            id: l.resultat.id, valeur: l.resultat.valeur, valeurNumerique: l.resultat.valeurNumerique, unite: l.resultat.unite,
+            refMin: l.resultat.refMin, refMax: l.resultat.refMax, refTexte: l.resultat.refTexte,
+            interpretation: l.resultat.interpretation, commentaire: l.resultat.commentaire, saisiLe: l.resultat.saisiLe,
+            saisiPar: l.resultat.saisiPar, codeEchantillon: l.resultat.echantillon?.code ?? null,
+          }
+        : null,
+    })),
+    lieuPrelevement: d.lieuPrelevement,
+    creneauPrelevement: d.creneauPrelevement,
+    recueLe: d.recueLe,
+    preleveeLe: d.preleveeLe,
+    valideeLe: d.valideeLe,
+    valideur: d.valideur,
+    commentaireBiologiste: d.commentaireBiologiste,
+    diffuseePatientLe: d.diffuseePatientLe,
+    echantillons: d.echantillons.map((e) => ({ id: e.id, code: e.code, specimen: e.specimen, preleveLe: e.preleveLe, commentaire: e.commentaire, preleveur: e.preleveur })),
+    alerteCritiqueEnAttente: d._count.alertesCritiques > 0,
   };
+}
+
+/**
+ * Vue patient : les resultats ne sont visibles qu'une fois diffuses
+ * (validation du biologiste, et accuse du prescripteur si critique — EF-04-09).
+ */
+export function versDemandeViewPatient(d: DemandeRow): DemandeAnalyseView {
+  const vue = versDemandeView(d);
+  if (vue.diffuseePatientLe) return vue;
+  return { ...vue, commentaireBiologiste: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
 }
 
 function versEpisodeView(e: EpisodeRow): EpisodeSoinsView {
@@ -465,7 +505,7 @@ export async function annulerDemandeAnalyse(user: JwtPayload, idDemande: string,
 }
 
 // ── EF-03-06 : bon d'examen imprimable ───────────────────────────────
-function echapper(v: string | null | undefined): string {
+export function echapper(v: string | null | undefined): string {
   return (v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
 
@@ -554,7 +594,7 @@ export async function mesEpisodes(userId: string): Promise<EpisodePatientView[]>
   return rows.map((e) => ({
     id: e.id, numero: e.numero, motif: e.motif, service: e.service, statut: e.statut,
     ouvertLe: e.ouvertLe, closLe: e.closLe, structure: e.structure, responsable: e.responsable,
-    demandesAnalyse: e.demandesAnalyse.map(versDemandeView),
+    demandesAnalyse: e.demandesAnalyse.map(versDemandeViewPatient),
     // Le patient ne voit pas les rendez-vous remplaces (ANNULE) : seul le
     // rendez-vous en vigueur et l'historique tenu comptent pour lui.
     rendezVous: e.rendezVous.filter((r) => r.statut !== 'ANNULE'),
@@ -565,5 +605,5 @@ export async function mesEpisodes(userId: string): Promise<EpisodePatientView[]>
 export async function documentDemandePourPatient(userId: string, idDemande: string): Promise<string> {
   const d = await prisma.demandeAnalyse.findFirst({ where: { id: idDemande, patient: { idUtilisateur: userId } }, include: DEMANDE_INCLUDE });
   if (!d) throw new NotFoundError('Demande introuvable');
-  return rendreBonExamen(versDemandeView(d));
+  return rendreBonExamen(versDemandeViewPatient(d));
 }

@@ -85,7 +85,7 @@ export const updateStructurePrefereeSchema = z.object({
   idStructure: id.nullable().optional(),
 }).strict();
 
-export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL']);
+export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'BIOLOGISTE']);
 
 export const createAgentStructureSchema = z.object({
   telephone: phone,
@@ -400,6 +400,45 @@ export const annulerDemandeSchema = z.object({
 export const episodesQuerySchema = paginationQuerySchema.extend({
   statut: z.enum(['OUVERT', 'EN_COURS', 'CLOS', 'ANNULE']).optional(),
   q: z.string().trim().max(100).optional(),
+});
+
+// ── P2 — Laboratoire (EF-04) ─────────────────────────────────────────
+const lieuPrelevement = z.enum(['SUR_PLACE', 'DOMICILE']);
+
+export const fileLaboQuerySchema = paginationQuerySchema.extend({
+  statut: z.enum(['TRANSMISE', 'RECUE', 'PRELEVEE', 'EN_ANALYSE', 'VALIDEE', 'ANNULEE']).optional(),
+  q: z.string().trim().max(100).optional(),
+});
+
+export const planifierPrelevementSchema = z.object({
+  lieu: lieuPrelevement,
+  creneau: z.string().datetime({ offset: true }).optional(),
+}).strict();
+
+export const enregistrerPrelevementSchema = z.object({
+  echantillons: z.array(z.object({ specimen: z.string().trim().min(2).max(40), commentaire: texteLibre(300).optional() }).strict()).max(20).optional(),
+  lieu: lieuPrelevement.optional(),
+}).strict();
+
+export const saisirResultatsSchema = z.object({
+  resultats: z.array(z.object({
+    idLigne: id.optional(),
+    codeLoinc: z.string().trim().min(1).max(20).optional(),
+    valeur: z.string().trim().min(1).max(200),
+    unite: z.string().trim().max(30).optional(),
+    commentaire: texteLibre(500).optional(),
+    idEchantillon: id.optional(),
+    interpretation: z.enum(['NORMAL', 'ANORMAL', 'CRITIQUE']).optional(),
+  }).strict().refine((r) => r.idLigne || r.codeLoinc, { message: 'Indiquez idLigne ou codeLoinc' })).min(1).max(100),
+}).strict();
+
+export const validerResultatsSchema = z.object({
+  commentaire: texteLibre(2000).optional(),
+}).strict();
+
+export const evolutionQuerySchema = z.object({
+  codeLoinc: z.string().trim().min(1).max(20),
+  idPatient: id.optional(),
 });
 
 export const notificationsQuerySchema = paginationQuerySchema.extend({

@@ -30,6 +30,8 @@ export type Role =
   | 'MEDECIN'
   | 'PHARMACIEN'
   | 'AGENT_ACCUEIL'
+  | 'TECHNICIEN_LABO'
+  | 'BIOLOGISTE'
   | 'ADMIN_STRUCTURE'
   | 'ADMIN_REGIONAL'
   | 'ADMIN_NATIONAL'
@@ -80,6 +82,8 @@ export type Urgence = 'ROUTINE' | 'URGENT' | 'URGENCE_VITALE';
 
 export type StatutEpisode = 'OUVERT' | 'EN_COURS' | 'CLOS' | 'ANNULE';
 export type StatutDemandeAnalyse = 'TRANSMISE' | 'RECUE' | 'PRELEVEE' | 'EN_ANALYSE' | 'VALIDEE' | 'ANNULEE';
+export type LieuPrelevement = 'SUR_PLACE' | 'DOMICILE';
+export type InterpretationResultat = 'NORMAL' | 'ANORMAL' | 'CRITIQUE';
 
 export type SyncOperation = 'CREATE' | 'UPDATE' | 'DELETE';
 
@@ -100,7 +104,11 @@ export type TypeNotification =
   | 'ALERTE_VITALE'
   | 'EPISODE_OUVERT'
   | 'DEMANDE_ANALYSE'
-  | 'ORIENTATION';
+  | 'ORIENTATION'
+  | 'PRELEVEMENT_PLANIFIE'
+  | 'RESULTATS_DISPONIBLES'
+  | 'RESULTAT_CRITIQUE'
+  | 'ESCALADE_CRITIQUE';
 
 export type CanalNotification = 'SMS' | 'PUSH' | 'IN_APP';
 
@@ -1181,12 +1189,45 @@ export interface ExamenView {
   aJeun: boolean;
   consignes: string | null;
   prixGnf: number | null;
+  /** Valeurs de reference et seuils critiques (EF-04-04, EF-04-07). */
+  refMin: number | null;
+  refMax: number | null;
+  refTexte: string | null;
+  critiqueMin: number | null;
+  critiqueMax: number | null;
+}
+
+/** Resultat d'une ligne (EF-04-04). Absent tant que rien n'est saisi. */
+export interface ResultatAnalyseView {
+  id: string;
+  valeur: string;
+  valeurNumerique: number | null;
+  unite: string | null;
+  refMin: number | null;
+  refMax: number | null;
+  refTexte: string | null;
+  interpretation: InterpretationResultat;
+  commentaire: string | null;
+  saisiLe: HorodatageApi;
+  saisiPar: PersonneRefView;
+  codeEchantillon: string | null;
 }
 
 export interface LigneDemandeAnalyseView {
   id: string;
   examen: ExamenView;
   commentaire: string | null;
+  resultat: ResultatAnalyseView | null;
+}
+
+/** Echantillon code (EF-04-03). */
+export interface EchantillonView {
+  id: string;
+  code: string;
+  specimen: string;
+  preleveLe: HorodatageApi;
+  commentaire: string | null;
+  preleveur: PersonneRefView;
 }
 
 export interface DemandeAnalyseView {
@@ -1206,6 +1247,19 @@ export interface DemandeAnalyseView {
   prescripteur: PersonneRefView;
   laboratoire: StructureRefView;
   lignes: LigneDemandeAnalyseView[];
+  /** Cycle laboratoire (EF-04). */
+  lieuPrelevement: LieuPrelevement | null;
+  creneauPrelevement: HorodatageApi | null;
+  recueLe: HorodatageApi | null;
+  preleveeLe: HorodatageApi | null;
+  valideeLe: HorodatageApi | null;
+  valideur: PersonneRefView | null;
+  commentaireBiologiste: string | null;
+  /** Null tant que les resultats ne sont pas diffuses au patient (EF-04-09). */
+  diffuseePatientLe: HorodatageApi | null;
+  echantillons: EchantillonView[];
+  /** Au moins un resultat critique non accuse par le prescripteur. */
+  alerteCritiqueEnAttente: boolean;
 }
 
 export interface RendezVousEpisodeView {
@@ -1296,4 +1350,89 @@ export interface EpisodePatientView {
   responsable: PersonneRefView | null;
   demandesAnalyse: DemandeAnalyseView[];
   rendezVous: RendezVousEpisodeView[];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// P2 — Laboratoire (EF-04)
+// Routes /laboratoire/* (TECHNICIEN_LABO, BIOLOGISTE, ADMIN_STRUCTURE),
+// /resultats/* (prescripteurs) et /patients/me/resultats/*.
+// ═══════════════════════════════════════════════════════════════════
+
+/** GET /laboratoire/tableau-de-bord. */
+export interface TableauDeBordLaboView {
+  aRecevoir: number;              // TRANSMISE
+  aPrelever: number;              // RECUE
+  enAnalyse: number;              // PRELEVEE + EN_ANALYSE
+  aValider: number;               // EN_ANALYSE avec toutes les lignes renseignees
+  urgentes: number;               // URGENT / URGENCE_VITALE non validees
+  critiquesNonAccusees: number;
+  valideesDuJour: number;
+  prochainsPrelevements: DemandeAnalyseView[];
+  fileUrgente: DemandeAnalyseView[];
+}
+
+/** POST /laboratoire/demandes/:id/prelevement/planifier (EF-04-02). */
+export interface PlanifierPrelevementDto {
+  lieu: LieuPrelevement;
+  /** ISO 8601. */
+  creneau?: string;
+}
+
+/** POST /laboratoire/demandes/:id/prelevement (EF-04-03). */
+export interface EnregistrerPrelevementDto {
+  /** Si absent : un echantillon par type de specimen de la demande. */
+  echantillons?: { specimen: string; commentaire?: string }[];
+  lieu?: LieuPrelevement;
+}
+
+/** Une valeur saisie ou importee (EF-04-04, EF-04-06). */
+export interface SaisieResultatDto {
+  /** Cible : la ligne, ou le code LOINC (import depuis un automate). */
+  idLigne?: string;
+  codeLoinc?: string;
+  valeur: string;
+  unite?: string;
+  commentaire?: string;
+  idEchantillon?: string;
+  /** Force la lecture, sinon elle est calculee d'apres les references. */
+  interpretation?: InterpretationResultat;
+}
+
+/** PUT /laboratoire/demandes/:id/resultats. */
+export interface SaisirResultatsDto {
+  resultats: SaisieResultatDto[];
+}
+
+/** POST /laboratoire/demandes/:id/valider (EF-04-05). */
+export interface ValiderResultatsDto {
+  commentaire?: string;
+}
+
+/** Alerte de resultat critique (EF-04-07/08). */
+export interface AlerteCritiqueView {
+  id: string;
+  creeLe: HorodatageApi;
+  accuseeLe: HorodatageApi | null;
+  escaladeeLe: HorodatageApi | null;
+  demande: { id: string; numero: string; idEpisode: string; patient: { id: string; prenom: string; nom: string }; laboratoire: StructureRefView };
+  resultat: { libelle: string; codeLoinc: string; valeur: string; unite: string | null; refMin: number | null; refMax: number | null };
+  destinataire: PersonneRefView;
+}
+
+/** Courbe d'evolution d'une valeur (EF-04-10). */
+export interface EvolutionResultatView {
+  codeLoinc: string;
+  libelle: string;
+  unite: string | null;
+  refMin: number | null;
+  refMax: number | null;
+  points: { date: HorodatageApi; valeur: number; interpretation: InterpretationResultat; numeroDemande: string }[];
+}
+
+/** Examens pour lesquels le patient a au moins un resultat numerique diffuse. */
+export interface ExamenSuiviView {
+  codeLoinc: string;
+  libelle: string;
+  unite: string | null;
+  nbPoints: number;
 }
