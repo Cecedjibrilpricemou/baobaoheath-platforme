@@ -34,7 +34,20 @@
 }
 
 // ── NAVIGATION LATÉRALE ────────────────────────────────────────────
+// La barre laterale porte la couleur de marque (memes verts que les bandes
+// de la landing) : elle se distingue nettement du contenu, en clair comme en
+// sombre. Tout ce qu'elle contient est en blanc, l'entree active en vert vif.
 .bb-nav {
+  --nav-bg: linear-gradient(180deg, #1A5C35 0%, #0B2618 100%);
+  --nav-ink: rgba(255, 255, 255, .78);
+  --nav-ink-strong: #FFFFFF;
+  --nav-muted: rgba(255, 255, 255, .50);
+  --nav-line: rgba(255, 255, 255, .12);
+  --nav-hover: rgba(255, 255, 255, .08);
+  --nav-active-bg: var(--bb-bright);
+  --nav-active-ink: var(--bb-deep);
+  --nav-danger: #FCA5A5;
+
   // En superposition (mobile) la barre doit laisser une zone tactile
   // suffisante sur le fond pour pouvoir la refermer d'un doigt.
   width: min(var(--bb-sidebar-width), 78vw);
@@ -42,21 +55,25 @@
   display: flex;
   flex-direction: column;
   border: none;
-  background: var(--bb-surface-0);
-  border-right: 1px solid var(--bb-border-light);
+  // Bord droit franc : le panneau Material arrondit ses coins par defaut.
+  --mat-sidenav-container-shape: 0;
+  border-radius: 0;
+  background: var(--nav-bg);
+  color: var(--nav-ink);
 
   &__brand {
     display: flex; align-items: center; gap: 10px;
     padding: 0.25rem 0.5rem 1.125rem;
     margin-bottom: 0.875rem;
-    border-bottom: 1px solid var(--bb-border-light);
+    border-bottom: 1px solid var(--nav-line);
+    color: var(--nav-ink-strong);
 
     &-mark { font-size: 22px; line-height: 1; }
 
     &-name {
       font-family: var(--bb-font-display);
       font-size: 16px; font-weight: 800;
-      color: var(--bb-text-primary);
+      color: var(--nav-ink-strong);
       letter-spacing: -0.3px;
     }
   }
@@ -67,13 +84,13 @@
   &__section {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--bb-text-muted);
+    color: var(--nav-muted);
     padding: 0 0.75rem; margin-bottom: 0.375rem;
   }
 
   &__list { padding: 0; }
 
-  &__footer { margin-top: auto; padding-top: 1rem; }
+  &__footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--nav-line); }
 
   // Entrée de navigation : pilule arrondie, active = teinte verte
   &__item {
@@ -81,9 +98,11 @@
     --mat-list-list-item-one-line-container-height: 42px;
     --mat-list-list-item-label-text-size: 13.5px;
     --mat-list-list-item-label-text-weight: 600;
-    --mat-list-list-item-label-text-color: var(--bb-text-secondary);
-    --mat-list-list-item-leading-icon-color: var(--bb-text-muted);
-    --mat-list-list-item-hover-state-layer-color: var(--bb-primary);
+    --mat-list-list-item-label-text-color: var(--nav-ink);
+    --mat-list-list-item-leading-icon-color: var(--nav-ink);
+    --mat-list-list-item-hover-state-layer-color: #fff;
+    --mat-list-list-item-hover-state-layer-opacity: .08;
+    --mat-list-list-item-focus-state-layer-color: #fff;
 
     width: 100%;
     margin-bottom: 2px;
@@ -95,23 +114,24 @@
     font-family: var(--bb-font-body);
     cursor: pointer;
 
-    // Entree active : pilule pleine dans le vert de marque, texte blanc —
-    // le meme vert que les boutons principaux de la landing.
+    // Entree active : pilule vert vif (accent de la landing en sombre) sur
+    // le fond profond, texte vert sombre — le contraste le plus net.
     // Classe doublee : mat-list-item pose sa propre couleur de fond a
     // specificite (0,2,0), il faut au moins l'egaler.
     &--active#{&}--active {
-      background: var(--bb-primary);
-      --mat-list-list-item-container-color: var(--bb-primary);
-      --mat-list-list-item-label-text-color: #fff;
-      --mat-list-list-item-leading-icon-color: #fff;
-      --mat-list-list-item-hover-state-layer-color: #fff;
+      background: var(--nav-active-bg);
+      --mat-list-list-item-container-color: var(--nav-active-bg);
+      --mat-list-list-item-label-text-color: var(--nav-active-ink);
+      --mat-list-list-item-leading-icon-color: var(--nav-active-ink);
+      --mat-list-list-item-hover-state-layer-color: #000;
+      --mat-list-list-item-hover-state-layer-opacity: .06;
       font-weight: 700;
-      box-shadow: 0 6px 16px rgba(45, 125, 70, .22);
+      box-shadow: 0 8px 18px -6px rgba(0, 0, 0, .45);
     }
 
     &--danger {
-      --mat-list-list-item-label-text-color: var(--bb-danger);
-      --mat-list-list-item-leading-icon-color: var(--bb-danger);
+      --mat-list-list-item-label-text-color: var(--nav-danger);
+      --mat-list-list-item-leading-icon-color: var(--nav-danger);
     }
 
     .mat-mdc-list-item-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -121,9 +141,9 @@
   &__badge {
     min-width: 20px; height: 20px; padding: 0 6px;
     border-radius: var(--bb-radius-pill);
-    background: var(--bb-warning-bg);
-    border: 1px solid var(--bb-warning-border);
-    color: var(--bb-warning);
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .22);
+    color: #fff;
     font-family: var(--bb-font-display);
     font-size: 11px; font-weight: 700;
     display: inline-flex; align-items: center; justify-content: center;
@@ -352,8 +372,9 @@
 
 // ── CONTRASTE EN MODE SOMBRE ───────────────────────────────────────
 [data-theme='dark'] {
-  // Le vert de marque reste lisible avec du texte blanc ; on ne l'eclaircit
-  // pas, comme les boutons de la landing en sombre.
+  // Sombre : la barre reprend les verts profonds des bandes sombres de la
+  // landing, et reste distincte du fond de page (#0A1A10).
+  .bb-nav { --nav-bg: linear-gradient(180deg, #17422A 0%, #0B2618 100%); --nav-line: rgba(255, 255, 255, .10); }
   .bb-nav__item--active { box-shadow: none; }
 
   .bb-page-head__tag { background: rgba(62, 187, 112, .14); color: var(--bb-bright); }
