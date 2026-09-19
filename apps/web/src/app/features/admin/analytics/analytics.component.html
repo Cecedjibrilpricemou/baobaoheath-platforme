@@ -2,13 +2,14 @@
 <div class="bb-dash">
 
   <!-- ── EN-TÊTE ─────────────────────────────────────────────────── -->
-  <header class="bb-dash__header">
-    <div>
-      <h1 class="bb-dash__title">{{ 'ADMIN.NAV_ANALYTICS' | translate }}</h1>
-      <p class="bb-dash__subtitle">{{ 'ADMIN.ANALYTICS.SUBTITLE' | translate: { nom: plateforme.nom() } }}</p>
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-chart-bar" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.NAV_ANALYTICS' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.ANALYTICS.SUBTITLE' | translate: { nom: plateforme.nom() } }}</p>
     </div>
 
-    <div class="bb-dash__actions">
+    <div class="bb-page-head__actions bb-dash__actions">
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-dash__filter">
         <mat-select [(ngModel)]="prefiltreSelectionne" (selectionChange)="onPrefiltreChange()">
           @for (opt of prefiltreOptions; track opt.value) {

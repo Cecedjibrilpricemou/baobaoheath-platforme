@@ -1,7 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════
 // _shell.scss — Coquille applicative partagée (Angular Material)
 //
-// Sidebar claire + pilule active verte, barre supérieure, menu profil.
+// Sidebar claire + pilule active dans le vert de marque (comme les boutons
+// de la landing), barre supérieure a boutons ronds cercles, menu profil,
+// en-tete de page commun (.bb-page-head).
 // Ces classes sont utilisées par les 6 layouts de rôle : les déclarer
 // globalement évite d'en embarquer six copies dans le bundle.
 // ═══════════════════════════════════════════════════════════════════
@@ -45,7 +47,9 @@
 
   &__brand {
     display: flex; align-items: center; gap: 10px;
-    padding: 0 0.5rem 1.25rem;
+    padding: 0.25rem 0.5rem 1.125rem;
+    margin-bottom: 0.875rem;
+    border-bottom: 1px solid var(--bb-border-light);
 
     &-mark { font-size: 22px; line-height: 1; }
 
@@ -91,11 +95,18 @@
     font-family: var(--bb-font-body);
     cursor: pointer;
 
-    &--active {
-      background: var(--bb-success-bg);
-      --mat-list-list-item-label-text-color: var(--bb-primary);
-      --mat-list-list-item-leading-icon-color: var(--bb-primary);
+    // Entree active : pilule pleine dans le vert de marque, texte blanc —
+    // le meme vert que les boutons principaux de la landing.
+    // Classe doublee : mat-list-item pose sa propre couleur de fond a
+    // specificite (0,2,0), il faut au moins l'egaler.
+    &--active#{&}--active {
+      background: var(--bb-primary);
+      --mat-list-list-item-container-color: var(--bb-primary);
+      --mat-list-list-item-label-text-color: #fff;
+      --mat-list-list-item-leading-icon-color: #fff;
+      --mat-list-list-item-hover-state-layer-color: #fff;
       font-weight: 700;
+      box-shadow: 0 6px 16px rgba(45, 125, 70, .22);
     }
 
     &--danger {
@@ -129,6 +140,19 @@
   position: sticky; top: 0; z-index: 10;
 
   &__spacer { flex: 1; }
+
+  // Boutons d'action ronds et cercles, comme ceux de la barre de la landing.
+  .mat-mdc-icon-button:not(.bb-topbar__user):not(.bb-topbar__burger) {
+    --mdc-icon-button-state-layer-size: 38px;
+    --mat-icon-button-state-layer-size: 38px;
+    width: 38px; height: 38px; padding: 0;
+    border: 1px solid var(--bb-border);
+    background: var(--bb-surface-card);
+    color: var(--bb-text-secondary);
+    transition: border-color var(--bb-transition), color var(--bb-transition);
+    &:hover { border-color: var(--bb-primary); color: var(--bb-primary); }
+    .mat-icon { font-size: 15px; width: 15px; height: 15px; line-height: 15px; }
+  }
 
   // Classe doublee : les styles de mat-icon-button sont injectes apres la
   // feuille globale et gagnent a specificite egale. Meme raison que pour
@@ -295,15 +319,44 @@
   .mat-mdc-menu-content { padding: 0; }
 }
 
-// ── CONTRASTE EN MODE SOMBRE ───────────────────────────────────────
-// --bb-success-bg et --bb-primary sont tous deux sombres : sur fond
-// sombre l'entrée active devenait illisible.
-[data-theme='dark'] {
-  .bb-nav__item--active {
-    background: rgba(62, 187, 112, 0.16);
-    --mat-list-list-item-label-text-color: var(--bb-bright);
-    --mat-list-list-item-leading-icon-color: var(--bb-bright);
+// ── EN-TÊTE DE PAGE COMMUN ─────────────────────────────────────────
+// Meme hierarchie que les sections de la landing : etiquette en pilule,
+// titre display, sous-titre discret, actions a droite.
+.bb-page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  &__text { min-width: 0; }
+
+  &__tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 12px; margin-bottom: 8px;
+    border-radius: var(--bb-radius-pill);
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    font-family: var(--bb-font-display); font-size: 10.5px; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--bb-primary);
+    i { font-size: 11px; }
   }
+
+  &__title {
+    font-family: var(--bb-font-display);
+    font-size: clamp(1.5rem, 2.4vw, 1.75rem); font-weight: 800; letter-spacing: -0.7px;
+    color: var(--bb-text-primary); margin: 0 0 0.25rem; line-height: 1.15;
+  }
+
+  &__sub { font-size: 14px; color: var(--bb-text-muted); margin: 0; line-height: 1.5; }
+
+  &__actions { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
+}
+
+// ── CONTRASTE EN MODE SOMBRE ───────────────────────────────────────
+[data-theme='dark'] {
+  // Le vert de marque reste lisible avec du texte blanc ; on ne l'eclaircit
+  // pas, comme les boutons de la landing en sombre.
+  .bb-nav__item--active { box-shadow: none; }
+
+  .bb-page-head__tag { background: rgba(62, 187, 112, .14); color: var(--bb-bright); }
 
   .bb-net {
     background: rgba(62, 187, 112, 0.14);

@@ -1,11 +1,14 @@
 <div class="bb-struct">
-  <div class="bb-struct__header">
-    <div>
-      <h1 class="bb-struct__title"><i class="pi pi-building"></i> {{ 'ADMIN.STRUCTURES.TITLE' | translate }}</h1>
-      <p class="bb-struct__sub">{{ 'ADMIN.STRUCTURES.SUBTITLE' | translate }}</p>
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-building" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.STRUCTURES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.STRUCTURES.SUBTITLE' | translate }}</p>
     </div>
-    <button class="bb-struct__add-btn" (click)="showForm.set(true)"><i class="pi pi-plus"></i> {{ 'ADMIN.STRUCTURES.NEW_BTN' | translate }}</button>
-  </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-struct__add-btn" (click)="showForm.set(true)"><i class="pi pi-plus"></i> {{ 'ADMIN.STRUCTURES.NEW_BTN' | translate }}</button>
+    </div>
+  </header>
 
   <!-- Modal MDP temporaire -->
   @if (mdpAffiche()) {

@@ -1,10 +1,13 @@
 <!-- features/admin/export/export.component.html -->
 <div class="bb-export">
 
-  <div class="bb-export__header">
-    <h1 class="bb-export__title"><i class="pi pi-download"></i> {{ 'ADMIN.EXPORT.TITLE' | translate }}</h1>
-    <p class="bb-export__subtitle">{{ 'ADMIN.EXPORT.SUBTITLE' | translate }}</p>
-  </div>
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-download" aria-hidden="true"></i> DHIS2</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.EXPORT.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.EXPORT.SUBTITLE' | translate }}</p>
+    </div>
+  </header>
 
   @if (successMsg()) {
     <div class="bb-export__alert bb-export__alert--success" role="status" aria-live="polite">

@@ -1,11 +1,5 @@
 .settings-page {
-  padding: 32px 48px;
-  background: var(--bb-surface-ground);
-  min-height: calc(100vh - 64px);
-
-  @media (max-width: 768px) {
-    padding: 24px 20px;
-  }
+  // Le gabarit .bb-shell__page porte deja la marge et le fond.
 }
 
 .settings-header {
@@ -123,10 +117,12 @@
       color: var(--bb-text-primary);
     }
 
+    // Meme pilule pleine que la navigation laterale.
     &.active {
-      background: var(--bb-success-bg);
-      color: var(--bb-primary);
-      
+      background: var(--bb-primary);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(45, 125, 70, .22);
+
       i {
         opacity: 1;
       }
