@@ -145,7 +145,7 @@ test('4. Admin structure — voit ses agents, le compteur suit la liste', async 
   await login(page, E2E.adminStructure.email);
   await expect(page).toHaveURL(/\/admin-structure\/dashboard/);
 
-  const compteur = page.locator('.bb-as-dash__stat-val').first();
+  const compteur = page.locator('.bb-stat__value').first();
   await expect(compteur).not.toHaveText('0');
   const attendu = Number((await compteur.textContent())?.trim());
 

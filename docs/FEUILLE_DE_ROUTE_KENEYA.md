@@ -155,5 +155,6 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 | Date | Bloc | Commit / note |
 |---|---|---|
 | 2026-09-18 | — | Renommage KÈNÈYA, landing et pages d'auth refaites, plan validé |
+| 2026-09-19 | Design | `37646f0` : tous les espaces (patient, ASC, médecin, pharmacien, admin structure) alignés sur la landing en clair et sombre — en-têtes `.bb-page-head`, cartes de chiffres neutres, alias `.bb-*` partagés |
 | 2026-09-19 | P1 | API `05f61d8` + front : espace Accueil hôpital (tableau de bord, admission, épisodes, orientation, demande d'analyse, bon d'examen), page patient « Mon parcours », rôle agent d'accueil et type laboratoire dans l'admin, locale fr pour les dates |
 | 2026-09-19 | P0 | API `c5c1772` + web : identité de la plateforme administrable (nom, logo, coordonnées), `<app-brand>`, `PlateformeService` |
