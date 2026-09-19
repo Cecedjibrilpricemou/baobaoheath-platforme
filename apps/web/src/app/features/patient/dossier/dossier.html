@@ -1,10 +1,11 @@
 <div class="dossier-page">
-  <div class="dossier-header">
-    <div class="header-content">
-      <h1>{{ 'PATIENT.DOSSIER.TITLE' | translate }}</h1>
-      <p>{{ 'PATIENT.DOSSIER.SUBTITLE' | translate }}</p>
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-folder" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.DOSSIER.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.DOSSIER.SUBTITLE' | translate }}</p>
     </div>
-    <div class="header-actions">
+    <div class="bb-page-head__actions header-actions">
       <button matButton="outlined" type="button" (click)="exportDossier()" [disabled]="isExporting()">
         <mat-icon fontSet="pi" [fontIcon]="isExporting() ? 'pi-spinner pi-spin' : 'pi-download'" aria-hidden="true"></mat-icon>
         {{ 'PATIENT.DOSSIER.EXPORT_FHIR' | translate }}
@@ -14,7 +15,7 @@
         {{ 'PATIENT.NAV_QR_CODE' | translate }}
       </a>
     </div>
-  </div>
+  </header>
 
   <div class="dossier-content">
 

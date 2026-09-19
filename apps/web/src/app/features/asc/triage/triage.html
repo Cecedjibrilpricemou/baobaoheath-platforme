@@ -1,13 +1,11 @@
 <div class="triage-page">
-  <div class="triage-header">
-    <div class="header-icon">
-      <i class="pi pi-bolt"></i>
+<header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-bolt" aria-hidden="true"></i> {{ 'ASC.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ASC.TRIAGE.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ASC.TRIAGE.SUBTITLE' | translate }}</p>
     </div>
-    <div class="header-content">
-      <h1>{{ 'ASC.TRIAGE.TITLE' | translate }}</h1>
-      <p>{{ 'ASC.TRIAGE.SUBTITLE' | translate }}</p>
-    </div>
-  </div>
+  </header>
 
   <!-- WIZARD STEPS INDICATOR -->
   <div class="wizard-steps" role="list" [attr.aria-label]="'ASC.TRIAGE.STEPS_ARIA' | translate">

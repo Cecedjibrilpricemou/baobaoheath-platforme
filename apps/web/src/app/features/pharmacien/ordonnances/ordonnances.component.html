@@ -5,6 +5,13 @@
   <!-- ETAT VIDE : RECHERCHE / SCAN (Si aucun patient) -->
   <!-- ============================================== -->
   @if (!patient()) {
+    <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-file" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.NAV_ORDONNANCES' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.ORDONNANCES.SEARCH_SUB' | translate }}</p>
+    </div>
+  </header>
     <div class="bb-ordo__empty-scanner">
       <div class="bb-ordo__empty-icon"><i class="pi pi-qrcode"></i></div>
       <h2>{{ 'PHARMACIEN.ORDONNANCES.SEARCH_TITLE' | translate }}</h2>

@@ -27,13 +27,11 @@
 
   &__avatar {
     width: 56px; height: 56px; border-radius: 16px;
-    background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    background: linear-gradient(135deg, #2D7D46, #1A5C35);
     color: #fff; display: flex; align-items: center; justify-content: center;
     font-family: var(--bb-font-display); font-weight: 800; font-size: 18px;
     flex-shrink: 0; letter-spacing: .02em;
-    box-shadow:
-      0 8px 20px -8px rgba(29, 78, 216, .55),
-      inset 0 1px 0 rgba(255, 255, 255, .25);
+    box-shadow: 0 8px 20px -8px rgba(45, 125, 70, .55);
   }
 
   &__title {
@@ -128,77 +126,31 @@
     }
 
     // ── Variantes (light) ────────────────────────────────────────
-    &--warning {
-      --c-accent: #D97706;
-      --c-accent-soft: rgba(245, 158, 11, .22);
-      --c-bg-from: #FFFBEB;
-      --c-bg-to: #FEF3C7;
-      --c-border: #FCD34D;
-      --c-icon-bg: rgba(255, 255, 255, .85);
-    }
-    &--success {
-      --c-accent: #16A34A;
-      --c-accent-soft: rgba(34, 197, 94, .22);
-      --c-bg-from: #F0FDF4;
-      --c-bg-to: #DCFCE7;
-      --c-border: #86EFAC;
-      --c-icon-bg: rgba(255, 255, 255, .85);
-    }
-    &--info {
-      --c-accent: #2563EB;
-      --c-accent-soft: rgba(59, 130, 246, .22);
-      --c-bg-from: #EFF6FF;
-      --c-bg-to: #DBEAFE;
-      --c-border: #BFDBFE;
-      --c-icon-bg: rgba(255, 255, 255, .85);
-    }
-    &--primary {
-      --c-accent: #7C3AED;
-      --c-accent-soft: rgba(139, 92, 246, .22);
-      --c-bg-from: #F5F3FF;
-      --c-bg-to: #EDE9FE;
-      --c-border: #C4B5FD;
-      --c-icon-bg: rgba(255, 255, 255, .85);
-    }
+    --c-bg-from: var(--bb-surface-card);
+    --c-bg-to: var(--bb-surface-card);
+    --c-border: var(--bb-border-light);
+    box-shadow: var(--bb-shadow-sm);
+
+    &--warning { --c-accent: var(--bb-warning); --c-accent-soft: var(--bb-warning-bg); --c-icon-bg: var(--bb-warning-bg); }
+    &--success { --c-accent: var(--bb-primary); --c-accent-soft: var(--bb-success-bg); --c-icon-bg: var(--bb-success-bg); }
+    &--info    { --c-accent: var(--bb-info);    --c-accent-soft: var(--bb-info-bg);    --c-icon-bg: var(--bb-info-bg); }
+    &--primary { --c-accent: var(--bb-primary); --c-accent-soft: var(--bb-success-bg); --c-icon-bg: var(--bb-success-bg); }
   }
 
   // ── Variantes (dark) — surface neutre + accent garde sa couleur ─
   // On vise lisibilité parfaite : fond proche surface-card, jamais
   // un wash pastel délavé.
   :host-context([data-theme="dark"]) &__stat-card {
-    --c-bg-from: var(--bb-surface-1);
+    // Sombre : surface neutre, seul l'accent (barre + icone) porte la couleur.
+    --c-bg-from: var(--bb-surface-card);
     --c-bg-to: var(--bb-surface-card);
     --c-icon-bg: rgba(255, 255, 255, .06);
     --c-border: var(--bb-border);
 
-    &--warning {
-      --c-accent: #FBBF24;
-      --c-accent-soft: rgba(251, 191, 36, .14);
-      --c-bg-from: rgba(245, 158, 11, .08);
-      --c-bg-to: var(--bb-surface-card);
-      --c-border: rgba(251, 191, 36, .28);
-    }
-    &--success {
-      --c-accent: #4ADE80;
-      --c-accent-soft: rgba(74, 222, 128, .14);
-      --c-bg-from: rgba(34, 197, 94, .08);
-      --c-bg-to: var(--bb-surface-card);
-      --c-border: rgba(74, 222, 128, .28);
-    }
-    &--info {
-      --c-accent: #60A5FA;
-      --c-accent-soft: rgba(96, 165, 250, .14);
-      --c-bg-from: rgba(59, 130, 246, .08);
-      --c-bg-to: var(--bb-surface-card);
-      --c-border: rgba(96, 165, 250, .28);
-    }
-    &--primary {
-      --c-accent: #A78BFA;
-      --c-accent-soft: rgba(167, 139, 250, .14);
-      --c-bg-from: rgba(139, 92, 246, .08);
-      --c-bg-to: var(--bb-surface-card);
-      --c-border: rgba(167, 139, 250, .28);
-    }
+    &--warning { --c-accent: #FBBF24; --c-accent-soft: rgba(251, 191, 36, .14); }
+    &--success,
+    &--primary { --c-accent: var(--bb-bright); --c-accent-soft: rgba(62, 187, 112, .14); }
+    &--info    { --c-accent: #60A5FA; --c-accent-soft: rgba(96, 165, 250, .14); }
   }
 
   &__stat-top {

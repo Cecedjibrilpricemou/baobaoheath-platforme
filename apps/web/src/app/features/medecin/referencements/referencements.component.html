@@ -2,12 +2,13 @@
 <div class="bb-med-cons bb-med-ref">
 
   <!-- Header -->
-  <div class="bb-med-cons__header">
-    <div>
-      <h1 class="bb-med-cons__title"><i class="pi pi-send"></i> {{ 'MEDECIN.REFERENCEMENTS.TITLE' | translate }}</h1>
-      <p class="bb-med-cons__subtitle">{{ 'MEDECIN.REFERENCEMENTS.SUBTITLE' | translate: { count: total() } }}</p>
+<header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-send" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.REFERENCEMENTS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'MEDECIN.REFERENCEMENTS.SUBTITLE' | translate: { count: total() } }}</p>
     </div>
-  </div>
+  </header>
 
   <!-- Filtre par statut -->
   <div class="bb-med-ref__filtres" role="tablist">

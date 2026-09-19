@@ -59,42 +59,21 @@
   }
 
   // ── Variantes ───────────────────────────────────────────────────
-  &--green {
-    background: linear-gradient(135deg, var(--bb-success-bg), #DCFCE7);
-    border-color: var(--bb-success-border);
-    &::after { background: #DCFCE7; }
-    .stat-card__icon { background: rgba(255,255,255,.60); i { color: var(--bb-primary); } }
-  }
+  // Variantes : meme carte neutre, seule la pastille d'icone change.
+  background: var(--bb-surface-card);
+  border-color: var(--bb-border-light);
+  box-shadow: var(--bb-shadow-sm);
+  &::after { display: none; }
 
-  &--blue {
-    background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
-    border-color: #BFDBFE;
-    &::after { background: #DBEAFE; }
-    .stat-card__icon { background: rgba(255,255,255,.60); i { color: #2563EB; } }
-  }
-
-  &--orange {
-    background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
-    border-color: #FDE68A;
-    &::after { background: #FEF3C7; }
-    .stat-card__icon { background: rgba(255,255,255,.60); i { color: #D97706; } }
-  }
-
-  &--purple {
-    background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
-    border-color: #C4B5FD;
-    &::after { background: #EDE9FE; }
-    .stat-card__icon { background: rgba(255,255,255,.60); i { color: #7C3AED; } }
-  }
+  &--green  .stat-card__icon { background: var(--bb-success-bg); i { color: var(--bb-primary); } }
+  &--blue   .stat-card__icon { background: var(--bb-info-bg);    i { color: var(--bb-info); } }
+  &--orange .stat-card__icon { background: var(--bb-warning-bg); i { color: var(--bb-warning); } }
+  &--purple .stat-card__icon { background: var(--bb-success-bg); i { color: var(--bb-primary); } }
 }
 
 :host-context([data-theme="dark"]) {
   .stat-card {
-    &--green  { background: linear-gradient(135deg, var(--bb-success-bg), rgba(21,128,61,.15)); }
-    &--blue   { background: linear-gradient(135deg, rgba(30,64,175,.12), rgba(30,64,175,.22)); border-color: rgba(30,64,175,.40); }
-    &--orange { background: linear-gradient(135deg, rgba(146,64,14,.12), rgba(146,64,14,.22)); border-color: rgba(146,64,14,.40); }
-    &--purple { background: linear-gradient(135deg, rgba(124,58,237,.10), rgba(124,58,237,.20)); border-color: rgba(124,58,237,.35); }
-    &__icon { background: rgba(0,0,0,.20) !important; }
+    &--green .stat-card__icon, &--purple .stat-card__icon { background: rgba(62, 187, 112, .14); i { color: var(--bb-bright); } }
     &__value { color: var(--bb-text-primary); }
   }
 }

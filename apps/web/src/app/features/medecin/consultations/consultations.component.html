@@ -2,12 +2,13 @@
 <div class="bb-med-cons">
 
   <!-- Header -->
-  <div class="bb-med-cons__header">
-    <div>
-      <h1 class="bb-med-cons__title"><i class="pi pi-check-circle"></i> {{ 'MEDECIN.CONSULTATIONS.TITLE' | translate }}</h1>
-      <p class="bb-med-cons__subtitle">{{ 'MEDECIN.CONSULTATIONS.SUBTITLE' | translate: { count: total() } }}</p>
+<header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-check-circle" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.CONSULTATIONS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'MEDECIN.CONSULTATIONS.SUBTITLE' | translate: { count: total() } }}</p>
     </div>
-  </div>
+  </header>
 
   <!-- Messages -->
   @if (successMessage()) {

@@ -1,13 +1,16 @@
 <div class="bb-agents">
-  <div class="bb-agents__header">
-    <div>
-      <h1 class="bb-agents__title"><i class="pi pi-users"></i> {{ 'ADMIN_STRUCTURE.AGENTS.TITLE' | translate }}</h1>
-      <p class="bb-agents__sub">{{ 'ADMIN_STRUCTURE.AGENTS.SUBTITLE' | translate }}</p>
+<header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-users" aria-hidden="true"></i> {{ 'ADMIN_STRUCTURE.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN_STRUCTURE.AGENTS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN_STRUCTURE.AGENTS.SUBTITLE' | translate }}</p>
     </div>
-    <button class="bb-agents__add-btn" (click)="showForm.set(true)">
-      <i class="pi pi-plus"></i> {{ 'ADMIN_STRUCTURE.AGENTS.ADD_BTN' | translate }}
-    </button>
-  </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-agents__add-btn" (click)="showForm.set(true)">
+        <i class="pi pi-plus"></i> {{ 'ADMIN_STRUCTURE.AGENTS.ADD_BTN' | translate }}
+      </button>
+    </div>
+  </header>
 
   @if (successMsg()) {
     <div class="bb-agents__alert bb-agents__alert--success" role="status" aria-live="polite"><i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMsg() }}</div>

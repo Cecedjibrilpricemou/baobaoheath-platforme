@@ -50,20 +50,26 @@
   &__kpi {
     border-radius: var(--bb-radius-xl); padding: 1.5rem;
     display: flex; flex-direction: column; gap: 12px;
-    border: 1px solid transparent; position: relative; overflow: hidden;
+    // Surface neutre comme les compteurs de la landing : seule la
+    // pastille d'icone porte la couleur.
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light); box-shadow: var(--bb-shadow-sm);
+    position: relative; overflow: hidden;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
     &:hover { transform: translateY(-4px); box-shadow: var(--bb-shadow-md); }
 
     i {
       width: 44px; height: 44px; border-radius: 12px; font-size: 20px;
-      background: var(--bb-surface-card); display: flex; align-items: center; justify-content: center;
-      position: relative; z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
     }
 
-    &--blue  { background: var(--bb-info-bg); border-color: var(--bb-info-border); i { color: var(--bb-info); } }
-    &--red   { background: var(--bb-danger-bg); border-color: var(--bb-danger-border); i { color: var(--bb-danger); } }
-    &--green { background: var(--bb-success-bg); border-color: var(--bb-success-border); i { color: var(--bb-primary); } }
+    &--blue  i { background: var(--bb-info-bg);    color: var(--bb-info); }
+    &--red   i { background: var(--bb-danger-bg);  color: var(--bb-danger); }
+    &--green i { background: var(--bb-success-bg); color: var(--bb-primary); }
   }
+
+  :host-context([data-theme="dark"]) &__kpi--green i { background: rgba(62, 187, 112, .14); color: var(--bb-bright); }
 
   &__kpi-val {
     font-family: var(--bb-font-display); font-size: 32px; font-weight: 800;

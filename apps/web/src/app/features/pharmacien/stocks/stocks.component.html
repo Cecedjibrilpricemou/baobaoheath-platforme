@@ -1,15 +1,18 @@
 <!-- features/pharmacien/stocks/stocks.component.html -->
 <div class="bb-ph-stocks">
 
-  <div class="bb-ph-stocks__header">
-    <div>
-      <h1 class="bb-ph-stocks__title"><i class="pi pi-box"></i> {{ 'PHARMACIEN.STOCKS.TITLE' | translate }}</h1>
-      <p class="bb-ph-stocks__subtitle">{{ 'PHARMACIEN.STOCKS.SUBTITLE' | translate }}</p>
+<header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-box" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.STOCKS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.STOCKS.SUBTITLE' | translate }}</p>
     </div>
-    <button class="bb-ph-stocks__add-btn" (click)="showForm.set(true)">
-      <i class="pi pi-plus"></i> {{ 'PHARMACIEN.STOCKS.REAPPRO_BTN' | translate }}
-    </button>
-  </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-ph-stocks__add-btn" (click)="showForm.set(true)">
+        <i class="pi pi-plus"></i> {{ 'PHARMACIEN.STOCKS.REAPPRO_BTN' | translate }}
+      </button>
+    </div>
+  </header>
 
   <!-- Alertes -->
   @if (successMsg()) {

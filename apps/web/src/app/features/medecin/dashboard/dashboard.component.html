@@ -2,11 +2,12 @@
 <div class="bb-med-dash">
 
   <!-- ── HEADER ─────────────────────────────────────────────── -->
-  <div class="bb-med-dash__header">
+  <header class="bb-page-head bb-med-dash__header">
     <div class="bb-med-dash__header-left">
       <div class="bb-med-dash__avatar" aria-hidden="true">{{ getInitiales() }}</div>
       <div class="bb-med-dash__header-text">
-        <h1 class="bb-med-dash__title">
+        <span class="bb-page-head__tag"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+        <h1 class="bb-page-head__title bb-med-dash__title">
           {{ 'MEDECIN.DASHBOARD.GREETING_PREFIX' | translate }} {{ currentUser()?.prenom }} {{ currentUser()?.nom }}
           <span class="bb-med-dash__wave" aria-hidden="true">👋</span>
         </h1>
@@ -25,7 +26,7 @@
         }
       </div>
     </div>
-  </div>
+  </header>
 
   <!-- ── STAT CARDS ─────────────────────────────────────────── -->
   @if (isLoading()) {

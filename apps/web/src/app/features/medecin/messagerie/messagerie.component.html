@@ -1,9 +1,13 @@
 <!-- features/medecin/messagerie/messagerie.component.html -->
 <div class="bb-msg">
 
-  <div class="bb-msg__header">
-    <h1 class="bb-msg__title"><i class="pi pi-comments"></i> {{ 'MEDECIN.MESSAGERIE.TITLE' | translate }}</h1>
-  </div>
+<header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-comments" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.MESSAGERIE.TITLE' | translate }}</h1>
+      
+    </div>
+  </header>
 
   @if (isLoading()) {
     <div class="bb-msg__layout">

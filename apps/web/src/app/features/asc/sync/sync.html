@@ -1,11 +1,9 @@
 <div class="sync-page">
-  <div class="sync-header">
-    <div class="header-icon" [ngClass]="isOnline() ? 'online-icon' : 'offline-icon'">
-      <i class="pi" [ngClass]="isOnline() ? 'pi-wifi' : 'pi-wifi-slash'"></i>
-    </div>
-    <div class="header-content">
-      <h1>{{ 'ASC.SYNC.TITLE' | translate }}</h1>
-      <p>
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi" [ngClass]="isOnline() ? 'pi-wifi' : 'pi-wifi-slash'" aria-hidden="true"></i> {{ 'ASC.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ASC.SYNC.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">
         @if (isOnline()) {
           <span class="text-green-600 font-medium">{{ 'ASC.SYNC.ONLINE_TEXT' | translate }}</span> {{ 'ASC.SYNC.ONLINE_SUB' | translate }}
         } @else {
@@ -17,13 +15,13 @@
         {{ 'ASC.SYNC.LAST_SYNC' | translate: { date: formatDerniereSync() } }}
       </p>
     </div>
-    <div class="header-actions">
+    <div class="bb-page-head__actions header-actions">
       <button matButton="filled" class="bb-sync__cta" [disabled]="!peutSynchroniser()" (click)="startSync()">
         <mat-icon fontSet="pi" [fontIcon]="isSyncing() ? 'pi-sync pi-spin' : 'pi-cloud-upload'" aria-hidden="true"></mat-icon>
         {{ (isSyncing() ? 'ASC.SYNC.SYNCING' : 'ASC.SYNC.SYNC_NOW') | translate }}
       </button>
     </div>
-  </div>
+  </header>
 
   @if (derniereErreur()) {
     <div class="sync-error" role="alert">

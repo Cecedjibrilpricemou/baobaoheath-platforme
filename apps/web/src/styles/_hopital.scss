@@ -5,8 +5,10 @@
 // Declare globalement : plusieurs pages partagent ces classes.
 // ═══════════════════════════════════════════════════════════════════
 
+// Les memes blocs servent a tous les espaces : chaque selecteur existe
+// sous son nom generique (.bb-card, .bb-stat...) et sous son nom d'origine.
 // ── Cartes ──────────────────────────────────────────────────────────
-.bb-hop-card {
+.bb-card, .bb-hop-card {
   background: var(--bb-surface-card);
   border: 1px solid var(--bb-border-light);
   border-radius: 20px;
@@ -22,10 +24,10 @@
 }
 
 // ── Grille de compteurs (tableau de bord) ──────────────────────────
-.bb-hop-stats {
+.bb-stats, .bb-hop-stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;
 }
-.bb-hop-stat {
+.bb-stat, .bb-hop-stat {
   display: flex; align-items: center; gap: 14px;
   background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 18px;
   padding: 1rem 1.125rem; box-shadow: var(--bb-shadow-sm);
@@ -41,22 +43,23 @@
   // Premiere carte : pleine, vert de marque (comme le bandeau des chiffres de la landing).
   &--primary {
     background: linear-gradient(135deg, #2D7D46, #1A5C35); border-color: transparent; color: #fff;
-    .bb-hop-stat__icon { background: rgba(255, 255, 255, .18); color: #fff; }
-    .bb-hop-stat__value, .bb-hop-stat__label { color: #fff; }
-    .bb-hop-stat__label { opacity: .9; }
+    .bb-hop-stat__icon, .bb-stat__icon { background: rgba(255, 255, 255, .18); color: #fff; }
+    .bb-hop-stat__value, .bb-hop-stat__label, .bb-stat__value, .bb-stat__label { color: #fff; }
+    .bb-hop-stat__label, .bb-stat__label { opacity: .9; }
   }
-  &--warning .bb-hop-stat__icon { background: var(--bb-warning-bg); color: var(--bb-warning); }
-  &--danger  .bb-hop-stat__icon { background: var(--bb-danger-bg);  color: var(--bb-danger); }
-  &--info    .bb-hop-stat__icon { background: var(--bb-info-bg);    color: var(--bb-info); }
+  &--warning { .bb-hop-stat__icon, .bb-stat__icon { background: var(--bb-warning-bg); color: var(--bb-warning); } }
+  &--danger  { .bb-hop-stat__icon, .bb-stat__icon { background: var(--bb-danger-bg);  color: var(--bb-danger); } }
+  &--info    { .bb-hop-stat__icon, .bb-stat__icon { background: var(--bb-info-bg);    color: var(--bb-info); } }
+  &--link { text-decoration: none; color: inherit; cursor: pointer; transition: transform var(--bb-transition), box-shadow var(--bb-transition); &:hover { transform: translateY(-2px); box-shadow: var(--bb-shadow); } }
 }
 
 // ── Filtres en pilules (comme les onglets d'analytics) ─────────────
-.bb-hop-pills {
+.bb-pills, .bb-hop-pills {
   display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px;
   background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: var(--bb-radius-pill);
   margin-bottom: 1rem;
 }
-.bb-hop-pill {
+.bb-pill, .bb-hop-pill {
   border: 0; background: transparent; cursor: pointer;
   padding: 8px 16px; border-radius: var(--bb-radius-pill);
   font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; color: var(--bb-text-secondary);
@@ -94,7 +97,7 @@
 }
 
 // ── Etat vide ───────────────────────────────────────────────────────
-.bb-hop-empty {
+.bb-empty, .bb-hop-empty {
   text-align: center; padding: 2.5rem 1rem; color: var(--bb-text-muted);
   border: 1px dashed var(--bb-border); border-radius: 20px; background: var(--bb-surface-card);
   i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
@@ -172,9 +175,9 @@
 
 // ── Mode sombre ─────────────────────────────────────────────────────
 [data-theme='dark'] {
-  .bb-hop-stat--primary { background: linear-gradient(135deg, #17422A, #0F2E1C); }
-  .bb-hop-pill--active { box-shadow: none; }
-  .bb-hop-examens__cat, .bb-hop-selected, .bb-hop-card__title i { color: var(--bb-bright); }
-  .bb-hop-item__avatar, .bb-hop-stat__icon { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
+  .bb-hop-stat--primary, .bb-stat--primary { background: linear-gradient(135deg, #17422A, #0F2E1C); }
+  .bb-hop-pill--active, .bb-pill--active { box-shadow: none; }
+  .bb-hop-examens__cat, .bb-hop-selected, .bb-hop-card__title i, .bb-card__title i { color: var(--bb-bright); }
+  .bb-hop-item__avatar, .bb-hop-stat__icon, .bb-stat__icon { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
   .bb-parcours__etape--done { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
 }
