@@ -55,6 +55,15 @@ export const routes: Routes = [
       import('./features/pharmacien/pharmacien.routes').then(m => m.PHARMACIEN_ROUTES)
   },
 
+  // ── Module Hopital (accueil, P1) ────────────────────────────────────
+  {
+    path: 'hopital',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['AGENT_ACCUEIL'] },
+    loadChildren: () =>
+      import('./features/hopital/hopital.routes').then(m => m.HOPITAL_ROUTES)
+  },
+
   // ── Module Admin Structure ──────────────────────────────────────────
   {
     path: 'admin-structure',

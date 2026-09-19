@@ -45,14 +45,14 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Plus aucune valeur de marque en dur dans le code (API et web).
 - [x] Écran super-admin : section « Identité » avec téléversement du logo.
 
-### P1 — Épisode de soins + demande d'analyse · M · EF-03
-- [ ] `EpisodeSoins` (motif, service, professionnel responsable, statut, dates), rattaché au patient.
-- [ ] Recherche patient obligatoire avant création (EF-03-01).
-- [ ] Référentiel `Examen` avec codes LOINC, importable.
-- [ ] `DemandeAnalyse` + lignes, urgence, laboratoire destinataire, consignes patient (à jeun…), transmission et notification (EF-03-03/04).
-- [ ] Orientation vers un médecin ou un service avec RDV proposé (EF-03-05).
-- [ ] Documents administratifs imprimables (EF-03-06).
-- [ ] Tableau de bord établissement (EF-03-07).
+### P1 — Épisode de soins + demande d'analyse · M · EF-03 · ✅ livré le 2026-09-19 (API + front)
+- [x] `EpisodeSoins` (motif, service, professionnel responsable, statut, dates), rattaché au patient. Rôle `AGENT_ACCUEIL`, espace web « Accueil hôpital ».
+- [x] Recherche patient obligatoire avant création (EF-03-01).
+- [x] Référentiel `Examen` avec codes LOINC (33 seedés ; import admin à venir avec P11).
+- [x] `DemandeAnalyse` + lignes, urgence, laboratoire destinataire, consignes patient (à jeun…), transmission et notification (EF-03-03/04). Type de structure `LABORATOIRE`.
+- [x] Orientation vers un médecin ou un service avec RDV proposé (EF-03-05).
+- [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
+- [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
 
 ### P2 — Laboratoire · L · EF-04
 - [ ] Rôle `BIOLOGISTE` ; type de structure `LABORATOIRE`.
@@ -155,4 +155,5 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 | Date | Bloc | Commit / note |
 |---|---|---|
 | 2026-09-18 | — | Renommage KÈNÈYA, landing et pages d'auth refaites, plan validé |
+| 2026-09-19 | P1 | API `05f61d8` + front : espace Accueil hôpital (tableau de bord, admission, épisodes, orientation, demande d'analyse, bon d'examen), page patient « Mon parcours », rôle agent d'accueil et type laboratoire dans l'admin, locale fr pour les dates |
 | 2026-09-19 | P0 | API `c5c1772` + web : identité de la plateforme administrable (nom, logo, coordonnées), `<app-brand>`, `PlateformeService` |

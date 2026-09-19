@@ -41,7 +41,8 @@
     "PROFILE_OF_ARIA": "Profil de {{name}}",
     "OPEN_MENU_ARIA": "Ouvrir le menu de navigation",
     "OPEN_PROFILE_ARIA": "Ouvrir le profil",
-    "CHANGE_LANG_ARIA": "Changer de langue"
+    "CHANGE_LANG_ARIA": "Changer de langue",
+    "ERROR_GENERIC": "Une erreur est survenue. Veuillez réessayer."
   },
   "PROFIL_MODAL": {
     "CLOSE_ARIA": "Fermer",
@@ -307,7 +308,8 @@
     "FOOTER_TERMS": "Conditions d'utilisation",
     "FOOTER_CONTACT": "Contact",
     "FOOTER_SECURE": "Données sécurisées",
-    "FOOTER_MADE": "Made in Guinea 🇬🇳"
+    "FOOTER_MADE": "Made in Guinea 🇬🇳",
+    "STRUCT_TYPE_LABORATOIRE": "Laboratoire"
   },
   "PATIENT": {
     "ROLE": "Patient",
@@ -457,7 +459,30 @@
           "DESC": "Contribuer, sans aucune donnée d'identité, aux statistiques de santé publique et à la recherche."
         }
       }
-    }
+    },
+    "PARCOURS": {
+      "NAV": "Mon parcours",
+      "TITLE": "Mon parcours de soins",
+      "SUBTITLE": "Vos prises en charge à l’hôpital, vos analyses et vos rendez-vous.",
+      "EMPTY": "Aucune prise en charge pour le moment.",
+      "EMPTY_SUB": "Lorsqu’un établissement vous admet, votre parcours apparaît ici.",
+      "OUVERT_LE": "Ouvert le",
+      "CLOS_LE": "Clos le",
+      "RESPONSABLE": "Médecin",
+      "RDV": "Rendez-vous",
+      "ANALYSES": "Analyses",
+      "BON": "Voir mon bon d’examen",
+      "CONSIGNES": "Consignes",
+      "LABO": "Laboratoire",
+      "ETAPE_ADMISSION": "Admission",
+      "ETAPE_ANALYSES": "Analyses",
+      "ETAPE_CONSULTATION": "Consultation",
+      "ETAPE_ORDONNANCE": "Ordonnance",
+      "ETAPE_PHARMACIE": "Pharmacie",
+      "ETAPE_LIVRAISON": "Livraison",
+      "BIENTOT": "bientôt"
+    },
+    "NAV_PARCOURS": "Mon parcours"
   },
   "ASC": {
     "ROLE": "Agent de Santé",
@@ -991,7 +1016,8 @@
       "SUCCESS_DEACTIVATED": "Structure « {{nom}} » désactivée.",
       "ERR_DEACTIVATE": "Erreur lors de la désactivation.",
       "SUCCESS_REACTIVATED": "Structure « {{nom}} » réactivée.",
-      "ERR_REACTIVATE": "Erreur lors de la réactivation."
+      "ERR_REACTIVATE": "Erreur lors de la réactivation.",
+      "TYPE_LABORATOIRE": "Laboratoire"
     },
     "SETTINGS": {
       "NOTICE_LINK": "Gérer les structures de santé",
@@ -1166,7 +1192,8 @@
       "SUCCESS_EMAIL_SENT": "Les identifiants ont aussi été envoyés par email à {{email}}",
       "SUCCESS_CREATED": "Agent créé avec succès !",
       "ERR_CREATE": "Erreur lors de la création.",
-      "SUCCESS_DEACTIVATED": "Agent désactivé."
+      "SUCCESS_DEACTIVATED": "Agent désactivé.",
+      "ROLE_AGENT_ACCUEIL": "Agent d'accueil"
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Agents actifs",
@@ -1203,5 +1230,151 @@
     "ERR_NO_CAMERA": "Aucune caméra détectée sur cet appareil. Saisissez le code à la main.",
     "ERR_INSECURE": "La caméra n'est disponible qu'en HTTPS. Saisissez le code à la main.",
     "ERR_GENERIC": "Impossible de démarrer la caméra. Saisissez le code à la main."
+  },
+  "HOPITAL": {
+    "ROLE": "Accueil hôpital",
+    "NAV_DASHBOARD": "Tableau de bord",
+    "NAV_ADMISSION": "Admission",
+    "NAV_EPISODES": "Épisodes de soins",
+    "DASH": {
+      "TITLE": "Tableau de bord",
+      "SUBTITLE": "Activité de votre établissement aujourd’hui",
+      "NEW_ADMISSION": "Nouvelle admission",
+      "STAT_OUVERTS": "Épisodes en cours",
+      "STAT_JOUR": "Admissions du jour",
+      "STAT_ANALYSES": "Analyses en attente",
+      "STAT_URGENTES": "Demandes urgentes",
+      "STAT_RDV": "Rendez-vous à venir",
+      "RECENT_TITLE": "Derniers épisodes",
+      "RECENT_EMPTY": "Aucun épisode pour le moment — commencez par une admission.",
+      "VOIR_TOUT": "Voir tous les épisodes"
+    },
+    "ADMISSION": {
+      "TITLE": "Admission d’un patient",
+      "SUBTITLE": "Recherchez toujours le patient avant d’ouvrir un dossier : un doublon d’identité peut nuire au patient.",
+      "SEARCH_LABEL": "Rechercher un patient",
+      "SEARCH_PH": "Nom, prénom, téléphone ou code QR (3 caractères min.)",
+      "SEARCH_HINT": "Le téléphone est masqué : vérifiez l’identité avec le patient avant de continuer.",
+      "NO_RESULT": "Aucun patient ne correspond.",
+      "NO_RESULT_HINT": "Le patient peut créer son compte depuis son téléphone, ou vous pouvez l’aider à s’inscrire.",
+      "REGISTER_LINK": "Inscrire un nouveau patient",
+      "EPISODE_OUVERT": "Épisode {{numero}} déjà ouvert",
+      "OUVRIR": "Ouvrir un épisode",
+      "VOIR_EPISODE": "Voir l’épisode",
+      "FORM_TITLE": "Nouvel épisode de soins pour {{nom}}",
+      "MOTIF": "Motif de la visite",
+      "MOTIF_PH": "Ex : douleurs abdominales depuis 3 jours",
+      "SERVICE": "Service (optionnel)",
+      "SERVICE_PH": "Ex : Médecine générale",
+      "RESPONSABLE": "Médecin responsable (optionnel)",
+      "RESPONSABLE_NONE": "— Aucun pour l’instant —",
+      "NOTES": "Notes d’accueil (optionnel)",
+      "SUBMIT": "Ouvrir l’épisode",
+      "CANCEL": "Annuler",
+      "SUCCESS": "Épisode {{numero}} ouvert.",
+      "NE_LE": "Né(e) le",
+      "SEXE_M": "Homme",
+      "SEXE_F": "Femme"
+    },
+    "EPISODES": {
+      "TITLE": "Épisodes de soins",
+      "SUBTITLE": "{{count}} épisode(s)",
+      "SEARCH_PH": "Numéro, motif ou patient…",
+      "FILTRE_TOUS": "Tous",
+      "FILTRE_OUVERT": "Ouverts",
+      "FILTRE_EN_COURS": "En cours",
+      "FILTRE_CLOS": "Clos",
+      "FILTRE_ANNULE": "Annulés",
+      "EMPTY": "Aucun épisode",
+      "EMPTY_SUB": "Ouvrez un épisode depuis l’admission.",
+      "ANALYSES": "{{count}} analyse(s)",
+      "CONSULTATIONS": "{{count}} consultation(s)",
+      "OUVERT_LE": "Ouvert le",
+      "PAR": "par",
+      "PREC": "Précédent",
+      "SUIV": "Suivant"
+    },
+    "STATUT": {
+      "OUVERT": "Ouvert",
+      "EN_COURS": "En cours",
+      "CLOS": "Clos",
+      "ANNULE": "Annulé"
+    },
+    "DEMANDE_STATUT": {
+      "TRANSMISE": "Transmise",
+      "RECUE": "Reçue",
+      "PRELEVEE": "Prélevée",
+      "EN_ANALYSE": "En analyse",
+      "VALIDEE": "Résultats validés",
+      "ANNULEE": "Annulée"
+    },
+    "URGENCE": {
+      "ROUTINE": "Routine",
+      "URGENT": "Urgent",
+      "URGENCE_VITALE": "Urgence vitale"
+    },
+    "DETAIL": {
+      "BACK": "Épisodes",
+      "PATIENT": "Patient",
+      "STRUCTURE": "Structure",
+      "OUVERT_PAR": "Ouvert par",
+      "RESPONSABLE": "Médecin responsable",
+      "SERVICE": "Service",
+      "AUCUN": "—",
+      "ACTION_ORIENTER": "Orienter",
+      "ACTION_ANALYSE": "Demande d’analyse",
+      "ACTION_CLOTURER": "Clôturer",
+      "ACTION_ANNULER": "Annuler l’épisode",
+      "CLOTURER_CONFIRM": "Clôturer cet épisode ? Les demandes en cours restent consultables.",
+      "ANNULER_CONFIRM": "Annuler cet épisode ? Cette action est définitive.",
+      "TERMINE": "Cet épisode est terminé.",
+      "RDV_TITLE": "Rendez-vous",
+      "RDV_EMPTY": "Aucun rendez-vous.",
+      "RDV_AVEC": "avec",
+      "ANALYSES_TITLE": "Demandes d’analyse",
+      "ANALYSES_EMPTY": "Aucune demande d’analyse.",
+      "CONSIGNES": "Consignes remises au patient",
+      "BON": "Bon d’examen",
+      "ANNULER_DEMANDE": "Annuler la demande",
+      "ANNULER_DEMANDE_MOTIF": "Motif de l’annulation",
+      "LABO": "Laboratoire",
+      "PRESCRIPTEUR": "Prescripteur",
+      "INDICATION": "Indication",
+      "NOTES": "Notes",
+      "ORIENT_TITLE": "Orienter le patient",
+      "ORIENT_SERVICE": "Service",
+      "ORIENT_MEDECIN": "Médecin",
+      "ORIENT_MEDECIN_NONE": "— Sans médecin (service seul) —",
+      "ORIENT_DATE": "Rendez-vous (optionnel)",
+      "ORIENT_MOTIF": "Motif du rendez-vous (optionnel)",
+      "ORIENT_HINT": "Une nouvelle orientation avec date remplace le rendez-vous encore planifié.",
+      "ORIENT_SUBMIT": "Enregistrer l’orientation",
+      "ORIENT_SUCCESS": "Orientation enregistrée.",
+      "DA_TITLE": "Nouvelle demande d’analyse",
+      "DA_LABO": "Laboratoire destinataire",
+      "DA_URGENCE": "Urgence",
+      "DA_INDICATION": "Indication clinique (optionnel)",
+      "DA_INDICATION_PH": "Ex : suspicion de paludisme",
+      "DA_EXAMENS": "Examens (référentiel LOINC)",
+      "DA_EXAMENS_SEARCH": "Filtrer les examens…",
+      "DA_SELECTED": "{{count}} examen(s) sélectionné(s)",
+      "DA_COMMENT": "Commentaire",
+      "DA_AJEUN": "à jeun",
+      "DA_CONSIGNES": "Consignes supplémentaires pour le patient (optionnel)",
+      "DA_CONSIGNES_HINT": "Les consignes « à jeun », « échantillon d’urine » et « QR Code » sont ajoutées automatiquement selon les examens.",
+      "DA_SUBMIT": "Transmettre au laboratoire",
+      "DA_SUCCESS": "Demande {{numero}} transmise. Le patient a été informé.",
+      "DA_NO_LABO": "Aucun laboratoire actif : demandez au super-administrateur d’en créer un.",
+      "DEMANDE_ANNULEE": "Demande annulée.",
+      "EPISODE_CLOS": "Épisode clôturé.",
+      "EPISODE_ANNULE": "Épisode annulé."
+    },
+    "RDV_STATUT": {
+      "PLANIFIE": "Planifié",
+      "CONFIRME": "Confirmé",
+      "TERMINE": "Terminé",
+      "ANNULE": "Annulé",
+      "ABSENT": "Absent"
+    }
   }
 }

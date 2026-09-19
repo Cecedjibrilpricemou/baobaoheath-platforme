@@ -1,4 +1,6 @@
-// shared/components/patient-layout/patient-layout.component.ts
+// shared/components/hopital-layout/hopital-layout.component.ts
+// Espace « Accueil hopital » (role AGENT_ACCUEIL) : admission, episodes de
+// soins, demandes d'analyse. Meme coquille que les autres espaces.
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -23,21 +25,21 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/con
 import { BrandComponent } from '../brand/brand.component';
 
 @Component({
-  selector: 'app-patient-layout',
+  selector: 'app-hopital-layout',
   standalone: true,
-  imports: [BrandComponent, 
-    CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe,
+  imports: [
+    BrandComponent, CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe,
     ProfilModalComponent, AvatarComponent, NotificationBellComponent, TopbarCrumbComponent,
     MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule,
     MatButtonModule, MatMenuModule, MatTooltipModule, MatDialogModule,
   ],
-  templateUrl: './patient-layout.component.html',
-  styleUrl: './patient-layout.component.scss'
+  templateUrl: './hopital-layout.component.html',
+  styleUrl: './hopital-layout.component.scss'
 })
-export class PatientLayoutComponent {
+export class HopitalLayoutComponent {
   private authService   = inject(AuthService);
   readonly themeService = inject(ThemeService);
-  readonly layout        = inject(LayoutService);
+  readonly layout       = inject(LayoutService);
   private i18nService   = inject(I18nService);
   private dialog        = inject(MatDialog);
 
@@ -47,8 +49,6 @@ export class PatientLayoutComponent {
   showProfil            = signal(false);
 
   constructor(iconRegistry: MatIconRegistry) {
-    // PrimeIcons est déjà embarqué localement : on l'expose comme font set
-    // Material plutôt que d'ajouter Material Symbols (plusieurs Mo).
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
@@ -77,10 +77,8 @@ export class PatientLayoutComponent {
   }
 
   navItems = [
-    { labelKey: 'PATIENT.NAV_DASHBOARD', icon: 'pi-home',   route: '/patient/dashboard' },
-    { labelKey: 'PATIENT.NAV_PARCOURS',  icon: 'pi-map',    route: '/patient/parcours'  },
-    { labelKey: 'PATIENT.NAV_PROFIL',    icon: 'pi-user',   route: '/patient/profil'    },
-    { labelKey: 'PATIENT.NAV_QR_CODE',   icon: 'pi-qrcode', route: '/patient/qr-code'   },
-    { labelKey: 'PATIENT.NAV_CONSENTS',  icon: 'pi-shield', route: '/patient/consentements' }
+    { labelKey: 'HOPITAL.NAV_DASHBOARD', icon: 'pi-th-large',  route: '/hopital/tableau-de-bord' },
+    { labelKey: 'HOPITAL.NAV_ADMISSION', icon: 'pi-user-plus', route: '/hopital/admission' },
+    { labelKey: 'HOPITAL.NAV_EPISODES',  icon: 'pi-folder',    route: '/hopital/episodes' },
   ];
 }

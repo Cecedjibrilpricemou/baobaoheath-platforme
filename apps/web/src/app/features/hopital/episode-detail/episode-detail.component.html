@@ -1,0 +1,226 @@
+@if (isLoading()) {
+  <div class="bb-skeleton" style="height:140px;border-radius:20px;margin-bottom:1rem"></div>
+  <div class="bb-skeleton" style="height:260px;border-radius:20px"></div>
+} @else if (episode(); as ep) {
+
+  <a routerLink="/hopital/episodes" class="bb-hop-back"><i class="pi pi-arrow-left" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.BACK' | translate }}</a>
+
+  <!-- ── En-tete de l'episode ─────────────────────────────────────── -->
+  <header class="bb-page-head" style="margin-bottom:1rem">
+    <div class="bb-page-head__text" style="display:flex;gap:14px;align-items:flex-start">
+      <span class="bb-hop-item__avatar" style="width:56px;height:56px;font-size:18px" aria-hidden="true">{{ initiales(ep) }}</span>
+      <div>
+        <span class="bb-page-head__tag"><i class="pi pi-folder-open" aria-hidden="true"></i> {{ ep.numero }}</span>
+        <h1 class="bb-page-head__title">{{ ep.patient.prenom }} {{ ep.patient.nom }} <span [class]="statutClasse(ep.statut)" style="vertical-align:middle;margin-left:6px">{{ 'HOPITAL.STATUT.' + ep.statut | translate }}</span></h1>
+        <p class="bb-page-head__sub">{{ ep.motif }}</p>
+      </div>
+    </div>
+    @if (!termine()) {
+      <div class="bb-page-head__actions">
+        <button matButton="filled" type="button" (click)="ouvrir('analyse')"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ANALYSE' | translate }}</button>
+        <button matButton="outlined" type="button" (click)="ouvrir('orientation')"><i class="pi pi-directions" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ORIENTER' | translate }}</button>
+        <button matButton type="button" (click)="cloturer(false)"><i class="pi pi-lock" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_CLOTURER' | translate }}</button>
+        <button matButton type="button" style="color:var(--bb-danger)" (click)="cloturer(true)"><i class="pi pi-times-circle" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ANNULER' | translate }}</button>
+      </div>
+    }
+  </header>
+
+  @if (termine()) {
+    <div class="bb-banner" [class.bb-banner--online]="ep.statut === 'CLOS'" [class.bb-banner--offline]="ep.statut === 'ANNULE'" role="status">
+      <i class="pi" [class.pi-lock]="ep.statut === 'CLOS'" [class.pi-times-circle]="ep.statut === 'ANNULE'" aria-hidden="true"></i>
+      <div class="bb-banner__text"><span class="bb-banner__title">{{ 'HOPITAL.DETAIL.TERMINE' | translate }}</span>@if (ep.closLe) { <span class="bb-banner__sub">{{ ep.closLe | date:'dd/MM/yyyy HH:mm' }}</span> }</div>
+    </div>
+  }
+
+  <!-- ── Fiche ────────────────────────────────────────────────────── -->
+  <section class="bb-hop-card">
+    <div class="bb-hop-info">
+      <div><div class="bb-hop-info__label">{{ 'HOPITAL.DETAIL.PATIENT' | translate }}</div><div class="bb-hop-info__value">{{ ep.patient.prenom }} {{ ep.patient.nom }} · {{ ep.patient.dateNaissance | date:'dd/MM/yyyy' }} · {{ ep.patient.telephone }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'HOPITAL.DETAIL.STRUCTURE' | translate }}</div><div class="bb-hop-info__value">{{ ep.structure.nom }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'HOPITAL.EPISODES.OUVERT_LE' | translate }}</div><div class="bb-hop-info__value">{{ ep.ouvertLe | date:'dd/MM/yyyy HH:mm' }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'HOPITAL.DETAIL.OUVERT_PAR' | translate }}</div><div class="bb-hop-info__value">{{ ep.ouvertPar.prenom }} {{ ep.ouvertPar.nom }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'HOPITAL.DETAIL.SERVICE' | translate }}</div><div class="bb-hop-info__value">{{ ep.service || ('HOPITAL.DETAIL.AUCUN' | translate) }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'HOPITAL.DETAIL.RESPONSABLE' | translate }}</div><div class="bb-hop-info__value">@if (ep.responsable) { Dr {{ ep.responsable.prenom }} {{ ep.responsable.nom }} } @else { {{ 'HOPITAL.DETAIL.AUCUN' | translate }} }</div></div>
+      @if (ep.notes) { <div style="grid-column:1/-1"><div class="bb-hop-info__label">{{ 'HOPITAL.DETAIL.NOTES' | translate }}</div><div class="bb-hop-info__value" style="font-weight:500;white-space:pre-line">{{ ep.notes }}</div></div> }
+    </div>
+  </section>
+
+  <!-- ── Panneau : orientation (EF-03-05) ─────────────────────────── -->
+  @if (panneau() === 'orientation') {
+    <section class="bb-hop-panel">
+      <h2 class="bb-hop-card__title"><i class="pi pi-directions" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ORIENT_TITLE' | translate }}</h2>
+      <div class="bb-hop-panel__grid">
+        <div class="form-field-wrap">
+          <label class="form-label" for="or-medecin">{{ 'HOPITAL.DETAIL.ORIENT_MEDECIN' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <mat-select id="or-medecin" [(ngModel)]="orientation.idMedecin">
+              <mat-option value="">{{ 'HOPITAL.DETAIL.ORIENT_MEDECIN_NONE' | translate }}</mat-option>
+              @for (m of medecins(); track m.id) { <mat-option [value]="m.id">Dr {{ m.prenom }} {{ m.nom }}@if (m.specialite) { · {{ m.specialite }} }</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap">
+          <label class="form-label" for="or-service">{{ 'HOPITAL.DETAIL.ORIENT_SERVICE' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="or-service" maxlength="120" [placeholder]="'HOPITAL.ADMISSION.SERVICE_PH' | translate" [(ngModel)]="orientation.service" />
+          </mat-form-field>
+        </div>
+        @if (orientation.idMedecin) {
+          <div class="form-field-wrap">
+            <label class="form-label" for="or-date">{{ 'HOPITAL.DETAIL.ORIENT_DATE' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="or-date" type="datetime-local" [(ngModel)]="orientation.prevuLe" [disabled]="!orientation.avecRdv" />
+            </mat-form-field>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px;cursor:pointer"><input type="checkbox" [(ngModel)]="orientation.avecRdv" style="accent-color:var(--bb-primary)" /> {{ 'HOPITAL.DETAIL.ORIENT_DATE' | translate }}</label>
+          </div>
+          <div class="form-field-wrap">
+            <label class="form-label" for="or-motif">{{ 'HOPITAL.DETAIL.ORIENT_MOTIF' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="or-motif" maxlength="300" [(ngModel)]="orientation.motif" />
+            </mat-form-field>
+          </div>
+        }
+      </div>
+      <small class="form-hint">{{ 'HOPITAL.DETAIL.ORIENT_HINT' | translate }}</small>
+      <div class="bb-hop-panel__footer">
+        <button matButton type="button" (click)="ouvrir('aucun')" [disabled]="isSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button matButton="filled" type="button" (click)="orienter()" [disabled]="isSaving() || (!orientation.idMedecin && !orientation.service.trim())">
+          <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ORIENT_SUBMIT' | translate }}
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- ── Panneau : demande d'analyse (EF-03-03) ───────────────────── -->
+  @if (panneau() === 'analyse') {
+    <section class="bb-hop-panel">
+      <h2 class="bb-hop-card__title"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_TITLE' | translate }}</h2>
+      @if (laboratoires().length === 0) {
+        <div class="bb-banner bb-banner--offline" role="alert"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'HOPITAL.DETAIL.DA_NO_LABO' | translate }}</span></div></div>
+      }
+      <div class="bb-hop-panel__grid">
+        <div class="form-field-wrap">
+          <label class="form-label" for="da-labo">{{ 'HOPITAL.DETAIL.DA_LABO' | translate }} *</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <mat-select id="da-labo" [(ngModel)]="demande.idLaboratoire">
+              @for (l of laboratoires(); track l.id) { <mat-option [value]="l.id">{{ l.nom }} · {{ l.prefecture }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap">
+          <label class="form-label" for="da-urgence">{{ 'HOPITAL.DETAIL.DA_URGENCE' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <mat-select id="da-urgence" [(ngModel)]="demande.urgence">
+              @for (u of urgences; track u) { <mat-option [value]="u">{{ 'HOPITAL.URGENCE.' + u | translate }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap bb-hop-panel__full">
+          <label class="form-label" for="da-indication">{{ 'HOPITAL.DETAIL.DA_INDICATION' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="da-indication" maxlength="1000" [placeholder]="'HOPITAL.DETAIL.DA_INDICATION_PH' | translate" [(ngModel)]="demande.indicationClinique" />
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap bb-hop-panel__full">
+          <label class="form-label" for="da-filtre">{{ 'HOPITAL.DETAIL.DA_EXAMENS' | translate }} *</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <i matPrefix class="pi pi-search" style="padding:0 6px 0 14px;color:var(--bb-primary)"></i>
+            <input matInput id="da-filtre" type="search" [placeholder]="'HOPITAL.DETAIL.DA_EXAMENS_SEARCH' | translate" [ngModel]="filtreExamens()" (ngModelChange)="filtreExamens.set($event)" />
+          </mat-form-field>
+          <p class="bb-hop-selected">{{ 'HOPITAL.DETAIL.DA_SELECTED' | translate: { count: selection().size } }}</p>
+          <div class="bb-hop-examens">
+            @for (g of examensFiltres(); track g.categorie) {
+              <div class="bb-hop-examens__cat">{{ g.categorie }}</div>
+              @for (e of g.items; track e.id) {
+                <label class="bb-hop-examens__row" [class.bb-hop-examens__row--on]="examenChoisi(e.id)">
+                  <input type="checkbox" [checked]="examenChoisi(e.id)" (change)="basculerExamen(e)" />
+                  <span class="bb-hop-examens__lib">{{ e.libelle }}</span>
+                  @if (e.aJeun) { <span class="bb-hop-examens__flag">{{ 'HOPITAL.DETAIL.DA_AJEUN' | translate }}</span> }
+                  <span class="bb-hop-examens__code">{{ e.codeLoinc }}</span>
+                </label>
+                @if (examenChoisi(e.id)) {
+                  <div style="padding:0 10px 8px 36px">
+                    <input class="bb-hop-examens__lib" style="width:100%;border:1px solid var(--bb-border);border-radius:8px;padding:6px 10px;font-size:12.5px;background:var(--bb-surface-card);color:var(--bb-text-primary)" maxlength="300"
+                      [placeholder]="'HOPITAL.DETAIL.DA_COMMENT' | translate" [value]="selection().get(e.id)" (input)="commenterExamen(e.id, $any($event.target).value)" />
+                  </div>
+                }
+              }
+            }
+          </div>
+        </div>
+        <div class="form-field-wrap bb-hop-panel__full">
+          <label class="form-label" for="da-consignes">{{ 'HOPITAL.DETAIL.DA_CONSIGNES' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <textarea matInput id="da-consignes" rows="2" maxlength="1000" [(ngModel)]="demande.consignesPatient"></textarea>
+          </mat-form-field>
+          <small class="form-hint">{{ 'HOPITAL.DETAIL.DA_CONSIGNES_HINT' | translate }}</small>
+        </div>
+      </div>
+      <div class="bb-hop-panel__footer">
+        <button matButton type="button" (click)="ouvrir('aucun')" [disabled]="isSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button matButton="filled" type="button" (click)="creerDemande()" [disabled]="isSaving() || !demande.idLaboratoire || selection().size === 0">
+          <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-send'" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_SUBMIT' | translate }}
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- ── Demandes d'analyse et rendez-vous ────────────────────────── -->
+  <div class="bb-hop-sections">
+    <section class="bb-hop-card">
+      <h2 class="bb-hop-card__title"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ANALYSES_TITLE' | translate }}</h2>
+      @if (ep.demandesAnalyse.length === 0) {
+        <div class="bb-hop-empty" style="padding:1.5rem"><i class="pi pi-filter"></i><p>{{ 'HOPITAL.DETAIL.ANALYSES_EMPTY' | translate }}</p></div>
+      } @else {
+        @for (d of ep.demandesAnalyse; track d.id) {
+          <div class="bb-hop-sub">
+            <div class="bb-hop-sub__head">
+              <span class="bb-hop-sub__num">{{ d.numero }}</span>
+              <span style="display:flex;gap:6px;flex-wrap:wrap"><span [class]="urgenceClasse(d.urgence)">{{ 'HOPITAL.URGENCE.' + d.urgence | translate }}</span><span [class]="demandeClasse(d.statut)">{{ 'HOPITAL.DEMANDE_STATUT.' + d.statut | translate }}</span></span>
+            </div>
+            <p class="bb-hop-sub__line"><i class="pi pi-building" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.LABO' | translate }} : <strong>{{ d.laboratoire.nom }}</strong> · {{ d.creeLe | date:'dd/MM/yyyy HH:mm' }} · {{ 'HOPITAL.DETAIL.PRESCRIPTEUR' | translate }} {{ d.prescripteur.prenom }} {{ d.prescripteur.nom }}</p>
+            @if (d.indicationClinique) { <p class="bb-hop-sub__line">{{ 'HOPITAL.DETAIL.INDICATION' | translate }} : {{ d.indicationClinique }}</p> }
+            <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral" [title]="l.examen.codeLoinc">{{ l.examen.libelle }}@if (l.commentaire) { — {{ l.commentaire }} }</span> }</div>
+            @if (d.consignesPatient) { <div class="bb-hop-sub__consignes"><strong>{{ 'HOPITAL.DETAIL.CONSIGNES' | translate }}</strong>{{ '\n' + d.consignesPatient }}</div> }
+            @if (d.motifAnnulation) { <p class="bb-hop-sub__line" style="color:var(--bb-danger)">{{ d.motifAnnulation }}</p> }
+            <div class="bb-hop-sub__actions">
+              <button matButton="outlined" type="button" (click)="bonExamen(d)"><i class="pi pi-print" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.BON' | translate }}</button>
+              @if (peutAnnulerDemande(d) && !termine()) {
+                <button matButton type="button" style="color:var(--bb-danger)" (click)="demandeAAnnuler.set(d)"><i class="pi pi-times" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ANNULER_DEMANDE' | translate }}</button>
+              }
+            </div>
+            @if (demandeAAnnuler()?.id === d.id) {
+              <div style="margin-top:10px">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                  <input matInput maxlength="300" [placeholder]="'HOPITAL.DETAIL.ANNULER_DEMANDE_MOTIF' | translate" [(ngModel)]="motifAnnulation" />
+                </mat-form-field>
+                <div class="bb-hop-sub__actions">
+                  <button matButton type="button" (click)="demandeAAnnuler.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                  <button matButton="filled" type="button" (click)="confirmerAnnulationDemande()" [disabled]="isSaving() || motifAnnulation.trim().length < 3">{{ 'COMMON.CONFIRM' | translate }}</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+    </section>
+
+    <section class="bb-hop-card">
+      <h2 class="bb-hop-card__title"><i class="pi pi-calendar" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.RDV_TITLE' | translate }}</h2>
+      @if (ep.rendezVous.length === 0) {
+        <div class="bb-hop-empty" style="padding:1.5rem"><i class="pi pi-calendar"></i><p>{{ 'HOPITAL.DETAIL.RDV_EMPTY' | translate }}</p></div>
+      } @else {
+        @for (r of ep.rendezVous; track r.id) {
+          <div class="bb-hop-sub">
+            <div class="bb-hop-sub__head">
+              <span class="bb-hop-sub__num">{{ r.prevuLe | date:'EEEE d MMMM yyyy, HH:mm' }}</span>
+              <span class="bb-badge" [class.bb-badge--success]="r.statut === 'PLANIFIE'" [class.bb-badge--neutral]="r.statut !== 'PLANIFIE'">{{ 'HOPITAL.RDV_STATUT.' + r.statut | translate }}</span>
+            </div>
+            @if (r.medecin) { <p class="bb-hop-sub__line">{{ 'HOPITAL.DETAIL.RDV_AVEC' | translate }} Dr {{ r.medecin.prenom }} {{ r.medecin.nom }}</p> }
+            @if (r.motif) { <p class="bb-hop-sub__line">{{ r.motif }}</p> }
+          </div>
+        }
+      }
+    </section>
+  </div>
+}

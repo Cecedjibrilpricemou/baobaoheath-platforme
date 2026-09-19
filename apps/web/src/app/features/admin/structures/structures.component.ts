@@ -57,6 +57,7 @@ export class StructuresComponent implements OnInit {
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_HOPITAL_REG'),  value: 'HOPITAL_REG'  },
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CHU'),          value: 'CHU'          },
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CLINIQUE'),     value: 'CLINIQUE'     },
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_LABORATOIRE'),  value: 'LABORATOIRE'  },
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_PHARMACIE'),    value: 'PHARMACIE'    }
     ];
   }

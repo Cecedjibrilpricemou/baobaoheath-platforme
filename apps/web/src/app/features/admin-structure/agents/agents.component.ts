@@ -45,7 +45,8 @@ export class AgentsComponent implements OnInit {
     return [
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_OPTION_ASC'), value: 'ASC' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'), value: 'MEDECIN' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'), value: 'PHARMACIEN' }
+      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'), value: 'PHARMACIEN' },
+      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL'), value: 'AGENT_ACCUEIL' }
     ];
   }
 
@@ -118,7 +119,8 @@ export class AgentsComponent implements OnInit {
       'ASC': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_ASC'),
       'ASC_SUPERVISOR': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_ASC_SUPERVISOR'),
       'MEDECIN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'),
-      'PHARMACIEN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN')
+      'PHARMACIEN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'),
+      'AGENT_ACCUEIL': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL')
     };
     return map[role] ?? role;
   }

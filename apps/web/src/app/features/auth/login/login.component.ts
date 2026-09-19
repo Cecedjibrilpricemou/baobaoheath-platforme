@@ -258,6 +258,7 @@ export class LoginComponent implements OnDestroy {
       ASC_SUPERVISOR:   '/asc/consultations',
       MEDECIN:          '/medecin/dashboard',
       PHARMACIEN:       '/pharmacien/ordonnances',
+      AGENT_ACCUEIL:    '/hopital/tableau-de-bord',
       ADMIN_STRUCTURE:  '/admin-structure/dashboard',
       ADMIN_REGIONAL:   '/admin/analytics',
       ADMIN_NATIONAL:   '/admin/analytics',

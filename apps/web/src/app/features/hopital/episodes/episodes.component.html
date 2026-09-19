@@ -1,0 +1,55 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-folder" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'HOPITAL.EPISODES.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'HOPITAL.EPISODES.SUBTITLE' | translate: { count: total() } }}</p>
+  </div>
+  <div class="bb-page-head__actions">
+    <a matButton="filled" routerLink="/hopital/admission"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'HOPITAL.DASH.NEW_ADMISSION' | translate }}</a>
+  </div>
+</header>
+
+<div class="bb-hop-toolbar">
+  <div class="bb-hop-pills" role="tablist" style="margin:0">
+    @for (f of filtres; track f) {
+      <button type="button" role="tab" class="bb-hop-pill" [class.bb-hop-pill--active]="filtre() === f" [attr.aria-selected]="filtre() === f" (click)="setFiltre(f)">{{ 'HOPITAL.EPISODES.FILTRE_' + f | translate }}</button>
+    }
+  </div>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="flex:1;min-width:220px">
+    <i matPrefix class="pi pi-search" style="padding:0 6px 0 14px;color:var(--bb-primary)"></i>
+    <input matInput type="search" [placeholder]="'HOPITAL.EPISODES.SEARCH_PH' | translate" [ngModel]="recherche" (ngModelChange)="onRecherche($event)" />
+  </mat-form-field>
+</div>
+
+@if (isLoading()) {
+  <div class="bb-hop-list">@for (i of [1,2,3,4]; track i) { <div class="bb-skeleton" style="height:84px;border-radius:18px"></div> }</div>
+} @else if (items().length === 0) {
+  <div class="bb-hop-empty"><i class="pi pi-folder"></i><p>{{ 'HOPITAL.EPISODES.EMPTY' | translate }}</p><span>{{ 'HOPITAL.EPISODES.EMPTY_SUB' | translate }}</span></div>
+} @else {
+  <div class="bb-hop-list">
+    @for (e of items(); track e.id) {
+      <a class="bb-hop-item" [routerLink]="['/hopital/episodes', e.id]">
+        <span class="bb-hop-item__avatar" aria-hidden="true">{{ initiales(e) }}</span>
+        <div class="bb-hop-item__body">
+          <p class="bb-hop-item__title">{{ e.patient.prenom }} {{ e.patient.nom }} <span [class]="statutClasse(e.statut)">{{ 'HOPITAL.STATUT.' + e.statut | translate }}</span></p>
+          <p class="bb-hop-item__sub">{{ e.motif }}</p>
+          <p class="bb-hop-item__meta">
+            <span class="bb-hop-item__num">{{ e.numero }}</span>
+            <span><i class="pi pi-calendar"></i>{{ 'HOPITAL.EPISODES.OUVERT_LE' | translate }} {{ e.ouvertLe | date:'dd/MM/yyyy HH:mm' }} {{ 'HOPITAL.EPISODES.PAR' | translate }} {{ e.ouvertPar.prenom }} {{ e.ouvertPar.nom }}</span>
+            @if (e.service) { <span><i class="pi pi-sitemap"></i>{{ e.service }}</span> }
+            @if (e.responsable) { <span><i class="pi pi-user"></i>Dr {{ e.responsable.prenom }} {{ e.responsable.nom }}</span> }
+            <span><i class="pi pi-filter"></i>{{ 'HOPITAL.EPISODES.ANALYSES' | translate: { count: e.nbDemandesAnalyse } }}</span>
+          </p>
+        </div>
+        <i class="pi pi-chevron-right" aria-hidden="true"></i>
+      </a>
+    }
+  </div>
+  @if (nbPages > 1) {
+    <div class="bb-hop-toolbar" style="justify-content:center;margin-top:1rem">
+      <button matButton="outlined" type="button" (click)="pagePrecedente()" [disabled]="page() === 1"><i class="pi pi-chevron-left" aria-hidden="true"></i> {{ 'HOPITAL.EPISODES.PREC' | translate }}</button>
+      <span style="font-size:13px;color:var(--bb-text-muted)">{{ page() }} / {{ nbPages }}</span>
+      <button matButton="outlined" type="button" (click)="pageSuivante()" [disabled]="page() >= nbPages">{{ 'HOPITAL.EPISODES.SUIV' | translate }} <i class="pi pi-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  }
+}

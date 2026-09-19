@@ -1,0 +1,67 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-map" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'PATIENT.PARCOURS.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'PATIENT.PARCOURS.SUBTITLE' | translate }}</p>
+  </div>
+</header>
+
+@if (isLoading()) {
+  <div class="bb-skeleton" style="height:180px;border-radius:20px"></div>
+} @else if (episodes().length === 0) {
+  <div class="bb-hop-empty"><i class="pi pi-map"></i><p>{{ 'PATIENT.PARCOURS.EMPTY' | translate }}</p><span>{{ 'PATIENT.PARCOURS.EMPTY_SUB' | translate }}</span></div>
+} @else {
+  <div class="bb-parcours">
+    @for (e of episodes(); track e.id) {
+      <section class="bb-hop-card">
+        <div class="bb-hop-sub__head" style="margin-bottom:10px">
+          <div>
+            <span class="bb-hop-item__num">{{ e.numero }}</span>
+            <h2 class="bb-hop-card__title" style="margin:2px 0 0"><i class="pi pi-building" aria-hidden="true"></i> {{ e.structure.nom }} <span [class]="statutClasse(e.statut)">{{ 'HOPITAL.STATUT.' + e.statut | translate }}</span></h2>
+          </div>
+          <span style="font-size:12.5px;color:var(--bb-text-muted)">{{ 'PATIENT.PARCOURS.OUVERT_LE' | translate }} {{ e.ouvertLe | date:'dd/MM/yyyy' }}@if (e.closLe) { · {{ 'PATIENT.PARCOURS.CLOS_LE' | translate }} {{ e.closLe | date:'dd/MM/yyyy' }} }</span>
+        </div>
+        <p class="bb-hop-sub__line" style="margin-bottom:10px"><strong>{{ e.motif }}</strong>@if (e.service) { · {{ e.service }} }@if (e.responsable) { · {{ 'PATIENT.PARCOURS.RESPONSABLE' | translate }} Dr {{ e.responsable.prenom }} {{ e.responsable.nom }} }</p>
+
+        <!-- Frise -->
+        <div class="bb-parcours__etapes" aria-label="Etapes du parcours">
+          @for (s of etapes(e); track s.cle) {
+            <span class="bb-parcours__etape" [class.bb-parcours__etape--done]="s.etat === 'done'" [class.bb-parcours__etape--now]="s.etat === 'now'">
+              <i class="pi" [class.pi-check]="s.etat === 'done'" [class.pi-circle-fill]="s.etat === 'now'" [class.pi-circle]="s.etat === 'todo' || s.etat === 'soon'" aria-hidden="true"></i>
+              {{ 'PATIENT.PARCOURS.' + s.cle | translate }}@if (s.etat === 'soon') { <small>({{ 'PATIENT.PARCOURS.BIENTOT' | translate }})</small> }
+            </span>
+          }
+        </div>
+
+        <div class="bb-hop-sections" style="margin-top:.75rem">
+          <div>
+            <h3 class="bb-hop-card__title" style="font-size:14px"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'PATIENT.PARCOURS.ANALYSES' | translate }}</h3>
+            @if (e.demandesAnalyse.length === 0) { <p class="bb-hop-sub__line">—</p> }
+            @for (d of e.demandesAnalyse; track d.id) {
+              <div class="bb-hop-sub">
+                <div class="bb-hop-sub__head"><span class="bb-hop-sub__num">{{ d.numero }}</span><span style="display:flex;gap:6px"><span [class]="urgenceClasse(d.urgence)">{{ 'HOPITAL.URGENCE.' + d.urgence | translate }}</span><span [class]="demandeClasse(d.statut)">{{ 'HOPITAL.DEMANDE_STATUT.' + d.statut | translate }}</span></span></div>
+                <p class="bb-hop-sub__line"><i class="pi pi-map-marker" aria-hidden="true"></i> {{ 'PATIENT.PARCOURS.LABO' | translate }} : <strong>{{ d.laboratoire.nom }}</strong> · {{ d.laboratoire.prefecture }}</p>
+                <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral">{{ l.examen.libelle }}</span> }</div>
+                @if (d.consignesPatient) { <div class="bb-hop-sub__consignes"><strong>{{ 'PATIENT.PARCOURS.CONSIGNES' | translate }}</strong>{{ '\n' + d.consignesPatient }}</div> }
+                @if (d.statut !== 'ANNULEE') {
+                  <div class="bb-hop-sub__actions"><button matButton="outlined" type="button" (click)="bonExamen(d)"><i class="pi pi-print" aria-hidden="true"></i> {{ 'PATIENT.PARCOURS.BON' | translate }}</button></div>
+                }
+              </div>
+            }
+          </div>
+          <div>
+            <h3 class="bb-hop-card__title" style="font-size:14px"><i class="pi pi-calendar" aria-hidden="true"></i> {{ 'PATIENT.PARCOURS.RDV' | translate }}</h3>
+            @if (e.rendezVous.length === 0) { <p class="bb-hop-sub__line">—</p> }
+            @for (r of e.rendezVous; track r.id) {
+              <div class="bb-hop-sub">
+                <div class="bb-hop-sub__head"><span class="bb-hop-sub__num">{{ r.prevuLe | date:'EEEE d MMMM yyyy, HH:mm' }}</span><span class="bb-badge" [class.bb-badge--success]="r.statut === 'PLANIFIE'" [class.bb-badge--neutral]="r.statut !== 'PLANIFIE'">{{ 'HOPITAL.RDV_STATUT.' + r.statut | translate }}</span></div>
+                @if (r.medecin) { <p class="bb-hop-sub__line">Dr {{ r.medecin.prenom }} {{ r.medecin.nom }}</p> }
+                @if (r.motif) { <p class="bb-hop-sub__line">{{ r.motif }}</p> }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+}

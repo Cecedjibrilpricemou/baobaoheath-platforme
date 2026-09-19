@@ -555,7 +555,9 @@ export async function mesEpisodes(userId: string): Promise<EpisodePatientView[]>
     id: e.id, numero: e.numero, motif: e.motif, service: e.service, statut: e.statut,
     ouvertLe: e.ouvertLe, closLe: e.closLe, structure: e.structure, responsable: e.responsable,
     demandesAnalyse: e.demandesAnalyse.map(versDemandeView),
-    rendezVous: e.rendezVous,
+    // Le patient ne voit pas les rendez-vous remplaces (ANNULE) : seul le
+    // rendez-vous en vigueur et l'historique tenu comptent pour lui.
+    rendezVous: e.rendezVous.filter((r) => r.statut !== 'ANNULE'),
   }));
 }
 

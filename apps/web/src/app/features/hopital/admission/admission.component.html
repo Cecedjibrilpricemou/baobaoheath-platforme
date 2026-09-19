@@ -1,0 +1,102 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'HOPITAL.ADMISSION.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'HOPITAL.ADMISSION.SUBTITLE' | translate }}</p>
+  </div>
+</header>
+
+@if (!selection()) {
+  <!-- ── Recherche (EF-03-01) ─────────────────────────────────────── -->
+  <section class="bb-hop-card">
+    <label class="form-label" for="adm-recherche" style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--bb-text-secondary);margin-bottom:6px">{{ 'HOPITAL.ADMISSION.SEARCH_LABEL' | translate }}</label>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+      <i matPrefix class="pi pi-search" style="padding:0 6px 0 14px;color:var(--bb-primary)"></i>
+      <input matInput id="adm-recherche" type="search" autocomplete="off" [placeholder]="'HOPITAL.ADMISSION.SEARCH_PH' | translate" [ngModel]="recherche" (ngModelChange)="onRecherche($event)" />
+    </mat-form-field>
+    <small style="display:block;margin-top:6px;font-size:12px;color:var(--bb-text-muted)">{{ 'HOPITAL.ADMISSION.SEARCH_HINT' | translate }}</small>
+  </section>
+
+  <div style="height:1rem"></div>
+
+  @if (isSearching()) {
+    <div class="bb-hop-list">@for (i of [1,2,3]; track i) { <div class="bb-skeleton" style="height:76px;border-radius:18px"></div> }</div>
+  } @else if (aCherche() && resultats().length === 0) {
+    <div class="bb-hop-empty">
+      <i class="pi pi-user"></i>
+      <p>{{ 'HOPITAL.ADMISSION.NO_RESULT' | translate }}</p>
+      <span>{{ 'HOPITAL.ADMISSION.NO_RESULT_HINT' | translate }}</span>
+      <p style="margin-top:12px"><a matButton="outlined" routerLink="/auth/register" target="_blank"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'HOPITAL.ADMISSION.REGISTER_LINK' | translate }}</a></p>
+    </div>
+  } @else if (resultats().length > 0) {
+    <div class="bb-hop-list">
+      @for (p of resultats(); track p.id) {
+        <div class="bb-hop-item" style="cursor:default">
+          <span class="bb-hop-item__avatar" aria-hidden="true">{{ initiales(p) }}</span>
+          <div class="bb-hop-item__body">
+            <p class="bb-hop-item__title">{{ p.prenom }} {{ p.nom }}</p>
+            <p class="bb-hop-item__meta">
+              <span><i class="pi pi-calendar"></i>{{ 'HOPITAL.ADMISSION.NE_LE' | translate }} {{ p.dateNaissance | date:'dd/MM/yyyy' }}</span>
+              <span><i class="pi pi-user"></i>{{ (p.sexe === 'F' ? 'HOPITAL.ADMISSION.SEXE_F' : 'HOPITAL.ADMISSION.SEXE_M') | translate }}</span>
+              <span><i class="pi pi-map-marker"></i>{{ p.prefecture }}</span>
+              <span><i class="pi pi-phone"></i>{{ p.telephoneMasque }}</span>
+            </p>
+            @if (p.episodeOuvert) {
+              <p class="bb-hop-item__sub" style="margin-top:4px"><span class="bb-badge bb-badge--info">{{ 'HOPITAL.ADMISSION.EPISODE_OUVERT' | translate: { numero: p.episodeOuvert.numero } }}</span></p>
+            }
+          </div>
+          <div class="bb-hop-item__actions">
+            @if (p.episodeOuvert) {
+              <a matButton="outlined" [routerLink]="['/hopital/episodes', p.episodeOuvert.id]">{{ 'HOPITAL.ADMISSION.VOIR_EPISODE' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+            } @else {
+              <button matButton="filled" type="button" (click)="choisir(p)"><i class="pi pi-folder-open" aria-hidden="true"></i> {{ 'HOPITAL.ADMISSION.OUVRIR' | translate }}</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+} @else {
+  <!-- ── Ouverture de l'episode (EF-03-02) ────────────────────────── -->
+  @if (selection(); as p) {
+    <button type="button" class="bb-hop-back" (click)="annuler()"><i class="pi pi-arrow-left"></i> {{ 'COMMON.BACK' | translate }}</button>
+    <section class="bb-hop-panel" style="margin-top:0">
+      <h2 class="bb-hop-card__title"><i class="pi pi-folder-open" aria-hidden="true"></i> {{ 'HOPITAL.ADMISSION.FORM_TITLE' | translate: { nom: p.prenom + ' ' + p.nom } }}</h2>
+      <div class="bb-hop-panel__grid">
+        <div class="form-field-wrap bb-hop-panel__full">
+          <label class="form-label" for="adm-motif">{{ 'HOPITAL.ADMISSION.MOTIF' | translate }} *</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="adm-motif" required maxlength="300" [placeholder]="'HOPITAL.ADMISSION.MOTIF_PH' | translate" [(ngModel)]="formulaire.motif" />
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap">
+          <label class="form-label" for="adm-service">{{ 'HOPITAL.ADMISSION.SERVICE' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="adm-service" maxlength="120" [placeholder]="'HOPITAL.ADMISSION.SERVICE_PH' | translate" [(ngModel)]="formulaire.service" />
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap">
+          <label class="form-label" for="adm-resp">{{ 'HOPITAL.ADMISSION.RESPONSABLE' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <mat-select id="adm-resp" [(ngModel)]="formulaire.idResponsable">
+              <mat-option value="">{{ 'HOPITAL.ADMISSION.RESPONSABLE_NONE' | translate }}</mat-option>
+              @for (m of medecins(); track m.id) { <mat-option [value]="m.id">Dr {{ m.prenom }} {{ m.nom }}@if (m.specialite) { · {{ m.specialite }} }</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap bb-hop-panel__full">
+          <label class="form-label" for="adm-notes">{{ 'HOPITAL.ADMISSION.NOTES' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <textarea matInput id="adm-notes" rows="3" maxlength="2000" [(ngModel)]="formulaire.notes"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="bb-hop-panel__footer">
+        <button matButton type="button" (click)="annuler()" [disabled]="isSaving()">{{ 'HOPITAL.ADMISSION.CANCEL' | translate }}</button>
+        <button matButton="filled" type="button" (click)="ouvrir()" [disabled]="isSaving() || formulaire.motif.trim().length < 3">
+          <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i> {{ 'HOPITAL.ADMISSION.SUBMIT' | translate }}
+        </button>
+      </div>
+    </section>
+  }
+}

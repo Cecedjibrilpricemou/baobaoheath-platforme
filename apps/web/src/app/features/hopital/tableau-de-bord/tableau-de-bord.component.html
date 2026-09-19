@@ -1,0 +1,61 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-building" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'HOPITAL.DASH.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'HOPITAL.DASH.SUBTITLE' | translate }}</p>
+  </div>
+  <div class="bb-page-head__actions">
+    <a matButton="filled" routerLink="/hopital/admission"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'HOPITAL.DASH.NEW_ADMISSION' | translate }}</a>
+  </div>
+</header>
+
+@if (isLoading()) {
+  <div class="bb-hop-stats">
+    @for (i of [1,2,3,4,5]; track i) { <div class="bb-skeleton" style="height:78px;border-radius:18px"></div> }
+  </div>
+} @else if (data(); as d) {
+  <div class="bb-hop-stats">
+    <div class="bb-hop-stat bb-hop-stat--primary">
+      <span class="bb-hop-stat__icon"><i class="pi pi-folder-open"></i></span>
+      <div><div class="bb-hop-stat__value">{{ d.episodesOuverts }}</div><div class="bb-hop-stat__label">{{ 'HOPITAL.DASH.STAT_OUVERTS' | translate }}</div></div>
+    </div>
+    <div class="bb-hop-stat">
+      <span class="bb-hop-stat__icon"><i class="pi pi-user-plus"></i></span>
+      <div><div class="bb-hop-stat__value">{{ d.episodesDuJour }}</div><div class="bb-hop-stat__label">{{ 'HOPITAL.DASH.STAT_JOUR' | translate }}</div></div>
+    </div>
+    <div class="bb-hop-stat bb-hop-stat--info">
+      <span class="bb-hop-stat__icon"><i class="pi pi-filter"></i></span>
+      <div><div class="bb-hop-stat__value">{{ d.demandesEnAttente }}</div><div class="bb-hop-stat__label">{{ 'HOPITAL.DASH.STAT_ANALYSES' | translate }}</div></div>
+    </div>
+    <div class="bb-hop-stat" [class.bb-hop-stat--danger]="d.demandesUrgentes > 0">
+      <span class="bb-hop-stat__icon"><i class="pi pi-exclamation-triangle"></i></span>
+      <div><div class="bb-hop-stat__value">{{ d.demandesUrgentes }}</div><div class="bb-hop-stat__label">{{ 'HOPITAL.DASH.STAT_URGENTES' | translate }}</div></div>
+    </div>
+    <div class="bb-hop-stat">
+      <span class="bb-hop-stat__icon"><i class="pi pi-calendar"></i></span>
+      <div><div class="bb-hop-stat__value">{{ d.orientationsAVenir }}</div><div class="bb-hop-stat__label">{{ 'HOPITAL.DASH.STAT_RDV' | translate }}</div></div>
+    </div>
+  </div>
+
+  <section class="bb-hop-card">
+    <h2 class="bb-hop-card__title"><i class="pi pi-clock" aria-hidden="true"></i> {{ 'HOPITAL.DASH.RECENT_TITLE' | translate }}</h2>
+    @if (d.derniersEpisodes.length === 0) {
+      <div class="bb-hop-empty"><i class="pi pi-folder"></i><p>{{ 'HOPITAL.DASH.RECENT_EMPTY' | translate }}</p></div>
+    } @else {
+      <div class="bb-hop-list">
+        @for (e of d.derniersEpisodes; track e.id) {
+          <a class="bb-hop-item" [routerLink]="['/hopital/episodes', e.id]">
+            <span class="bb-hop-item__avatar" aria-hidden="true">{{ initiales(e.patient.prenom, e.patient.nom) }}</span>
+            <div class="bb-hop-item__body">
+              <p class="bb-hop-item__title">{{ e.patient.prenom }} {{ e.patient.nom }} <span [class]="statutClasse(e.statut)">{{ 'HOPITAL.STATUT.' + e.statut | translate }}</span></p>
+              <p class="bb-hop-item__sub">{{ e.motif }}</p>
+              <p class="bb-hop-item__meta"><span class="bb-hop-item__num">{{ e.numero }}</span><span><i class="pi pi-calendar"></i>{{ e.ouvertLe | date:'dd/MM/yyyy HH:mm' }}</span>@if (e.service) { <span><i class="pi pi-sitemap"></i>{{ e.service }}</span> }</p>
+            </div>
+            <i class="pi pi-chevron-right" aria-hidden="true"></i>
+          </a>
+        }
+      </div>
+      <p style="margin:12px 0 0"><a routerLink="/hopital/episodes" class="bb-hop-back" style="margin:0">{{ 'HOPITAL.DASH.VOIR_TOUT' | translate }} <i class="pi pi-arrow-right"></i></a></p>
+    }
+  </section>
+}

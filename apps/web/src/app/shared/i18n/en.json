@@ -41,7 +41,8 @@
     "PROFILE_OF_ARIA": "Profile of {{name}}",
     "OPEN_MENU_ARIA": "Open navigation menu",
     "OPEN_PROFILE_ARIA": "Open profile",
-    "CHANGE_LANG_ARIA": "Change language"
+    "CHANGE_LANG_ARIA": "Change language",
+    "ERROR_GENERIC": "Something went wrong. Please try again."
   },
   "PROFIL_MODAL": {
     "CLOSE_ARIA": "Close",
@@ -307,7 +308,8 @@
     "FOOTER_TERMS": "Terms of use",
     "FOOTER_CONTACT": "Contact",
     "FOOTER_SECURE": "Secure data",
-    "FOOTER_MADE": "Made in Guinea 🇬🇳"
+    "FOOTER_MADE": "Made in Guinea 🇬🇳",
+    "STRUCT_TYPE_LABORATOIRE": "Laboratory"
   },
   "PATIENT": {
     "ROLE": "Patient",
@@ -457,7 +459,30 @@
           "DESC": "Contribute, without any identifying data, to public health statistics and research."
         }
       }
-    }
+    },
+    "PARCOURS": {
+      "NAV": "My care path",
+      "TITLE": "My care path",
+      "SUBTITLE": "Your hospital care, analyses and appointments.",
+      "EMPTY": "No care episode yet.",
+      "EMPTY_SUB": "When a facility admits you, your care path appears here.",
+      "OUVERT_LE": "Opened on",
+      "CLOS_LE": "Closed on",
+      "RESPONSABLE": "Doctor",
+      "RDV": "Appointments",
+      "ANALYSES": "Analyses",
+      "BON": "View my lab order",
+      "CONSIGNES": "Instructions",
+      "LABO": "Laboratory",
+      "ETAPE_ADMISSION": "Admission",
+      "ETAPE_ANALYSES": "Analyses",
+      "ETAPE_CONSULTATION": "Consultation",
+      "ETAPE_ORDONNANCE": "Prescription",
+      "ETAPE_PHARMACIE": "Pharmacy",
+      "ETAPE_LIVRAISON": "Delivery",
+      "BIENTOT": "soon"
+    },
+    "NAV_PARCOURS": "My care path"
   },
   "ASC": {
     "ROLE": "Health Worker",
@@ -911,7 +936,8 @@
       "SUCCESS_DEACTIVATED": "Facility \"{{nom}}\" deactivated.",
       "ERR_DEACTIVATE": "Error while deactivating.",
       "SUCCESS_REACTIVATED": "Facility \"{{nom}}\" reactivated.",
-      "ERR_REACTIVATE": "Error while reactivating."
+      "ERR_REACTIVATE": "Error while reactivating.",
+      "TYPE_LABORATOIRE": "Laboratory"
     },
     "SETTINGS": {
       "NOTICE_LINK": "Manage health facilities",
@@ -1166,7 +1192,8 @@
       "SUCCESS_EMAIL_SENT": "Credentials have also been sent by email to {{email}}",
       "SUCCESS_CREATED": "Agent created successfully!",
       "ERR_CREATE": "Error while creating.",
-      "SUCCESS_DEACTIVATED": "Agent deactivated."
+      "SUCCESS_DEACTIVATED": "Agent deactivated.",
+      "ROLE_AGENT_ACCUEIL": "Front desk agent"
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Active agents",
@@ -1203,5 +1230,151 @@
     "ERR_NO_CAMERA": "No camera found on this device. Type the code instead.",
     "ERR_INSECURE": "The camera is only available over HTTPS. Type the code instead.",
     "ERR_GENERIC": "Could not start the camera. Type the code instead."
+  },
+  "HOPITAL": {
+    "ROLE": "Hospital front desk",
+    "NAV_DASHBOARD": "Dashboard",
+    "NAV_ADMISSION": "Admission",
+    "NAV_EPISODES": "Care episodes",
+    "DASH": {
+      "TITLE": "Dashboard",
+      "SUBTITLE": "Your facility’s activity today",
+      "NEW_ADMISSION": "New admission",
+      "STAT_OUVERTS": "Ongoing episodes",
+      "STAT_JOUR": "Admissions today",
+      "STAT_ANALYSES": "Pending analyses",
+      "STAT_URGENTES": "Urgent requests",
+      "STAT_RDV": "Upcoming appointments",
+      "RECENT_TITLE": "Latest episodes",
+      "RECENT_EMPTY": "No episode yet — start with an admission.",
+      "VOIR_TOUT": "See all episodes"
+    },
+    "ADMISSION": {
+      "TITLE": "Patient admission",
+      "SUBTITLE": "Always search for the patient before opening a record: a duplicate identity can harm the patient.",
+      "SEARCH_LABEL": "Search a patient",
+      "SEARCH_PH": "Name, phone or QR code (min. 3 characters)",
+      "SEARCH_HINT": "The phone is masked: confirm the identity with the patient before continuing.",
+      "NO_RESULT": "No matching patient.",
+      "NO_RESULT_HINT": "The patient can create an account from their phone, or you can help them sign up.",
+      "REGISTER_LINK": "Register a new patient",
+      "EPISODE_OUVERT": "Episode {{numero}} already open",
+      "OUVRIR": "Open an episode",
+      "VOIR_EPISODE": "View episode",
+      "FORM_TITLE": "New care episode for {{nom}}",
+      "MOTIF": "Reason for visit",
+      "MOTIF_PH": "E.g. abdominal pain for 3 days",
+      "SERVICE": "Department (optional)",
+      "SERVICE_PH": "E.g. General medicine",
+      "RESPONSABLE": "Responsible doctor (optional)",
+      "RESPONSABLE_NONE": "— None for now —",
+      "NOTES": "Front desk notes (optional)",
+      "SUBMIT": "Open the episode",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Episode {{numero}} opened.",
+      "NE_LE": "Born on",
+      "SEXE_M": "Male",
+      "SEXE_F": "Female"
+    },
+    "EPISODES": {
+      "TITLE": "Care episodes",
+      "SUBTITLE": "{{count}} episode(s)",
+      "SEARCH_PH": "Number, reason or patient…",
+      "FILTRE_TOUS": "All",
+      "FILTRE_OUVERT": "Open",
+      "FILTRE_EN_COURS": "Ongoing",
+      "FILTRE_CLOS": "Closed",
+      "FILTRE_ANNULE": "Cancelled",
+      "EMPTY": "No episode",
+      "EMPTY_SUB": "Open an episode from the admission page.",
+      "ANALYSES": "{{count}} analysis request(s)",
+      "CONSULTATIONS": "{{count}} consultation(s)",
+      "OUVERT_LE": "Opened on",
+      "PAR": "by",
+      "PREC": "Previous",
+      "SUIV": "Next"
+    },
+    "STATUT": {
+      "OUVERT": "Open",
+      "EN_COURS": "Ongoing",
+      "CLOS": "Closed",
+      "ANNULE": "Cancelled"
+    },
+    "DEMANDE_STATUT": {
+      "TRANSMISE": "Sent",
+      "RECUE": "Received",
+      "PRELEVEE": "Sampled",
+      "EN_ANALYSE": "In analysis",
+      "VALIDEE": "Results validated",
+      "ANNULEE": "Cancelled"
+    },
+    "URGENCE": {
+      "ROUTINE": "Routine",
+      "URGENT": "Urgent",
+      "URGENCE_VITALE": "Life-threatening"
+    },
+    "DETAIL": {
+      "BACK": "Episodes",
+      "PATIENT": "Patient",
+      "STRUCTURE": "Facility",
+      "OUVERT_PAR": "Opened by",
+      "RESPONSABLE": "Responsible doctor",
+      "SERVICE": "Department",
+      "AUCUN": "—",
+      "ACTION_ORIENTER": "Refer",
+      "ACTION_ANALYSE": "Analysis request",
+      "ACTION_CLOTURER": "Close",
+      "ACTION_ANNULER": "Cancel episode",
+      "CLOTURER_CONFIRM": "Close this episode? Ongoing requests remain visible.",
+      "ANNULER_CONFIRM": "Cancel this episode? This cannot be undone.",
+      "TERMINE": "This episode is finished.",
+      "RDV_TITLE": "Appointments",
+      "RDV_EMPTY": "No appointment.",
+      "RDV_AVEC": "with",
+      "ANALYSES_TITLE": "Analysis requests",
+      "ANALYSES_EMPTY": "No analysis request.",
+      "CONSIGNES": "Instructions given to the patient",
+      "BON": "Lab order",
+      "ANNULER_DEMANDE": "Cancel request",
+      "ANNULER_DEMANDE_MOTIF": "Cancellation reason",
+      "LABO": "Laboratory",
+      "PRESCRIPTEUR": "Prescriber",
+      "INDICATION": "Indication",
+      "NOTES": "Notes",
+      "ORIENT_TITLE": "Refer the patient",
+      "ORIENT_SERVICE": "Department",
+      "ORIENT_MEDECIN": "Doctor",
+      "ORIENT_MEDECIN_NONE": "— No doctor (department only) —",
+      "ORIENT_DATE": "Appointment (optional)",
+      "ORIENT_MOTIF": "Appointment reason (optional)",
+      "ORIENT_HINT": "A new dated referral replaces the still-planned appointment.",
+      "ORIENT_SUBMIT": "Save referral",
+      "ORIENT_SUCCESS": "Referral saved.",
+      "DA_TITLE": "New analysis request",
+      "DA_LABO": "Destination laboratory",
+      "DA_URGENCE": "Urgency",
+      "DA_INDICATION": "Clinical indication (optional)",
+      "DA_INDICATION_PH": "E.g. suspected malaria",
+      "DA_EXAMENS": "Tests (LOINC referential)",
+      "DA_EXAMENS_SEARCH": "Filter tests…",
+      "DA_SELECTED": "{{count}} test(s) selected",
+      "DA_COMMENT": "Comment",
+      "DA_AJEUN": "fasting",
+      "DA_CONSIGNES": "Extra instructions for the patient (optional)",
+      "DA_CONSIGNES_HINT": "“Fasting”, “urine sample” and “QR Code” instructions are added automatically based on the tests.",
+      "DA_SUBMIT": "Send to the laboratory",
+      "DA_SUCCESS": "Request {{numero}} sent. The patient has been notified.",
+      "DA_NO_LABO": "No active laboratory: ask the super-administrator to create one.",
+      "DEMANDE_ANNULEE": "Request cancelled.",
+      "EPISODE_CLOS": "Episode closed.",
+      "EPISODE_ANNULE": "Episode cancelled."
+    },
+    "RDV_STATUT": {
+      "PLANIFIE": "Planned",
+      "CONFIRME": "Confirmed",
+      "TERMINE": "Done",
+      "ANNULE": "Cancelled",
+      "ABSENT": "No-show"
+    }
   }
 }
