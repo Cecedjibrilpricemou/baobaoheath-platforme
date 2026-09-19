@@ -990,6 +990,43 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Parametres a jour' }, 400: { description: 'Validation' } },
       },
     },
+    // ── P1 Hopital : episodes de soins et demandes d'analyse (EF-03) ────
+    '/api/v1/hopital/tableau-de-bord': { get: { tags: ['Hopital'], summary: 'Tableau de bord de l etablissement (EF-03-07)', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Compteurs et derniers episodes' } } } },
+    '/api/v1/hopital/patients/recherche': {
+      get: { tags: ['Hopital'], summary: 'Rechercher un patient avant admission (EF-03-01)', security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string', minLength: 3 }, description: 'Nom, prenom, telephone ou QR code' }],
+        responses: { 200: { description: 'Identites minimales, telephone masque, episode ouvert eventuel' } } },
+    },
+    '/api/v1/hopital/examens': { get: { tags: ['Hopital'], summary: 'Referentiel des examens (codes LOINC)', security: [{ bearerAuth: [] }], parameters: [{ name: 'q', in: 'query', schema: { type: 'string' } }, { name: 'categorie', in: 'query', schema: { type: 'string' } }], responses: { 200: { description: 'Examens actifs' } } } },
+    '/api/v1/hopital/laboratoires': { get: { tags: ['Hopital'], summary: 'Structures pouvant recevoir une demande d analyse', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Laboratoires et hopitaux actifs' } } } },
+    '/api/v1/hopital/medecins': { get: { tags: ['Hopital'], summary: 'Medecins de la structure (orientation)', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Liste' } } } },
+    '/api/v1/hopital/episodes': {
+      get: { tags: ['Hopital'], summary: 'Episodes de la structure', security: [{ bearerAuth: [] }], parameters: [{ name: 'statut', in: 'query', schema: { type: 'string', enum: ['OUVERT', 'EN_COURS', 'CLOS', 'ANNULE'] } }, { name: 'q', in: 'query', schema: { type: 'string' } }, { name: 'page', in: 'query', schema: { type: 'integer' } }, { name: 'limit', in: 'query', schema: { type: 'integer' } }], responses: { 200: { description: 'Page d episodes' } } },
+      post: { tags: ['Hopital'], summary: 'Ouvrir un episode de soins (EF-03-02)', security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idPatient', 'motif'], properties: { idPatient: { type: 'string' }, motif: { type: 'string' }, service: { type: 'string' }, idResponsable: { type: 'string' }, notes: { type: 'string' } } } } } },
+        responses: { 201: { description: 'Episode numerote EP-AAAA-NNNNNN' }, 409: { description: 'Un episode est deja ouvert pour ce patient' } } },
+    },
+    '/api/v1/hopital/episodes/{id}': {
+      get: { tags: ['Hopital'], summary: 'Detail d un episode', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Episode avec demandes et rendez-vous' } } },
+      patch: { tags: ['Hopital'], summary: 'Modifier un episode', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { motif: { type: 'string' }, service: { type: 'string' }, idResponsable: { type: 'string', nullable: true }, notes: { type: 'string', nullable: true }, statut: { type: 'string', enum: ['OUVERT', 'EN_COURS'] } } } } } }, responses: { 200: { description: 'Episode a jour' } } },
+    },
+    '/api/v1/hopital/episodes/{id}/cloturer': { post: { tags: ['Hopital'], summary: 'Cloturer un episode', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Episode clos' } } } },
+    '/api/v1/hopital/episodes/{id}/annuler': { post: { tags: ['Hopital'], summary: 'Annuler un episode', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Episode annule' } } } },
+    '/api/v1/hopital/episodes/{id}/orientation': {
+      post: { tags: ['Hopital'], summary: 'Orienter vers un medecin ou un service, rendez-vous propose (EF-03-05)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { idMedecin: { type: 'string' }, service: { type: 'string' }, prevuLe: { type: 'string', format: 'date-time' }, motif: { type: 'string' } } } } } },
+        responses: { 200: { description: 'Episode EN_COURS, rendez-vous cree si prevuLe' } } },
+    },
+    '/api/v1/hopital/episodes/{id}/demandes-analyse': {
+      post: { tags: ['Hopital'], summary: 'Creer et transmettre une demande d analyse structuree (EF-03-03, EF-03-04)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idLaboratoire', 'examens'], properties: { idLaboratoire: { type: 'string' }, urgence: { type: 'string', enum: ['ROUTINE', 'URGENT', 'URGENCE_VITALE'] }, indicationClinique: { type: 'string' }, consignesPatient: { type: 'string' }, examens: { type: 'array', items: { type: 'object', required: ['idExamen'], properties: { idExamen: { type: 'string' }, commentaire: { type: 'string' } } } } } } } } },
+        responses: { 201: { description: 'Demande DA-AAAA-NNNNNN transmise, patient notifie' } } },
+    },
+    '/api/v1/hopital/demandes-analyse/{id}': { get: { tags: ['Hopital'], summary: 'Detail d une demande d analyse', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Demande avec lignes' } } } },
+    '/api/v1/hopital/demandes-analyse/{id}/annuler': { post: { tags: ['Hopital'], summary: 'Annuler une demande non prelevee', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string' } } } } } }, responses: { 200: { description: 'Demande annulee' }, 409: { description: 'Prelevement deja realise' } } } },
+    '/api/v1/hopital/demandes-analyse/{id}/document': { get: { tags: ['Hopital'], summary: 'Bon d examen imprimable (EF-03-06)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'HTML pret a imprimer', content: { 'text/html': { schema: { type: 'string' } } } } } } },
+    '/api/v1/patients/me/episodes': { get: { tags: ['Patients'], summary: 'Mon parcours hospitalier : episodes, analyses, rendez-vous', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Episodes du patient' } } } },
+    '/api/v1/patients/me/demandes-analyse/{id}/document': { get: { tags: ['Patients'], summary: 'Mon bon d examen imprimable', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'HTML', content: { 'text/html': { schema: { type: 'string' } } } } } } },
     '/api/v1/admin-structure/parametres/logo': {
       post: {
         tags: ['Parametres'], summary: 'Televerser le logo de la plateforme (SUPER_ADMIN)', security: [{ bearerAuth: [] }],

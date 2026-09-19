@@ -43,18 +43,34 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
     };
   }
 
+  // Un episode de soins ouvert dans la structure donne acces au dossier
+  // (CDC ch. 8 : « les patients de son etablissement ayant un episode en cours »).
+  const parEpisode: PatientWhere[] = idStructure
+    ? [{ episodes: { some: { idStructure, statut: { in: ['OUVERT', 'EN_COURS'] } } } }]
+    : [];
+
   if (user.role === 'MEDECIN') {
     return {
-      consultations: {
-        some: {
-          OR: [
-            { idMedecinValideur: user.userId },
-            ...(idStructure ? [{ asc: { idStructure } }] : []),
-            ...(idStructure ? [{ referencement: { idStructureCible: idStructure } }] : []),
-          ],
+      OR: [
+        {
+          consultations: {
+            some: {
+              OR: [
+                { idMedecinValideur: user.userId },
+                ...(idStructure ? [{ asc: { idStructure } }] : []),
+                ...(idStructure ? [{ referencement: { idStructureCible: idStructure } }] : []),
+              ],
+            },
+          },
         },
-      },
+        ...parEpisode,
+        { episodes: { some: { idResponsable: user.userId } } },
+      ],
     };
+  }
+
+  if (user.role === 'AGENT_ACCUEIL' && idStructure) {
+    return { OR: parEpisode };
   }
 
   if (user.role === 'ADMIN_STRUCTURE' && idStructure) {
@@ -63,6 +79,7 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
         { idStructurePreferee: idStructure },
         { consultations: { some: { asc: { idStructure } } } },
         { consultations: { some: { referencement: { idStructureCible: idStructure } } } },
+        ...parEpisode,
       ],
     };
   }

@@ -159,6 +159,19 @@ async function mockSendSms(
     };
 }
 
+/**
+ * SMS "fire and forget" pour les autres services (hopital, commandes...) :
+ * une panne de l'operateur ne doit jamais faire echouer l'action metier.
+ * Aucune information medicale dans le message (EF-11-02).
+ */
+export async function envoyerSmsSimule(telephone: string, message: string): Promise<void> {
+    try {
+        await mockSendSms(telephone, message);
+    } catch (e: unknown) {
+        logger.warn('[SMS] envoi echoue', { telephone, erreur: e instanceof Error ? e.message : String(e) });
+    }
+}
+
 // ─── Envoyer un SMS ───────────────────────────────────────
 export async function envoyerSms(dto: SendSmsDto) {
     const result = await mockSendSms(dto.telephone, dto.message);

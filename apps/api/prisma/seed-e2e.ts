@@ -7,16 +7,19 @@ import { PrismaClient, Role, TypeStructure } from '../src/config/generated/clien
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { hashPassword } from '../src/utils/password.utils.js';
+import { seedExamens } from './seed-examens.js';
 
 export const E2E = {
   motDePasse: 'E2e-Password-123',
   prefecture: 'Kindia',
   centre: { nom: 'Centre de sante e2e', telephone: '+224600100001' },
   pharmacie: { nom: 'Pharmacie e2e', telephone: '+224600100002' },
+  laboratoire: { nom: 'Laboratoire e2e', telephone: '+224600100003' },
   asc: { email: 'asc.e2e@baobao.test', telephone: '690000001', prenom: 'Mamadou', nom: 'Bah' },
   medecin: { email: 'medecin.e2e@baobao.test', telephone: '690000002', prenom: 'Fatoumata', nom: 'Camara' },
   pharmacien: { email: 'pharma.e2e@baobao.test', telephone: '690000003', prenom: 'Ibrahima', nom: 'Sow' },
   adminStructure: { email: 'admin.centre.e2e@baobao.test', telephone: '690000004', prenom: 'Aissatou', nom: 'Barry' },
+  accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
   medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000 },
 } as const;
@@ -61,6 +64,8 @@ async function main() {
 
   const centre = await upsertStructure(E2E.centre.nom, TypeStructure.CENTRE, E2E.centre.telephone);
   const pharmacie = await upsertStructure(E2E.pharmacie.nom, TypeStructure.PHARMACIE, E2E.pharmacie.telephone);
+  await upsertStructure(E2E.laboratoire.nom, TypeStructure.LABORATOIRE, E2E.laboratoire.telephone);
+  await seedExamens(prisma);
 
   const asc = await upsertUtilisateur(E2E.asc, Role.ASC, motDePasseHash, centre.id);
   const ascProfile = await prisma.ascProfile.upsert({
@@ -78,6 +83,9 @@ async function main() {
 
   // Administre le centre : voit ses agents (ASC + medecin) et ses statistiques.
   await upsertUtilisateur(E2E.adminStructure, Role.ADMIN_STRUCTURE, motDePasseHash, centre.id);
+
+  // Accueil du centre : admission, episodes, demandes d'analyse (P1).
+  await upsertUtilisateur(E2E.accueil, Role.AGENT_ACCUEIL, motDePasseHash, centre.id);
 
   const pharmacien = await upsertUtilisateur(E2E.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
   await prisma.pharmacienProfile.upsert({

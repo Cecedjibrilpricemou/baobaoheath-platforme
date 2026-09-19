@@ -1,4 +1,7 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
+import type { AuthRequest } from '../middlewares/auth.middleware';
+import * as hopital from '../services/hopital.service';
+import type { EpisodePatientView } from '@baobaoheath/shared-types';
 import {
   createPatientController,
   getPatientsController,
@@ -28,6 +31,16 @@ router.put('/me', authenticate, requireRole('PATIENT'), validateBody(updatePatie
 router.put('/me/structure', authenticate, requireRole('PATIENT'), validateBody(updateStructurePrefereeSchema), updateStructurePrefereeController);
 router.get('/me/export', authenticate, requireRole('PATIENT'), exportDossierController);
 router.get('/me/consultations', authenticate, requireRole('PATIENT'), getMesConsultationsController);
+
+// P1 — parcours hospitalier du patient : episodes, demandes d'analyse, orientations.
+router.get('/me/episodes', authenticate, requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const data: EpisodePatientView[] = await hopital.mesEpisodes(req.user!.userId);
+  res.json({ success: true, data });
+});
+router.get('/me/demandes-analyse/:id/document', authenticate, requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const html = await hopital.documentDemandePourPatient(req.user!.userId, req.params['id'] as string);
+  res.type('html').send(html);
+});
 
 router.get('/', authenticate, requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'ADMIN_STRUCTURE'), getPatientsController);
 router.get('/qr/:qrCode', authenticate, requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN'), getPatientByQrCodeController);

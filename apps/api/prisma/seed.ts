@@ -3,6 +3,7 @@ import { PrismaClient, Role } from '../src/config/generated/client/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { hashPassword } from '../src/utils/password.utils.js';
+import { seedExamens } from './seed-examens.js';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -13,18 +14,25 @@ async function main() {
 
   const motDePasseHash = await hashPassword('baobao1234');
 
-  await prisma.utilisateur.upsert({
-    where: { telephone: '600000001' },
-    update: {},
-    create: {
-      telephone: '600000001',
-      email: 'cecedjibrilpricemou1er@gmail.com',
-      motDePasseHash,
-      prenom: 'Cécé',
-      nom: 'Pricemou',
-      role: Role.SUPER_ADMIN,
-    },
-  });
+  // Idempotent sur le telephone ET l'e-mail : le compte peut avoir change de
+  // numero depuis l'application sans que le seed echoue.
+  const email = 'cecedjibrilpricemou1er@gmail.com';
+  const existant = await prisma.utilisateur.findFirst({ where: { OR: [{ telephone: '600000001' }, { email }] }, select: { id: true } });
+  if (!existant) {
+    await prisma.utilisateur.create({
+      data: {
+        telephone: '600000001',
+        email,
+        motDePasseHash,
+        prenom: 'Cécé',
+        nom: 'Pricemou',
+        role: Role.SUPER_ADMIN,
+      },
+    });
+  }
+
+  const nbExamens = await seedExamens(prisma);
+  console.log(`🧪 Referentiel des examens : ${nbExamens} codes LOINC.`);
 
   console.log('✅ Seed terminé — tous les autres comptes seront créés via l\'application.');
 }

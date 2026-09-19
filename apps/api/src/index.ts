@@ -27,6 +27,7 @@ import ussdRoutes from './routes/ussd.routes';
 import statsRoutes from './routes/stats.routes';
 import uploadRoutes from './routes/upload.routes';
 import parametresRoutes from './routes/parametres.routes';
+import hopitalRoutes from './routes/hopital.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -185,6 +186,7 @@ app.use('/api/v1/ussd', ussdRoutes);
 app.use('/api/v1/stats', statsRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/v1/parametres', parametresRoutes);
+app.use('/api/v1/hopital', hopitalRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

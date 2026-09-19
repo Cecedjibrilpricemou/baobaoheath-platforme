@@ -176,9 +176,13 @@ describe('buildPatientWhereForUser — cross-structure isolation', () => {
     });
 
     const where = await buildPatientWhereForUser(makeUser('MEDECIN', 'doc-1'));
-    // Must scope to validated consultations only — no structure-wide wildcard
+    // Must scope to validated consultations and episodes they are responsible
+    // for — no structure-wide wildcard (P1 : episodes de soins).
     expect(where).toEqual({
-      consultations: { some: { OR: [{ idMedecinValideur: 'doc-1' }] } },
+      OR: [
+        { consultations: { some: { OR: [{ idMedecinValideur: 'doc-1' }] } } },
+        { episodes: { some: { idResponsable: 'doc-1' } } },
+      ],
     });
   });
 

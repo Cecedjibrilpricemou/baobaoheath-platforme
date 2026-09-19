@@ -10,7 +10,7 @@ Le patient ne se déplace **qu'une fois** (à l'hôpital). Tout le reste se fait
 
 ## Règles de travail
 
-- **API d'abord, front ensuite** : chaque bloc API est mergé (develop → CI verte → `main`) avant d'attaquer ses écrans.
+- **API d'abord, front ensuite, dans le même bloc** : chaque bloc API est mergé (develop → CI verte → `main`), puis **immédiatement branché au front avec ses écrans alignés sur le design de la landing** (couleurs, pilules, cartes, mode sombre), avant de passer au bloc suivant.
 - **SMS et paiement restent simulés** (pas de clés API) derrière les abstractions existantes (`payment-provider.service`, `notification.service`). Seul le fournisseur changera plus tard.
 - Les décisions D1–D10 du cahier des charges (règle de rejet assurance, base médicamenteuse, valeurs critiques, statut du livreur…) sont des **paramètres ou référentiels administrables**, jamais des constantes dans le code.
 - Chaque livraison référence les exigences couvertes (ex. `EF-04-05`) dans le message de commit et dans Swagger.

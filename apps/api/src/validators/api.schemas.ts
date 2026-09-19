@@ -85,7 +85,7 @@ export const updateStructurePrefereeSchema = z.object({
   idStructure: id.nullable().optional(),
 }).strict();
 
-export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN']);
+export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL']);
 
 export const createAgentStructureSchema = z.object({
   telephone: phone,
@@ -98,7 +98,7 @@ export const createAgentStructureSchema = z.object({
 
 export const createStructureSchema = z.object({
   nom: z.string().trim().min(2).max(160),
-  type: z.enum(['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE']),
+  type: z.enum(['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE', 'LABORATOIRE']),
   prefecture: z.string().trim().min(1).max(80),
   adresse: z.string().trim().max(200).optional(),
   latitude: z.coerce.number().optional(),
@@ -358,6 +358,49 @@ export const updateParametresSystemeSchema = z.object({
     ussdTimeoutSecondes: z.coerce.number().int().min(30).max(3600),
   }).partial().strict().optional(),
 }).strict();
+
+// ─── P1 Hopital : episodes de soins et demandes d'analyse (EF-03) ────────────
+const texteLibre = (max: number) => z.string().trim().max(max);
+
+export const createEpisodeSchema = z.object({
+  idPatient: id,
+  motif: z.string().trim().min(3).max(300),
+  service: texteLibre(120).optional(),
+  idResponsable: id.optional(),
+  notes: texteLibre(2000).optional(),
+}).strict();
+
+export const updateEpisodeSchema = z.object({
+  motif: z.string().trim().min(3).max(300).optional(),
+  service: texteLibre(120).optional(),
+  idResponsable: id.nullable().optional(),
+  notes: texteLibre(2000).nullable().optional(),
+  statut: z.enum(['OUVERT', 'EN_COURS']).optional(),
+}).strict();
+
+export const orientationSchema = z.object({
+  service: texteLibre(120).optional(),
+  idMedecin: id.optional(),
+  prevuLe: z.string().datetime({ offset: true }).optional(),
+  motif: texteLibre(300).optional(),
+}).strict().refine((v) => v.idMedecin || v.service, { message: 'Indiquez un medecin ou un service' });
+
+export const createDemandeAnalyseSchema = z.object({
+  idLaboratoire: id,
+  urgence: z.enum(['ROUTINE', 'URGENT', 'URGENCE_VITALE']).optional(),
+  indicationClinique: texteLibre(1000).optional(),
+  consignesPatient: texteLibre(1000).optional(),
+  examens: z.array(z.object({ idExamen: id, commentaire: texteLibre(300).optional() }).strict()).min(1).max(40),
+}).strict();
+
+export const annulerDemandeSchema = z.object({
+  motif: z.string().trim().min(3).max(300),
+}).strict();
+
+export const episodesQuerySchema = paginationQuerySchema.extend({
+  statut: z.enum(['OUVERT', 'EN_COURS', 'CLOS', 'ANNULE']).optional(),
+  q: z.string().trim().max(100).optional(),
+});
 
 export const notificationsQuerySchema = paginationQuerySchema.extend({
   lu: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),

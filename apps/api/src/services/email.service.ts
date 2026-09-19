@@ -325,6 +325,7 @@ export async function envoyerEmailAgent(dto: {
     const roleLabel: Record<string, string> = {
         'ASC': 'Agent de Santé Communautaire',
         'ASC_SUPERVISOR': 'Superviseur ASC',
+        'AGENT_ACCUEIL': "Agent d'accueil",
         'MEDECIN': 'Médecin',
         'PHARMACIEN': 'Pharmacien'
     };

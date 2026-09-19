@@ -29,6 +29,7 @@ export type Role =
   | 'ASC_SUPERVISOR'
   | 'MEDECIN'
   | 'PHARMACIEN'
+  | 'AGENT_ACCUEIL'
   | 'ADMIN_STRUCTURE'
   | 'ADMIN_REGIONAL'
   | 'ADMIN_NATIONAL'
@@ -66,7 +67,8 @@ export type TypeStructure =
   | 'HOPITAL_REG'
   | 'CHU'
   | 'CLINIQUE'
-  | 'PHARMACIE';
+  | 'PHARMACIE'
+  | 'LABORATOIRE';
 
 export type StatutOrdonnance =
   | 'EN_ATTENTE'
@@ -75,6 +77,9 @@ export type StatutOrdonnance =
   | 'ANNULEE';
 
 export type Urgence = 'ROUTINE' | 'URGENT' | 'URGENCE_VITALE';
+
+export type StatutEpisode = 'OUVERT' | 'EN_COURS' | 'CLOS' | 'ANNULE';
+export type StatutDemandeAnalyse = 'TRANSMISE' | 'RECUE' | 'PRELEVEE' | 'EN_ANALYSE' | 'VALIDEE' | 'ANNULEE';
 
 export type SyncOperation = 'CREATE' | 'UPDATE' | 'DELETE';
 
@@ -92,7 +97,10 @@ export type TypeNotification =
   | 'RAPPEL_VACCINATION'
   | 'ORDONNANCE_SIGNEE'
   | 'NOUVEAU_MESSAGE'
-  | 'ALERTE_VITALE';
+  | 'ALERTE_VITALE'
+  | 'EPISODE_OUVERT'
+  | 'DEMANDE_ANALYSE'
+  | 'ORIENTATION';
 
 export type CanalNotification = 'SMS' | 'PUSH' | 'IN_APP';
 
@@ -1127,4 +1135,165 @@ export interface UpdateParametresSystemeDto {
 /** POST /admin-structure/parametres/logo — reponse. */
 export interface LogoPlateformeView {
   logoUrl: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// P1 — Hopital : episode de soins et demande d'analyse (EF-03)
+// Routes /hopital/* (AGENT_ACCUEIL, MEDECIN, ADMIN_STRUCTURE) et /patients/me/episodes.
+// ═══════════════════════════════════════════════════════════════════
+
+/** GET /hopital/patients/recherche — identite minimale pour l'identito-vigilance (EF-03-01). */
+export interface PatientRechercheView {
+  id: string;
+  prenom: string;
+  nom: string;
+  sexe: string;
+  dateNaissance: HorodatageApi;
+  prefecture: string;
+  /** Masque sauf les 3 derniers chiffres. */
+  telephoneMasque: string;
+  /** Un episode ouvert existe deja dans la structure de l'agent. */
+  episodeOuvert: { id: string; numero: string } | null;
+}
+
+export interface PersonneRefView {
+  id: string;
+  prenom: string;
+  nom: string;
+  role: Role;
+}
+
+export interface StructureRefView {
+  id: string;
+  nom: string;
+  type: TypeStructure;
+  prefecture: string;
+}
+
+/** Referentiel des examens (codes LOINC). */
+export interface ExamenView {
+  id: string;
+  codeLoinc: string;
+  libelle: string;
+  categorie: string;
+  specimen: string;
+  unite: string | null;
+  aJeun: boolean;
+  consignes: string | null;
+  prixGnf: number | null;
+}
+
+export interface LigneDemandeAnalyseView {
+  id: string;
+  examen: ExamenView;
+  commentaire: string | null;
+}
+
+export interface DemandeAnalyseView {
+  id: string;
+  numero: string;
+  urgence: Urgence;
+  statut: StatutDemandeAnalyse;
+  indicationClinique: string | null;
+  consignesPatient: string | null;
+  creeLe: HorodatageApi;
+  transmiseLe: HorodatageApi | null;
+  annuleeLe: HorodatageApi | null;
+  motifAnnulation: string | null;
+  idEpisode: string;
+  numeroEpisode: string;
+  patient: { id: string; prenom: string; nom: string };
+  prescripteur: PersonneRefView;
+  laboratoire: StructureRefView;
+  lignes: LigneDemandeAnalyseView[];
+}
+
+export interface RendezVousEpisodeView {
+  id: string;
+  statut: string;
+  motif: string | null;
+  prevuLe: HorodatageApi;
+  medecin: PersonneRefView | null;
+}
+
+export interface EpisodeSoinsView {
+  id: string;
+  numero: string;
+  motif: string;
+  service: string | null;
+  statut: StatutEpisode;
+  notes: string | null;
+  ouvertLe: HorodatageApi;
+  closLe: HorodatageApi | null;
+  patient: { id: string; prenom: string; nom: string; sexe: string; dateNaissance: HorodatageApi; telephone: string };
+  structure: StructureRefView;
+  ouvertPar: PersonneRefView;
+  responsable: PersonneRefView | null;
+  demandesAnalyse: DemandeAnalyseView[];
+  rendezVous: RendezVousEpisodeView[];
+  nbConsultations: number;
+}
+
+/** Ligne de liste (sans les sous-collections). */
+export type EpisodeSoinsResumeView = Omit<EpisodeSoinsView, 'demandesAnalyse' | 'rendezVous'> & {
+  nbDemandesAnalyse: number;
+};
+
+/** GET /hopital/tableau-de-bord (EF-03-07). */
+export interface TableauDeBordHopitalView {
+  episodesOuverts: number;
+  episodesDuJour: number;
+  demandesEnAttente: number;      // TRANSMISE ou RECUE
+  demandesUrgentes: number;       // URGENT / URGENCE_VITALE non validees
+  orientationsAVenir: number;     // rendez-vous medecin planifies
+  parStatut: { statut: StatutEpisode; nombre: number }[];
+  derniersEpisodes: EpisodeSoinsResumeView[];
+}
+
+export interface CreateEpisodeDto {
+  idPatient: string;
+  motif: string;
+  service?: string;
+  idResponsable?: string;
+  notes?: string;
+}
+
+export interface UpdateEpisodeDto {
+  motif?: string;
+  service?: string;
+  idResponsable?: string | null;
+  notes?: string | null;
+  statut?: Extract<StatutEpisode, 'OUVERT' | 'EN_COURS'>;
+}
+
+/** POST /hopital/episodes/:id/orientation (EF-03-05). */
+export interface OrientationDto {
+  service?: string;
+  idMedecin?: string;
+  /** ISO 8601 ; si absent, l'orientation n'ouvre pas de rendez-vous. */
+  prevuLe?: string;
+  motif?: string;
+}
+
+export interface CreateDemandeAnalyseDto {
+  idLaboratoire: string;
+  urgence?: Urgence;
+  indicationClinique?: string;
+  consignesPatient?: string;
+  examens: { idExamen: string; commentaire?: string }[];
+}
+
+/** GET /patients/me/episodes — vue patient de son parcours hospitalier. */
+export interface EpisodePatientView {
+  id: string;
+  numero: string;
+  motif: string;
+  service: string | null;
+  statut: StatutEpisode;
+  ouvertLe: HorodatageApi;
+  closLe: HorodatageApi | null;
+  structure: StructureRefView;
+  responsable: PersonneRefView | null;
+  demandesAnalyse: DemandeAnalyseView[];
+  rendezVous: RendezVousEpisodeView[];
 }
