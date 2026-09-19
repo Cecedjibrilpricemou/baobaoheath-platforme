@@ -313,7 +313,31 @@ export const sendMessageSchema = z.object({
 
 // ─── Parametres systeme (super-admin) ────────────────────────────────────────
 // Bornes alignees sur les curseurs de la page Parametres du web.
+const texteCourt = z.string().trim().max(120);
+const emailOuVide = z.string().trim().max(160).refine((v) => v === '' || z.string().email().safeParse(v).success, 'Adresse e-mail invalide');
+const urlOuVide = z.string().trim().max(300).refine((v) => v === '' || /^https?:\/\/\S+$/i.test(v), 'URL invalide (http:// ou https://)');
+const telephoneOuVide = z.string().trim().max(30).refine((v) => v === '' || /^[+0-9 ().-]{6,30}$/.test(v), 'Numéro de téléphone invalide');
+
 export const updateParametresSystemeSchema = z.object({
+  identite: z.object({
+    nom: z.string().trim().min(2).max(60),
+    nomCourt: z.string().trim().max(20).regex(/^[A-Za-z0-9 .-]*$/, 'Lettres non accentuées et chiffres uniquement (SMS)'),
+    slogan: texteCourt,
+    logoUrl: urlOuVide,
+    adresse: z.string().trim().max(200),
+    ville: texteCourt,
+    pays: texteCourt,
+    telephone: telephoneOuVide,
+    telephoneSupport: telephoneOuVide,
+    emailContact: emailOuVide,
+    emailSupport: emailOuVide,
+    emailExpediteur: z.string().trim().max(60),
+    siteWeb: urlOuVide,
+    facebook: urlOuVide,
+    whatsapp: telephoneOuVide,
+    copyright: texteCourt,
+    devise: z.string().trim().length(3).toUpperCase(),
+  }).partial().strict().optional(),
   facturation: z.object({
     paiementEspeces: z.boolean(),
     paiementOrangeMoney: z.boolean(),

@@ -1,3 +1,4 @@
+import { getIdentitePlateforme } from './parametres.service';
 import { randomBytes } from 'crypto';
 import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
@@ -192,7 +193,8 @@ export async function envoyerRappelRendezVous(idRendezVous: string) {
         minute: '2-digit',
     });
 
-    const message = `KENEYA: Bonjour ${utilisateur.prenom}, rappel de votre rendez-vous le ${dateFormatee}. Répondez STOP pour annuler.`;
+    const { nomCourt } = await getIdentitePlateforme();
+    const message = `${nomCourt}: Bonjour ${utilisateur.prenom}, rappel de votre rendez-vous le ${dateFormatee}. Répondez STOP pour annuler.`;
 
     const result = await mockSendSms(utilisateur.telephone, message);
 
@@ -224,7 +226,8 @@ export async function envoyerAlerteStock(idStock: string) {
         throw new NotFoundError('Stock non trouvé');
     }
 
-    const message = `KENEYA ALERTE: Stock critique — ${stock.medicament.dci} (${stock.quantite} ${stock.unite} restants, seuil: ${stock.seuilAlerte}). Veuillez renouveler votre stock.`;
+    const { nomCourt } = await getIdentitePlateforme();
+    const message = `${nomCourt} ALERTE: Stock critique — ${stock.medicament.dci} (${stock.quantite} ${stock.unite} restants, seuil: ${stock.seuilAlerte}). Veuillez renouveler votre stock.`;
 
     if (!stock.asc) {
         throw new ValidationError('Ce stock n est pas rattache a un ASC');
@@ -263,10 +266,11 @@ export async function envoyerNotificationReferencement(
     const { utilisateur } = ref.consultation.patient;
     const structure = ref.structureCible.nom;
 
+    const { nomCourt } = await getIdentitePlateforme();
     const message =
         statut === 'ACCEPTE'
-            ? `KENEYA: Bonjour ${utilisateur.prenom}, votre transfert vers ${structure} a été ACCEPTÉ. Présentez-vous avec votre QR Code.`
-            : `KENEYA: Bonjour ${utilisateur.prenom}, votre transfert vers ${structure} a été refusé. Contactez votre ASC pour plus d'informations.`;
+            ? `${nomCourt}: Bonjour ${utilisateur.prenom}, votre transfert vers ${structure} a été ACCEPTÉ. Présentez-vous avec votre QR Code.`
+            : `${nomCourt}: Bonjour ${utilisateur.prenom}, votre transfert vers ${structure} a été refusé. Contactez votre ASC pour plus d'informations.`;
 
     return mockSendSms(utilisateur.telephone, message);
 }
@@ -297,7 +301,8 @@ export async function envoyerRappelVaccination(idVaccination: string) {
         year: 'numeric',
     });
 
-    const message = `KENEYA: Bonjour ${utilisateur.prenom}, rappel — votre vaccination ${vaccination.vaccinNom} est due le ${dateFormatee}. Contactez votre ASC.`;
+    const { nomCourt } = await getIdentitePlateforme();
+    const message = `${nomCourt}: Bonjour ${utilisateur.prenom}, rappel — votre vaccination ${vaccination.vaccinNom} est due le ${dateFormatee}. Contactez votre ASC.`;
 
     return mockSendSms(utilisateur.telephone, message);
 }

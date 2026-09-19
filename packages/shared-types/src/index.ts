@@ -1062,8 +1062,47 @@ export interface ConfigSyncView {
   frequenceMinutes: number;
 }
 
+/**
+ * Identite de la plateforme (nom, logo, coordonnees). Editee par le
+ * super-admin ; consommee par le web (landing, auth, footer, onglet), les
+ * e-mails, les SMS/USSD et la documentation API. Aucune de ces valeurs ne
+ * doit exister en dur dans le code.
+ */
+export interface ParametresIdentiteView {
+  /** Nom affiche partout (ex. « KÈNÈYA »). */
+  nom: string;
+  /** Nom sans accent ni caracteres speciaux, pour les SMS et l'USSD (alphabet GSM). Derive du nom si vide. */
+  nomCourt: string;
+  slogan: string;
+  /** URL absolue du logo televerse (vide = pas de logo, le nom est affiche seul). */
+  logoUrl: string;
+  adresse: string;
+  ville: string;
+  pays: string;
+  telephone: string;
+  telephoneSupport: string;
+  emailContact: string;
+  emailSupport: string;
+  /** Nom d'expediteur des e-mails ; l'adresse reste celle du compte SMTP. */
+  emailExpediteur: string;
+  siteWeb: string;
+  facebook: string;
+  whatsapp: string;
+  /** Mention de pied de page ; vide = « © <annee> <nom> — Tous droits reserves ». */
+  copyright: string;
+  /** Code ISO 4217 de la devise affichee (ex. GNF). */
+  devise: string;
+}
+
+/**
+ * GET /parametres/publics — sous-ensemble sans authentification, lu par le
+ * web au demarrage (landing, pages d'auth, footer, titre d'onglet).
+ */
+export type IdentitePlateformeView = ParametresIdentiteView;
+
 /** Valeurs persistees, toujours completes (defauts fusionnes cote serveur). */
 export interface ParametresSystemeValeurs {
+  identite: ParametresIdentiteView;
   facturation: ParametresFacturationView;
   securite: ParametresSecuriteView;
   alertes: ParametresAlertesView;
@@ -1078,8 +1117,14 @@ export interface ParametresSystemeView extends ParametresSystemeValeurs {
 
 /** PUT /admin-structure/parametres — chaque section et chaque champ est optionnel. */
 export interface UpdateParametresSystemeDto {
+  identite?: Partial<ParametresIdentiteView>;
   facturation?: Partial<ParametresFacturationView>;
   securite?: Partial<ParametresSecuriteView>;
   alertes?: Partial<ParametresAlertesView>;
   sync?: Partial<ParametresSyncView>;
+}
+
+/** POST /admin-structure/parametres/logo — reponse. */
+export interface LogoPlateformeView {
+  logoUrl: string;
 }

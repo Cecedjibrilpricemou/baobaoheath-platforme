@@ -1,7 +1,11 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
+import { uploadLogo } from '../middlewares/upload.middleware';
+import { uploadLogoController } from '../controllers/upload.controller';
+import { ValidationError } from '../utils/app-error';
 import * as service from '../services/admin-structure.service';
 import * as parametresService from '../services/parametres.service';
 import type {
@@ -136,5 +140,21 @@ router.put('/parametres', requireRole('SUPER_ADMIN'), validateBody(updateParamet
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
   }
 });
+
+// Logo de la plateforme (champ multipart "logo") : redimensionne, enregistre
+// dans Parametres > Identite, renvoie l'identite a jour.
+router.post('/parametres/logo', requireRole('SUPER_ADMIN'), (req: AuthRequest, res: Response, next: NextFunction) => {
+  uploadLogo(req, res, (err: unknown) => {
+    if (err) {
+      const message =
+        err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
+          ? 'Image trop volumineuse (2 Mo maximum).'
+          : err instanceof Error ? err.message : 'Échec du téléversement.';
+      next(new ValidationError(message));
+      return;
+    }
+    next();
+  });
+}, uploadLogoController);
 
 export default router;

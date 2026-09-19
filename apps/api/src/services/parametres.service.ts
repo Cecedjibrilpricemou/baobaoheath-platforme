@@ -11,6 +11,8 @@ import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { cacheDel, withCache } from '../utils/cache';
 import type {
+  IdentitePlateformeView,
+  ParametresIdentiteView,
   ParametresSystemeValeurs,
   ParametresSystemeView,
   UpdateParametresSystemeDto,
@@ -21,6 +23,27 @@ const CACHE_KEY = 'parametres:systeme';
 const CACHE_TTL_SECONDES = 60;
 
 export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
+  // Seule source de verite pour le nom et les coordonnees de la plateforme.
+  // Ces defauts ne servent qu'avant la premiere sauvegarde par le super-admin.
+  identite: {
+    nom: 'KÈNÈYA',
+    nomCourt: '',
+    slogan: 'Votre santé, plus simplement.',
+    logoUrl: '',
+    adresse: '',
+    ville: 'Conakry',
+    pays: 'Guinée',
+    telephone: '',
+    telephoneSupport: '',
+    emailContact: '',
+    emailSupport: '',
+    emailExpediteur: '',
+    siteWeb: '',
+    facebook: '',
+    whatsapp: '',
+    copyright: '',
+    devise: 'GNF',
+  },
   facturation: {
     paiementEspeces: true,
     paiementOrangeMoney: true,
@@ -86,6 +109,47 @@ export async function getValeursParametres(): Promise<ParametresSystemeValeurs> 
     const ligne = await lireLigne();
     return fusionnerParametres(PARAMETRES_PAR_DEFAUT, ligne?.valeurs);
   });
+}
+
+// ── Identite de la plateforme ───────────────────────────────────────
+
+/**
+ * Nom utilisable dans un SMS ou un menu USSD : alphabet GSM de base, donc
+ * sans accents (« KÈNÈYA » → « KENEYA »). Un È dans un SMS ferait passer le
+ * message en UCS-2 et diviserait sa longueur utile par deux.
+ */
+export function nomSms(identite: Pick<ParametresIdentiteView, 'nom' | 'nomCourt'>): string {
+  const base = identite.nomCourt.trim() || identite.nom;
+  return base
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z0-9 .\-]/g, '')
+    .trim()
+    .toUpperCase() || 'PLATEFORME';
+}
+
+/** Mention de pied de page : celle saisie, sinon « © <annee> <nom> — Tous droits reserves ». */
+export function mentionCopyright(identite: Pick<ParametresIdentiteView, 'nom' | 'copyright'>): string {
+  return identite.copyright.trim() || `© ${new Date().getFullYear()} ${identite.nom} — Tous droits réservés`;
+}
+
+/**
+ * Identite complete pour les consommateurs internes (e-mails, SMS, USSD,
+ * Swagger). Les derives (nomCourt, copyright) sont toujours renseignes.
+ */
+export async function getIdentitePlateforme(): Promise<IdentitePlateformeView> {
+  const { identite } = await getValeursParametres();
+  return {
+    ...identite,
+    nomCourt: nomSms(identite),
+    copyright: mentionCopyright(identite),
+  };
+}
+
+/** POST /admin-structure/parametres/logo — enregistre l'URL du logo televerse. */
+export async function modifierLogo(userId: string, logoUrl: string): Promise<IdentitePlateformeView> {
+  await modifierParametres(userId, { identite: { logoUrl } });
+  return getIdentitePlateforme();
 }
 
 /** GET /admin-structure/parametres */

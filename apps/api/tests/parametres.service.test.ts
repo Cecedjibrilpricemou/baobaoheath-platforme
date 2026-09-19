@@ -1,9 +1,13 @@
 import {
   PARAMETRES_PAR_DEFAUT,
   fusionnerParametres,
+  getIdentitePlateforme,
   getParametres,
   getValeursParametres,
+  mentionCopyright,
+  modifierLogo,
   modifierParametres,
+  nomSms,
 } from '../src/services/parametres.service';
 
 jest.mock('../src/config/prisma', () => ({
@@ -104,6 +108,63 @@ describe('modifierParametres', () => {
       update: { valeurs: attendu, idModifiePar: 'admin-1' },
     });
     expect(vue).toEqual({ ...attendu, modifieLe, idModifiePar: 'admin-1' });
+  });
+});
+
+// ── Identite de la plateforme ────────────────────────────────────────
+describe('nomSms', () => {
+  it('retire les accents et passe en majuscules (alphabet GSM)', () => {
+    expect(nomSms({ nom: 'KÈNÈYA', nomCourt: '' })).toBe('KENEYA');
+    expect(nomSms({ nom: 'Santé Ñandú', nomCourt: '' })).toBe('SANTE NANDU');
+  });
+
+  it('prefere le nom court saisi par l admin', () => {
+    expect(nomSms({ nom: 'KÈNÈYA', nomCourt: 'KNY' })).toBe('KNY');
+  });
+
+  it('ne renvoie jamais une chaine vide', () => {
+    expect(nomSms({ nom: '🌳', nomCourt: '' })).toBe('PLATEFORME');
+  });
+});
+
+describe('mentionCopyright', () => {
+  it('genere « © annee nom » quand rien n est saisi', () => {
+    const annee = new Date().getFullYear();
+    expect(mentionCopyright({ nom: 'KÈNÈYA', copyright: '' })).toBe(`© ${annee} KÈNÈYA — Tous droits réservés`);
+  });
+
+  it('respecte la mention saisie', () => {
+    expect(mentionCopyright({ nom: 'X', copyright: '© 2030 Ma Plateforme' })).toBe('© 2030 Ma Plateforme');
+  });
+});
+
+describe('getIdentitePlateforme', () => {
+  it('renvoie l identite avec les derives renseignes', async () => {
+    prisma.parametresSysteme.findUnique.mockResolvedValue({
+      id: 'global',
+      valeurs: { identite: { nom: 'Kènèya Santé', emailContact: 'contact@keneya.gn' } },
+    });
+
+    const identite = await getIdentitePlateforme();
+
+    expect(identite.nom).toBe('Kènèya Santé');
+    expect(identite.nomCourt).toBe('KENEYA SANTE');
+    expect(identite.emailContact).toBe('contact@keneya.gn');
+    expect(identite.copyright).toContain('Kènèya Santé');
+    expect(identite.devise).toBe(PARAMETRES_PAR_DEFAUT.identite.devise);
+  });
+});
+
+describe('modifierLogo', () => {
+  it('enregistre l URL du logo dans la section identite et renvoie l identite', async () => {
+    prisma.parametresSysteme.findUnique.mockResolvedValue(null);
+    prisma.parametresSysteme.upsert.mockResolvedValue({ id: 'global', modifieLe: new Date(), idModifiePar: 'admin-1' });
+
+    await modifierLogo('admin-1', 'http://localhost:3000/uploads/logos/logo-1.png');
+
+    const appel = prisma.parametresSysteme.upsert.mock.calls[0][0];
+    expect(appel.update.valeurs.identite.logoUrl).toBe('http://localhost:3000/uploads/logos/logo-1.png');
+    expect(appel.update.valeurs.identite.nom).toBe(PARAMETRES_PAR_DEFAUT.identite.nom);
   });
 });
 

@@ -1,16 +1,16 @@
-import { Express } from 'express';
+import { Express, Request, Response, NextFunction } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { logger } from './logger';
+import { getIdentitePlateforme } from '../services/parametres.service';
 
 export const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'KÈNÈYA API',
+    title: 'API', // complete a la volee avec le nom de la plateforme (Parametres > Identite)
     version: '1.0.0',
-    description: 'API de la plateforme de santé numérique KÈNÈYA — Guinée',
+    description: 'API de la plateforme de parcours de soins connecté',
     contact: {
-      name: 'KÈNÈYA Team',
-      email: 'dev@baobaoheath.com',
+      name: 'Équipe technique',
     },
   },
   servers: [
@@ -358,7 +358,7 @@ export const swaggerDocument = {
         required: ['telephone', 'message'],
         properties: {
           telephone: { type: 'string', example: '+224621000000', description: 'Numéro de téléphone destinataire' },
-          message: { type: 'string', example: 'KENEYA: Votre rendez-vous est demain à 9h00.', description: 'Contenu du SMS (max 160 caractères)' },
+          message: { type: 'string', example: 'PLATEFORME: Votre rendez-vous est demain à 9h00.', description: 'Contenu du SMS (max 160 caractères)' },
         },
       },
       SmsMasseDto: {
@@ -366,7 +366,7 @@ export const swaggerDocument = {
         required: ['prefecture', 'message'],
         properties: {
           prefecture: { type: 'string', example: 'Conakry', description: 'Préfecture cible pour envoi en masse' },
-          message: { type: 'string', example: 'KENEYA: Campagne de vaccination contre la rougeole — rendez-vous ce samedi.', description: 'Message à envoyer à tous les patients de la préfecture' },
+          message: { type: 'string', example: 'PLATEFORME: Campagne de vaccination contre la rougeole — rendez-vous ce samedi.', description: 'Message à envoyer à tous les patients de la préfecture' },
         },
       },
       SmsResult: {
@@ -960,19 +960,62 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Reponse texte CON/END', content: { 'text/plain': { schema: { type: 'string' } } } } },
       },
     },
+    // ── Parametres de la plateforme (feuille de route P0) ──────────────
+    '/api/v1/parametres/publics': {
+      get: {
+        tags: ['Parametres'],
+        summary: 'Identite publique de la plateforme (nom, logo, coordonnees) — sans authentification',
+        responses: {
+          200: {
+            description: 'Identite courante',
+            content: { 'application/json': { schema: { type: 'object', properties: {
+              nom: { type: 'string', example: 'KÈNÈYA' },
+              nomCourt: { type: 'string', example: 'KENEYA', description: 'Version sans accent pour SMS/USSD' },
+              slogan: { type: 'string' }, logoUrl: { type: 'string' },
+              adresse: { type: 'string' }, ville: { type: 'string' }, pays: { type: 'string' },
+              telephone: { type: 'string' }, telephoneSupport: { type: 'string' },
+              emailContact: { type: 'string' }, emailSupport: { type: 'string' }, emailExpediteur: { type: 'string' },
+              siteWeb: { type: 'string' }, facebook: { type: 'string' }, whatsapp: { type: 'string' },
+              copyright: { type: 'string' }, devise: { type: 'string', example: 'GNF' },
+            } } } },
+          },
+        },
+      },
+    },
+    '/api/v1/admin-structure/parametres': {
+      get: { tags: ['Parametres'], summary: 'Parametres complets (SUPER_ADMIN)', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Sections identite, facturation, securite, alertes, sync' } } },
+      put: {
+        tags: ['Parametres'], summary: 'Mise a jour partielle, section par section (SUPER_ADMIN)', security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { identite: { type: 'object' }, facturation: { type: 'object' }, securite: { type: 'object' }, alertes: { type: 'object' }, sync: { type: 'object' } } } } } },
+        responses: { 200: { description: 'Parametres a jour' }, 400: { description: 'Validation' } },
+      },
+    },
+    '/api/v1/admin-structure/parametres/logo': {
+      post: {
+        tags: ['Parametres'], summary: 'Televerser le logo de la plateforme (SUPER_ADMIN)', security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', properties: { logo: { type: 'string', format: 'binary', description: 'PNG, JPEG, WebP ou SVG, 2 Mo max' } } } } } },
+        responses: { 200: { description: 'Identite a jour avec logoUrl' }, 400: { description: 'Image refusee' } },
+      },
+    },
   },
 };
 
 // ─── Montage Swagger UI ───────────────────────────────────
 export function setupSwagger(app: Express): void {
-  app.use(
-    '/api/docs',
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerDocument, {
-      customSiteTitle: 'KÈNÈYA API Docs',
+  // Le nom de la plateforme vient de la base : on l'injecte a chaque
+  // affichage de la documentation plutot qu'au demarrage (il peut changer
+  // depuis l'interface sans redemarrage de l'API).
+  app.use('/api/docs', swaggerUi.serve, async (req: Request, res: Response, next: NextFunction) => {
+    const nom = await getIdentitePlateforme().then((i) => i.nom).catch(() => 'Plateforme');
+    const document = {
+      ...swaggerDocument,
+      info: { ...swaggerDocument.info, title: `${nom} API`, description: `API de la plateforme ${nom} — parcours de soins connecté` },
+    };
+    swaggerUi.setup(document, {
+      customSiteTitle: `${nom} API Docs`,
       customCss: '.swagger-ui .topbar { background-color: #085041; }',
-    })
-  );
+    })(req, res, next);
+  });
 
   logger.debug(
     `Documentation API : http://localhost:${process.env.PORT ?? 3000}/api/docs`

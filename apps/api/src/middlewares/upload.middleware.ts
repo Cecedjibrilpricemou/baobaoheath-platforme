@@ -23,3 +23,25 @@ export const uploadAvatar = multer({
 
 export const AVATARS_PUBLIC_PATH = '/uploads/avatars';
 export { AVATARS_DIR };
+
+// Logo de la plateforme (page Parametres > Identite). Meme principe : en
+// memoire, redimensionne par sharp, jamais l'original sur disque.
+const LOGOS_DIR = path.join(process.cwd(), 'uploads', 'logos');
+fs.mkdirSync(LOGOS_DIR, { recursive: true });
+
+export const TYPES_LOGO_ACCEPTES = [...TYPES_IMAGE_ACCEPTES, 'image/svg+xml'];
+
+export const uploadLogo = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (!TYPES_LOGO_ACCEPTES.includes(file.mimetype)) {
+      cb(new Error('Format non supporté — utilisez une image PNG, JPEG, WebP ou SVG.'));
+      return;
+    }
+    cb(null, true);
+  },
+}).single('logo');
+
+export const LOGOS_PUBLIC_PATH = '/uploads/logos';
+export { LOGOS_DIR };

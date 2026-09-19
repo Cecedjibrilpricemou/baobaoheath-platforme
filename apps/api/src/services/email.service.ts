@@ -1,6 +1,7 @@
 // src/services/email.service.ts
 import nodemailer from 'nodemailer';
 import { AppError } from '../utils/app-error';
+import { getIdentitePlateforme } from './parametres.service';
 
 // ── Transporter Gmail ─────────────────────────────────────────────
 type EmailConfig = {
@@ -53,6 +54,8 @@ export async function envoyerOtpConnexion(dto: {
     expireDansMinutes: number;
 }): Promise<void> {
     const { user } = getEmailConfig();
+    const identite = await getIdentitePlateforme();
+    const nom = identite.nom;
 
     const html = `
 <!DOCTYPE html>
@@ -65,7 +68,7 @@ export async function envoyerOtpConnexion(dto: {
         <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
           <tr>
             <td style="background:#1B5E35;color:#ffffff;padding:24px;text-align:center;">
-              <h1 style="margin:0;font-size:22px;">KÈNÈYA</h1>
+              <h1 style="margin:0;font-size:22px;">${nom}</h1>
               <p style="margin:6px 0 0;font-size:13px;color:#d1fae5;">Verification de connexion</p>
             </td>
           </tr>
@@ -73,7 +76,7 @@ export async function envoyerOtpConnexion(dto: {
             <td style="padding:28px;">
               <p style="font-size:15px;color:#334155;margin:0 0 16px;">Bonjour ${dto.prenomNom},</p>
               <p style="font-size:15px;color:#334155;line-height:1.6;margin:0 0 20px;">
-                Utilisez le code ci-dessous pour finaliser votre connexion a KÈNÈYA.
+                Utilisez le code ci-dessous pour finaliser votre connexion a ${nom}.
               </p>
               <div style="text-align:center;margin:24px 0;">
                 <span style="display:inline-block;background:#f0fdf4;border:1px solid #86efac;color:#14532d;font-size:34px;font-weight:800;letter-spacing:8px;padding:16px 24px;border-radius:8px;font-family:Consolas,monospace;">
@@ -95,9 +98,9 @@ export async function envoyerOtpConnexion(dto: {
 
     try {
         await createGmailTransporter().sendMail({
-            from: `"KÈNÈYA" <${user}>`,
+            from: `"${identite.emailExpediteur.trim() || nom}" <${user}>`,
             to: dto.destinataire,
-            subject: `Code de verification KÈNÈYA: ${dto.code}`,
+            subject: `Code de verification ${nom}: ${dto.code}`,
             html
         });
     } catch (error) {
@@ -117,6 +120,8 @@ export async function envoyerEmailResetMotDePasse(dto: {
     expireDansMinutes: number;
 }): Promise<void> {
     const { user } = getEmailConfig();
+    const identite = await getIdentitePlateforme();
+    const nom = identite.nom;
 
     const html = `
 <!DOCTYPE html>
@@ -129,7 +134,7 @@ export async function envoyerEmailResetMotDePasse(dto: {
         <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
           <tr>
             <td style="background:linear-gradient(135deg,#0B2618 0%,#1B5E35 100%);color:#ffffff;padding:28px;text-align:center;">
-              <h1 style="margin:0;font-size:22px;">KÈNÈYA</h1>
+              <h1 style="margin:0;font-size:22px;">${nom}</h1>
               <p style="margin:6px 0 0;font-size:13px;color:#d1fae5;">Réinitialisation de mot de passe</p>
             </td>
           </tr>
@@ -137,7 +142,7 @@ export async function envoyerEmailResetMotDePasse(dto: {
             <td style="padding:32px;">
               <p style="font-size:15px;color:#334155;margin:0 0 16px;">Bonjour ${dto.prenomNom},</p>
               <p style="font-size:15px;color:#334155;line-height:1.6;margin:0 0 24px;">
-                Vous avez demandé la réinitialisation de votre mot de passe KÈNÈYA.
+                Vous avez demandé la réinitialisation de votre mot de passe ${nom}.
                 Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
               </p>
               <div style="text-align:center;margin:28px 0;">
@@ -158,7 +163,7 @@ export async function envoyerEmailResetMotDePasse(dto: {
           </tr>
           <tr>
             <td style="background:#f8fafc;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-              <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 KÈNÈYA · Guinée 🇬🇳</p>
+              <p style="margin:0;color:#94a3b8;font-size:12px;">${identite.copyright}</p>
             </td>
           </tr>
         </table>
@@ -171,9 +176,9 @@ export async function envoyerEmailResetMotDePasse(dto: {
 
     try {
         await createGmailTransporter().sendMail({
-            from: `"KÈNÈYA" <${user}>`,
+            from: `"${identite.emailExpediteur.trim() || nom}" <${user}>`,
             to: dto.destinataire,
-            subject: 'Réinitialisation de votre mot de passe KÈNÈYA',
+            subject: 'Réinitialisation de votre mot de passe ${nom}',
             html
         });
     } catch (error) {
@@ -191,13 +196,15 @@ export async function envoyerEmailAdminStructure(dto: {
     telephone: string;
     motDePasseTemporaire: string;
 }): Promise<void> {
+    const identite = await getIdentitePlateforme();
+    const nom = identite.nom;
     const html = `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vos identifiants KÈNÈYA</title>
+  <title>Vos identifiants ${nom}</title>
 </head>
 <body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
@@ -208,8 +215,8 @@ export async function envoyerEmailAdminStructure(dto: {
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#0B2618 0%,#1B5E35 100%);padding:40px 40px 30px;text-align:center;">
-              <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;letter-spacing:-0.5px;">KÈNÈYA</h1>
-              <p style="color:rgba(255,255,255,0.7);margin:6px 0 0;font-size:13px;">La santé numérique au service de la Guinée 🇬🇳</p>
+              <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;letter-spacing:-0.5px;">${nom}</h1>
+              <p style="color:rgba(255,255,255,0.7);margin:6px 0 0;font-size:13px;">${identite.slogan}</p>
             </td>
           </tr>
 
@@ -218,7 +225,7 @@ export async function envoyerEmailAdminStructure(dto: {
             <td style="padding:40px;">
               <h2 style="color:#1B5E35;font-size:20px;margin:0 0 16px;font-weight:700;">Bienvenue, ${dto.prenomNom} !</h2>
               <p style="color:#444;font-size:15px;line-height:1.6;margin:0 0 20px;">
-                Votre compte <strong>Administrateur de structure</strong> a été créé sur la plateforme KÈNÈYA.
+                Votre compte <strong>Administrateur de structure</strong> a été créé sur la plateforme ${nom}.
                 Vous êtes désormais responsable de la structure suivante :
               </p>
 
@@ -258,7 +265,7 @@ export async function envoyerEmailAdminStructure(dto: {
               <div style="text-align:center;margin:0 0 32px;">
                 <a href="http://localhost:4200/auth/login"
                    style="background:#1B5E35;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:700;display:inline-block;">
-                  Se connecter à KÈNÈYA
+                  Se connecter à ${nom}
                 </a>
               </div>
 
@@ -273,7 +280,7 @@ export async function envoyerEmailAdminStructure(dto: {
           <tr>
             <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;color:#94a3b8;font-size:12px;">
-                © 2026 KÈNÈYA · Guinée 🇬🇳 · Tous droits réservés
+                ${identite.copyright}
               </p>
             </td>
           </tr>
@@ -290,9 +297,9 @@ export async function envoyerEmailAdminStructure(dto: {
 
     try {
         await createGmailTransporter().sendMail({
-            from: `"KÈNÈYA" <${user}>`,
+            from: `"${identite.emailExpediteur.trim() || nom}" <${user}>`,
             to: dto.destinataire,
-            subject: `Vos identifiants KÈNÈYA - ${dto.nomStructure}`,
+            subject: `Vos identifiants ${nom} - ${dto.nomStructure}`,
             html
         });
     } catch (error) {
@@ -313,6 +320,8 @@ export async function envoyerEmailAgent(dto: {
     telephone: string;
     motDePasseTemporaire: string;
 }): Promise<void> {
+    const identite = await getIdentitePlateforme();
+    const nom = identite.nom;
     const roleLabel: Record<string, string> = {
         'ASC': 'Agent de Santé Communautaire',
         'ASC_SUPERVISOR': 'Superviseur ASC',
@@ -331,15 +340,15 @@ export async function envoyerEmailAgent(dto: {
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
           <tr>
             <td style="background:linear-gradient(135deg,#0B2618 0%,#1B5E35 100%);padding:40px 40px 30px;text-align:center;">
-              <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;">KÈNÈYA</h1>
-              <p style="color:rgba(255,255,255,0.7);margin:6px 0 0;font-size:13px;">La santé numérique au service de la Guinée 🇬🇳</p>
+              <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;">${nom}</h1>
+              <p style="color:rgba(255,255,255,0.7);margin:6px 0 0;font-size:13px;">${identite.slogan}</p>
             </td>
           </tr>
           <tr>
             <td style="padding:40px;">
               <h2 style="color:#1B5E35;font-size:20px;margin:0 0 16px;font-weight:700;">Bienvenue, ${dto.prenomNom} !</h2>
               <p style="color:#444;font-size:15px;line-height:1.6;margin:0 0 20px;">
-                Votre compte <strong>${roleLabel[dto.role] ?? dto.role}</strong> a été créé sur KÈNÈYA
+                Votre compte <strong>${roleLabel[dto.role] ?? dto.role}</strong> a été créé sur ${nom}
                 pour la structure <strong>${dto.nomStructure}</strong>.
               </p>
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin:0 0 24px;">
@@ -368,7 +377,7 @@ export async function envoyerEmailAgent(dto: {
           </tr>
           <tr>
             <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-              <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 KÈNÈYA · Guinée 🇬🇳</p>
+              <p style="margin:0;color:#94a3b8;font-size:12px;">${identite.copyright}</p>
             </td>
           </tr>
         </table>
@@ -383,9 +392,9 @@ export async function envoyerEmailAgent(dto: {
 
     try {
         await createGmailTransporter().sendMail({
-            from: `"KÈNÈYA" <${user}>`,
+            from: `"${identite.emailExpediteur.trim() || nom}" <${user}>`,
             to: dto.destinataire,
-            subject: `Vos identifiants KÈNÈYA - ${dto.nomStructure}`,
+            subject: `Vos identifiants ${nom} - ${dto.nomStructure}`,
             html
         });
     } catch (error) {

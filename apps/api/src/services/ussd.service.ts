@@ -1,6 +1,6 @@
 import { UssdSessionStatus } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
-import { getValeursParametres } from './parametres.service';
+import { getIdentitePlateforme, getValeursParametres } from './parametres.service';
 
 interface UssdRequest {
   sessionId: string;
@@ -33,6 +33,7 @@ export async function handleUssdRequest(input: UssdRequest) {
   });
 
   const { sync } = await getValeursParametres();
+  const { nomCourt } = await getIdentitePlateforme();
   const expireLe = new Date(Date.now() + sync.ussdTimeoutSecondes * 1000);
 
   await prisma.ussdSession.upsert({
@@ -54,12 +55,12 @@ export async function handleUssdRequest(input: UssdRequest) {
 
   if (!utilisateur?.patientProfile) {
     await finish(input.sessionId);
-    return end('KENEYA: numero non associe a un patient. Contactez votre ASC.');
+    return end(`${nomCourt}: numero non associe a un patient. Contactez votre ASC.`);
   }
 
   if (!choice) {
     return con([
-      'KENEYA',
+      nomCourt,
       '1. Mon profil',
       '2. Mes rendez-vous',
       '3. Mes vaccins',
@@ -70,7 +71,7 @@ export async function handleUssdRequest(input: UssdRequest) {
 
   if (choice === '0') {
     await finish(input.sessionId);
-    return end('Merci d avoir utilise KENEYA.');
+    return end(`Merci d avoir utilise ${nomCourt}.`);
   }
 
   if (choice === '1') {

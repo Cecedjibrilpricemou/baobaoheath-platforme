@@ -26,7 +26,9 @@ import privacyRoutes from './routes/privacy.routes';
 import ussdRoutes from './routes/ussd.routes';
 import statsRoutes from './routes/stats.routes';
 import uploadRoutes from './routes/upload.routes';
+import parametresRoutes from './routes/parametres.routes';
 import { setupSwagger } from './config/swagger';
+import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
 import { prisma } from './config/prisma';
 import { initSentry, captureError } from './config/sentry';
@@ -130,9 +132,12 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 
   const allOk = Object.values(checks).every((s) => s === 'ok');
+  // Le nom vient des parametres ; si la base est injoignable on ne bloque
+  // pas la reponse de sante pour autant.
+  const nom = allOk ? await getIdentitePlateforme().then((i) => i.nom).catch(() => 'API') : 'API';
   res.status(allOk ? 200 : 503).json({
     success: allOk,
-    message: allOk ? 'KÈNÈYA API operationnelle' : 'Degraded',
+    message: allOk ? `${nom} API operationnelle` : 'Degraded',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: env.NODE_ENV,
@@ -179,6 +184,7 @@ app.use('/api/v1/privacy', privacyRoutes);
 app.use('/api/v1/ussd', ussdRoutes);
 app.use('/api/v1/stats', statsRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
+app.use('/api/v1/parametres', parametresRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {
@@ -193,7 +199,7 @@ initSocketServer(httpServer);
 
 httpServer.listen(env.PORT, () => {
   logger.info(`Documentation API : http://localhost:${env.PORT}/api/docs`);
-  logger.info(`KÈNÈYA API : http://localhost:${env.PORT}`);
+  logger.info(`API : http://localhost:${env.PORT}`);
   logger.info(`Environnement   : ${env.NODE_ENV}`);
   logger.info(`CORS origins    : ${env.ALLOWED_ORIGINS.join(', ')}`);
   logger.info(`WebSocket       : ws://localhost:${env.PORT}`);
