@@ -1,10 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-
-/** Adresse affichee dans le bloc contact ; le formulaire y envoie aussi. */
-export const CONTACT_EMAIL = 'contact@baobaohealth.org';
+import { PlateformeService } from '../../../../shared/services/plateforme.service';
 
 @Component({
   selector: 'app-contact',
@@ -14,7 +12,7 @@ export const CONTACT_EMAIL = 'contact@baobaohealth.org';
   styleUrl: './contact.component.scss'
 })
 export class ContactComponent {
-  readonly contactEmail = CONTACT_EMAIL;
+  readonly plateforme = inject(PlateformeService);
 
   formulaire = { nom: '', email: '', sujet: '', message: '' };
 
@@ -23,11 +21,11 @@ export class ContactComponent {
   envoyer() {
     const { nom, email, sujet, message } = this.formulaire;
     const corps = [message.trim(), '', '—', nom.trim(), email.trim()].join('\n');
-    const url = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(sujet.trim() || 'Contact KÈNÈYA')}&body=${encodeURIComponent(corps)}`;
+    const url = `mailto:${this.plateforme.emailContact()}?subject=${encodeURIComponent(sujet.trim() || `Contact ${this.plateforme.nom()}`)}&body=${encodeURIComponent(corps)}`;
     window.location.href = url;
   }
 
   get peutEnvoyer(): boolean {
-    return this.formulaire.message.trim().length > 0;
+    return this.formulaire.message.trim().length > 0 && this.plateforme.emailContact().length > 0;
   }
 }

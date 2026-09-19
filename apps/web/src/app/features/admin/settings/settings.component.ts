@@ -10,8 +10,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import type {
+  IdentitePlateformeView,
   ParametresAlertesView,
   ParametresFacturationView,
+  ParametresIdentiteView,
   ParametresSecuriteView,
   ParametresSyncView,
   ParametresSystemeValeurs,
@@ -21,6 +23,7 @@ import type {
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { AdminService } from '../../../core/services/admin.service';
+import { PlateformeService } from '../../../shared/services/plateforme.service';
 
 type Onglet = keyof ParametresSystemeValeurs;
 
@@ -38,16 +41,19 @@ export class SettingsComponent implements OnInit {
   private i18n = inject(I18nService);
   private adminService = inject(AdminService);
   private toastr = inject(ToastrService);
+  private plateforme = inject(PlateformeService);
 
   // Navigation
-  activeTab = signal<Onglet>('facturation');
+  activeTab = signal<Onglet>('identite');
 
   isLoading = signal(true);
   isSaving  = signal(false);
+  isUploadingLogo = signal(false);
   modifieLe = signal<string | Date | null>(null);
 
   get tabs(): { id: Onglet; label: string; icon: string }[] {
     return [
+      { id: 'identite',    label: this.i18n.t('ADMIN.SETTINGS.TAB_IDENTITY'), icon: 'pi pi-id-card' },
       { id: 'facturation', label: this.i18n.t('ADMIN.SETTINGS.TAB_BILLING'),  icon: 'pi pi-wallet' },
       { id: 'securite',    label: this.i18n.t('ADMIN.SETTINGS.TAB_SECURITY'), icon: 'pi pi-lock' },
       { id: 'alertes',     label: this.i18n.t('ADMIN.SETTINGS.TAB_ALERTS'),   icon: 'pi pi-bolt' },
@@ -57,6 +63,12 @@ export class SettingsComponent implements OnInit {
 
   // Modeles lies aux formulaires (ngModel). Remplis par GET /admin-structure/parametres,
   // renvoyes section par section par PUT — chaque onglet a son propre bouton.
+  identite: ParametresIdentiteView = {
+    nom: '', nomCourt: '', slogan: '', logoUrl: '', adresse: '', ville: '', pays: '',
+    telephone: '', telephoneSupport: '', emailContact: '', emailSupport: '', emailExpediteur: '',
+    siteWeb: '', facebook: '', whatsapp: '', copyright: '', devise: 'GNF'
+  };
+
   facturation: ParametresFacturationView = {
     paiementEspeces: true,
     paiementOrangeMoney: true,
@@ -122,8 +134,45 @@ export class SettingsComponent implements OnInit {
     });
   }
 
+  /** Televerse le logo ; l'API renvoie l'identite a jour, appliquee aussitot a toute l'interface. */
+  changerLogo(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const fichier = input.files?.[0];
+    input.value = '';
+    if (!fichier || this.isUploadingLogo()) return;
+
+    this.isUploadingLogo.set(true);
+    this.adminService.uploadLogo(fichier).subscribe({
+      next: res => {
+        if (res.data) this.appliquerIdentite(res.data);
+        this.isUploadingLogo.set(false);
+        this.toastr.success(this.i18n.t('ADMIN.SETTINGS.IDENTITY_LOGO_SAVED'), this.i18n.t('COMMON.SUCCESS'));
+      },
+      error: err => {
+        this.isUploadingLogo.set(false);
+        this.toastr.error(err?.error?.error ?? this.i18n.t('ADMIN.SETTINGS.ERR_SAVE'), this.i18n.t('COMMON.ERROR_TITLE'));
+      }
+    });
+  }
+
+  /** Retire le logo : le nom seul est affiche. */
+  retirerLogo() {
+    this.identite.logoUrl = '';
+    this.enregistrer('identite');
+  }
+
+  private appliquerIdentite(identite: IdentitePlateformeView) {
+    // La reponse contient les derives (copyright « © annee nom », nom court) :
+    // seul le logo entre dans le formulaire, sinon un champ laisse vide par
+    // l'admin serait fige a la valeur calculee du jour.
+    this.identite = { ...this.identite, logoUrl: identite.logoUrl };
+    this.plateforme.appliquer(identite);
+  }
+
   private appliquer(vue: ParametresSystemeView) {
     // Copies : ngModel mute les objets, la reponse HTTP ne doit pas etre partagee.
+    this.identite    = { ...vue.identite };
+    this.plateforme.appliquer(vue.identite);
     this.facturation = { ...vue.facturation };
     this.securite    = { ...vue.securite };
     this.alertes     = { ...vue.alertes };

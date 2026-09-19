@@ -5,7 +5,7 @@
       <h2 class="section-title">
         {{ 'LANDING.CONTACT_TITLE_A' | translate }} <span class="section-title__accent">{{ 'LANDING.CONTACT_TITLE_B' | translate }}</span>
       </h2>
-      <p class="section-sub">{{ 'LANDING.CONTACT_SUB' | translate }}</p>
+      <p class="section-sub">{{ 'LANDING.CONTACT_SUB' | translate: { nom: plateforme.nom() } }}</p>
     </div>
 
     <div class="contact-container">
@@ -14,21 +14,21 @@
           <span class="info-card__icon info-card__icon--green" aria-hidden="true"><i class="pi pi-map-marker"></i></span>
           <div>
             <h3>{{ 'LANDING.CONTACT_ADDRESS_LABEL' | translate }}</h3>
-            <p>{{ 'LANDING.CONTACT_ADDRESS_VALUE' | translate }}</p>
+            <p>{{ plateforme.adresseComplete() || '—' }}</p>
           </div>
         </div>
         <div class="info-card">
           <span class="info-card__icon info-card__icon--purple" aria-hidden="true"><i class="pi pi-envelope"></i></span>
           <div>
             <h3>{{ 'LANDING.CONTACT_EMAIL_LABEL' | translate }}</h3>
-            <p><a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a></p>
+            <p>@if (plateforme.emailContact()) { <a [href]="'mailto:' + plateforme.emailContact()">{{ plateforme.emailContact() }}</a> } @else { — }</p>
           </div>
         </div>
         <div class="info-card">
           <span class="info-card__icon info-card__icon--orange" aria-hidden="true"><i class="pi pi-phone"></i></span>
           <div>
             <h3>{{ 'LANDING.CONTACT_PHONE_LABEL' | translate }}</h3>
-            <p>+224 620 00 00 00</p>
+            <p>{{ plateforme.telephone() || '—' }}</p>
           </div>
         </div>
       </div>

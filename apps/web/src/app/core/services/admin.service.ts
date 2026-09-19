@@ -5,6 +5,7 @@ import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
 import type {
   CreationStructureView,
+  IdentitePlateformeView,
   ParametresSystemeView,
   StructureAdminView,
   StructurePubliqueView,
@@ -65,6 +66,13 @@ export class AdminService {
 
   updateParametres(payload: UpdateParametresSystemeDto): Observable<ApiResponse<ParametresSystemeView>> {
     return this.api.put<ApiResponse<ParametresSystemeView>>('/admin-structure/parametres', payload);
+  }
+
+  /** Televerse le logo de la plateforme (Parametres > Identite) ; renvoie l'identite a jour. */
+  uploadLogo(fichier: File): Observable<ApiResponse<IdentitePlateformeView>> {
+    const formData = new FormData();
+    formData.append('logo', fichier);
+    return this.api.post<ApiResponse<IdentitePlateformeView>>('/admin-structure/parametres/logo', formData);
   }
 
   // Analytics

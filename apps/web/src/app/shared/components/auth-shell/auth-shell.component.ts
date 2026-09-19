@@ -7,11 +7,12 @@ import { RouterLink } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { BrandComponent } from '../brand/brand.component';
 
 @Component({
   selector: 'app-auth-shell',
   standalone: true,
-  imports: [RouterLink, TranslatePipe],
+  imports: [BrandComponent, RouterLink, TranslatePipe],
   templateUrl: './auth-shell.component.html',
   // Styles globaux : styles/_auth.scss (les pages y font aussi reference).
 })

@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { PlateformeService } from '../../../shared/services/plateforme.service';
 import type {
   AlerteEpidemiqueView,
   CouvertureVaccinView,
@@ -47,6 +48,7 @@ interface StatsStructures {
 export class AnalyticsComponent implements OnInit {
   private adminService = inject(AdminService);
   private i18n = inject(I18nService);
+  readonly plateforme = inject(PlateformeService);
 
   dashboard = signal<DashboardAnalyticsView | null>(null);
   heatmap = signal<HeatmapPointView[]>([]);

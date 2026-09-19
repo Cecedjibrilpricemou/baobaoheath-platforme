@@ -37,6 +37,158 @@
         </div>
       } @else {
 
+      <!-- ONGLET : IDENTITE DE LA PLATEFORME -->
+      @if (activeTab() === 'identite') {
+        <div class="settings-panel">
+          <h2>{{ 'ADMIN.SETTINGS.IDENTITY_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.IDENTITY_DESC' | translate }}</p>
+
+          <!-- Logo -->
+          <div class="setting-row identity-logo">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'ADMIN.SETTINGS.IDENTITY_LOGO' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.IDENTITY_LOGO_HINT' | translate }}</span>
+            </div>
+            <div class="identity-logo__actions">
+              @if (identite.logoUrl) {
+                <img class="identity-logo__preview" [src]="identite.logoUrl" [alt]="identite.nom" />
+              } @else {
+                <span class="identity-logo__none">{{ 'ADMIN.SETTINGS.IDENTITY_LOGO_NONE' | translate }}</span>
+              }
+              <input #logoInput type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden (change)="changerLogo($event)" />
+              <button matButton="outlined" type="button" [disabled]="isUploadingLogo()" (click)="logoInput.click()">
+                @if (isUploadingLogo()) { <mat-spinner diameter="16"></mat-spinner> } @else { <i class="pi pi-upload" aria-hidden="true"></i> }
+                {{ 'ADMIN.SETTINGS.IDENTITY_LOGO_UPLOAD' | translate }}
+              </button>
+              @if (identite.logoUrl) {
+                <button matButton type="button" [disabled]="isSaving()" (click)="retirerLogo()">
+                  <i class="pi pi-times" aria-hidden="true"></i> {{ 'ADMIN.SETTINGS.IDENTITY_LOGO_REMOVE' | translate }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <h2>{{ 'ADMIN.SETTINGS.IDENTITY_SECTION_GENERAL' | translate }}</h2>
+          <div class="identity-grid">
+            <div class="field">
+              <label for="id-nom">{{ 'ADMIN.SETTINGS.IDENTITY_NOM' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-nom" maxlength="60" required [(ngModel)]="identite.nom" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-nom-court">{{ 'ADMIN.SETTINGS.IDENTITY_NOM_COURT' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-nom-court" maxlength="20" [(ngModel)]="identite.nomCourt" />
+              </mat-form-field>
+              <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.IDENTITY_NOM_COURT_HINT' | translate }}</small>
+            </div>
+            <div class="field identity-grid__full">
+              <label for="id-slogan">{{ 'ADMIN.SETTINGS.IDENTITY_SLOGAN' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-slogan" maxlength="120" [(ngModel)]="identite.slogan" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <h2>{{ 'ADMIN.SETTINGS.IDENTITY_SECTION_CONTACT' | translate }}</h2>
+          <div class="identity-grid">
+            <div class="field identity-grid__full">
+              <label for="id-adresse">{{ 'ADMIN.SETTINGS.IDENTITY_ADRESSE' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-adresse" maxlength="200" [(ngModel)]="identite.adresse" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-ville">{{ 'ADMIN.SETTINGS.IDENTITY_VILLE' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-ville" maxlength="120" [(ngModel)]="identite.ville" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-pays">{{ 'ADMIN.SETTINGS.IDENTITY_PAYS' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-pays" maxlength="120" [(ngModel)]="identite.pays" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-tel">{{ 'ADMIN.SETTINGS.IDENTITY_TELEPHONE' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-tel" type="tel" maxlength="30" [(ngModel)]="identite.telephone" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-tel-support">{{ 'ADMIN.SETTINGS.IDENTITY_TELEPHONE_SUPPORT' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-tel-support" type="tel" maxlength="30" [(ngModel)]="identite.telephoneSupport" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-email">{{ 'ADMIN.SETTINGS.IDENTITY_EMAIL_CONTACT' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-email" type="email" maxlength="160" [(ngModel)]="identite.emailContact" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-email-support">{{ 'ADMIN.SETTINGS.IDENTITY_EMAIL_SUPPORT' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-email-support" type="email" maxlength="160" [(ngModel)]="identite.emailSupport" />
+              </mat-form-field>
+            </div>
+            <div class="field identity-grid__full">
+              <label for="id-expediteur">{{ 'ADMIN.SETTINGS.IDENTITY_EMAIL_EXPEDITEUR' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-expediteur" maxlength="60" [(ngModel)]="identite.emailExpediteur" />
+              </mat-form-field>
+              <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.IDENTITY_EMAIL_EXPEDITEUR_HINT' | translate }}</small>
+            </div>
+            <div class="field">
+              <label for="id-site">{{ 'ADMIN.SETTINGS.IDENTITY_SITE_WEB' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-site" type="url" maxlength="300" placeholder="https://" [(ngModel)]="identite.siteWeb" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-facebook">{{ 'ADMIN.SETTINGS.IDENTITY_FACEBOOK' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-facebook" type="url" maxlength="300" placeholder="https://" [(ngModel)]="identite.facebook" />
+              </mat-form-field>
+            </div>
+            <div class="field">
+              <label for="id-whatsapp">{{ 'ADMIN.SETTINGS.IDENTITY_WHATSAPP' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-whatsapp" type="tel" maxlength="30" [(ngModel)]="identite.whatsapp" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <h2>{{ 'ADMIN.SETTINGS.IDENTITY_SECTION_LEGAL' | translate }}</h2>
+          <div class="identity-grid">
+            <div class="field identity-grid__full">
+              <label for="id-copyright">{{ 'ADMIN.SETTINGS.IDENTITY_COPYRIGHT' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-copyright" maxlength="120" [(ngModel)]="identite.copyright" />
+              </mat-form-field>
+              <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.IDENTITY_COPYRIGHT_HINT' | translate }}</small>
+            </div>
+            <div class="field">
+              <label for="id-devise">{{ 'ADMIN.SETTINGS.IDENTITY_DEVISE' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="id-devise" maxlength="3" style="text-transform: uppercase" [(ngModel)]="identite.devise" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'identite' }"></ng-container>
+        </div>
+      }
+
       <!-- ONGLET : FACTURATION -->
       @if (activeTab() === 'facturation') {
         <div class="settings-panel">

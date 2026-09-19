@@ -8,6 +8,14 @@ import { catchError, of, switchMap } from 'rxjs';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
+import { PlateformeService } from './shared/services/plateforme.service';
+
+// Nom, logo et coordonnees de la plateforme : lus avant le premier rendu pour
+// que la marque n'apparaisse jamais avec sa valeur de repli.
+function initializePlateforme() {
+  const plateforme = inject(PlateformeService);
+  return () => plateforme.charger();
+}
 
 function initializeAuth() {
   const auth = inject(AuthService);
@@ -24,6 +32,7 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes, withViewTransitions()),
     provideHttpClient(withInterceptors([authInterceptor])),
+    { provide: APP_INITIALIZER, useFactory: initializePlateforme, multi: true },
     { provide: APP_INITIALIZER, useFactory: initializeAuth, multi: true },
     provideAnimationsAsync(),
     provideToastr({

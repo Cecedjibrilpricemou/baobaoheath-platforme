@@ -20,11 +20,12 @@ import { AvatarComponent } from '../avatar/avatar.component';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 import { TopbarCrumbComponent } from '../topbar-crumb/topbar-crumb.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
+import { BrandComponent } from '../brand/brand.component';
 
 @Component({
   selector: 'app-admin-structure-layout',
   standalone: true,
-  imports: [
+  imports: [BrandComponent, 
     CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe,
     ProfilModalComponent, AvatarComponent, NotificationBellComponent, TopbarCrumbComponent,
     MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule,

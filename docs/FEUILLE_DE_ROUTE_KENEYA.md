@@ -2,7 +2,7 @@
 
 > Référence : *Cahier des charges Kènèya v2.0* du 13 septembre 2026 (exigences EF-01…EF-13, ENF-01…06, priorités M/S/C, lots V1→V4).
 > Ce fichier est le plan de travail vivant : on coche au fur et à mesure, on renumérote jamais.
-> Dernière mise à jour : 2026-09-18.
+> Dernière mise à jour : 2026-09-19.
 
 ## Objectif produit
 
@@ -38,12 +38,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 
 ## Plan par ordre de priorité
 
-### P0 — Identité de la plateforme (paramètres) · S
-- [ ] Section `identite` dans `ParametresSysteme` : nom, slogan, logo (upload → URL), adresse, e-mails (contact, support, expéditeur), téléphones, site, réseaux sociaux, copyright, pays, devise.
-- [ ] `GET /parametres/publics` sans authentification (landing, pages d'auth, footer, titre d'onglet).
-- [ ] E-mails, SMS, USSD, Swagger, `/health` lisent la table (cache mémoire invalidé à la sauvegarde).
-- [ ] Plus aucune valeur de marque en dur dans le code (API et web).
-- [ ] Écran super-admin : section « Identité » avec téléversement du logo.
+### P0 — Identité de la plateforme (paramètres) · S · ✅ livré le 2026-09-19
+- [x] Section `identite` dans `ParametresSysteme` : nom, slogan, logo (upload → URL), adresse, e-mails (contact, support, expéditeur), téléphones, site, réseaux sociaux, copyright, pays, devise.
+- [x] `GET /parametres/publics` sans authentification (landing, pages d'auth, footer, titre d'onglet).
+- [x] E-mails, SMS, USSD, Swagger, `/health` lisent la table (cache mémoire invalidé à la sauvegarde).
+- [x] Plus aucune valeur de marque en dur dans le code (API et web).
+- [x] Écran super-admin : section « Identité » avec téléversement du logo.
 
 ### P1 — Épisode de soins + demande d'analyse · M · EF-03
 - [ ] `EpisodeSoins` (motif, service, professionnel responsable, statut, dates), rattaché au patient.
@@ -155,3 +155,4 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 | Date | Bloc | Commit / note |
 |---|---|---|
 | 2026-09-18 | — | Renommage KÈNÈYA, landing et pages d'auth refaites, plan validé |
+| 2026-09-19 | P0 | API `c5c1772` + web : identité de la plateforme administrable (nom, logo, coordonnées), `<app-brand>`, `PlateformeService` |

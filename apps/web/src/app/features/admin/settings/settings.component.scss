@@ -245,3 +245,28 @@
 .text-secondary { color: var(--bb-text-secondary); }
 .text-red { color: #EF4444; }
 .block { display: block; }
+
+// ── Onglet Identite ─────────────────────────────────────────────────
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  @media (max-width: 720px) { grid-template-columns: 1fr; }
+
+  &__full { grid-column: 1 / -1; }
+  .field { margin-bottom: 16px; }
+}
+
+.identity-logo {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  &__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  &__preview {
+    height: 56px; max-width: 200px; object-fit: contain;
+    padding: 8px 12px; border-radius: var(--bb-radius);
+    background: var(--bb-surface-0); border: 1px solid var(--bb-border);
+  }
+  &__none { font-size: 13px; color: var(--bb-text-muted); }
+}

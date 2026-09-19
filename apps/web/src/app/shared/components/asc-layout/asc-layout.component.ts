@@ -21,6 +21,7 @@ import { AvatarComponent } from '../avatar/avatar.component';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
 import { OfflineQueueService } from '../../../core/services/offline-queue.service';
+import { BrandComponent } from '../brand/brand.component';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/asc/consultations':   'ASC.NAV_CONSULTATIONS',
@@ -33,7 +34,7 @@ const ROUTE_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-asc-layout',
   standalone: true,
-  imports: [
+  imports: [BrandComponent, 
     CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe,
     ProfilModalComponent, AvatarComponent, NotificationBellComponent,
     MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule,
