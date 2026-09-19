@@ -480,9 +480,25 @@
       "ETAPE_ORDONNANCE": "Prescription",
       "ETAPE_PHARMACIE": "Pharmacy",
       "ETAPE_LIVRAISON": "Delivery",
-      "BIENTOT": "soon"
+      "BIENTOT": "soon",
+      "CONCLUSION": "Biologist’s conclusion",
+      "RESULTATS_BIENTOT": "Results validated, release in progress.",
+      "CR": "Report",
+      "COURBES": "My charts"
     },
-    "NAV_PARCOURS": "My care path"
+    "NAV_PARCOURS": "My care path",
+    "NAV_RESULTATS": "My results",
+    "RESULTATS": {
+      "TITLE": "My results",
+      "SUBTITLE": "How your test values evolve over time, with reference ranges.",
+      "EMPTY": "No result to track",
+      "EMPTY_SUB": "Your validated tests will show up here once released.",
+      "REFERENCE": "Reference",
+      "COL_DATE": "Date",
+      "COL_VALEUR": "Value",
+      "COL_LECTURE": "Reading",
+      "COL_DEMANDE": "Request"
+    }
   },
   "ASC": {
     "ROLE": "Health Worker",
@@ -1193,7 +1209,9 @@
       "SUCCESS_CREATED": "Agent created successfully!",
       "ERR_CREATE": "Error while creating.",
       "SUCCESS_DEACTIVATED": "Agent deactivated.",
-      "ROLE_AGENT_ACCUEIL": "Front desk agent"
+      "ROLE_AGENT_ACCUEIL": "Front desk agent",
+      "ROLE_TECHNICIEN_LABO": "Laboratory technician",
+      "ROLE_BIOLOGISTE": "Biologist"
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Active agents",
@@ -1367,7 +1385,9 @@
       "DA_NO_LABO": "No active laboratory: ask the super-administrator to create one.",
       "DEMANDE_ANNULEE": "Request cancelled.",
       "EPISODE_CLOS": "Episode closed.",
-      "EPISODE_ANNULE": "Episode cancelled."
+      "EPISODE_ANNULE": "Episode cancelled.",
+      "CR": "Report",
+      "CRITIQUE_A_ACCUSER": "Critical result to acknowledge:"
     },
     "RDV_STATUT": {
       "PLANIFIE": "Planned",
@@ -1375,6 +1395,134 @@
       "TERMINE": "Done",
       "ANNULE": "Cancelled",
       "ABSENT": "No-show"
+    },
+    "NAV_ALERTES": "Critical alerts",
+    "ALERTES": {
+      "TITLE": "Critical results",
+      "SUBTITLE": "Every alert must be acknowledged: acknowledgement releases the results to the patient.",
+      "OUVERTES": "{{count}} alert(s) to acknowledge",
+      "EMPTY": "No pending alert",
+      "EMPTY_SUB": "Critical results validated by the laboratory will show up here.",
+      "ESCALADEE": "Escalated",
+      "REF": "ref.",
+      "VOIR_EPISODE": "Episode",
+      "CR": "Report",
+      "ACCUSER": "Acknowledge",
+      "ACCUSE_OK": "Acknowledgement recorded.",
+      "HISTORIQUE": "Acknowledged alerts",
+      "ACCUSEE": "Acknowledged"
+    }
+  },
+  "LABO": {
+    "ROLE": "Laboratory",
+    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DEMANDES": "Request queue",
+    "LIEU": {
+      "SUR_PLACE": "On site",
+      "DOMICILE": "At home"
+    },
+    "LECTURE": {
+      "NORMAL": "Normal",
+      "ANORMAL": "Abnormal",
+      "CRITIQUE": "Critical"
+    },
+    "ETAPE": {
+      "TRANSMISE": "Sent",
+      "RECUE": "Received",
+      "PRELEVEE": "Collected",
+      "EN_ANALYSE": "In analysis",
+      "VALIDEE": "Validated"
+    },
+    "DASH": {
+      "TITLE": "Laboratory activity",
+      "SUBTITLE": "Today’s intake, sample collection, results and validations.",
+      "VOIR_FILE": "Open the queue",
+      "STAT_A_RECEVOIR": "To receive",
+      "STAT_A_PRELEVER": "To collect",
+      "STAT_EN_ANALYSE": "In analysis",
+      "STAT_A_VALIDER": "Ready to validate",
+      "STAT_URGENTES": "Urgent",
+      "STAT_CRITIQUES": "Unacknowledged critical",
+      "STAT_VALIDEES_JOUR": "Validated today",
+      "FILE_TITLE": "Priority queue",
+      "FILE_EMPTY": "No pending request.",
+      "EXAMENS": "{{count}} test(s)",
+      "PRELEVEMENTS_TITLE": "Scheduled collections",
+      "PRELEVEMENTS_EMPTY": "No scheduled collection."
+    },
+    "FILE": {
+      "TITLE": "Request queue",
+      "SUBTITLE": "{{count}} request(s) — sorted by urgency then age.",
+      "FILTRE_TOUS": "All",
+      "SEARCH_PH": "Number or patient name…",
+      "EMPTY": "No request",
+      "EMPTY_SUB": "Requests sent by facilities will show up here.",
+      "EXAMENS": "test(s)",
+      "SAISIS": "{{n}}/{{total}} results entered",
+      "TRANSMISE_LE": "sent on",
+      "CRITIQUE_EN_ATTENTE": "Critical to acknowledge"
+    },
+    "DETAIL": {
+      "BACK": "Back to the queue",
+      "PRESCRIT_PAR": "Ordered by",
+      "EPISODE": "Episode",
+      "ACTION_RECEPTION": "Acknowledge receipt",
+      "ACTION_PLANIFIER": "Schedule collection",
+      "ACTION_PRELEVER": "Record collection",
+      "ACTION_VALIDER": "Validate results",
+      "ACTION_CR": "Report",
+      "ACTION_CR_BROUILLON": "Report preview",
+      "ANNULEE": "Request cancelled by the prescriber",
+      "CRITIQUE_BANNER": "Critical result awaiting acknowledgement",
+      "CRITIQUE_BANNER_SUB": "The prescriber has been alerted; results reach the patient after acknowledgement (or within 24 h).",
+      "PRET_A_VALIDER": "All results are entered",
+      "PRET_A_VALIDER_SUB": "Review the values then validate: validation is nominative and releases the report.",
+      "PATIENT": "Patient",
+      "PRESCRIPTEUR": "Prescriber",
+      "TRANSMISE_LE": "Sent on",
+      "PRELEVEMENT": "Collection",
+      "VALIDATION": "Validation",
+      "DIFFUSION": "Released to patient",
+      "NON_DIFFUSEE": "Not released",
+      "CONSIGNES": "Instructions given to the patient",
+      "RECEPTION_OK": "Receipt recorded.",
+      "PLANIFIER_TITLE": "Schedule the collection",
+      "LIEU": "Location",
+      "CRENEAU": "Time slot",
+      "AVEC_CRENEAU": "Set a time slot",
+      "PLANIFIER_HINT": "The patient is informed of the location and slot by notification and SMS.",
+      "PLANIFIER_SUBMIT": "Save",
+      "PLANIFIE_OK": "Collection scheduled, patient informed.",
+      "PRELEVER_TITLE": "Record the collection",
+      "PRELEVER_HINT": "One sample per specimen type is proposed; each sample gets a unique code EC-YYYY-NNNNNN.",
+      "SPECIMEN": "Specimen",
+      "ECH_COMMENTAIRE": "Comment (tube, volume…)",
+      "AJOUTER_ECH": "Add a sample",
+      "PRELEVER_SUBMIT": "Confirm collection",
+      "PRELEVE_OK": "{{n}} sample(s) recorded.",
+      "RESULTATS_TITLE": "Results",
+      "SAISIE_SUBMIT": "Save results",
+      "SAISIE_APRES_PRELEVEMENT": "Entry opens once the collection is recorded.",
+      "SAISIE_OK": "{{n}} result(s) saved.",
+      "COL_EXAMEN": "Test",
+      "COL_VALEUR": "Value",
+      "COL_UNITE": "Unit",
+      "COL_REF": "Reference",
+      "COL_LECTURE": "Reading",
+      "COL_COMMENTAIRE": "Comment",
+      "COMMENTAIRE_PH": "Comment",
+      "EN_ATTENTE": "Pending",
+      "VALIDER_TITLE": "Biologist validation",
+      "VALIDER_HINT": "Your name and the time are stamped on the report. Critical results trigger an alert to the prescriber.",
+      "CONCLUSION": "Conclusion",
+      "CONCLUSION_PH": "Conclusion or recommendation (optional)",
+      "VALIDER_SUBMIT": "Validate and release",
+      "VALIDER_CONFIRM_TITLE": "Validate the results?",
+      "VALIDER_CONFIRM_TEXT": "This validation is nominative and final. The prescriber and the patient will be informed.",
+      "VALIDER_CONFIRM_CRITIQUE": "{{n}} critical result(s): the prescriber gets a priority alert and the patient is informed only after acknowledgement.",
+      "VALIDE_OK": "Results validated.",
+      "ECHANTILLONS_TITLE": "Samples",
+      "ECHANTILLONS_EMPTY": "No sample collected yet."
     }
   }
 }

@@ -1,0 +1,75 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-chart-line" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'PATIENT.RESULTATS.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'PATIENT.RESULTATS.SUBTITLE' | translate }}</p>
+  </div>
+</header>
+
+@if (isLoading()) {
+  <div class="bb-skeleton" style="height:320px;border-radius:20px"></div>
+} @else if (examens().length === 0) {
+  <div class="bb-empty"><i class="pi pi-chart-line"></i><p>{{ 'PATIENT.RESULTATS.EMPTY' | translate }}</p><span>{{ 'PATIENT.RESULTATS.EMPTY_SUB' | translate }}</span></div>
+} @else {
+  <!-- Choix de l'examen : un seul filtre, en ligne au-dessus de la courbe -->
+  <div class="bb-pills" role="tablist" style="margin-bottom:1rem">
+    @for (e of examens(); track e.codeLoinc) {
+      <button type="button" role="tab" class="bb-pill" [class.bb-pill--active]="choisi() === e.codeLoinc" [attr.aria-selected]="choisi() === e.codeLoinc" (click)="choisir(e.codeLoinc)">{{ e.libelle }} <small>({{ e.nbPoints }})</small></button>
+    }
+  </div>
+
+  @if (isChargeant()) {
+    <div class="bb-skeleton" style="height:320px;border-radius:20px"></div>
+  } @else if (evolution(); as ev) {
+    <section class="bb-card courbe">
+      <div class="courbe__head">
+        <div>
+          <h2 class="bb-card__title" style="margin:0"><i class="pi pi-chart-line" aria-hidden="true"></i> {{ ev.libelle }}@if (ev.unite) { <small class="courbe__unite">{{ ev.unite }}</small> }</h2>
+          @if (ev.refMin !== null || ev.refMax !== null) {
+            <p class="courbe__ref"><span class="courbe__swatch" aria-hidden="true"></span> {{ 'PATIENT.RESULTATS.REFERENCE' | translate }} : @if (ev.refMin !== null && ev.refMax !== null) { {{ ev.refMin }} – {{ ev.refMax }} } @else if (ev.refMin !== null) { ≥ {{ ev.refMin }} } @else { ≤ {{ ev.refMax }} } {{ ev.unite ?? '' }}</p>
+          }
+        </div>
+        @if (pointSurvole() ?? dernier(); as p) {
+          <div class="courbe__hero" aria-live="polite">
+            <span class="courbe__hero-val">{{ formater(p.valeur) }} <small>{{ ev.unite ?? '' }}</small></span>
+            <span class="courbe__hero-meta">{{ p.date | date:'d MMM yyyy' }} · <span [class]="lectureClasse(p.interpretation)">{{ 'LABO.LECTURE.' + p.interpretation | translate }}</span></span>
+          </div>
+        }
+      </div>
+
+      @if (echelle(); as s) {
+        <svg class="courbe__svg" [attr.viewBox]="'0 0 ' + L + ' ' + H" role="img" [attr.aria-label]="ev.libelle" (mousemove)="surMouvement($event)" (mouseleave)="survol.set(null)">
+          <!-- Bande de reference -->
+          @if (bande(); as b) { <rect class="courbe__bande" [attr.x]="M.gauche" [attr.y]="b.y" [attr.width]="L - M.gauche - M.droite" [attr.height]="b.h" rx="3" /> }
+          <!-- Grille et axe Y -->
+          @for (g of graduations(); track g.y) {
+            <line class="courbe__grille" [attr.x1]="M.gauche" [attr.x2]="L - M.droite" [attr.y1]="g.y" [attr.y2]="g.y" />
+            <text class="courbe__axe" [attr.x]="M.gauche - 8" [attr.y]="g.y + 4" text-anchor="end">{{ g.label }}</text>
+          }
+          <!-- Croix de survol -->
+          @if (pointSurvole(); as p) { <line class="courbe__croix" [attr.x1]="p.x" [attr.x2]="p.x" [attr.y1]="M.haut" [attr.y2]="H - M.bas" /> }
+          <!-- Serie -->
+          <path class="courbe__ligne" [attr.d]="trace()" />
+          @for (p of points(); track $index; let i = $index) {
+            <circle class="courbe__point" [class.courbe__point--anormal]="p.interpretation === 'ANORMAL'" [class.courbe__point--critique]="p.interpretation === 'CRITIQUE'" [class.courbe__point--actif]="survol() === i" [attr.cx]="p.x" [attr.cy]="p.y" r="5" />
+            <!-- Cible de survol plus large que le point -->
+            <circle class="courbe__cible" [attr.cx]="p.x" [attr.cy]="p.y" r="14" (mouseenter)="survol.set(i)" />
+            <text class="courbe__date" [attr.x]="p.x" [attr.y]="H - M.bas + 18" text-anchor="middle">{{ p.date | date:'dd/MM/yy' }}</text>
+          }
+          <!-- Etiquette du dernier point -->
+          @if (dernier(); as d) { <text class="courbe__label" [attr.x]="d.x - 10" [attr.y]="d.y - 12" text-anchor="end">{{ formater(d.valeur) }}</text> }
+        </svg>
+      }
+
+      <!-- Vue tableau : toujours disponible -->
+      <table class="courbe__table">
+        <thead><tr><th>{{ 'PATIENT.RESULTATS.COL_DATE' | translate }}</th><th>{{ 'PATIENT.RESULTATS.COL_VALEUR' | translate }}</th><th>{{ 'PATIENT.RESULTATS.COL_LECTURE' | translate }}</th><th>{{ 'PATIENT.RESULTATS.COL_DEMANDE' | translate }}</th></tr></thead>
+        <tbody>
+          @for (p of points(); track $index) {
+            <tr><td>{{ p.date | date:'dd/MM/yyyy' }}</td><td><strong>{{ formater(p.valeur) }}</strong> {{ ev.unite ?? '' }}</td><td><span [class]="lectureClasse(p.interpretation)">{{ 'LABO.LECTURE.' + p.interpretation | translate }}</span></td><td class="courbe__num">{{ p.numero }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+}

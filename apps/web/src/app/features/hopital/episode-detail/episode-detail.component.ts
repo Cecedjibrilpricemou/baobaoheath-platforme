@@ -16,6 +16,8 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { dateLocaleParDefaut, statutDemandeClasse, statutEpisodeClasse, urgenceClasse } from '../hopital.utils';
+import { LaboratoireService } from '../../../core/services/laboratoire.service';
+import { interpretationClasse, referenceLisible } from '../../laboratoire/laboratoire.utils';
 
 type Panneau = 'aucun' | 'orientation' | 'analyse';
 
@@ -29,6 +31,7 @@ export class EpisodeDetailComponent implements OnInit {
   private route   = inject(ActivatedRoute);
   private router  = inject(Router);
   private hopital = inject(HopitalService);
+  private labo    = inject(LaboratoireService);
   private toastr  = inject(ToastrService);
   private i18n    = inject(I18nService);
   private dialog  = inject(MatDialog);
@@ -36,6 +39,8 @@ export class EpisodeDetailComponent implements OnInit {
   readonly statutClasse = statutEpisodeClasse;
   readonly demandeClasse = statutDemandeClasse;
   readonly urgenceClasse = urgenceClasse;
+  readonly lectureClasse = interpretationClasse;
+  readonly reference = referenceLisible;
 
   episode   = signal<EpisodeSoinsView | null>(null);
   isLoading = signal(true);
@@ -143,6 +148,8 @@ export class EpisodeDetailComponent implements OnInit {
   }
 
   bonExamen(d: DemandeAnalyseView) { this.hopital.ouvrirBonExamen(d.id); }
+  compteRendu(d: DemandeAnalyseView) { this.labo.ouvrirCompteRendu(d.id, 'prescripteur'); }
+  aResultats(d: DemandeAnalyseView) { return d.lignes.some((l) => l.resultat); }
   peutAnnulerDemande(d: DemandeAnalyseView) { return d.statut === 'TRANSMISE' || d.statut === 'RECUE'; }
 
   confirmerAnnulationDemande() {

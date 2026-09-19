@@ -1,0 +1,89 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-microchip" aria-hidden="true"></i> {{ 'LABO.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'LABO.DASH.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'LABO.DASH.SUBTITLE' | translate }}</p>
+  </div>
+  <div class="bb-page-head__actions">
+    <a matButton="filled" routerLink="/laboratoire/demandes"><i class="pi pi-list" aria-hidden="true"></i> {{ 'LABO.DASH.VOIR_FILE' | translate }}</a>
+  </div>
+</header>
+
+@if (isLoading()) {
+  <div class="bb-stats">
+    @for (i of [1,2,3,4,5,6]; track i) { <div class="bb-skeleton" style="height:78px;border-radius:18px"></div> }
+  </div>
+} @else if (data(); as d) {
+  <div class="bb-stats">
+    <a class="bb-stat bb-stat--info bb-stat--link" routerLink="/laboratoire/demandes" [queryParams]="{ statut: 'TRANSMISE' }">
+      <span class="bb-stat__icon"><i class="pi pi-inbox"></i></span>
+      <div><div class="bb-stat__value">{{ d.aRecevoir }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_A_RECEVOIR' | translate }}</div></div>
+    </a>
+    <a class="bb-stat bb-stat--link" routerLink="/laboratoire/demandes" [queryParams]="{ statut: 'RECUE' }">
+      <span class="bb-stat__icon"><i class="pi pi-calendar"></i></span>
+      <div><div class="bb-stat__value">{{ d.aPrelever }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_A_PRELEVER' | translate }}</div></div>
+    </a>
+    <a class="bb-stat bb-stat--warning bb-stat--link" routerLink="/laboratoire/demandes" [queryParams]="{ statut: 'EN_ANALYSE' }">
+      <span class="bb-stat__icon"><i class="pi pi-hourglass"></i></span>
+      <div><div class="bb-stat__value">{{ d.enAnalyse }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_EN_ANALYSE' | translate }}</div></div>
+    </a>
+    <div class="bb-stat bb-stat--primary">
+      <span class="bb-stat__icon"><i class="pi pi-verified"></i></span>
+      <div><div class="bb-stat__value">{{ d.aValider }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_A_VALIDER' | translate }}</div></div>
+    </div>
+    <div class="bb-stat" [class.bb-stat--danger]="d.urgentes > 0">
+      <span class="bb-stat__icon"><i class="pi pi-exclamation-triangle"></i></span>
+      <div><div class="bb-stat__value">{{ d.urgentes }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_URGENTES' | translate }}</div></div>
+    </div>
+    <div class="bb-stat" [class.bb-stat--danger]="d.critiquesNonAccusees > 0">
+      <span class="bb-stat__icon"><i class="pi pi-bell"></i></span>
+      <div><div class="bb-stat__value">{{ d.critiquesNonAccusees }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_CRITIQUES' | translate }}</div></div>
+    </div>
+    <div class="bb-stat">
+      <span class="bb-stat__icon"><i class="pi pi-check-circle"></i></span>
+      <div><div class="bb-stat__value">{{ d.valideesDuJour }}</div><div class="bb-stat__label">{{ 'LABO.DASH.STAT_VALIDEES_JOUR' | translate }}</div></div>
+    </div>
+  </div>
+
+  <div class="bb-hop-sections">
+    <section class="bb-card">
+      <h2 class="bb-card__title"><i class="pi pi-bolt" aria-hidden="true"></i> {{ 'LABO.DASH.FILE_TITLE' | translate }}</h2>
+      @if (d.fileUrgente.length === 0) {
+        <div class="bb-empty"><i class="pi pi-inbox"></i><p>{{ 'LABO.DASH.FILE_EMPTY' | translate }}</p></div>
+      } @else {
+        <div class="bb-hop-list">
+          @for (x of d.fileUrgente; track x.id) {
+            <a class="bb-hop-item" [routerLink]="['/laboratoire/demandes', x.id]">
+              <span class="bb-hop-item__avatar" aria-hidden="true">{{ initiales(x) }}</span>
+              <div class="bb-hop-item__body">
+                <p class="bb-hop-item__title">{{ x.patient.prenom }} {{ x.patient.nom }} <span [class]="urgenceClasse(x.urgence)">{{ 'HOPITAL.URGENCE.' + x.urgence | translate }}</span> <span [class]="demandeClasse(x.statut)">{{ 'HOPITAL.DEMANDE_STATUT.' + x.statut | translate }}</span></p>
+                <p class="bb-hop-item__sub">{{ 'LABO.DASH.EXAMENS' | translate: { count: x.lignes.length } }} · {{ x.prescripteur.prenom }} {{ x.prescripteur.nom }}</p>
+                <p class="bb-hop-item__meta"><span class="bb-hop-item__num">{{ x.numero }}</span><span><i class="pi pi-clock"></i>{{ x.transmiseLe | date:'dd/MM HH:mm' }}</span></p>
+              </div>
+              <i class="pi pi-chevron-right" aria-hidden="true"></i>
+            </a>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="bb-card">
+      <h2 class="bb-card__title"><i class="pi pi-calendar-clock" aria-hidden="true"></i> {{ 'LABO.DASH.PRELEVEMENTS_TITLE' | translate }}</h2>
+      @if (d.prochainsPrelevements.length === 0) {
+        <div class="bb-empty"><i class="pi pi-calendar"></i><p>{{ 'LABO.DASH.PRELEVEMENTS_EMPTY' | translate }}</p></div>
+      } @else {
+        <div class="bb-hop-list">
+          @for (x of d.prochainsPrelevements; track x.id) {
+            <a class="bb-hop-item" [routerLink]="['/laboratoire/demandes', x.id]">
+              <div class="bb-hop-item__body">
+                <p class="bb-hop-item__title">{{ x.creneauPrelevement | date:'EEEE d MMM, HH:mm' }} <span class="bb-badge bb-badge--info">{{ 'LABO.LIEU.' + x.lieuPrelevement | translate }}</span></p>
+                <p class="bb-hop-item__sub">{{ x.patient.prenom }} {{ x.patient.nom }} · {{ x.numero }}</p>
+              </div>
+              <i class="pi pi-chevron-right" aria-hidden="true"></i>
+            </a>
+          }
+        </div>
+      }
+    </section>
+  </div>
+}

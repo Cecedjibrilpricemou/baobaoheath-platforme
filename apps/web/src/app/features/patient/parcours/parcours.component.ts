@@ -9,23 +9,29 @@ import { HopitalService } from '../../../core/services/hopital.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { statutDemandeClasse, statutEpisodeClasse, urgenceClasse } from '../../hopital/hopital.utils';
+import { LaboratoireService } from '../../../core/services/laboratoire.service';
+import { interpretationClasse, referenceLisible } from '../../laboratoire/laboratoire.utils';
+import { RouterLink } from '@angular/router';
 
 type Etape = { cle: string; etat: 'done' | 'now' | 'todo' | 'soon' };
 
 @Component({
   selector: 'app-patient-parcours',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, TranslatePipe],
+  imports: [DatePipe, MatButtonModule, TranslatePipe, RouterLink],
   templateUrl: './parcours.component.html',
 })
 export class ParcoursComponent implements OnInit {
   private hopital = inject(HopitalService);
+  private labo    = inject(LaboratoireService);
   private toastr  = inject(ToastrService);
   private i18n    = inject(I18nService);
 
   readonly statutClasse = statutEpisodeClasse;
   readonly demandeClasse = statutDemandeClasse;
   readonly urgenceClasse = urgenceClasse;
+  readonly lectureClasse = interpretationClasse;
+  readonly reference = referenceLisible;
 
   episodes  = signal<EpisodePatientView[]>([]);
   isLoading = signal(true);
@@ -53,4 +59,7 @@ export class ParcoursComponent implements OnInit {
   }
 
   bonExamen(d: DemandeAnalyseView) { this.hopital.ouvrirBonExamen(d.id, true); }
+  compteRendu(d: DemandeAnalyseView) { this.labo.ouvrirCompteRendu(d.id, 'patient'); }
+  /** Resultats visibles seulement une fois diffuses (validation, et accuse du prescripteur si critique). */
+  resultatsDisponibles(d: DemandeAnalyseView) { return !!d.diffuseePatientLe && d.lignes.some((l) => l.resultat); }
 }

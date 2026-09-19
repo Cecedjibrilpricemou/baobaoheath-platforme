@@ -180,10 +180,29 @@
             </div>
             <p class="bb-hop-sub__line"><i class="pi pi-building" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.LABO' | translate }} : <strong>{{ d.laboratoire.nom }}</strong> · {{ d.creeLe | date:'dd/MM/yyyy HH:mm' }} · {{ 'HOPITAL.DETAIL.PRESCRIPTEUR' | translate }} {{ d.prescripteur.prenom }} {{ d.prescripteur.nom }}</p>
             @if (d.indicationClinique) { <p class="bb-hop-sub__line">{{ 'HOPITAL.DETAIL.INDICATION' | translate }} : {{ d.indicationClinique }}</p> }
-            <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral" [title]="l.examen.codeLoinc">{{ l.examen.libelle }}@if (l.commentaire) { — {{ l.commentaire }} }</span> }</div>
+            @if (aResultats(d)) {
+              <!-- Resultats vus par le prescripteur (P2) : valeur, reference, lecture. -->
+              <div class="bb-resultats">
+                @for (l of d.lignes; track l.id) {
+                  <div class="bb-resultats__row" [class.bb-resultats__row--critique]="l.resultat?.interpretation === 'CRITIQUE'" [class.bb-resultats__row--anormal]="l.resultat?.interpretation === 'ANORMAL'">
+                    <span class="bb-resultats__lib">{{ l.examen.libelle }}</span>
+                    <span class="bb-resultats__val">{{ l.resultat?.valeur ?? '—' }} <small>{{ l.resultat?.unite ?? l.examen.unite ?? '' }}</small></span>
+                    <span class="bb-resultats__ref">{{ reference(l) }}</span>
+                    @if (l.resultat) { <span [class]="lectureClasse(l.resultat.interpretation)">{{ 'LABO.LECTURE.' + l.resultat.interpretation | translate }}</span> } @else { <span class="bb-badge bb-badge--neutral">{{ 'LABO.DETAIL.EN_ATTENTE' | translate }}</span> }
+                  </div>
+                }
+              </div>
+              @if (d.commentaireBiologiste) { <div class="bb-hop-sub__consignes"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireBiologiste }}</div> }
+              @if (d.alerteCritiqueEnAttente) { <p class="bb-hop-sub__line" style="color:var(--bb-danger);font-weight:700"><i class="pi pi-bell" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.CRITIQUE_A_ACCUSER' | translate }} <a routerLink="/hopital/alertes">{{ 'HOPITAL.NAV_ALERTES' | translate }}</a></p> }
+            } @else {
+              <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral" [title]="l.examen.codeLoinc">{{ l.examen.libelle }}@if (l.commentaire) { — {{ l.commentaire }} }</span> }</div>
+            }
             @if (d.consignesPatient) { <div class="bb-hop-sub__consignes"><strong>{{ 'HOPITAL.DETAIL.CONSIGNES' | translate }}</strong>{{ '\n' + d.consignesPatient }}</div> }
             @if (d.motifAnnulation) { <p class="bb-hop-sub__line" style="color:var(--bb-danger)">{{ d.motifAnnulation }}</p> }
             <div class="bb-hop-sub__actions">
+              @if (d.statut === 'VALIDEE') {
+                <button matButton="filled" type="button" (click)="compteRendu(d)"><i class="pi pi-file-check" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.CR' | translate }}</button>
+              }
               <button matButton="outlined" type="button" (click)="bonExamen(d)"><i class="pi pi-print" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.BON' | translate }}</button>
               @if (peutAnnulerDemande(d) && !termine()) {
                 <button matButton type="button" style="color:var(--bb-danger)" (click)="demandeAAnnuler.set(d)"><i class="pi pi-times" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ANNULER_DEMANDE' | translate }}</button>

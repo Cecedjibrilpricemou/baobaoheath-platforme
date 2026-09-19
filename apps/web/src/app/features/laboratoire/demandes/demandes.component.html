@@ -1,0 +1,56 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-microchip" aria-hidden="true"></i> {{ 'LABO.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'LABO.FILE.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'LABO.FILE.SUBTITLE' | translate: { count: total() } }}</p>
+  </div>
+</header>
+
+<div class="bb-hop-toolbar">
+  <div class="bb-pills" role="tablist" style="margin:0">
+    @for (f of filtres; track f) {
+      <button type="button" role="tab" class="bb-pill" [class.bb-pill--active]="filtre() === f" [attr.aria-selected]="filtre() === f" (click)="setFiltre(f)">{{ (f === 'TOUS' ? 'LABO.FILE.FILTRE_TOUS' : 'HOPITAL.DEMANDE_STATUT.' + f) | translate }}</button>
+    }
+  </div>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="flex:1;min-width:220px">
+    <i matPrefix class="pi pi-search" style="padding:0 6px 0 14px;color:var(--bb-primary)"></i>
+    <input matInput type="search" [placeholder]="'LABO.FILE.SEARCH_PH' | translate" [ngModel]="recherche" (ngModelChange)="onRecherche($event)" />
+  </mat-form-field>
+</div>
+
+@if (isLoading()) {
+  <div class="bb-hop-list">@for (i of [1,2,3,4]; track i) { <div class="bb-skeleton" style="height:84px;border-radius:18px"></div> }</div>
+} @else if (items().length === 0) {
+  <div class="bb-empty"><i class="pi pi-inbox"></i><p>{{ 'LABO.FILE.EMPTY' | translate }}</p><span>{{ 'LABO.FILE.EMPTY_SUB' | translate }}</span></div>
+} @else {
+  <div class="bb-hop-list">
+    @for (d of items(); track d.id) {
+      <a class="bb-hop-item" [routerLink]="['/laboratoire/demandes', d.id]" [class.bb-hop-item--urgent]="d.urgence !== 'ROUTINE' && d.statut !== 'VALIDEE' && d.statut !== 'ANNULEE'">
+        <span class="bb-hop-item__avatar" aria-hidden="true">{{ initiales(d) }}</span>
+        <div class="bb-hop-item__body">
+          <p class="bb-hop-item__title">
+            {{ d.patient.prenom }} {{ d.patient.nom }}
+            <span [class]="urgenceClasse(d.urgence)">{{ 'HOPITAL.URGENCE.' + d.urgence | translate }}</span>
+            <span [class]="demandeClasse(d.statut)">{{ 'HOPITAL.DEMANDE_STATUT.' + d.statut | translate }}</span>
+            @if (d.alerteCritiqueEnAttente) { <span class="bb-badge bb-badge--danger"><i class="pi pi-bell" aria-hidden="true"></i> {{ 'LABO.FILE.CRITIQUE_EN_ATTENTE' | translate }}</span> }
+          </p>
+          <p class="bb-hop-item__sub">{{ d.lignes.length }} {{ 'LABO.FILE.EXAMENS' | translate }}@if (d.statut === 'EN_ANALYSE' || d.statut === 'PRELEVEE') { · {{ 'LABO.FILE.SAISIS' | translate: { n: nbSaisis(d), total: d.lignes.length } }} }@if (d.indicationClinique) { · {{ d.indicationClinique }} }</p>
+          <p class="bb-hop-item__meta">
+            <span class="bb-hop-item__num">{{ d.numero }}</span>
+            <span><i class="pi pi-clock"></i>{{ 'LABO.FILE.TRANSMISE_LE' | translate }} {{ d.transmiseLe | date:'dd/MM/yyyy HH:mm' }}</span>
+            <span><i class="pi pi-user"></i>{{ d.prescripteur.prenom }} {{ d.prescripteur.nom }}</span>
+            @if (d.creneauPrelevement && (d.statut === 'TRANSMISE' || d.statut === 'RECUE')) { <span><i class="pi pi-calendar"></i>{{ d.creneauPrelevement | date:'dd/MM HH:mm' }} · {{ 'LABO.LIEU.' + d.lieuPrelevement | translate }}</span> }
+          </p>
+        </div>
+        <i class="pi pi-chevron-right" aria-hidden="true"></i>
+      </a>
+    }
+  </div>
+  @if (nbPages > 1) {
+    <div class="bb-hop-toolbar" style="justify-content:center;margin-top:1rem">
+      <button matButton="outlined" type="button" (click)="pagePrecedente()" [disabled]="page() === 1"><i class="pi pi-chevron-left" aria-hidden="true"></i> {{ 'HOPITAL.EPISODES.PREC' | translate }}</button>
+      <span style="font-size:13px;color:var(--bb-text-muted)">{{ page() }} / {{ nbPages }}</span>
+      <button matButton="outlined" type="button" (click)="pageSuivante()" [disabled]="page() >= nbPages">{{ 'HOPITAL.EPISODES.SUIV' | translate }} <i class="pi pi-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  }
+}

@@ -54,7 +54,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
 - [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
 
-### P2 — Laboratoire · L · EF-04 · 🟡 API livrée le 2026-09-19, front en cours
+### P2 — Laboratoire · L · EF-04 · ✅ livré le 2026-09-19 (API + front)
 - [x] Rôles `BIOLOGISTE` (validation) et `TECHNICIEN_LABO` (réception, prélèvement, saisie) ; type de structure `LABORATOIRE` (P1).
 - [x] File des demandes triée par urgence puis ancienneté (EF-04-01) ; tableau de bord du laboratoire.
 - [x] Prélèvement sur place ou à domicile avec créneau, patient notifié (EF-04-02) ; `Echantillon` codé `EC-AAAA-NNNNNN` (EF-04-03).
@@ -63,7 +63,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Résultats critiques : seuils `critiqueMin/Max` par examen, alerte prioritaire au prescripteur avec accusé de lecture, escalade automatique vers l'admin de structure par job (30 min), diffusion patient différée jusqu'à l'accusé ou 24 h (EF-04-07/08/09).
 - [x] Courbe d'évolution d'une valeur, côté patient et côté professionnel (EF-04-10).
 - [ ] Saisie hors connexion via la sync existante (EF-04-11) — reporté : la sync ne couvre que l'ASC pour l'instant.
-- [ ] Front : espace « Laboratoire » (file, fiche demande, prélèvement, saisie, validation), alertes critiques côté accueil/médecin, résultats et courbes côté patient.
+- [x] Front : espace « Laboratoire » (tableau de bord, file, fiche demande avec frise, planification, prélèvement, saisie, validation biologiste, compte rendu), page « Alertes critiques » côté accueil, résultats dans la fiche épisode et dans « Mon parcours », page « Mes résultats » (courbe SVG + tableau) côté patient.
+- [ ] Médecin prescripteur : l'espace médecin n'émet pas encore de demandes d'analyse (seul l'accueil le fait) ; à brancher avec P3 (compte rendu de consultation).
 
 ### P3 — Ordonnance infalsifiable + sécurité de prescription · M · EF-05
 - [ ] Numéro unique + code de vérification, durée de validité, statut `SERVIE`, vérification côté pharmacie (EF-05-07/08, EF-07-01).
@@ -157,6 +158,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 | Date | Bloc | Commit / note |
 |---|---|---|
 | 2026-09-18 | — | Renommage KÈNÈYA, landing et pages d'auth refaites, plan validé |
+| 2026-09-19 | P2 | API `5b2e945` + front : espace Laboratoire (technicien, biologiste), cycle réception → prélèvement → saisie → validation, résultats critiques avec accusé et escalade, courbes d'évolution patient |
 | 2026-09-19 | Design | `37646f0` : tous les espaces (patient, ASC, médecin, pharmacien, admin structure) alignés sur la landing en clair et sombre — en-têtes `.bb-page-head`, cartes de chiffres neutres, alias `.bb-*` partagés |
 | 2026-09-19 | P1 | API `05f61d8` + front : espace Accueil hôpital (tableau de bord, admission, épisodes, orientation, demande d'analyse, bon d'examen), page patient « Mon parcours », rôle agent d'accueil et type laboratoire dans l'admin, locale fr pour les dates |
 | 2026-09-19 | P0 | API `c5c1772` + web : identité de la plateforme administrable (nom, logo, coordonnées), `<app-brand>`, `PlateformeService` |

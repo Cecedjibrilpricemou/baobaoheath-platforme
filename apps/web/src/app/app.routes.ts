@@ -64,6 +64,15 @@ export const routes: Routes = [
       import('./features/hopital/hopital.routes').then(m => m.HOPITAL_ROUTES)
   },
 
+  // ── Module Laboratoire (P2, EF-04) ──────────────────────────────────
+  {
+    path: 'laboratoire',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['TECHNICIEN_LABO', 'BIOLOGISTE'] },
+    loadChildren: () =>
+      import('./features/laboratoire/laboratoire.routes').then(m => m.LABORATOIRE_ROUTES)
+  },
+
   // ── Module Admin Structure ──────────────────────────────────────────
   {
     path: 'admin-structure',

@@ -1,0 +1,83 @@
+// Poste de travail laboratoire : frise du cycle, saisie des echantillons,
+// tableau des resultats. Tokens partages, aucune couleur en dur.
+:host { display: block; }
+
+// ── Frise du cycle TRANSMISE → VALIDEE ───────────────────────────────
+.labo-etapes {
+  list-style: none; margin: 0 0 1rem; padding: 14px 16px;
+  display: flex; align-items: center; gap: 0;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: var(--bb-radius-xl);
+  overflow-x: auto;
+
+  &__item {
+    flex: 1; min-width: 96px; position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    color: var(--bb-text-muted); font-size: 12px; font-weight: 600; text-align: center;
+
+    // Trait entre deux etapes
+    &:not(:last-child)::after {
+      content: ''; position: absolute; top: 13px; left: calc(50% + 14px); width: calc(100% - 28px); height: 2px;
+      background: var(--bb-border); border-radius: 2px;
+    }
+    &--done:not(:last-child)::after { background: var(--bb-primary); }
+    &--done { color: var(--bb-text-secondary); .labo-etapes__dot { background: var(--bb-primary); color: #fff; border-color: var(--bb-primary); } }
+    &--now  { color: var(--bb-primary); .labo-etapes__dot { border-color: var(--bb-primary); color: var(--bb-primary); box-shadow: 0 0 0 4px rgba(45, 125, 70, .16); } .labo-etapes__label { font-weight: 800; } }
+  }
+
+  &__dot {
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    border: 2px solid var(--bb-border); background: var(--bb-surface-card); font-size: 11px; position: relative; z-index: 1;
+  }
+}
+
+// ── Echantillons a prelever ──────────────────────────────────────────
+.labo-echantillons {
+  display: flex; flex-direction: column; gap: 8px; margin: 6px 0 4px;
+  &__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  &__num {
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
+    background: var(--bb-success-bg); color: var(--bb-primary); font-family: var(--bb-font-display); font-size: 12px; font-weight: 800;
+  }
+}
+
+.labo-ech-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--bb-radius-pill);
+  background: var(--bb-surface-1); border: 1px solid var(--bb-border-light); font-size: 12.5px; color: var(--bb-text-secondary);
+  strong { font-family: monospace; color: var(--bb-text-primary); letter-spacing: .04em; }
+  i { color: var(--bb-primary); }
+}
+
+// ── Tableau des resultats ────────────────────────────────────────────
+.labo-resultats {
+  display: flex; flex-direction: column; gap: 6px; overflow-x: auto;
+
+  &__head, &__row {
+    display: grid; grid-template-columns: minmax(200px, 1.6fr) minmax(110px, .9fr) 70px minmax(90px, .8fr) 110px minmax(160px, 1.2fr);
+    gap: 10px; align-items: center; min-width: 760px;
+  }
+  &__head {
+    padding: 4px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-muted);
+  }
+  &__row {
+    padding: 10px 12px; border-radius: 14px; background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+    font-size: 13.5px; color: var(--bb-text-primary);
+    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); }
+    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg); }
+  }
+  &__examen { display: flex; flex-direction: column; gap: 2px; strong { font-size: 13.5px; } small { font-size: 11.5px; color: var(--bb-text-muted); font-family: monospace; } }
+  &__ref { font-size: 12.5px; color: var(--bb-text-secondary); }
+
+  &__input, &__select {
+    width: 100%; padding: 8px 10px; border-radius: 10px; font-size: 13.5px; font-family: inherit;
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card); color: var(--bb-text-primary);
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    &:focus { outline: none; border-color: var(--bb-primary); box-shadow: 0 0 0 3px rgba(45, 125, 70, .16); }
+  }
+  &__select { margin-top: 6px; font-size: 12px; }
+}
+
+:host-context([data-theme="dark"]) {
+  .labo-resultats__row--anormal  { background: rgba(245, 158, 11, .10); }
+  .labo-resultats__row--critique { background: rgba(239, 68, 68, .12); }
+  .labo-etapes__item--now .labo-etapes__dot { box-shadow: 0 0 0 4px rgba(62, 187, 112, .18); }
+}

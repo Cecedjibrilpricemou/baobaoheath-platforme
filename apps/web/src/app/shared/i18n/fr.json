@@ -480,9 +480,25 @@
       "ETAPE_ORDONNANCE": "Ordonnance",
       "ETAPE_PHARMACIE": "Pharmacie",
       "ETAPE_LIVRAISON": "Livraison",
-      "BIENTOT": "bientôt"
+      "BIENTOT": "bientôt",
+      "CONCLUSION": "Conclusion du biologiste",
+      "RESULTATS_BIENTOT": "Résultats validés, diffusion en cours.",
+      "CR": "Compte rendu",
+      "COURBES": "Mes courbes"
     },
-    "NAV_PARCOURS": "Mon parcours"
+    "NAV_PARCOURS": "Mon parcours",
+    "NAV_RESULTATS": "Mes résultats",
+    "RESULTATS": {
+      "TITLE": "Mes résultats",
+      "SUBTITLE": "L’évolution de vos analyses dans le temps, avec les valeurs de référence.",
+      "EMPTY": "Aucun résultat à suivre",
+      "EMPTY_SUB": "Vos analyses validées apparaîtront ici dès leur diffusion.",
+      "REFERENCE": "Référence",
+      "COL_DATE": "Date",
+      "COL_VALEUR": "Valeur",
+      "COL_LECTURE": "Lecture",
+      "COL_DEMANDE": "Demande"
+    }
   },
   "ASC": {
     "ROLE": "Agent de Santé",
@@ -1193,7 +1209,9 @@
       "SUCCESS_CREATED": "Agent créé avec succès !",
       "ERR_CREATE": "Erreur lors de la création.",
       "SUCCESS_DEACTIVATED": "Agent désactivé.",
-      "ROLE_AGENT_ACCUEIL": "Agent d'accueil"
+      "ROLE_AGENT_ACCUEIL": "Agent d'accueil",
+      "ROLE_TECHNICIEN_LABO": "Technicien de laboratoire",
+      "ROLE_BIOLOGISTE": "Biologiste"
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Agents actifs",
@@ -1367,7 +1385,9 @@
       "DA_NO_LABO": "Aucun laboratoire actif : demandez au super-administrateur d’en créer un.",
       "DEMANDE_ANNULEE": "Demande annulée.",
       "EPISODE_CLOS": "Épisode clôturé.",
-      "EPISODE_ANNULE": "Épisode annulé."
+      "EPISODE_ANNULE": "Épisode annulé.",
+      "CR": "Compte rendu",
+      "CRITIQUE_A_ACCUSER": "Résultat critique à accuser :"
     },
     "RDV_STATUT": {
       "PLANIFIE": "Planifié",
@@ -1375,6 +1395,134 @@
       "TERMINE": "Terminé",
       "ANNULE": "Annulé",
       "ABSENT": "Absent"
+    },
+    "NAV_ALERTES": "Alertes critiques",
+    "ALERTES": {
+      "TITLE": "Résultats critiques",
+      "SUBTITLE": "Chaque alerte doit être accusée : l’accusé libère la diffusion des résultats au patient.",
+      "OUVERTES": "{{count}} alerte(s) à accuser",
+      "EMPTY": "Aucune alerte en attente",
+      "EMPTY_SUB": "Les résultats critiques validés par le laboratoire apparaîtront ici.",
+      "ESCALADEE": "Escaladée",
+      "REF": "réf.",
+      "VOIR_EPISODE": "Épisode",
+      "CR": "Compte rendu",
+      "ACCUSER": "Accuser lecture",
+      "ACCUSE_OK": "Accusé de lecture enregistré.",
+      "HISTORIQUE": "Alertes accusées",
+      "ACCUSEE": "Accusée"
+    }
+  },
+  "LABO": {
+    "ROLE": "Laboratoire",
+    "NAV_DASHBOARD": "Tableau de bord",
+    "NAV_DEMANDES": "File des demandes",
+    "LIEU": {
+      "SUR_PLACE": "Sur place",
+      "DOMICILE": "À domicile"
+    },
+    "LECTURE": {
+      "NORMAL": "Normal",
+      "ANORMAL": "Anormal",
+      "CRITIQUE": "Critique"
+    },
+    "ETAPE": {
+      "TRANSMISE": "Transmise",
+      "RECUE": "Reçue",
+      "PRELEVEE": "Prélevée",
+      "EN_ANALYSE": "En analyse",
+      "VALIDEE": "Validée"
+    },
+    "DASH": {
+      "TITLE": "Activité du laboratoire",
+      "SUBTITLE": "Réception, prélèvements, résultats et validations du jour.",
+      "VOIR_FILE": "Voir la file",
+      "STAT_A_RECEVOIR": "À recevoir",
+      "STAT_A_PRELEVER": "À prélever",
+      "STAT_EN_ANALYSE": "En analyse",
+      "STAT_A_VALIDER": "Prêtes à valider",
+      "STAT_URGENTES": "Urgentes",
+      "STAT_CRITIQUES": "Critiques sans accusé",
+      "STAT_VALIDEES_JOUR": "Validées aujourd’hui",
+      "FILE_TITLE": "File prioritaire",
+      "FILE_EMPTY": "Aucune demande en attente.",
+      "EXAMENS": "{{count}} examen(s)",
+      "PRELEVEMENTS_TITLE": "Prélèvements planifiés",
+      "PRELEVEMENTS_EMPTY": "Aucun prélèvement planifié."
+    },
+    "FILE": {
+      "TITLE": "File des demandes",
+      "SUBTITLE": "{{count}} demande(s) — triées par urgence puis par ancienneté.",
+      "FILTRE_TOUS": "Toutes",
+      "SEARCH_PH": "Numéro ou nom du patient…",
+      "EMPTY": "Aucune demande",
+      "EMPTY_SUB": "Les demandes transmises par les établissements apparaîtront ici.",
+      "EXAMENS": "examen(s)",
+      "SAISIS": "{{n}}/{{total}} résultats saisis",
+      "TRANSMISE_LE": "transmise le",
+      "CRITIQUE_EN_ATTENTE": "Critique à accuser"
+    },
+    "DETAIL": {
+      "BACK": "Retour à la file",
+      "PRESCRIT_PAR": "Prescrite par",
+      "EPISODE": "Épisode",
+      "ACTION_RECEPTION": "Accuser réception",
+      "ACTION_PLANIFIER": "Planifier le prélèvement",
+      "ACTION_PRELEVER": "Enregistrer le prélèvement",
+      "ACTION_VALIDER": "Valider les résultats",
+      "ACTION_CR": "Compte rendu",
+      "ACTION_CR_BROUILLON": "Aperçu du compte rendu",
+      "ANNULEE": "Demande annulée par le prescripteur",
+      "CRITIQUE_BANNER": "Résultat critique en attente d’accusé de lecture",
+      "CRITIQUE_BANNER_SUB": "Le prescripteur a été alerté ; les résultats seront diffusés au patient après son accusé (ou sous 24 h).",
+      "PRET_A_VALIDER": "Tous les résultats sont saisis",
+      "PRET_A_VALIDER_SUB": "Relisez les valeurs puis validez : la validation est nominative et libère la diffusion.",
+      "PATIENT": "Patient",
+      "PRESCRIPTEUR": "Prescripteur",
+      "TRANSMISE_LE": "Transmise le",
+      "PRELEVEMENT": "Prélèvement",
+      "VALIDATION": "Validation",
+      "DIFFUSION": "Diffusion au patient",
+      "NON_DIFFUSEE": "Non diffusée",
+      "CONSIGNES": "Consignes données au patient",
+      "RECEPTION_OK": "Réception enregistrée.",
+      "PLANIFIER_TITLE": "Planifier le prélèvement",
+      "LIEU": "Lieu",
+      "CRENEAU": "Créneau",
+      "AVEC_CRENEAU": "Fixer un créneau",
+      "PLANIFIER_HINT": "Le patient est informé du lieu et du créneau par notification et SMS.",
+      "PLANIFIER_SUBMIT": "Enregistrer",
+      "PLANIFIE_OK": "Prélèvement planifié, patient informé.",
+      "PRELEVER_TITLE": "Enregistrer le prélèvement",
+      "PRELEVER_HINT": "Un échantillon par type de spécimen est proposé ; chaque échantillon reçoit un code unique EC-AAAA-NNNNNN.",
+      "SPECIMEN": "Spécimen",
+      "ECH_COMMENTAIRE": "Commentaire (tube, volume…)",
+      "AJOUTER_ECH": "Ajouter un échantillon",
+      "PRELEVER_SUBMIT": "Confirmer le prélèvement",
+      "PRELEVE_OK": "{{n}} échantillon(s) enregistré(s).",
+      "RESULTATS_TITLE": "Résultats",
+      "SAISIE_SUBMIT": "Enregistrer les résultats",
+      "SAISIE_APRES_PRELEVEMENT": "La saisie sera possible après l’enregistrement du prélèvement.",
+      "SAISIE_OK": "{{n}} résultat(s) enregistré(s).",
+      "COL_EXAMEN": "Examen",
+      "COL_VALEUR": "Valeur",
+      "COL_UNITE": "Unité",
+      "COL_REF": "Référence",
+      "COL_LECTURE": "Lecture",
+      "COL_COMMENTAIRE": "Commentaire",
+      "COMMENTAIRE_PH": "Commentaire",
+      "EN_ATTENTE": "En attente",
+      "VALIDER_TITLE": "Validation biologiste",
+      "VALIDER_HINT": "Votre nom et l’heure sont apposés sur le compte rendu. Les résultats critiques déclenchent une alerte au prescripteur.",
+      "CONCLUSION": "Conclusion",
+      "CONCLUSION_PH": "Conclusion ou recommandation (facultatif)",
+      "VALIDER_SUBMIT": "Valider et diffuser",
+      "VALIDER_CONFIRM_TITLE": "Valider les résultats ?",
+      "VALIDER_CONFIRM_TEXT": "Cette validation est nominative et définitive. Le prescripteur et le patient seront informés.",
+      "VALIDER_CONFIRM_CRITIQUE": "{{n}} résultat(s) critique(s) : le prescripteur recevra une alerte prioritaire et le patient ne sera informé qu’après son accusé de lecture.",
+      "VALIDE_OK": "Résultats validés.",
+      "ECHANTILLONS_TITLE": "Échantillons",
+      "ECHANTILLONS_EMPTY": "Aucun échantillon prélevé pour l’instant."
     }
   }
 }

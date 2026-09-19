@@ -1,0 +1,62 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-bell" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'HOPITAL.ALERTES.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'HOPITAL.ALERTES.SUBTITLE' | translate }}</p>
+  </div>
+</header>
+
+@if (isLoading()) {
+  <div class="bb-hop-list">@for (i of [1,2]; track i) { <div class="bb-skeleton" style="height:110px;border-radius:18px"></div> }</div>
+} @else {
+  <section class="bb-card">
+    <h2 class="bb-card__title"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'HOPITAL.ALERTES.OUVERTES' | translate: { count: ouvertes().length } }}</h2>
+    @if (ouvertes().length === 0) {
+      <div class="bb-empty"><i class="pi pi-check-circle"></i><p>{{ 'HOPITAL.ALERTES.EMPTY' | translate }}</p><span>{{ 'HOPITAL.ALERTES.EMPTY_SUB' | translate }}</span></div>
+    } @else {
+      <div class="bb-hop-list">
+        @for (a of ouvertes(); track a.id) {
+          <div class="bb-hop-item bb-hop-item--urgent" style="cursor:default">
+            <div class="bb-hop-item__body">
+              <p class="bb-hop-item__title">
+                {{ a.demande.patient.prenom }} {{ a.demande.patient.nom }}
+                <span class="bb-badge bb-badge--danger">{{ 'LABO.LECTURE.CRITIQUE' | translate }}</span>
+                @if (a.escaladeeLe) { <span class="bb-badge bb-badge--warning">{{ 'HOPITAL.ALERTES.ESCALADEE' | translate }}</span> }
+              </p>
+              <p class="bb-hop-item__sub"><strong>{{ a.resultat.libelle }}</strong> : <strong style="color:var(--bb-danger)">{{ a.resultat.valeur }} {{ a.resultat.unite ?? '' }}</strong> · {{ 'HOPITAL.ALERTES.REF' | translate }} {{ reference(a) }}</p>
+              <p class="bb-hop-item__meta">
+                <span class="bb-hop-item__num">{{ a.demande.numero }}</span>
+                <span><i class="pi pi-building"></i>{{ a.demande.laboratoire.nom }}</span>
+                <span><i class="pi pi-clock"></i>{{ a.creeLe | date:'dd/MM/yyyy HH:mm' }}</span>
+                @if (a.destinataire) { <span><i class="pi pi-user"></i>{{ a.destinataire.prenom }} {{ a.destinataire.nom }}</span> }
+              </p>
+            </div>
+            <div class="bb-hop-item__actions">
+              <a matButton [routerLink]="['/hopital/episodes', a.demande.idEpisode]"><i class="pi pi-folder-open" aria-hidden="true"></i> {{ 'HOPITAL.ALERTES.VOIR_EPISODE' | translate }}</a>
+              <button matButton="outlined" type="button" (click)="compteRendu(a)"><i class="pi pi-print" aria-hidden="true"></i> {{ 'HOPITAL.ALERTES.CR' | translate }}</button>
+              <button matButton="filled" type="button" (click)="accuser(a)" [disabled]="enCours() === a.id"><i [class]="enCours() === a.id ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i> {{ 'HOPITAL.ALERTES.ACCUSER' | translate }}</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  @if (accusees().length > 0) {
+    <section class="bb-card" style="margin-top:1rem">
+      <h2 class="bb-card__title"><i class="pi pi-history" aria-hidden="true"></i> {{ 'HOPITAL.ALERTES.HISTORIQUE' | translate }}</h2>
+      <div class="bb-hop-list">
+        @for (a of accusees(); track a.id) {
+          <a class="bb-hop-item" [routerLink]="['/hopital/episodes', a.demande.idEpisode]">
+            <div class="bb-hop-item__body">
+              <p class="bb-hop-item__title">{{ a.demande.patient.prenom }} {{ a.demande.patient.nom }} <span class="bb-badge bb-badge--success">{{ 'HOPITAL.ALERTES.ACCUSEE' | translate }}</span></p>
+              <p class="bb-hop-item__sub">{{ a.resultat.libelle }} : {{ a.resultat.valeur }} {{ a.resultat.unite ?? '' }}</p>
+              <p class="bb-hop-item__meta"><span class="bb-hop-item__num">{{ a.demande.numero }}</span><span><i class="pi pi-check"></i>{{ a.accuseeLe | date:'dd/MM/yyyy HH:mm' }}</span></p>
+            </div>
+            <i class="pi pi-chevron-right" aria-hidden="true"></i>
+          </a>
+        }
+      </div>
+    </section>
+  }
+}

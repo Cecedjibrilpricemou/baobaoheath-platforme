@@ -1,0 +1,233 @@
+@if (isLoading()) {
+  <div class="bb-skeleton" style="height:140px;border-radius:20px;margin-bottom:1rem"></div>
+  <div class="bb-skeleton" style="height:320px;border-radius:20px"></div>
+} @else if (demande(); as d) {
+
+  <a routerLink="/laboratoire/demandes" class="bb-hop-back"><i class="pi pi-arrow-left" aria-hidden="true"></i> {{ 'LABO.DETAIL.BACK' | translate }}</a>
+
+  <!-- ── En-tete ─────────────────────────────────────────────────────── -->
+  <header class="bb-page-head" style="margin-bottom:1rem">
+    <div class="bb-page-head__text" style="display:flex;gap:14px;align-items:flex-start">
+      <span class="bb-hop-item__avatar" style="width:56px;height:56px;font-size:18px" aria-hidden="true">{{ initiales(d) }}</span>
+      <div>
+        <span class="bb-page-head__tag"><i class="pi pi-microchip" aria-hidden="true"></i> {{ d.numero }}</span>
+        <h1 class="bb-page-head__title">
+          {{ d.patient.prenom }} {{ d.patient.nom }}
+          <span [class]="urgenceClasse(d.urgence)" style="vertical-align:middle;margin-left:6px">{{ 'HOPITAL.URGENCE.' + d.urgence | translate }}</span>
+          <span [class]="demandeClasse(d.statut)" style="vertical-align:middle">{{ 'HOPITAL.DEMANDE_STATUT.' + d.statut | translate }}</span>
+        </h1>
+        <p class="bb-page-head__sub">{{ 'LABO.DETAIL.PRESCRIT_PAR' | translate }} {{ d.prescripteur.prenom }} {{ d.prescripteur.nom }} · {{ 'LABO.DETAIL.EPISODE' | translate }} {{ d.numeroEpisode }}@if (d.indicationClinique) { · {{ d.indicationClinique }} }</p>
+      </div>
+    </div>
+    <div class="bb-page-head__actions">
+      @switch (d.statut) {
+        @case ('TRANSMISE') {
+          <button matButton="filled" type="button" (click)="accuserReception()" [disabled]="isSaving()"><i class="pi pi-inbox" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_RECEPTION' | translate }}</button>
+          <button matButton="outlined" type="button" (click)="ouvrir('planifier')"><i class="pi pi-calendar-plus" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_PLANIFIER' | translate }}</button>
+          <button matButton type="button" (click)="ouvrir('prelever')"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_PRELEVER' | translate }}</button>
+        }
+        @case ('RECUE') {
+          <button matButton="filled" type="button" (click)="ouvrir('prelever')"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_PRELEVER' | translate }}</button>
+          <button matButton="outlined" type="button" (click)="ouvrir('planifier')"><i class="pi pi-calendar-plus" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_PLANIFIER' | translate }}</button>
+        }
+        @case ('PRELEVEE') {
+          <button matButton="outlined" type="button" (click)="compteRendu()"><i class="pi pi-print" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_CR_BROUILLON' | translate }}</button>
+        }
+        @case ('EN_ANALYSE') {
+          @if (estBiologiste()) {
+            <button matButton="filled" type="button" (click)="ouvrir('valider')" [disabled]="!toutSaisi()"><i class="pi pi-verified" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_VALIDER' | translate }}</button>
+          }
+          <button matButton="outlined" type="button" (click)="compteRendu()"><i class="pi pi-print" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_CR_BROUILLON' | translate }}</button>
+        }
+        @case ('VALIDEE') {
+          <button matButton="filled" type="button" (click)="compteRendu()"><i class="pi pi-print" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_CR' | translate }}</button>
+        }
+      }
+    </div>
+  </header>
+
+  <!-- ── Frise des etapes ────────────────────────────────────────────── -->
+  @if (d.statut === 'ANNULEE') {
+    <div class="bb-banner bb-banner--offline" role="status"><i class="pi pi-times-circle" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'LABO.DETAIL.ANNULEE' | translate }}</span>@if (d.motifAnnulation) { <span class="bb-banner__sub">{{ d.motifAnnulation }}</span> }</div></div>
+  } @else {
+    <ol class="labo-etapes" aria-label="Etapes">
+      @for (e of etapes; track e; let i = $index) {
+        <li class="labo-etapes__item" [class.labo-etapes__item--done]="i < etapeCourante()" [class.labo-etapes__item--now]="i === etapeCourante()">
+          <span class="labo-etapes__dot"><i class="pi" [class.pi-check]="i < etapeCourante()" [class.pi-circle-fill]="i === etapeCourante()" [class.pi-circle]="i > etapeCourante()" aria-hidden="true"></i></span>
+          <span class="labo-etapes__label">{{ 'LABO.ETAPE.' + e | translate }}</span>
+        </li>
+      }
+    </ol>
+  }
+
+  @if (d.statut === 'VALIDEE' && d.alerteCritiqueEnAttente) {
+    <div class="bb-banner bb-banner--offline" role="alert"><i class="pi pi-bell" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'LABO.DETAIL.CRITIQUE_BANNER' | translate }}</span><span class="bb-banner__sub">{{ 'LABO.DETAIL.CRITIQUE_BANNER_SUB' | translate }}</span></div></div>
+  }
+  @if (d.statut === 'EN_ANALYSE' && estBiologiste() && toutSaisi()) {
+    <div class="bb-banner bb-banner--online" role="status"><i class="pi pi-verified" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'LABO.DETAIL.PRET_A_VALIDER' | translate }}</span><span class="bb-banner__sub">{{ 'LABO.DETAIL.PRET_A_VALIDER_SUB' | translate }}</span></div></div>
+  }
+
+  <!-- ── Fiche ───────────────────────────────────────────────────────── -->
+  <section class="bb-card">
+    <div class="bb-hop-info">
+      <div><div class="bb-hop-info__label">{{ 'LABO.DETAIL.PATIENT' | translate }}</div><div class="bb-hop-info__value">{{ d.patient.prenom }} {{ d.patient.nom }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'LABO.DETAIL.PRESCRIPTEUR' | translate }}</div><div class="bb-hop-info__value">{{ d.prescripteur.prenom }} {{ d.prescripteur.nom }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'LABO.DETAIL.TRANSMISE_LE' | translate }}</div><div class="bb-hop-info__value">{{ d.transmiseLe | date:'dd/MM/yyyy HH:mm' }}</div></div>
+      <div><div class="bb-hop-info__label">{{ 'LABO.DETAIL.PRELEVEMENT' | translate }}</div><div class="bb-hop-info__value">@if (d.preleveeLe) { {{ d.preleveeLe | date:'dd/MM/yyyy HH:mm' }} } @else if (d.creneauPrelevement) { {{ d.creneauPrelevement | date:'dd/MM/yyyy HH:mm' }} } @else { — }@if (d.lieuPrelevement) { · {{ 'LABO.LIEU.' + d.lieuPrelevement | translate }} }</div></div>
+      <div><div class="bb-hop-info__label">{{ 'LABO.DETAIL.VALIDATION' | translate }}</div><div class="bb-hop-info__value">@if (d.valideeLe) { {{ d.valideeLe | date:'dd/MM/yyyy HH:mm' }} · {{ d.valideur?.prenom }} {{ d.valideur?.nom }} } @else { — }</div></div>
+      <div><div class="bb-hop-info__label">{{ 'LABO.DETAIL.DIFFUSION' | translate }}</div><div class="bb-hop-info__value">@if (d.diffuseePatientLe) { {{ d.diffuseePatientLe | date:'dd/MM/yyyy HH:mm' }} } @else { {{ 'LABO.DETAIL.NON_DIFFUSEE' | translate }} }</div></div>
+      @if (d.consignesPatient) { <div style="grid-column:1/-1"><div class="bb-hop-info__label">{{ 'LABO.DETAIL.CONSIGNES' | translate }}</div><div class="bb-hop-info__value" style="font-weight:500;white-space:pre-line">{{ d.consignesPatient }}</div></div> }
+    </div>
+  </section>
+
+  <!-- ── Panneau : planifier le prelevement ─────────────────────────── -->
+  @if (panneau() === 'planifier') {
+    <section class="bb-hop-panel">
+      <h2 class="bb-card__title"><i class="pi pi-calendar-plus" aria-hidden="true"></i> {{ 'LABO.DETAIL.PLANIFIER_TITLE' | translate }}</h2>
+      <div class="bb-hop-panel__grid">
+        <div class="form-field-wrap">
+          <label class="form-label" for="pl-lieu">{{ 'LABO.DETAIL.LIEU' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <mat-select id="pl-lieu" [(ngModel)]="planification.lieu">
+              @for (l of lieux; track l) { <mat-option [value]="l">{{ 'LABO.LIEU.' + l | translate }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-field-wrap">
+          <label class="form-label" for="pl-date">{{ 'LABO.DETAIL.CRENEAU' | translate }}</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+            <input matInput id="pl-date" type="datetime-local" [(ngModel)]="planification.creneau" [disabled]="!planification.avecCreneau" />
+          </mat-form-field>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px;cursor:pointer"><input type="checkbox" [(ngModel)]="planification.avecCreneau" style="accent-color:var(--bb-primary)" /> {{ 'LABO.DETAIL.AVEC_CRENEAU' | translate }}</label>
+        </div>
+      </div>
+      <small class="form-hint">{{ 'LABO.DETAIL.PLANIFIER_HINT' | translate }}</small>
+      <div class="bb-hop-panel__footer">
+        <button matButton type="button" (click)="ouvrir('aucun')" [disabled]="isSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button matButton="filled" type="button" (click)="planifier()" [disabled]="isSaving()"><i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i> {{ 'LABO.DETAIL.PLANIFIER_SUBMIT' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  <!-- ── Panneau : enregistrer le prelevement ───────────────────────── -->
+  @if (panneau() === 'prelever') {
+    <section class="bb-hop-panel">
+      <h2 class="bb-card__title"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'LABO.DETAIL.PRELEVER_TITLE' | translate }}</h2>
+      <p class="form-hint" style="margin:0 0 10px">{{ 'LABO.DETAIL.PRELEVER_HINT' | translate }}</p>
+      <div class="form-field-wrap" style="max-width:320px">
+        <label class="form-label" for="pr-lieu">{{ 'LABO.DETAIL.LIEU' | translate }}</label>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+          <mat-select id="pr-lieu" [(ngModel)]="lieuPrelevement">
+            @for (l of lieux; track l) { <mat-option [value]="l">{{ 'LABO.LIEU.' + l | translate }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="labo-echantillons">
+        @for (e of echantillons(); track $index; let i = $index) {
+          <div class="labo-echantillons__row">
+            <span class="labo-echantillons__num">{{ i + 1 }}</span>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="flex:0 0 180px">
+              <input matInput [placeholder]="'LABO.DETAIL.SPECIMEN' | translate" maxlength="40" [ngModel]="e.specimen" (ngModelChange)="majEchantillon(i, 'specimen', $event)" style="text-transform:uppercase" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="flex:1">
+              <input matInput [placeholder]="'LABO.DETAIL.ECH_COMMENTAIRE' | translate" maxlength="300" [ngModel]="e.commentaire" (ngModelChange)="majEchantillon(i, 'commentaire', $event)" />
+            </mat-form-field>
+            <button matIconButton type="button" (click)="retirerEchantillon(i)" [attr.aria-label]="'COMMON.DELETE' | translate"><i class="pi pi-trash" aria-hidden="true"></i></button>
+          </div>
+        }
+        <button matButton type="button" (click)="ajouterEchantillon()"><i class="pi pi-plus" aria-hidden="true"></i> {{ 'LABO.DETAIL.AJOUTER_ECH' | translate }}</button>
+      </div>
+      <div class="bb-hop-panel__footer">
+        <button matButton type="button" (click)="ouvrir('aucun')" [disabled]="isSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button matButton="filled" type="button" (click)="prelever()" [disabled]="isSaving() || echantillons().length === 0"><i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i> {{ 'LABO.DETAIL.PRELEVER_SUBMIT' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  <!-- ── Panneau : validation du biologiste ─────────────────────────── -->
+  @if (panneau() === 'valider') {
+    <section class="bb-hop-panel">
+      <h2 class="bb-card__title"><i class="pi pi-verified" aria-hidden="true"></i> {{ 'LABO.DETAIL.VALIDER_TITLE' | translate }}</h2>
+      <p class="form-hint" style="margin:0 0 10px">{{ 'LABO.DETAIL.VALIDER_HINT' | translate }}</p>
+      <div class="form-field-wrap">
+        <label class="form-label" for="va-com">{{ 'LABO.DETAIL.CONCLUSION' | translate }}</label>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+          <textarea matInput id="va-com" rows="3" maxlength="2000" [placeholder]="'LABO.DETAIL.CONCLUSION_PH' | translate" [(ngModel)]="commentaireBiologiste"></textarea>
+        </mat-form-field>
+      </div>
+      <div class="bb-hop-panel__footer">
+        <button matButton type="button" (click)="ouvrir('aucun')" [disabled]="isSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button matButton="filled" type="button" (click)="valider()" [disabled]="isSaving() || !peutValider()"><i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-verified'" aria-hidden="true"></i> {{ 'LABO.DETAIL.VALIDER_SUBMIT' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  <!-- ── Resultats ───────────────────────────────────────────────────── -->
+  <section class="bb-card" style="margin-top:1rem">
+    <div class="bb-hop-sub__head" style="margin-bottom:8px">
+      <h2 class="bb-card__title" style="margin:0"><i class="pi pi-list-check" aria-hidden="true"></i> {{ 'LABO.DETAIL.RESULTATS_TITLE' | translate }}</h2>
+      @if (peutSaisir()) {
+        <button matButton="filled" type="button" (click)="enregistrerResultats()" [disabled]="isSaving() || !saisieModifiee()"><i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-save'" aria-hidden="true"></i> {{ 'LABO.DETAIL.SAISIE_SUBMIT' | translate }}</button>
+      }
+    </div>
+    @if (d.statut === 'TRANSMISE' || d.statut === 'RECUE') {
+      <p class="form-hint" style="margin:0 0 10px">{{ 'LABO.DETAIL.SAISIE_APRES_PRELEVEMENT' | translate }}</p>
+    }
+    <div class="labo-resultats" [class.labo-resultats--edition]="peutSaisir()">
+      <div class="labo-resultats__head">
+        <span>{{ 'LABO.DETAIL.COL_EXAMEN' | translate }}</span><span>{{ 'LABO.DETAIL.COL_VALEUR' | translate }}</span><span>{{ 'LABO.DETAIL.COL_UNITE' | translate }}</span><span>{{ 'LABO.DETAIL.COL_REF' | translate }}</span><span>{{ 'LABO.DETAIL.COL_LECTURE' | translate }}</span><span>{{ 'LABO.DETAIL.COL_COMMENTAIRE' | translate }}</span>
+      </div>
+      @for (l of d.lignes; track l.id) {
+        <div class="labo-resultats__row" [class.labo-resultats__row--critique]="l.resultat?.interpretation === 'CRITIQUE'" [class.labo-resultats__row--anormal]="l.resultat?.interpretation === 'ANORMAL'">
+          <div class="labo-resultats__examen"><strong>{{ l.examen.libelle }}</strong><small>{{ l.examen.codeLoinc }} · {{ l.examen.specimen }}@if (l.commentaire) { · {{ l.commentaire }} }</small></div>
+          <div>
+            @if (peutSaisir()) {
+              <input class="labo-resultats__input" [placeholder]="l.examen.refTexte ? l.examen.refTexte : '0,0'" maxlength="200" [ngModel]="saisies()[l.id]?.valeur" (ngModelChange)="majSaisie(l.id, 'valeur', $event)" [attr.aria-label]="l.examen.libelle" />
+            } @else {
+              <strong>{{ l.resultat?.valeur ?? '—' }}</strong>
+            }
+          </div>
+          <div>{{ l.resultat?.unite ?? l.examen.unite ?? '' }}</div>
+          <div class="labo-resultats__ref">{{ reference(l) }}</div>
+          <div>
+            @if (peutSaisir()) {
+              @if (apercu(l); as a) { <span [class]="lectureClasse(a)">{{ 'LABO.LECTURE.' + a | translate }}</span> } @else { <span class="bb-badge bb-badge--neutral">—</span> }
+            } @else if (l.resultat) {
+              <span [class]="lectureClasse(l.resultat.interpretation)">{{ 'LABO.LECTURE.' + l.resultat.interpretation | translate }}</span>
+            } @else { <span class="bb-badge bb-badge--neutral">{{ 'LABO.DETAIL.EN_ATTENTE' | translate }}</span> }
+          </div>
+          <div>
+            @if (peutSaisir()) {
+              <input class="labo-resultats__input" maxlength="500" [placeholder]="'LABO.DETAIL.COMMENTAIRE_PH' | translate" [ngModel]="saisies()[l.id]?.commentaire" (ngModelChange)="majSaisie(l.id, 'commentaire', $event)" />
+              @if (d.echantillons.length > 1) {
+                <select class="labo-resultats__select" [ngModel]="saisies()[l.id]?.idEchantillon" (ngModelChange)="majSaisie(l.id, 'idEchantillon', $event)">
+                  @for (e of d.echantillons; track e.id) { <option [value]="e.id">{{ e.specimen }} · {{ e.code }}</option> }
+                </select>
+              }
+            } @else {
+              <span style="font-size:12.5px;color:var(--bb-text-secondary)">{{ l.resultat?.commentaire ?? '' }}</span>
+              @if (l.resultat?.codeEchantillon) { <small style="display:block;color:var(--bb-text-muted)">{{ l.resultat?.codeEchantillon }}</small> }
+            }
+          </div>
+        </div>
+      }
+    </div>
+    @if (d.commentaireBiologiste) {
+      <div class="bb-hop-sub__consignes" style="margin-top:12px"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireBiologiste }}</div>
+    }
+  </section>
+
+  <!-- ── Echantillons ────────────────────────────────────────────────── -->
+  <section class="bb-card" style="margin-top:1rem">
+    <h2 class="bb-card__title"><i class="pi pi-barcode" aria-hidden="true"></i> {{ 'LABO.DETAIL.ECHANTILLONS_TITLE' | translate }}</h2>
+    @if (d.echantillons.length === 0) {
+      <div class="bb-empty" style="padding:1.25rem"><i class="pi pi-filter"></i><p>{{ 'LABO.DETAIL.ECHANTILLONS_EMPTY' | translate }}</p></div>
+    } @else {
+      <div class="bb-hop-sub__tags">
+        @for (e of d.echantillons; track e.id) {
+          <span class="labo-ech-chip"><i class="pi pi-barcode" aria-hidden="true"></i> <strong>{{ e.code }}</strong> · {{ e.specimen }} · {{ e.preleveLe | date:'dd/MM HH:mm' }} · {{ e.preleveur.prenom }} {{ e.preleveur.nom }}@if (e.commentaire) { · {{ e.commentaire }} }</span>
+        }
+      </div>
+    }
+  </section>
+}
