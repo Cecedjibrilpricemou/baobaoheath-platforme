@@ -189,6 +189,18 @@
     gap: 8px; margin-bottom: 2px;
   }
 
+  &__ordo-head-actions { display: flex; align-items: center; gap: 10px; }
+
+  &__ordo-print {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
+    color: var(--bb-text-secondary); font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover { color: var(--bb-text-primary); border-color: var(--bb-border-hover); }
+    i { font-size: 11px; color: var(--bb-primary); }
+  }
+
   &__ordo-numero {
     font-family: var(--bb-font-display); font-size: 13px; font-weight: 800;
     letter-spacing: 0.4px; color: var(--bb-text-primary);

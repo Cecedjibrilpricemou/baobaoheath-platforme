@@ -4,7 +4,11 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { PharmacieStock, OrdonnanceDelivrance, DelivrancePayload } from '../models/pharmacien.model';
 import { ApiResponse } from '../models/api.model';
-import type { OrdonnanceEnAttenteView } from '@baobaoheath/shared-types';
+import type {
+  OrdonnanceEnAttenteView,
+  VerificationOrdonnanceView,
+  VerifierOrdonnanceDto,
+} from '@baobaoheath/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class PharmacienService {
@@ -17,6 +21,15 @@ export class PharmacienService {
 
   scanQrCode(code: string): Observable<ApiResponse<OrdonnanceDelivrance>> {
     return this.api.get<ApiResponse<OrdonnanceDelivrance>>(`/pharmacien/scan/${code}`);
+  }
+
+  /**
+   * EF-07-01 : controle d'une ordonnance papier, sans le QR du patient. La
+   * reponse peut etre un refus motive (non signee, expiree, deja servie) : ce
+   * n'est pas une erreur HTTP, le comptoir doit l'afficher tel quel.
+   */
+  verifierOrdonnance(dto: VerifierOrdonnanceDto): Observable<ApiResponse<VerificationOrdonnanceView>> {
+    return this.api.post<ApiResponse<VerificationOrdonnanceView>>('/pharmacien/ordonnances/verifier', dto);
   }
 
   delivrerOrdonnance(idOrdonnance: string, payload: DelivrancePayload): Observable<ApiResponse<OrdonnanceDelivrance>> {

@@ -75,7 +75,9 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Délivrance **ligne par ligne** (prépare EF-07-07) ; le statut du document se déduit de ses lignes et ne se saisit jamais.
   - `POST /pharmacien/ordonnances/verifier` : numéro inconnu et code faux donnent la même réponse (pas d'énumération) ; un refus renvoie toujours son motif lisible.
   - Migration avec reprise des données existantes, vérifiée sur base jetable (5 documents reconstitués depuis 11 lignes, 13 contrôles, `migrate diff` vide).
-- [ ] **Front P3 à faire** : écran de vérification au comptoir (saisie numéro + code), impression de l'ordonnance avec son numéro et son code, affichage du code côté patient.
+- [x] **Front livré le 2026-09-23** : écran de vérification au comptoir (numéro + code, refus motivé affiché tel quel), page patient « Mes ordonnances » (code masqué par défaut, dévoilé d'un geste), ordonnance imprimable depuis l'espace patient comme depuis la fiche de consultation.
+  - Le document est rendu par l'API, comme le bon d'examen et le compte rendu de laboratoire : filigrane « NON SIGNÉE » ou « EXPIRÉE » pour qu'aucun papier n'ait l'air opposable sans l'être.
+  - Parcours e2e étendu : la patiente retrouve son ordonnance, dévoile son code et l'imprime, avant que la pharmacie ne la délivre.
 - [ ] Base médicaments enrichie (DCI, ATC) ; `InteractionMedicament` ; alertes interactions/allergies/contre-indications non bloquantes avec motif de dépassement (EF-05-05/06).
 - [ ] Ordonnances renouvelables (EF-05-09) ; circuit distinct pour produits réglementés (EF-05-12).
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
@@ -165,7 +167,8 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
-| 2026-09-23 | P3 | API : l'ordonnance devient un document numéroté, codé, daté et signé ; délivrance ligne par ligne ; vérification au comptoir (EF-05-07/08, EF-07-01). 202 tests API (+51). Écrans de vérification et d'impression restent à faire. |
+| 2026-09-23 | P3 | Front : vérification au comptoir (numéro + code), page patient « Mes ordonnances » avec code masqué, ordonnance imprimable. 220 tests API, 5 parcours e2e. La signature obligatoire devient le paramètre de la décision D2, à `false` : imposer un médecin bloquerait la délivrance là où il n'y en a pas. |
+| 2026-09-23 | P3 | API : l'ordonnance devient un document numéroté, codé, daté et signé ; délivrance ligne par ligne ; vérification au comptoir (EF-05-07/08, EF-07-01). Migration avec reprise des données, vérifiée sur base jetable. |
 | 2026-09-18 | — | Renommage KÈNÈYA, landing et pages d'auth refaites, plan validé |
 | 2026-09-19 | P2 | API `5b2e945` + front : espace Laboratoire (technicien, biologiste), cycle réception → prélèvement → saisie → validation, résultats critiques avec accusé et escalade, courbes d'évolution patient |
 | 2026-09-19 | Design | `37646f0` : tous les espaces (patient, ASC, médecin, pharmacien, admin structure) alignés sur la landing en clair et sombre — en-têtes `.bb-page-head`, cartes de chiffres neutres, alias `.bb-*` partagés |

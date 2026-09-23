@@ -54,6 +54,73 @@
       <app-qr-scanner (detecte)="onQrDetecte($event)" (ferme)="showScanner.set(false)" />
     }
 
+    <!-- Verification d'une ordonnance papier, sans QR patient (EF-07-01) -->
+    <section class="bb-ordo__verif" aria-labelledby="verif-title">
+      <div class="bb-ordo__verif-head">
+        <h3 id="verif-title"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.VERIFY_TITLE' | translate }}</h3>
+      </div>
+      <p class="bb-ordo__verif-sub">{{ 'PHARMACIEN.ORDONNANCES.VERIFY_SUB' | translate }}</p>
+
+      <div class="bb-ordo__verif-form">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'PHARMACIEN.ORDONNANCES.VERIFY_NUMBER' | translate }}</mat-label>
+          <input matInput id="verif-numero" [(ngModel)]="numeroSaisi" placeholder="OR-2026-000123"
+                 [disabled]="isVerifiant()" (keydown.enter)="verifier()" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'PHARMACIEN.ORDONNANCES.VERIFY_CODE' | translate }}</mat-label>
+          <input matInput id="verif-code" [(ngModel)]="codeSaisi" placeholder="A7D27Y"
+                 [disabled]="isVerifiant()" (keydown.enter)="verifier()" />
+        </mat-form-field>
+        <button type="button" class="bb-ordo__search-btn" (click)="verifier()"
+                [disabled]="isVerifiant() || !numeroSaisi.trim() || !codeSaisi.trim()">
+          <i [class]="isVerifiant() ? 'pi pi-spinner pi-spin' : 'pi pi-check-circle'" aria-hidden="true"></i>
+          {{ (isVerifiant() ? 'PHARMACIEN.ORDONNANCES.VERIFYING' : 'PHARMACIEN.ORDONNANCES.VERIFY_BTN') | translate }}
+        </button>
+      </div>
+
+      @if (verification(); as v) {
+        <!-- Un refus n'est pas une erreur technique : il porte son motif, que
+             le pharmacien doit pouvoir expliquer au patient. -->
+        <div class="bb-ordo__verif-result"
+             [class.bb-ordo__verif-result--ok]="v.valide"
+             [class.bb-ordo__verif-result--ko]="!v.valide"
+             role="status" aria-live="polite">
+          <div class="bb-ordo__verif-verdict">
+            <i [class]="v.valide ? 'pi pi-check-circle' : 'pi pi-ban'" aria-hidden="true"></i>
+            <strong>{{ (v.valide ? 'PHARMACIEN.ORDONNANCES.VERIFY_OK' : 'PHARMACIEN.ORDONNANCES.VERIFY_KO') | translate }}</strong>
+            @if (v.motif) { <span class="bb-ordo__verif-motif">{{ v.motif }}</span> }
+          </div>
+
+          @if (v.ordonnance; as ord) {
+            <div class="bb-ordo__verif-detail">
+              <span class="bb-ordo__doc-numero">{{ ord.numero }}</span>
+              @if (v.patient; as pat) {
+                <span>{{ pat.prenom }} {{ pat.nom }}</span>
+              }
+              <span class="meta">{{ ord.medecinNom }} · {{ 'PHARMACIEN.ORDONNANCES.VALID_UNTIL' | translate: { date: (ord.valideJusquau | date:'shortDate') ?? '' } }}</span>
+              <ul class="bb-ordo__verif-meds">
+                @for (l of ord.lignes; track l.id) {
+                  <li>{{ l.medicament.nomCommercial ?? l.medicament.dci }} — {{ l.posologie }} · {{ l.frequence }} · {{ l.dureeJours }}j</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="bb-ordo__verif-actions">
+            @if (v.valide) {
+              <button type="button" class="bb-ordo__search-btn" (click)="ouvrirDepuisVerification()">
+                <i class="pi pi-arrow-right" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.VERIFY_OPEN' | translate }}
+              </button>
+            }
+            <button type="button" class="bb-ordo__back" (click)="fermerVerification()">
+              {{ 'COMMON.CLOSE' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+
     <!-- Ordonnances en attente dans la préfecture -->
     <section class="bb-ordo__pending" aria-labelledby="pending-title">
       <div class="bb-ordo__pending-head">

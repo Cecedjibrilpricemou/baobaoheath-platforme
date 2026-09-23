@@ -10,6 +10,7 @@ import { env } from './config/env';
 import authRoutes from './routes/auth.routes';
 import patientRoutes from './routes/patient.routes';
 import consultationRoutes from './routes/consultation.routes';
+import ordonnanceRoutes from './routes/ordonnance.routes';
 import medicamentRoutes from './routes/medicament.routes';
 import ascRoutes from './routes/asc.routes';
 import medecinRoutes from './routes/medecin.routes';
@@ -171,6 +172,7 @@ for (const route of ROUTES_SENSIBLES) {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/consultations', consultationRoutes);
+app.use('/api/v1/ordonnances', ordonnanceRoutes);
 app.use('/api/v1/medicaments', medicamentRoutes);
 app.use('/api/v1/asc', ascRoutes);
 app.use('/api/v1/medecin', medecinRoutes);

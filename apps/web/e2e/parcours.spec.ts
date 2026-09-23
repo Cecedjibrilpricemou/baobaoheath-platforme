@@ -3,8 +3,9 @@
 //   1. l'ASC recoit Awa Diallo, prescrit un medicament, cloture ; puis la
 //      revoit et la refere au centre de sante ;
 //   2. le medecin du centre accepte le transfert — et Awa en est prevenue ;
-//   3. la pharmacie de la prefecture voit l'ordonnance en attente et la delivre ;
-//   4. l'admin du centre retrouve ses agents, compteur et liste d'accord.
+//   3. Awa retrouve son ordonnance, devoile son code et l'imprime ;
+//   4. la pharmacie de la prefecture voit l'ordonnance en attente et la delivre ;
+//   5. l'admin du centre retrouve ses agents, compteur et liste d'accord.
 //
 // Chaque test depend du precedent (mode serial) : c'est voulu, on verifie la
 // chaine, pas des ecrans isoles.
@@ -108,7 +109,43 @@ test('2. Medecin — accepte le transfert, la patiente est notifiee', async ({ p
   await contextePatiente.close();
 });
 
-test('3. Pharmacien — voit l ordonnance en attente et la delivre', async ({ page }) => {
+test("3. Patiente — retrouve son ordonnance, devoile son code et l'imprime", async ({ page }) => {
+  await login(page, E2E.patient.telephone);
+  await expect(page).toHaveURL(/\/patient\/dashboard/);
+
+  await page.goto('/patient/ordonnances');
+  const carte = page.locator('.bb-pord__card').first();
+  await expect(carte).toBeVisible();
+
+  // Le numero est ce que la pharmacie demande : il doit etre lisible tel quel.
+  const numero = carte.locator('.bb-pord__numero');
+  await expect(numero).toHaveText(/^OR-\d{4}-\d{6}$/);
+
+  // Le medicament prescrit au parcours 1 figure bien sur une ordonnance.
+  await expect(page.locator('.bb-pord__meds').first()).toContainText(E2E.medicament);
+
+  // Le code ne s'affiche pas d'emblee : l'ecran s'ouvre souvent devant
+  // quelqu'un, et ce code permet de retirer un traitement.
+  const active = page.locator('.bb-pord__card:not(.bb-pord__card--inactive)').first();
+  await expect(active).toBeVisible();
+  const valeur = active.locator('.bb-pord__code-val');
+  await expect(valeur).toHaveText('••••••');
+  await active.locator('.bb-pord__code-btn').click();
+  // L'alphabet ecarte les caracteres ambigus : ni 0/O, ni 1/I/L.
+  await expect(valeur).toHaveText(/^[A-HJ-KM-NP-Z2-9]{4,12}$/);
+
+  // L'impression ouvre le document rendu par l'API, numero et code en clair.
+  const [document] = await Promise.all([
+    page.waitForEvent('popup'),
+    carte.locator('.bb-pord__print').click(),
+  ]);
+  await document.waitForLoadState('domcontentloaded');
+  await expect(document.locator('body')).toContainText(await numero.innerText());
+  await expect(document.locator('.controle')).toBeVisible();
+  await document.close();
+});
+
+test('4. Pharmacien — voit l ordonnance en attente et la delivre', async ({ page }) => {
   await login(page, E2E.pharmacien.email);
   await expect(page).toHaveURL(/\/pharmacien\/ordonnances/);
 
@@ -141,7 +178,7 @@ test('3. Pharmacien — voit l ordonnance en attente et la delivre', async ({ pa
   await expect(lignes).toHaveCount(avant - 1);
 });
 
-test('4. Admin structure — voit ses agents, le compteur suit la liste', async ({ page }) => {
+test('5. Admin structure — voit ses agents, le compteur suit la liste', async ({ page }) => {
   await login(page, E2E.adminStructure.email);
   await expect(page).toHaveURL(/\/admin-structure\/dashboard/);
 

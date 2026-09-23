@@ -1,0 +1,97 @@
+<div class="bb-pord">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-file-edit" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.ORDONNANCES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.ORDONNANCES.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-pord__empty">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (ordonnances().length === 0) {
+    <div class="bb-pord__empty-state">
+      <i class="pi pi-file" aria-hidden="true"></i>
+      <p>{{ 'PATIENT.ORDONNANCES.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+
+    @if (actives().length) {
+      <h2 class="bb-pord__section">{{ 'PATIENT.ORDONNANCES.ACTIVES' | translate }}</h2>
+      @for (o of actives(); track o.id) {
+        <ng-container *ngTemplateOutlet="carte; context: { o: o, active: true }"></ng-container>
+      }
+    }
+
+    @if (archivees().length) {
+      <h2 class="bb-pord__section">{{ 'PATIENT.ORDONNANCES.ARCHIVEES' | translate }}</h2>
+      @for (o of archivees(); track o.id) {
+        <ng-container *ngTemplateOutlet="carte; context: { o: o, active: false }"></ng-container>
+      }
+    }
+  }
+</div>
+
+<ng-template #carte let-o="o" let-active="active">
+  <article class="bb-pord__card" [class.bb-pord__card--inactive]="!active">
+    <div class="bb-pord__head">
+      <div>
+        <span class="bb-pord__numero">{{ o.numero }}</span>
+        <span class="bb-pord__date">{{ 'PATIENT.ORDONNANCES.ISSUED_ON' | translate: { date: (o.creeLe | date:'shortDate') ?? '' } }}</span>
+      </div>
+      <span class="bb-badge"
+            [class.bb-badge--success]="active"
+            [class.bb-badge--muted]="!active">
+        @if (o.expiree) {
+          {{ 'PATIENT.ORDONNANCES.EXPIREE' | translate }}
+        } @else if (o.statut === 'SERVIE') {
+          {{ 'PATIENT.ORDONNANCES.SERVIE' | translate }}
+        } @else if (o.statut === 'PARTIELLEMENT_SERVIE') {
+          {{ 'PATIENT.ORDONNANCES.PARTIELLE' | translate: { n: restantes(o) } }}
+        } @else {
+          {{ 'PATIENT.ORDONNANCES.A_RETIRER' | translate: { n: restantes(o) } }}
+        }
+      </span>
+    </div>
+
+    <p class="bb-pord__meta">
+      @if (o.signataire) { {{ o.signataire.prenom }} {{ o.signataire.nom }} · }
+      {{ 'PATIENT.ORDONNANCES.VALID_UNTIL' | translate: { date: (o.valideJusquau | date:'shortDate') ?? '' } }}
+    </p>
+
+    <ul class="bb-pord__meds">
+      @for (l of o.lignes; track l.id) {
+        <li [class.bb-pord__med--delivree]="l.statut === 'DELIVREE'">
+          <strong>{{ l.medicament?.nomCommercial ?? l.medicament?.dci }}</strong>
+          <span>{{ l.posologie }} · {{ l.frequence }} · {{ l.dureeJours }} {{ 'PATIENT.ORDONNANCES.DAYS' | translate }}</span>
+          @if (l.statut === 'DELIVREE') {
+            <span class="bb-pord__retire"><i class="pi pi-check" aria-hidden="true"></i> {{ 'PATIENT.ORDONNANCES.RETIRE' | translate }}</span>
+          }
+        </li>
+      }
+    </ul>
+
+    <!-- Le code ouvre le retrait du traitement : il ne s'affiche qu'a la
+         demande, au comptoir, pas des l'ouverture de la page. -->
+    @if (active) {
+      <div class="bb-pord__code">
+        <div>
+          <span class="bb-pord__code-lab">{{ 'PATIENT.ORDONNANCES.CODE_LABEL' | translate }}</span>
+          <span class="bb-pord__code-val">{{ codeVisible(o.id) ? o.codeVerification : '••••••' }}</span>
+        </div>
+        <button type="button" class="bb-pord__code-btn" (click)="basculerCode(o.id)"
+                [attr.aria-label]="(codeVisible(o.id) ? 'PATIENT.ORDONNANCES.CODE_HIDE' : 'PATIENT.ORDONNANCES.CODE_SHOW') | translate">
+          <i [class]="codeVisible(o.id) ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+          {{ (codeVisible(o.id) ? 'PATIENT.ORDONNANCES.CODE_HIDE' : 'PATIENT.ORDONNANCES.CODE_SHOW') | translate }}
+        </button>
+      </div>
+      <p class="bb-pord__code-aide">{{ 'PATIENT.ORDONNANCES.CODE_HINT' | translate }}</p>
+    }
+
+    <div class="bb-pord__actions">
+      <button type="button" class="bb-pord__print" (click)="imprimer(o)">
+        <i class="pi pi-print" aria-hidden="true"></i> {{ 'PATIENT.ORDONNANCES.PRINT' | translate }}
+      </button>
+    </div>
+  </article>
+</ng-template>

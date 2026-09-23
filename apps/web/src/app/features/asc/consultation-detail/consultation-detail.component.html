@@ -442,8 +442,15 @@
             <div class="bb-detail__ordo">
               <div class="bb-detail__ordo-head">
                 <span class="bb-detail__ordo-numero">{{ ordonnance.numero }}</span>
-                <span class="bb-badge" [class.bb-badge--info]="!ordonnance.expiree" [class.bb-badge--danger]="ordonnance.expiree">
-                  {{ ordonnance.expiree ? ('ASC.CONSULTATION_DETAIL.ORDO_EXPIREE' | translate) : ordonnance.statut }}
+                <span class="bb-detail__ordo-head-actions">
+                  <span class="bb-badge" [class.bb-badge--info]="!ordonnance.expiree" [class.bb-badge--danger]="ordonnance.expiree">
+                    {{ ordonnance.expiree ? ('ASC.CONSULTATION_DETAIL.ORDO_EXPIREE' | translate) : ordonnance.statut }}
+                  </span>
+                  <button type="button" class="bb-detail__ordo-print" (click)="imprimerOrdonnance(ordonnance.id)"
+                          [attr.aria-label]="'ASC.CONSULTATION_DETAIL.ORDO_IMPRIMER' | translate">
+                    <i class="pi pi-print" aria-hidden="true"></i>
+                    {{ 'ASC.CONSULTATION_DETAIL.ORDO_IMPRIMER' | translate }}
+                  </button>
                 </span>
               </div>
               @if (ordonnance.signeLe) {

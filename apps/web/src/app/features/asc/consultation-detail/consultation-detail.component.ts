@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { ConsultationService, VitalsPayload } from '../../../core/services/consultation.service';
+import { OrdonnanceService } from '../../../core/services/ordonnance.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type {
@@ -43,6 +44,15 @@ export class ConsultationDetailComponent implements OnInit {
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
   private i18n   = inject(I18nService);
+  private ordonnanceService = inject(OrdonnanceService);
+
+  /**
+   * Le document est rendu par l'API : on l'ouvre dans un onglet et le
+   * navigateur se charge de l'impression, comme pour le bon d'examen.
+   */
+  imprimerOrdonnance(id: string) {
+    window.open(this.ordonnanceService.urlDocument(id), '_blank', 'noopener');
+  }
 
   consultation    = signal<ConsultationDetailView | null>(null);
   isLoading       = signal(true);

@@ -79,6 +79,7 @@ export class PatientLayoutComponent {
   navItems = [
     { labelKey: 'PATIENT.NAV_DASHBOARD', icon: 'pi-home',   route: '/patient/dashboard' },
     { labelKey: 'PATIENT.NAV_PARCOURS',  icon: 'pi-map',    route: '/patient/parcours'  },
+    { labelKey: 'PATIENT.NAV_ORDONNANCES', icon: 'pi-file-edit', route: '/patient/ordonnances' },
     { labelKey: 'PATIENT.NAV_RESULTATS', icon: 'pi-chart-line', route: '/patient/resultats' },
     { labelKey: 'PATIENT.NAV_PROFIL',    icon: 'pi-user',   route: '/patient/profil'    },
     { labelKey: 'PATIENT.NAV_QR_CODE',   icon: 'pi-qrcode', route: '/patient/qr-code'   },

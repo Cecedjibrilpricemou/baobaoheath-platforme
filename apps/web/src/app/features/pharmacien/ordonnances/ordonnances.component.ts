@@ -15,6 +15,7 @@ import type {
   OrdonnanceDelivranceView,
   OrdonnanceEnAttenteView,
   PatientScanView,
+  VerificationOrdonnanceView,
 } from '@baobaoheath/shared-types';
 
 @Component({
@@ -65,6 +66,50 @@ export class OrdonnancesComponent implements OnInit {
   // sans attendre que le patient presente son QR code.
   enAttente          = signal<OrdonnanceEnAttenteView[]>([]);
   isLoadingEnAttente = signal(true);
+
+  // ── Verification par numero + code (EF-07-01) ──────────────────────
+  // Le patient peut arriver avec le papier et sans son QR : c'est le cas le
+  // plus courant au comptoir.
+  numeroSaisi = '';
+  codeSaisi   = '';
+  isVerifiant = signal(false);
+  verification = signal<VerificationOrdonnanceView | null>(null);
+
+  verifier() {
+    const numero = this.numeroSaisi.trim();
+    const code = this.codeSaisi.trim();
+    if (!numero || !code || this.isVerifiant()) return;
+
+    this.isVerifiant.set(true);
+    this.errorMessage.set('');
+    this.verification.set(null);
+
+    this.pharmacienService.verifierOrdonnance({ numero, codeVerification: code }).subscribe({
+      next: res => {
+        this.isVerifiant.set(false);
+        this.verification.set(res.data ?? null);
+      },
+      error: err => {
+        this.isVerifiant.set(false);
+        // 400 = numero mal forme (le format est valide cote API) ; un couple
+        // faux revient en 200 avec `valide: false`.
+        this.errorMessage.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.ORDONNANCES.ERR_VERIFY'));
+      }
+    });
+  }
+
+  /** Ouvre la delivrance du dossier verifie : meme parcours que le scan. */
+  ouvrirDepuisVerification() {
+    const v = this.verification();
+    if (!v?.valide || !v.ordonnance || !v.patient) return;
+    this.patient.set(v.patient);
+    this.ordonnances.set([v.ordonnance]);
+    this.verification.set(null);
+    this.numeroSaisi = '';
+    this.codeSaisi = '';
+  }
+
+  fermerVerification() { this.verification.set(null); }
 
   ngOnInit() {
     const nav = this.router.getCurrentNavigation();

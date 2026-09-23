@@ -606,6 +606,16 @@ export const swaggerDocument = {
     '/api/v1/consultations/{id}/ordonnances': {
       post: { tags: ['Consultations'], summary: 'Prescrire un médicament (EF-05)', description: "Ajoute un médicament à l'ordonnance en cours de rédaction de la consultation. Si aucune ordonnance n'est ouverte, elle est créée avec son numéro (OR-AAAA-NNNNNN), son code de vérification et sa durée de validité. Deux médicaments prescrits pendant la même consultation forment donc une seule ordonnance.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } } }, responses: { 201: { description: "Ligne d'ordonnance ajoutée" }, 400: { description: 'Médicament non trouvé' } } },
     },
+    // ─── Ordonnance : consultation et impression (EF-05, EF-06-02) ───
+    '/api/v1/ordonnances/me': {
+      get: { tags: ['Ordonnances'], summary: 'Mes ordonnances (patient)', description: "Les ordonnances du patient connecté, la plus récente d'abord. Le code de vérification en fait partie : c'est le secret que le patient présente au comptoir s'il n'a pas son QR.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Liste des ordonnances' }, 404: { description: 'Profil patient non trouvé' } } },
+    },
+    '/api/v1/ordonnances/{id}': {
+      get: { tags: ['Ordonnances'], summary: 'Détail d’une ordonnance', description: "L'habilitation se juge sur la consultation : le patient son dossier, l'ASC ses consultations, le médecin celles de sa structure.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Ordonnance' }, 403: { description: 'Accès refusé' }, 404: { description: 'Ordonnance non trouvée' } } },
+    },
+    '/api/v1/ordonnances/{id}/document': {
+      get: { tags: ['Ordonnances'], summary: 'Ordonnance imprimable (EF-06-02)', description: "Document HTML prêt pour `window.print`. Le couple numéro + code y figure encadré : c'est ce que le pharmacien saisit. Une ordonnance non signée ou expirée porte un filigrane, pour qu'aucun papier n'ait l'air opposable sans l'être.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Document HTML', content: { 'text/html': { schema: { type: 'string' } } } }, 403: { description: 'Accès refusé' }, 404: { description: 'Ordonnance non trouvée' } } },
+    },
     // ─── Pharmacie : contrôle et délivrance (EF-07) ──────────
     '/api/v1/pharmacien/ordonnances/verifier': {
       post: {
