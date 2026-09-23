@@ -254,6 +254,12 @@ export interface OrdonnanceDto {
   dureeJours: number;
   quantite?: number;
   instructions?: string;
+  /**
+   * EF-05-06 : pourquoi le prescripteur passe outre une alerte. L'API
+   * recalcule les alertes de son cote — ce champ ne les declare pas, il les
+   * justifie.
+   */
+  motifDepassement?: string;
 }
 
 export interface ReferralDto {
@@ -479,6 +485,51 @@ export interface DiagnosticView {
   source: string;
 }
 
+/**
+ * Gravite d'une alerte de prescription (EF-05-05). L'ordre compte :
+ * `PRECAUTION` informe, les deux autres appellent un motif de depassement.
+ */
+export type NiveauInteraction =
+  | 'PRECAUTION'
+  | 'ASSOCIATION_DECONSEILLEE'
+  | 'CONTRE_INDICATION';
+
+export type TypeAlertePrescription = 'ALLERGIE' | 'INTERACTION' | 'CONTRE_INDICATION';
+
+/**
+ * Une raison de ne pas prescrire ce medicament a ce patient. L'alerte ne
+ * bloque jamais : elle informe le prescripteur, qui reste seul juge et motive
+ * son choix s'il passe outre (EF-05-06).
+ */
+export interface AlertePrescriptionView {
+  type: TypeAlertePrescription;
+  niveau: NiveauInteraction;
+  /** Titre court, affichable tel quel. */
+  libelle: string;
+  detail: string;
+  /** Conduite a tenir, quand le referentiel en propose une. */
+  conduite?: string | null;
+  /** Le medicament deja prescrit qui entre en interaction, le cas echeant. */
+  medicamentEnCause?: string | null;
+  /** Referentiel d'origine, pour pouvoir reexaminer une regle contestee. */
+  source?: string | null;
+}
+
+/** Reponse de POST /consultations/:id/ordonnances/alertes. */
+export interface AlertesPrescriptionView {
+  alertes: AlertePrescriptionView[];
+  /**
+   * Calcule par l'API : au moins une alerte depasse la simple precaution, un
+   * motif est donc attendu. Le client ne recalcule pas ce seuil.
+   */
+  motifRequis: boolean;
+}
+
+/** POST /consultations/:id/ordonnances/alertes */
+export interface VerifierPrescriptionDto {
+  idMedicament: string;
+}
+
 /** Un medicament prescrit. La delivrance se fait a ce niveau. */
 export interface LigneOrdonnanceView {
   id: string;
@@ -489,6 +540,9 @@ export interface LigneOrdonnanceView {
   quantite?: number | null;
   instructions?: string | null;
   medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string };
+  /** Ce qui a ete montre au prescripteur au moment de la prescription. */
+  alertes?: AlertePrescriptionView[] | null;
+  motifDepassement?: string | null;
 }
 
 /**

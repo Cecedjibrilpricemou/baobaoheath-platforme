@@ -78,7 +78,13 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] **Front livré le 2026-09-23** : écran de vérification au comptoir (numéro + code, refus motivé affiché tel quel), page patient « Mes ordonnances » (code masqué par défaut, dévoilé d'un geste), ordonnance imprimable depuis l'espace patient comme depuis la fiche de consultation.
   - Le document est rendu par l'API, comme le bon d'examen et le compte rendu de laboratoire : filigrane « NON SIGNÉE » ou « EXPIRÉE » pour qu'aucun papier n'ait l'air opposable sans l'être.
   - Parcours e2e étendu : la patiente retrouve son ordonnance, dévoile son code et l'imprime, avant que la pharmacie ne la délivre.
-- [ ] Base médicaments enrichie (DCI, ATC) ; `InteractionMedicament` ; alertes interactions/allergies/contre-indications non bloquantes avec motif de dépassement (EF-05-05/06).
+- [x] **API livrée le 2026-09-23** — Base médicaments enrichie (`codeAtc`, `contreIndications`) ; `InteractionMedicament` ; alertes non bloquantes avec motif de dépassement (EF-05-05/06).
+  - Trois familles d'alertes : **allergies** déclarées au dossier (directes et **par famille ATC** — un patient allergique à l'amoxicilline l'est à toute la classe J01C), **contre-indications** face aux maladies chroniques, **interactions** avec les traitements encore en cours.
+  - Les libellés étant saisis à la main, la comparaison est insensible aux accents et à la casse, avec un seuil de 4 caractères : sans lui, « fer » se rapprocherait de « fermeture » et les alertes deviendraient du bruit.
+  - **Rien n'est bloqué** : le prescripteur voit le patient, le référentiel voit une paire de molécules. `POST /consultations/:id/ordonnances/alertes` renvoie ce qu'il doit savoir ; `motifRequis` n'est vrai qu'au-delà de la simple précaution, pour ne pas provoquer des « RAS » systématiques.
+  - Les alertes sont **recalculées côté serveur** à la prescription (sauter l'appel ne les contourne pas) et **figées sur la ligne** avec le motif : le référentiel évoluera, ce qui compte est ce qui a été montré ce jour-là. La traçabilité du motif est en outre assurée par le journal d'audit, qui enregistre déjà le corps de chaque POST.
+  - ⚠️ **Le référentiel d'interactions est vide** : aucune donnée clinique n'a été inventée. Les alertes allergies et contre-indications fonctionnent dès maintenant depuis le dossier patient ; les interactions attendent l'import du référentiel (P11, décision D6).
+- [ ] **Front EF-05-05/06 à faire** : présentation des alertes à la prescription et saisie du motif de dépassement.
 - [ ] Ordonnances renouvelables (EF-05-09) ; circuit distinct pour produits réglementés (EF-05-12).
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
@@ -167,6 +173,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-23 | P3 | API sécurité de prescription (EF-05-05/06) : allergies (dont par famille ATC), contre-indications, interactions ; alertes non bloquantes, recalculées côté serveur et figées sur la ligne avec le motif de dépassement. 243 tests API. Référentiel d'interactions volontairement vide — aucune donnée clinique inventée. |
 | 2026-09-23 | P3 | Front : vérification au comptoir (numéro + code), page patient « Mes ordonnances » avec code masqué, ordonnance imprimable. 220 tests API, 5 parcours e2e. La signature obligatoire devient le paramètre de la décision D2, à `false` : imposer un médecin bloquerait la délivrance là où il n'y en a pas. |
 | 2026-09-23 | P3 | API : l'ordonnance devient un document numéroté, codé, daté et signé ; délivrance ligne par ligne ; vérification au comptoir (EF-05-07/08, EF-07-01). Migration avec reprise des données, vérifiée sur base jetable. |
 | 2026-09-18 | — | Renommage KÈNÈYA, landing et pages d'auth refaites, plan validé |

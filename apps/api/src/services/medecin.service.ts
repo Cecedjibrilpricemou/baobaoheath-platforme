@@ -7,7 +7,7 @@ import {
 } from '../types/medecin.types';
 import { JwtPayload } from '../types/auth.types';
 import { assertCanAccessConsultation } from './access-control.service';
-import { avecExpiration } from './ordonnance.service';
+import { avecExpirationEtAlertes } from './ordonnance.service';
 import { getValeursParametres } from './parametres.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { withCache, cacheDel } from '../utils/cache';
@@ -82,7 +82,7 @@ export async function getConsultationsAValider(
     return {
         data: consultations.map((c) => ({
             ...c,
-            ordonnances: c.ordonnances.map((o) => avecExpiration(o)),
+            ordonnances: c.ordonnances.map((o) => avecExpirationEtAlertes(o)),
         })),
         meta: {
             total,

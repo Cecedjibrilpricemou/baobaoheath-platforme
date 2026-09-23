@@ -1,4 +1,4 @@
-import { EncounterStatus, SyncOperation } from '../config/generated/client/client';
+import { EncounterStatus, Prisma, SyncOperation } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import {
@@ -14,7 +14,8 @@ import {
   assertCanAccessPatient,
   buildConsultationWhereForUser,
 } from './access-control.service';
-import { avecExpiration, ordonnanceEnRedaction } from './ordonnance.service';
+import { avecExpirationEtAlertes, ordonnanceEnRedaction } from './ordonnance.service';
+import { analyserPrescription } from './prescription-securite.service';
 import { recordSyncEvent } from './sync.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 
@@ -141,7 +142,7 @@ export async function getConsultationById(user: JwtPayload, id: string) {
   if (!consultation) throw new NotFoundError('Consultation non trouvee');
   return {
     ...consultation,
-    ordonnances: consultation.ordonnances.map((o) => avecExpiration(o)),
+    ordonnances: consultation.ordonnances.map((o) => avecExpirationEtAlertes(o)),
   };
 }
 
@@ -255,6 +256,25 @@ export async function addDiagnostic(
   return diagnostic;
 }
 
+/**
+ * EF-05-05/06 : ce que le prescripteur doit savoir avant d'ajouter ce
+ * medicament. Appele par l'ecran avant la prescription ; l'API recalcule de
+ * toute facon les memes alertes a la creation, donc sauter cet appel ne permet
+ * pas de les contourner, seulement de ne pas les voir.
+ */
+export async function alertesPrescription(
+  user: JwtPayload,
+  idConsultation: string,
+  idMedicament: string
+) {
+  if (user.role === 'MEDECIN') {
+    await assertCanAccessConsultation(user, idConsultation);
+  } else {
+    await assertCanModifyAsAsc(user, idConsultation);
+  }
+  return analyserPrescription(idConsultation, idMedicament);
+}
+
 export async function addOrdonnance(
   user: JwtPayload,
   idConsultation: string,
@@ -272,6 +292,12 @@ export async function addOrdonnance(
 
   if (!medicament) throw new NotFoundError('Medicament non trouve');
 
+  // EF-05-05/06 : les alertes sont recalculees ici, jamais reprises du
+  // client. Les reprendre reviendrait a laisser le prescripteur decider s'il
+  // veut etre alerte. Elles n'empechent rien : elles sont figees sur la ligne
+  // avec le motif eventuel, pour qu'on sache plus tard ce qui a ete montre.
+  const { alertes } = await analyserPrescription(idConsultation, dto.idMedicament);
+
   // Le medicament rejoint l'ordonnance en cours de redaction de la
   // consultation ; si elle n'existe pas encore, elle est ouverte ici avec son
   // numero et son code de verification.
@@ -286,6 +312,9 @@ export async function addOrdonnance(
       dureeJours: dto.dureeJours,
       quantite: dto.quantite ?? 1,
       instructions: dto.instructions,
+      // Cast vers le type JSON de Prisma : la forme est celle du contrat.
+      alertes: alertes.length ? (alertes as unknown as Prisma.InputJsonValue) : undefined,
+      motifDepassement: alertes.length ? (dto.motifDepassement ?? null) : null,
     },
     include: { medicament: true },
   });

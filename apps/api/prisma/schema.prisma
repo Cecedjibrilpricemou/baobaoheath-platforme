@@ -550,12 +550,56 @@ model Medicament {
   imageUrl         String?
   listeEssentielle Boolean  @default(false)
   estActif         Boolean  @default(true)
-  prixUnitaireGnf  Int      @default(0) // ← NOUVEAU : prix national de référence en GNF
+  prixUnitaireGnf  Int      @default(0) // prix national de référence en GNF
+
+  // Classification ATC (EF-05-05, decision D6). Elle permet de rapprocher deux
+  // specialites de la meme famille : un patient allergique a l'amoxicilline
+  // l'est a toute la classe J01C, que la comparaison sur la DCI seule
+  // manquerait.
+  codeAtc String?
+
+  /// Contre-indications connues, en texte libre tant que le referentiel
+  /// national (D6) n'est pas arrete. Comparees aux maladies chroniques du
+  /// patient (EF-05-06).
+  contreIndications String[]
 
   lignesOrdonnance LigneOrdonnance[]
   stocks           Stock[]
 
+  @@index([codeAtc])
   @@map("medicaments")
+}
+
+// Gravite d'une interaction, du plus leger au plus grave. L'ordre des valeurs
+// fait foi : le service compare par rang pour decider ce qui merite un motif
+// de depassement.
+enum NiveauInteraction {
+  PRECAUTION
+  ASSOCIATION_DECONSEILLEE
+  CONTRE_INDICATION
+}
+
+/// Interaction connue entre deux principes actifs (EF-05-05).
+///
+/// Une interaction est symetrique : le couple est toujours stocke ordonne
+/// (dciA < dciB, en minuscules) pour qu'une meme paire ne puisse pas exister
+/// deux fois dans les deux sens.
+model InteractionMedicament {
+  id          String            @id @default(cuid())
+  dciA        String
+  dciB        String
+  niveau      NiveauInteraction
+  description String
+  /// Conduite a tenir, affichee au prescripteur avec l'alerte.
+  conduite String?
+  /// Referentiel d'origine, pour pouvoir reexaminer une regle contestee.
+  source String?
+  creeLe DateTime @default(now())
+
+  @@unique([dciA, dciB])
+  @@index([dciA])
+  @@index([dciB])
+  @@map("interactions_medicaments")
 }
 
 // L'ordonnance est un *document* : un numero unique, un code de verification
@@ -609,6 +653,15 @@ model LigneOrdonnance {
   instructions String?
   statut       StatutOrdonnance @default(EN_ATTENTE)
   creeLe       DateTime         @default(now())
+
+  // EF-05-06 : les alertes presentees au prescripteur au moment de la
+  // prescription, figees telles quelles. Le referentiel evoluera ; ce qui
+  // compte est ce qui lui a ete montre ce jour-la.
+  alertes Json?
+
+  /// Pourquoi le prescripteur a passe outre. Nul quand aucune alerte n'a
+  /// ete declenchee, ou quand il n'a pas motive son choix.
+  motifDepassement String?
 
   idOrdonnance String
   ordonnance   Ordonnance @relation(fields: [idOrdonnance], references: [id], onDelete: Cascade)

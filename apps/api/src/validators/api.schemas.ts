@@ -162,6 +162,11 @@ export const verifierOrdonnanceSchema = z.object({
   codeVerification: z.string().trim().min(4).max(12),
 }).strict();
 
+// EF-05-05 : demande d'analyse des alertes avant prescription.
+export const alertesPrescriptionSchema = z.object({
+  idMedicament: id,
+}).strict();
+
 export const createConsultationSchema = z.object({
   idPatient: id,
   motifPrincipal: z.string().trim().min(2).max(500),
@@ -196,6 +201,9 @@ export const ordonnanceSchema = z.object({
   dureeJours: positiveInt.max(365),
   quantite: positiveInt.max(10000).optional(),
   instructions: z.string().trim().max(500).optional(),
+  // EF-05-06 : pourquoi le prescripteur passe outre une alerte. Une longueur
+  // minimale evite le « ok » qui ne documente rien.
+  motifDepassement: z.string().trim().min(5).max(500).optional(),
 }).strict();
 
 export const referralSchema = z.object({

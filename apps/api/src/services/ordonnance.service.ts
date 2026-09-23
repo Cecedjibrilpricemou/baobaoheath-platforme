@@ -14,6 +14,7 @@ import { prisma } from '../config/prisma';
 import { NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
 import { getValeursParametres } from './parametres.service';
+import type { AlertePrescriptionView } from '@baobaoheath/shared-types';
 
 /**
  * Alphabet du code de verification : ni 0/O, ni 1/I/L, qui se confondent quand
@@ -48,6 +49,43 @@ export function avecExpiration<T extends { valideJusquau: Date }>(
   maintenant = new Date()
 ): T & { expiree: boolean } {
   return { ...ordonnance, expiree: estExpiree(ordonnance, maintenant) };
+}
+
+/**
+ * Meme calcul, plus la conversion des alertes. Elles sont stockees en JSON :
+ * Prisma les rend en `JsonValue`, que le contrat partage decrit comme un
+ * tableau d'alertes. La conversion se fait ici, une fois, plutot que dans
+ * chaque ecran — et le cast est legitime : c'est nous qui avons ecrit ce JSON.
+ */
+export function avecExpirationEtAlertes<
+  T extends { valideJusquau: Date; lignes: { alertes: unknown }[] }
+>(
+  ordonnance: T,
+  maintenant = new Date()
+): Omit<T, 'lignes'> & {
+  expiree: boolean;
+  lignes: (Omit<T['lignes'][number], 'alertes'> & { alertes: AlertePrescriptionView[] | null })[];
+} {
+  // Le type de la ligne se derive de T : un second parametre generique serait
+  // infere depuis sa contrainte, et toutes les autres proprietes seraient
+  // perdues. `Omit` est indispensable aussi : sans lui, l'intersection
+  // conserve le type d'origine de `alertes` (JsonValue) et la conversion
+  // n'a aucun effet.
+  //
+  // L'assertion finale porte sur la seule chose que TypeScript ne sait pas
+  // deduire d'un spread generique : que `...l` conserve les autres proprietes
+  // de la ligne. La forme produite est bien celle annoncee.
+  return {
+    ...ordonnance,
+    expiree: estExpiree(ordonnance, maintenant),
+    lignes: ordonnance.lignes.map((l) => ({
+      ...l,
+      alertes: (l.alertes ?? null) as AlertePrescriptionView[] | null,
+    })),
+  } as Omit<T, 'lignes'> & {
+    expiree: boolean;
+    lignes: (Omit<T['lignes'][number], 'alertes'> & { alertes: AlertePrescriptionView[] | null })[];
+  };
 }
 
 /**

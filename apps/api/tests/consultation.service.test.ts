@@ -30,6 +30,13 @@ jest.mock('../src/config/prisma', () => ({
 // L'ouverture du document (numerotation, code, validite) est testee dans
 // ordonnance.service.test.ts : ici on verifie seulement que la prescription
 // rejoint bien l'ordonnance en cours de redaction.
+// L'analyse de securite a son propre fichier de tests
+// (prescription-securite.service.test.ts) : ici on verifie seulement qu'elle
+// est bien sollicitee et que son resultat est fige sur la ligne.
+jest.mock('../src/services/prescription-securite.service', () => ({
+  analyserPrescription: jest.fn(),
+}));
+
 jest.mock('../src/services/ordonnance.service', () => ({
   ...jest.requireActual('../src/services/ordonnance.service'),
   ordonnanceEnRedaction: jest.fn(),
@@ -65,6 +72,9 @@ const accessControl = jest.requireMock('../src/services/access-control.service')
 };
 const { ordonnanceEnRedaction } = jest.requireMock('../src/services/ordonnance.service') as {
   ordonnanceEnRedaction: jest.Mock;
+};
+const { analyserPrescription } = jest.requireMock('../src/services/prescription-securite.service') as {
+  analyserPrescription: jest.Mock;
 };
 const { recordSyncEvent } = jest.requireMock('../src/services/sync.service') as { recordSyncEvent: jest.Mock };
 
@@ -204,6 +214,10 @@ describe('addDiagnostic / addOrdonnance — qui peut ecrire', () => {
     });
   });
 
+  beforeEach(() => {
+    analyserPrescription.mockResolvedValue({ alertes: [], motifRequis: false });
+  });
+
   it('refuse une ordonnance sur un medicament inconnu', async () => {
     consultationOuverte();
     prisma.medicament.findUnique.mockResolvedValue(null);
@@ -225,6 +239,48 @@ describe('addDiagnostic / addOrdonnance — qui peut ecrire', () => {
 
     expect(prisma.ligneOrdonnance.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ quantite: 1, idMedicament: 'm-1' }),
+    }));
+  });
+
+  // EF-05-06 : ce qui a ete montre au prescripteur est fige sur la ligne. Le
+  // referentiel evoluera ; ce qui compte est ce qu'il avait sous les yeux.
+  it('fige les alertes et le motif de depassement sur la ligne', async () => {
+    consultationOuverte();
+    prisma.medicament.findUnique.mockResolvedValue({ id: 'm-1' });
+    ordonnanceEnRedaction.mockResolvedValue({ id: 'ord-1', numero: 'OR-2026-000001' });
+    prisma.ligneOrdonnance.create.mockResolvedValue({ id: 'l1', quantite: 1 });
+    const alertes = [{ type: 'ALLERGIE', niveau: 'CONTRE_INDICATION', libelle: 'x', detail: 'y' }];
+    analyserPrescription.mockResolvedValue({ alertes, motifRequis: true });
+
+    await addOrdonnance(ASC, 'cons-1', {
+      idMedicament: 'm-1', posologie: '1cp', frequence: '2/j', dureeJours: 3,
+      motifDepassement: 'Benefice superieur au risque, patiente surveillee.',
+    });
+
+    expect(analyserPrescription).toHaveBeenCalledWith('cons-1', 'm-1');
+    expect(prisma.ligneOrdonnance.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        alertes,
+        motifDepassement: 'Benefice superieur au risque, patiente surveillee.',
+      }),
+    }));
+  });
+
+  // Sans alerte, un motif n'a pas de sens : le conserver laisserait croire
+  // qu'on a passe outre quelque chose.
+  it('n enregistre aucun motif quand aucune alerte ne s est declenchee', async () => {
+    consultationOuverte();
+    prisma.medicament.findUnique.mockResolvedValue({ id: 'm-1' });
+    ordonnanceEnRedaction.mockResolvedValue({ id: 'ord-1', numero: 'OR-2026-000001' });
+    prisma.ligneOrdonnance.create.mockResolvedValue({ id: 'l1', quantite: 1 });
+
+    await addOrdonnance(ASC, 'cons-1', {
+      idMedicament: 'm-1', posologie: '1cp', frequence: '2/j', dureeJours: 3,
+      motifDepassement: 'motif sans objet',
+    });
+
+    expect(prisma.ligneOrdonnance.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ alertes: undefined, motifDepassement: null }),
     }));
   });
 

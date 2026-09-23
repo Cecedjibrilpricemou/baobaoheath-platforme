@@ -3,7 +3,7 @@ import { Request as ExpressRequest } from 'express';
 import * as consultationService from '../services/consultation.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { EncounterStatus } from '@baobaoheath/shared-types';
-import type { ConsultationDetailView } from '@baobaoheath/shared-types';
+import type { AlertesPrescriptionView, ConsultationDetailView } from '@baobaoheath/shared-types';
 
 type RequestWithId = ExpressRequest<{ id: string }> & AuthRequest;
 
@@ -50,6 +50,13 @@ export async function addDiagnosticController(req: RequestWithId, res: Response)
 export async function addOrdonnanceController(req: RequestWithId, res: Response): Promise<void> {
     const ordonnance = await consultationService.addOrdonnance(req.user!, req.params.id, req.body);
     res.status(201).json({ success: true, data: ordonnance });
+}
+
+export async function alertesPrescriptionController(req: RequestWithId, res: Response): Promise<void> {
+    const data: AlertesPrescriptionView = await consultationService.alertesPrescription(
+        req.user!, req.params.id, req.body.idMedicament
+    );
+    res.json({ success: true, data });
 }
 
 export async function createReferralController(req: RequestWithId, res: Response): Promise<void> {
