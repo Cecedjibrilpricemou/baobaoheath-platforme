@@ -16,14 +16,32 @@ import { hashPassword } from '../src/utils/password.utils.js';
 
 const MOT_DE_PASSE = 'baobao1234';
 
+/**
+ * Comptes vises, par e-mail ou par telephone : les patients se connectent avec
+ * leur numero et n'ont pas tous une adresse.
+ *
+ * Les trois premieres adresses de la version precedente
+ * (medecin.demo@baobaohealth.test et consorts) ne correspondaient a aucun
+ * compte : le script annoncait « 0 compte(s) mis a jour » sans que personne ne
+ * le remarque, et les espaces concernes restaient inaccessibles.
+ */
 const COMPTES_DEMO = [
-  'medecin.demo@baobaohealth.test',
-  'pharmacien.demo@baobaohealth.test',
-  'admin.demo@baobaohealth.test',
-  'ibrahima.conde@baobaotest.local',
+  // Espace de demonstration complet (un role par adresse).
+  'cecedjibrilpricemou1er+asc@gmail.com',
+  'cecedjibrilpricemou1er+medecin@gmail.com',
+  'cecedjibrilpricemou1er+pharma@gmail.com',
+  'cecedjibrilpricemou1er+admin@gmail.com',
+  'cecedjibrilpricemou1er+labo@gmail.com',
+  'cecedjibrilpricemou1er+accueil@gmail.com',
+  'cecedjibrilpricemou1er+tech@gmail.com',
+  'cecedjibrilpricemou1er+bio@gmail.com',
+  // Comptes de test historiques.
+  'ousmane.bah@baobaotest.local',
   'sekou.traore@baobaotest.local',
   'mariam.sylla@baobaotest.local',
   'kadiatou.barry@baobaotest.local',
+  // Patiente de reference, par telephone.
+  '625444555',
 ];
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -37,12 +55,22 @@ async function main() {
 
   const motDePasseHash = await hashPassword(MOT_DE_PASSE);
 
-  for (const email of COMPTES_DEMO) {
+  let introuvables = 0;
+
+  for (const identifiant of COMPTES_DEMO) {
     const resultat = await prisma.utilisateur.updateMany({
-      where: { email },
+      where: identifiant.includes('@') ? { email: identifiant } : { telephone: identifiant },
       data: { motDePasseHash, doitChangerMotDePasse: false },
     });
-    console.log(`${email} : ${resultat.count} compte(s) mis a jour`);
+    if (resultat.count === 0) introuvables += 1;
+    console.log(`${identifiant} : ${resultat.count} compte(s) mis a jour`);
+  }
+
+  // Un identifiant obsolete doit se voir : sinon le script « reussit » en ne
+  // faisant rien, et l'espace concerne reste inaccessible.
+  if (introuvables > 0) {
+    console.warn(`
+[!] ${introuvables} identifiant(s) sans compte correspondant — liste a mettre a jour.`);
   }
 
   console.log(`\nMot de passe applique : ${MOT_DE_PASSE}`);
