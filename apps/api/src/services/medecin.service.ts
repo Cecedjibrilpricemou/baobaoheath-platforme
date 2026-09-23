@@ -7,6 +7,8 @@ import {
 } from '../types/medecin.types';
 import { JwtPayload } from '../types/auth.types';
 import { assertCanAccessConsultation } from './access-control.service';
+import { avecExpiration } from './ordonnance.service';
+import { getValeursParametres } from './parametres.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { withCache, cacheDel } from '../utils/cache';
 import { emitToUser } from '../realtime/socket.server';
@@ -66,7 +68,10 @@ export async function getConsultationsAValider(
                 constantes: true,
                 diagnostics: true,
                 ordonnances: {
-                    include: { medicament: true },
+                    include: {
+                        lignes: { include: { medicament: true } },
+                        signataire: { select: { prenom: true, nom: true } },
+                    },
                 },
             },
             orderBy: { consulteeLE: 'desc' },
@@ -75,7 +80,10 @@ export async function getConsultationsAValider(
     ]);
 
     return {
-        data: consultations,
+        data: consultations.map((c) => ({
+            ...c,
+            ordonnances: c.ordonnances.map((o) => avecExpiration(o)),
+        })),
         meta: {
             total,
             page,
@@ -110,6 +118,8 @@ export async function validerConsultation(
     }
 
     const idOrdonnancesSignees = dto.idOrdonnances ?? [];
+    const { prescription } = await getValeursParametres();
+    const dureeValiditeJours = prescription.dureeValiditeJours;
 
     const updated = await prisma.$transaction(async (tx) => {
         const updated = await tx.consultation.update({
@@ -122,6 +132,13 @@ export async function validerConsultation(
         });
 
         if (idOrdonnancesSignees.length > 0) {
+            // La validite court a partir de la signature, pas de la redaction :
+            // une ordonnance rédigée par l'ASC puis validée trois jours plus
+            // tard perdrait sinon trois jours de validité.
+            const signeLe = new Date();
+            const valideJusquau = new Date(signeLe);
+            valideJusquau.setDate(valideJusquau.getDate() + dureeValiditeJours);
+
             await tx.ordonnance.updateMany({
                 where: {
                     id: { in: idOrdonnancesSignees },
@@ -129,7 +146,8 @@ export async function validerConsultation(
                 },
                 data: {
                     signePar: user.userId,
-                    signeLe: new Date(),
+                    signeLe,
+                    valideJusquau,
                 },
             });
         }

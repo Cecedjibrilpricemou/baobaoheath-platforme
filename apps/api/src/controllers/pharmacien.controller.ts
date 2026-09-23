@@ -1,15 +1,30 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as pharmacienService from '../services/pharmacien.service';
-import type { ScanPatientView, StockPharmacieView } from '@baobaoheath/shared-types';
+import type {
+  ScanPatientView,
+  StockPharmacieView,
+  VerificationOrdonnanceView,
+} from '@baobaoheath/shared-types';
 
 export async function scanPatientController(req: AuthRequest, res: Response): Promise<void> {
   const data: ScanPatientView = await pharmacienService.scanPatient(String(req.params.qrCode), req.user!.userId);
     res.json({ success: true, data });
 }
 
+// `:id` designe une ligne d'ordonnance : la delivrance se fait medicament par
+// medicament (EF-07-07), pas sur l'ordonnance entiere.
 export async function delivrerOrdonnanceController(req: AuthRequest, res: Response): Promise<void> {
-  const data = await pharmacienService.delivrerOrdonnance(String(req.params.id), req.user!.userId, req.body);
+  const data = await pharmacienService.delivrerLigneOrdonnance(String(req.params.id), req.user!.userId, req.body);
+    res.json({ success: true, data });
+}
+
+/** EF-07-01 : controle d'une ordonnance par son numero et son code. */
+export async function verifierOrdonnanceController(req: AuthRequest, res: Response): Promise<void> {
+  const data: VerificationOrdonnanceView = await pharmacienService.verifierOrdonnance(
+    req.user!.userId,
+    req.body
+  );
     res.json({ success: true, data });
 }
 

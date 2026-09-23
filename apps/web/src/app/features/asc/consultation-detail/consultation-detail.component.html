@@ -436,18 +436,38 @@
       @if (consultation()?.ordonnances?.length) {
         <div class="bb-detail__list">
           <h3 class="bb-detail__list-title">{{ 'ASC.CONSULTATION_DETAIL.ORDONNANCES_PRESCRIBED_TITLE' | translate }}</h3>
-          @for (o of consultation()!.ordonnances; track o.id) {
-            <div class="bb-detail__list-item">
-              <div class="bb-detail__list-item-left">
-                <span class="bb-detail__ordo-med">
-                  {{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}
+          @for (ordonnance of consultation()!.ordonnances; track ordonnance.id) {
+            <!-- L'ordonnance est un document : son numero et sa validite valent
+                 pour tous les medicaments qu'elle porte. -->
+            <div class="bb-detail__ordo">
+              <div class="bb-detail__ordo-head">
+                <span class="bb-detail__ordo-numero">{{ ordonnance.numero }}</span>
+                <span class="bb-badge" [class.bb-badge--info]="!ordonnance.expiree" [class.bb-badge--danger]="ordonnance.expiree">
+                  {{ ordonnance.expiree ? ('ASC.CONSULTATION_DETAIL.ORDO_EXPIREE' | translate) : ordonnance.statut }}
                 </span>
-                <span class="bb-detail__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }} jours</span>
-                @if (o.instructions) {
-                  <span class="bb-detail__ordo-note">{{ o.instructions }}</span>
-                }
               </div>
-              <span class="bb-badge bb-badge--info">{{ o.statut }}</span>
+              @if (ordonnance.signeLe) {
+                <span class="bb-detail__ordo-note">
+                  {{ 'ASC.CONSULTATION_DETAIL.ORDO_VALIDE_JUSQUAU' | translate: { date: (ordonnance.valideJusquau | date:'shortDate') ?? '' } }}
+                </span>
+              } @else {
+                <span class="bb-detail__ordo-note">{{ 'ASC.CONSULTATION_DETAIL.ORDO_NON_SIGNEE' | translate }}</span>
+              }
+
+              @for (o of ordonnance.lignes; track o.id) {
+                <div class="bb-detail__list-item">
+                  <div class="bb-detail__list-item-left">
+                    <span class="bb-detail__ordo-med">
+                      {{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}
+                    </span>
+                    <span class="bb-detail__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }} jours</span>
+                    @if (o.instructions) {
+                      <span class="bb-detail__ordo-note">{{ o.instructions }}</span>
+                    }
+                  </div>
+                  <span class="bb-badge bb-badge--info">{{ o.statut }}</span>
+                </div>
+              }
             </div>
           }
         </div>

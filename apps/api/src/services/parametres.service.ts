@@ -64,6 +64,13 @@ export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
     frequenceMinutes: 30,
     ussdTimeoutSecondes: 600,
   },
+  // La duree de validite d'une ordonnance releve de la reglementation, pas du
+  // code : la decision D2 du cahier des charges est encore en attente, donc
+  // elle s'administre ici. 90 jours est la valeur de depart.
+  prescription: {
+    dureeValiditeJours: 90,
+    longueurCodeVerification: 6,
+  },
 };
 
 type Section = keyof ParametresSystemeValeurs;

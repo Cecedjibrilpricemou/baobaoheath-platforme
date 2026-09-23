@@ -15,6 +15,7 @@ import type {
   ParametresFacturationView,
   ParametresIdentiteView,
   ParametresSecuriteView,
+  ParametresPrescriptionView,
   ParametresSyncView,
   ParametresSystemeValeurs,
   ParametresSystemeView,
@@ -57,7 +58,8 @@ export class SettingsComponent implements OnInit {
       { id: 'facturation', label: this.i18n.t('ADMIN.SETTINGS.TAB_BILLING'),  icon: 'pi pi-wallet' },
       { id: 'securite',    label: this.i18n.t('ADMIN.SETTINGS.TAB_SECURITY'), icon: 'pi pi-lock' },
       { id: 'alertes',     label: this.i18n.t('ADMIN.SETTINGS.TAB_ALERTS'),   icon: 'pi pi-bolt' },
-      { id: 'sync',        label: this.i18n.t('ADMIN.SETTINGS.TAB_SYNC'),     icon: 'pi pi-sync' }
+      { id: 'sync',        label: this.i18n.t('ADMIN.SETTINGS.TAB_SYNC'),     icon: 'pi pi-sync' },
+      { id: 'prescription', label: this.i18n.t('ADMIN.SETTINGS.TAB_PRESCRIPTION'), icon: 'pi pi-file-edit' }
     ];
   }
 
@@ -90,6 +92,13 @@ export class SettingsComponent implements OnInit {
     offlineMode: true,
     frequenceMinutes: 30,
     ussdTimeoutSecondes: 600
+  };
+
+  // La duree de validite d'une ordonnance releve de la reglementation, pas du
+  // code : le cahier des charges (decision D2) en fait un parametre.
+  prescription: ParametresPrescriptionView = {
+    dureeValiditeJours: 90,
+    longueurCodeVerification: 6
   };
 
   ngOnInit() {
@@ -177,6 +186,7 @@ export class SettingsComponent implements OnInit {
     this.securite    = { ...vue.securite };
     this.alertes     = { ...vue.alertes };
     this.sync        = { ...vue.sync };
+    this.prescription = { ...vue.prescription };
     this.modifieLe.set(vue.modifieLe);
   }
 }

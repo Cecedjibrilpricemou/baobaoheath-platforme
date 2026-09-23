@@ -135,16 +135,21 @@
           <div class="bb-med-cons__block">
             <h3 class="bb-med-cons__block-title"><i class="pi pi-file-edit"></i> {{ 'MEDECIN.CONSULTATIONS.ORDONNANCES_TITLE' | translate }}</h3>
             <p class="bb-med-cons__block-note">{{ 'MEDECIN.CONSULTATIONS.ORDONNANCES_HINT' | translate }}</p>
-            @for (o of selected()!.ordonnances; track o.id) {
+            <!-- On signe une ordonnance, pas un medicament : la case porte sur
+                 le document entier, et sa signature engage toutes ses lignes. -->
+            @for (ordonnance of selected()!.ordonnances; track ordonnance.id) {
               <div
                 class="bb-med-cons__ordo"
-                [class.bb-med-cons__ordo--selected]="isOrdonnanceSelectionnee(o.id)"
-                (click)="toggleOrdonnance(o.id)"
+                [class.bb-med-cons__ordo--selected]="isOrdonnanceSelectionnee(ordonnance.id)"
+                (click)="toggleOrdonnance(ordonnance.id)"
               >
-                <input type="checkbox" [id]="'ordo-check-' + o.id" [checked]="isOrdonnanceSelectionnee(o.id)" (click)="$event.stopPropagation()" (change)="toggleOrdonnance(o.id)" />
-                <label [for]="'ordo-check-' + o.id" (click)="$event.stopPropagation()">
-                  <p class="bb-med-cons__ordo-med">{{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}</p>
-                  <p class="bb-med-cons__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j</p>
+                <input type="checkbox" [id]="'ordo-check-' + ordonnance.id" [checked]="isOrdonnanceSelectionnee(ordonnance.id)" (click)="$event.stopPropagation()" (change)="toggleOrdonnance(ordonnance.id)" />
+                <label [for]="'ordo-check-' + ordonnance.id" (click)="$event.stopPropagation()">
+                  <p class="bb-med-cons__ordo-numero">{{ ordonnance.numero }}</p>
+                  @for (o of ordonnance.lignes; track o.id) {
+                    <p class="bb-med-cons__ordo-med">{{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}</p>
+                    <p class="bb-med-cons__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j</p>
+                  }
                 </label>
               </div>
             }

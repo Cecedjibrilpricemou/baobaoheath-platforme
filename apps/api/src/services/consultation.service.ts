@@ -14,6 +14,7 @@ import {
   assertCanAccessPatient,
   buildConsultationWhereForUser,
 } from './access-control.service';
+import { avecExpiration, ordonnanceEnRedaction } from './ordonnance.service';
 import { recordSyncEvent } from './sync.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 
@@ -119,7 +120,10 @@ export async function getConsultationById(user: JwtPayload, id: string) {
       constantes: true,
       diagnostics: true,
       ordonnances: {
-        include: { medicament: true },
+        include: {
+          lignes: { include: { medicament: true } },
+          signataire: { select: { prenom: true, nom: true } },
+        },
       },
       // La structure cible est affichee sur la fiche : sans cette relation,
       // referencement.structureCible etait undefined cote client.
@@ -135,7 +139,10 @@ export async function getConsultationById(user: JwtPayload, id: string) {
   });
 
   if (!consultation) throw new NotFoundError('Consultation non trouvee');
-  return consultation;
+  return {
+    ...consultation,
+    ordonnances: consultation.ordonnances.map((o) => avecExpiration(o)),
+  };
 }
 
 export async function saveVitals(user: JwtPayload, idConsultation: string, dto: VitalsDto) {
@@ -265,9 +272,14 @@ export async function addOrdonnance(
 
   if (!medicament) throw new NotFoundError('Medicament non trouve');
 
-  const ordonnance = await prisma.ordonnance.create({
+  // Le medicament rejoint l'ordonnance en cours de redaction de la
+  // consultation ; si elle n'existe pas encore, elle est ouverte ici avec son
+  // numero et son code de verification.
+  const ordonnance = await ordonnanceEnRedaction(idConsultation);
+
+  const ligne = await prisma.ligneOrdonnance.create({
     data: {
-      idConsultation,
+      idOrdonnance: ordonnance.id,
       idMedicament: dto.idMedicament,
       posologie: dto.posologie,
       frequence: dto.frequence,
@@ -280,14 +292,19 @@ export async function addOrdonnance(
 
   await recordSyncEvent({
     scope: 'medical',
-    entityType: 'Ordonnance',
-    entityId: ordonnance.id,
+    entityType: 'LigneOrdonnance',
+    entityId: ligne.id,
     operation: SyncOperation.CREATE,
     idUtilisateur: user.userId,
-    payload: { idConsultation, idMedicament: dto.idMedicament, quantite: ordonnance.quantite },
+    payload: {
+      idOrdonnance: ordonnance.id,
+      idConsultation,
+      idMedicament: dto.idMedicament,
+      quantite: ligne.quantite,
+    },
   });
 
-  return ordonnance;
+  return ligne;
 }
 
 // ── AMÉLIORATION : $transaction pour garantir atomicité consultation + referencement ──
@@ -418,7 +435,7 @@ export async function getMesConsultations(
       include: {
         constantes: true,
         diagnostics: true,
-        ordonnances: { include: { medicament: true } },
+        ordonnances: { include: { lignes: { include: { medicament: true } } } },
         facture: true,
         // Qui a vu le patient : affiche dans son dossier et son tableau de
         // bord ("Agent Mamadou Bah"), a la place d'un motif technique.

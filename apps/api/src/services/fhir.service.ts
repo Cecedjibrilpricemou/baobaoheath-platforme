@@ -146,41 +146,50 @@ function fhirVitals(consultation: Awaited<ReturnType<typeof loadConsultation>>):
     }));
 }
 
-function fhirMedicationRequest(ordonnance: Awaited<ReturnType<typeof loadConsultation>>['ordonnances'][number]) {
+type OrdonnanceChargee = Awaited<ReturnType<typeof loadConsultation>>['ordonnances'][number];
+type LigneChargee = OrdonnanceChargee['lignes'][number];
+
+// En FHIR, une MedicationRequest porte *un* medicament : elle correspond donc a
+// une ligne, pas au document. Le lien entre les lignes d'une meme ordonnance
+// passe par groupIdentifier, qui recoit le numero (OR-2026-000123).
+function fhirMedicationRequest(ligne: LigneChargee, ordonnance: OrdonnanceChargee) {
   return {
     resourceType: 'MedicationRequest',
-    id: ordonnance.id,
-    status: ordonnance.statut === 'DELIVREE' ? 'completed' : 'active',
+    id: ligne.id,
+    status: ligne.statut === 'DELIVREE' ? 'completed' : 'active',
     intent: 'order',
+    groupIdentifier: { value: ordonnance.numero },
+    authoredOn: iso(ordonnance.signeLe ?? ordonnance.creeLe),
     medicationCodeableConcept: {
-      text: ordonnance.medicament.nomCommercial ?? ordonnance.medicament.dci,
+      text: ligne.medicament.nomCommercial ?? ligne.medicament.dci,
     },
     encounter: { reference: `Encounter/${ordonnance.idConsultation}` },
     dosageInstruction: [
       {
-        text: [ordonnance.posologie, ordonnance.frequence, `${ordonnance.dureeJours} jours`, ordonnance.instructions]
+        text: [ligne.posologie, ligne.frequence, `${ligne.dureeJours} jours`, ligne.instructions]
           .filter(Boolean)
           .join(' - '),
       },
     ],
     dispenseRequest: {
-      quantity: { value: ordonnance.quantite },
+      validityPeriod: { end: iso(ordonnance.valideJusquau) },
+      quantity: { value: ligne.quantite },
     },
   };
 }
 
-function fhirMedicationDispense(ordonnance: Awaited<ReturnType<typeof loadConsultation>>['ordonnances'][number]) {
-  if (ordonnance.statut !== 'DELIVREE') return null;
+function fhirMedicationDispense(ligne: LigneChargee) {
+  if (ligne.statut !== 'DELIVREE') return null;
 
   return {
     resourceType: 'MedicationDispense',
-    id: `dispense-${ordonnance.id}`,
+    id: `dispense-${ligne.id}`,
     status: 'completed',
     medicationCodeableConcept: {
-      text: ordonnance.medicament.nomCommercial ?? ordonnance.medicament.dci,
+      text: ligne.medicament.nomCommercial ?? ligne.medicament.dci,
     },
-    authorizingPrescription: [{ reference: `MedicationRequest/${ordonnance.id}` }],
-    quantity: { value: ordonnance.quantite },
+    authorizingPrescription: [{ reference: `MedicationRequest/${ligne.id}` }],
+    quantity: { value: ligne.quantite },
   };
 }
 
@@ -211,7 +220,7 @@ async function loadConsultation(idConsultation: string) {
     include: {
       constantes: true,
       diagnostics: true,
-      ordonnances: { include: { medicament: true } },
+      ordonnances: { include: { lignes: { include: { medicament: true } } } },
       facture: true,
       asc: { include: { utilisateur: true, structure: true } },
     },
@@ -238,7 +247,7 @@ export async function getPatientBundleFhir(idPatient: string) {
         include: {
           constantes: true,
           diagnostics: true,
-          ordonnances: { include: { medicament: true } },
+          ordonnances: { include: { lignes: { include: { medicament: true } } } },
           facture: true,
           asc: { include: { utilisateur: true, structure: true } },
         },
@@ -258,8 +267,10 @@ export async function getPatientBundleFhir(idPatient: string) {
       ...(consultation.asc?.utilisateur ? [fhirPractitioner(consultation.asc.utilisateur)] : []),
       ...consultation.diagnostics.map(fhirDiagnostic),
       ...fhirVitals(consultation),
-      ...consultation.ordonnances.map(fhirMedicationRequest),
-      ...(consultation.ordonnances.map(fhirMedicationDispense).filter(Boolean) as FhirResource[]),
+      ...consultation.ordonnances.flatMap((o) => o.lignes.map((l) => fhirMedicationRequest(l, o))),
+      ...(consultation.ordonnances
+        .flatMap((o) => o.lignes.map(fhirMedicationDispense))
+        .filter(Boolean) as FhirResource[]),
       ...(consultation.facture ? [fhirInvoice(consultation.facture)] : []),
     ]),
     ...patient.vaccinations.map((vaccination) => ({

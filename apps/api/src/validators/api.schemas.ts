@@ -155,6 +155,13 @@ export const delivrerOrdonnanceSchema = z.object({
   quantiteDelivree: z.coerce.number().int().positive().optional(),
 }).strict();
 
+// EF-07-01. Le service compare en majuscules : la casse saisie au comptoir ne
+// doit pas faire echouer un controle legitime.
+export const verifierOrdonnanceSchema = z.object({
+  numero: z.string().trim().regex(/^OR-\d{4}-\d{6}$/i, 'Numero d ordonnance invalide'),
+  codeVerification: z.string().trim().min(4).max(12),
+}).strict();
+
 export const createConsultationSchema = z.object({
   idPatient: id,
   motifPrincipal: z.string().trim().min(2).max(500),

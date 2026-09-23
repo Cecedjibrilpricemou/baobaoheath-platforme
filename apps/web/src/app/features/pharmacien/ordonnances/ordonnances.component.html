@@ -77,8 +77,10 @@
                 <span class="bb-ordo__pending-body">
                   <span class="bb-ordo__pending-name">{{ g.prenom }} {{ g.nom }}</span>
                   <span class="bb-ordo__pending-meds">
-                    @for (o of g.lignes; track o.id; let last = $last) {
-                      {{ o.medicament.nomCommercial || o.medicament.dci }} × {{ o.quantite }}@if (!last) {, }
+                    @for (o of g.lignes; track o.id) {
+                      @for (m of o.medicaments; track m.id; let last = $last) {
+                        {{ m.nomCommercial || m.dci }}@if (!last) {, }
+                      }
                     }
                   </span>
                   <span class="bb-ordo__pending-date">{{ 'PHARMACIEN.ORDONNANCES.PENDING_SINCE' | translate }} {{ g.lignes[0].creeLe | date:'mediumDate' }}</span>
@@ -155,40 +157,64 @@
             <p>{{ 'PHARMACIEN.ORDONNANCES.EMPTY_ALL_DELIVERED' | translate }}</p>
           </div>
         } @else {
-          @for (o of ordonnances(); track o.id) {
-            <div
-              class="bb-ordo__item"
-              [class.bb-ordo__item--selected]="selected()?.id === o.id"
-              [class.bb-ordo__item--alerte]="o.alerteAllergie"
-              (click)="selectionner(o)"
-            >
-              @if (o.alerteAllergie) {
-                <div class="bb-ordo__item-alerte" role="alert">
-                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.ALLERGY_RISK' | translate }}
+          @for (ordonnance of ordonnances(); track ordonnance.id) {
+            <!-- En-tete du document : c'est lui que le pharmacien confronte au
+                 papier presente au comptoir. -->
+            <div class="bb-ordo__doc" [class.bb-ordo__doc--expiree]="ordonnance.expiree">
+              <div class="bb-ordo__doc-head">
+                <span class="bb-ordo__doc-numero">{{ ordonnance.numero }}</span>
+                <span class="bb-ordo__doc-medecin">
+                  <i class="pi pi-user-edit" aria-hidden="true"></i> {{ ordonnance.medecinNom }} · {{ formatDate(ordonnance.signeLe) }}
+                </span>
+              </div>
+              @if (ordonnance.expiree) {
+                <p class="bb-ordo__doc-refus" role="alert">
+                  <i class="pi pi-ban" aria-hidden="true"></i>
+                  {{ 'PHARMACIEN.ORDONNANCES.EXPIRED' | translate: { date: (ordonnance.valideJusquau | date:'shortDate') ?? '' } }}
+                </p>
+              } @else {
+                <p class="bb-ordo__doc-validite">
+                  {{ 'PHARMACIEN.ORDONNANCES.VALID_UNTIL' | translate: { date: (ordonnance.valideJusquau | date:'shortDate') ?? '' } }}
+                  · <strong>{{ formatMontant(ordonnance.totalGnf) }}</strong>
+                </p>
+              }
+
+              @for (o of ordonnance.lignes; track o.id) {
+                <div
+                  class="bb-ordo__item"
+                  [class.bb-ordo__item--selected]="selected()?.ligne?.id === o.id"
+                  [class.bb-ordo__item--alerte]="o.alerteAllergie"
+                  (click)="selectionner(ordonnance, o)"
+                >
+                  @if (o.alerteAllergie) {
+                    <div class="bb-ordo__item-alerte" role="alert">
+                      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.ALLERGY_RISK' | translate }}
+                    </div>
+                  }
+                  <div class="bb-ordo__item-content">
+                    <div class="bb-ordo__item-left">
+                      <span class="bb-ordo__item-med">
+                        {{ o.medicament.nomCommercial ?? o.medicament.dci }} <span class="badge">{{ o.medicament.dosage }}</span>
+                      </span>
+                      <span class="bb-ordo__item-details">
+                        <i class="pi pi-clock" aria-hidden="true"></i> {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j <br>
+                        <strong>{{ 'PHARMACIEN.ORDONNANCES.QTY_LABEL' | translate: { qty: o.quantite } }}</strong>
+                      </span>
+                    </div>
+                    <div class="bb-ordo__item-right">
+                      <span class="bb-ordo__item-prix">{{ formatMontant(o.prixTotalGnf) }}</span>
+                      <button
+                        class="bb-ordo__btn-select"
+                        [disabled]="ordonnance.expiree"
+                        (click)="selectionner(ordonnance, o)"
+                        [attr.aria-label]="('PHARMACIEN.ORDONNANCES.DELIVER_ARIA' | translate: { med: o.medicament.nomCommercial ?? o.medicament.dci }) + (o.alerteAllergie ? ('PHARMACIEN.ORDONNANCES.DELIVER_ARIA_ALLERGY_SUFFIX' | translate) : '')"
+                      >
+                        {{ 'PHARMACIEN.ORDONNANCES.DELIVER' | translate }} <i class="pi pi-chevron-right" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               }
-              <div class="bb-ordo__item-content">
-                <div class="bb-ordo__item-left">
-                  <span class="bb-ordo__item-med">
-                    {{ o.medicament.nomCommercial ?? o.medicament.dci }} <span class="badge">{{ o.medicament.dosage }}</span>
-                  </span>
-                  <span class="bb-ordo__item-details">
-                    <i class="pi pi-clock" aria-hidden="true"></i> {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j <br>
-                    <strong>{{ 'PHARMACIEN.ORDONNANCES.QTY_LABEL' | translate: { qty: o.quantite } }}</strong>
-                  </span>
-                  <span class="bb-ordo__item-medecin"><i class="pi pi-user-edit" aria-hidden="true"></i> {{ o.medecinNom }} · {{ formatDate(o.signeLe) }}</span>
-                </div>
-                <div class="bb-ordo__item-right">
-                  <span class="bb-ordo__item-prix">{{ formatMontant(o.prixTotalGnf) }}</span>
-                  <button
-                    class="bb-ordo__btn-select"
-                    (click)="selectionner(o)"
-                    [attr.aria-label]="('PHARMACIEN.ORDONNANCES.DELIVER_ARIA' | translate: { med: o.medicament.nomCommercial ?? o.medicament.dci }) + (o.alerteAllergie ? ('PHARMACIEN.ORDONNANCES.DELIVER_ARIA_ALLERGY_SUFFIX' | translate) : '')"
-                  >
-                    {{ 'PHARMACIEN.ORDONNANCES.DELIVER' | translate }} <i class="pi pi-chevron-right" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </div>
             </div>
           }
         }
@@ -202,18 +228,18 @@
           </h3>
 
           <div class="bb-ordo__form-med">
-            <strong>{{ selected()!.medicament.nomCommercial ?? selected()!.medicament.dci }}</strong>
-            <span>{{ selected()!.medicament.dosage }} — {{ selected()!.medicament.forme }}</span>
+            <strong>{{ selected()!.ligne.medicament.nomCommercial ?? selected()!.ligne.medicament.dci }}</strong>
+            <span>{{ selected()!.ligne.medicament.dosage }} — {{ selected()!.ligne.medicament.forme }}</span>
           </div>
 
           <!-- Quantité -->
           <div class="bb-ordo__form-field mt-4">
-            <label id="ordo-qty-label" for="ordo-qty">{{ 'PHARMACIEN.ORDONNANCES.QTY_TO_DELIVER' | translate: { qty: selected()!.quantite } }}</label>
+            <label id="ordo-qty-label" for="ordo-qty">{{ 'PHARMACIEN.ORDONNANCES.QTY_TO_DELIVER' | translate: { qty: selected()!.ligne.quantite } }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
   <input matInput type="number"
     id="ordo-qty"
     [min]="1"
-    [max]="selected()!.quantite"
+    [max]="selected()!.ligne.quantite"
     step="1"
     [(ngModel)]="quantiteDelivree"
   />
@@ -242,7 +268,7 @@
           <div class="bb-ordo__montant">
             <span>{{ 'PHARMACIEN.ORDONNANCES.AMOUNT_LABEL' | translate }}</span>
             <span class="bb-ordo__montant-value">
-              {{ formatMontant(getMontantAvecQuantite(selected()!)) }}
+              {{ formatMontant(getMontantAvecQuantite(selected()!.ligne)) }}
             </span>
           </div>
 
@@ -252,14 +278,14 @@
             <button
               class="bb-ordo__deliver-btn"
               (click)="delivrer()"
-              [disabled]="isDelivering() || selected()!.alerteAllergie"
+              [disabled]="isDelivering() || selected()!.ligne.alerteAllergie"
             >
               <i [class]="isDelivering() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
               {{ (isDelivering() ? 'PHARMACIEN.ORDONNANCES.PROCESSING' : 'PHARMACIEN.ORDONNANCES.CONFIRM_PAYMENT') | translate }}
             </button>
           </div>
 
-          @if (selected()!.alerteAllergie) {
+          @if (selected()!.ligne.alerteAllergie) {
             <div class="bb-ordo__alert-block mt-3" role="alert">
               <i class="pi pi-lock" aria-hidden="true"></i> {{ 'PHARMACIEN.ORDONNANCES.BLOCKED_ALLERGY' | translate }}
             </div>

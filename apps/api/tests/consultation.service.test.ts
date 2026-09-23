@@ -19,11 +19,20 @@ jest.mock('../src/config/prisma', () => ({
     constantesVitales: { create: jest.fn(), update: jest.fn() },
     diagnostic: { create: jest.fn() },
     ordonnance: { create: jest.fn() },
+    ligneOrdonnance: { create: jest.fn() },
     medicament: { findUnique: jest.fn() },
     structureSante: { findUnique: jest.fn() },
     referencement: { create: jest.fn() },
     $transaction: jest.fn(),
   },
+}));
+
+// L'ouverture du document (numerotation, code, validite) est testee dans
+// ordonnance.service.test.ts : ici on verifie seulement que la prescription
+// rejoint bien l'ordonnance en cours de redaction.
+jest.mock('../src/services/ordonnance.service', () => ({
+  ...jest.requireActual('../src/services/ordonnance.service'),
+  ordonnanceEnRedaction: jest.fn(),
 }));
 
 jest.mock('../src/services/access-control.service', () => ({
@@ -44,6 +53,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     constantesVitales: { create: jest.Mock; update: jest.Mock };
     diagnostic: { create: jest.Mock };
     ordonnance: { create: jest.Mock };
+    ligneOrdonnance: { create: jest.Mock };
     medicament: { findUnique: jest.Mock };
     structureSante: { findUnique: jest.Mock };
     referencement: { create: jest.Mock };
@@ -52,6 +62,9 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
 };
 const accessControl = jest.requireMock('../src/services/access-control.service') as {
   assertCanAccessPatient: jest.Mock; assertCanAccessConsultation: jest.Mock;
+};
+const { ordonnanceEnRedaction } = jest.requireMock('../src/services/ordonnance.service') as {
+  ordonnanceEnRedaction: jest.Mock;
 };
 const { recordSyncEvent } = jest.requireMock('../src/services/sync.service') as { recordSyncEvent: jest.Mock };
 
@@ -197,18 +210,38 @@ describe('addDiagnostic / addOrdonnance — qui peut ecrire', () => {
 
     await expect(addOrdonnance(ASC, 'cons-1', { idMedicament: 'm-x', posologie: '1cp', frequence: '2/j', dureeJours: 3 }))
       .rejects.toBeInstanceOf(NotFoundError);
-    expect(prisma.ordonnance.create).not.toHaveBeenCalled();
+    expect(prisma.ligneOrdonnance.create).not.toHaveBeenCalled();
+    // Aucun numero ne doit etre consomme pour une prescription refusee.
+    expect(ordonnanceEnRedaction).not.toHaveBeenCalled();
   });
 
   it('la quantite prescrite vaut 1 par defaut', async () => {
     consultationOuverte();
     prisma.medicament.findUnique.mockResolvedValue({ id: 'm-1' });
-    prisma.ordonnance.create.mockResolvedValue({ id: 'o1', quantite: 1 });
+    ordonnanceEnRedaction.mockResolvedValue({ id: 'ord-1', numero: 'OR-2026-000001' });
+    prisma.ligneOrdonnance.create.mockResolvedValue({ id: 'l1', quantite: 1 });
 
     await addOrdonnance(ASC, 'cons-1', { idMedicament: 'm-1', posologie: '1cp', frequence: '2/j', dureeJours: 3 });
 
-    expect(prisma.ordonnance.create).toHaveBeenCalledWith(expect.objectContaining({
+    expect(prisma.ligneOrdonnance.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ quantite: 1, idMedicament: 'm-1' }),
+    }));
+  });
+
+  // Deux medicaments prescrits pendant la meme consultation forment *une*
+  // ordonnance : c'est ce qui rend le numero et le code utilisables au
+  // comptoir. Avant P3, ils donnaient deux objets sans lien.
+  it('rattache le medicament a l ordonnance en cours de redaction de la consultation', async () => {
+    consultationOuverte();
+    prisma.medicament.findUnique.mockResolvedValue({ id: 'm-1' });
+    ordonnanceEnRedaction.mockResolvedValue({ id: 'ord-1', numero: 'OR-2026-000001' });
+    prisma.ligneOrdonnance.create.mockResolvedValue({ id: 'l1', quantite: 2 });
+
+    await addOrdonnance(ASC, 'cons-1', { idMedicament: 'm-1', posologie: '1cp', frequence: '2/j', dureeJours: 3, quantite: 2 });
+
+    expect(ordonnanceEnRedaction).toHaveBeenCalledWith('cons-1');
+    expect(prisma.ligneOrdonnance.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ idOrdonnance: 'ord-1' }),
     }));
   });
 });

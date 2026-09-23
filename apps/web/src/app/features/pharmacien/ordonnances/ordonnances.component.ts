@@ -11,6 +11,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
 import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
 import type {
   HorodatageApi,
+  LigneDelivranceView,
   OrdonnanceDelivranceView,
   OrdonnanceEnAttenteView,
   PatientScanView,
@@ -40,7 +41,10 @@ export class OrdonnancesComponent implements OnInit {
   // Patient & Ordonnances State
   patient          = signal<PatientScanView | null>(null);
   ordonnances      = signal<OrdonnanceDelivranceView[]>([]);
-  selected         = signal<OrdonnanceDelivranceView | null>(null);
+  // On delivre un medicament, pas une ordonnance : la selection designe donc
+  // une ligne, mais garde son document — c'est lui qui porte le numero, la
+  // validite et la signature que le pharmacien doit pouvoir verifier a l'ecran.
+  selected         = signal<{ ordonnance: OrdonnanceDelivranceView; ligne: LigneDelivranceView } | null>(null);
   isDelivering     = signal(false);
   successMessage   = signal('');
 
@@ -155,9 +159,9 @@ export class OrdonnancesComponent implements OnInit {
     this.selected.set(null);
   }
 
-  selectionner(o: OrdonnanceDelivranceView) {
-    this.selected.set(o);
-    this.quantiteDelivree = o.quantite;
+  selectionner(ordonnance: OrdonnanceDelivranceView, ligne: LigneDelivranceView) {
+    this.selected.set({ ordonnance, ligne });
+    this.quantiteDelivree = ligne.quantite;
     this.modePaiement = 'ESPECES';
     this.errorMessage.set('');
   }
@@ -165,21 +169,30 @@ export class OrdonnancesComponent implements OnInit {
   annuler() { this.selected.set(null); this.errorMessage.set(''); }
 
   delivrer() {
-    const o = this.selected();
-    if (!o) return;
+    const selection = this.selected();
+    if (!selection) return;
+    const { ordonnance, ligne } = selection;
 
     this.isDelivering.set(true);
     this.errorMessage.set('');
 
-    this.pharmacienService.delivrerOrdonnance(o.id, {
+    this.pharmacienService.delivrerOrdonnance(ligne.id, {
       modePaiement: this.modePaiement,
       quantiteDelivree: this.quantiteDelivree
     } as unknown as import('../../../core/models/pharmacien.model').DelivrancePayload).subscribe({
       next: (response) => {
         this.isDelivering.set(false);
         this.selected.set(null);
-        this.ordonnances.update(list => list.filter(ord => ord.id !== o.id));
-        this.enAttente.update(list => list.filter(ord => ord.id !== o.id));
+
+        // La ligne quitte l'ordonnance ; l'ordonnance disparait quand elle n'a
+        // plus rien a delivrer.
+        this.ordonnances.update(list => list
+          .map(ord => ord.id === ordonnance.id
+            ? { ...ord, lignes: ord.lignes.filter(l => l.id !== ligne.id) }
+            : ord)
+          .filter(ord => ord.lignes.length > 0));
+        this.enAttente.update(list => list.filter(ord => ord.id !== ordonnance.id));
+
         const responseData = response?.data as { montantGnf?: number };
         this.successMessage.set(this.i18n.t('PHARMACIEN.ORDONNANCES.SUCCESS_DELIVERED', { amount: this.formatMontant(responseData?.montantGnf ?? 0) }));
         setTimeout(() => this.successMessage.set(''), 5000);
@@ -191,15 +204,17 @@ export class OrdonnancesComponent implements OnInit {
     });
   }
 
-  getMontantAvecQuantite(o: OrdonnanceDelivranceView): number {
-    return o.medicament.prixUnitaireGnf * this.quantiteDelivree;
+  getMontantAvecQuantite(ligne: LigneDelivranceView): number {
+    return ligne.medicament.prixUnitaireGnf * this.quantiteDelivree;
   }
 
   formatMontant(m: number): string {
     return new Intl.NumberFormat('fr-GN', { style: 'currency', currency: 'GNF', maximumFractionDigits: 0 }).format(m);
   }
 
-  formatDate(d: string): string {
+  // Une ordonnance non signee n'a pas de date : le type le dit, l'affichage
+  // doit donc prevoir le cas plutot que de rendre « Invalid Date ».
+  formatDate(d: HorodatageApi | null | undefined): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }

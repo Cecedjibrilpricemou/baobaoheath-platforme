@@ -604,7 +604,29 @@ export const swaggerDocument = {
       post: { tags: ['Consultations'], summary: 'Clôturer une consultation', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Consultation clôturée' }, 400: { description: 'Consultation déjà terminée' } } },
     },
     '/api/v1/consultations/{id}/ordonnances': {
-      post: { tags: ['Consultations'], summary: 'Ajouter une ordonnance', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } } }, responses: { 201: { description: 'Ordonnance ajoutée' }, 400: { description: 'Médicament non trouvé' } } },
+      post: { tags: ['Consultations'], summary: 'Prescrire un médicament (EF-05)', description: "Ajoute un médicament à l'ordonnance en cours de rédaction de la consultation. Si aucune ordonnance n'est ouverte, elle est créée avec son numéro (OR-AAAA-NNNNNN), son code de vérification et sa durée de validité. Deux médicaments prescrits pendant la même consultation forment donc une seule ordonnance.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OrdonnanceDto' } } } }, responses: { 201: { description: "Ligne d'ordonnance ajoutée" }, 400: { description: 'Médicament non trouvé' } } },
+    },
+    // ─── Pharmacie : contrôle et délivrance (EF-07) ──────────
+    '/api/v1/pharmacien/ordonnances/verifier': {
+      post: {
+        tags: ['Pharmacien'],
+        summary: "Vérifier une ordonnance au comptoir (EF-07-01)",
+        description: "Contrôle une ordonnance présentée sans le QR du patient. Le numéro seul ne suffit pas : il est séquentiel, donc devinable. Un numéro inconnu et un code faux renvoient la même réponse, pour qu'on ne puisse pas énumérer les numéros valides. Une ordonnance refusée est renvoyée avec son motif (non signée, expirée, annulée, déjà servie) afin que le pharmacien puisse l'expliquer au patient.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['numero', 'codeVerification'], properties: { numero: { type: 'string', example: 'OR-2026-000123' }, codeVerification: { type: 'string', example: 'A7D27Y' } } } } } },
+        responses: { 200: { description: "Résultat du contrôle : `valide` indique si la délivrance est permise ; `motif` dit pourquoi elle ne l'est pas" }, 400: { description: 'Numéro mal formé' }, 403: { description: 'Compte non rattaché à une pharmacie' } },
+      },
+    },
+    '/api/v1/pharmacien/ordonnances/{id}/delivrer': {
+      post: {
+        tags: ['Pharmacien'],
+        summary: 'Délivrer un médicament (EF-07-07)',
+        description: "`id` désigne une **ligne** d'ordonnance, pas l'ordonnance : la délivrance se fait médicament par médicament, une officine pouvant n'avoir qu'une partie du traitement. L'ordonnance est contrôlée avant toute sortie de stock ; son statut passe ensuite à PARTIELLEMENT_SERVIE ou SERVIE selon ce qu'il reste.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: "Identifiant de la ligne d'ordonnance" }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { modePaiement: { type: 'string', enum: ['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO'] }, quantiteDelivree: { type: 'integer', minimum: 1 } } } } } },
+        responses: { 200: { description: 'Médicament délivré' }, 400: { description: "Ordonnance non signée, expirée, annulée, déjà servie, ou stock insuffisant" }, 404: { description: "Ligne d'ordonnance non trouvée" } },
+      },
     },
     '/api/v1/consultations/{id}/referral': {
       post: { tags: ['Consultations'], summary: 'Créer un référencement', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ReferralDto' } } } }, responses: { 201: { description: 'Référencement créé' }, 400: { description: 'Référencement déjà existant ou structure non trouvée' } } },

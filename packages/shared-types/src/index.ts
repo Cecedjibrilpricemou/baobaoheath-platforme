@@ -72,9 +72,16 @@ export type TypeStructure =
   | 'PHARMACIE'
   | 'LABORATOIRE';
 
+/**
+ * Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
+ * que `EN_ATTENTE` ou `DELIVREE` ; le document ajoute `PARTIELLEMENT_SERVIE` et
+ * `SERVIE`, deduits de ses lignes.
+ */
 export type StatutOrdonnance =
   | 'EN_ATTENTE'
   | 'DELIVREE'
+  | 'PARTIELLEMENT_SERVIE'
+  | 'SERVIE'
   | 'EXPIREE'
   | 'ANNULEE';
 
@@ -418,6 +425,16 @@ export interface SignerOrdonnanceDto {
   idOrdonnance: string;
 }
 
+/**
+ * POST /pharmacien/ordonnances/verifier (EF-07-01). Le numero seul ne suffit
+ * pas : il est sequentiel, donc devinable. Le code prouve que le porteur a
+ * l'ordonnance en main.
+ */
+export interface VerifierOrdonnanceDto {
+  numero: string;
+  codeVerification: string;
+}
+
 export interface ValiderConsultationDto {
   notesMedecin: string;
   idOrdonnances?: string[];
@@ -462,16 +479,36 @@ export interface DiagnosticView {
   source: string;
 }
 
-export interface OrdonnanceView {
+/** Un medicament prescrit. La delivrance se fait a ce niveau. */
+export interface LigneOrdonnanceView {
   id: string;
-  statut: string;
-  signeLe?: HorodatageApi | null;
+  statut: StatutOrdonnance;
   posologie: string;
   frequence: string;
   dureeJours: number;
   quantite?: number | null;
   instructions?: string | null;
   medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string };
+}
+
+/**
+ * L'ordonnance est un document, pas un medicament : c'est lui qui porte le
+ * numero et le code que la pharmacie controle avant de delivrer (EF-05-07/08).
+ * `codeVerification` n'est expose qu'au patient et au prescripteur — jamais
+ * dans une liste destinee a un tiers.
+ */
+export interface OrdonnanceView {
+  id: string;
+  numero: string;
+  statut: StatutOrdonnance;
+  codeVerification?: string;
+  valideJusquau: HorodatageApi;
+  /** Calcule par l'API : `valideJusquau` depasse. */
+  expiree: boolean;
+  signeLe?: HorodatageApi | null;
+  signataire?: { prenom: string; nom: string } | null;
+  creeLe: HorodatageApi;
+  lignes: LigneOrdonnanceView[];
 }
 
 // Une constante non saisie arrive en `null` (colonne nullable Prisma serialisee
@@ -759,22 +796,48 @@ export interface MedicamentTarifeView extends MedicamentView {
   prixUnitaireGnf: number;
 }
 
-/** Ordonnance telle que presentee au comptoir (GET /pharmacien/scan/:qrCode). */
-export interface OrdonnanceDelivranceView {
+/** Une ligne de l'ordonnance au comptoir : c'est l'unite de delivrance. */
+export interface LigneDelivranceView {
   id: string;
   posologie: string;
   frequence: string;
   dureeJours: number;
   quantite: number;
-  statut: string;
-  signeLe: string;
-  /** Calcule par l'API : signataire de l'ordonnance, ou l'agent a defaut. */
-  medecinNom: string;
+  statut: StatutOrdonnance;
+  instructions?: string | null;
   medicament: MedicamentTarifeView;
   /** Calcule par l'API : quantite x prix unitaire. */
   prixTotalGnf: number;
   /** Calcule par l'API : le principe actif figure dans les allergies du patient. */
   alerteAllergie: boolean;
+}
+
+/** Ordonnance telle que presentee au comptoir (GET /pharmacien/scan/:qrCode). */
+export interface OrdonnanceDelivranceView {
+  id: string;
+  numero: string;
+  statut: StatutOrdonnance;
+  valideJusquau: HorodatageApi;
+  /** Calcule par l'API : `valideJusquau` depasse au moment de la lecture. */
+  expiree: boolean;
+  signeLe: HorodatageApi | null;
+  /** Calcule par l'API : signataire de l'ordonnance, ou l'agent a defaut. */
+  medecinNom: string;
+  lignes: LigneDelivranceView[];
+  /** Calcule par l'API : somme des lignes restant a delivrer. */
+  totalGnf: number;
+}
+
+/**
+ * Reponse de POST /pharmacien/ordonnances/verifier (EF-07-01). Une ordonnance
+ * refusee renvoie toujours un motif lisible au comptoir : le pharmacien doit
+ * pouvoir l'expliquer au patient.
+ */
+export interface VerificationOrdonnanceView {
+  valide: boolean;
+  motif?: string;
+  ordonnance?: OrdonnanceDelivranceView;
+  patient?: PatientScanView;
 }
 
 /**
@@ -784,13 +847,14 @@ export interface OrdonnanceDelivranceView {
  */
 export interface OrdonnanceEnAttenteView {
   id: string;
-  posologie: string;
-  frequence: string;
-  dureeJours: number;
-  quantite: number;
+  numero: string;
+  statut: StatutOrdonnance;
+  valideJusquau: HorodatageApi;
+  expiree: boolean;
   creeLe: HorodatageApi;
   signeLe: HorodatageApi | null;
-  medicament: MedicamentView;
+  /** Les medicaments restant a delivrer, pour situer l'ordonnance en un coup d'oeil. */
+  medicaments: MedicamentView[];
   patient: { prenom: string; nom: string; qrCode: string };
 }
 
@@ -1117,12 +1181,24 @@ export interface ParametresIdentiteView {
 export type IdentitePlateformeView = ParametresIdentiteView;
 
 /** Valeurs persistees, toujours completes (defauts fusionnes cote serveur). */
+/**
+ * Duree de validite d'une ordonnance. Le cahier des charges en fait un
+ * parametre administrable (decision D2 en attente) : jamais une constante.
+ */
+export interface ParametresPrescriptionView {
+  /** Jours de validite a compter de la signature. */
+  dureeValiditeJours: number;
+  /** Longueur du code de verification remis au patient. */
+  longueurCodeVerification: number;
+}
+
 export interface ParametresSystemeValeurs {
   identite: ParametresIdentiteView;
   facturation: ParametresFacturationView;
   securite: ParametresSecuriteView;
   alertes: ParametresAlertesView;
   sync: ParametresSyncView;
+  prescription: ParametresPrescriptionView;
 }
 
 /** GET/PUT /admin-structure/parametres */
@@ -1138,6 +1214,7 @@ export interface UpdateParametresSystemeDto {
   securite?: Partial<ParametresSecuriteView>;
   alertes?: Partial<ParametresAlertesView>;
   sync?: Partial<ParametresSyncView>;
+  prescription?: Partial<ParametresPrescriptionView>;
 }
 
 /** POST /admin-structure/parametres/logo — reponse. */

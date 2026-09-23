@@ -342,6 +342,34 @@
         </div>
       }
 
+      <!-- ONGLET : ORDONNANCES (EF-05-07/08, decision D2 du cahier des charges) -->
+      @if (activeTab() === 'prescription') {
+        <div class="settings-panel">
+          <h2>{{ 'ADMIN.SETTINGS.PRESCRIPTION_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.PRESCRIPTION_DESC' | translate }}</p>
+
+          <div class="field">
+            <label for="presc-validite">{{ 'ADMIN.SETTINGS.PRESCRIPTION_VALIDITY_LABEL' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="presc-validite" type="number" min="1" max="365"
+                     [(ngModel)]="prescription.dureeValiditeJours" />
+            </mat-form-field>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PRESCRIPTION_VALIDITY_HINT' | translate }}</small>
+          </div>
+
+          <div class="field mt-4">
+            <label for="presc-code">{{ 'ADMIN.SETTINGS.PRESCRIPTION_CODE_LABEL' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="presc-code" type="number" min="4" max="12"
+                     [(ngModel)]="prescription.longueurCodeVerification" />
+            </mat-form-field>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PRESCRIPTION_CODE_HINT' | translate }}</small>
+          </div>
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'prescription' }"></ng-container>
+        </div>
+      }
+
       }
     </div>
   </div>

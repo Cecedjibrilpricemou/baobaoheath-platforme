@@ -96,9 +96,16 @@ enum TypeStructure {
   LABORATOIRE      // Laboratoire d'analyses (EF-04)
 }
 
+// Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
+// que EN_ATTENTE ou DELIVREE ; le document ajoute PARTIELLEMENT_SERVIE et
+// SERVIE, calcules a partir de ses lignes. DELIVREE reste dans le type pour les
+// lignes : PostgreSQL ne permet pas de retirer une valeur d'enum sans recreer
+// le type.
 enum StatutOrdonnance {
   EN_ATTENTE
   DELIVREE
+  PARTIELLEMENT_SERVIE
+  SERVIE
   EXPIREE
   ANNULEE
 }
@@ -545,36 +552,73 @@ model Medicament {
   estActif         Boolean  @default(true)
   prixUnitaireGnf  Int      @default(0) // ← NOUVEAU : prix national de référence en GNF
 
-  ordonnances Ordonnance[]
-  stocks      Stock[]
+  lignesOrdonnance LigneOrdonnance[]
+  stocks           Stock[]
 
   @@map("medicaments")
 }
 
+// L'ordonnance est un *document* : un numero unique, un code de verification
+// remis au patient, une date de fin de validite. C'est lui que la pharmacie
+// controle avant de delivrer quoi que ce soit (EF-05-07/08, EF-07-01). Les
+// medicaments prescrits sont ses lignes.
 model Ordonnance {
-  id           String           @id @default(cuid())
-  posologie    String
-  frequence    String
-  dureeJours   Int
-  quantite     Int              @default(1) // ← NOUVEAU : quantité à délivrer
-  instructions String?
-  statut       StatutOrdonnance @default(EN_ATTENTE)
-  urlDocument  String?
-  signeLe      DateTime?
-  creeLe       DateTime         @default(now())
+  id     String           @id @default(cuid())
+  numero String           @unique // OR-2026-000123
+  statut StatutOrdonnance @default(EN_ATTENTE)
+
+  // Court, sans caracteres ambigus, lu a voix haute ou recopie depuis le
+  // papier. Il ne remplace pas le numero : il prouve que le porteur a bien
+  // l'ordonnance en main, le numero seul etant devinable.
+  codeVerification String
+
+  // Au-dela, la pharmacie refuse. La duree par defaut est un parametre
+  // systeme, jamais une constante (decision D2 du cahier des charges).
+  valideJusquau DateTime
+
+  urlDocument String?
+  creeLe      DateTime @default(now())
+  modifieLe   DateTime @updatedAt
 
   idConsultation String
   consultation   Consultation @relation(fields: [idConsultation], references: [id], onDelete: Cascade)
 
-  idMedicament String
-  medicament   Medicament @relation(fields: [idMedicament], references: [id])
-
+  // Signature nominative du prescripteur : sans elle, l'ordonnance n'est pas
+  // opposable et la pharmacie doit la refuser.
   signePar   String?
   signataire Utilisateur? @relation("MedecinSignataire", fields: [signePar], references: [id])
+  signeLe    DateTime?
+
+  lignes LigneOrdonnance[]
 
   @@index([idConsultation])
   @@index([statut])
+  @@index([valideJusquau])
   @@map("ordonnances")
+}
+
+// Un medicament prescrit. La delivrance se fait ligne par ligne : une
+// pharmacie peut n'avoir qu'une partie du traitement (delivrance partielle,
+// EF-07-07), et le statut du document se deduit de ses lignes.
+model LigneOrdonnance {
+  id           String           @id @default(cuid())
+  posologie    String
+  frequence    String
+  dureeJours   Int
+  quantite     Int              @default(1)
+  instructions String?
+  statut       StatutOrdonnance @default(EN_ATTENTE)
+  creeLe       DateTime         @default(now())
+
+  idOrdonnance String
+  ordonnance   Ordonnance @relation(fields: [idOrdonnance], references: [id], onDelete: Cascade)
+
+  idMedicament String
+  medicament   Medicament @relation(fields: [idMedicament], references: [id])
+
+  @@index([idOrdonnance])
+  @@index([statut])
+  @@map("lignes_ordonnance")
 }
 
 model Vaccination {

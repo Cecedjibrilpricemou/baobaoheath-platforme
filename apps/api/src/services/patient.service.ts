@@ -241,7 +241,7 @@ export async function exportPatientDossier(userId: string) {
         },
       },
       consultations: {
-        include: { constantes: true, diagnostics: true, ordonnances: { include: { medicament: true } } },
+        include: { constantes: true, diagnostics: true, ordonnances: { include: { lignes: { include: { medicament: true } } } } },
         orderBy: { consulteeLE: 'desc' },
       },
       vaccinations: true,
