@@ -1088,6 +1088,8 @@
       "PRESCRIPTION_VALIDITY_HINT": "Comptee a partir de la signature du prescripteur, pas de la redaction.",
       "PRESCRIPTION_CODE_LABEL": "Longueur du code de verification",
       "PRESCRIPTION_CODE_HINT": "Code remis au patient et controle au comptoir. Plus il est long, plus il est sur, mais plus il est penible a recopier.",
+      "PRESCRIPTION_SIGN_TITLE": "Exiger la signature d'un medecin",
+      "PRESCRIPTION_SIGN_SUB": "Decision reglementaire en attente (D2). Desactive, une ordonnance redigee par un agent de sante communautaire est delivrable des la cloture de la consultation. Active, elle doit d'abord etre validee par un medecin — ce qui bloque la delivrance la ou il n'y en a pas.",
       "TAB_BILLING": "Facturation",
       "STRUCTURES_HINT": "Le profil de chaque établissement (nom, type, adresse) se gère depuis la page Structures.",
       "SUCCESS_SAVED": "Paramètres enregistrés",

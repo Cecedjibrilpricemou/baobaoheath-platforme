@@ -45,6 +45,11 @@ const PHARMACIEN = {
 };
 const PARACETAMOL = { id: 'm-1', dci: 'Paracetamol', nomCommercial: 'Doliprane', forme: 'cp', dosage: '500mg', prixUnitaireGnf: 1000 };
 
+const PARAMETRES = {
+  prescription: { dureeValiditeJours: 90, longueurCodeVerification: 6, signatureObligatoire: false },
+  facturation: { margePct: 15 },
+};
+
 const DANS_30_JOURS = new Date(Date.now() + 30 * 24 * 3600 * 1000);
 const IL_Y_A_10_JOURS = new Date(Date.now() - 10 * 24 * 3600 * 1000);
 
@@ -90,7 +95,10 @@ describe('garde commune : le compte doit etre rattache a une pharmacie', () => {
 });
 
 describe('scanPatient', () => {
-  beforeEach(pharmacienValide);
+  beforeEach(() => {
+    pharmacienValide();
+    getValeursParametres.mockResolvedValue(PARAMETRES);
+  });
 
   it('404 sur un QR code inconnu', async () => {
     prisma.patientProfile.findUnique.mockResolvedValue(null);
@@ -168,6 +176,7 @@ describe('delivrerLigneOrdonnance', () => {
 
   beforeEach(() => {
     pharmacienValide();
+    getValeursParametres.mockResolvedValue(PARAMETRES);
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn({
       stock: { updateMany: prisma.stock.updateMany },
       ligneOrdonnance: { update: prisma.ligneOrdonnance.update },
@@ -184,11 +193,24 @@ describe('delivrerLigneOrdonnance', () => {
   // Ils passent avant tout : rien ne doit sortir du stock sur une ordonnance
   // qui n'est pas opposable.
 
-  it('refuse une ordonnance non signee par le prescripteur', async () => {
+  // Decision D2 non tranchee : par defaut, une ordonnance d'ASC se delivre.
+  it('refuse une ordonnance non signee quand la signature est imposee', async () => {
+    getValeursParametres.mockResolvedValue({
+      prescription: { ...PARAMETRES.prescription, signatureObligatoire: true },
+    });
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(ligneAvecOrdonnance({ signeLe: null }));
 
     await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).rejects.toThrow(/non signee/i);
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('delivre une ordonnance d ASC non signee tant que la signature n est pas imposee', async () => {
+    prisma.ligneOrdonnance.findUnique.mockResolvedValue(ligneAvecOrdonnance({ signeLe: null }));
+    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.updateMany.mockResolvedValue({ count: 1 });
+    prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
+
+    await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).resolves.toBeDefined();
   });
 
   it('refuse une ordonnance expiree', async () => {
@@ -313,7 +335,10 @@ describe('verifierOrdonnance', () => {
     };
   }
 
-  beforeEach(pharmacienValide);
+  beforeEach(() => {
+    pharmacienValide();
+    getValeursParametres.mockResolvedValue(PARAMETRES);
+  });
 
   it('accepte le bon couple numero + code', async () => {
     prisma.ordonnance.findUnique.mockResolvedValue(ordonnanceComplete());
@@ -371,8 +396,9 @@ describe('verifierOrdonnance', () => {
 });
 
 describe('getOrdonnances — perimetre', () => {
-  it('ne liste que les ordonnances signees des patients de la prefecture, sans telephone', async () => {
+  it('ne liste que les ordonnances des patients de la prefecture, sans telephone', async () => {
     pharmacienValide();
+    getValeursParametres.mockResolvedValue(PARAMETRES);
     prisma.ordonnance.findMany.mockResolvedValue([{
       id: 'ord-1', numero: 'OR-2026-000001', statut: 'EN_ATTENTE',
       valideJusquau: DANS_30_JOURS, creeLe: new Date(), signeLe: new Date('2026-09-01'),
@@ -385,9 +411,6 @@ describe('getOrdonnances — perimetre', () => {
     expect(prisma.ordonnance.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: {
         statut: { in: ['EN_ATTENTE', 'PARTIELLEMENT_SERVIE'] },
-        // Une ordonnance non signee n'est pas opposable : elle n'a rien a
-        // faire dans la file du comptoir.
-        signeLe: { not: null },
         consultation: { patient: { prefecture: 'Kindia' } },
       },
     }));

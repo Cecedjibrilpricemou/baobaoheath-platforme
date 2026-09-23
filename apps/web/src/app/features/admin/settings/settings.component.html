@@ -366,6 +366,17 @@
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PRESCRIPTION_CODE_HINT' | translate }}</small>
           </div>
 
+          <div class="divider"></div>
+
+          <!-- Decision D2 du cahier des charges, encore en attente. -->
+          <div class="setting-row warning-bg">
+            <div class="setting-info">
+              <span class="setting-title" id="setting-signature-label">{{ 'ADMIN.SETTINGS.PRESCRIPTION_SIGN_TITLE' | translate }}</span>
+              <span class="setting-sub">{{ 'ADMIN.SETTINGS.PRESCRIPTION_SIGN_SUB' | translate }}</span>
+            </div>
+            <mat-slide-toggle aria-labelledby="setting-signature-label" [(ngModel)]="prescription.signatureObligatoire"></mat-slide-toggle>
+          </div>
+
           <ng-container *ngTemplateOutlet="footer; context: { section: 'prescription' }"></ng-container>
         </div>
       }

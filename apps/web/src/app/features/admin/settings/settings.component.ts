@@ -98,7 +98,8 @@ export class SettingsComponent implements OnInit {
   // code : le cahier des charges (decision D2) en fait un parametre.
   prescription: ParametresPrescriptionView = {
     dureeValiditeJours: 90,
-    longueurCodeVerification: 6
+    longueurCodeVerification: 6,
+    signatureObligatoire: false
   };
 
   ngOnInit() {

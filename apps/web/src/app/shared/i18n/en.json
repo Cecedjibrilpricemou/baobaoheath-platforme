@@ -1006,6 +1006,8 @@
       "PRESCRIPTION_VALIDITY_HINT": "Counted from the prescriber's signature, not from drafting.",
       "PRESCRIPTION_CODE_LABEL": "Verification code length",
       "PRESCRIPTION_CODE_HINT": "Code given to the patient and checked at the counter. Longer is safer but harder to copy.",
+      "PRESCRIPTION_SIGN_TITLE": "Require a doctor's signature",
+      "PRESCRIPTION_SIGN_SUB": "Pending regulatory decision (D2). When off, a prescription written by a community health worker can be dispensed as soon as the consultation is closed. When on, a doctor must validate it first - which blocks dispensing where there is no doctor.",
       "TAB_BILLING": "Billing",
       "STRUCTURES_HINT": "Each facility's profile (name, type, address) is managed from the Facilities page.",
       "SUCCESS_SAVED": "Settings saved",

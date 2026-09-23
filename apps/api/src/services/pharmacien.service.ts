@@ -182,7 +182,8 @@ export async function delivrerLigneOrdonnance(
   if (!ligne) throw new NotFoundError('Ligne d ordonnance non trouvee');
 
   // EF-05-07/08 : le controle porte sur le document, pas sur la ligne.
-  const refus = motifDeRefus(ligne.ordonnance);
+  const { prescription } = await getValeursParametres();
+  const refus = motifDeRefus(ligne.ordonnance, prescription.signatureObligatoire);
   if (refus) throw new ValidationError(refus);
 
   if (ligne.statut !== StatutOrdonnance.EN_ATTENTE) {
@@ -269,7 +270,8 @@ export async function verifierOrdonnance(
     return { valide: false, motif: 'Numero ou code de verification incorrect' };
   }
 
-  const refus = motifDeRefus(ordonnance);
+  const { prescription } = await getValeursParametres();
+  const refus = motifDeRefus(ordonnance, prescription.signatureObligatoire);
   const patient = ordonnance.consultation.patient;
   const vue = vueDelivrance(ordonnance, patient.allergies, ordonnance.consultation.asc?.utilisateur ?? null);
 
@@ -304,14 +306,17 @@ export async function getStocksPharmacie(pharmacienId: string) {
 export async function getOrdonnances(pharmacienId: string): Promise<OrdonnanceEnAttenteView[]> {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
 
+  const { prescription } = await getValeursParametres();
+
   const ordonnances = await prisma.ordonnance.findMany({
     where: {
       statut: {
         in: [StatutOrdonnance.EN_ATTENTE, StatutOrdonnance.PARTIELLEMENT_SERVIE],
       },
-      // Une ordonnance non signee n'est pas opposable : elle n'a rien a faire
-      // dans la file du comptoir.
-      signeLe: { not: null },
+      // La file ne montre que ce qui est reellement delivrable : si la
+      // signature est imposee (decision D2), une ordonnance non signee n'a
+      // rien a y faire.
+      ...(prescription.signatureObligatoire ? { signeLe: { not: null } } : {}),
       consultation: { patient: { prefecture: pharmacien.structure.prefecture } },
     },
     select: {

@@ -1190,6 +1190,14 @@ export interface ParametresPrescriptionView {
   dureeValiditeJours: number;
   /** Longueur du code de verification remis au patient. */
   longueurCodeVerification: number;
+  /**
+   * Decision D2, non tranchee : faut-il la signature d'un medecin pour qu'une
+   * ordonnance soit delivrable ? Tant qu'elle ne l'est pas, une ordonnance
+   * redigee par un ASC et cloturee reste delivrable (`false`), ce qui est le
+   * fonctionnement actuel sur le terrain. Passer a `true` impose la validation
+   * medecin avant tout passage en pharmacie.
+   */
+  signatureObligatoire: boolean;
 }
 
 export interface ParametresSystemeValeurs {

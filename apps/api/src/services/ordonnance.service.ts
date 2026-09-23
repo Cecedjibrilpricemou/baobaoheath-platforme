@@ -149,12 +149,20 @@ export async function signerOrdonnance(idOrdonnance: string, idSignataire: strin
  * Le motif est rendu tel quel au comptoir : le pharmacien doit pouvoir
  * l'expliquer au patient plutot que d'opposer un refus muet.
  */
-export function motifDeRefus(ordonnance: {
-  statut: StatutOrdonnance;
-  signeLe: Date | null;
-  valideJusquau: Date;
-}): string | null {
-  if (!ordonnance.signeLe) return "Ordonnance non signee par le prescripteur";
+export function motifDeRefus(
+  ordonnance: {
+    statut: StatutOrdonnance;
+    signeLe: Date | null;
+    valideJusquau: Date;
+  },
+  // Decision D2, non tranchee : voir parametres.service. Tant qu'elle ne l'est
+  // pas, une ordonnance redigee par un ASC reste delivrable — l'imposer
+  // bloquerait la pharmacie dans les zones sans medecin.
+  signatureObligatoire = false
+): string | null {
+  if (signatureObligatoire && !ordonnance.signeLe) {
+    return 'Ordonnance non signee par le prescripteur';
+  }
   if (ordonnance.statut === StatutOrdonnance.ANNULEE) return 'Ordonnance annulee';
   if (ordonnance.statut === StatutOrdonnance.SERVIE) return 'Ordonnance deja entierement servie';
   if (estExpiree(ordonnance)) {

@@ -224,8 +224,14 @@ describe('motifDeRefus', () => {
     expect(motifDeRefus(VALIDE)).toBeNull();
   });
 
-  it('refuse une ordonnance non signee', () => {
-    expect(motifDeRefus({ ...VALIDE, signeLe: null })).toMatch(/non signee/i);
+  // Decision D2 non tranchee : par defaut un ASC prescrit et la pharmacie
+  // delivre. Exiger la signature partout bloquerait les villages sans medecin.
+  it('laisse passer une ordonnance non signee tant que la signature n est pas imposee', () => {
+    expect(motifDeRefus({ ...VALIDE, signeLe: null })).toBeNull();
+  });
+
+  it('refuse une ordonnance non signee quand la signature est imposee', () => {
+    expect(motifDeRefus({ ...VALIDE, signeLe: null }, true)).toMatch(/non signee/i);
   });
 
   it('refuse une ordonnance annulee', () => {
@@ -249,9 +255,16 @@ describe('motifDeRefus', () => {
     expect(motifDeRefus({ ...VALIDE, statut: StatutOrdonnance.PARTIELLEMENT_SERVIE })).toBeNull();
   });
 
-  // L'ordre compte : une ordonnance non signee ET expiree doit d'abord
-  // signaler l'absence de signature, qui est le defaut le plus grave.
+  // L'ordre compte : quand la signature est imposee, une ordonnance non signee
+  // ET expiree doit d'abord signaler l'absence de signature, qui est le defaut
+  // le plus grave.
   it('signale d abord l absence de signature', () => {
-    expect(motifDeRefus({ statut: StatutOrdonnance.EN_ATTENTE, signeLe: null, valideJusquau: HIER })).toMatch(/non signee/i);
+    expect(motifDeRefus({ statut: StatutOrdonnance.EN_ATTENTE, signeLe: null, valideJusquau: HIER }, true)).toMatch(/non signee/i);
+  });
+
+  // Une ordonnance non signee reste soumise a sa date de validite : ne pas
+  // exiger la signature ne doit pas rendre une ordonnance perimee delivrable.
+  it('refuse une ordonnance non signee mais expiree, signature non imposee', () => {
+    expect(motifDeRefus({ statut: StatutOrdonnance.EN_ATTENTE, signeLe: null, valideJusquau: HIER })).toMatch(/expiree/i);
   });
 });

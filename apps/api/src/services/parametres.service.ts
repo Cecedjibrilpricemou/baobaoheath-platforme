@@ -70,6 +70,11 @@ export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
   prescription: {
     dureeValiditeJours: 90,
     longueurCodeVerification: 6,
+    // Faux par defaut : c'est le fonctionnement actuel, ou un ASC prescrit et
+    // la pharmacie delivre sans attendre un medecin. L'imposer sans que la
+    // decision D2 soit tranchee bloquerait la delivrance dans les villages
+    // sans medecin.
+    signatureObligatoire: false,
   },
 };
 
