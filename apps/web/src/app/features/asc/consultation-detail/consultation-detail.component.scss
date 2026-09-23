@@ -191,6 +191,29 @@
 
   &__ordo-head-actions { display: flex; align-items: center; gap: 10px; }
 
+  // ── Securite de prescription (EF-05-05/06) ──────────────────────
+  // Les couleurs viennent des tokens semantiques : ils sont redefinis en mode
+  // sombre, donc rien a repeter ici.
+  &__alertes { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+  &__alertes-attente {
+    display: flex; align-items: center; gap: 8px; margin: 12px 0 0;
+    font-size: 12.5px; color: var(--bb-text-secondary);
+  }
+
+  &__motif {
+    margin-top: 4px;
+    label {
+      display: block; margin-bottom: 6px;
+      font-size: 13px; font-weight: 600; color: var(--bb-text-primary);
+    }
+  }
+
+  &__motif-aide {
+    display: block; margin-top: 6px;
+    font-size: 11.5px; color: var(--bb-text-muted);
+  }
+
   &__ordo-print {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 5px 11px; border-radius: var(--bb-radius);
@@ -305,4 +328,33 @@
   background: linear-gradient(90deg, var(--bb-surface-1) 25%, var(--bb-surface-2) 50%, var(--bb-surface-1) 75%);
   background-size: 200% 100%;
   animation: bb-shimmer 1.4s infinite;
+}
+
+
+// Bandeau d'alerte de prescription. Trois gravites, trois couleurs : l'oeil
+// trie avant la lecture.
+.bb-alerte {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 14px;
+  border: 1px solid; border-radius: var(--bb-radius-lg);
+
+  > i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  &--danger  { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
+  &--warning { background: var(--bb-warning-bg); border-color: var(--bb-warning-border); color: var(--bb-warning); }
+  &--info    { background: var(--bb-info-bg);    border-color: var(--bb-info-border);    color: var(--bb-info); }
+
+  &__corps { flex: 1; min-width: 0; }
+
+  &__titre {
+    margin: 0 0 3px;
+    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700;
+  }
+
+  // Le detail et la conduite se lisent dans la couleur du texte courant : en
+  // gardant la teinte de gravite sur tout le bloc, le pave deviendrait
+  // illisible.
+  &__detail, &__conduite { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--bb-text-primary); }
+  &__conduite { margin-top: 5px; }
+  &__source { margin: 5px 0 0; font-size: 11px; color: var(--bb-text-muted); }
 }

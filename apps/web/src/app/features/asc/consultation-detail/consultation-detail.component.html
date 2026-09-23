@@ -491,6 +491,7 @@
                 <mat-select
                   id="ordo-medicament"
                   [(ngModel)]="ordonnanceForm.idMedicament"
+                  (selectionChange)="analyserMedicament()"
                   [placeholder]="'ASC.CONSULTATION_DETAIL.MEDICAMENT_PH' | translate"
                 >
                   @for (opt of medicamentOptions(); track opt.value) {
@@ -498,6 +499,50 @@
                   }
                 </mat-select>
               </mat-form-field>
+
+              <!-- Securite de prescription (EF-05-05/06). L'alerte informe,
+                   elle n'interdit pas : seul un motif est demande au-dela de
+                   la simple precaution. -->
+              @if (isAnalysant()) {
+                <p class="bb-detail__alertes-attente">
+                  <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
+                  {{ 'ASC.CONSULTATION_DETAIL.ALERTES_ANALYSE' | translate }}
+                </p>
+              } @else if (alertes().length) {
+                <div class="bb-detail__alertes" role="alert" aria-live="polite">
+                  @for (a of alertes(); track $index) {
+                    <div class="bb-alerte" [class]="classeAlerte(a.niveau)">
+                      <i [class]="iconeAlerte(a.niveau)" aria-hidden="true"></i>
+                      <div class="bb-alerte__corps">
+                        <p class="bb-alerte__titre">{{ a.libelle }}</p>
+                        <p class="bb-alerte__detail">{{ a.detail }}</p>
+                        @if (a.conduite) {
+                          <p class="bb-alerte__conduite"><strong>{{ 'ASC.CONSULTATION_DETAIL.ALERTE_CONDUITE' | translate }}</strong> {{ a.conduite }}</p>
+                        }
+                        @if (a.source) {
+                          <p class="bb-alerte__source">{{ a.source }}</p>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (motifRequis()) {
+                    <div class="bb-detail__motif">
+                      <label for="ordo-motif">{{ 'ASC.CONSULTATION_DETAIL.MOTIF_LABEL' | translate }}</label>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                        <textarea
+                          matInput
+                          id="ordo-motif"
+                          rows="2"
+                          [(ngModel)]="motifDepassement"
+                          [placeholder]="'ASC.CONSULTATION_DETAIL.MOTIF_PH' | translate"
+                        ></textarea>
+                      </mat-form-field>
+                      <small class="bb-detail__motif-aide">{{ 'ASC.CONSULTATION_DETAIL.MOTIF_HINT' | translate }}</small>
+                    </div>
+                  }
+                </div>
+              }
             </div>
             <div class="bb-detail__form-field">
               <label for="ordo-posologie">{{ 'ASC.CONSULTATION_DETAIL.POSOLOGIE_LABEL' | translate }}</label>

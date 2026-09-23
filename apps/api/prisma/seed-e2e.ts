@@ -22,7 +22,10 @@ export const E2E = {
   accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
   biologiste: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
-  medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000 },
+  medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
+  // Molecule a laquelle la patiente se declare allergique : elle sert a
+  // verifier que l'alerte de prescription (EF-05-05) arrive a l'ecran.
+  allergene: { dci: 'Amoxicilline', nomCommercial: 'Clamoxyl e2e', forme: 'gelule', dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
 } as const;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -103,14 +106,18 @@ async function main() {
   const rattachement = { idAscPrincipal: ascProfile.id, idStructurePreferee: centre.id };
   await prisma.patientProfile.upsert({
     where: { idUtilisateur: patientUser.id },
-    update: { qrCode: E2E.patient.qrCode, prefecture: E2E.prefecture, ...rattachement },
+    update: {
+      qrCode: E2E.patient.qrCode, prefecture: E2E.prefecture,
+      allergies: [E2E.allergene.dci],
+      ...rattachement,
+    },
     create: {
       idUtilisateur: patientUser.id,
       qrCode: E2E.patient.qrCode,
       dateNaissance: new Date('1990-05-01'),
       sexe: 'F',
       prefecture: E2E.prefecture,
-      allergies: [],
+      allergies: [E2E.allergene.dci],
       maladiesChroniques: [],
       ...rattachement,
     },
@@ -119,6 +126,11 @@ async function main() {
   let medicament = await prisma.medicament.findFirst({ where: { nomCommercial: E2E.medicament.nomCommercial } });
   if (!medicament) {
     medicament = await prisma.medicament.create({ data: { ...E2E.medicament, listeEssentielle: true } });
+  }
+
+  const allergene = await prisma.medicament.findFirst({ where: { nomCommercial: E2E.allergene.nomCommercial } });
+  if (!allergene) {
+    await prisma.medicament.create({ data: { ...E2E.allergene, listeEssentielle: false } });
   }
 
   // La pharmacie doit avoir du stock pour delivrer ; l'ASC n'en a pas encore

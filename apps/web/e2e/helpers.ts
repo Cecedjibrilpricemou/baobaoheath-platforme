@@ -12,6 +12,8 @@ export const E2E = {
   /** Nom commercial (liste pharmacie) et DCI (select d'ordonnance : « Paracetamol · 500mg · comprime »). */
   medicament: 'Doliprane e2e',
   medicamentDci: 'Paracetamol',
+  /** Molecule a laquelle la patiente est allergique (EF-05-05). */
+  allergene: 'Amoxicilline',
 } as const;
 
 /**

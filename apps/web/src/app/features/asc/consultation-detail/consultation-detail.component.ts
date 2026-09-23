@@ -14,11 +14,13 @@ import { OrdonnanceService } from '../../../core/services/ordonnance.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type {
+  AlertePrescriptionView,
   ConsultationDetailView,
   ConstantesVitalesView,
   HorodatageApi,
   DiagnosticDetailView,
   MedicamentView,
+  NiveauInteraction,
   OrdonnanceView,
   ReferencementView,
   StructureView,
@@ -139,6 +141,51 @@ export class ConsultationDetailComponent implements OnInit {
   };
   medicaments     = signal<MedicamentView[]>([]);
   isSavingOrdonnance = signal(false);
+
+  // ── Securite de prescription (EF-05-05/06) ──────────────
+  // Les alertes sont demandees des le choix du medicament, pas a
+  // l'enregistrement : savoir apres avoir redige la posologie n'aide personne.
+  alertes         = signal<AlertePrescriptionView[]>([]);
+  motifRequis     = signal(false);
+  isAnalysant     = signal(false);
+  motifDepassement = '';
+
+  /** Classe de gravite, pour que l'oeil trie avant la lecture. */
+  classeAlerte(niveau: NiveauInteraction): string {
+    if (niveau === 'CONTRE_INDICATION') return 'bb-alerte--danger';
+    if (niveau === 'ASSOCIATION_DECONSEILLEE') return 'bb-alerte--warning';
+    return 'bb-alerte--info';
+  }
+
+  iconeAlerte(niveau: NiveauInteraction): string {
+    if (niveau === 'CONTRE_INDICATION') return 'pi pi-ban';
+    if (niveau === 'ASSOCIATION_DECONSEILLEE') return 'pi pi-exclamation-triangle';
+    return 'pi pi-info-circle';
+  }
+
+  /** Appele au changement de medicament : on interroge, on n'empeche rien. */
+  analyserMedicament() {
+    const id = this.consultation()?.id;
+    this.alertes.set([]);
+    this.motifRequis.set(false);
+    this.motifDepassement = '';
+    if (!id || !this.ordonnanceForm.idMedicament) return;
+
+    this.isAnalysant.set(true);
+    this.consultationService.alertesPrescription(id, this.ordonnanceForm.idMedicament).subscribe({
+      next: (res) => {
+        this.isAnalysant.set(false);
+        this.alertes.set(res.data?.alertes ?? []);
+        this.motifRequis.set(res.data?.motifRequis ?? false);
+      },
+      // Une analyse indisponible ne doit pas empecher de prescrire : on le dit
+      // au lieu de laisser croire que le dossier est sans particularite.
+      error: () => {
+        this.isAnalysant.set(false);
+        this.showError(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_ALERTES'));
+      },
+    });
+  }
 
   // ── Référencement ────────────────────────────────────────
   referralForm: {
@@ -281,14 +328,29 @@ export class ConsultationDetailComponent implements OnInit {
   saveOrdonnance() {
     const id = this.consultation()?.id;
     if (!id || !this.ordonnanceForm.idMedicament) return;
+
+    // EF-05-06 : l'alerte ne bloque pas la prescription, elle demande
+    // seulement de dire pourquoi. Le seuil vient de l'API, jamais d'ici.
+    const motif = this.motifDepassement.trim();
+    if (this.motifRequis() && motif.length < 5) {
+      this.showError(this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_MOTIF_REQUIS'));
+      return;
+    }
+
     this.isSavingOrdonnance.set(true);
-    this.consultationService.saveOrdonnance(id, this.ordonnanceForm).subscribe({
+    const payload = { ...this.ordonnanceForm, ...(motif ? { motifDepassement: motif } : {}) };
+
+    this.consultationService.saveOrdonnance(id, payload).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const data = response.data;
-          const c = this.consultation();
-          if (c) this.consultation.set({ ...c, ordonnances: [...c.ordonnances, data as unknown as OrdonnanceView] });
+          // On relit la consultation : la reponse est une *ligne*, pas une
+          // ordonnance. L'ajouter telle quelle a la liste des documents
+          // afficherait une carte vide jusqu'au prochain chargement.
+          this.loadConsultation(id);
           this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
+          this.alertes.set([]);
+          this.motifRequis.set(false);
+          this.motifDepassement = '';
           this.isSavingOrdonnance.set(false);
           this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_ORDONNANCE'));
         }

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 import { Consultation, Diagnostic, OrdonnanceLigne } from '../models/patient.model';
-import { ConstantesVitalesView } from '@baobaoheath/shared-types';
+import { AlertesPrescriptionView, ConstantesVitalesView } from '@baobaoheath/shared-types';
 
 export interface VitalsPayload {
   temperature?: number;
@@ -34,6 +34,8 @@ export interface OrdonnancePayload {
   dureeJours: number;
   quantite?: number;
   instructions?: string;
+  /** EF-05-06 : pourquoi le prescripteur passe outre une alerte. */
+  motifDepassement?: string;
 }
 
 export interface ReferralPayload {
@@ -56,6 +58,17 @@ export class ConsultationService {
 
   saveDiagnostic(id: string, payload: DiagnosticPayload): Observable<ApiResponse<Diagnostic>> {
     return this.api.post<ApiResponse<Diagnostic>>(`/consultations/${id}/diagnostics`, payload);
+  }
+
+  /**
+   * EF-05-05 : ce que le prescripteur doit savoir avant d'ajouter ce
+   * medicament. L'API recalcule les memes alertes a la creation : ne pas
+   * appeler cette route ne les contourne pas, elle sert a les *montrer*.
+   */
+  alertesPrescription(id: string, idMedicament: string): Observable<ApiResponse<AlertesPrescriptionView>> {
+    return this.api.post<ApiResponse<AlertesPrescriptionView>>(
+      `/consultations/${id}/ordonnances/alertes`, { idMedicament }
+    );
   }
 
   saveOrdonnance(id: string, payload: OrdonnancePayload): Observable<ApiResponse<OrdonnanceLigne>> {

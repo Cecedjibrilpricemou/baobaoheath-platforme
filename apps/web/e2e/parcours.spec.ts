@@ -59,6 +59,20 @@ test('1. ASC — consultation, ordonnance, cloture, puis referencement', async (
   await cliquer(page, page.locator('.bb-detail__submit-btn:visible'));
   await expect(page.getByText(/ordonnance ajoutée/i)).toBeVisible();
 
+  // EF-05-05/06 : la patiente se declare allergique a l'amoxicilline. Choisir
+  // cette molecule doit faire apparaitre l'alerte et reclamer un motif — sans
+  // rien interdire.
+  await choisirOption(page, 'ordo-medicament', E2E.allergene);
+  const alerte = page.locator('.bb-alerte--danger');
+  await expect(alerte).toBeVisible();
+  await expect(alerte).toContainText(/allergie/i);
+  await expect(page.locator('#ordo-motif')).toBeVisible();
+
+  // Repasser sur un medicament sans risque efface l'alerte et le motif.
+  await choisirOption(page, 'ordo-medicament', E2E.medicamentDci);
+  await expect(page.locator('.bb-alerte--danger')).toHaveCount(0);
+  await expect(page.locator('#ordo-motif')).toHaveCount(0);
+
   await cliquer(page, page.getByRole('button', { name: /clôturer la consultation/i }));
   await page.locator('.bb-logout-modal__btn:not(.bb-logout-modal__btn--cancel)').click();
   await expect(page.getByText(/clôturée avec succès/i)).toBeVisible();

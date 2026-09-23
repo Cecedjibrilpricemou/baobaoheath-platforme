@@ -84,7 +84,9 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - **Rien n'est bloqué** : le prescripteur voit le patient, le référentiel voit une paire de molécules. `POST /consultations/:id/ordonnances/alertes` renvoie ce qu'il doit savoir ; `motifRequis` n'est vrai qu'au-delà de la simple précaution, pour ne pas provoquer des « RAS » systématiques.
   - Les alertes sont **recalculées côté serveur** à la prescription (sauter l'appel ne les contourne pas) et **figées sur la ligne** avec le motif : le référentiel évoluera, ce qui compte est ce qui a été montré ce jour-là. La traçabilité du motif est en outre assurée par le journal d'audit, qui enregistre déjà le corps de chaque POST.
   - ⚠️ **Le référentiel d'interactions est vide** : aucune donnée clinique n'a été inventée. Les alertes allergies et contre-indications fonctionnent dès maintenant depuis le dossier patient ; les interactions attendent l'import du référentiel (P11, décision D6).
-- [ ] **Front EF-05-05/06 à faire** : présentation des alertes à la prescription et saisie du motif de dépassement.
+- [x] **Front livré le 2026-09-23** : les alertes s'affichent dès le choix du médicament (pas à l'enregistrement — savoir après avoir rédigé la posologie n'aide personne), triées par gravité et colorées sur les tokens sémantiques (contre-indication → danger, déconseillée → warning, précaution → info), donc justes en clair comme en sombre. Le champ « motif de dépassement » n'apparaît qu'au-delà de la simple précaution, et le seuil vient de l'API.
+  - Une analyse indisponible le dit au lieu de laisser croire que le dossier est sans particularité.
+  - Parcours e2e étendu : la patiente du jeu d'essai est déclarée allergique à l'amoxicilline ; choisir cette molécule fait apparaître l'alerte et le motif, en changer les efface.
 - [ ] Ordonnances renouvelables (EF-05-09) ; circuit distinct pour produits réglementés (EF-05-12).
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
@@ -173,6 +175,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-23 | P3 | Front sécurité de prescription : alertes affichées au choix du médicament, triées par gravité, motif de dépassement exigé au-delà de la précaution. Jeu e2e enrichi d'une allergie déclarée pour vérifier que l'alerte arrive bien à l'écran. |
 | 2026-09-23 | P3 | API sécurité de prescription (EF-05-05/06) : allergies (dont par famille ATC), contre-indications, interactions ; alertes non bloquantes, recalculées côté serveur et figées sur la ligne avec le motif de dépassement. 243 tests API. Référentiel d'interactions volontairement vide — aucune donnée clinique inventée. |
 | 2026-09-23 | P3 | Front : vérification au comptoir (numéro + code), page patient « Mes ordonnances » avec code masqué, ordonnance imprimable. 220 tests API, 5 parcours e2e. La signature obligatoire devient le paramètre de la décision D2, à `false` : imposer un médecin bloquerait la délivrance là où il n'y en a pas. |
 | 2026-09-23 | P3 | API : l'ordonnance devient un document numéroté, codé, daté et signé ; délivrance ligne par ligne ; vérification au comptoir (EF-05-07/08, EF-07-01). Migration avec reprise des données, vérifiée sur base jetable. |
