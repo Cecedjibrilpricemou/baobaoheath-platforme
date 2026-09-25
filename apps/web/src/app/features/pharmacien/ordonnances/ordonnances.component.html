@@ -234,6 +234,15 @@
                   <i class="pi pi-user-edit" aria-hidden="true"></i> {{ ordonnance.medecinNom }} · {{ formatDate(ordonnance.signeLe) }}
                 </span>
               </div>
+              <!-- EF-05-12 : circuit reglemente — controle d'identite au
+                   comptoir, et signature d'un medecin exigee. -->
+              @if (ordonnance.contientProduitReglemente) {
+                <p class="bb-ordo__doc-reglemente" role="alert">
+                  <i class="pi pi-shield" aria-hidden="true"></i>
+                  {{ 'PHARMACIEN.ORDONNANCES.REGLEMENTE' | translate }}
+                </p>
+              }
+
               @if (ordonnance.expiree) {
                 <p class="bb-ordo__doc-refus" role="alert">
                   <i class="pi pi-ban" aria-hidden="true"></i>
@@ -280,6 +289,22 @@
                       </button>
                     </div>
                   </div>
+                </div>
+              }
+
+              <!-- EF-05-09 : le cycle suivant ne s'ouvre qu'une fois tout
+                   delivre, et jamais sur un produit reglemente. -->
+              @if (ordonnance.renouvellementsRestants > 0 && !ordonnance.expiree) {
+                <div class="bb-ordo__doc-renouv">
+                  <span>{{ 'PHARMACIEN.ORDONNANCES.RENEW_LEFT' | translate: { n: ordonnance.renouvellementsRestants } }}</span>
+                  @if (ordonnance.statut === 'SERVIE') {
+                    <button type="button" class="bb-ordo__btn-select"
+                            [disabled]="isRenouvelant() === ordonnance.id"
+                            (click)="renouveler(ordonnance)">
+                      <i [class]="isRenouvelant() === ordonnance.id ? 'pi pi-spinner pi-spin' : 'pi pi-replay'" aria-hidden="true"></i>
+                      {{ 'PHARMACIEN.ORDONNANCES.RENEW_BTN' | translate }}
+                    </button>
+                  }
                 </div>
               }
             </div>

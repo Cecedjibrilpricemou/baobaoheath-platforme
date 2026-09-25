@@ -204,6 +204,9 @@ export const ordonnanceSchema = z.object({
   // EF-05-06 : pourquoi le prescripteur passe outre une alerte. Une longueur
   // minimale evite le « ok » qui ne documente rien.
   motifDepassement: z.string().trim().min(5).max(500).optional(),
+  // EF-05-09 : le plafond reel vient du parametre systeme ; ici on borne
+  // seulement pour ne pas accepter n'importe quel entier.
+  renouvellementsAutorises: z.coerce.number().int().min(0).max(24).optional(),
 }).strict();
 
 export const referralSchema = z.object({

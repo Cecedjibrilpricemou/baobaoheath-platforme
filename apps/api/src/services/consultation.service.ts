@@ -14,7 +14,7 @@ import {
   assertCanAccessPatient,
   buildConsultationWhereForUser,
 } from './access-control.service';
-import { avecExpirationEtAlertes, ordonnanceEnRedaction } from './ordonnance.service';
+import { appliquerReglesDocument, avecExpirationEtAlertes, ordonnanceEnRedaction } from './ordonnance.service';
 import { analyserPrescription } from './prescription-securite.service';
 import { recordSyncEvent } from './sync.service';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
@@ -318,6 +318,11 @@ export async function addOrdonnance(
     },
     include: { medicament: true },
   });
+
+  // EF-05-09 / EF-05-12 : ce qui se decide au niveau du document. Un produit
+  // reglemente ferme le renouvellement et raccourcit la validite, sans que le
+  // prescripteur ait a y penser — et sans qu'il puisse s'y soustraire.
+  await appliquerReglesDocument(ordonnance.id, dto.renouvellementsAutorises);
 
   await recordSyncEvent({
     scope: 'medical',

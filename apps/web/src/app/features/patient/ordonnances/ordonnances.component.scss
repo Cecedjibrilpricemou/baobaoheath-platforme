@@ -46,6 +46,13 @@
 
   &__meta { font-size: 12.5px; color: var(--bb-text-secondary); margin: 8px 0 12px; }
 
+  &__reglemente {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 12px;
+    padding: 8px 12px; border-radius: var(--bb-radius);
+    background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+    color: var(--bb-warning); font-size: 12px; font-weight: 600;
+  }
+
   &__meds {
     list-style: none; margin: 0; padding: 0;
     display: flex; flex-direction: column; gap: 8px;

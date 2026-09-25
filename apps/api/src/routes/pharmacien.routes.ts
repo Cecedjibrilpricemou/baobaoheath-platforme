@@ -20,6 +20,9 @@ router.get('/scan/:qrCode', ctrl.scanPatientController);
 // ordonnance d'un proche). Declaree avant `/ordonnances/:id/...` pour que
 // « verifier » ne soit pas capture comme un identifiant.
 router.post('/ordonnances/verifier', validateBody(verifierOrdonnanceSchema), ctrl.verifierOrdonnanceController);
+// EF-05-09 : `:id` designe ici l'ordonnance entiere, pas une ligne — un
+// renouvellement rouvre tout le traitement.
+router.post('/ordonnances/:id/renouveler', ctrl.renouvelerOrdonnanceController);
 // `:id` designe une ligne : la delivrance se fait medicament par medicament.
 router.post('/ordonnances/:id/delivrer', validateBody(delivrerOrdonnanceSchema), ctrl.delivrerOrdonnanceController);
 router.get('/stocks', ctrl.getStocksController);

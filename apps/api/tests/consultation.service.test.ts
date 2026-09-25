@@ -40,6 +40,9 @@ jest.mock('../src/services/prescription-securite.service', () => ({
 jest.mock('../src/services/ordonnance.service', () => ({
   ...jest.requireActual('../src/services/ordonnance.service'),
   ordonnanceEnRedaction: jest.fn(),
+  // EF-05-09/12 : teste dans ordonnance.service.test.ts ; ici on verifie
+  // seulement que la prescription la declenche avec le nombre demande.
+  appliquerReglesDocument: jest.fn(),
 }));
 
 jest.mock('../src/services/access-control.service', () => ({
@@ -70,8 +73,9 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
 const accessControl = jest.requireMock('../src/services/access-control.service') as {
   assertCanAccessPatient: jest.Mock; assertCanAccessConsultation: jest.Mock;
 };
-const { ordonnanceEnRedaction } = jest.requireMock('../src/services/ordonnance.service') as {
+const { ordonnanceEnRedaction, appliquerReglesDocument } = jest.requireMock('../src/services/ordonnance.service') as {
   ordonnanceEnRedaction: jest.Mock;
+  appliquerReglesDocument: jest.Mock;
 };
 const { analyserPrescription } = jest.requireMock('../src/services/prescription-securite.service') as {
   analyserPrescription: jest.Mock;
@@ -216,6 +220,7 @@ describe('addDiagnostic / addOrdonnance — qui peut ecrire', () => {
 
   beforeEach(() => {
     analyserPrescription.mockResolvedValue({ alertes: [], motifRequis: false });
+    appliquerReglesDocument.mockResolvedValue(undefined);
   });
 
   it('refuse une ordonnance sur un medicament inconnu', async () => {
@@ -282,6 +287,22 @@ describe('addDiagnostic / addOrdonnance — qui peut ecrire', () => {
     expect(prisma.ligneOrdonnance.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ alertes: undefined, motifDepassement: null }),
     }));
+  });
+
+  // EF-05-09 : le renouvellement se decide au niveau du document, meme s'il
+  // est saisi dans le formulaire d'une ligne.
+  it('transmet au document le nombre de renouvellements demande', async () => {
+    consultationOuverte();
+    prisma.medicament.findUnique.mockResolvedValue({ id: 'm-1' });
+    ordonnanceEnRedaction.mockResolvedValue({ id: 'ord-1', numero: 'OR-2026-000001' });
+    prisma.ligneOrdonnance.create.mockResolvedValue({ id: 'l1', quantite: 1 });
+
+    await addOrdonnance(ASC, 'cons-1', {
+      idMedicament: 'm-1', posologie: '1cp', frequence: '2/j', dureeJours: 3,
+      renouvellementsAutorises: 3,
+    });
+
+    expect(appliquerReglesDocument).toHaveBeenCalledWith('ord-1', 3);
   });
 
   // Deux medicaments prescrits pendant la meme consultation forment *une*

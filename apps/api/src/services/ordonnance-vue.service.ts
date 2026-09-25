@@ -13,7 +13,7 @@ import { JwtPayload } from '../types/auth.types';
 import { NotFoundError } from '../utils/app-error';
 import { assertCanAccessConsultation } from './access-control.service';
 import { echapper } from './hopital.service';
-import { estExpiree } from './ordonnance.service';
+import { estExpiree, renouvellementsRestants } from './ordonnance.service';
 import { getIdentitePlateforme } from './parametres.service';
 import type { OrdonnanceView } from '@baobaoheath/shared-types';
 
@@ -47,6 +47,10 @@ function versVue(o: OrdonnanceChargee): OrdonnanceView {
     signeLe: o.signeLe ? o.signeLe.toISOString() : null,
     signataire: signataire ? { prenom: signataire.prenom, nom: signataire.nom } : null,
     creeLe: o.creeLe.toISOString(),
+    renouvellementsAutorises: o.renouvellementsAutorises,
+    renouvellementsUtilises: o.renouvellementsUtilises,
+    renouvellementsRestants: renouvellementsRestants(o),
+    contientProduitReglemente: o.lignes.some((l) => l.medicament.estReglemente),
     lignes: o.lignes.map((l) => ({
       id: l.id,
       statut: l.statut,

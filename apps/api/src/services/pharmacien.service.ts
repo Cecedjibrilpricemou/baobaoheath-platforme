@@ -4,7 +4,14 @@ import { Role, StatutOrdonnance, TypeStructure } from '../config/generated/clien
 import { hashPassword } from '../utils/password.utils';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { getValeursParametres } from './parametres.service';
-import { estExpiree, motifDeRefus, recalculerStatut } from './ordonnance.service';
+import {
+  contientProduitReglemente,
+  estExpiree,
+  motifDeRefus,
+  recalculerStatut,
+  renouvelerOrdonnance,
+  renouvellementsRestants,
+} from './ordonnance.service';
 import type {
   OrdonnanceDelivranceView,
   OrdonnanceEnAttenteView,
@@ -50,6 +57,8 @@ type OrdonnanceAvecLignes = {
   valideJusquau: Date;
   signeLe: Date | null;
   creeLe: Date;
+  renouvellementsAutorises: number;
+  renouvellementsUtilises: number;
   signataire: { prenom: string; nom: string } | null;
   lignes: {
     id: string;
@@ -59,7 +68,7 @@ type OrdonnanceAvecLignes = {
     quantite: number;
     statut: StatutOrdonnance;
     instructions: string | null;
-    medicament: { id: string; dci: string; nomCommercial: string | null; forme: string; dosage: string; prixUnitaireGnf: number };
+    medicament: { id: string; dci: string; nomCommercial: string | null; forme: string; dosage: string; prixUnitaireGnf: number; estReglemente: boolean };
   }[];
 };
 
@@ -89,6 +98,7 @@ function vueDelivrance(
       statut: l.statut as OrdonnanceDelivranceView['statut'],
       instructions: l.instructions,
       medicament: l.medicament,
+      estReglemente: l.medicament.estReglemente,
       prixTotalGnf: l.quantite * l.medicament.prixUnitaireGnf,
       alerteAllergie,
     };
@@ -106,6 +116,8 @@ function vueDelivrance(
     totalGnf: lignes
       .filter((l) => l.statut !== StatutOrdonnance.DELIVREE)
       .reduce((somme, l) => somme + l.prixTotalGnf, 0),
+    renouvellementsRestants: renouvellementsRestants(o),
+    contientProduitReglemente: lignes.some((l) => l.estReglemente),
   };
 }
 
@@ -181,9 +193,18 @@ export async function delivrerLigneOrdonnance(
   });
   if (!ligne) throw new NotFoundError('Ligne d ordonnance non trouvee');
 
-  // EF-05-07/08 : le controle porte sur le document, pas sur la ligne.
+  // EF-05-07/08 : le controle porte sur le document, pas sur la ligne. Le
+  // caractere reglemente se juge sur l'ordonnance entiere : une autre ligne
+  // peut porter le stupefiant.
   const { prescription } = await getValeursParametres();
-  const refus = motifDeRefus(ligne.ordonnance, prescription.signatureObligatoire);
+  const refus = motifDeRefus(
+    {
+      ...ligne.ordonnance,
+      contientProduitReglemente: await contientProduitReglemente(ligne.idOrdonnance),
+      renouvellementsRestants: renouvellementsRestants(ligne.ordonnance),
+    },
+    prescription.signatureObligatoire
+  );
   if (refus) throw new ValidationError(refus);
 
   if (ligne.statut !== StatutOrdonnance.EN_ATTENTE) {
@@ -271,7 +292,14 @@ export async function verifierOrdonnance(
   }
 
   const { prescription } = await getValeursParametres();
-  const refus = motifDeRefus(ordonnance, prescription.signatureObligatoire);
+  const refus = motifDeRefus(
+    {
+      ...ordonnance,
+      contientProduitReglemente: ordonnance.lignes.some((l) => l.medicament.estReglemente),
+      renouvellementsRestants: renouvellementsRestants(ordonnance),
+    },
+    prescription.signatureObligatoire
+  );
   const patient = ordonnance.consultation.patient;
   const vue = vueDelivrance(ordonnance, patient.allergies, ordonnance.consultation.asc?.utilisateur ?? null);
 
@@ -287,6 +315,38 @@ export async function verifierOrdonnance(
       groupeSanguin: patient.groupeSanguin ?? undefined,
       allergiesCritiques: patient.allergies,
     },
+  };
+}
+
+/**
+ * EF-05-09 : ouvrir le cycle suivant d'une ordonnance renouvelable.
+ *
+ * C'est la pharmacie qui declenche, parce que c'est elle qui a le patient et
+ * son papier devant elle. Les regles metier (produit reglemente, cycles
+ * restants, expiration) sont portees par ordonnance.service : le comptoir ne
+ * fait que demander.
+ */
+export async function renouvelerAuComptoir(pharmacienId: string, idOrdonnance: string) {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+
+  const ordonnance = await prisma.ordonnance.findUnique({
+    where: { id: idOrdonnance },
+    select: { id: true, consultation: { select: { patient: { select: { prefecture: true } } } } },
+  });
+  if (!ordonnance) throw new NotFoundError('Ordonnance non trouvee');
+
+  // Meme perimetre que la file du comptoir : une officine ne renouvelle pas
+  // l'ordonnance d'un patient d'une autre prefecture.
+  if (ordonnance.consultation.patient.prefecture !== pharmacien.structure.prefecture) {
+    throw new ForbiddenError('Cette ordonnance ne releve pas de votre prefecture');
+  }
+
+  const maj = await renouvelerOrdonnance(idOrdonnance);
+  return {
+    id: maj.id,
+    numero: maj.numero,
+    statut: maj.statut,
+    renouvellementsRestants: renouvellementsRestants(maj),
   };
 }
 

@@ -5,12 +5,15 @@
 // opposable, et le statut du document ne se saisit pas — il se deduit de ses
 // lignes.
 import {
+  appliquerReglesDocument,
   avecExpiration,
   estExpiree,
   genererCodeVerification,
   motifDeRefus,
   ordonnanceEnRedaction,
   recalculerStatut,
+  renouvelerOrdonnance,
+  renouvellementsRestants,
   signerOrdonnance,
 } from '../src/services/ordonnance.service';
 import { StatutOrdonnance } from '../src/config/generated/client/client';
@@ -19,8 +22,9 @@ import { NotFoundError, ValidationError } from '../src/utils/app-error';
 jest.mock('../src/config/prisma', () => ({
   prisma: {
     ordonnance: { findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
-    ligneOrdonnance: { findUnique: jest.fn() },
+    ligneOrdonnance: { findUnique: jest.fn(), findFirst: jest.fn(), updateMany: jest.fn() },
     $queryRaw: jest.fn(),
+    $transaction: jest.fn(),
   },
 }));
 jest.mock('../src/services/numero.service', () => ({ prochainNumero: jest.fn() }));
@@ -29,20 +33,31 @@ jest.mock('../src/services/parametres.service', () => ({ getValeursParametres: j
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     ordonnance: { findFirst: jest.Mock; findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
-    ligneOrdonnance: { findUnique: jest.Mock };
+    ligneOrdonnance: { findUnique: jest.Mock; findFirst: jest.Mock; updateMany: jest.Mock };
     $queryRaw: jest.Mock;
+    $transaction: jest.Mock;
   };
 };
 const { prochainNumero } = jest.requireMock('../src/services/numero.service') as { prochainNumero: jest.Mock };
 const { getValeursParametres } = jest.requireMock('../src/services/parametres.service') as { getValeursParametres: jest.Mock };
 
-const PARAMETRES = { prescription: { dureeValiditeJours: 90, longueurCodeVerification: 6 } };
+const PARAMETRES = {
+  prescription: {
+    dureeValiditeJours: 90,
+    longueurCodeVerification: 6,
+    signatureObligatoire: false,
+    dureeValiditeReglementeJours: 28,
+    renouvellementsMax: 6,
+  },
+};
 
 const DANS_30_JOURS = new Date(Date.now() + 30 * 24 * 3600 * 1000);
 const HIER = new Date(Date.now() - 24 * 3600 * 1000);
 
 beforeEach(() => {
   getValeursParametres.mockResolvedValue(PARAMETRES);
+  // Par defaut aucun produit reglemente : chaque test qui en veut un le dit.
+  prisma.ligneOrdonnance.findFirst.mockResolvedValue(null);
 });
 afterEach(() => jest.resetAllMocks());
 
@@ -214,10 +229,18 @@ describe('signerOrdonnance', () => {
 
 // ── Refus au comptoir ────────────────────────────────────────────────
 describe('motifDeRefus', () => {
-  const VALIDE: { statut: StatutOrdonnance; signeLe: Date | null; valideJusquau: Date } = {
+  const VALIDE: {
+    statut: StatutOrdonnance;
+    signeLe: Date | null;
+    valideJusquau: Date;
+    contientProduitReglemente: boolean;
+    renouvellementsRestants: number;
+  } = {
     statut: StatutOrdonnance.EN_ATTENTE,
     signeLe: new Date('2026-09-01'),
     valideJusquau: DANS_30_JOURS,
+    contientProduitReglemente: false,
+    renouvellementsRestants: 0,
   };
 
   it('laisse passer une ordonnance signee, valide et non servie', () => {
@@ -255,16 +278,176 @@ describe('motifDeRefus', () => {
     expect(motifDeRefus({ ...VALIDE, statut: StatutOrdonnance.PARTIELLEMENT_SERVIE })).toBeNull();
   });
 
+  // EF-05-09 : une ordonnance servie n'est pas finie s'il reste un cycle.
+  it('laisse passer une ordonnance servie s il reste un renouvellement', () => {
+    expect(motifDeRefus({
+      ...VALIDE, statut: StatutOrdonnance.SERVIE, renouvellementsRestants: 2,
+    })).toBeNull();
+  });
+
+  it('refuse une ordonnance servie sans renouvellement restant', () => {
+    expect(motifDeRefus({
+      ...VALIDE, statut: StatutOrdonnance.SERVIE, renouvellementsRestants: 0,
+    })).toMatch(/servie/i);
+  });
+
+  // EF-05-12 : un stupefiant ne se delivre pas sur la parole d'un agent
+  // communautaire, meme quand la decision D2 n'impose rien au cas general.
+  it('exige un medecin pour un produit reglemente, meme sans signature obligatoire', () => {
+    const motif = motifDeRefus({ ...VALIDE, signeLe: null, contientProduitReglemente: true });
+    expect(motif).toMatch(/reglemente/i);
+    expect(motif).toMatch(/medecin/i);
+  });
+
+  it('laisse passer un produit reglemente signe par un medecin', () => {
+    expect(motifDeRefus({ ...VALIDE, contientProduitReglemente: true })).toBeNull();
+  });
+
   // L'ordre compte : quand la signature est imposee, une ordonnance non signee
   // ET expiree doit d'abord signaler l'absence de signature, qui est le defaut
   // le plus grave.
   it('signale d abord l absence de signature', () => {
-    expect(motifDeRefus({ statut: StatutOrdonnance.EN_ATTENTE, signeLe: null, valideJusquau: HIER }, true)).toMatch(/non signee/i);
+    expect(motifDeRefus({ ...VALIDE, signeLe: null, valideJusquau: HIER }, true)).toMatch(/non signee/i);
   });
 
   // Une ordonnance non signee reste soumise a sa date de validite : ne pas
   // exiger la signature ne doit pas rendre une ordonnance perimee delivrable.
   it('refuse une ordonnance non signee mais expiree, signature non imposee', () => {
-    expect(motifDeRefus({ statut: StatutOrdonnance.EN_ATTENTE, signeLe: null, valideJusquau: HIER })).toMatch(/expiree/i);
+    expect(motifDeRefus({ ...VALIDE, signeLe: null, valideJusquau: HIER })).toMatch(/expiree/i);
+  });
+});
+
+// ── Renouvellement et produits reglementes (EF-05-09, EF-05-12) ──────
+describe('renouvellementsRestants', () => {
+  it('compte ce qui reste, jamais en dessous de zero', () => {
+    expect(renouvellementsRestants({ renouvellementsAutorises: 3, renouvellementsUtilises: 1 })).toBe(2);
+    expect(renouvellementsRestants({ renouvellementsAutorises: 0, renouvellementsUtilises: 0 })).toBe(0);
+    // Un compteur incoherent ne doit pas produire un nombre negatif, qui
+    // passerait pour « pas de renouvellement » a un endroit et pour un
+    // booleen vrai a un autre.
+    expect(renouvellementsRestants({ renouvellementsAutorises: 1, renouvellementsUtilises: 4 })).toBe(0);
+  });
+});
+
+describe('renouvelerOrdonnance', () => {
+  const SERVIE = {
+    id: 'ord-1', statut: 'SERVIE', valideJusquau: DANS_30_JOURS,
+    renouvellementsAutorises: 2, renouvellementsUtilises: 0,
+    lignes: [{ id: 'l1', statut: 'DELIVREE' }],
+  };
+
+  beforeEach(() => {
+    prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) =>
+      fn({
+        ligneOrdonnance: { updateMany: prisma.ligneOrdonnance.updateMany },
+        ordonnance: { update: prisma.ordonnance.update },
+      })
+    );
+  });
+
+  it('rouvre les lignes et avance le compteur, sans changer le numero', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue(SERVIE);
+    prisma.ordonnance.update.mockResolvedValue({ ...SERVIE, statut: 'EN_ATTENTE', renouvellementsUtilises: 1 });
+
+    await renouvelerOrdonnance('ord-1');
+
+    expect(prisma.ligneOrdonnance.updateMany).toHaveBeenCalledWith({
+      where: { idOrdonnance: 'ord-1' }, data: { statut: 'EN_ATTENTE' },
+    });
+    const { data } = prisma.ordonnance.update.mock.calls[0][0];
+    expect(data).toEqual({ statut: 'EN_ATTENTE', renouvellementsUtilises: { increment: 1 } });
+    // Le patient represente le meme papier : ni le numero ni le code ne bougent.
+    expect(data).not.toHaveProperty('numero');
+    expect(data).not.toHaveProperty('codeVerification');
+  });
+
+  it('refuse un produit reglemente', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue(SERVIE);
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue({ id: 'l1' });
+
+    await expect(renouvelerOrdonnance('ord-1')).rejects.toThrow(/reglemente/i);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('refuse quand il ne reste aucun cycle', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue({ ...SERVIE, renouvellementsUtilises: 2 });
+
+    await expect(renouvelerOrdonnance('ord-1')).rejects.toThrow(/renouvellement/i);
+  });
+
+  // Rouvrir une ordonnance non servie permettrait de delivrer deux fois le
+  // meme traitement dans le meme cycle.
+  it('refuse une ordonnance qui n est pas entierement servie', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue({ ...SERVIE, statut: 'PARTIELLEMENT_SERVIE' });
+
+    await expect(renouvelerOrdonnance('ord-1')).rejects.toThrow(/servie/i);
+  });
+
+  // Un renouvellement ne prolonge pas une ordonnance perimee.
+  it('refuse une ordonnance expiree', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue({ ...SERVIE, valideJusquau: HIER });
+
+    await expect(renouvelerOrdonnance('ord-1')).rejects.toThrow(/expiree/i);
+  });
+});
+
+describe('appliquerReglesDocument', () => {
+  const DOC = {
+    id: 'ord-1', signeLe: null, creeLe: new Date(),
+    valideJusquau: DANS_30_JOURS, renouvellementsAutorises: 0,
+  };
+
+  it('accorde les renouvellements demandes', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue(DOC);
+
+    await appliquerReglesDocument('ord-1', 3);
+
+    expect(prisma.ordonnance.update.mock.calls[0][0].data.renouvellementsAutorises).toBe(3);
+  });
+
+  // Le plafond vient du parametre systeme, pas d'une constante ni du client.
+  it('plafonne au parametre systeme', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue(DOC);
+
+    await appliquerReglesDocument('ord-1', 99);
+
+    expect(prisma.ordonnance.update.mock.calls[0][0].data.renouvellementsAutorises).toBe(6);
+  });
+
+  // EF-05-12 : le prescripteur ne peut pas rendre renouvelable une ordonnance
+  // portant un stupefiant, meme en le demandant explicitement.
+  it('ferme le renouvellement des qu un produit reglemente entre dans l ordonnance', async () => {
+    prisma.ordonnance.findUnique.mockResolvedValue({ ...DOC, renouvellementsAutorises: 3 });
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue({ id: 'l1' });
+
+    await appliquerReglesDocument('ord-1', 5);
+
+    const { data } = prisma.ordonnance.update.mock.calls[0][0];
+    expect(data.renouvellementsAutorises).toBe(0);
+  });
+
+  it('raccourcit la validite d une ordonnance reglementee', async () => {
+    const creeLe = new Date();
+    prisma.ordonnance.findUnique.mockResolvedValue({ ...DOC, creeLe });
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue({ id: 'l1' });
+
+    await appliquerReglesDocument('ord-1');
+
+    const { data } = prisma.ordonnance.update.mock.calls[0][0];
+    const jours = Math.round((data.valideJusquau.getTime() - creeLe.getTime()) / (24 * 3600 * 1000));
+    expect(jours).toBe(28);
+  });
+
+  // Sans changement, pas d'ecriture : une ordonnance signee ne doit pas voir
+  // sa date glisser parce qu'on a ajoute une ligne.
+  it('n ecrit rien quand rien ne change', async () => {
+    const creeLe = new Date();
+    const valideJusquau = new Date(creeLe);
+    valideJusquau.setDate(valideJusquau.getDate() + 90);
+    prisma.ordonnance.findUnique.mockResolvedValue({ ...DOC, creeLe, valideJusquau });
+
+    await appliquerReglesDocument('ord-1');
+
+    expect(prisma.ordonnance.update).not.toHaveBeenCalled();
   });
 });

@@ -26,6 +26,9 @@ export const E2E = {
   // Molecule a laquelle la patiente se declare allergique : elle sert a
   // verifier que l'alerte de prescription (EF-05-05) arrive a l'ecran.
   allergene: { dci: 'Amoxicilline', nomCommercial: 'Clamoxyl e2e', forme: 'gelule', dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
+  // Produit a circuit reglemente (EF-05-12) : ni renouvelable, validite
+  // reduite, signature d'un medecin exigee.
+  reglemente: { dci: 'Morphine', nomCommercial: 'Morphine e2e', forme: 'ampoule', dosage: '10mg', prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
 } as const;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -131,6 +134,11 @@ async function main() {
   const allergene = await prisma.medicament.findFirst({ where: { nomCommercial: E2E.allergene.nomCommercial } });
   if (!allergene) {
     await prisma.medicament.create({ data: { ...E2E.allergene, listeEssentielle: false } });
+  }
+
+  const reglemente = await prisma.medicament.findFirst({ where: { nomCommercial: E2E.reglemente.nomCommercial } });
+  if (!reglemente) {
+    await prisma.medicament.create({ data: { ...E2E.reglemente, listeEssentielle: false } });
   }
 
   // La pharmacie doit avoir du stock pour delivrer ; l'ASC n'en a pas encore

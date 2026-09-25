@@ -201,6 +201,20 @@
 
   &__doc-validite { font-size: 12.5px; color: var(--bb-text-secondary); margin: 0 0 12px; }
 
+  &__doc-reglemente {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 10px;
+    padding: 8px 12px; border-radius: var(--bb-radius);
+    background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+    color: var(--bb-warning); font-size: 12.5px; font-weight: 600;
+  }
+
+  &__doc-renouv {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 12px;
+    border-top: 1px dashed var(--bb-border);
+    font-size: 12.5px; color: var(--bb-text-secondary);
+  }
+
   &__doc-refus {
     display: flex; align-items: center; gap: 8px; margin: 0 0 12px;
     font-size: 12.5px; font-weight: 600; color: var(--bb-danger, #ef4444);

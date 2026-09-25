@@ -366,6 +366,24 @@
             <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PRESCRIPTION_CODE_HINT' | translate }}</small>
           </div>
 
+          <div class="field mt-4">
+            <label for="presc-validite-reglementee">{{ 'ADMIN.SETTINGS.PRESCRIPTION_REG_LABEL' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="presc-validite-reglementee" type="number" min="1" max="365"
+                     [(ngModel)]="prescription.dureeValiditeReglementeJours" />
+            </mat-form-field>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PRESCRIPTION_REG_HINT' | translate }}</small>
+          </div>
+
+          <div class="field mt-4">
+            <label for="presc-renouvellements">{{ 'ADMIN.SETTINGS.PRESCRIPTION_RENEW_LABEL' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="presc-renouvellements" type="number" min="0" max="24"
+                     [(ngModel)]="prescription.renouvellementsMax" />
+            </mat-form-field>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PRESCRIPTION_RENEW_HINT' | translate }}</small>
+          </div>
+
           <div class="divider"></div>
 
           <!-- Decision D2 du cahier des charges, encore en attente. -->

@@ -260,6 +260,13 @@ export interface OrdonnanceDto {
    * justifie.
    */
   motifDepassement?: string;
+
+  /**
+   * EF-05-09 : renouvellements accordes, portes par l'ordonnance entiere. La
+   * derniere valeur transmise fait foi pour le document en cours de redaction.
+   * Refuse des qu'un produit reglemente y figure.
+   */
+  renouvellementsAutorises?: number;
 }
 
 export interface ReferralDto {
@@ -539,7 +546,7 @@ export interface LigneOrdonnanceView {
   dureeJours: number;
   quantite?: number | null;
   instructions?: string | null;
-  medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string };
+  medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string; estReglemente?: boolean };
   /** Ce qui a ete montre au prescripteur au moment de la prescription. */
   alertes?: AlertePrescriptionView[] | null;
   motifDepassement?: string | null;
@@ -563,6 +570,14 @@ export interface OrdonnanceView {
   signataire?: { prenom: string; nom: string } | null;
   creeLe: HorodatageApi;
   lignes: LigneOrdonnanceView[];
+
+  /** EF-05-09. Le numero et le code ne changent pas d'un cycle a l'autre. */
+  renouvellementsAutorises: number;
+  renouvellementsUtilises: number;
+  /** Calcule par l'API : renouvellements restants, une fois l'ordonnance servie. */
+  renouvellementsRestants: number;
+  /** Calcule par l'API : au moins un medicament est a circuit reglemente (EF-05-12). */
+  contientProduitReglemente: boolean;
 }
 
 // Une constante non saisie arrive en `null` (colonne nullable Prisma serialisee
@@ -756,6 +771,12 @@ export interface MedicamentView {
   nomCommercial?: string | null;
   forme: string;
   dosage: string;
+  /**
+   * EF-05-12 : circuit reglemente (stupefiant, psychotrope). L'ecran de
+   * prescription le signale avant la saisie ; l'API applique la regle de toute
+   * facon.
+   */
+  estReglemente?: boolean;
 }
 
 export interface StructureView {
@@ -860,6 +881,8 @@ export interface LigneDelivranceView {
   statut: StatutOrdonnance;
   instructions?: string | null;
   medicament: MedicamentTarifeView;
+  /** EF-05-12 : circuit reglemente, signale ligne par ligne au comptoir. */
+  estReglemente: boolean;
   /** Calcule par l'API : quantite x prix unitaire. */
   prixTotalGnf: number;
   /** Calcule par l'API : le principe actif figure dans les allergies du patient. */
@@ -880,6 +903,11 @@ export interface OrdonnanceDelivranceView {
   lignes: LigneDelivranceView[];
   /** Calcule par l'API : somme des lignes restant a delivrer. */
   totalGnf: number;
+
+  /** EF-05-09 : ce qu'il reste apres la delivrance en cours. */
+  renouvellementsRestants: number;
+  /** EF-05-12 : impose le controle d'identite au comptoir. */
+  contientProduitReglemente: boolean;
 }
 
 /**
@@ -1252,6 +1280,16 @@ export interface ParametresPrescriptionView {
    * medecin avant tout passage en pharmacie.
    */
   signatureObligatoire: boolean;
+
+  /**
+   * EF-05-12 : validite d'une ordonnance portant un produit a circuit
+   * reglemente (stupefiant, psychotrope). Toujours plus courte que la duree
+   * ordinaire ; la signature d'un medecin y est exigee quoi qu'il arrive.
+   */
+  dureeValiditeReglementeJours: number;
+
+  /** EF-05-09 : plafond de renouvellements qu'un prescripteur peut accorder. */
+  renouvellementsMax: number;
 }
 
 export interface ParametresSystemeValeurs {

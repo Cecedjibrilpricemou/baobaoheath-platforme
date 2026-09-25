@@ -194,6 +194,10 @@
   // ── Securite de prescription (EF-05-05/06) ──────────────────────
   // Les couleurs viennent des tokens semantiques : ils sont redefinis en mode
   // sombre, donc rien a repeter ici.
+  // Le bandeau « produit reglemente » precede les alertes : il ne depend pas
+  // du patient mais du produit, et vaut pour toute l'ordonnance.
+  &__reglemente { margin-top: 12px; }
+
   &__alertes { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 
   &__alertes-attente {

@@ -36,6 +36,16 @@ export class PharmacienService {
     return this.api.post<ApiResponse<OrdonnanceDelivrance>>(`/pharmacien/ordonnances/${idOrdonnance}/delivrer`, payload);
   }
 
+  /**
+   * EF-05-09 : ouvrir le cycle suivant. Le numero et le code ne changent pas —
+   * c'est le meme papier que le patient represente.
+   */
+  renouvelerOrdonnance(idOrdonnance: string): Observable<ApiResponse<{ statut: string; renouvellementsRestants: number }>> {
+    return this.api.post<ApiResponse<{ statut: string; renouvellementsRestants: number }>>(
+      `/pharmacien/ordonnances/${idOrdonnance}/renouveler`, {}
+    );
+  }
+
   getStocks(): Observable<ApiResponse<PharmacieStock[]>> {
     return this.api.get<ApiResponse<PharmacieStock[]>>('/pharmacien/stocks');
   }

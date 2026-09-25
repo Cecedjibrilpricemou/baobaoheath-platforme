@@ -87,7 +87,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] **Front livré le 2026-09-23** : les alertes s'affichent dès le choix du médicament (pas à l'enregistrement — savoir après avoir rédigé la posologie n'aide personne), triées par gravité et colorées sur les tokens sémantiques (contre-indication → danger, déconseillée → warning, précaution → info), donc justes en clair comme en sombre. Le champ « motif de dépassement » n'apparaît qu'au-delà de la simple précaution, et le seuil vient de l'API.
   - Une analyse indisponible le dit au lieu de laisser croire que le dossier est sans particularité.
   - Parcours e2e étendu : la patiente du jeu d'essai est déclarée allergique à l'amoxicilline ; choisir cette molécule fait apparaître l'alerte et le motif, en changer les efface.
-- [ ] Ordonnances renouvelables (EF-05-09) ; circuit distinct pour produits réglementés (EF-05-12).
+- [x] **API + front livrés le 2026-09-25** — Ordonnances renouvelables (EF-05-09) ; circuit distinct pour produits réglementés (EF-05-12).
+  - **Renouvellement** : le numéro et le code **ne changent pas** d'un cycle à l'autre — c'est le même papier que le patient représente au comptoir. Les lignes repassent en attente, le compteur avance, et la validité globale continue de plafonner : un renouvellement ne prolonge pas une ordonnance périmée. Déclenché depuis la pharmacie, qui a le patient devant elle, et seulement sur une ordonnance entièrement servie.
+  - **Produits réglementés** : `Medicament.estReglemente`. Une ordonnance qui en contient n'est jamais renouvelable, voit sa validité réduite (paramètre distinct, 28 jours par défaut) et **exige la signature d'un médecin quelle que soit la décision D2** — un stupéfiant ne se délivre pas sur la parole d'un agent communautaire.
+  - Ces règles sont appliquées **au niveau du document**, après chaque prescription : le prescripteur ne peut pas s'y soustraire en les ignorant.
+  - Front : champ « renouvellements » verrouillé dès qu'un produit réglementé entre dans l'ordonnance, bandeau au comptoir imposant le contrôle d'identité, bouton « Renouveler », et compteur de cycles restants côté patient.
+  - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
 ### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02
@@ -175,6 +180,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-25 | P3 | Renouvellement et produits réglementés (EF-05-09, EF-05-12), API + interfaces. 261 tests API, 5 parcours e2e. Deux signatures rendues obligatoires dans `motifDeRefus` pour que le compilateur force les appelants : sans cela les deux règles restaient inertes. |
 | 2026-09-23 | P3 | Front sécurité de prescription : alertes affichées au choix du médicament, triées par gravité, motif de dépassement exigé au-delà de la précaution. Jeu e2e enrichi d'une allergie déclarée pour vérifier que l'alerte arrive bien à l'écran. |
 | 2026-09-23 | P3 | API sécurité de prescription (EF-05-05/06) : allergies (dont par famille ATC), contre-indications, interactions ; alertes non bloquantes, recalculées côté serveur et figées sur la ligne avec le motif de dépassement. 243 tests API. Référentiel d'interactions volontairement vide — aucune donnée clinique inventée. |
 | 2026-09-23 | P3 | Front : vérification au comptoir (numéro + code), page patient « Mes ordonnances » avec code masqué, ordonnance imprimable. 220 tests API, 5 parcours e2e. La signature obligatoire devient le paramètre de la décision D2, à `false` : imposer un médecin bloquerait la délivrance là où il n'y en a pas. |

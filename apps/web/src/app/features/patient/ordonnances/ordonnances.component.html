@@ -57,7 +57,19 @@
     <p class="bb-pord__meta">
       @if (o.signataire) { {{ o.signataire.prenom }} {{ o.signataire.nom }} · }
       {{ 'PATIENT.ORDONNANCES.VALID_UNTIL' | translate: { date: (o.valideJusquau | date:'shortDate') ?? '' } }}
+      @if (o.renouvellementsAutorises > 0) {
+        · {{ 'PATIENT.ORDONNANCES.RENEW_LEFT' | translate: { n: o.renouvellementsRestants } }}
+      }
     </p>
+
+    <!-- EF-05-12 : le patient doit savoir qu'il devra presenter une piece
+         d'identite au comptoir. -->
+    @if (o.contientProduitReglemente) {
+      <p class="bb-pord__reglemente">
+        <i class="pi pi-shield" aria-hidden="true"></i>
+        {{ 'PATIENT.ORDONNANCES.REGLEMENTE' | translate }}
+      </p>
+    }
 
     <ul class="bb-pord__meds">
       @for (l of o.lignes; track l.id) {

@@ -28,6 +28,12 @@ export async function verifierOrdonnanceController(req: AuthRequest, res: Respon
     res.json({ success: true, data });
 }
 
+/** EF-05-09 : ouvrir le cycle suivant d'une ordonnance renouvelable. */
+export async function renouvelerOrdonnanceController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.renouvelerAuComptoir(req.user!.userId, String(req.params.id));
+    res.json({ success: true, data });
+}
+
 export async function getStocksController(req: AuthRequest, res: Response): Promise<void> {
   const data: StockPharmacieView[] = await pharmacienService.getStocksPharmacie(req.user!.userId);
     res.json({ success: true, data });

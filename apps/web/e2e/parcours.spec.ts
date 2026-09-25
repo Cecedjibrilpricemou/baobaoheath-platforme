@@ -68,10 +68,17 @@ test('1. ASC — consultation, ordonnance, cloture, puis referencement', async (
   await expect(alerte).toContainText(/allergie/i);
   await expect(page.locator('#ordo-motif')).toBeVisible();
 
+  // EF-05-12 : un produit reglemente se signale avant la saisie, et ferme le
+  // renouvellement — le champ existe mais devient inaccessible.
+  await choisirOption(page, 'ordo-medicament', E2E.reglemente);
+  await expect(page.locator('.bb-detail__reglemente')).toBeVisible();
+  await expect(page.locator('#ordo-renouvellements')).toBeDisabled();
+
   // Repasser sur un medicament sans risque efface l'alerte et le motif.
   await choisirOption(page, 'ordo-medicament', E2E.medicamentDci);
   await expect(page.locator('.bb-alerte--danger')).toHaveCount(0);
   await expect(page.locator('#ordo-motif')).toHaveCount(0);
+  await expect(page.locator('#ordo-renouvellements')).toBeEnabled();
 
   await cliquer(page, page.getByRole('button', { name: /clôturer la consultation/i }));
   await page.locator('.bb-logout-modal__btn:not(.bb-logout-modal__btn--cancel)').click();

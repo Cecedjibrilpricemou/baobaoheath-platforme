@@ -213,6 +213,33 @@ export class OrdonnancesComponent implements OnInit {
 
   annuler() { this.selected.set(null); this.errorMessage.set(''); }
 
+  isRenouvelant = signal('');
+
+  /**
+   * EF-05-09 : rouvrir le traitement pour un nouveau cycle. On relit ensuite
+   * le patient : les lignes repassent en attente cote serveur, et rejouer ce
+   * calcul ici serait une occasion de divergence.
+   */
+  renouveler(ordonnance: OrdonnanceDelivranceView) {
+    if (this.isRenouvelant()) return;
+    this.isRenouvelant.set(ordonnance.id);
+    this.errorMessage.set('');
+
+    this.pharmacienService.renouvelerOrdonnance(ordonnance.id).subscribe({
+      next: () => {
+        this.isRenouvelant.set('');
+        this.successMessage.set(this.i18n.t('PHARMACIEN.ORDONNANCES.RENEW_OK', { numero: ordonnance.numero }));
+        setTimeout(() => this.successMessage.set(''), 5000);
+        if (this.qrCode.trim()) this.scan();
+        this.chargerEnAttente();
+      },
+      error: (err) => {
+        this.isRenouvelant.set('');
+        this.errorMessage.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.ORDONNANCES.ERR_RENEW'));
+      },
+    });
+  }
+
   delivrer() {
     const selection = this.selected();
     if (!selection) return;

@@ -558,6 +558,12 @@ model Medicament {
   // manquerait.
   codeAtc String?
 
+  /// Produit a circuit reglemente : stupefiant, psychotrope (EF-05-12). Une
+  /// ordonnance qui en contient n'est jamais renouvelable, sa validite est
+  /// reduite, et elle exige la signature d'un medecin quelle que soit la
+  /// decision D2.
+  estReglemente Boolean @default(false)
+
   /// Contre-indications connues, en texte libre tant que le referentiel
   /// national (D6) n'est pas arrete. Comparees aux maladies chroniques du
   /// patient (EF-05-06).
@@ -619,6 +625,12 @@ model Ordonnance {
   // Au-dela, la pharmacie refuse. La duree par defaut est un parametre
   // systeme, jamais une constante (decision D2 du cahier des charges).
   valideJusquau DateTime
+
+  // EF-05-09 : nombre de fois que l'ordonnance peut etre servie a nouveau
+  // apres avoir ete entierement delivree. Le numero et le code ne changent
+  // pas — c'est le meme papier que le patient represente au comptoir.
+  renouvellementsAutorises Int @default(0)
+  renouvellementsUtilises  Int @default(0)
 
   urlDocument String?
   creeLe      DateTime @default(now())

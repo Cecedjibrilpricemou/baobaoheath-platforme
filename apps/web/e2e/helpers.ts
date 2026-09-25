@@ -14,6 +14,8 @@ export const E2E = {
   medicamentDci: 'Paracetamol',
   /** Molecule a laquelle la patiente est allergique (EF-05-05). */
   allergene: 'Amoxicilline',
+  /** Produit a circuit reglemente (EF-05-12). */
+  reglemente: 'Morphine',
 } as const;
 
 /**

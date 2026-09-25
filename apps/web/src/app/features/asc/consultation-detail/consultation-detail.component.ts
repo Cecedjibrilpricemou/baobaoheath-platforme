@@ -137,7 +137,10 @@ export class ConsultationDetailComponent implements OnInit {
     posologie: '',
     frequence: '',
     dureeJours: 7,
-    instructions: ''
+    instructions: '',
+    // EF-05-09 : porte par l'ordonnance entiere, saisi ici parce que c'est le
+    // seul formulaire de prescription.
+    renouvellementsAutorises: 0
   };
   medicaments     = signal<MedicamentView[]>([]);
   isSavingOrdonnance = signal(false);
@@ -169,6 +172,13 @@ export class ConsultationDetailComponent implements OnInit {
     this.alertes.set([]);
     this.motifRequis.set(false);
     this.motifDepassement = '';
+
+    const choisi = this.medicaments().find(m => m.id === this.ordonnanceForm.idMedicament);
+    this.medicamentReglemente.set(choisi?.estReglemente === true);
+    // Un produit reglemente n'est jamais renouvelable : on remet le champ a
+    // zero plutot que de laisser une valeur que l'API refusera en silence.
+    if (choisi?.estReglemente) this.ordonnanceForm.renouvellementsAutorises = 0;
+
     if (!id || !this.ordonnanceForm.idMedicament) return;
 
     this.isAnalysant.set(true);
@@ -208,6 +218,18 @@ export class ConsultationDetailComponent implements OnInit {
       label: [m.dci, m.dosage, m.forme].filter(Boolean).join(' · '),
     }))
   );
+
+  /**
+   * EF-05-12 : le medicament choisi releve-t-il d'un circuit reglemente ?
+   * L'ecran le signale avant la saisie ; l'API applique la regle de toute
+   * facon, le front ne fait que l'annoncer.
+   *
+   * Un `computed` serait ici un piege : il ne suit que des signaux, et
+   * `ordonnanceForm.idMedicament` est une propriete ordinaire liee par
+   * ngModel. La valeur resterait figee a son premier calcul. On la pose donc
+   * explicitement au changement de medicament.
+   */
+  medicamentReglemente = signal(false);
 
   readonly structureOptions = computed(() =>
     this.structures().map(s => ({
@@ -347,7 +369,7 @@ export class ConsultationDetailComponent implements OnInit {
           // ordonnance. L'ajouter telle quelle a la liste des documents
           // afficherait une carte vide jusqu'au prochain chargement.
           this.loadConsultation(id);
-          this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '' };
+          this.ordonnanceForm = { idMedicament: '', posologie: '', frequence: '', dureeJours: 7, instructions: '', renouvellementsAutorises: 0 };
           this.alertes.set([]);
           this.motifRequis.set(false);
           this.motifDepassement = '';

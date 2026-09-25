@@ -75,6 +75,12 @@ export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
     // decision D2 soit tranchee bloquerait la delivrance dans les villages
     // sans medecin.
     signatureObligatoire: false,
+    // EF-05-12 : un stupefiant ou un psychotrope ne se presente pas trois mois
+    // apres avoir ete prescrit. 28 jours est l'usage le plus repandu ; comme le
+    // reste, c'est un parametre et non une constante.
+    dureeValiditeReglementeJours: 28,
+    // EF-05-09 : plafond de ce qu'un prescripteur peut accorder d'un trait.
+    renouvellementsMax: 6,
   },
 };
 

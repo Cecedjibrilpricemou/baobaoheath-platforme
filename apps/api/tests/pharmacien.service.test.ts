@@ -16,7 +16,7 @@ jest.mock('../src/config/prisma', () => ({
     utilisateur: { findUnique: jest.fn() },
     patientProfile: { findUnique: jest.fn() },
     ordonnance: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
-    ligneOrdonnance: { findUnique: jest.fn(), update: jest.fn() },
+    ligneOrdonnance: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     medicament: { findUnique: jest.fn() },
     stock: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     $transaction: jest.fn(),
@@ -30,7 +30,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     utilisateur: { findUnique: jest.Mock };
     patientProfile: { findUnique: jest.Mock };
     ordonnance: { findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
-    ligneOrdonnance: { findUnique: jest.Mock; update: jest.Mock };
+    ligneOrdonnance: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
     medicament: { findUnique: jest.Mock };
     stock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     $transaction: jest.Mock;
@@ -43,10 +43,13 @@ const PHARMACIEN = {
   structure: { id: 'pharma-1', type: 'PHARMACIE', prefecture: 'Kindia' },
   pharmacienProfile: {},
 };
-const PARACETAMOL = { id: 'm-1', dci: 'Paracetamol', nomCommercial: 'Doliprane', forme: 'cp', dosage: '500mg', prixUnitaireGnf: 1000 };
+const PARACETAMOL = { id: 'm-1', dci: 'Paracetamol', nomCommercial: 'Doliprane', forme: 'cp', dosage: '500mg', prixUnitaireGnf: 1000, estReglemente: false };
 
 const PARAMETRES = {
-  prescription: { dureeValiditeJours: 90, longueurCodeVerification: 6, signatureObligatoire: false },
+  prescription: {
+    dureeValiditeJours: 90, longueurCodeVerification: 6, signatureObligatoire: false,
+    dureeValiditeReglementeJours: 28, renouvellementsMax: 6,
+  },
   facturation: { margePct: 15 },
 };
 
@@ -55,6 +58,8 @@ const IL_Y_A_10_JOURS = new Date(Date.now() - 10 * 24 * 3600 * 1000);
 
 /** Ordonnance signee et encore valide : le cas nominal du comptoir. */
 type EtatOrdonnance = {
+  renouvellementsAutorises: number;
+  renouvellementsUtilises: number;
   id: string;
   numero: string;
   statut: string;
@@ -66,6 +71,8 @@ type EtatOrdonnance = {
 };
 
 const ORD_VALIDE: EtatOrdonnance = {
+  renouvellementsAutorises: 0,
+  renouvellementsUtilises: 0,
   id: 'ord-1',
   numero: 'OR-2026-000001',
   statut: 'EN_ATTENTE',
@@ -98,6 +105,7 @@ describe('scanPatient', () => {
   beforeEach(() => {
     pharmacienValide();
     getValeursParametres.mockResolvedValue(PARAMETRES);
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue(null);
   });
 
   it('404 sur un QR code inconnu', async () => {
@@ -177,6 +185,7 @@ describe('delivrerLigneOrdonnance', () => {
   beforeEach(() => {
     pharmacienValide();
     getValeursParametres.mockResolvedValue(PARAMETRES);
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue(null);
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn({
       stock: { updateMany: prisma.stock.updateMany },
       ligneOrdonnance: { update: prisma.ligneOrdonnance.update },
@@ -220,6 +229,28 @@ describe('delivrerLigneOrdonnance', () => {
 
     await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).rejects.toThrow(/expiree/i);
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  // EF-05-12 : le caractere reglemente se juge sur l'ordonnance entiere. Une
+  // autre ligne peut porter le stupefiant que celle qu'on delivre.
+  it('refuse un produit reglemente non signe par un medecin', async () => {
+    prisma.ligneOrdonnance.findUnique.mockResolvedValue(ligneAvecOrdonnance({ signeLe: null }));
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue({ id: 'autre-ligne' });
+
+    await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).rejects.toThrow(/reglemente/i);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  // EF-05-09 : une ordonnance servie reste servable s'il reste un cycle.
+  it('delivre une ordonnance servie qui garde un renouvellement', async () => {
+    prisma.ligneOrdonnance.findUnique.mockResolvedValue(
+      ligneAvecOrdonnance({ statut: 'SERVIE', renouvellementsAutorises: 2, renouvellementsUtilises: 0 })
+    );
+    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.updateMany.mockResolvedValue({ count: 1 });
+    prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
+
+    await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).resolves.toBeDefined();
   });
 
   it('refuse une ordonnance annulee', async () => {
@@ -338,6 +369,7 @@ describe('verifierOrdonnance', () => {
   beforeEach(() => {
     pharmacienValide();
     getValeursParametres.mockResolvedValue(PARAMETRES);
+    prisma.ligneOrdonnance.findFirst.mockResolvedValue(null);
   });
 
   it('accepte le bon couple numero + code', async () => {

@@ -99,7 +99,9 @@ export class SettingsComponent implements OnInit {
   prescription: ParametresPrescriptionView = {
     dureeValiditeJours: 90,
     longueurCodeVerification: 6,
-    signatureObligatoire: false
+    signatureObligatoire: false,
+    dureeValiditeReglementeJours: 28,
+    renouvellementsMax: 6
   };
 
   ngOnInit() {

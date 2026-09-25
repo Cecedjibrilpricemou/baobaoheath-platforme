@@ -503,6 +503,19 @@
               <!-- Securite de prescription (EF-05-05/06). L'alerte informe,
                    elle n'interdit pas : seul un motif est demande au-dela de
                    la simple precaution. -->
+              <!-- EF-05-12 : le circuit reglemente se signale avant la saisie.
+                   L'API applique la regle quoi qu'il arrive ; l'ecran l'annonce
+                   pour qu'elle ne soit pas une surprise. -->
+              @if (medicamentReglemente()) {
+                <div class="bb-alerte bb-alerte--warning bb-detail__reglemente">
+                  <i class="pi pi-shield" aria-hidden="true"></i>
+                  <div class="bb-alerte__corps">
+                    <p class="bb-alerte__titre">{{ 'ASC.CONSULTATION_DETAIL.REGLEMENTE_TITRE' | translate }}</p>
+                    <p class="bb-alerte__detail">{{ 'ASC.CONSULTATION_DETAIL.REGLEMENTE_DETAIL' | translate }}</p>
+                  </div>
+                </div>
+              }
+
               @if (isAnalysant()) {
                 <p class="bb-detail__alertes-attente">
                   <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
@@ -570,6 +583,26 @@
             />
           </mat-form-field>
             </div>
+            <!-- EF-05-09 : porte par l'ordonnance entiere, pas par le
+                 medicament. Ferme des qu'un produit reglemente y figure. -->
+            <div class="bb-detail__form-field">
+              <label for="ordo-renouvellements">{{ 'ASC.CONSULTATION_DETAIL.RENOUVELLEMENTS_LABEL' | translate }}</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input
+                  matInput
+                  id="ordo-renouvellements"
+                  type="number"
+                  min="0"
+                  max="24"
+                  [disabled]="medicamentReglemente()"
+                  [(ngModel)]="ordonnanceForm.renouvellementsAutorises"
+                />
+              </mat-form-field>
+              <small class="bb-detail__motif-aide">
+                {{ (medicamentReglemente() ? 'ASC.CONSULTATION_DETAIL.RENOUVELLEMENTS_INTERDIT' : 'ASC.CONSULTATION_DETAIL.RENOUVELLEMENTS_HINT') | translate }}
+              </small>
+            </div>
+
             <div class="bb-detail__form-field bb-detail__form-field--full">
               <label for="ordo-instructions">{{ 'ASC.CONSULTATION_DETAIL.INSTRUCTIONS_LABEL' | translate }}</label>
               <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-detail__field-full">
