@@ -245,7 +245,7 @@
     "NAV_REGISTER": "Create account",
     "HERO_TITLE_A": "Your health,",
     "HERO_TITLE_B": "made simple.",
-    "HERO_DESC": "{{nom}} connects patients, community health workers, doctors and pharmacies across Guinea: one record, one QR Code, and follow-up that goes wherever you go.",
+    "HERO_DESC": "{{nom}} connects patients, community health workers, doctors, laboratories and pharmacies across Guinea. One trip to the hospital: tests, consultation, prescription and pharmacy all follow from your record, with your QR Code.",
     "HERO_BTN_PATIENT": "Create my patient record",
     "HERO_BTN_STRUCTURE": "Find a facility",
     "HERO_BTN_AGENT": "Professional area",
@@ -264,9 +264,9 @@
     "HOW_STEP2_TITLE": "Get your QR Code",
     "HOW_STEP2_DESC": "Your record is created and your personal QR Code is generated automatically.",
     "HOW_STEP3_TITLE": "Access your services",
-    "HOW_STEP3_DESC": "Consultations, vaccines, prescriptions, pharmacy — everything is ready, everywhere.",
+    "HOW_STEP3_DESC": "Consultations, laboratory tests, vaccines, prescriptions, pharmacy — everything is ready, everywhere.",
     "STRUCT_TITLE": "Find a health facility near you",
-    "STRUCT_SUB": "Health posts, centres, hospitals and pharmacies partnering with {{nom}}.",
+    "STRUCT_SUB": "Health posts, centres, hospitals, laboratories and pharmacies partnering with {{nom}}.",
     "STRUCT_SEARCH_PH": "Name, prefecture or address…",
     "STRUCT_EMPTY": "No facility matches your search.",
     "STRUCT_CARD_BTN": "Join this facility",
@@ -277,6 +277,7 @@
     "STRUCT_TYPE_CHU": "University hospital",
     "STRUCT_TYPE_CLINIQUE": "Clinic",
     "STRUCT_TYPE_PHARMACIE": "Pharmacy",
+    "STRUCT_TYPE_LABORATOIRE": "Laboratory",
     "CTA_TITLE": "Ready to join {{nom}}?",
     "CTA_SUB": "Create your free account and find your health record anywhere in Guinea, even on a slow connection.",
     "CTA_PRIMARY": "Create a free account",
@@ -308,8 +309,7 @@
     "FOOTER_TERMS": "Terms of use",
     "FOOTER_CONTACT": "Contact",
     "FOOTER_SECURE": "Secure data",
-    "FOOTER_MADE": "Made in Guinea 🇬🇳",
-    "STRUCT_TYPE_LABORATOIRE": "Laboratory"
+    "FOOTER_MADE": "Made in Guinea 🇬🇳"
   },
   "PATIENT": {
     "ROLE": "Patient",

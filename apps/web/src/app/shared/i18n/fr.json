@@ -245,7 +245,7 @@
     "NAV_REGISTER": "Créer un compte",
     "HERO_TITLE_A": "Votre santé,",
     "HERO_TITLE_B": "plus simplement.",
-    "HERO_DESC": "{{nom}} relie les patients, les agents de santé communautaire, les médecins et les pharmacies de Guinée : un dossier unique, un QR Code, et un suivi qui vous accompagne partout.",
+    "HERO_DESC": "{{nom}} relie les patients, les agents de santé communautaire, les médecins, les laboratoires et les pharmacies de Guinée. Un seul déplacement à l'hôpital : analyses, consultation, ordonnance et pharmacie se suivent ensuite depuis votre dossier, avec votre QR Code.",
     "HERO_BTN_PATIENT": "Créer mon dossier patient",
     "HERO_BTN_STRUCTURE": "Trouver une structure",
     "HERO_BTN_AGENT": "Espace professionnel",
@@ -264,9 +264,9 @@
     "HOW_STEP2_TITLE": "Recevez votre QR Code",
     "HOW_STEP2_DESC": "Votre dossier est créé et votre QR Code personnel est généré automatiquement.",
     "HOW_STEP3_TITLE": "Accédez à vos services",
-    "HOW_STEP3_DESC": "Consultations, vaccins, ordonnances, pharmacie — tout est prêt, partout.",
+    "HOW_STEP3_DESC": "Consultations, analyses de laboratoire, vaccins, ordonnances, pharmacie — tout est prêt, partout.",
     "STRUCT_TITLE": "Trouvez une structure de santé près de chez vous",
-    "STRUCT_SUB": "Postes, centres, hôpitaux et pharmacies partenaires de {{nom}}.",
+    "STRUCT_SUB": "Postes, centres, hôpitaux, laboratoires et pharmacies partenaires de {{nom}}.",
     "STRUCT_SEARCH_PH": "Nom, préfecture ou adresse…",
     "STRUCT_EMPTY": "Aucune structure ne correspond à votre recherche.",
     "STRUCT_CARD_BTN": "Rejoindre cette structure",
@@ -277,6 +277,7 @@
     "STRUCT_TYPE_CHU": "CHU",
     "STRUCT_TYPE_CLINIQUE": "Clinique",
     "STRUCT_TYPE_PHARMACIE": "Pharmacie",
+    "STRUCT_TYPE_LABORATOIRE": "Laboratoire",
     "CTA_TITLE": "Prêt à rejoindre {{nom}} ?",
     "CTA_SUB": "Créez votre compte gratuitement et retrouvez votre dossier de santé partout en Guinée, même en faible débit.",
     "CTA_PRIMARY": "Créer un compte gratuit",
@@ -308,8 +309,7 @@
     "FOOTER_TERMS": "Conditions d'utilisation",
     "FOOTER_CONTACT": "Contact",
     "FOOTER_SECURE": "Données sécurisées",
-    "FOOTER_MADE": "Made in Guinea 🇬🇳",
-    "STRUCT_TYPE_LABORATOIRE": "Laboratoire"
+    "FOOTER_MADE": "Made in Guinea 🇬🇳"
   },
   "PATIENT": {
     "ROLE": "Patient",
