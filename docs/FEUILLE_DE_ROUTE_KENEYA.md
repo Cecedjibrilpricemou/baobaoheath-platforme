@@ -161,6 +161,101 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Rappels de prise de traitement (EF-06-09) ; code d'urgence (EF-06-08).
 - [ ] Téléconsultation (EF-05-10/11) ; statistiques anonymisées (EF-12-08).
 
+## Du point où nous en sommes à la mise en service
+
+> Section ajoutée le 2026-09-25. Elle ne remplace pas le plan par blocs ci-dessus : elle le met en perspective jusqu'à la livraison, avec ce qui n'est pas du code et ce qui bloque en dehors de l'équipe.
+
+### Où nous en sommes
+
+Livrés et en production sur `main` : **P0** (identité de la plateforme), **P1** (épisode de soins, demande d'analyse), **P2** (laboratoire), et **P3 aux trois quarts** (ordonnance infalsifiable, sécurité de prescription, renouvellement et produits réglementés). Reste P3 : le compte rendu de consultation.
+
+Filet de sécurité en place : 261 tests API, 21 tests front, 5 parcours end-to-end, CI à cinq jobs sur chaque poussée.
+
+### Les phases, dans l'ordre
+
+Les tailles (**S** ≈ 1 j · **M** ≈ 2–3 j · **L** ≈ 4–6 j) sont de l'**effort de développement pour une personne**. Elles n'incluent ni la recette, ni les décisions externes, ni l'installation chez l'hébergeur. Le calendrier réel dépend surtout de ces trois-là, pas du code.
+
+#### Phase 1 — Socle médical (lot V1) · ~12–18 j
+
+Ce qui rend la plateforme utilisable en établissement, sans commerce ni assurance.
+
+| Bloc | Objet | Taille | Bloqué par |
+|---|---|---|---|
+| P3 (fin) | Compte rendu de consultation structuré, daté, signé (EF-05-03) — débloque aussi le médecin prescripteur d'analyses, reliquat de P2 | M | — |
+| P4 | Identito-vigilance, doublons, consentement versionné, bris de glace, journal des accès | L | — |
+| P5 | Fil d'avancement du parcours patient, documents téléchargeables | S | — |
+| P9 | Notifications sans contenu médical, préférences de canal, rejeu | S | — |
+| P11 | Journal d'audit des **lectures**, référentiels importables, demandes RGPD | M | — |
+
+**P11 conditionne le reste** : c'est lui qui apporte l'import des référentiels (LOINC, CIM-10, ATC, tarifs). Sans lui, le référentiel d'interactions médicamenteuses reste vide et le catalogue de médicaments ne se gère qu'en base.
+
+À l'issue de cette phase, le lot V1 du cahier des charges est couvert : **recette possible sur le parcours médical**.
+
+#### Phase 2 — Commerce (lot V2) · ~7–10 j
+
+| Bloc | Objet | Taille | Bloqué par |
+|---|---|---|---|
+| P6 | Commande pharmacie + machine à états, substitution, refus motivé, délivrance partielle | L | — |
+| P7 | Paiement idempotent, statuts en attente, remboursements, rapprochement | M | **D8** (grille tarifaire) |
+
+Le fournisseur de paiement reste **simulé** derrière `payment-provider.service` : passer en réel ne demandera qu'un adaptateur, pas une refonte.
+
+#### Phase 3 — Assurance et livraison (lot V3) · ~10–14 j
+
+| Bloc | Objet | Taille | Bloqué par |
+|---|---|---|---|
+| P10 | Assureurs, contrats, taux, plafonds, reste à charge, autorisation préalable | L | **D4** (rejet après délivrance) |
+| P8 | Livraison, rôle livreur, suivi GPS, preuve de remise, annuaire géolocalisé | L | **D1/D5** (livraison à domicile, statut du livreur) |
+
+P8 est **constructible sans D1/D5** grâce au repli « retrait en pharmacie » déjà prévu : la carte et le suivi se branchent ensuite.
+
+#### Phase 4 — Interopérabilité · ~4–6 j
+
+P12 : HL7 v2 en réception, FHIR R4 étendu, connecteur fichier, environnement de test partenaires. Cette phase **dépend des partenaires**, pas de nous : elle ne peut pas être finie sans un interlocuteur en face.
+
+#### Phase 5 — Extension (lot V4) · ~4–6 j
+
+P13 : comptes aidants, mineurs, rappels de traitement, téléconsultation (**D2**), statistiques anonymisées. Hors périmètre d'une première mise en service.
+
+### Dette à solder avant la mise en service
+
+Constatée et vérifiée le 2026-09-25. Rien ici n'est bloquant pour développer, tout l'est pour livrer sereinement.
+
+| Point | Constat | Effort |
+|---|---|---|
+| `apps/api/prisma.config.js` | Artefact de build **commité** à côté du `.ts`. Prisma le préfère et fait échouer les commandes sans `--config` explicite. | S |
+| Swagger | **2 routes pharmacien documentées sur 12.** Le CDC impose que chaque livraison référence ses exigences dans Swagger. | S |
+| CI | `actions/checkout@v4` et `setup-node@v4` ciblent Node 20, déprécié. Avertissement aujourd'hui, panne demain. | S |
+| Redis | `REDIS_URL` non configuré : la limitation de débit est **en mémoire**, donc inopérante dès qu'il y a plus d'une instance. | S |
+| E-mail | Gmail non configuré : l'OTP tombe en repli développement. Inacceptable en production. | S |
+| Référentiels | Interactions médicamenteuses **vides** (aucune donnée clinique inventée), catalogue médicaments non administrable depuis l'interface. | résolu par P11 |
+| Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend. | M |
+
+### Ce qui n'est pas du code
+
+C'est ici que se joue la date de mise en service, bien plus que dans les blocs P.
+
+1. **Décisions externes** — six décisions du CDC conditionnent des blocs entiers : D1/D5 (livraison, statut du livreur), D2 (ordonnance numérique, téléconsultation), D4 (rejet d'assurance), D6 (base médicamenteuse), D7 (valeurs critiques), D8 (grille tarifaire). Toutes sont déjà des **paramètres ou référentiels administrables** : les trancher ne demandera pas de développement, seulement une saisie.
+2. **Hébergement agréé santé** (ENF-05) — agrément, localisation des données, coffre de clés (ENF-01-03), séparation dev/test/prod (ENF-01-09). Délai administratif, à lancer **au plus tôt**.
+3. **Sauvegardes et restauration** (ENF-02) — RPO 15 min, RTO 4 h, **testées chaque trimestre**. Une sauvegarde jamais restaurée n'est pas une sauvegarde.
+4. **Test d'intrusion** (ENF-01-07) — avant mise en service, par un tiers.
+5. **Supervision et alertes** (ENF-06-03).
+6. **Reprise de données** — patients, structures, professionnels existants. Volume et qualité inconnus à ce jour : à chiffrer dès que les fichiers sources sont disponibles.
+7. **Recette** — le CDC est la référence contractuelle : chaque EF/ENF doit être vérifié par le client, pas par l'équipe.
+8. **Formation et accompagnement** — ASC, agents d'accueil, laboratoires, pharmaciens. Ce sont des métiers différents, pas un public unique.
+
+### Jalons proposés
+
+| Jalon | Contenu | Condition de sortie |
+|---|---|---|
+| **J1 — Socle médical recettable** | Fin de phase 1 + dette « avant mise en service » | Le parcours hôpital → labo → ordonnance → pharmacie se déroule de bout en bout sur données réelles anonymisées |
+| **J2 — Pilote en site unique** | J1 + hébergement + reprise de données + formation d'un établissement | Un établissement utilise la plateforme en conditions réelles |
+| **J3 — Commerce et paiement** | Phase 2, fournisseur de paiement réel | Une commande est payée et délivrée |
+| **J4 — Ouverture** | Phase 3 + test d'intrusion + sauvegardes testées | Mise en service élargie |
+| **J5 — Interopérabilité** | Phase 4, au rythme des partenaires | Échange réel avec un système tiers |
+
+**Le chemin critique n'est pas le code.** L'agrément de l'hébergeur et la reprise de données sont les deux éléments à lancer immédiatement, en parallèle du développement — ils ne s'accélèrent pas en écrivant plus vite.
+
 ## Hors code — exploitation (à traiter avec l'hébergeur)
 
 Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO 15 min / RTO 4 h testées chaque trimestre (ENF-02), coffre de clés (ENF-01-03), supervision et alertes (ENF-06-03), test d'intrusion avant mise en service (ENF-01-07), séparation dev/test/prod (ENF-01-09).
