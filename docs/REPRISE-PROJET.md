@@ -1,7 +1,7 @@
 # KÈNÈYA — dossier de reprise
 
 > Écrit pour qu'une personne **ou une IA** puisse reprendre ce projet sans rien deviner.
-> Dernière mise à jour : 2026-09-26. Chaque affirmation ici a été vérifiée dans le dépôt, pas recopiée d'un document antérieur.
+> Dernière mise à jour : 2026-09-26 (spécification commande/livraison). Chaque affirmation ici a été vérifiée dans le dépôt, pas recopiée d'un document antérieur.
 >
 > Si vous constatez un écart entre ce fichier et le code, **le code a raison** — corrigez ce fichier.
 
@@ -139,6 +139,15 @@ cd packages/shared-types && npm run build     # sinon les autres voient l'ancien
 - **`ParametresSysteme`** — une seule ligne, `valeurs` en JSON, défauts dans `parametres.service.ts`. **Ajouter un paramètre ne demande aucune migration.**
 - **`Compteur`** — numérotation lisible et atomique (`EP-2026-000123`, `DA-`, `EC-`, `OR-`), via `numero.service.ts`.
 
+**Ce que le modèle ne sait pas encore**, et qu'il faudra ajouter avant P6/P8 (constaté le 2026-09-26) :
+
+| Manque | État |
+|---|---|
+| **Quartier / commune** | Le patient a `prefecture`, `sousPrefecture`, `village` ; la structure a `prefecture` et `adresse`. Aucun n'a de quartier — **la maille de tout le parcours commande/livraison**. |
+| **Pharmacie partenaire** | `StructureSante` n'a qu'un `type` et un `estActive`. La convention n'existe pas. |
+| **Rôle `LIVREUR`** | Absent de l'enum `Role`. |
+| **Course, offre de prix, attribution** | Rien. |
+
 ### L'ordonnance est un *document*, pas un médicament
 
 Avant P3, « ordonnance » désignait un médicament prescrit : trois médicaments prescrits le même jour formaient trois objets sans lien. Il n'y avait donc rien à numéroter, rien à signer d'un geste, rien que la pharmacie puisse contrôler.
@@ -226,6 +235,18 @@ Le détail complet, phase par phase, avec les jalons et ce qui n'est pas du code
 | **4 — Interopérabilité** | P12 HL7, FHIR étendu, connecteurs | ~4–6 j |
 | **5 — Extension (V4)** | P13 aidants, téléconsultation, rappels | ~4–6 j |
 
+### Le parcours commande et livraison est spécifié
+
+**`docs/PARCOURS-COMMANDE-LIVRAISON.md`** décrit le processus complet, arrêté avec le porteur du projet les 25 et 26 septembre 2026 : appel aux pharmacies du quartier dès l'ordonnance prête, attribution à la première qui déclare détenir tous les produits, choix du mode de remise par le patient, mise en concurrence des motards sur **délai et prix**, vérification du livreur par QR code, suivi du trajet, preuve de remise.
+
+**À lire avant d'écrire une ligne de P6, P7 ou P8.** Trois conséquences déplacent le plan :
+
+1. **P11 devient un préalable à P6.** Sans la notion de pharmacie partenaire ni les conventions assureur ↔ pharmacie, on ne sait ni qui notifier, ni comment calculer la prise en charge.
+2. **P7 se simplifie** : le transport se règle de la main à la main au motard, hors facture plateforme. Le bloc paiement n'a pas à connaître la livraison.
+3. **Une migration géographique précède tout le reste** : quartier et commune, sur le patient comme sur la structure.
+
+Deux points y restent **en proposition, non validés** : la double voie de preuve de remise (déclaration du patient / scan du QR par le livreur) et le circuit de substitution pharmacien → médecin.
+
 **Le chemin critique n'est pas le code** : l'agrément de l'hébergeur santé et la reprise de données commandent la date de mise en service. Six décisions externes (D1/D2/D4/D5/D6/D7/D8) conditionnent des blocs entiers — toutes sont déjà des paramètres, les trancher ne demandera aucun développement.
 
 **P11 mérite une attention particulière** : il apporte l'import des référentiels. Tant qu'il n'est pas là, le référentiel d'interactions reste vide et le catalogue de médicaments ne se gère qu'en base (aucun écran d'administration).
@@ -282,10 +303,11 @@ Chacun a coûté du temps et a été corrigé. Ils sont typiques et reviendront.
 ## 10. Par où commencer
 
 1. `docs/FEUILLE_DE_ROUTE_KENEYA.md` — le plan vivant, coché au fur et à mesure.
-2. `packages/shared-types/src/index.ts` — le contrat ; on y comprend le domaine plus vite que dans le schéma.
-3. `apps/api/prisma/schema.prisma` — le modèle, largement commenté sur les choix non évidents.
-4. `apps/api/src/services/ordonnance.service.ts` — représentatif du style attendu : règles explicites, commentaires qui disent *pourquoi*, pas *quoi*.
-5. `apps/web/e2e/parcours.spec.ts` — les cinq parcours décrivent le produit mieux qu'une spécification.
+2. `docs/PARCOURS-COMMANDE-LIVRAISON.md` — **indispensable avant P6, P7 ou P8** ; inutile avant.
+3. `packages/shared-types/src/index.ts` — le contrat ; on y comprend le domaine plus vite que dans le schéma.
+4. `apps/api/prisma/schema.prisma` — le modèle, largement commenté sur les choix non évidents.
+5. `apps/api/src/services/ordonnance.service.ts` — représentatif du style attendu : règles explicites, commentaires qui disent *pourquoi*, pas *quoi*.
+6. `apps/web/e2e/parcours.spec.ts` — les cinq parcours décrivent le produit mieux qu'une spécification.
 
 ### Ce qu'on attend d'une contribution
 
