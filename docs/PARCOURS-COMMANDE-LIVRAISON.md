@@ -101,9 +101,20 @@ Le patient **repart avec son ordonnance**, comme aujourd'hui, et cherche ses pro
 
 Le patient est **notifié** et peut aller chercher lui-même.
 
-### Le motard choisi ne se présente pas
+### Le motard choisi ne se présente pas — nouvel appel d'offres
 
-**Au bout de 30 minutes**, la requête repart et la course est proposée à un autre motard.
+**Au bout de 30 minutes**, la course repart en **appel d'offres complet**, pas en repêchage de l'offre suivante.
+
+La raison : après une demi-heure, **le prix tient peut-être encore, le délai non**. Un motard qui annonçait « livrable dans 30 min » l'a dit il y a plus longtemps que cela ; il est ailleurs, ou sur une autre course. Reprendre son offre vendrait au patient un délai qui n'existe plus — et le délai fait la moitié du choix. Par ailleurs le patient avait retenu une **combinaison**, pas un prix : lui affecter d'office le suivant lui imposerait un marché qu'il n'a pas accepté.
+
+Un appel d'offres complet ne veut pas dire repartir de zéro :
+
+- **les précédents soumissionnaires sont re-notifiés en premier** — ils ont déjà montré leur intérêt et re-soumettent en un geste, avec un délai à jour. S'ils sont encore dans le secteur, le patient a une offre en quelques secondes ;
+- **le motard défaillant est écarté de cette course** : il a accepté et n'est pas venu ;
+- **le patient est prévenu, jamais contourné** — « votre livreur ne s'est pas présenté, nous relançons ». Un changement silencieux détruit la confiance plus vite qu'un retard ;
+- **on lui propose la sortie** : après une demi-heure d'attente, on lui redemande s'il préfère aller chercher lui-même. C'est le principe de bout en bout — c'est le patient qui décide.
+
+> **Les 30 minutes sont un paramètre système**, pas une constante. À Conakry, ce délai n'a pas le même sens à 8 h et à 15 h.
 
 ### Vérification du motard à la pharmacie — par QR code
 
