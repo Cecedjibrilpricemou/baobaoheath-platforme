@@ -110,6 +110,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
 ### P6 — Commande pharmacie · L · EF-07 / §3.2
+- [ ] **Appel aux pharmacies du quartier** dès l'ordonnance prête : les pharmacies partenaires sont interrogées sur la disponibilité **de la totalité** des produits ; **la première qui déclare les avoir prend la commande**. Patient et médecin notifiés. Si aucune n'a tout, les deux sont avertis et le patient décide (voir `PARCOURS-COMMANDE-LIVRAISON.md`).
 - [ ] **Mode de remise choisi par le patient à la commande** (décision du 2026-09-26) : `RETRAIT_PHARMACIE` ou `LIVRAISON`. Ce n'est pas un repli technique — beaucoup de patients habitent à côté d'une pharmacie et iront chercher eux-mêmes. La livraison n'est jamais imposée.
 - [ ] `Commande` + lignes ; machine à états stricte, avec **deux sorties selon le mode** :
   - commun : Créée → Validée pharmacie → Prise en charge en cours → À payer → Payée → En préparation
@@ -134,8 +135,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Affectation au livreur ; positions horodatées pour le **suivi du trajet** (EF-10-04/05).
 - [ ] Preuve de remise : code à usage unique ou signature (EF-10-06) ; contrôle d'identité produits sensibles (EF-10-07).
 - [ ] Échec : nouvelle tentative, retour pharmacie, remboursement (EF-10-08) ; chaîne du froid (EF-10-09) ; signalement colis (EF-10-10).
-- [ ] **Frais de transport annoncés avant engagement** (décision du 2026-09-26) : la plateforme propose un montant (ex. « Transport 5 000 GNF — acceptez-vous ? »). **Aucun livreur n'est notifié tant que le patient n'a pas accepté.** Le montant vient d'un référentiel administrable, jamais d'une constante.
-- [ ] Sur acceptation : notification aux livreurs, prise de course, puis suivi.
+- [ ] **Mise en concurrence des motards** (processus du 2026-09-26, voir `PARCOURS-COMMANDE-LIVRAISON.md`) : les motards des communes environnantes sont notifiés de la course, **chacun propose son prix**, et **le patient choisit**. La plateforme n'impose pas de tarif.
+- [ ] Sur validation : la pharmacie reçoit **photo, numéro et identifiant** du motard, et **vérifie à son arrivée** avant de remettre les produits.
 - [ ] Le retrait en pharmacie n'est **pas un repli** : c'est un mode de remise permanent, à égalité avec la livraison.
 - [ ] Annuaire public géolocalisé : cliniques, pharmacies, laboratoires (horaires, services, coordonnées).
 
@@ -263,16 +264,11 @@ C'est ici que se joue la date de mise en service, bien plus que dans les blocs P
 
 **Le chemin critique n'est pas le code.** L'agrément de l'hébergeur et la reprise de données sont les deux éléments à lancer immédiatement, en parallèle du développement — ils ne s'accélèrent pas en écrivant plus vite.
 
-## Questions ouvertes sur la livraison (à trancher avant P6/P8)
+## Parcours commande et livraison
 
-Le principe est acquis — le patient choisit, et accepte les frais avant qu'un livreur soit notifié. Six points restent sans réponse, et chacun change le code :
+Le processus complet — appel aux pharmacies du quartier, attribution au premier déclarant, mise en concurrence des motards, vérification à la remise, suivi sur carte — est décrit dans **`PARCOURS-COMMANDE-LIVRAISON.md`**, avec **dix questions ouvertes** à trancher avant d'écrire P6, P7 et P8.
 
-1. **Comment le montant est-il calculé ?** Forfait par zone, distance, ou saisi par la pharmacie ? Quelle que soit la réponse, ce sera un **référentiel administrable** (règle de travail du projet), mais sa forme dépend du mode de calcul.
-2. **Qui encaisse le transport ?** Ajouté à la facture réglée sur la plateforme, ou payé en espèces au livreur à la remise ? La réponse décide si P7 (paiement) doit connaître la livraison.
-3. **Si le patient refuse le montant**, la commande bascule-t-elle en retrait en pharmacie, ou est-elle annulée ?
-4. **Si aucun livreur n'accepte** dans un délai donné : quel délai, et que devient la commande ?
-5. **Le patient peut-il revenir sur son choix** après avoir accepté les frais, et jusqu'à quand ?
-6. **Le montant annoncé est-il ferme ?** Un écart constaté à la livraison ouvrirait une négociation au pas de la porte, que la plateforme ne saurait pas arbitrer.
+Deux d'entre elles conditionnent le reste : le **moment du paiement** (avant le départ pour les médicaments, à l'arrivée pour le transport — à confirmer) et la **maille géographique**, qui n'existe pas encore en base.
 
 ## Hors code — exploitation (à traiter avec l'hébergeur)
 
