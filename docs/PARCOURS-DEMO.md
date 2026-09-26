@@ -64,6 +64,8 @@ Maomou Condé, née le 17/03/1992. QR : `DEMO-QR-MAOMOU-0001`.
 
 Connexion **Fatoumata Keïta**. Rechercher Maomou Condé, ouvrir un épisode de soins, prescrire une analyse vers le **Laboratoire Cécé**. Le bon d'examen est imprimable.
 
+Puis **orienter la patiente vers le Dr David Camara**, avec ou sans date. Le médecin reçoit une notification et retrouve la patiente dans *Orientations* — c'est par là qu'il la prend en charge à l'étape 3.
+
 ### 2. Laboratoire — du prélèvement au résultat validé
 
 **Sékou Cécé** (technicien) reçoit la demande, planifie le prélèvement, saisit les résultats.
@@ -73,7 +75,7 @@ Connexion **Fatoumata Keïta**. Rechercher Maomou Condé, ouvrir un épisode de 
 
 ### 3. Médecin — consulter et prescrire
 
-Connexion **Dr David Camara**.
+Connexion **Dr David Camara**. Menu **Orientations** : la patiente que l'accueil lui a adressée s'y trouve, avec le motif et l'heure du rendez-vous. Un rendez-vous déjà passé est signalé « à voir ».
 
 **Ce qu'il faut essayer, dans cet ordre :**
 

@@ -3,6 +3,7 @@ import {
   getDashboardStatsController,
   getConsultationsAValiderController,
   validerConsultationController,
+  getOrientationsController,
   getReferencementsController,
   repondreReferencementController,
   sendMessageController,
@@ -31,6 +32,8 @@ router.get('/consultations', getConsultationsAValiderController);
 router.put('/consultations/:id/valider', validateBody(validerConsultationSchema), validerConsultationController);
 
 // ─── Référencements ───────────────────────────────────────
+// EF-03-05 : les patients que l'accueil a orientes vers ce medecin.
+router.get('/orientations', getOrientationsController);
 router.get('/referencements', getReferencementsController);
 router.put('/referencements/:id/repondre', validateBody(repondreReferencementSchema), repondreReferencementController);
 

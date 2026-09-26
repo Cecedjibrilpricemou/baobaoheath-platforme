@@ -159,6 +159,51 @@ describe('orienter (EF-03-05)', () => {
     expect(envoyerSmsSimule.mock.calls[0][1]).toMatch(/^KENEYA:/);
     expect(envoyerSmsSimule.mock.calls[0][1]).not.toContain('abdominales');
   });
+
+  // Le defaut constate en usage : l'orientation s'ecrivait bien, mais personne
+  // ne prevenait le medecin. Le patient etait envoye vers quelqu'un qui ne le
+  // voyait pas arriver. Ce test verrouille l'avertissement.
+  it('previent le medecin, avec le lien vers ses orientations', async () => {
+    prisma.episodeSoins.findFirst.mockResolvedValue(episodeRow);
+    prisma.utilisateur.findFirst
+      .mockResolvedValueOnce({ id: 'med-1' })
+      .mockResolvedValueOnce({ id: 'pat-u', telephone: '620000000' });
+    prisma.episodeSoins.update.mockResolvedValue(episodeRow);
+    prisma.rendezVous.create.mockResolvedValue({});
+    prisma.rendezVous.updateMany.mockResolvedValue({ count: 1 });
+
+    await orienter(agent, 'ep-1', { idMedecin: 'med-1', prevuLe: '2026-09-22T09:00:00+00:00' });
+
+    const pourMedecin = notifierSansBloquer.mock.calls.find((c: unknown[]) =>
+      (c[0] as { idUtilisateur: string }).idUtilisateur === 'med-1'
+    );
+    expect(pourMedecin).toBeDefined();
+    expect(pourMedecin![0]).toMatchObject({
+      idUtilisateur: 'med-1',
+      type: 'ORIENTATION',
+      // Sans ce lien, le medecin est prevenu mais ne sait pas ou regarder.
+      lienAction: '/medecin/orientations',
+    });
+    // Le patient reste prevenu de son cote : les deux notifications coexistent.
+    expect(notifierSansBloquer.mock.calls.some((c: unknown[]) =>
+      (c[0] as { idUtilisateur: string }).idUtilisateur === 'pat-u'
+    )).toBe(true);
+  });
+
+  // Orienter vers un service sans nommer de medecin reste possible : il n'y a
+  // alors personne a prevenir, et cela ne doit pas echouer.
+  it('n envoie pas de notification medecin quand aucun medecin n est designe', async () => {
+    prisma.episodeSoins.findFirst.mockResolvedValue(episodeRow);
+    prisma.utilisateur.findFirst.mockResolvedValueOnce({ id: 'pat-u', telephone: '620000000' });
+    prisma.episodeSoins.update.mockResolvedValue(episodeRow);
+    prisma.rendezVous.updateMany.mockResolvedValue({ count: 0 });
+
+    await orienter(agent, 'ep-1', { service: 'Medecine interne' });
+
+    expect(notifierSansBloquer.mock.calls.every((c: unknown[]) =>
+      (c[0] as { idUtilisateur: string }).idUtilisateur !== 'med-1'
+    )).toBe(true);
+  });
 });
 
 describe('creerDemandeAnalyse (EF-03-03 / EF-03-04)', () => {

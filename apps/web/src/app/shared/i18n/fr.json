@@ -638,7 +638,7 @@
       "BACK": "Consultations",
       "CLOSING": "Clôture...",
       "CLOSE_BTN": "Clôturer la consultation",
-      "MOTIF_LABEL": "Motif principal",
+      "MOTIF_LABEL": "Motif de dépassement",
       "TAB_VITALS": "Constantes vitales",
       "TAB_DIAGNOSTICS": "Diagnostics",
       "TAB_ORDONNANCES": "Ordonnances",
@@ -688,7 +688,6 @@
       "RENOUVELLEMENTS_INTERDIT": "Impossible : l'ordonnance contient un produit réglementé.",
       "ALERTES_ANALYSE": "Vérification des allergies et interactions…",
       "ALERTE_CONDUITE": "Conduite à tenir :",
-      "MOTIF_LABEL": "Motif de dépassement",
       "MOTIF_PH": "Pourquoi prescrivez-vous malgré cette alerte ?",
       "MOTIF_HINT": "Obligatoire au-delà d'une simple précaution. Ce motif est conservé avec l'ordonnance.",
       "ERR_MOTIF_REQUIS": "Indiquez pourquoi vous prescrivez malgré l'alerte (5 caractères minimum).",
@@ -920,6 +919,18 @@
       "SUCCESS_REFUSE": "Transfert refusé — le patient et l'ASC sont prévenus.",
       "ERR_LOAD": "Impossible de charger les référencements",
       "ERR_RESPOND": "Impossible d'enregistrer votre réponse"
+    },
+    "NAV_ORIENTATIONS": "Orientations",
+    "ORIENTATIONS": {
+      "TITLE": "Patients orientés vers vous",
+      "SUB": "Les patients que l'accueil vous a adressés. Ceux qui ont un rendez-vous apparaissent en premier.",
+      "EMPTY": "Aucun patient ne vous est orienté pour le moment.",
+      "AVEC_RDV": "Avec rendez-vous",
+      "SANS_RDV": "Sans rendez-vous",
+      "SANS_DATE": "Sans date",
+      "EN_RETARD": "à voir",
+      "ORIENTE_LE": "orienté le {{date}}",
+      "ERR_LOAD": "Impossible de charger vos orientations."
     }
   },
   "PHARMACIEN": {

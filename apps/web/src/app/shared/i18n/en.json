@@ -638,7 +638,7 @@
       "BACK": "Consultations",
       "CLOSING": "Closing...",
       "CLOSE_BTN": "Close consultation",
-      "MOTIF_LABEL": "Main reason",
+      "MOTIF_LABEL": "Override reason",
       "TAB_VITALS": "Vital signs",
       "TAB_DIAGNOSTICS": "Diagnoses",
       "TAB_ORDONNANCES": "Prescriptions",
@@ -688,7 +688,6 @@
       "RENOUVELLEMENTS_INTERDIT": "Not possible: the prescription contains a controlled product.",
       "ALERTES_ANALYSE": "Checking allergies and interactions…",
       "ALERTE_CONDUITE": "Recommended action:",
-      "MOTIF_LABEL": "Override reason",
       "MOTIF_PH": "Why are you prescribing despite this alert?",
       "MOTIF_HINT": "Required beyond a simple precaution. This reason is kept with the prescription.",
       "ERR_MOTIF_REQUIS": "State why you are prescribing despite the alert (5 characters minimum).",
@@ -920,6 +919,18 @@
       "SUCCESS_REFUSE": "Transfer declined — the patient and CHW have been notified.",
       "ERR_LOAD": "Could not load referrals",
       "ERR_RESPOND": "Could not save your response"
+    },
+    "NAV_ORIENTATIONS": "Referrals",
+    "ORIENTATIONS": {
+      "TITLE": "Patients referred to you",
+      "SUB": "Patients the front desk sent your way. Those with an appointment come first.",
+      "EMPTY": "No patient has been referred to you yet.",
+      "AVEC_RDV": "With an appointment",
+      "SANS_RDV": "Without an appointment",
+      "SANS_DATE": "No date",
+      "EN_RETARD": "overdue",
+      "ORIENTE_LE": "referred on {{date}}",
+      "ERR_LOAD": "Could not load your referrals."
     }
   },
   "ADMIN": {

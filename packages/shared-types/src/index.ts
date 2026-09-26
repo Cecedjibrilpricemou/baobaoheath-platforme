@@ -1344,6 +1344,41 @@ export interface LogoPlateformeView {
 // Routes /hopital/* (AGENT_ACCUEIL, MEDECIN, ADMIN_STRUCTURE) et /patients/me/episodes.
 // ═══════════════════════════════════════════════════════════════════
 
+/**
+ * GET /medecin/orientations — un patient que l'accueil a oriente vers ce
+ * medecin (EF-03-05).
+ *
+ * L'orientation posait `EpisodeSoins.idResponsable` et creait un rendez-vous,
+ * mais rien dans l'espace medecin ne lisait l'un ni l'autre : le patient
+ * etait oriente vers quelqu'un qui ne le voyait jamais arriver.
+ */
+export interface OrientationMedecinView {
+  idEpisode: string;
+  numeroEpisode: string;
+  statutEpisode: StatutEpisode;
+  motif: string;
+  service?: string | null;
+  ouvertLe: HorodatageApi;
+  /** Moment ou l'orientation a ete posee. */
+  orienteLe: HorodatageApi;
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  structure: { id: string; nom: string };
+  /** Present seulement si l'accueil a propose une date. */
+  rendezVous?: {
+    id: string;
+    prevuLe: HorodatageApi;
+    statut: string;
+    motif?: string | null;
+  } | null;
+}
+
 /** GET /hopital/patients/recherche — identite minimale pour l'identito-vigilance (EF-03-01). */
 export interface PatientRechercheView {
   id: string;

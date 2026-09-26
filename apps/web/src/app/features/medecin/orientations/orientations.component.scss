@@ -1,0 +1,87 @@
+// features/medecin/orientations — meme grammaire que « Mes ordonnances ».
+.bb-orient {
+  padding: 1.75rem;
+  max-width: 860px;
+  margin: 0 auto;
+
+  &__section {
+    font-family: var(--bb-font-display);
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--bb-text-secondary);
+    margin: 22px 0 10px;
+  }
+
+  &__empty { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  &__empty-state {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i { font-size: 30px; color: var(--bb-text-muted); }
+  }
+
+  &__card {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
+    margin-bottom: 12px; box-shadow: var(--bb-shadow-sm);
+
+    // Un rendez-vous deja passe : le patient aurait du etre vu.
+    &--retard { border-color: var(--bb-danger-border); }
+  }
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+
+  &__patient {
+    display: block;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__motif {
+    margin: 0 0 10px; padding: 9px 12px;
+    border-radius: var(--bb-radius);
+    background: var(--bb-surface-1);
+    font-size: 13.5px; color: var(--bb-text-primary);
+  }
+
+  &__pied { margin: 0; font-size: 12px; color: var(--bb-text-muted); }
+
+  &__numero {
+    font-family: var(--bb-font-display); font-weight: 800;
+    letter-spacing: .4px; color: var(--bb-text-secondary);
+  }
+}
+
+// Le badge de date. `bb-badge` n'existe pas globalement : il est defini ici.
+.bb-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: var(--bb-radius-pill);
+  font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+  color: var(--bb-text-secondary);
+
+  i { font-size: 12px; }
+
+  &--info   { background: var(--bb-info-bg);   border-color: var(--bb-info-border);   color: var(--bb-info); }
+  &--danger { background: var(--bb-danger-bg); border-color: var(--bb-danger-border); color: var(--bb-danger); }
+}
+
+// En sombre, `--bb-info` et `--bb-danger` ne sont pas redefinis : le bleu #1E40AF
+// sur #0A0F2D serait illisible. Meme parti pris que le tableau de bord medecin :
+// l'accent passe a une teinte claire.
+// En sombre, `--bb-surface-1` vaut `--bb-surface-card` : le bandeau du motif
+// disparaitrait dans la carte. Un voile clair le fait ressortir.
+:host-context([data-theme='dark']) .bb-orient__motif {
+  background: rgba(255, 255, 255, .05);
+}
+
+:host-context([data-theme='dark']) .bb-badge {
+  &--info   { color: #60A5FA; }
+  &--danger { color: #F87171; }
+}

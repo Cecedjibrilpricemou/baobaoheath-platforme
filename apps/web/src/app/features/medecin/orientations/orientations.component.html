@@ -1,0 +1,71 @@
+<div class="bb-orient">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-directions" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.ORIENTATIONS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'MEDECIN.ORIENTATIONS.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-orient__empty">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (orientations().length === 0) {
+    <div class="bb-orient__empty-state">
+      <i class="pi pi-directions" aria-hidden="true"></i>
+      <p>{{ 'MEDECIN.ORIENTATIONS.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+
+    @if (avecRendezVous().length) {
+      <h2 class="bb-orient__section">{{ 'MEDECIN.ORIENTATIONS.AVEC_RDV' | translate }}</h2>
+      @for (o of avecRendezVous(); track o.idEpisode) {
+        <ng-container *ngTemplateOutlet="carte; context: { o: o }"></ng-container>
+      }
+    }
+
+    @if (sansRendezVous().length) {
+      <h2 class="bb-orient__section">{{ 'MEDECIN.ORIENTATIONS.SANS_RDV' | translate }}</h2>
+      @for (o of sansRendezVous(); track o.idEpisode) {
+        <ng-container *ngTemplateOutlet="carte; context: { o: o }"></ng-container>
+      }
+    }
+  }
+</div>
+
+<ng-template #carte let-o="o">
+  <article class="bb-orient__card"
+           [class.bb-orient__card--retard]="o.rendezVous && estEnRetard(o.rendezVous.prevuLe)">
+    <div class="bb-orient__head">
+      <div>
+        <span class="bb-orient__patient">{{ o.patient.prenom }} {{ o.patient.nom }}</span>
+        <span class="bb-orient__meta">
+          @if (age(o.patient.dateNaissance); as a) { {{ a }} ans · }
+          {{ o.patient.sexe }} · {{ o.patient.telephone }}
+        </span>
+      </div>
+
+      @if (o.rendezVous) {
+        <span class="bb-badge"
+              [class.bb-badge--danger]="estEnRetard(o.rendezVous.prevuLe)"
+              [class.bb-badge--info]="!estEnRetard(o.rendezVous.prevuLe)">
+          <i class="pi pi-calendar" aria-hidden="true"></i>
+          {{ o.rendezVous.prevuLe | date:'short' }}
+          @if (estEnRetard(o.rendezVous.prevuLe)) {
+            — {{ 'MEDECIN.ORIENTATIONS.EN_RETARD' | translate }}
+          }
+        </span>
+      } @else {
+        <span class="bb-badge bb-badge--muted">{{ 'MEDECIN.ORIENTATIONS.SANS_DATE' | translate }}</span>
+      }
+    </div>
+
+    <p class="bb-orient__motif">{{ o.motif }}</p>
+
+    <p class="bb-orient__pied">
+      <span class="bb-orient__numero">{{ o.numeroEpisode }}</span>
+      · {{ o.structure.nom }}
+      @if (o.service) { · {{ o.service }} }
+      · {{ 'MEDECIN.ORIENTATIONS.ORIENTE_LE' | translate: { date: (o.orienteLe | date:'short') ?? '' } }}
+    </p>
+  </article>
+</ng-template>

@@ -7,6 +7,7 @@ import { Consultation } from '../models/asc.model';
 import { MedecinStats, OrdonnanceCreationPayload, ValidationDiagnosticPayload } from '../models/medecin.model';
 import { ApiResponse } from '../models/api.model';
 import type {
+  OrientationMedecinView,
   ReferencementATraiterView,
   ReferralStatus,
   RepondreReferencementDto,
@@ -18,6 +19,11 @@ export class MedecinService {
 
   getPatientDossier(idPatient: string): Observable<ApiResponse<Patient>> {
     return this.api.get<ApiResponse<Patient>>(`/patients/${idPatient}`);
+  }
+
+  /** Les patients que l'accueil a orientes vers ce medecin (EF-03-05). */
+  getOrientations(): Observable<ApiResponse<OrientationMedecinView[]>> {
+    return this.api.get<ApiResponse<OrientationMedecinView[]>>('/medecin/orientations');
   }
 
   // L'API renvoie { success, data: [], meta } a plat (pas de PaginatedData).

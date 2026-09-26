@@ -368,6 +368,22 @@ export async function orienter(user: JwtPayload, idEpisode: string, dto: Orienta
     }
   });
 
+  // Le medecin destinataire doit etre prevenu : sans cela l'orientation
+  // s'ecrit en base et personne ne voit arriver le patient.
+  if (dto.idMedecin) {
+    const quandMedecin = prevuLe
+      ? ` le ${prevuLe.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}`
+      : '';
+    await notifierSansBloquer({
+      idUtilisateur: dto.idMedecin,
+      type: 'ORIENTATION',
+      titre: 'Un patient vous est oriente',
+      contenu: `Episode ${episode.numero} — ${dto.motif ?? episode.motif}${quandMedecin}.`,
+      lienAction: '/medecin/orientations',
+      metadonnees: { idEpisode, prevuLe: prevuLe?.toISOString() ?? null },
+    });
+  }
+
   const patientUser = await prisma.utilisateur.findFirst({ where: { patientProfile: { id: episode.idPatient } }, select: { id: true, telephone: true } });
   if (patientUser) {
     const quand = prevuLe ? ` le ${prevuLe.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}` : '';

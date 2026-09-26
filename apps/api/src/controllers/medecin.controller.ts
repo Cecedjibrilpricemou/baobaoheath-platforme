@@ -4,6 +4,7 @@ import * as medecinService from '../services/medecin.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { ReferralStatus } from '@baobaoheath/shared-types';
 import type {
+  OrientationMedecinView,
   ConsultationAValiderView,
   MedecinDashboardView,
   MessageView,
@@ -53,6 +54,11 @@ export async function validerConsultationController(
 }
 
 // ─── Référencements à traiter ─────────────────────────────
+export async function getOrientationsController(req: AuthRequest, res: Response): Promise<void> {
+    const data: OrientationMedecinView[] = await medecinService.getOrientations(req.user!.userId);
+    res.json({ success: true, data });
+}
+
 export async function getReferencementsController(
   req: AuthRequest,
   res: Response

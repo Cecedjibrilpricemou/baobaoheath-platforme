@@ -9,6 +9,7 @@ import { JwtPayload } from '../types/auth.types';
 import { assertCanAccessConsultation } from './access-control.service';
 import { avecExpirationEtAlertes } from './ordonnance.service';
 import { getValeursParametres } from './parametres.service';
+import type { OrientationMedecinView } from '@baobaoheath/shared-types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { withCache, cacheDel } from '../utils/cache';
 import { emitToUser } from '../realtime/socket.server';
@@ -169,6 +170,67 @@ export async function validerConsultation(
     }
 
     return updated;
+}
+
+/**
+ * Les patients que l'accueil a orientes vers ce medecin (EF-03-05).
+ *
+ * L'orientation posait `EpisodeSoins.idResponsable` et creait eventuellement
+ * un rendez-vous, mais aucun ecran ne lisait l'un ni l'autre : le patient
+ * etait oriente vers quelqu'un qui ne le voyait jamais arriver.
+ *
+ * Les episodes clos ou annules sont ecartes : ils ne demandent plus rien.
+ */
+export async function getOrientations(userId: string): Promise<OrientationMedecinView[]> {
+    const episodes = await prisma.episodeSoins.findMany({
+        where: {
+            idResponsable: userId,
+            statut: { notIn: ['CLOS', 'ANNULE'] },
+        },
+        include: {
+            structure: { select: { id: true, nom: true } },
+            patient: {
+                select: {
+                    id: true, dateNaissance: true, sexe: true,
+                    utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+                },
+            },
+            // Le rendez-vous encore planifie de cet episode, s'il y en a un.
+            rendezVous: {
+                where: { statut: 'PLANIFIE' },
+                orderBy: { prevuLe: 'asc' },
+                take: 1,
+                select: { id: true, prevuLe: true, statut: true, motif: true },
+            },
+        },
+        // Ceux qui ont un rendez-vous proche d'abord, puis les plus recents.
+        orderBy: { modifieLe: 'desc' },
+        take: 50,
+    });
+
+    return episodes.map((e) => ({
+        idEpisode: e.id,
+        numeroEpisode: e.numero,
+        statutEpisode: e.statut,
+        motif: e.motif,
+        service: e.service,
+        ouvertLe: e.ouvertLe.toISOString(),
+        // `modifieLe` est le moment ou l'orientation a ete posee : c'est elle
+        // qui a touche l'episode en dernier.
+        orienteLe: e.modifieLe.toISOString(),
+        patient: {
+            id: e.patient.id,
+            prenom: e.patient.utilisateur.prenom,
+            nom: e.patient.utilisateur.nom,
+            dateNaissance: e.patient.dateNaissance.toISOString(),
+            sexe: e.patient.sexe,
+            telephone: e.patient.utilisateur.telephone,
+        },
+        structure: e.structure,
+        rendezVous: e.rendezVous[0]
+            ? { ...e.rendezVous[0], prevuLe: e.rendezVous[0].prevuLe.toISOString() }
+            : null,
+    }));
 }
 
 // ─── Référencements à traiter ─────────────────────────────
