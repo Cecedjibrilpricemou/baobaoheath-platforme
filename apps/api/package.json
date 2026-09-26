@@ -13,6 +13,7 @@
     "prisma:studio": "prisma studio --config prisma.config.ts",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:seed:e2e": "tsx prisma/seed-e2e.ts",
+    "prisma:seed:demo": "tsx prisma/seed-demo.ts",
     "prisma:backfill-encryption": "tsx prisma/backfill-encryption.ts"
   },
   "dependencies": {
