@@ -1,6 +1,7 @@
-// Trois etapes. Signature KENEYA : une pastille numerotee pleine, prolongee
-// d'une ligne de progression qui court vers l'etape suivante (la derniere se
-// termine par un point). Icone dans un carre arrondi, titre, texte.
+// Le parcours patient, etape par etape. Signature KENEYA : une pastille
+// numerotee pleine, prolongee d'un trait de progression qui s'allonge d'une
+// carte a l'autre — court au depart, plein a l'arrivee. Puis une photo quand
+// elle illustre vraiment l'etape, sinon l'icone dans son carre arrondi.
 .section-header { text-align: center; margin-bottom: 44px; }
 .section-tag { display: inline-block; padding: 4px 14px; border-radius: var(--bb-radius-pill); background: var(--land-accent-soft); border: 1px solid var(--bb-success-border); font-family: var(--bb-font-display); font-size: 11px; font-weight: 700; color: var(--land-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
 .section-title { font-family: var(--bb-font-display); font-size: clamp(28px, 3.6vw, 38px); font-weight: 800; color: var(--bb-text-primary); letter-spacing: -1px; margin: 0 0 12px; text-wrap: balance; }
@@ -8,10 +9,19 @@
 .section-sub { font-size: 15px; color: var(--bb-text-muted); max-width: 520px; margin: 0 auto; line-height: 1.65; }
 
 .how-section { max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; @media (max-width: 768px) { padding: 56px 20px 40px; } }
-.steps-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; @media (max-width: 768px) { grid-template-columns: 1fr; } }
+.steps-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 22px;
+  // Sept etapes : quatre par rangee tient sur un ecran large sans que les
+  // cartes deviennent des timbres-poste.
+  grid-template-columns: repeat(4, 1fr);
+  @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 640px)  { grid-template-columns: 1fr; }
+}
 
 .step {
   position: relative;
+  display: flex; flex-direction: column;
   padding: 24px 26px 28px;
   background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 22px;
   transition: transform var(--bb-transition), box-shadow var(--bb-transition), border-color var(--bb-transition);
@@ -20,7 +30,10 @@
 
 // Piste : la ligne part de la pastille et file jusqu'au bord de la carte,
 // en s'effacant, comme si elle rejoignait l'etape suivante.
+// La piste deborde a droite : le trait file vers l'etape suivante, hors de la
+// carte. Sauf pour la derniere, qui est une arrivee et doit rester chez elle.
 .step__track { display: flex; align-items: center; gap: 12px; margin: 0 -26px 22px 0; }
+.step__track--end { margin-right: 0; }
 .step__num {
   flex-shrink: 0;
   min-width: 44px; height: 30px; padding: 0 12px;
@@ -31,21 +44,77 @@
   box-shadow: 0 6px 14px rgba(45, 125, 70, .25);
 }
 .step__line {
-  flex: 1; height: 2px; border-radius: 2px;
+  // La largeur est posee en ligne par le composant (largeurTrait) : c'est
+  // elle qui fait sentir la progression. `flex: 1` l'ecraserait.
+  flex: 0 0 auto; height: 2px; border-radius: 2px; min-width: 18px;
   background: linear-gradient(90deg, var(--land-accent), transparent);
   opacity: .7;
   &--end {
-    // Derniere etape : le trait s'arrete sur un point.
-    flex: 0 0 56px; position: relative;
-    background: linear-gradient(90deg, var(--land-accent), var(--land-accent) 70%, transparent 70%);
-    &::after { content: ''; position: absolute; right: 10px; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--land-accent); transform: translateY(-50%); }
+    // Derniere etape : le trait garde sa largeur — c'est la plus longue — et
+    // s'acheve sur un point. Lui imposer une largeur fixe ici inverserait la
+    // progression ; le laisser s'effacer en degrade ferait flotter le point
+    // dans le vide.
+    position: relative;
+    background: var(--land-accent);
+    &::after {
+      content: ''; position: absolute; right: -3px; top: 50%;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--land-accent); transform: translateY(-50%);
+    }
   }
 }
 
+// Toutes les cartes reservent le meme cadre, photo ou non : sinon les cartes
+// sans image sont plus courtes et les titres ne s'alignent plus d'une colonne
+// a l'autre.
 .step__icon {
-  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 3 / 2; margin-bottom: 18px;
+  border-radius: 16px;
   background: var(--land-accent-soft); color: var(--land-accent);
-  display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px;
+  font-size: 30px;
 }
 .step__title { font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 8px; }
 .step__desc { font-size: 14px; color: var(--bb-text-secondary); line-height: 1.65; margin: 0; }
+.step__title { text-wrap: balance; }
+
+
+// ── Photo d'etape ────────────────────────────────────────────────────
+.step__media {
+  margin-bottom: 18px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--land-accent-soft);
+  aspect-ratio: 3 / 2;
+}
+
+.step__photo {
+  display: block; width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform var(--bb-transition);
+  .step:hover & { transform: scale(1.04); }
+}
+
+// ── Etape pas encore livree ──────────────────────────────────────────
+// Elle figure au parcours parce que le cahier des charges la vise, mais elle
+// ne doit pas se lire comme un service disponible.
+.step--bientot {
+  border-style: dashed;
+  .step__num { background: var(--bb-surface-2); color: var(--bb-text-secondary); }
+  .step__line { opacity: .35; }
+  .step__icon { background: var(--bb-surface-2); color: var(--bb-text-muted); }
+}
+
+.step__bientot {
+  display: inline-block; margin-left: 8px; vertical-align: middle;
+  padding: 2px 9px; border-radius: var(--bb-radius-pill);
+  background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+  color: var(--bb-warning);
+  font-family: var(--bb-font-display); font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step__photo { transition: none; }
+  .step:hover .step__photo { transform: none; }
+}

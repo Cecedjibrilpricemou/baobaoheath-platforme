@@ -6,18 +6,48 @@
     </h2>
     <p class="section-sub">{{ 'LANDING.HOW_SUB' | translate }}</p>
   </div>
+
   <ol class="steps-grid">
-    @for (step of steps; track step.num; let last = $last) {
-    <li class="step">
-      <!-- Piste d'etape : pastille numerotee + ligne qui file vers l'etape suivante -->
-      <div class="step__track" aria-hidden="true">
-        <span class="step__num">{{ step.num }}</span>
-        <span class="step__line" [class.step__line--end]="last"></span>
-      </div>
-      <span class="step__icon" aria-hidden="true"><i [class]="'pi ' + step.icon"></i></span>
-      <h3 class="step__title">{{ step.titleKey | translate }}</h3>
-      <p class="step__desc">{{ step.descKey | translate }}</p>
-    </li>
+    @for (step of steps; track step.num; let i = $index, last = $last) {
+      <li class="step" [class.step--bientot]="step.bientot">
+        <!-- Piste d'etape : pastille numerotee, puis un trait qui s'allonge
+             d'une carte a l'autre. C'est lui qui donne le sentiment d'avancer
+             dans une grille ou toutes les cartes se ressemblent. -->
+        <div class="step__track" [class.step__track--end]="last" aria-hidden="true">
+          <span class="step__num">{{ step.num }}</span>
+          <span
+            class="step__line"
+            [class.step__line--end]="last"
+            [style.width.%]="largeurTrait(i)"
+          ></span>
+        </div>
+
+        <!-- Une photo quand elle illustre vraiment l'etape ; sinon la pastille
+             d'icone. Une image approximative vaut moins qu'aucune image. -->
+        @if (step.image) {
+          <div class="step__media">
+            <img
+              class="step__photo"
+              [src]="step.image"
+              [alt]="(step.imageAltKey ?? '') | translate"
+              width="480"
+              height="320"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        } @else {
+          <span class="step__icon" aria-hidden="true"><i [class]="'pi ' + step.icon"></i></span>
+        }
+
+        <h3 class="step__title">
+          {{ step.titleKey | translate }}
+          @if (step.bientot) {
+            <span class="step__bientot">{{ 'LANDING.HOW_SOON' | translate }}</span>
+          }
+        </h3>
+        <p class="step__desc">{{ step.descKey | translate }}</p>
+      </li>
     }
   </ol>
 </section>
