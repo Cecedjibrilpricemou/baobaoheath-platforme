@@ -100,11 +100,25 @@ export class LoginComponent implements OnDestroy {
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_CREDENTIALS'),
+          this.messageErreur(err, 'AUTH.LOGIN.ERR_CREDENTIALS'),
           this.i18nService.t('AUTH.LOGIN.ERR_LOGIN_TITLE')
         );
       }
     });
+  }
+
+  /**
+   * Un serveur injoignable n'est pas un mauvais mot de passe.
+   *
+   * Sans cette distinction, une API arretee produisait « identifiants
+   * incorrects » : la reponse n'ayant pas de corps JSON, on retombait sur le
+   * message par defaut. Le message envoyait chercher l'erreur du mauvais cote.
+   */
+  private messageErreur(err: unknown, cleParDefaut: string): string {
+    const e = err as { status?: number; error?: { error?: string; message?: string } };
+    // status 0 : la requete n'a jamais atteint le serveur (arrete, CORS, reseau).
+    if (e?.status === 0) return this.i18nService.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE');
+    return e?.error?.error ?? e?.error?.message ?? this.i18nService.t(cleParDefaut);
   }
 
   verifyOtp() {
@@ -123,7 +137,7 @@ export class LoginComponent implements OnDestroy {
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_OTP_INCORRECT'),
+          this.messageErreur(err, 'AUTH.LOGIN.ERR_OTP_INCORRECT'),
           this.i18nService.t('AUTH.LOGIN.ERR_OTP_VERIFY_TITLE')
         );
         this.otpCode = '';
@@ -149,7 +163,7 @@ export class LoginComponent implements OnDestroy {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.toastr.error(err?.error?.error ?? this.i18nService.t('AUTH.LOGIN.ERR_OTP_RESEND'), this.i18nService.t('AUTH.LOGIN.ERR_TITLE'));
+        this.toastr.error(this.messageErreur(err, 'AUTH.LOGIN.ERR_OTP_RESEND'), this.i18nService.t('AUTH.LOGIN.ERR_TITLE'));
       }
     });
   }

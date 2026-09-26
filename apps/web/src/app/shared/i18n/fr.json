@@ -150,7 +150,8 @@
       "OTP_BACK": "Retour à la connexion",
       "OTP_EXPIRES_IN": "Expire dans",
       "OTP_EXPIRED_MSG": "Code expiré — cliquez sur « Renvoyer le code » pour recevoir un nouveau code.",
-      "CHANGE_PWD_REQUIRED": "Votre mot de passe temporaire doit être changé. Accédez à votre profil pour le modifier."
+      "CHANGE_PWD_REQUIRED": "Votre mot de passe temporaire doit être changé. Accédez à votre profil pour le modifier.",
+      "ERR_SERVEUR_INJOIGNABLE": "Serveur injoignable. Vérifiez que l'API est démarrée, puis réessayez."
     },
     "FORGOT": {
       "TITLE": "Mot de passe oublié",
