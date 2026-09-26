@@ -110,7 +110,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
 ### P6 — Commande pharmacie · L · EF-07 / §3.2
-- [ ] `Commande` + lignes ; machine à états stricte : Créée → Validée pharmacie → Prise en charge en cours → À payer → Payée → En préparation → En livraison → Livrée → Clôturée (+ Échec, Annulée/Remboursée).
+- [ ] **Mode de remise choisi par le patient à la commande** (décision du 2026-09-26) : `RETRAIT_PHARMACIE` ou `LIVRAISON`. Ce n'est pas un repli technique — beaucoup de patients habitent à côté d'une pharmacie et iront chercher eux-mêmes. La livraison n'est jamais imposée.
+- [ ] `Commande` + lignes ; machine à états stricte, avec **deux sorties selon le mode** :
+  - commun : Créée → Validée pharmacie → Prise en charge en cours → À payer → Payée → En préparation
+  - retrait : → **Prête pour retrait** → Retirée → Clôturée
+  - livraison : → **Frais de transport proposés** → **Acceptés par le patient** → Livreur notifié → En livraison → Livrée → Clôturée
+  - (+ Échec, Annulée/Remboursée)
 - [ ] Panier chiffré ligne par ligne depuis l'ordonnance (EF-07-02).
 - [ ] Validation nominative obligatoire du pharmacien (EF-07-03) ; substitution tracée et notifiée (EF-07-04) ; refus motivé (EF-07-05).
 - [ ] Stock temps réel + pharmacie alternative (EF-07-06) ; délivrance partielle (EF-07-07) ; pas de retour (EF-07-11).
@@ -129,7 +134,9 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Affectation au livreur ; positions horodatées pour le **suivi du trajet** (EF-10-04/05).
 - [ ] Preuve de remise : code à usage unique ou signature (EF-10-06) ; contrôle d'identité produits sensibles (EF-10-07).
 - [ ] Échec : nouvelle tentative, retour pharmacie, remboursement (EF-10-08) ; chaîne du froid (EF-10-09) ; signalement colis (EF-10-10).
-- [ ] Repli « retrait en pharmacie » tant que D1/D5 ne sont pas tranchées.
+- [ ] **Frais de transport annoncés avant engagement** (décision du 2026-09-26) : la plateforme propose un montant (ex. « Transport 5 000 GNF — acceptez-vous ? »). **Aucun livreur n'est notifié tant que le patient n'a pas accepté.** Le montant vient d'un référentiel administrable, jamais d'une constante.
+- [ ] Sur acceptation : notification aux livreurs, prise de course, puis suivi.
+- [ ] Le retrait en pharmacie n'est **pas un repli** : c'est un mode de remise permanent, à égalité avec la livraison.
 - [ ] Annuaire public géolocalisé : cliniques, pharmacies, laboratoires (horaires, services, coordonnées).
 
 ### P9 — Notifications neutres · S · EF-11
@@ -256,6 +263,17 @@ C'est ici que se joue la date de mise en service, bien plus que dans les blocs P
 
 **Le chemin critique n'est pas le code.** L'agrément de l'hébergeur et la reprise de données sont les deux éléments à lancer immédiatement, en parallèle du développement — ils ne s'accélèrent pas en écrivant plus vite.
 
+## Questions ouvertes sur la livraison (à trancher avant P6/P8)
+
+Le principe est acquis — le patient choisit, et accepte les frais avant qu'un livreur soit notifié. Six points restent sans réponse, et chacun change le code :
+
+1. **Comment le montant est-il calculé ?** Forfait par zone, distance, ou saisi par la pharmacie ? Quelle que soit la réponse, ce sera un **référentiel administrable** (règle de travail du projet), mais sa forme dépend du mode de calcul.
+2. **Qui encaisse le transport ?** Ajouté à la facture réglée sur la plateforme, ou payé en espèces au livreur à la remise ? La réponse décide si P7 (paiement) doit connaître la livraison.
+3. **Si le patient refuse le montant**, la commande bascule-t-elle en retrait en pharmacie, ou est-elle annulée ?
+4. **Si aucun livreur n'accepte** dans un délai donné : quel délai, et que devient la commande ?
+5. **Le patient peut-il revenir sur son choix** après avoir accepté les frais, et jusqu'à quand ?
+6. **Le montant annoncé est-il ferme ?** Un écart constaté à la livraison ouvrirait une négociation au pas de la porte, que la plateforme ne saurait pas arbitrer.
+
 ## Hors code — exploitation (à traiter avec l'hébergeur)
 
 Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO 15 min / RTO 4 h testées chaque trimestre (ENF-02), coffre de clés (ENF-01-03), supervision et alertes (ENF-06-03), test d'intrusion avant mise en service (ENF-01-07), séparation dev/test/prod (ENF-01-09).
@@ -264,7 +282,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | # | Décision | Impact sur le code |
 |---|---|---|
-| D1/D5 | Livraison de médicaments à domicile, statut du livreur | P8 construit avec repli retrait en pharmacie |
+| D1/D5 | Livraison de médicaments à domicile, statut du livreur | **Partiellement tranché le 2026-09-26** : la livraison est facultative, le patient choisit, et il accepte les frais avant qu'un livreur soit notifié. Restent ouvertes les questions ci-dessous. |
 | D2 | Cadre de l'ordonnance numérique et téléconsultation | P3 (validité, signature), P13 |
 | D4 | Qui supporte un rejet d'assurance après livraison | paramètre système (P10) |
 | D6 | Base médicamenteuse de référence | référentiel importable (P3) |
