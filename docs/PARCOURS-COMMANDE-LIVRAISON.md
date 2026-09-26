@@ -117,11 +117,13 @@ Le motard **existe sur la plateforme et porte un QR code**. Le pharmacien le sca
 
 > C'est la réponse à EF-10-06. Elle inverse la charge par rapport au code à usage unique : c'est le destinataire qui atteste, pas le livreur.
 
-### Le médecin — informé, et peut substituer
+### Substitution — le pharmacien propose, le médecin décide
 
-Il est notifié à la prise en charge et en cas d'indisponibilité. Il peut **proposer des produits du même type** : c'est lui le prescripteur.
+Le pharmacien **peut changer un produit, mais en accord avec le médecin traitant** : c'est lui qui connaît le patient. Le médecin dit le produit, la pharmacie délivre.
 
-> À noter : EF-07-04 prévoyait la substitution **par le pharmacien**. Ici elle revient au **médecin**. Les deux ne s'excluent pas, mais il faudra dire qui tranche en cas de désaccord.
+Le médecin est par ailleurs notifié à la prise en charge et en cas d'indisponibilité.
+
+> EF-07-04 prévoyait la substitution par le pharmacien seul. Ici les deux interviennent, et l'ordre est clair : proposition d'un côté, décision de l'autre. Le circuit est décrit plus bas (proposition B).
 
 ### Assurance — vérifiée par la plateforme
 
@@ -129,25 +131,62 @@ C'est **la plateforme** qui contrôle, pas la pharmacie au comptoir. Le montage 
 
 ---
 
-## Ce qui reste à trancher
+## Choix du motard — sur le délai *et* le prix
 
-### 1. Sur quoi le patient choisit-il son motard ?
+Le patient voit les deux : **« livrable dans 30 min — 10 000 GNF »**. Le motard annonce donc un **délai en plus de son prix**, et les deux engagent.
 
-**Sans réponse à ce jour.** Voit-il seulement les prix, ou aussi la **distance**, le **délai estimé**, une **note** du motard ?
+> Sans le délai, le choix se ferait au moins-disant. Dans une course de médicaments, une heure d'attente peut coûter plus cher que 2 000 GNF d'écart.
 
-Le prix seul pousse mécaniquement au moins-disant, ce qui n'est pas toujours le meilleur service — et dans une course de médicaments, le délai compte.
+---
 
-### 2. La relance à 30 minutes — nouvelle enchère ou offre suivante ?
+## Propositions à valider
 
-Quand la course repart, **rejoue-t-on l'appel d'offres complet**, ou passe-t-on simplement au motard suivant parmi ceux qui avaient déjà proposé un prix ?
+Ces deux points ont été laissés ouverts avec la consigne de proposer une solution. Ce qui suit **attend votre validation** — le reste du document est décidé.
 
-### 3. Le patient sans téléphone au moment de la remise
+### A. Preuve de remise — deux voies, qui ne prouvent pas la même chose
 
-La preuve de remise repose sur une déclaration **dans l'application**. Si le patient n'a pas son téléphone, plus de batterie, ou ne sait pas s'en servir — que fait le motard ? Le cahier des charges prévoit aussi la **signature** (EF-10-06) : la garde-t-on en recours ?
+On part du principe qu'un patient a un téléphone, ou quelqu'un pour l'assister. Il reste qu'un téléphone se décharge.
 
-### 4. Substitution : médecin ou pharmacien ?
+**Voie principale — le patient déclare.** Il ouvre l'application devant le motard et confirme « produit reçu ». C'est la preuve la plus forte : **le destinataire atteste**.
 
-Le médecin peut proposer un produit équivalent. Le pharmacien le peut aussi (EF-07-04). **Qui tranche** si les deux proposent, ou si le pharmacien n'a pas le produit substitué par le médecin ?
+**Voie de secours — le motard scanne le QR du patient.** Le patient a déjà un QR code unique, celui qu'il présente au comptoir. Le motard le scanne, sur téléphone ou sur papier.
+
+Ces deux voies **ne se valent pas**, et le système doit le dire :
+
+| Voie | Ce qui est enregistré | Ce que ça prouve |
+|---|---|---|
+| Déclaration du patient | `CONFIRMEE_PATIENT` | Le destinataire a reçu et l'a dit |
+| Scan du QR par le motard | `ATTESTEE_LIVREUR` | Le livreur était devant le QR du patient |
+
+Le scan ne prouve pas la remise : un QR se photographie. Trois garde-fous, peu coûteux :
+
+1. **Position et heure du scan** sont enregistrées et comparées à l'adresse de livraison. Un scan à trois kilomètres se voit.
+2. Le patient reçoit une **notification** : « votre livraison a été déclarée remise ».
+3. Il dispose d'un **délai pour contester** — 24 h, paramétrable. Sans contestation, la course est close.
+
+> Le principe : celui qui atteste doit être celui qui a quelque chose à perdre s'il ment. Quand c'est le livreur qui atteste, on ajoute de quoi le vérifier.
+
+### B. Substitution — la conversation où elle veut, la décision dans l'application
+
+**La règle retenue** : le pharmacien peut changer un produit, **mais en accord avec le médecin traitant**, qui connaît le patient. Concrètement, le médecin dit le produit et la pharmacie délivre.
+
+Le téléphone restera le canal réel — on ne va pas l'interdire. Mais **un appel ne laisse pas de trace**, et une substitution non tracée est exactement ce que EF-07-04 interdit.
+
+**La proposition : l'appel prépare la décision, l'application l'enregistre.**
+
+1. Le pharmacien ouvre une **demande de substitution** sur une ligne précise : produit proposé, motif (rupture, équivalent disponible).
+2. Le **médecin prescripteur est notifié**. Sa vue porte le contexte : allergies du patient, autres lignes de l'ordonnance, et **les alertes recalculées sur le produit de remplacement** — `analyserPrescription` existe déjà et s'applique tel quel. Un substitut peut tomber sur une allergie que l'original évitait.
+3. Le médecin **accepte ou refuse en un geste**. S'ils se sont parlé au téléphone, le geste ne fait qu'entériner ce qui est déjà dit — il prend trois secondes.
+4. L'acceptation **réécrit la ligne** en conservant le produit d'origine visible : on doit pouvoir lire plus tard ce qui a été prescrit **et** ce qui a été délivré.
+5. Le **patient est notifié** du changement.
+
+**Ce qu'il faut encore trancher** : si le médecin ne répond pas — il est en consultation, de garde, injoignable. Trois options, par ordre de prudence :
+
+- **la ligne attend**, et la commande part avec les autres produits (la délivrance partielle existe déjà) ;
+- le pharmacien peut **relancer** ;
+- au-delà d'un délai, l'**admin de structure** peut trancher à la place.
+
+Ma recommandation : la première. Une substitution qui se décide toute seule faute de réponse n'est plus une substitution en accord avec le médecin.
 
 ---
 
@@ -157,5 +196,7 @@ Le médecin peut proposer un produit équivalent. Le pharmacien le peut aussi (E
 - **P8** n'est plus « un tarif annoncé au patient » mais **une mise en concurrence** où les motards proposent et le patient choisit. C'est un mécanisme sensiblement différent, plus proche d'une place de marché.
 - **P11** (conventions des partenaires) devient un **préalable** à P6 : sans la notion de pharmacie partenaire, on ne sait pas qui notifier. Les conventions **assureur ↔ pharmacie**, avec leurs pourcentages, y entrent aussi — c'est de là que P10 tirera le calcul de prise en charge.
 - **P7 (paiement) n'a pas à connaître la livraison** : le transport se règle de la main à la main au motard. Cela simplifie le bloc.
-- Le **motard porte un QR code** sur la plateforme : c'est lui qui fait foi à la pharmacie, pas un contrôle à l'œil.
+- Le **motard porte un QR code** sur la plateforme : c'est lui qui fait foi à la pharmacie, pas un contrôle à l'œil. Le **patient a déjà le sien** — il sert de voie de secours à la remise.
+- L'**offre du motard porte un délai en plus du prix** : c'est sur les deux que le patient choisit.
+- La **substitution réutilise `analyserPrescription`** : un produit de remplacement doit passer le même contrôle d'allergies et d'interactions qu'une prescription.
 - Une **migration géographique** est nécessaire avant tout le reste : quartier et commune, sur le patient comme sur la structure.
