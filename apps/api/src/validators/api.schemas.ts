@@ -167,6 +167,24 @@ export const alertesPrescriptionSchema = z.object({
   idMedicament: id,
 }).strict();
 
+// ── P6 : commande pharmacie (EF-07) ──────────────────────────────────
+export const lancerRechercheSchema = z.object({ idOrdonnance: id }).strict();
+
+export const repondreDisponibiliteSchema = z.object({
+  // Une pharmacie repond oui ou non : il n'y a pas de « peut-etre ». La
+  // reponse partielle se traite par la delivrance ligne a ligne, plus tard.
+  aTousLesProduits: z.boolean(),
+}).strict();
+
+export const retirerPriseEnChargeSchema = z.object({
+  // Le patient attend une explication, pas un desistement muet.
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+export const choisirModeRemiseSchema = z.object({
+  mode: z.enum(['RETRAIT_PHARMACIE', 'LIVRAISON']),
+}).strict();
+
 export const createConsultationSchema = z.object({
   idPatient: id,
   motifPrincipal: z.string().trim().min(2).max(500),

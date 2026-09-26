@@ -110,7 +110,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
 ### P6 — Commande pharmacie · L · EF-07 / §3.2
-- [ ] **Appel aux pharmacies du quartier** dès l'ordonnance prête : les pharmacies partenaires sont interrogées sur la disponibilité **de la totalité** des produits ; **la première qui déclare les avoir prend la commande**. Patient et médecin notifiés. Si aucune n'a tout, les deux sont avertis et le patient décide (voir `PARCOURS-COMMANDE-LIVRAISON.md`).
+
+> **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**. Le front reste à faire.
+>
+> L'attribution repose sur un `updateMany` conditionnel : deux pharmacies simultanées donnent un gagnant et un perdant, jamais deux gagnants. Vérifié par sabotage.
+
+- [x] **API livrée le 2026-09-26** — **Appel aux pharmacies du quartier** dès l'ordonnance prête : les pharmacies partenaires sont interrogées sur la disponibilité **de la totalité** des produits ; **la première qui déclare les avoir prend la commande**. Patient et médecin notifiés. Si aucune n'a tout, les deux sont avertis et le patient décide (voir `PARCOURS-COMMANDE-LIVRAISON.md`).
 - [ ] **Mode de remise choisi par le patient à la commande** (décision du 2026-09-26) : `RETRAIT_PHARMACIE` ou `LIVRAISON`. Ce n'est pas un repli technique — beaucoup de patients habitent à côté d'une pharmacie et iront chercher eux-mêmes. La livraison n'est jamais imposée.
 - [ ] `Commande` + lignes ; machine à états stricte, avec **deux sorties selon le mode** :
   - commun : Créée → Validée pharmacie → Prise en charge en cours → À payer → Payée → En préparation
@@ -289,6 +294,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-26 | P6 | Socle commande pharmacie (API) : quartier/commune, pharmacie partenaire, rôle `LIVREUR`, `Commande` + `ReponsePharmacie`, appel au quartier, attribution atomique au premier déclarant, rétractation, choix du mode de remise. 283 tests API. Front à faire. |
 | 2026-09-25 | P3 | Renouvellement et produits réglementés (EF-05-09, EF-05-12), API + interfaces. 261 tests API, 5 parcours e2e. Deux signatures rendues obligatoires dans `motifDeRefus` pour que le compilateur force les appelants : sans cela les deux règles restaient inertes. |
 | 2026-09-23 | P3 | Front sécurité de prescription : alertes affichées au choix du médicament, triées par gravité, motif de dépassement exigé au-delà de la précaution. Jeu e2e enrichi d'une allergie déclarée pour vérifier que l'alerte arrive bien à l'écran. |
 | 2026-09-23 | P3 | API sécurité de prescription (EF-05-05/06) : allergies (dont par famille ATC), contre-indications, interactions ; alertes non bloquantes, recalculées côté serveur et figées sur la ligne avec le motif de dépassement. 243 tests API. Référentiel d'interactions volontairement vide — aucune donnée clinique inventée. |

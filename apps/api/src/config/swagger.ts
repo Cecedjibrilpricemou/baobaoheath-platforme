@@ -617,6 +617,37 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Alertes et seuil de motif' }, 403: { description: 'Accès refusé' }, 404: { description: 'Consultation ou médicament non trouvé' } },
       },
     },
+    // ─── Commande pharmacie (EF-07) ───────────────────────────
+    '/api/v1/commandes': {
+      post: {
+        tags: ['Commandes'],
+        summary: 'Lancer la recherche d’une pharmacie (EF-07)',
+        description: "Dès l'ordonnance signée, les pharmacies **partenaires du quartier du patient** sont interrogées : détenez-vous la totalité des produits ? Une ordonnance non signée est refusée — elle n'est pas opposable. Si aucune pharmacie partenaire n'existe dans le quartier, la commande conclut directement `SANS_PHARMACIE` : le patient repart avec son ordonnance.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idOrdonnance'], properties: { idOrdonnance: { type: 'string' } } } } } },
+        responses: { 201: { description: 'Commande créée, pharmacies notifiées' }, 400: { description: 'Ordonnance non signée ou sans médicament' }, 409: { description: 'Une commande existe déjà pour cette ordonnance' } },
+      },
+    },
+    '/api/v1/commandes/pharmacie': {
+      get: { tags: ['Commandes'], summary: 'File du comptoir', description: "Les appels en cours du quartier de la pharmacie qu'elle n'a pas encore refusés, et les commandes qu'elle a prises.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Liste des commandes' }, 403: { description: 'Pharmacie non partenaire ou sans structure' } } },
+    },
+    '/api/v1/commandes/{id}/disponibilite': {
+      post: {
+        tags: ['Commandes'],
+        summary: 'Répondre à l’appel — et prendre la commande (EF-07)',
+        description: "`aTousLesProduits: true` **tente** de prendre la commande. L'attribution est atomique : deux pharmacies qui répondent à la même seconde donnent un gagnant et un perdant, jamais deux gagnants. La perdante reçoit un 409. Un refus est enregistré tel quel ; quand toutes les sollicitées ont refusé, la commande passe `SANS_PHARMACIE` et le patient comme le médecin sont avertis.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['aTousLesProduits'], properties: { aTousLesProduits: { type: 'boolean' } } } } } },
+        responses: { 200: { description: 'Réponse enregistrée' }, 403: { description: 'Quartier ou partenariat non conforme' }, 409: { description: 'Une autre pharmacie a été plus rapide' } },
+      },
+    },
+    '/api/v1/commandes/{id}/retirer': {
+      post: { tags: ['Commandes'], summary: 'Rendre la commande', description: "La pharmacie n'avait finalement pas tout. Le verrou se rouvre et les autres retrouvent la main. Le motif est exigé : le patient attend une explication, pas un désistement muet.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string', minLength: 5 } } } } } }, responses: { 200: { description: 'Commande rendue' }, 403: { description: "La commande n'est pas la vôtre" } } },
+    },
+    '/api/v1/commandes/{id}/mode-remise': {
+      post: { tags: ['Commandes'], summary: 'Choisir retrait ou livraison (patient)', description: "**La livraison n'est jamais imposée** : beaucoup de patients habitent à côté d'une pharmacie et iront chercher eux-mêmes. Seul le patient concerné peut choisir.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['mode'], properties: { mode: { type: 'string', enum: ['RETRAIT_PHARMACIE', 'LIVRAISON'] } } } } } }, responses: { 200: { description: 'Mode enregistré' }, 400: { description: "Aucune pharmacie n'a encore pris la commande" }, 403: { description: 'Cette commande ne vous appartient pas' } } },
+    },
     // ─── Ordonnance : consultation et impression (EF-05, EF-06-02) ───
     '/api/v1/ordonnances/me': {
       get: { tags: ['Ordonnances'], summary: 'Mes ordonnances (patient)', description: "Les ordonnances du patient connecté, la plus récente d'abord. Le code de vérification en fait partie : c'est le secret que le patient présente au comptoir s'il n'a pas son QR.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Liste des ordonnances' }, 404: { description: 'Profil patient non trouvé' } } },

@@ -32,6 +32,7 @@ export type Role =
   | 'AGENT_ACCUEIL'
   | 'TECHNICIEN_LABO'
   | 'BIOLOGISTE'
+  | 'LIVREUR'
   | 'ADMIN_STRUCTURE'
   | 'ADMIN_REGIONAL'
   | 'ADMIN_NATIONAL'
@@ -115,7 +116,23 @@ export type TypeNotification =
   | 'PRELEVEMENT_PLANIFIE'
   | 'RESULTATS_DISPONIBLES'
   | 'RESULTAT_CRITIQUE'
-  | 'ESCALADE_CRITIQUE';
+  | 'ESCALADE_CRITIQUE'
+  | 'COMMANDE_A_SERVIR'
+  | 'COMMANDE_PRISE_EN_CHARGE'
+  | 'COMMANDE_SANS_PHARMACIE';
+
+/** Statut d'une commande pharmacie (EF-07). */
+export type StatutCommande =
+  | 'RECHERCHE_PHARMACIE'
+  | 'PRISE_EN_CHARGE'
+  | 'SANS_PHARMACIE'
+  | 'ANNULEE';
+
+/**
+ * Comment le patient recupere ses produits. La livraison n'est jamais
+ * imposee : beaucoup de patients habitent a cote d'une pharmacie.
+ */
+export type ModeRemise = 'RETRAIT_PHARMACIE' | 'LIVRAISON';
 
 export type CanalNotification = 'SMS' | 'PUSH' | 'IN_APP';
 

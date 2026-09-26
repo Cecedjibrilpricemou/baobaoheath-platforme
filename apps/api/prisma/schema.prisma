@@ -18,6 +18,7 @@ enum Role {
   AGENT_ACCUEIL    // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
   TECHNICIEN_LABO  // Laboratoire : reception, prelevement, saisie des resultats (EF-04)
   BIOLOGISTE       // Laboratoire : idem + validation nominative des resultats (EF-04-05)
+  LIVREUR          // Taxi-moto : courses de livraison de medicaments (EF-10)
   ADMIN_STRUCTURE
   ADMIN_REGIONAL
   ADMIN_NATIONAL
@@ -152,6 +153,9 @@ enum TypeNotification {
   RESULTATS_DISPONIBLES
   RESULTAT_CRITIQUE
   ESCALADE_CRITIQUE
+  COMMANDE_A_SERVIR         // P6 : appel aux pharmacies du quartier
+  COMMANDE_PRISE_EN_CHARGE  // P6 : une pharmacie a tout, elle sert
+  COMMANDE_SANS_PHARMACIE   // P6 : aucune n'a la totalite
 }
 
 enum UssdSessionStatus {
@@ -330,7 +334,18 @@ model StructureSante {
   nom         String
   type        TypeStructure
   prefecture  String
+  commune     String?
+  quartier    String?
   adresse     String?
+
+  /// Partenaire conventionne : seules ces structures sont sollicitees pour une
+  /// commande (EF-12-02). La gestion complete des conventions viendra avec
+  /// P11 ; ici on ne retient que ce qu'il faut pour savoir qui notifier.
+  estPartenaire    Boolean   @default(false)
+  partenaireDepuis DateTime?
+
+  commandes         Commande[]         @relation("PharmacieCommande")
+  reponsesCommandes ReponsePharmacie[] @relation("ReponsesPharmacie")
   latitude    Float?
   longitude   Float?
   telephone   String?
@@ -362,6 +377,10 @@ model PatientProfile {
   maladiesChroniques String[]
   prefecture         String
   sousPrefecture     String?
+  // Maille reelle du parcours commande/livraison : c'est dans son quartier que
+  // le patient cherche une pharmacie, pas dans sa prefecture.
+  commune            String?
+  quartier           String?
   village            String?
   latitude           Float?
   longitude          Float?
@@ -645,7 +664,8 @@ model Ordonnance {
   signataire Utilisateur? @relation("MedecinSignataire", fields: [signePar], references: [id])
   signeLe    DateTime?
 
-  lignes LigneOrdonnance[]
+  lignes   LigneOrdonnance[]
+  commande Commande?
 
   @@index([idConsultation])
   @@index([statut])
@@ -1140,4 +1160,80 @@ model AlerteResultatCritique {
   @@index([idDestinataire, accuseeLe])
   @@index([accuseeLe, escaladeeLe, creeLe])
   @@map("alertes_resultat_critique")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// P6 — Commande pharmacie (EF-07)
+// Voir docs/PARCOURS-COMMANDE-LIVRAISON.md
+// ═══════════════════════════════════════════════════════════════════
+
+enum StatutCommande {
+  /// L'appel est lance, aucune pharmacie n'a encore declare tout avoir.
+  RECHERCHE_PHARMACIE
+  /// Une pharmacie a declare detenir la totalite : elle a la commande.
+  PRISE_EN_CHARGE
+  /// Aucune pharmacie du quartier ne detient la totalite, ou aucune n'est
+  /// partenaire. Le patient repart avec son ordonnance.
+  SANS_PHARMACIE
+  ANNULEE
+}
+
+/// Mode de remise, choisi par le patient (decision du 2026-09-26). La
+/// livraison n'est jamais imposee : beaucoup de patients habitent a cote d'une
+/// pharmacie et iront chercher eux-memes.
+enum ModeRemise {
+  RETRAIT_PHARMACIE
+  LIVRAISON
+}
+
+model Commande {
+  id     String         @id @default(cuid())
+  numero String         @unique // CM-2026-000123
+  statut StatutCommande @default(RECHERCHE_PHARMACIE)
+
+  /// Reste nul tant que le patient n'a pas choisi.
+  modeRemise ModeRemise?
+
+  /// Quartier vise par l'appel, fige a la creation : le patient peut
+  /// demenager, la commande doit rester lisible telle qu'elle a ete passee.
+  quartierRecherche String?
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  idOrdonnance String     @unique
+  ordonnance   Ordonnance @relation(fields: [idOrdonnance], references: [id], onDelete: Cascade)
+
+  /// La pharmacie qui a pris la commande. Nul tant que personne n'a declare
+  /// detenir la totalite — c'est ce champ qui porte le verrou d'attribution.
+  idPharmacie     String?
+  pharmacie       StructureSante? @relation("PharmacieCommande", fields: [idPharmacie], references: [id])
+  priseEnChargeLe DateTime?
+
+  reponses ReponsePharmacie[]
+
+  @@index([statut])
+  @@index([idPharmacie])
+  @@map("commandes")
+}
+
+/// Ce que chaque pharmacie sollicitee a repondu. On garde la trace meme des
+/// reponses negatives : c'est ce qui permet de dire au patient « trois
+/// pharmacies ont ete interrogees, aucune n'avait tout ».
+model ReponsePharmacie {
+  id               String   @id @default(cuid())
+  aTousLesProduits Boolean
+  repondueLe       DateTime @default(now())
+  /// Renseigne quand une pharmacie se retracte apres avoir pris la commande.
+  retracteeLe DateTime?
+
+  idCommande String
+  commande   Commande @relation(fields: [idCommande], references: [id], onDelete: Cascade)
+
+  idStructure String
+  structure   StructureSante @relation("ReponsesPharmacie", fields: [idStructure], references: [id])
+
+  @@unique([idCommande, idStructure])
+  @@index([idCommande])
+  @@map("reponses_pharmacie")
 }
