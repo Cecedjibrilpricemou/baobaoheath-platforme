@@ -262,7 +262,7 @@ Constatée et vérifiée le 2026-09-25. Rien ici n'est bloquant pour développer
 | Point | Constat | Effort |
 |---|---|---|
 | `apps/api/prisma.config.js` | Artefact de build **commité** à côté du `.ts`. Prisma le préfère et fait échouer les commandes sans `--config` explicite. | S |
-| Swagger | **2 routes pharmacien documentées sur 12.** Le CDC impose que chaque livraison référence ses exigences dans Swagger. | S |
+| Swagger | **2 routes pharmacien documentées sur 10.** Le CDC impose que chaque livraison référence ses exigences dans Swagger. | S |
 | CI | `actions/checkout@v4` et `setup-node@v4` ciblent Node 20, déprécié. Avertissement aujourd'hui, panne demain. | S |
 | Redis | `REDIS_URL` non configuré : la limitation de débit est **en mémoire**, donc inopérante dès qu'il y a plus d'une instance. | S |
 | E-mail | Gmail non configuré : l'OTP tombe en repli développement. Inacceptable en production. | S |
