@@ -2,7 +2,9 @@
 
 > Référence : *Cahier des charges Kènèya v2.0* du 13 septembre 2026 (exigences EF-01…EF-13, ENF-01…06, priorités M/S/C, lots V1→V4).
 > Ce fichier est le plan de travail vivant : on coche au fur et à mesure, on renumérote jamais.
-> Dernière mise à jour : 2026-09-19.
+> Dernière mise à jour : 2026-09-28.
+>
+> ⚠️ **Un addendum du 2026-09-28** (`ADDENDUM-CDC-2026-09-28.md`) ajoute huit points remontés par le chef de projet, dont **trois rouvrent du code livré** : le médecin fixe désormais les rendez-vous, le rôle biologiste disparaît, et les résultats d'analyse ne sont visibles du patient qu'après accord du médecin. Les blocs concernés portent la mention **🔁 rouvert**.
 
 ## Objectif produit
 
@@ -51,17 +53,21 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Référentiel `Examen` avec codes LOINC (33 seedés ; import admin à venir avec P11).
 - [x] `DemandeAnalyse` + lignes, urgence, laboratoire destinataire, consignes patient (à jeun…), transmission et notification (EF-03-03/04). Type de structure `LABORATOIRE`.
 - [x] Orientation vers un médecin ou un service avec RDV proposé (EF-03-05).
+- [ ] 🔁 **Rouvert le 2026-09-28** — l'accueil n'est plus celui qui fixe le créneau : il oriente, **le médecin fixe le rendez-vous** (addendum, point 3). Le champ date disparaît de l'écran d'accueil.
+- [ ] 🔁 **Pointage de présence** (addendum, point 2) : file des patients attendus du jour, arrivée pointée par l'assistante, redirection vers le médecin au bon moment. Le rôle reste `AGENT_ACCUEIL`, dont l'intitulé affiché devient « Assistante ».
 - [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
 - [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
 
 ### P2 — Laboratoire · L · EF-04 · ✅ livré le 2026-09-19 (API + front)
 - [x] Rôles `BIOLOGISTE` (validation) et `TECHNICIEN_LABO` (réception, prélèvement, saisie) ; type de structure `LABORATOIRE` (P1).
+- [ ] 🔁 **Rouvert le 2026-09-28** — **le rôle `BIOLOGISTE` est supprimé** : c'est le laborantin (`TECHNICIEN_LABO`) qui valide (addendum, point 4). La validation nominative **reste bloquante** — quelqu'un continue de signer. Migration des comptes existants obligatoire ; les comptes rendus déjà validés gardent le nom de leur valideur.
 - [x] File des demandes triée par urgence puis ancienneté (EF-04-01) ; tableau de bord du laboratoire.
 - [x] Prélèvement sur place ou à domicile avec créneau, patient notifié (EF-04-02) ; `Echantillon` codé `EC-AAAA-NNNNNN` (EF-04-03).
 - [x] `ResultatAnalyse` : valeur, unité, références figées à la saisie, lecture NORMAL/ANORMAL/CRITIQUE calculée ; saisie par ligne ou import par code LOINC (EF-04-04/06).
 - [x] Validation nominative du biologiste **bloquante** (toutes les lignes renseignées) avant toute diffusion (EF-04-05) ; compte rendu imprimable avec filigrane « NON VALIDÉ » avant validation.
 - [x] Résultats critiques : seuils `critiqueMin/Max` par examen, alerte prioritaire au prescripteur avec accusé de lecture, escalade automatique vers l'admin de structure par job (30 min), diffusion patient différée jusqu'à l'accusé ou 24 h (EF-04-07/08/09).
 - [x] Courbe d'évolution d'une valeur, côté patient et côté professionnel (EF-04-10).
+- [ ] 🔁 **Rouvert le 2026-09-28** — **le patient ne voit un résultat qu'après que le médecin l'a libéré**, avec la possibilité d'y joindre une explication en langage clair (addendum, point 7). Aujourd'hui un résultat non critique part au patient dès la validation du laboratoire, et un résultat critique finit par partir tout seul au bout de 24 h : **cette diffusion automatique disparaît**. Un garde-fou relance le médecin puis escalade vers l'admin de structure — jamais vers le patient.
 - [ ] Saisie hors connexion via la sync existante (EF-04-11) — reporté : la sync ne couvre que l'ASC pour l'instant.
 - [x] Front : espace « Laboratoire » (tableau de bord, file, fiche demande avec frise, planification, prélèvement, saisie, validation biologiste, compte rendu), page « Alertes critiques » côté accueil, résultats dans la fiche épisode et dans « Mon parcours », page « Mes résultats » (courbe SVG + tableau) côté patient.
 - [ ] Médecin prescripteur : l'espace médecin n'émet pas encore de demandes d'analyse (seul l'accueil le fait) ; à brancher avec P3 (compte rendu de consultation).
@@ -109,7 +115,13 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Tous les documents téléchargeables/imprimables (EF-06-02/03).
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
-### P6 — Commande pharmacie · L · EF-07 / §3.2
+### P6 — Commande pharmacie **et gestion d'officine** · L · EF-07 / §3.2
+
+> **Élargi le 2026-09-28** (addendum, point 1) : il ne s'agit plus seulement de servir des ordonnances, mais de **tenir une pharmacie**. S'ajoutent la vente au comptoir, l'import Excel du catalogue, l'approvisionnement par facture et les alertes de péremption.
+>
+> ⚠️ **Un blocage de modèle est à lever d'abord.** `Stock` porte `@@unique([idStructure, idMedicament])` et **une seule** `datePeremption` : deux lots du même produit périmant à deux dates différentes ne tiennent pas dedans, alors que c'est exactement ce que produit un approvisionnement. Il faut un modèle `LotStock`, `Stock` devenant la somme de ses lots. Migration avec reprise.
+>
+> De même, la **vente au comptoir n'existe pas** : `Facture` est attachée à une consultation (`idConsultation @unique`). Une boîte vendue à un passant n'a aucun objet pour l'enregistrer — donc rien à totaliser dans un tableau de bord.
 
 > **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**. Le front reste à faire.
 >
@@ -126,6 +138,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Validation nominative obligatoire du pharmacien (EF-07-03) ; substitution tracée et notifiée (EF-07-04) ; refus motivé (EF-07-05).
 - [ ] Stock temps réel + pharmacie alternative (EF-07-06) ; délivrance partielle (EF-07-07) ; pas de retour (EF-07-11).
 - [ ] Historique et renouvellement (EF-07-09).
+- [ ] **`LotStock`** : quantité, date de péremption, facture d'origine, prix d'achat. Sortie au plus proche de la péremption, et délivrance d'un lot périmé bloquée.
+- [ ] **Vente au comptoir** : lignes, remise, mode de paiement, vendeur, avec ou sans ordonnance, avec ou sans assurance. Un produit réglementé ne s'y vend pas sans ordonnance (EF-05-12).
+- [ ] **Tableau de bord officine** : chiffre du jour, produits les plus vendus, ruptures, encaissements par mode.
+- [ ] **Import Excel du catalogue**, avec rapport ligne par ligne — un import qui échoue en silence sur trois lignes est pire que pas d'import.
+- [ ] **Approvisionnement par facture**, en deux temps : saisie assistée avec la facture en justificatif d'abord, extraction automatique ensuite, **toujours relue avant enregistrement**. Une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
+- [ ] **Alerte de péremption proche**, seuil paramétrable (30/60/90 jours).
 
 ### P7 — Paiement fiable (fournisseur simulé) · M · EF-08
 - [ ] `TentativePaiement` avec référence unique → idempotence (EF-08-03).
@@ -156,6 +174,9 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Autorisation préalable bloquante au-delà d'un seuil paramétrable (EF-09-05).
 - [ ] Trois modes : API, portail assureur, validation manuelle (EF-09-02) ; dossier de facturation et suivi (EF-09-06/07).
 - [ ] Règle de rejet après délivrance en paramètre (EF-09-08, décision D4) ; non assurés en paiement direct (EF-09-09).
+- [ ] **Précisé le 2026-09-28** (addendum, point 5) — contrôle d'éligibilité opposable et tracé au comptoir ; **vue de l'assureur sur ses pharmacies conventionnées** (délivré, facturé, payé, dû, écarts).
+- [ ] **Exclusions par catégorie de produit** (lait, cosmétiques…). Suppose deux préalables : que le catalogue accepte des **articles non médicamenteux**, et que `Medicament.categorie` — aujourd'hui **texte libre et facultatif** — devienne une catégorie issue d'un **référentiel fermé**. On ne fonde pas une règle de remboursement sur un champ que chacun remplit comme il veut.
+- [ ] **Un taux de 100 % ne couvre pas tout** : il s'applique après exclusions et dans la limite des plafonds. Le détail ligne par ligne — couvert, à quel taux, exclu **et pourquoi** — doit être montré avant paiement ; un reste à charge sans explication se conteste au comptoir.
 
 ### P11 — Administration, audit, référentiels · M · EF-12
 - [ ] Journal non modifiable incluant les **lectures** de dossier ; recherche et export (EF-12-04/05).
@@ -172,7 +193,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 ### P13 — Extension (lot V4) · L
 - [ ] Comptes aidants avec mandat et périmètre (EF-06-05) ; mineurs (EF-06-06).
 - [ ] Rappels de prise de traitement (EF-06-09) ; code d'urgence (EF-06-08).
-- [ ] Téléconsultation (EF-05-10/11) ; statistiques anonymisées (EF-12-08).
+- [ ] ~~Téléconsultation (EF-05-10/11)~~ → **remontée le 2026-09-28** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le rendez-vous. Se construit avec le circuit RDV ci-dessus. Reste à confirmer s'il s'agit d'une consultation réellement à distance (visioconférence, décision **D2**) ou d'une prise de rendez-vous à distance — ce n'est ni le même coût ni le même cadre.
+- [ ] Statistiques anonymisées (EF-12-08).
 
 ## Du point où nous en sommes à la mise en service
 
@@ -294,6 +316,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-28 | CDC | **Addendum du chef de projet** (`ADDENDUM-CDC-2026-09-28.md`) : huit points, dont **trois reprises de code livré** (RDV fixés par le médecin, suppression du rôle biologiste, résultats libérés par le médecin). Trois arbitrages tranchés le jour même. Ordonnancement proposé : les reprises d'abord, ~20 à 27 jours au total. Cinq questions restent ouvertes. |
 | 2026-09-26 | P6 | Socle commande pharmacie (API) : quartier/commune, pharmacie partenaire, rôle `LIVREUR`, `Commande` + `ReponsePharmacie`, appel au quartier, attribution atomique au premier déclarant, rétractation, choix du mode de remise. 283 tests API. Front à faire. |
 | 2026-09-25 | P3 | Renouvellement et produits réglementés (EF-05-09, EF-05-12), API + interfaces. 261 tests API, 5 parcours e2e. Deux signatures rendues obligatoires dans `motifDeRefus` pour que le compilateur force les appelants : sans cela les deux règles restaient inertes. |
 | 2026-09-23 | P3 | Front sécurité de prescription : alertes affichées au choix du médicament, triées par gravité, motif de dépassement exigé au-delà de la précaution. Jeu e2e enrichi d'une allergie déclarée pour vérifier que l'alerte arrive bien à l'écran. |
