@@ -290,6 +290,42 @@ Le statut du rendez-vous est une **chaîne libre**, pas une énumération : la b
 
 ---
 
+## 9. L'accueil se recentre : plus rien de médical
+
+> « Aucune analyse n'est plus prescrite à l'accueil, juste pointage de présence et redirection vers le médecin, ou bien vérification si le patient existe ou création de compte. Pas de prescription, ni ordonnance ni produit. »
+
+Décision du 2026-09-28. Elle **supprime la question D** au lieu d'y répondre : sans prescription par l'accueil, aucun résultat ne peut se retrouver sans médecin pour le libérer.
+
+### Ce que l'accueil garde
+
+Rechercher ou créer le patient · **ouvrir l'épisode de la visite** · pointer la présence · rediriger vers le médecin **sans fixer d'heure** · son tableau de bord, allégé.
+
+**L'épisode reste ouvert par l'accueil, et fermé par le médecin.** Ouvrir l'épisode n'est pas un acte médical : c'est l'enregistrement de la visite — qui est venu, quand, et ce que la personne déclare au comptoir. Le motif noté est une parole de patient, pas un diagnostic.
+
+> **Le pointage impose ce choix.** Un patient qui arrive sans rendez-vous — le cas le plus courant — n'a aucun objet auquel rattacher sa présence. Si le médecin ouvrait l'épisode, l'accueil devrait créer un second objet pour dire « cette personne est là et attend ». Ce serait le même objet sous un autre nom.
+
+Fermer, en revanche, est médical : l'épisode se clôt quand la prise en charge est finie, et seul le médecin le sait.
+
+### Ce que l'accueil perd — vérifié route par route
+
+| | État constaté | Action |
+|---|---|---|
+| **Ordonnance** | **Déjà interdit** — `consultation.routes.ts:39` n'autorise que `ASC`, `ASC_SUPERVISOR`, `MEDECIN` | rien à faire |
+| **Prescription d'analyses** | `hopital.routes.ts:29` l'autorise | retirer `AGENT_ACCUEIL` |
+| **Envoi d'une ordonnance aux pharmacies** | ⚠️ `commande.routes.ts:28` l'autorise — **non mentionné par le chef de projet, relevé en vérifiant** ; tombe sous « ni produit » | retirer `AGENT_ACCUEIL` |
+| **Lecture des résultats d'analyse** | `resultats.routes.ts:16` l'autorise — ce droit venait de la prescription | retirer, tombe avec le reste |
+| **Écran des alertes critiques** | Existe côté accueil | perd son objet : plus aucune alerte ne lui sera destinée |
+
+### ⚠️ L'ordre n'est pas négociable
+
+**Le seul écran permettant de prescrire une analyse est celui de l'accueil** (`features/hopital/episode-detail`). L'espace médecin n'en a pas. Côté API le médecin a pourtant déjà le droit — c'est l'écran qui manque, pas la permission.
+
+Retirer le droit à l'accueil avant de donner l'écran au médecin rendrait **tout le bloc laboratoire (P2, livré) inaccessible** : plus personne ne pourrait demander un bilan.
+
+Les deux gestes forment donc **un seul bloc** : on construit l'écran du médecin, **puis** on retire les droits de l'accueil. Ce bloc absorbe au passage le reliquat de P2 qui traînait depuis le 19 septembre — ce n'est pas du travail supplémentaire.
+
+---
+
 ## Ce qu'il reste à trancher
 
 | # | Question | Pourquoi ça bloque |
@@ -297,7 +333,7 @@ Le statut du rendez-vous est une **chaîne libre**, pas une énumération : la b
 | ~~A~~ | ~~Téléconsultation : à distance pour de vrai, ou prise de RDV à distance ?~~ | **Tranché le 2026-09-28** : la prise de rendez-vous à distance se fait **maintenant**, la téléconsultation réelle **plus tard** (toujours suspendue à D2). |
 | B | Scan de facture : saisie assistée d'abord, extraction automatique ensuite ? | Détermine si le bloc pharmacie est livrable en une fois ou en deux. |
 | C | Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ? | Conditionne le modèle de catalogue **et** les exclusions d'assurance. |
-| D | Résultats : qui libère quand le prescripteur est un agent d'accueil et non un médecin ? | L'accueil peut prescrire des analyses (EF-03-03) mais ne peut pas traduire un résultat. |
+| ~~D~~ | ~~Résultats : qui libère quand le prescripteur est un agent d'accueil ?~~ | **Supprimée le 2026-09-28** : l'accueil ne prescrit plus rien (voir point 9). Sans prescription par l'accueil, pas de résultat orphelin. |
 | E | Vente au comptoir sans ordonnance : autorisée pour tous les produits ? | Un produit réglementé ne se vend pas sans ordonnance (EF-05-12). |
 
 ---
@@ -309,14 +345,15 @@ Les trois reprises d'abord : elles portent sur du code en production, et **chaqu
 | Ordre | Bloc | Taille | Justification |
 |---|---|---|---|
 | 1 | **Résultats libérés par le médecin** (point 7) | M | Le seul point à conséquence clinique. Aujourd'hui un patient peut lire un résultat que personne ne lui a expliqué. |
-| 2 | **RDV fixés par le médecin + agenda + pointage** (points 2, 3, 8) | M | Un seul circuit, une seule reprise. Séparer ferait refaire l'écran d'accueil deux fois — et un médecin qui fixe ses rendez-vous a besoin de l'endroit où les voir. |
-| 3 | **Suppression du rôle biologiste** (point 4) | M | Migration de comptes : plus elle tarde, plus il y a de comptes et de comptes rendus concernés. |
-| 4 | **Demande de rendez-vous à distance par le patient** (point 6) | M | Se branche sur le circuit RDV du bloc 2, qui doit exister avant. La **téléconsultation réelle** n'est pas dans ce total : elle attend D2. |
-| 5 | **Pharmacie : lots, approvisionnement, péremptions** (points 1.3, 1.4) | L | Le blocage de modèle est ici. À faire avant la vente, qui s'appuie dessus. |
-| 6 | **Pharmacie : vente et tableau de bord** (points 1.1, 1.2) | M | Suppose les lots. |
-| 7 | **Assurance** (point 5) | L | Inchangé en P10, enrichi des précisions ci-dessus. Suppose la catégorie de produits. |
+| 2 | **Le médecin prescrit, l'accueil se recentre** (point 9) | M | L'écran de prescription d'analyses côté médecin **d'abord**, le retrait des droits de l'accueil **ensuite**. Absorbe le reliquat de P2. |
+| 3 | **RDV fixés par le médecin + agenda + pointage** (points 2, 3, 8) | M | Un seul circuit, une seule reprise. Séparer ferait refaire l'écran d'accueil deux fois — et un médecin qui fixe ses rendez-vous a besoin de l'endroit où les voir. |
+| 4 | **Suppression du rôle biologiste** (point 4) | M | Migration de comptes : plus elle tarde, plus il y a de comptes et de comptes rendus concernés. |
+| 5 | **Demande de rendez-vous à distance par le patient** (point 6) | M | Se branche sur le circuit RDV du bloc 3, qui doit exister avant. La **téléconsultation réelle** n'est pas dans ce total : elle attend D2. |
+| 6 | **Pharmacie : lots, approvisionnement, péremptions** (points 1.3, 1.4) | L | Le blocage de modèle est ici. À faire avant la vente, qui s'appuie dessus. |
+| 7 | **Pharmacie : vente et tableau de bord** (points 1.1, 1.2) | M | Suppose les lots. |
+| 8 | **Assurance** (point 5) | L | Inchangé en P10, enrichi des précisions ci-dessus. Suppose la catégorie de produits. |
 
-**Total estimé : ~20 à 27 jours de développement**, hors recette et hors décisions externes.
+**Total estimé : ~22 à 30 jours de développement**, hors recette et hors décisions externes.
 
 ---
 

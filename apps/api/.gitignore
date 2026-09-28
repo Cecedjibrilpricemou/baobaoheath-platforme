@@ -6,3 +6,8 @@ node_modules
 
 # Fichiers uploadés par les utilisateurs (photos de profil, etc.)
 /uploads
+
+# Compile de prisma.config.ts. Prisma 7 le prefere au .ts et ne sait pas le
+# lire : commite, il fait echouer migrate, generate et diff.
+prisma.config.js
+prisma.config.js.map

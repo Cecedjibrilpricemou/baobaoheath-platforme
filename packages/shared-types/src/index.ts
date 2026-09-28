@@ -1379,6 +1379,31 @@ export interface OrientationMedecinView {
   } | null;
 }
 
+/**
+ * POST /medecin/resultats/:idDemande/liberer — le medecin rend les resultats
+ * visibles au patient (addendum du 2026-09-28).
+ *
+ * Le commentaire est la « traduction » : un resultat est ecrit pour un soignant,
+ * et le patient qui le lit seul ne sait pas s'il doit s'inquieter.
+ */
+export interface LibererResultatsDto {
+  commentaire?: string;
+}
+
+/** GET /medecin/resultats — la file des resultats qu'un medecin doit liberer. */
+export interface ResultatALibererView {
+  idDemande: string;
+  numero: string;
+  /** Validation par le laboratoire : c'est de ce moment que date l'attente du patient. */
+  valideeLe: HorodatageApi;
+  idEpisode: string;
+  nbExamens: number;
+  contientCritique: boolean;
+  contientAnormal: boolean;
+  patient: { id: string; prenom: string; nom: string };
+  laboratoire: { id: string; nom: string };
+}
+
 /** GET /hopital/patients/recherche — identite minimale pour l'identito-vigilance (EF-03-01). */
 export interface PatientRechercheView {
   id: string;

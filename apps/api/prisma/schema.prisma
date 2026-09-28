@@ -211,6 +211,7 @@ model Utilisateur {
   episodesResponsable  EpisodeSoins[]  @relation("EpisodeResponsable")
   demandesPrescrites   DemandeAnalyse[] @relation("Prescripteur")
   demandesValidees     DemandeAnalyse[] @relation("Valideur")
+  demandesLiberees     DemandeAnalyse[] @relation("LibereParMedecin")
   echantillonsPreleves Echantillon[]    @relation("Preleveur")
   resultatsSaisis      ResultatAnalyse[] @relation("SaisiPar")
   alertesCritiques     AlerteResultatCritique[] @relation("DestinataireAlerte")
@@ -1042,12 +1043,27 @@ model DemandeAnalyse {
   preleveeLe            DateTime?
   valideeLe             DateTime?
   commentaireBiologiste String?
-  // Diffusion au patient : immediate apres validation, differee si un
-  // resultat critique attend l'accuse de lecture du prescripteur (EF-04-09).
+  /// Moment ou le patient a pu voir ses resultats. Depuis l'addendum du
+  /// 2026-09-28, il n'est jamais pose par le temps qui passe : seul un medecin
+  /// qui libere les resultats le renseigne. Avant, un resultat non critique
+  /// partait des la validation du laboratoire, et un resultat critique finissait
+  /// par partir seul au bout de 24 h — le patient lisait alors des termes que
+  /// personne ne lui avait expliques.
   diffuseePatientLe     DateTime?
+  /// Traduction en langage clair, redigee par le medecin au moment ou il libere
+  /// les resultats. C'est elle qui donne son sens au chiffre.
+  commentaireMedecin    String?
+  /// Garde-fou : sans ces deux dates, un medecin absent laisserait un patient
+  /// sans ses resultats indefiniment. On relance, puis on escalade vers
+  /// l'administrateur de la structure — jamais vers le patient.
+  relanceLiberationLe   DateTime?
+  escaladeLiberationLe  DateTime?
 
   idValideur String?
   valideur   Utilisateur? @relation("Valideur", fields: [idValideur], references: [id])
+
+  idLiberePar String?
+  liberePar   Utilisateur? @relation("LibereParMedecin", fields: [idLiberePar], references: [id])
 
   echantillons     Echantillon[]
   alertesCritiques AlerteResultatCritique[]
@@ -1069,6 +1085,11 @@ model DemandeAnalyse {
   @@index([idLaboratoire, statut, urgence, creeLe])
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([idEpisode])
+  /// File « a liberer » du medecin : ses demandes validees que le patient ne
+  /// voit pas encore.
+  @@index([idPrescripteur, statut, diffuseePatientLe])
+  /// Job de relance et d'escalade : les validees que personne n'a liberees.
+  @@index([statut, diffuseePatientLe, valideeLe])
   @@map("demandes_analyse")
 }
 

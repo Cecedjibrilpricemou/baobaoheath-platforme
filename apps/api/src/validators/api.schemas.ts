@@ -85,6 +85,15 @@ export const updateStructurePrefereeSchema = z.object({
   idStructure: id.nullable().optional(),
 }).strict();
 
+/**
+ * Liberation des resultats au patient (addendum du 2026-09-28). Le commentaire
+ * est facultatif : un bilan sans particularite n'appelle pas d'explication, et
+ * en exiger une produirait des « RAS » systematiques qui n'apprennent rien.
+ */
+export const libererResultatsSchema = z.object({
+  commentaire: z.string().trim().max(2000).optional(),
+});
+
 export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'BIOLOGISTE']);
 
 export const createAgentStructureSchema = z.object({

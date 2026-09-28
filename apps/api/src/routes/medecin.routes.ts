@@ -4,6 +4,8 @@ import {
   getConsultationsAValiderController,
   validerConsultationController,
   getOrientationsController,
+  getResultatsALibererController,
+  libererResultatsController,
   getReferencementsController,
   repondreReferencementController,
   sendMessageController,
@@ -14,6 +16,7 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import {
   validerConsultationSchema,
+  libererResultatsSchema,
   repondreReferencementSchema,
   sendMessageSchema,
 } from '../validators/api.schemas';
@@ -30,6 +33,14 @@ router.get('/dashboard', getDashboardStatsController);
 // ─── Consultations ────────────────────────────────────────
 router.get('/consultations', getConsultationsAValiderController);
 router.put('/consultations/:id/valider', validateBody(validerConsultationSchema), validerConsultationController);
+
+// ─── Résultats d'analyse à libérer ────────────────────────
+// Addendum du 2026-09-28 : le patient ne voit un résultat qu'après qu'un
+// médecin l'a libéré, avec la possibilité d'y joindre une explication en
+// langage clair. `requireRole('MEDECIN')` est explicite ici : le routeur laisse
+// aussi passer les administrateurs, qui n'ont rien à libérer.
+router.get('/resultats', requireRole('MEDECIN'), getResultatsALibererController);
+router.post('/resultats/:id/liberer', requireRole('MEDECIN'), validateBody(libererResultatsSchema), libererResultatsController);
 
 // ─── Référencements ───────────────────────────────────────
 // EF-03-05 : les patients que l'accueil a orientes vers ce medecin.

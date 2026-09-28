@@ -2,6 +2,8 @@
 // saisie / validation, circuit des resultats critiques. Prisma est simule.
 import {
   accuserAlerte,
+  libererResultats,
+  mesResultatsALiberer,
   enregistrerPrelevement,
   interpreter,
   planifierPrelevement,
@@ -10,15 +12,15 @@ import {
   validerResultats,
 } from '../src/services/laboratoire.service';
 import { JwtPayload } from '../src/types/auth.types';
-import { ConflictError, ForbiddenError, ValidationError } from '../src/utils/app-error';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../src/utils/app-error';
 
 jest.mock('../src/config/prisma', () => {
   const prisma: Record<string, unknown> = {
     utilisateur: { findUnique: jest.fn(), findFirst: jest.fn() },
-    demandeAnalyse: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn(), count: jest.fn() },
+    demandeAnalyse: { findFirst: jest.fn(), findUnique: jest.fn(), findUniqueOrThrow: jest.fn(), findMany: jest.fn(), update: jest.fn(), updateMany: jest.fn(), count: jest.fn() },
     echantillon: { create: jest.fn() },
     resultatAnalyse: { upsert: jest.fn() },
-    alerteResultatCritique: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    alerteResultatCritique: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     $queryRaw: jest.fn(),
   };
   prisma['$transaction'] = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
@@ -38,10 +40,10 @@ type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     utilisateur: { findUnique: M; findFirst: M };
-    demandeAnalyse: { findFirst: M; findUnique: M; findMany: M; update: M; count: M };
+    demandeAnalyse: { findFirst: M; findUnique: M; findUniqueOrThrow: M; findMany: M; update: M; updateMany: M; count: M };
     echantillon: { create: M };
     resultatAnalyse: { upsert: M };
-    alerteResultatCritique: { create: M; findFirst: M; findMany: M; update: M };
+    alerteResultatCritique: { create: M; findFirst: M; findMany: M; update: M; updateMany: M };
     $queryRaw: M;
     $transaction: M;
   };
@@ -194,37 +196,171 @@ describe('validerResultats (EF-04-05, EF-04-07, EF-04-09)', () => {
     expect(prisma.demandeAnalyse.update).not.toHaveBeenCalled();
   });
 
-  it('sans critique : valide, diffuse aussitot au patient et informe le prescripteur', async () => {
+  // Addendum du 2026-09-28 : la validation du laboratoire ne rend plus rien
+  // visible au patient. Avant, un resultat sans particularite partait aussitot,
+  // et le patient lisait « Hemoglobine 6 g/dL » sans savoir s'il devait
+  // s'inquieter.
+  it('sans critique : valide, mais ne montre rien au patient', async () => {
     prisma.demandeAnalyse.findFirst.mockResolvedValue(demande('EN_ANALYSE', { lignes: [
       { id: 'li-hb', examen: hemoglobine, resultat: resultat('ANORMAL') },
       { id: 'li-vih', examen: vih, resultat: resultat('NORMAL', 'res-2') },
     ] }));
     await validerResultats(biologiste, 'da-1', { commentaire: 'Anemie moderee' });
+
     const data = prisma.demandeAnalyse.update.mock.calls[0][0].data;
     expect(data).toMatchObject({ statut: 'VALIDEE', idValideur: 'bio-1', commentaireBiologiste: 'Anemie moderee' });
-    expect(data.diffuseePatientLe).toBeInstanceOf(Date);
+    // Ni pose, ni efface : la validation ne touche plus a ce champ.
+    expect(data.diffuseePatientLe).toBeUndefined();
     expect(prisma.alerteResultatCritique.create).not.toHaveBeenCalled();
-    const types = notifierSansBloquer.mock.calls.map((c) => c[0].type);
-    expect(types).toEqual(['RESULTATS_DISPONIBLES', 'RESULTATS_DISPONIBLES']);
-    // Le SMS patient ne contient aucune valeur medicale.
-    expect(envoyerSmsSimule.mock.calls[0][1]).not.toMatch(/6|Anemie/);
+
+    // Une seule notification, pour le medecin. Le patient n'est pas prevenu.
+    expect(notifierSansBloquer).toHaveBeenCalledTimes(1);
+    expect(notifierSansBloquer.mock.calls[0][0]).toMatchObject({
+      idUtilisateur: 'x', type: 'RESULTATS_DISPONIBLES', lienAction: '/medecin/resultats',
+    });
+    expect(envoyerSmsSimule).not.toHaveBeenCalled();
   });
 
-  it('avec critique : alerte prioritaire au prescripteur, diffusion patient differee', async () => {
+  it('avec critique : alerte prioritaire au prescripteur, rien au patient', async () => {
     prisma.demandeAnalyse.findFirst.mockResolvedValue(demande('EN_ANALYSE', { lignes: [
       { id: 'li-hb', examen: hemoglobine, resultat: resultat('CRITIQUE') },
       { id: 'li-vih', examen: vih, resultat: resultat('NORMAL', 'res-2') },
     ] }));
     await validerResultats(biologiste, 'da-1', {});
+
     expect(prisma.alerteResultatCritique.create).toHaveBeenCalledWith({ data: { idDemande: 'da-1', idResultat: 'res-1', idDestinataire: 'med-1' } });
-    expect(prisma.demandeAnalyse.update.mock.calls[0][0].data.diffuseePatientLe).toBeNull();
+    expect(prisma.demandeAnalyse.update.mock.calls[0][0].data.diffuseePatientLe).toBeUndefined();
     expect(notifierSansBloquer).toHaveBeenCalledTimes(1);
     expect(notifierSansBloquer.mock.calls[0][0]).toMatchObject({ idUtilisateur: 'x', type: 'RESULTAT_CRITIQUE' });
     expect(envoyerSmsSimule.mock.calls[0][1]).toContain('CRITIQUE');
   });
 });
 
-describe('accuserAlerte (EF-04-08) et escalade (EF-04-09)', () => {
+// ── Liberation par le medecin (addendum du 2026-09-28) ────────────────
+describe('libererResultats', () => {
+  const garde = (extra: Record<string, unknown> = {}) => ({
+    id: 'da-1', numero: 'DA-2026-000001', statut: 'VALIDEE', diffuseePatientLe: null,
+    idPrescripteur: 'med-1', idPatient: 'pat-1', idEpisode: 'ep-1',
+    episode: { idResponsable: 'med-1' },
+    ...extra,
+  });
+
+  function liberationReussie() {
+    prisma.demandeAnalyse.updateMany.mockResolvedValue({ count: 1 });
+    prisma.alerteResultatCritique.updateMany.mockResolvedValue({ count: 0 });
+    prisma.utilisateur.findFirst.mockResolvedValue({ id: 'user-pat', telephone: '625000000' });
+    prisma.demandeAnalyse.findUniqueOrThrow.mockResolvedValue(demande('VALIDEE'));
+  }
+
+  it('est reservee au medecin', async () => {
+    await expect(libererResultats(biologiste, 'da-1', {})).rejects.toBeInstanceOf(ForbiddenError);
+    expect(prisma.demandeAnalyse.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('refuse un medecin qui ne suit pas ce patient', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde({ idPrescripteur: 'med-9', episode: { idResponsable: 'med-8' } }));
+    await expect(libererResultats(medecin, 'da-1', {})).rejects.toBeInstanceOf(ForbiddenError);
+    expect(prisma.demandeAnalyse.updateMany).not.toHaveBeenCalled();
+  });
+
+  // Le prescripteur peut s'absenter : exiger le seul prescripteur bloquerait le
+  // patient chez un medecin en conge.
+  it('accepte le medecin responsable de l episode, meme s il n a pas prescrit', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde({ idPrescripteur: 'med-9', episode: { idResponsable: 'med-1' } }));
+    liberationReussie();
+    await expect(libererResultats(medecin, 'da-1', {})).resolves.toBeDefined();
+  });
+
+  it('refuse tant que le laboratoire n a pas valide', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde({ statut: 'EN_ANALYSE' }));
+    await expect(libererResultats(medecin, 'da-1', {})).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it('refuse de liberer deux fois', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde({ diffuseePatientLe: new Date() }));
+    await expect(libererResultats(medecin, 'da-1', {})).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it('rend introuvable une demande inconnue', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(null);
+    await expect(libererResultats(medecin, 'da-x', {})).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('ouvre l acces au patient, avec l explication du medecin', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde());
+    liberationReussie();
+
+    await libererResultats(medecin, 'da-1', { commentaire: '  Votre fer est bas, rien d inquietant.  ' });
+
+    const { where, data } = prisma.demandeAnalyse.updateMany.mock.calls[0][0];
+    // La condition fait tout le travail : elle interdit la double liberation.
+    expect(where).toEqual({ id: 'da-1', statut: 'VALIDEE', diffuseePatientLe: null });
+    expect(data.diffuseePatientLe).toBeInstanceOf(Date);
+    expect(data.idLiberePar).toBe('med-1');
+    expect(data.commentaireMedecin).toBe('Votre fer est bas, rien d inquietant.');
+
+    // Le patient est prevenu, sans valeur medicale dans le SMS.
+    expect(notifierSansBloquer).toHaveBeenCalledWith(expect.objectContaining({ idUtilisateur: 'user-pat', type: 'RESULTATS_DISPONIBLES' }));
+    expect(envoyerSmsSimule.mock.calls[0][1]).not.toMatch(/fer|bas/i);
+  });
+
+  it('sans commentaire, ne stocke pas une chaine vide', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde());
+    liberationReussie();
+    await libererResultats(medecin, 'da-1', { commentaire: '   ' });
+    expect(prisma.demandeAnalyse.updateMany.mock.calls[0][0].data.commentaireMedecin).toBeNull();
+  });
+
+  // Liberer, c'est avoir lu : sans cela l'escalade critique se retournerait
+  // contre un medecin qui a deja fait le travail.
+  it('leve les alertes critiques encore ouvertes de la demande', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde());
+    liberationReussie();
+    await libererResultats(medecin, 'da-1', {});
+    expect(prisma.alerteResultatCritique.updateMany).toHaveBeenCalledWith({
+      where: { idDemande: 'da-1', accuseeLe: null },
+      data: { accuseeLe: expect.any(Date) },
+    });
+  });
+
+  // Deux medecins qui liberent en meme temps : un gagnant, un perdant, jamais
+  // deux notifications au patient.
+  it('refuse quand un autre medecin vient de liberer', async () => {
+    prisma.demandeAnalyse.findUnique.mockResolvedValue(garde());
+    prisma.demandeAnalyse.updateMany.mockResolvedValue({ count: 0 });
+    await expect(libererResultats(medecin, 'da-1', {})).rejects.toBeInstanceOf(ConflictError);
+    expect(notifierSansBloquer).not.toHaveBeenCalled();
+  });
+});
+
+describe('mesResultatsALiberer', () => {
+  it('ne rend que les validees que le patient ne voit pas encore', async () => {
+    prisma.demandeAnalyse.findMany.mockResolvedValue([]);
+    await mesResultatsALiberer(medecin);
+    const { where, orderBy } = prisma.demandeAnalyse.findMany.mock.calls[0][0];
+    expect(where).toMatchObject({ statut: 'VALIDEE', diffuseePatientLe: null });
+    expect(where.OR).toEqual([{ idPrescripteur: 'med-1' }, { episode: { idResponsable: 'med-1' } }]);
+    // Le plus ancien d'abord : c'est le patient qui attend depuis le plus longtemps.
+    expect(orderBy).toEqual({ valideeLe: 'asc' });
+  });
+
+  it('signale les resultats critiques et anormaux de chaque demande', async () => {
+    prisma.demandeAnalyse.findMany.mockResolvedValue([{
+      id: 'da-1', numero: 'DA-2026-000001', valideeLe: new Date('2026-09-28T08:00:00Z'), idEpisode: 'ep-1',
+      patient: { id: 'pat-1', utilisateur: { prenom: 'Awa', nom: 'Diallo' } },
+      laboratoire: { id: 'labo-A', nom: 'Labo Cece' },
+      lignes: [{ resultat: { interpretation: 'CRITIQUE' } }, { resultat: { interpretation: 'NORMAL' } }],
+    }]);
+
+    const [r] = await mesResultatsALiberer(medecin);
+
+    expect(r).toMatchObject({ idDemande: 'da-1', numero: 'DA-2026-000001', nbExamens: 2, contientCritique: true, contientAnormal: false });
+    expect(r.patient).toEqual({ id: 'pat-1', prenom: 'Awa', nom: 'Diallo' });
+    expect(typeof r.valideeLe).toBe('string');
+  });
+});
+
+describe('accuserAlerte (EF-04-08) et escalade', () => {
   const alerte = (extra: Record<string, unknown> = {}) => ({
     id: 'al-1', creeLe: new Date(), accuseeLe: null, escaladeeLe: null, idDemande: 'da-1', idResultat: 'res-1', idDestinataire: 'med-1', idEscaladeVers: null,
     demande: { id: 'da-1', numero: 'DA-2026-000001', idEpisode: 'ep-1', patient: { id: 'pat-1', utilisateur: { prenom: 'Awa', nom: 'Diallo' } }, laboratoire: { id: 'labo-A', nom: 'L', type: 'LABORATOIRE', prefecture: 'K' } },
@@ -233,35 +369,61 @@ describe('accuserAlerte (EF-04-08) et escalade (EF-04-09)', () => {
     ...extra,
   });
 
-  it('l accuse de lecture libere la diffusion au patient quand plus rien n est en attente', async () => {
+  // L'accuse dit que le soignant a vu l'alerte, pas qu'il a explique le
+  // resultat. Ce sont deux gestes differents depuis l'addendum du 2026-09-28.
+  it('l accuse de lecture ne montre plus rien au patient', async () => {
     prisma.alerteResultatCritique.findFirst.mockResolvedValue(alerte());
     prisma.alerteResultatCritique.update.mockResolvedValue(alerte({ accuseeLe: new Date() }));
-    prisma.demandeAnalyse.findUnique.mockResolvedValue({ id: 'da-1', numero: 'DA-2026-000001', idPatient: 'pat-1', idEpisode: 'ep-1', statut: 'VALIDEE', diffuseePatientLe: null, _count: { alertesCritiques: 0 } });
-    const vue = await accuserAlerte(medecin, 'al-1');
-    expect(vue.accuseeLe).not.toBeNull();
-    expect(prisma.demandeAnalyse.update.mock.calls[0][0].data.diffuseePatientLe).toBeInstanceOf(Date);
-    expect(notifierSansBloquer).toHaveBeenCalledWith(expect.objectContaining({ idUtilisateur: 'user-pat', type: 'RESULTATS_DISPONIBLES' }));
-  });
 
-  it('ne diffuse pas tant qu une autre alerte de la demande reste ouverte', async () => {
-    prisma.alerteResultatCritique.findFirst.mockResolvedValue(alerte());
-    prisma.alerteResultatCritique.update.mockResolvedValue(alerte({ accuseeLe: new Date() }));
-    prisma.demandeAnalyse.findUnique.mockResolvedValue({ id: 'da-1', statut: 'VALIDEE', diffuseePatientLe: null, _count: { alertesCritiques: 1 } });
-    await accuserAlerte(medecin, 'al-1');
+    const vue = await accuserAlerte(medecin, 'al-1');
+
+    expect(vue.accuseeLe).not.toBeNull();
     expect(prisma.demandeAnalyse.update).not.toHaveBeenCalled();
+    expect(prisma.demandeAnalyse.updateMany).not.toHaveBeenCalled();
     expect(notifierSansBloquer).not.toHaveBeenCalled();
   });
 
-  it('le job escalade vers l admin de la structure et diffuse au patient passe le delai', async () => {
+  it('le job escalade l alerte critique vers l admin de la structure', async () => {
     prisma.alerteResultatCritique.findMany.mockResolvedValue([{ ...alerte(), destinataire: { id: 'med-1', prenom: 'Dr', nom: 'Bah', idStructure: null, medecinProfile: { idStructure: 'struct-H' } } }]);
-    prisma.utilisateur.findFirst.mockResolvedValueOnce({ id: 'admin-H', telephone: '610000000' }).mockResolvedValue({ id: 'user-pat', telephone: '625000000' });
-    prisma.demandeAnalyse.findMany.mockResolvedValue([{ id: 'da-9', numero: 'DA-2026-000009', idPatient: 'pat-1', idEpisode: 'ep-1' }]);
+    prisma.utilisateur.findFirst.mockResolvedValue({ id: 'admin-H', telephone: '610000000' });
+    prisma.demandeAnalyse.findMany.mockResolvedValue([]);
+
     const r = await traiterAlertesCritiques();
-    expect(r).toEqual({ escaladees: 1, diffusees: 1 });
+
+    expect(r).toEqual({ escaladees: 1, relancees: 0, escaladesLiberation: 0 });
     expect(prisma.alerteResultatCritique.update.mock.calls[0][0].data).toMatchObject({ idEscaladeVers: 'admin-H' });
-    expect(prisma.utilisateur.findFirst.mock.calls[0][0].where).toMatchObject({ idStructure: 'struct-H', role: 'ADMIN_STRUCTURE' });
-    const types = notifierSansBloquer.mock.calls.map((c) => c[0].type);
-    expect(types).toEqual(['ESCALADE_CRITIQUE', 'RESULTATS_DISPONIBLES']);
-    expect(prisma.demandeAnalyse.update).toHaveBeenCalledWith({ where: { id: 'da-9' }, data: { diffuseePatientLe: expect.any(Date) } });
+    expect(notifierSansBloquer.mock.calls.map((c) => c[0].type)).toEqual(['ESCALADE_CRITIQUE']);
+  });
+
+  // Le garde-fou : sans lui, un medecin absent laisserait le patient sans
+  // reponse. Mais il ne doit jamais diffuser a sa place.
+  it('le job relance le medecin qui n a pas libere, sans rien montrer au patient', async () => {
+    prisma.alerteResultatCritique.findMany.mockResolvedValue([]);
+    prisma.demandeAnalyse.findMany
+      .mockResolvedValueOnce([{ id: 'da-9', numero: 'DA-2026-000009', idPrescripteur: 'med-1', idEpisode: 'ep-1', episode: { idResponsable: 'med-2' } }])
+      .mockResolvedValueOnce([]);
+
+    const r = await traiterAlertesCritiques();
+
+    expect(r).toEqual({ escaladees: 0, relancees: 1, escaladesLiberation: 0 });
+    // Le responsable de l'episode d'abord : le prescripteur a pu passer la main.
+    expect(notifierSansBloquer.mock.calls[0][0]).toMatchObject({ idUtilisateur: 'med-2', lienAction: '/medecin/resultats' });
+    // La relance est datee, donc elle ne repart pas a chaque tour du job.
+    expect(prisma.demandeAnalyse.update.mock.calls[0][0].data).toEqual({ relanceLiberationLe: expect.any(Date) });
+  });
+
+  it('le job escalade vers l admin quand le medecin n a toujours pas libere', async () => {
+    prisma.alerteResultatCritique.findMany.mockResolvedValue([]);
+    prisma.demandeAnalyse.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'da-9', numero: 'DA-2026-000009', idEpisode: 'ep-1', episode: { idStructure: 'struct-H' }, prescripteur: { prenom: 'Dr', nom: 'Bah' } }]);
+    prisma.utilisateur.findFirst.mockResolvedValue({ id: 'admin-H', telephone: '610000000' });
+
+    const r = await traiterAlertesCritiques();
+
+    expect(r).toEqual({ escaladees: 0, relancees: 0, escaladesLiberation: 1 });
+    expect(notifierSansBloquer.mock.calls[0][0]).toMatchObject({ idUtilisateur: 'admin-H', titre: 'Resultats non liberes au patient' });
+    // L'escalade va a l'administrateur, jamais au patient.
+    expect(notifierSansBloquer.mock.calls.every((c) => c[0].idUtilisateur !== 'user-pat')).toBe(true);
   });
 });

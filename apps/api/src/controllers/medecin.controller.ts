@@ -1,10 +1,13 @@
 import { Response } from 'express';
 import { Request as ExpressRequest } from 'express';
 import * as medecinService from '../services/medecin.service';
+import * as laboratoire from '../services/laboratoire.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { ReferralStatus } from '@baobaoheath/shared-types';
 import type {
+  DemandeAnalyseView,
   OrientationMedecinView,
+  ResultatALibererView,
   ConsultationAValiderView,
   MedecinDashboardView,
   MessageView,
@@ -57,6 +60,22 @@ export async function validerConsultationController(
 export async function getOrientationsController(req: AuthRequest, res: Response): Promise<void> {
     const data: OrientationMedecinView[] = await medecinService.getOrientations(req.user!.userId);
     res.json({ success: true, data });
+}
+
+// Addendum du 2026-09-28 : le patient ne voit ses resultats qu'apres que le
+// medecin les a liberes, avec l'explication qui va avec.
+export async function getResultatsALibererController(req: AuthRequest, res: Response): Promise<void> {
+    const data: ResultatALibererView[] = await laboratoire.mesResultatsALiberer(req.user!);
+    res.json({ success: true, data });
+}
+
+export async function libererResultatsController(req: AuthRequest, res: Response): Promise<void> {
+    const data: DemandeAnalyseView = await laboratoire.libererResultats(
+        req.user!,
+        req.params['id'] as string,
+        req.body
+    );
+    res.json({ success: true, data, message: 'Resultats liberes : le patient peut les consulter' });
 }
 
 export async function getReferencementsController(
