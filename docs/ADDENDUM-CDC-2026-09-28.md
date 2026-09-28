@@ -1,6 +1,6 @@
 # Addendum au cahier des charges — points du chef de projet
 
-> Réunion rapportée le **2026-09-28**. Ce document consigne les huit points remontés, ce qu'ils impliquent concrètement, et **ce qu'ils changent dans ce qui est déjà livré**.
+> Réunion rapportée le **2026-09-28**, complétée le jour même. Ce document consigne les neuf points remontés, ce qu'ils impliquent concrètement, et **ce qu'ils changent dans ce qui est déjà livré**.
 >
 > Chaque constat sur l'existant a été vérifié dans le code, référence à l'appui. Les estimations sont de l'effort de développement pour une personne : **S** ≈ 1 j · **M** ≈ 2–3 j · **L** ≈ 4–6 j.
 
@@ -18,7 +18,9 @@ Trois de ces points **contredisent du code livré et en production**. Ce ne sont
 | Gestion complète de la pharmacie | ajout lourd | Nouveau bloc, avec un blocage de modèle |
 | Pointage de présence | ajout | Espace accueil |
 | Assurance enrichie | précision sur P10 | Non commencé, donc sans casse |
-| Téléconsultation | remontée de priorité | Était en lot V4 (P13) |
+| Agenda du médecin | ajout | Aucun écran n'existe ; l'index en base, si |
+| Prise de RDV à distance | remontée de priorité | Était en lot V4 (P13) |
+| Téléconsultation | **différée** | Décision du chef de projet : « on verra un peu plus tard » |
 
 **Le point le plus coûteux n'est pas le plus visible** : l'approvisionnement par facture bute sur une limite du modèle de stock, décrite au point 1.3.
 
@@ -206,7 +208,16 @@ PATIENT (chez lui)          MEDECIN                    ASSISTANTE
 
 **Ce parcours est cohérent avec les points 2 et 3** — c'est le même circuit vu depuis le patient. Les trois se construisent ensemble ; les séparer ferait faire le travail deux fois.
 
-> À noter : tel que décrit, le patient **se déplace quand même**. Ce n'est pas encore une consultation à distance, c'est une **prise de rendez-vous à distance**. La vraie téléconsultation — le médecin voit le patient sans qu'il se déplace — suppose la visioconférence et relève de la décision **D2** (cadre légal de l'acte à distance), toujours en attente. À confirmer avec le chef de projet : les deux n'ont ni le même coût, ni le même cadre.
+### Tranché le 2026-09-28 : les deux, mais pas en même temps
+
+Tel que décrit ci-dessus, le patient **se déplace quand même** : ce n'est pas une consultation à distance, c'est une **prise de rendez-vous à distance**. La distinction a été posée, et le chef de projet a tranché :
+
+| | Périmètre | Quand |
+|---|---|---|
+| **Prise de rendez-vous à distance** | Le patient demande sa consultation depuis chez lui, le médecin fixe le créneau, l'assistante le pointe à l'arrivée. | **Maintenant** — bloc 4 de l'ordonnancement |
+| **Téléconsultation réelle** | Le médecin voit le patient sans qu'il se déplace : visioconférence, acte à distance, traçabilité. | **Plus tard** — reste suspendue à la décision **D2** (cadre légal) |
+
+> C'est le bon ordre. La téléconsultation réelle a besoin du circuit de rendez-vous à distance pour exister : on ne consulte pas à distance quelqu'un qui n'a pas pu prendre rendez-vous à distance. Construire le premier ne sera pas perdu, ce sera le socle du second.
 
 ---
 
@@ -242,11 +253,48 @@ La diffusion devient **un geste du médecin**, jamais un effet du temps :
 
 ---
 
+## 8. Le médecin voit ses rendez-vous, dans l'ordre · S
+
+> « Le docteur doit voir une liste de ses rendez-vous par ordre. »
+
+Point ajouté le 2026-09-28. **Aucun écran de ce genre n'existe** : l'espace médecin contient un tableau de bord, les consultations, les référencements, la messagerie et les orientations — pas d'agenda.
+
+### La bonne nouvelle
+
+Le modèle est déjà prêt, et il a même été indexé pour cette requête exacte :
+
+```prisma
+model RendezVous {
+  prevuLe   DateTime
+  idMedecin String?
+  @@index([idMedecin, prevuLe])
+}
+```
+
+Il ne manque que l'endpoint et l'écran. **C'est le point le moins cher des neuf**, et c'est aussi celui qui rend le point 3 utilisable : dès lors que le médecin fixe lui-même ses rendez-vous, il lui faut l'endroit où les voir. Les deux se livrent ensemble.
+
+### Ce que l'écran doit montrer
+
+- **Par ordre chronologique, le plus proche en premier**, groupé par jour — « aujourd'hui », « demain », puis les dates.
+- Pour chacun : le patient, son âge, le motif, l'heure, et **son état de présence** (attendu, présent, en consultation, terminé) une fois le pointage du point 2 en place.
+- **Aujourd'hui d'abord** : c'est la vue dont le médecin se sert le matin.
+- Un rendez-vous dépassé sans que le patient soit venu se signale, comme le fait déjà l'écran d'orientations.
+
+### Un point de modèle à corriger au passage
+
+```prisma
+statut String @default("PLANIFIE")
+```
+
+Le statut du rendez-vous est une **chaîne libre**, pas une énumération : la base n'interdit aucune valeur, et une faute de frappe passerait sans erreur. Puisque le point 2 y ajoute des états de présence, autant le fermer en `enum` à ce moment-là — c'est la migration la moins chère qu'on aura l'occasion de faire ici.
+
+---
+
 ## Ce qu'il reste à trancher
 
 | # | Question | Pourquoi ça bloque |
 |---|---|---|
-| A | **Téléconsultation : à distance pour de vrai, ou prise de RDV à distance ?** | Ce n'est ni le même coût, ni le même cadre légal (décision D2). |
+| ~~A~~ | ~~Téléconsultation : à distance pour de vrai, ou prise de RDV à distance ?~~ | **Tranché le 2026-09-28** : la prise de rendez-vous à distance se fait **maintenant**, la téléconsultation réelle **plus tard** (toujours suspendue à D2). |
 | B | Scan de facture : saisie assistée d'abord, extraction automatique ensuite ? | Détermine si le bloc pharmacie est livrable en une fois ou en deux. |
 | C | Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ? | Conditionne le modèle de catalogue **et** les exclusions d'assurance. |
 | D | Résultats : qui libère quand le prescripteur est un agent d'accueil et non un médecin ? | L'accueil peut prescrire des analyses (EF-03-03) mais ne peut pas traduire un résultat. |
@@ -261,9 +309,9 @@ Les trois reprises d'abord : elles portent sur du code en production, et **chaqu
 | Ordre | Bloc | Taille | Justification |
 |---|---|---|---|
 | 1 | **Résultats libérés par le médecin** (point 7) | M | Le seul point à conséquence clinique. Aujourd'hui un patient peut lire un résultat que personne ne lui a expliqué. |
-| 2 | **RDV fixés par le médecin + pointage** (points 2, 3) | M | Un seul circuit, une seule reprise. Séparer ferait refaire l'écran d'accueil deux fois. |
+| 2 | **RDV fixés par le médecin + agenda + pointage** (points 2, 3, 8) | M | Un seul circuit, une seule reprise. Séparer ferait refaire l'écran d'accueil deux fois — et un médecin qui fixe ses rendez-vous a besoin de l'endroit où les voir. |
 | 3 | **Suppression du rôle biologiste** (point 4) | M | Migration de comptes : plus elle tarde, plus il y a de comptes et de comptes rendus concernés. |
-| 4 | **Demande de consultation par le patient** (point 6) | M | Se branche sur le circuit RDV du point 2, qui doit exister avant. |
+| 4 | **Demande de rendez-vous à distance par le patient** (point 6) | M | Se branche sur le circuit RDV du bloc 2, qui doit exister avant. La **téléconsultation réelle** n'est pas dans ce total : elle attend D2. |
 | 5 | **Pharmacie : lots, approvisionnement, péremptions** (points 1.3, 1.4) | L | Le blocage de modèle est ici. À faire avant la vente, qui s'appuie dessus. |
 | 6 | **Pharmacie : vente et tableau de bord** (points 1.1, 1.2) | M | Suppose les lots. |
 | 7 | **Assurance** (point 5) | L | Inchangé en P10, enrichi des précisions ci-dessus. Suppose la catégorie de produits. |

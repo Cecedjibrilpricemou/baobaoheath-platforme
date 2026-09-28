@@ -54,6 +54,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] `DemandeAnalyse` + lignes, urgence, laboratoire destinataire, consignes patient (à jeun…), transmission et notification (EF-03-03/04). Type de structure `LABORATOIRE`.
 - [x] Orientation vers un médecin ou un service avec RDV proposé (EF-03-05).
 - [ ] 🔁 **Rouvert le 2026-09-28** — l'accueil n'est plus celui qui fixe le créneau : il oriente, **le médecin fixe le rendez-vous** (addendum, point 3). Le champ date disparaît de l'écran d'accueil.
+- [ ] **Agenda du médecin** (addendum, point 8) : ses rendez-vous **par ordre chronologique**, le plus proche en premier, groupés par jour, avec l'état de présence. Aucun écran de ce genre n'existe, mais l'index `@@index([idMedecin, prevuLe])` est déjà en base — il ne manque que l'endpoint et l'écran. Se livre avec la reprise ci-dessus : un médecin qui fixe ses rendez-vous a besoin de l'endroit où les voir.
+- [ ] `RendezVous.statut` est une **chaîne libre** (`String @default("PLANIFIE")`) : à fermer en `enum` au moment où le pointage y ajoute ses états, la base n'interdisant aujourd'hui aucune valeur.
 - [ ] 🔁 **Pointage de présence** (addendum, point 2) : file des patients attendus du jour, arrivée pointée par l'assistante, redirection vers le médecin au bon moment. Le rôle reste `AGENT_ACCUEIL`, dont l'intitulé affiché devient « Assistante ».
 - [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
 - [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
@@ -193,7 +195,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 ### P13 — Extension (lot V4) · L
 - [ ] Comptes aidants avec mandat et périmètre (EF-06-05) ; mineurs (EF-06-06).
 - [ ] Rappels de prise de traitement (EF-06-09) ; code d'urgence (EF-06-08).
-- [ ] ~~Téléconsultation (EF-05-10/11)~~ → **remontée le 2026-09-28** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le rendez-vous. Se construit avec le circuit RDV ci-dessus. Reste à confirmer s'il s'agit d'une consultation réellement à distance (visioconférence, décision **D2**) ou d'une prise de rendez-vous à distance — ce n'est ni le même coût ni le même cadre.
+- [ ] **Prise de rendez-vous à distance** → **remontée le 2026-09-28** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le créneau, l'assistante le pointe à son arrivée. Se construit avec le circuit RDV ci-dessus.
+- [ ] **Téléconsultation réelle (EF-05-10/11)** — visioconférence, acte à distance : **reste en lot V4**, décision du chef de projet (« on verra un peu plus tard »), et toujours suspendue à **D2**. Elle s'appuiera sur le circuit de prise de rendez-vous à distance : on ne consulte pas à distance quelqu'un qui n'a pas pu prendre rendez-vous à distance.
 - [ ] Statistiques anonymisées (EF-12-08).
 
 ## Du point où nous en sommes à la mise en service
@@ -316,6 +319,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-28 | CDC | Compléments : **agenda du médecin** (point 8, l'index existe déjà en base) et arbitrage téléconsultation — la **prise de rendez-vous à distance se fait maintenant**, la consultation à distance réelle attend D2. |
 | 2026-09-28 | CDC | **Addendum du chef de projet** (`ADDENDUM-CDC-2026-09-28.md`) : huit points, dont **trois reprises de code livré** (RDV fixés par le médecin, suppression du rôle biologiste, résultats libérés par le médecin). Trois arbitrages tranchés le jour même. Ordonnancement proposé : les reprises d'abord, ~20 à 27 jours au total. Cinq questions restent ouvertes. |
 | 2026-09-26 | P6 | Socle commande pharmacie (API) : quartier/commune, pharmacie partenaire, rôle `LIVREUR`, `Commande` + `ReponsePharmacie`, appel au quartier, attribution atomique au premier déclarant, rétractation, choix du mode de remise. 283 tests API. Front à faire. |
 | 2026-09-25 | P3 | Renouvellement et produits réglementés (EF-05-09, EF-05-12), API + interfaces. 261 tests API, 5 parcours e2e. Deux signatures rendues obligatoires dans `motifDeRefus` pour que le compilateur force les appelants : sans cela les deux règles restaient inertes. |
