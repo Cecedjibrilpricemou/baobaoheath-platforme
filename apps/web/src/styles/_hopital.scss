@@ -202,3 +202,39 @@
   &__row--anormal  { background: rgba(245, 158, 11, .10); }
   &__row--critique { background: rgba(239, 68, 68, .12); }
 }
+
+// ── L'explication du médecin, avant les chiffres (addendum du 2026-09-28) ──
+// Elle passe avant la valeur brute parce que c'est elle que le patient doit
+// lire en premier : « Hémoglobine 6 g/dL » ne lui dit rien tout seul.
+// Ces règles sont ici et non dans un .scss de composant : `parcours.component`
+// n'a pas de `styleUrl`, ses styles viennent de cette feuille globale.
+.bb-explication {
+  margin: 10px 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-info-bg);
+  border: 1px solid var(--bb-info-border);
+  border-left: 3px solid var(--bb-info);
+
+  &__titre {
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    font-size: 12.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    color: var(--bb-info);
+    i { font-size: 12px; }
+  }
+
+  &__texte {
+    margin: 7px 0 0;
+    font-size: 13.5px; line-height: 1.6;
+    color: var(--bb-text-primary);
+    white-space: pre-wrap;
+  }
+}
+
+// En sombre, `--bb-info` (#1E40AF) sur #0A0F2D serait illisible. Feuille
+// globale : pas de `:host-context` ici, l'attribut est porté par <html>.
+[data-theme='dark'] .bb-explication {
+  border-left-color: #60A5FA;
+  .bb-explication__titre { color: #60A5FA; }
+}

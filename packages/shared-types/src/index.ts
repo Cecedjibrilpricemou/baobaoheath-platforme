@@ -1509,6 +1509,15 @@ export interface DemandeAnalyseView {
   valideeLe: HorodatageApi | null;
   valideur: PersonneRefView | null;
   commentaireBiologiste: string | null;
+  /**
+   * Traduction en langage clair, ecrite par le medecin quand il a libere les
+   * resultats (addendum du 2026-09-28). C'est elle qui donne son sens au
+   * chiffre : sans elle, le patient lit « Hemoglobine 6 g/dL » sans savoir
+   * s'il doit s'inquieter.
+   */
+  commentaireMedecin: string | null;
+  /** Renseigne des qu'un medecin a libere : le patient peut voir ses resultats. */
+  libereePar?: { id: string; prenom: string; nom: string } | null;
   /** Null tant que les resultats ne sont pas diffuses au patient (EF-04-09). */
   diffuseePatientLe: HorodatageApi | null;
   echantillons: EchantillonView[];

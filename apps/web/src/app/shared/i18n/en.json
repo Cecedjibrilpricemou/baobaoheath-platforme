@@ -539,7 +539,9 @@
       "COL_VALEUR": "Value",
       "COL_LECTURE": "Reading",
       "COL_DEMANDE": "Request"
-    }
+    },
+    "EXPLICATION_MEDECIN": "Your doctor’s explanation",
+    "PAS_ENCORE_LIBERE": "Your results are ready. Your doctor needs to review them before sharing them with you."
   },
   "ASC": {
     "ROLE": "Health Worker",
@@ -932,6 +934,29 @@
       "EN_RETARD": "overdue",
       "ORIENTE_LE": "referred on {{date}}",
       "ERR_LOAD": "Could not load your referrals."
+    },
+    "NAV_RESULTATS": "Results to release",
+    "RESULTATS": {
+      "TITLE": "Results to release",
+      "SUB": "Patients only see these results once you release them. You can add an explanation.",
+      "EMPTY": "Nothing pending. All your patients have received their results.",
+      "CRITIQUES": "Critical values",
+      "AUTRES": "Other results",
+      "CRITIQUE": "critical",
+      "ANORMAL": "out of range",
+      "NORMAL": "in range",
+      "NB_EXAMENS": "{{n}} test(s)",
+      "VALIDEE_LE": "Validated on",
+      "ATTEND_DEPUIS": "patient waiting for {{n}} day(s)",
+      "VOIR": "Open the record",
+      "LIBERER": "Release to patient",
+      "CONFIRMER": "Confirm release",
+      "EXPLICATION": "Explanation for the patient",
+      "EXPLICATION_AIDE": "Optional, but it is what gives the number its meaning: a result is written for a clinician, not for the patient.",
+      "EXPLICATION_EX": "E.g. your iron level is a little low, nothing worrying. We will discuss it at your next appointment.",
+      "OK_LIBERE": "{{patient}} can now view their results.",
+      "ERR_LOAD": "Could not load the results to release.",
+      "ERR_LIBERER": "The release failed."
     }
   },
   "ADMIN": {

@@ -20,6 +20,11 @@ export const MEDECIN_ROUTES: Routes = [
           import('./consultations/consultations.component').then(m => m.MedecinConsultationsComponent)
       },
       {
+        path: 'resultats',
+        loadComponent: () =>
+          import('./resultats/resultats.component').then(m => m.ResultatsComponent)
+      },
+      {
         path: 'orientations',
         loadComponent: () =>
           import('./orientations/orientations.component').then(m => m.OrientationsComponent)

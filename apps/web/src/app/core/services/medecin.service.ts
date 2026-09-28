@@ -7,7 +7,10 @@ import { Consultation } from '../models/asc.model';
 import { MedecinStats, OrdonnanceCreationPayload, ValidationDiagnosticPayload } from '../models/medecin.model';
 import { ApiResponse } from '../models/api.model';
 import type {
+  DemandeAnalyseView,
+  LibererResultatsDto,
   OrientationMedecinView,
+  ResultatALibererView,
   ReferencementATraiterView,
   ReferralStatus,
   RepondreReferencementDto,
@@ -19,6 +22,17 @@ export class MedecinService {
 
   getPatientDossier(idPatient: string): Observable<ApiResponse<Patient>> {
     return this.api.get<ApiResponse<Patient>>(`/patients/${idPatient}`);
+  }
+
+  /** Les resultats valides que le patient ne voit pas encore (addendum 2026-09-28). */
+  getResultatsALiberer(): Observable<ApiResponse<ResultatALibererView[]>> {
+    return this.api.get<ApiResponse<ResultatALibererView[]>>('/medecin/resultats');
+  }
+
+  /** Ouvre l'acces au patient, avec une explication en langage clair. */
+  libererResultats(idDemande: string, commentaire?: string): Observable<ApiResponse<DemandeAnalyseView>> {
+    const payload: LibererResultatsDto = commentaire ? { commentaire } : {};
+    return this.api.post<ApiResponse<DemandeAnalyseView>>(`/medecin/resultats/${idDemande}/liberer`, payload);
   }
 
   /** Les patients que l'accueil a orientes vers ce medecin (EF-03-05). */

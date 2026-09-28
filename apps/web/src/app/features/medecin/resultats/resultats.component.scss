@@ -1,0 +1,133 @@
+// features/medecin/resultats — même grammaire que « Orientations ».
+.bb-liber {
+  padding: 1.75rem;
+  max-width: 880px;
+  margin: 0 auto;
+
+  &__section {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--bb-font-display);
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--bb-text-secondary);
+    margin: 22px 0 10px;
+
+    &--danger { color: var(--bb-danger); }
+    i { font-size: 14px; }
+  }
+
+  &__empty { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  &__empty-state {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i { font-size: 30px; color: var(--bb-primary); }
+  }
+
+  &__card {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
+    margin-bottom: 12px; box-shadow: var(--bb-shadow-sm);
+
+    // Une valeur critique que le patient n'a pas encore reçue : la carte le dit.
+    &--critique { border-color: var(--bb-danger-border); }
+  }
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+
+  &__patient {
+    display: block;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__attente {
+    margin: 0 0 12px;
+    font-size: 12.5px; color: var(--bb-text-secondary);
+    strong { color: var(--bb-danger); font-weight: 700; }
+  }
+
+  &__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  &__lien {
+    font-size: 13px; font-weight: 600;
+    color: var(--bb-primary); text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+
+  &__btn {
+    padding: 8px 16px; border-radius: var(--bb-radius-pill);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-primary);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+
+    &:hover:not(:disabled) { border-color: var(--bb-primary); color: var(--bb-primary); }
+    &:disabled { opacity: .6; cursor: default; }
+
+    &--primaire {
+      background: var(--bb-primary); border-color: var(--bb-primary); color: #fff;
+      margin-top: 10px;
+      &:hover:not(:disabled) { color: #fff; filter: brightness(1.05); }
+    }
+  }
+
+  &__form {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--bb-border-light);
+  }
+
+  &__label {
+    display: block;
+    font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
+  }
+
+  // Pourquoi ce champ existe : sans explication, le chiffre ne dit rien au patient.
+  &__aide {
+    margin: 4px 0 8px;
+    font-size: 12.5px; color: var(--bb-text-muted); line-height: 1.5;
+  }
+
+  &__textarea {
+    width: 100%; box-sizing: border-box;
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-primary);
+    font-family: inherit; font-size: 13.5px; line-height: 1.55;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--bb-primary); }
+    &::placeholder { color: var(--bb-text-muted); }
+  }
+}
+
+.bb-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: var(--bb-radius-pill);
+  font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+  color: var(--bb-text-secondary);
+
+  i { font-size: 12px; }
+
+  &--danger  { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
+  &--warning { background: var(--bb-warning-bg); border-color: var(--bb-warning-border); color: var(--bb-warning); }
+}
+
+// En sombre, `--bb-danger` et `--bb-warning` ne sont pas redéfinis : le rouge
+// #DC2626 sur #2D0A0A serait illisible. Même parti pris que le tableau de bord
+// médecin — l'accent passe à une teinte claire.
+:host-context([data-theme='dark']) {
+  .bb-liber__section--danger,
+  .bb-liber__attente strong { color: #F87171; }
+
+  .bb-badge {
+    &--danger  { color: #F87171; }
+    &--warning { color: #FBBF24; }
+  }
+}

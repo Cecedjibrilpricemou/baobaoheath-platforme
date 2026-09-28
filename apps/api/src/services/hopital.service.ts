@@ -44,6 +44,7 @@ export const DEMANDE_INCLUDE = {
   prescripteur: { select: PERSONNE_SELECT },
   laboratoire: { select: STRUCTURE_SELECT },
   valideur: { select: PERSONNE_SELECT },
+  liberePar: { select: PERSONNE_SELECT },
   echantillons: { include: { preleveur: { select: PERSONNE_SELECT } }, orderBy: { preleveLe: 'asc' } },
   lignes: {
     include: { examen: { select: EXAMEN_SELECT }, resultat: { include: { saisiPar: { select: PERSONNE_SELECT }, echantillon: { select: { code: true } } } } },
@@ -112,6 +113,8 @@ export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
     valideeLe: d.valideeLe,
     valideur: d.valideur,
     commentaireBiologiste: d.commentaireBiologiste,
+    commentaireMedecin: d.commentaireMedecin,
+    libereePar: d.liberePar ?? null,
     diffuseePatientLe: d.diffuseePatientLe,
     echantillons: d.echantillons.map((e) => ({ id: e.id, code: e.code, specimen: e.specimen, preleveLe: e.preleveLe, commentaire: e.commentaire, preleveur: e.preleveur })),
     alerteCritiqueEnAttente: d._count.alertesCritiques > 0,
@@ -125,7 +128,7 @@ export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
 export function versDemandeViewPatient(d: DemandeRow): DemandeAnalyseView {
   const vue = versDemandeView(d);
   if (vue.diffuseePatientLe) return vue;
-  return { ...vue, commentaireBiologiste: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
+  return { ...vue, commentaireBiologiste: null, commentaireMedecin: null, libereePar: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
 }
 
 function versEpisodeView(e: EpisodeRow): EpisodeSoinsView {

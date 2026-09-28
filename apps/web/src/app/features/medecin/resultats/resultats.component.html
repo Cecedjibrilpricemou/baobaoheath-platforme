@@ -1,0 +1,129 @@
+<div class="bb-liber">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-inbox" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.RESULTATS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'MEDECIN.RESULTATS.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-liber__empty">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (resultats().length === 0) {
+    <div class="bb-liber__empty-state">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <p>{{ 'MEDECIN.RESULTATS.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+
+    @if (critiques().length) {
+      <h2 class="bb-liber__section bb-liber__section--danger">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'MEDECIN.RESULTATS.CRITIQUES' | translate }}
+      </h2>
+      @for (r of critiques(); track r.idDemande) {
+        <article class="bb-liber__card bb-liber__card--critique">
+          <div class="bb-liber__head">
+            <div>
+              <span class="bb-liber__patient">{{ r.patient.prenom }} {{ r.patient.nom }}</span>
+              <span class="bb-liber__meta">
+                {{ r.numero }} · {{ r.laboratoire.nom }} ·
+                {{ 'MEDECIN.RESULTATS.NB_EXAMENS' | translate: { n: r.nbExamens } }}
+              </span>
+            </div>
+            <span class="bb-badge bb-badge--danger">
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+              {{ 'MEDECIN.RESULTATS.CRITIQUE' | translate }}
+            </span>
+          </div>
+
+          <p class="bb-liber__attente">
+            {{ 'MEDECIN.RESULTATS.VALIDEE_LE' | translate }} {{ r.valideeLe | date:'short' }}
+            @if (joursDAttente(r.valideeLe); as j) {
+              — <strong>{{ 'MEDECIN.RESULTATS.ATTEND_DEPUIS' | translate: { n: j } }}</strong>
+            }
+          </p>
+
+          <div class="bb-liber__actions">
+            <a class="bb-liber__lien" [routerLink]="['/medecin/orientations']" [queryParams]="{ episode: r.idEpisode }">
+              {{ 'MEDECIN.RESULTATS.VOIR' | translate }}
+            </a>
+            <button type="button" class="bb-liber__btn" (click)="ouvrir(r.idDemande)">
+              {{ (ouverte() === r.idDemande ? 'COMMON.CANCEL' : 'MEDECIN.RESULTATS.LIBERER') | translate }}
+            </button>
+          </div>
+
+          @if (ouverte() === r.idDemande) {
+            <div class="bb-liber__form">
+              <label class="bb-liber__label" [attr.for]="'c-' + r.idDemande">
+                {{ 'MEDECIN.RESULTATS.EXPLICATION' | translate }}
+              </label>
+              <p class="bb-liber__aide">{{ 'MEDECIN.RESULTATS.EXPLICATION_AIDE' | translate }}</p>
+              <textarea [id]="'c-' + r.idDemande" class="bb-liber__textarea" rows="3"
+                        maxlength="2000" [(ngModel)]="commentaire"
+                        [placeholder]="'MEDECIN.RESULTATS.EXPLICATION_EX' | translate"></textarea>
+              <button type="button" class="bb-liber__btn bb-liber__btn--primaire"
+                      [disabled]="enCours() === r.idDemande" (click)="liberer(r)">
+                {{ (enCours() === r.idDemande ? 'COMMON.LOADING' : 'MEDECIN.RESULTATS.CONFIRMER') | translate }}
+              </button>
+            </div>
+          }
+        </article>
+      }
+    }
+
+    @if (ordinaires().length) {
+      <h2 class="bb-liber__section">{{ 'MEDECIN.RESULTATS.AUTRES' | translate }}</h2>
+      @for (r of ordinaires(); track r.idDemande) {
+        <article class="bb-liber__card">
+          <div class="bb-liber__head">
+            <div>
+              <span class="bb-liber__patient">{{ r.patient.prenom }} {{ r.patient.nom }}</span>
+              <span class="bb-liber__meta">
+                {{ r.numero }} · {{ r.laboratoire.nom }} ·
+                {{ 'MEDECIN.RESULTATS.NB_EXAMENS' | translate: { n: r.nbExamens } }}
+              </span>
+            </div>
+            @if (r.contientAnormal) {
+              <span class="bb-badge bb-badge--warning">{{ 'MEDECIN.RESULTATS.ANORMAL' | translate }}</span>
+            } @else {
+              <span class="bb-badge">{{ 'MEDECIN.RESULTATS.NORMAL' | translate }}</span>
+            }
+          </div>
+
+          <p class="bb-liber__attente">
+            {{ 'MEDECIN.RESULTATS.VALIDEE_LE' | translate }} {{ r.valideeLe | date:'short' }}
+            @if (joursDAttente(r.valideeLe); as j) {
+              — <strong>{{ 'MEDECIN.RESULTATS.ATTEND_DEPUIS' | translate: { n: j } }}</strong>
+            }
+          </p>
+
+          <div class="bb-liber__actions">
+            <a class="bb-liber__lien" [routerLink]="['/medecin/orientations']" [queryParams]="{ episode: r.idEpisode }">
+              {{ 'MEDECIN.RESULTATS.VOIR' | translate }}
+            </a>
+            <button type="button" class="bb-liber__btn" (click)="ouvrir(r.idDemande)">
+              {{ (ouverte() === r.idDemande ? 'COMMON.CANCEL' : 'MEDECIN.RESULTATS.LIBERER') | translate }}
+            </button>
+          </div>
+
+          @if (ouverte() === r.idDemande) {
+            <div class="bb-liber__form">
+              <label class="bb-liber__label" [attr.for]="'c-' + r.idDemande">
+                {{ 'MEDECIN.RESULTATS.EXPLICATION' | translate }}
+              </label>
+              <p class="bb-liber__aide">{{ 'MEDECIN.RESULTATS.EXPLICATION_AIDE' | translate }}</p>
+              <textarea [id]="'c-' + r.idDemande" class="bb-liber__textarea" rows="3"
+                        maxlength="2000" [(ngModel)]="commentaire"
+                        [placeholder]="'MEDECIN.RESULTATS.EXPLICATION_EX' | translate"></textarea>
+              <button type="button" class="bb-liber__btn bb-liber__btn--primaire"
+                      [disabled]="enCours() === r.idDemande" (click)="liberer(r)">
+                {{ (enCours() === r.idDemande ? 'COMMON.LOADING' : 'MEDECIN.RESULTATS.CONFIRMER') | translate }}
+              </button>
+            </div>
+          }
+        </article>
+      }
+    }
+  }
+</div>

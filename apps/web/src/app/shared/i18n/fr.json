@@ -539,7 +539,9 @@
       "COL_VALEUR": "Valeur",
       "COL_LECTURE": "Lecture",
       "COL_DEMANDE": "Demande"
-    }
+    },
+    "EXPLICATION_MEDECIN": "Explication de votre médecin",
+    "PAS_ENCORE_LIBERE": "Vos résultats sont prêts. Votre médecin doit d'abord les relire avant de vous les transmettre."
   },
   "ASC": {
     "ROLE": "Agent de Santé",
@@ -932,6 +934,29 @@
       "EN_RETARD": "à voir",
       "ORIENTE_LE": "orienté le {{date}}",
       "ERR_LOAD": "Impossible de charger vos orientations."
+    },
+    "NAV_RESULTATS": "Résultats à libérer",
+    "RESULTATS": {
+      "TITLE": "Résultats à libérer",
+      "SUB": "Le patient ne voit ces résultats qu'après votre libération. Vous pouvez y joindre une explication.",
+      "EMPTY": "Aucun résultat en attente. Vos patients ont tous reçu les leurs.",
+      "CRITIQUES": "Valeurs critiques",
+      "AUTRES": "Autres résultats",
+      "CRITIQUE": "critique",
+      "ANORMAL": "hors bornes",
+      "NORMAL": "dans les bornes",
+      "NB_EXAMENS": "{{n}} examen(s)",
+      "VALIDEE_LE": "Validé le",
+      "ATTEND_DEPUIS": "le patient attend depuis {{n}} jour(s)",
+      "VOIR": "Voir le dossier",
+      "LIBERER": "Libérer au patient",
+      "CONFIRMER": "Confirmer la libération",
+      "EXPLICATION": "Explication pour le patient",
+      "EXPLICATION_AIDE": "Facultatif, mais c'est elle qui donne son sens au chiffre : un résultat est écrit pour un soignant, pas pour le patient.",
+      "EXPLICATION_EX": "Ex. : votre taux de fer est un peu bas, rien d'inquiétant. Nous en reparlons au prochain rendez-vous.",
+      "OK_LIBERE": "{{patient}} peut maintenant consulter ses résultats.",
+      "ERR_LOAD": "Impossible de charger les résultats à libérer.",
+      "ERR_LIBERER": "La libération a échoué."
     }
   },
   "PHARMACIEN": {
