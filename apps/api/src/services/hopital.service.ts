@@ -300,8 +300,31 @@ export async function listerEpisodes(
   return { items: rows.map(versEpisodeResume), total, page: filtres.page, limit: filtres.limit };
 }
 
+/**
+ * Masque les valeurs d'analyse pour l'agent d'accueil (addendum du 2026-09-28).
+ *
+ * Fermer `/demandes-analyse/:id` ne suffisait pas : la fiche d'episode porte
+ * elle aussi les lignes et leurs resultats, et elle lui reste ouverte — c'est
+ * son ecran de travail. Sans ce filtre, le droit retire d'un cote revenait par
+ * l'autre. Il garde ce dont il a besoin, la liste des examens demandes et
+ * l'avancement, mais pas les valeurs.
+ */
+function sansValeursPourLAccueil(user: JwtPayload, vue: EpisodeSoinsView): EpisodeSoinsView {
+  if (user.role !== 'AGENT_ACCUEIL') return vue;
+  return {
+    ...vue,
+    demandesAnalyse: vue.demandesAnalyse.map((d) => ({
+      ...d,
+      commentaireBiologiste: null,
+      commentaireMedecin: null,
+      libereePar: null,
+      lignes: d.lignes.map((l) => ({ ...l, resultat: null })),
+    })),
+  };
+}
+
 export async function getEpisode(user: JwtPayload, idEpisode: string): Promise<EpisodeSoinsView> {
-  return versEpisodeView(await episodeDeLaStructure(user, idEpisode));
+  return sansValeursPourLAccueil(user, versEpisodeView(await episodeDeLaStructure(user, idEpisode)));
 }
 
 export async function modifierEpisode(user: JwtPayload, idEpisode: string, dto: UpdateEpisodeDto): Promise<EpisodeSoinsView> {

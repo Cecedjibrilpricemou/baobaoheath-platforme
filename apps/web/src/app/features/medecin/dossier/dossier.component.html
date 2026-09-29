@@ -1,0 +1,191 @@
+<div class="bb-dossier">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-folder-open" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.DOSSIER.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'MEDECIN.DOSSIER.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-dossier__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (episode(); as ep) {
+
+    <!-- ── Identité et motif ─────────────────────────────────────── -->
+    <section class="bb-dossier__card">
+      <div class="bb-dossier__head">
+        <div>
+          <span class="bb-dossier__patient">{{ ep.patient.prenom }} {{ ep.patient.nom }}</span>
+          <span class="bb-dossier__meta">
+            @if (age(ep.patient.dateNaissance); as a) { {{ a }} ans · }
+            {{ ep.patient.sexe }} · {{ ep.patient.telephone }}
+          </span>
+        </div>
+        <span [class]="statutClasse(ep.statut)">{{ 'HOPITAL.EPISODE_STATUT.' + ep.statut | translate }}</span>
+      </div>
+
+      <p class="bb-dossier__motif">{{ ep.motif }}</p>
+      <p class="bb-dossier__pied">
+        <span class="bb-dossier__numero">{{ ep.numero }}</span>
+        · {{ ep.structure.nom }}
+        @if (ep.service) { · {{ ep.service }} }
+        · {{ 'MEDECIN.DOSSIER.OUVERT_LE' | translate }} {{ ep.ouvertLe | date:'short' }}
+      </p>
+
+      @if (!termine()) {
+        <div class="bb-dossier__actions">
+          <button matButton="filled" type="button" (click)="prescrit.set(!prescrit())">
+            <i class="pi pi-filter" aria-hidden="true"></i>
+            {{ (prescrit() ? 'COMMON.CANCEL' : 'MEDECIN.DOSSIER.PRESCRIRE') | translate }}
+          </button>
+          <button matButton type="button" (click)="cloturer()">
+            <i class="pi pi-lock" aria-hidden="true"></i>
+            {{ 'HOPITAL.DETAIL.ACTION_CLOTURER' | translate }}
+          </button>
+        </div>
+      }
+    </section>
+
+    <!-- ── Prescrire des analyses ────────────────────────────────── -->
+    @if (prescrit() && !termine()) {
+      <section class="bb-hop-panel">
+        <h2 class="bb-hop-card__title"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_TITLE' | translate }}</h2>
+
+        @if (laboratoires().length === 0) {
+          <div class="bb-banner bb-banner--offline" role="alert">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            <div class="bb-banner__text"><span class="bb-banner__title">{{ 'HOPITAL.DETAIL.DA_NO_LABO' | translate }}</span></div>
+          </div>
+        }
+
+        <div class="bb-hop-panel__grid">
+          <div class="form-field-wrap">
+            <label class="form-label" for="da-labo">{{ 'HOPITAL.DETAIL.DA_LABO' | translate }} *</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <mat-select id="da-labo" [(ngModel)]="demande.idLaboratoire">
+                @for (l of laboratoires(); track l.id) { <mat-option [value]="l.id">{{ l.nom }} · {{ l.prefecture }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-field-wrap">
+            <label class="form-label" for="da-urgence">{{ 'HOPITAL.DETAIL.DA_URGENCE' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <mat-select id="da-urgence" [(ngModel)]="demande.urgence">
+                @for (u of urgences; track u) { <mat-option [value]="u">{{ 'HOPITAL.URGENCE.' + u | translate }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-field-wrap bb-hop-panel__full">
+            <label class="form-label" for="da-indication">{{ 'HOPITAL.DETAIL.DA_INDICATION' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="da-indication" maxlength="1000"
+                     [placeholder]="'HOPITAL.DETAIL.DA_INDICATION_PH' | translate"
+                     [(ngModel)]="demande.indicationClinique" />
+            </mat-form-field>
+          </div>
+
+          <div class="form-field-wrap bb-hop-panel__full">
+            <label class="form-label" for="da-filtre">{{ 'HOPITAL.DETAIL.DA_EXAMENS' | translate }} *</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <i matPrefix class="pi pi-search" style="padding:0 6px 0 14px;color:var(--bb-primary)"></i>
+              <input matInput id="da-filtre" type="search"
+                     [placeholder]="'HOPITAL.DETAIL.DA_EXAMENS_SEARCH' | translate"
+                     [ngModel]="filtreExamens()" (ngModelChange)="filtreExamens.set($event)" />
+            </mat-form-field>
+
+            <p class="bb-hop-selected">{{ 'HOPITAL.DETAIL.DA_SELECTED' | translate: { count: selection().size } }}</p>
+
+            <div class="bb-hop-examens">
+              @for (g of examensFiltres(); track g.categorie) {
+                <div class="bb-hop-examens__cat">{{ g.categorie }}</div>
+                @for (e of g.items; track e.id) {
+                  <label class="bb-hop-examens__row" [class.bb-hop-examens__row--on]="examenChoisi(e.id)">
+                    <input type="checkbox" [checked]="examenChoisi(e.id)" (change)="basculerExamen(e)" />
+                    <span class="bb-hop-examens__lib">{{ e.libelle }}</span>
+                    @if (e.aJeun) { <span class="bb-hop-examens__flag">{{ 'HOPITAL.DETAIL.DA_AJEUN' | translate }}</span> }
+                    <span class="bb-hop-examens__code">{{ e.codeLoinc }}</span>
+                  </label>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="bb-dossier__actions">
+          <button matButton="filled" type="button"
+                  [disabled]="isSaving() || !demande.idLaboratoire || selection().size === 0"
+                  (click)="creerDemande()">
+            {{ (isSaving() ? 'COMMON.LOADING' : 'MEDECIN.DOSSIER.ENVOYER') | translate }}
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- ── Analyses de cet épisode ───────────────────────────────── -->
+    <h2 class="bb-dossier__section">{{ 'MEDECIN.DOSSIER.ANALYSES' | translate }}</h2>
+
+    @if (ep.demandesAnalyse.length === 0) {
+      <p class="bb-dossier__muted">{{ 'MEDECIN.DOSSIER.AUCUNE_ANALYSE' | translate }}</p>
+    } @else {
+      @for (d of ep.demandesAnalyse; track d.id) {
+        <div class="bb-hop-sub">
+          <div class="bb-hop-sub__head">
+            <span class="bb-hop-sub__num">{{ d.numero }}</span>
+            <span style="display:flex;gap:6px">
+              <span [class]="urgenceClasse(d.urgence)">{{ 'HOPITAL.URGENCE.' + d.urgence | translate }}</span>
+              <span [class]="demandeClasse(d.statut)">{{ 'HOPITAL.DEMANDE_STATUT.' + d.statut | translate }}</span>
+            </span>
+          </div>
+
+          <p class="bb-hop-sub__line">
+            <i class="pi pi-map-marker" aria-hidden="true"></i>
+            {{ 'PATIENT.PARCOURS.LABO' | translate }} : <strong>{{ d.laboratoire.nom }}</strong>
+          </p>
+
+          @if (aLiberer(d)) {
+            <p class="bb-dossier__alerte">
+              <i class="pi pi-eye-slash" aria-hidden="true"></i>
+              {{ 'MEDECIN.DOSSIER.A_LIBERER' | translate }}
+              <a [routerLink]="['/medecin/resultats']">{{ 'MEDECIN.DOSSIER.A_LIBERER_LIEN' | translate }}</a>
+            </p>
+          }
+
+          @if (aResultats(d)) {
+            <div class="bb-resultats">
+              @for (l of d.lignes; track l.id) {
+                <div class="bb-resultats__row"
+                     [class.bb-resultats__row--critique]="l.resultat?.interpretation === 'CRITIQUE'"
+                     [class.bb-resultats__row--anormal]="l.resultat?.interpretation === 'ANORMAL'">
+                  <span class="bb-resultats__lib">{{ l.examen.libelle }}</span>
+                  <span class="bb-resultats__val">{{ l.resultat?.valeur ?? '—' }} <small>{{ l.resultat?.unite ?? l.examen.unite ?? '' }}</small></span>
+                  <span class="bb-resultats__ref">{{ reference(l) }}</span>
+                  @if (l.resultat) { <span [class]="lectureClasse(l.resultat.interpretation)">{{ 'LABO.LECTURE.' + l.resultat.interpretation | translate }}</span> }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="bb-hop-sub__tags">
+              @for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral">{{ l.examen.libelle }}</span> }
+            </div>
+          }
+
+          <div class="bb-hop-sub__actions">
+            <button matButton type="button" (click)="bonExamen(d)">
+              <i class="pi pi-print" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_BON' | translate }}
+            </button>
+            @if (aResultats(d)) {
+              <button matButton="filled" type="button" (click)="compteRendu(d)">
+                <i class="pi pi-file-check" aria-hidden="true"></i> {{ 'PATIENT.PARCOURS.CR' | translate }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    }
+
+  } @else {
+    <p class="bb-dossier__muted">{{ 'MEDECIN.DOSSIER.INTROUVABLE' | translate }}</p>
+  }
+</div>

@@ -20,7 +20,7 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN |
 | Modèle | 40 modèles Prisma, 21 enums, 21 migrations, **13 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward) |
-| Tests | **305 API** (Jest, 21 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
+| Tests | **321 API** (Jest, 22 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -242,6 +242,12 @@ L'audit passe par **`scripts/audit-gate.mjs`**, pas par `npm audit` brut : même
 > `gh run list --commit <sha>` est **peu fiable sur ce dépôt** : il renvoie parfois un run périmé, parfois rien. Interrogez par branche et filtrez sur `headSha` :
 > `gh run list --branch develop --limit 5 --json databaseId,headSha,status,conclusion`
 
+### Les permissions se testent
+
+`requireRole` porte ses rôles (`GardeDeRole.roles`), ce qui permet de parcourir la pile d'un routeur Express et d'affirmer qui peut atteindre quoi — voir `tests/routes-permissions.test.ts`. Avant, retirer un `requireRole` d'une route ne cassait aucun test et l'API s'ouvrait en silence.
+
+**Fermer une route ne suffit pas toujours.** La même donnée arrive souvent par plusieurs chemins : les résultats d'analyse sont exposés par `/demandes-analyse/:id` **et** par la fiche d'épisode. Retirer le droit d'un côté le laissait revenir par l'autre. Cherchez toujours le second chemin.
+
 ### Prouver, pas supposer
 
 La convention du projet est de **saboter ses propres tests** avant de les croire : retirer la garde, vérifier que le test tombe pour la bonne raison, restaurer. Une suite verte ne prouve rien tant qu'on ne l'a pas vue échouer.
@@ -297,7 +303,7 @@ Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté h
 | | Bloc | Taille | Où il tombe dans l'ancienne feuille |
 |---|---|---|---|
 | 1 | ✅ Résultats libérés par le médecin | M | **P2** — livré |
-| 2 | Le médecin prescrit, l'accueil se recentre | M | **P2** — absorbe le reliquat « médecin prescripteur » |
+| 2 | ✅ Le médecin prescrit, l'accueil se recentre | M | **P2** — livré le 2026-09-29 |
 | 3 | RDV fixés par le médecin + agenda + pointage | M | **P1** — remplace « orientation avec RDV » |
 | 4 | Suppression du rôle biologiste | M | **P2** — réécrit une case déjà cochée |
 | 5 | Prise de rendez-vous à distance | M | **P13 → remonte** |

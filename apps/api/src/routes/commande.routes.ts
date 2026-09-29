@@ -19,13 +19,13 @@ const router = Router();
 router.use(authenticate);
 
 /**
- * Lance la recherche d'une pharmacie pour une ordonnance signee. Ouvert au
- * prescripteur et a l'accueil : ce sont eux qui cloturent le passage a
- * l'hopital.
+ * Lance la recherche d'une pharmacie pour une ordonnance signee. Reserve aux
+ * prescripteurs : l'accueil en a ete retire le 2026-09-28 (addendum, point 9 —
+ * « ni prescription, ni ordonnance, ni produit »).
  */
 router.post(
   '/',
-  requireRole('MEDECIN', 'ASC', 'ASC_SUPERVISOR', 'AGENT_ACCUEIL'),
+  requireRole('MEDECIN', 'ASC', 'ASC_SUPERVISOR'),
   validateBody(lancerRechercheSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.lancerRecherchePharmacie(req.body.idOrdonnance);

@@ -1,7 +1,7 @@
-// shared/components/hopital-layout/hopital-layout.component.ts
-// Espace « Accueil hopital » (role AGENT_ACCUEIL) : admission, episodes de
+﻿// shared/components/hopital-layout/hopital-layout.component.ts
+// Espace Â« Accueil hopital Â» (role AGENT_ACCUEIL) : admission, episodes de
 // soins, demandes d'analyse. Meme coquille que les autres espaces.
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -76,10 +76,21 @@ export class HopitalLayoutComponent {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  navItems = [
-    { labelKey: 'HOPITAL.NAV_DASHBOARD', icon: 'pi-th-large',  route: '/hopital/tableau-de-bord' },
-    { labelKey: 'HOPITAL.NAV_ADMISSION', icon: 'pi-user-plus', route: '/hopital/admission' },
-    { labelKey: 'HOPITAL.NAV_EPISODES',  icon: 'pi-folder',    route: '/hopital/episodes' },
-    { labelKey: 'HOPITAL.NAV_ALERTES',   icon: 'pi-bell',      route: '/hopital/alertes' },
-  ];
+  /**
+   * Les alertes de valeurs critiques ne concernent plus l'agent d'accueil :
+   * depuis l'addendum du 2026-09-28 il ne prescrit plus, donc aucune alerte ne
+   * lui est destinÃ©e, et l'API lui a fermÃ© la lecture des rÃ©sultats. L'entrÃ©e
+   * reste pour l'administrateur de structure, vers qui les escalades partent.
+   */
+  readonly navItems = computed(() => {
+    const items = [
+      { labelKey: 'HOPITAL.NAV_DASHBOARD', icon: 'pi-th-large',  route: '/hopital/tableau-de-bord' },
+      { labelKey: 'HOPITAL.NAV_ADMISSION', icon: 'pi-user-plus', route: '/hopital/admission' },
+      { labelKey: 'HOPITAL.NAV_EPISODES',  icon: 'pi-folder',    route: '/hopital/episodes' },
+    ];
+    if (this.currentUser()?.role !== 'AGENT_ACCUEIL') {
+      items.push({ labelKey: 'HOPITAL.NAV_ALERTES', icon: 'pi-bell', route: '/hopital/alertes' });
+    }
+    return items;
+  });
 }

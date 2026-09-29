@@ -45,7 +45,7 @@
           </p>
 
           <div class="bb-liber__actions">
-            <a class="bb-liber__lien" [routerLink]="['/medecin/orientations']" [queryParams]="{ episode: r.idEpisode }">
+            <a class="bb-liber__lien" [routerLink]="['/medecin/dossier', r.idEpisode]">
               {{ 'MEDECIN.RESULTATS.VOIR' | translate }}
             </a>
             <button type="button" class="bb-liber__btn" (click)="ouvrir(r.idDemande)">
@@ -99,7 +99,7 @@
           </p>
 
           <div class="bb-liber__actions">
-            <a class="bb-liber__lien" [routerLink]="['/medecin/orientations']" [queryParams]="{ episode: r.idEpisode }">
+            <a class="bb-liber__lien" [routerLink]="['/medecin/dossier', r.idEpisode]">
               {{ 'MEDECIN.RESULTATS.VOIR' | translate }}
             </a>
             <button type="button" class="bb-liber__btn" (click)="ouvrir(r.idDemande)">

@@ -933,7 +933,8 @@
       "SANS_DATE": "No date",
       "EN_RETARD": "overdue",
       "ORIENTE_LE": "referred on {{date}}",
-      "ERR_LOAD": "Could not load your referrals."
+      "ERR_LOAD": "Could not load your referrals.",
+      "OUVRIR": "Open the record"
     },
     "NAV_RESULTATS": "Results to release",
     "RESULTATS": {
@@ -957,6 +958,19 @@
       "OK_LIBERE": "{{patient}} can now view their results.",
       "ERR_LOAD": "Could not load the results to release.",
       "ERR_LIBERER": "The release failed."
+    },
+    "DOSSIER": {
+      "TITLE": "Visit record",
+      "SUB": "Tests already ordered for this episode, and new ones.",
+      "OUVERT_LE": "opened on",
+      "PRESCRIRE": "Order tests",
+      "ENVOYER": "Send to the laboratory",
+      "ANALYSES": "Tests for this episode",
+      "AUCUNE_ANALYSE": "No test ordered yet.",
+      "A_LIBERER": "Results validated: the patient cannot see them yet.",
+      "A_LIBERER_LIEN": "Release them",
+      "CLOTURER_CONFIRM": "Close this episode? Care will be considered complete.",
+      "INTROUVABLE": "Record not found."
     }
   },
   "ADMIN": {

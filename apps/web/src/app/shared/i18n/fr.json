@@ -933,7 +933,8 @@
       "SANS_DATE": "Sans date",
       "EN_RETARD": "à voir",
       "ORIENTE_LE": "orienté le {{date}}",
-      "ERR_LOAD": "Impossible de charger vos orientations."
+      "ERR_LOAD": "Impossible de charger vos orientations.",
+      "OUVRIR": "Ouvrir le dossier"
     },
     "NAV_RESULTATS": "Résultats à libérer",
     "RESULTATS": {
@@ -957,6 +958,19 @@
       "OK_LIBERE": "{{patient}} peut maintenant consulter ses résultats.",
       "ERR_LOAD": "Impossible de charger les résultats à libérer.",
       "ERR_LIBERER": "La libération a échoué."
+    },
+    "DOSSIER": {
+      "TITLE": "Dossier de la visite",
+      "SUB": "Les analyses de cet épisode, et la prescription de nouvelles.",
+      "OUVERT_LE": "ouvert le",
+      "PRESCRIRE": "Prescrire des analyses",
+      "ENVOYER": "Envoyer au laboratoire",
+      "ANALYSES": "Analyses de cet épisode",
+      "AUCUNE_ANALYSE": "Aucune analyse prescrite pour l'instant.",
+      "A_LIBERER": "Résultats validés : le patient ne les voit pas encore.",
+      "A_LIBERER_LIEN": "Les libérer",
+      "CLOTURER_CONFIRM": "Clôturer cet épisode ? La prise en charge sera considérée comme terminée.",
+      "INTROUVABLE": "Dossier introuvable."
     }
   },
   "PHARMACIEN": {

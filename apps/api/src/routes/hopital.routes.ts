@@ -28,6 +28,16 @@ const router = Router();
 router.use(authenticate);
 router.use(requireRole('AGENT_ACCUEIL', 'MEDECIN', 'ADMIN_STRUCTURE'));
 
+/**
+ * Addendum du 2026-09-28 : l'accueil ne fait plus rien de medical. Il cherche
+ * ou cree le patient, ouvre l'episode de la visite, pointe la presence et
+ * redirige. Prescrire une analyse, la lire, l'annuler : c'est le medecin.
+ *
+ * Le routeur laisse passer l'accueil pour tout le reste, donc chaque route
+ * medicale porte sa propre garde.
+ */
+const ACTE_MEDICAL = requireRole('MEDECIN', 'ADMIN_STRUCTURE');
+
 // Les erreurs metier (AppError) remontent au middleware global : pas de
 // try/catch ici, Express 5 propage les rejets des handlers async.
 
@@ -84,7 +94,7 @@ router.patch('/episodes/:id', validateBody(updateEpisodeSchema), async (req: Aut
   res.json({ success: true, data });
 });
 
-router.post('/episodes/:id/cloturer', async (req: AuthRequest, res: Response) => {
+router.post('/episodes/:id/cloturer', ACTE_MEDICAL, async (req: AuthRequest, res: Response) => {
   const data: EpisodeSoinsView = await hopital.cloturerEpisode(req.user!, req.params['id'] as string, false);
   res.json({ success: true, data });
 });
@@ -100,23 +110,23 @@ router.post('/episodes/:id/orientation', validateBody(orientationSchema), async 
 });
 
 // ── Demandes d'analyse (EF-03-03, EF-03-04, EF-03-06) ────────────────
-router.post('/episodes/:id/demandes-analyse', validateBody(createDemandeAnalyseSchema), async (req: AuthRequest, res: Response) => {
+router.post('/episodes/:id/demandes-analyse', ACTE_MEDICAL, validateBody(createDemandeAnalyseSchema), async (req: AuthRequest, res: Response) => {
   const data: DemandeAnalyseView = await hopital.creerDemandeAnalyse(req.user!, req.params['id'] as string, req.body);
   res.status(201).json({ success: true, data });
 });
 
-router.get('/demandes-analyse/:id', async (req: AuthRequest, res: Response) => {
+router.get('/demandes-analyse/:id', ACTE_MEDICAL, async (req: AuthRequest, res: Response) => {
   const data: DemandeAnalyseView = await hopital.getDemandeAnalyse(req.user!, req.params['id'] as string);
   res.json({ success: true, data });
 });
 
-router.post('/demandes-analyse/:id/annuler', validateBody(annulerDemandeSchema), async (req: AuthRequest, res: Response) => {
+router.post('/demandes-analyse/:id/annuler', ACTE_MEDICAL, validateBody(annulerDemandeSchema), async (req: AuthRequest, res: Response) => {
   const data: DemandeAnalyseView = await hopital.annulerDemandeAnalyse(req.user!, req.params['id'] as string, req.body.motif);
   res.json({ success: true, data });
 });
 
 // Bon d'examen imprimable (HTML pret pour window.print).
-router.get('/demandes-analyse/:id/document', async (req: AuthRequest, res: Response) => {
+router.get('/demandes-analyse/:id/document', ACTE_MEDICAL, async (req: AuthRequest, res: Response) => {
   const html = await hopital.documentDemandeAnalyse(req.user!, req.params['id'] as string);
   res.type('html').send(html);
 });

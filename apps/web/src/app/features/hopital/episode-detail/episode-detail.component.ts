@@ -12,6 +12,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 import type { DemandeAnalyseView, EpisodeSoinsView, ExamenView, StructureRefView, Urgence } from '@baobaoheath/shared-types';
 import { HopitalService, MedecinRefView } from '../../../core/services/hopital.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -35,6 +36,17 @@ export class EpisodeDetailComponent implements OnInit {
   private toastr  = inject(ToastrService);
   private i18n    = inject(I18nService);
   private dialog  = inject(MatDialog);
+  private auth    = inject(AuthService);
+
+  /**
+   * Addendum du 2026-09-28 : l'agent d'accueil ne fait plus rien de medical.
+   * Il ouvre l'episode, oriente et pointe ; prescrire, lire un resultat et
+   * cloturer sont passes au medecin. L'API refuse deja ces appels — masquer
+   * les boutons evite de lui proposer des actions qui echoueront.
+   *
+   * L'ecran reste partage avec l'administrateur de structure, qui les garde.
+   */
+  readonly estAccueil = computed(() => this.auth.currentUser()?.role === 'AGENT_ACCUEIL');
 
   readonly statutClasse = statutEpisodeClasse;
   readonly demandeClasse = statutDemandeClasse;

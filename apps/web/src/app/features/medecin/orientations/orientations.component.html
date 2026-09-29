@@ -61,6 +61,12 @@
 
     <p class="bb-orient__motif">{{ o.motif }}</p>
 
+    <p class="bb-orient__actions">
+      <a class="bb-orient__lien" [routerLink]="['/medecin/dossier', o.idEpisode]">
+        {{ 'MEDECIN.ORIENTATIONS.OUVRIR' | translate }}
+      </a>
+    </p>
+
     <p class="bb-orient__pied">
       <span class="bb-orient__numero">{{ o.numeroEpisode }}</span>
       · {{ o.structure.nom }}

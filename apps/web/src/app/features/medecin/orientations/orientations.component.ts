@@ -6,6 +6,7 @@
 // vers quelqu'un qui ne le voyait pas arriver.
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import type { OrientationMedecinView } from '@baobaoheath/shared-types';
 
@@ -16,7 +17,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
 @Component({
   selector: 'app-medecin-orientations',
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, TranslatePipe],
+  imports: [DatePipe, NgTemplateOutlet, RouterLink, TranslatePipe],
   templateUrl: './orientations.component.html',
   styleUrl: './orientations.component.scss',
 })
