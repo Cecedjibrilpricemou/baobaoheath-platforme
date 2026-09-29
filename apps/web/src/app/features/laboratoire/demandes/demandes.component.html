@@ -4,7 +4,44 @@
     <h1 class="bb-page-head__title">{{ 'LABO.FILE.TITLE' | translate }}</h1>
     <p class="bb-page-head__sub">{{ 'LABO.FILE.SUBTITLE' | translate: { count: total() } }}</p>
   </div>
+  <div class="bb-page-head__actions">
+    <button matButton="filled" type="button" (click)="ouvrirScanner()">
+      <i class="pi pi-qrcode" aria-hidden="true"></i> {{ 'LABO.SCAN' | translate }}
+    </button>
+  </div>
 </header>
+
+<!-- Le patient arrive au comptoir : on scanne son code plutôt que de le
+     chercher dans la file ou de lui demander son nom. -->
+@if (showScanner()) {
+  <app-qr-scanner (detecte)="onQrDetecte($event)" (ferme)="showScanner.set(false)" />
+}
+
+@if (scan(); as s) {
+  <section class="bb-scan">
+    <div class="bb-scan__head">
+      <div>
+        <span class="bb-scan__patient">{{ s.patient.prenom }} {{ s.patient.nom }}</span>
+        <span class="bb-scan__meta">{{ s.patient.sexe }} · {{ s.patient.dateNaissance | date:'dd/MM/yyyy' }} · {{ s.patient.telephone }}</span>
+      </div>
+      <button matButton type="button" (click)="scan.set(null)">{{ 'LABO.SCAN_FERMER' | translate }}</button>
+    </div>
+
+    @if (s.demandes.length === 0) {
+      <p class="bb-scan__vide">{{ 'LABO.SCAN_AUCUNE' | translate }}</p>
+    } @else {
+      @for (d of s.demandes; track d.id) {
+        <a class="bb-scan__demande" [routerLink]="['/laboratoire/demandes', d.id]">
+          <span class="bb-scan__num">{{ d.numero }}</span>
+          <span [class]="urgenceClasse(d.urgence)">{{ 'HOPITAL.URGENCE.' + d.urgence | translate }}</span>
+          <span [class]="demandeClasse(d.statut)">{{ 'HOPITAL.DEMANDE_STATUT.' + d.statut | translate }}</span>
+          @if (d.aJeun) { <span class="bb-scan__jeune">{{ 'LABO.SCAN_A_JEUN' | translate }}</span> }
+          <span class="bb-scan__examens">{{ d.examens.join(' · ') }}</span>
+        </a>
+      }
+    }
+  </section>
+}
 
 <div class="bb-hop-toolbar">
   <div class="bb-pills" role="tablist" style="margin:0">

@@ -9,19 +9,20 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
-import type { DemandeAnalyseView, StatutDemandeAnalyse } from '@baobaoheath/shared-types';
+import type { DemandeAnalyseView, ScanLaboratoireView, StatutDemandeAnalyse } from '@baobaoheath/shared-types';
 import { LaboratoireService } from '../../../core/services/laboratoire.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { statutDemandeClasse, urgenceClasse } from '../../hopital/hopital.utils';
 import { nbResultatsSaisis } from '../laboratoire.utils';
+import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
 
 type Filtre = 'TOUS' | StatutDemandeAnalyse;
 
 @Component({
   selector: 'app-labo-demandes',
   standalone: true,
-  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, QrScannerComponent],
   templateUrl: './demandes.component.html',
 })
 export class LaboDemandesComponent implements OnInit {
@@ -42,6 +43,34 @@ export class LaboDemandesComponent implements OnInit {
   total     = signal(0);
   items     = signal<DemandeAnalyseView[]>([]);
   isLoading = signal(true);
+
+  /**
+   * Scan du QR patient au comptoir. Le laborantin voit ce qui reste a faire
+   * pour ce patient dans son laboratoire, sans le chercher dans la file.
+   */
+  showScanner = signal(false);
+  scan = signal<ScanLaboratoireView | null>(null);
+
+  ouvrirScanner() {
+    this.scan.set(null);
+    this.showScanner.set(true);
+  }
+
+  onQrDetecte(qrCode: string) {
+    this.showScanner.set(false);
+    this.labo.scanPatient(qrCode).subscribe({
+      next: (r) => this.scan.set(r.data ?? null),
+      error: (err) => {
+        const e = err as { status?: number; error?: { error?: string } };
+        this.toastr.error(
+          e?.status === 0
+            ? this.i18n.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE')
+            : e?.error?.error ?? this.i18n.t('LABO.SCAN_ERREUR'),
+          this.i18n.t('COMMON.ERROR_TITLE')
+        );
+      },
+    });
+  }
 
   private terme$ = new Subject<string>();
 

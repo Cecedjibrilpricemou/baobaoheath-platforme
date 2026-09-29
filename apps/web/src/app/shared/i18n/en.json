@@ -1655,6 +1655,12 @@
       "VALIDE_OK": "Results validated.",
       "ECHANTILLONS_TITLE": "Samples",
       "ECHANTILLONS_EMPTY": "No sample collected yet."
-    }
+    },
+    "SCAN": "Scan a patient",
+    "SCAN_TITRE": "Patient scanned",
+    "SCAN_AUCUNE": "No pending test for this patient in your laboratory.",
+    "SCAN_A_JEUN": "fasting",
+    "SCAN_FERMER": "Close",
+    "SCAN_ERREUR": "Unknown QR code, or no test for this patient here."
   }
 }

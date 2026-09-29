@@ -238,3 +238,44 @@
   border-left-color: #60A5FA;
   .bb-explication__titre { color: #60A5FA; }
 }
+
+// ── Panneau du scan patient au comptoir du laboratoire (2026-09-29) ──
+// Volontairement sobre : il montre ce qui reste a faire, pas un dossier.
+.bb-scan {
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-xl); padding: 1rem 1.15rem; margin-bottom: 14px;
+  box-shadow: var(--bb-shadow-sm);
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  &__patient {
+    display: block; font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; color: var(--bb-text-primary);
+  }
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__vide { margin: 0; font-size: 13px; color: var(--bb-text-secondary); }
+
+  &__demande {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 12px; margin-top: 8px; text-decoration: none;
+    border-radius: var(--bb-radius); border: 1px solid var(--bb-border-light);
+    background: var(--bb-surface-1); color: var(--bb-text-primary);
+    &:hover { border-color: var(--bb-primary); }
+  }
+  &__num { font-family: var(--bb-font-display); font-weight: 800; font-size: 13px; }
+  &__examens { font-size: 12.5px; color: var(--bb-text-secondary); flex-basis: 100%; }
+
+  // Un examen a jeun se signale : le laborantin doit le savoir avant de prelever.
+  &__jeune {
+    padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+    color: var(--bb-warning); font-size: 11.5px; font-weight: 700;
+  }
+}
+
+[data-theme='dark'] .bb-scan {
+  &__demande { background: rgba(255, 255, 255, .04); }
+  &__jeune { color: #FBBF24; }
+}

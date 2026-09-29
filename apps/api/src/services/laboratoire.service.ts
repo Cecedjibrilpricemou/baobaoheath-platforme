@@ -29,6 +29,7 @@ import type {
   LibererResultatsDto,
   PlanifierPrelevementDto,
   ResultatALibererView,
+  ScanLaboratoireView,
   SaisirResultatsDto,
   TableauDeBordLaboView,
   ValiderResultatsDto,
@@ -115,6 +116,72 @@ export async function fileDesDemandes(
     prisma.demandeAnalyse.count({ where }),
   ]);
   return { items: items.map(versDemandeView), total, page: opts.page, limit: opts.limit };
+}
+
+/**
+ * Scan du QR patient au comptoir du laboratoire.
+ *
+ * Le patient arrive avec son code ; le laborantin le scanne et voit ce qu'il y
+ * a a faire pour lui, sans chercher dans la file ni lui demander son nom.
+ *
+ * **Le scan ouvre une fenetre, pas le dossier.** On rend l'identite minimale et
+ * les demandes encore a traiter *dans ce laboratoire* — ni les resultats
+ * valides, ni les ordonnances, ni l'historique. Un QR est un identifiant, pas
+ * une cle du dossier medical : le pharmacien qui scanne le meme code voit des
+ * ordonnances et aucune analyse, et c'est voulu.
+ */
+export async function scanPatient(user: JwtPayload, qrCode: string): Promise<ScanLaboratoireView> {
+  const idLaboratoire = await laboratoireDe(user);
+
+  const patient = await prisma.patientProfile.findUnique({
+    where: { qrCode },
+    select: {
+      id: true, dateNaissance: true, sexe: true,
+      utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+    },
+  });
+  if (!patient) throw new NotFoundError('Patient non trouve');
+
+  const demandes = await prisma.demandeAnalyse.findMany({
+    where: {
+      idPatient: patient.id,
+      idLaboratoire,
+      // Ce qui reste a faire. Une demande validee est close pour le laboratoire,
+      // et l'afficher ici ferait croire qu'il y a encore un geste a poser.
+      statut: { in: ['TRANSMISE', 'RECUE', 'PRELEVEE', 'EN_ANALYSE'] },
+    },
+    select: {
+      id: true, numero: true, statut: true, urgence: true,
+      consignesPatient: true, creeLe: true,
+      lignes: { select: { examen: { select: { libelle: true, aJeun: true } } } },
+    },
+    // L'urgence d'abord, puis la plus ancienne : le meme ordre que la file.
+    orderBy: [{ urgence: 'desc' }, { creeLe: 'asc' }],
+    take: 20,
+  });
+
+  return {
+    patient: {
+      id: patient.id,
+      prenom: patient.utilisateur.prenom,
+      nom: patient.utilisateur.nom,
+      dateNaissance: patient.dateNaissance.toISOString(),
+      sexe: patient.sexe,
+      telephone: patient.utilisateur.telephone,
+    },
+    demandes: demandes.map((d) => ({
+      id: d.id,
+      numero: d.numero,
+      statut: d.statut,
+      urgence: d.urgence,
+      creeLe: d.creeLe.toISOString(),
+      consignesPatient: d.consignesPatient,
+      examens: d.lignes.map((l) => l.examen.libelle),
+      // Le laborantin doit le savoir avant de prelever.
+      aJeun: d.lignes.some((l) => l.examen.aJeun),
+    })),
+    totalDemandes: demandes.length,
+  };
 }
 
 export async function getDemande(user: JwtPayload, idDemande: string): Promise<DemandeAnalyseView> {

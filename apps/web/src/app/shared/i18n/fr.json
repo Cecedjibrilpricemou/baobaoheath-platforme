@@ -1655,6 +1655,12 @@
       "VALIDE_OK": "Résultats validés.",
       "ECHANTILLONS_TITLE": "Échantillons",
       "ECHANTILLONS_EMPTY": "Aucun échantillon prélevé pour l’instant."
-    }
+    },
+    "SCAN": "Scanner un patient",
+    "SCAN_TITRE": "Patient scanné",
+    "SCAN_AUCUNE": "Aucune analyse en attente pour ce patient dans votre laboratoire.",
+    "SCAN_A_JEUN": "à jeun",
+    "SCAN_FERMER": "Fermer",
+    "SCAN_ERREUR": "QR code inconnu, ou patient sans analyse ici."
   }
 }

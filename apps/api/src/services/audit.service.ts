@@ -34,7 +34,12 @@ function shouldAudit(req: Request): boolean {
     req.originalUrl.includes('/patients') ||
     req.originalUrl.includes('/consultations') ||
     req.originalUrl.includes('/fhir') ||
-    req.originalUrl.includes('/analytics/export')
+    req.originalUrl.includes('/analytics/export') ||
+    // Scanner un QR patient, c'est consulter son dossier : le geste laisse une
+    // trace, au meme titre qu'une lecture de fiche. Ni le scan du comptoir
+    // pharmacie ni celui du laboratoire n'etaient traces jusqu'au 2026-09-29 —
+    // c'est precisement ce que le patient doit pouvoir relire (EF-02-08).
+    req.originalUrl.includes('/scan/')
   );
 }
 

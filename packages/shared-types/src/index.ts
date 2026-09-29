@@ -1390,6 +1390,38 @@ export interface LibererResultatsDto {
   commentaire?: string;
 }
 
+/**
+ * GET /laboratoire/scan/:qrCode — ce que voit le laborantin qui scanne un
+ * patient au comptoir.
+ *
+ * Volontairement etroit : l'identite minimale et les demandes encore a traiter
+ * dans SON laboratoire. Un QR est un identifiant, pas une cle du dossier
+ * medical — le pharmacien qui scanne le meme code voit des ordonnances et
+ * aucune analyse.
+ */
+export interface ScanLaboratoireView {
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  demandes: {
+    id: string;
+    numero: string;
+    statut: StatutDemandeAnalyse;
+    urgence: Urgence;
+    creeLe: HorodatageApi;
+    consignesPatient?: string | null;
+    examens: string[];
+    /** Au moins un examen exige d'etre a jeun : a savoir avant de prelever. */
+    aJeun: boolean;
+  }[];
+  totalDemandes: number;
+}
+
 /** GET /medecin/resultats — la file des resultats qu'un medecin doit liberer. */
 export interface ResultatALibererView {
   idDemande: string;

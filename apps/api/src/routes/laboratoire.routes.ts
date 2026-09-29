@@ -13,12 +13,20 @@ import {
   saisirResultatsSchema,
   validerResultatsSchema,
 } from '../validators/api.schemas';
-import type { DemandeAnalyseView, TableauDeBordLaboView } from '@baobaoheath/shared-types';
+import type { DemandeAnalyseView, ScanLaboratoireView, TableauDeBordLaboView } from '@baobaoheath/shared-types';
 
 const router = Router();
 
 router.use(authenticate);
 router.use(requireRole('TECHNICIEN_LABO', 'BIOLOGISTE', 'ADMIN_STRUCTURE'));
+
+// ── Scan du QR patient au comptoir ───────────────────────────────────
+// Même geste que côté pharmacie, fenêtre différente : le laborantin voit ce
+// qui reste à faire pour ce patient dans SON laboratoire, et rien d'autre.
+router.get('/scan/:qrCode', async (req: AuthRequest, res: Response) => {
+  const data: ScanLaboratoireView = await labo.scanPatient(req.user!, req.params['qrCode'] as string);
+  res.json({ success: true, data });
+});
 
 router.get('/tableau-de-bord', async (req: AuthRequest, res: Response) => {
   const data: TableauDeBordLaboView = await labo.tableauDeBord(req.user!);
