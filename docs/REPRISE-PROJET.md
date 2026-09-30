@@ -18,9 +18,9 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types` |
 | API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — 25 fichiers de routes, 30 services |
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN |
-| Modèle | 40 modèles Prisma, 22 enums, 23 migrations, **12 rôles** |
+| Modèle | 41 modèles Prisma, 23 enums, 24 migrations, **12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward) |
-| Tests | **351 API** (Jest, 24 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
+| Tests | **376 API** (Jest, 25 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -305,7 +305,7 @@ Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté h
 | 2 | ✅ Le médecin prescrit, l'accueil se recentre | M | **P2** — livré le 2026-09-29 |
 | 3 | ✅ RDV fixés par le médecin + agenda + pointage | M | **P1** — livré le 2026-09-30 |
 | 4 | ✅ Suppression du rôle biologiste | M | **P2** — livré le 2026-09-30 |
-| 5 | Prise de rendez-vous à distance | M | **P13 → remonte** |
+| 5 | ✅ Prise de rendez-vous à distance | M | **P13 → remonté** — livré le 2026-09-30 |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | L | **P6** — travail réellement neuf |
 | 7 | Pharmacie : vente et tableau de bord | M | **P6** — travail réellement neuf |
 | 8 | Assurance enrichie | L | **P10** — précise, n'ajoute pas de bloc |
@@ -414,6 +414,7 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 **Méthode**
 
 - **Une vérification qui ne peut pas échouer ne vérifie rien.** Un contrôle du pointage cherchait `/Arriv/` dans la page — or le bouton s'appelle « Pointer l'arrivée », donc il passait quoi qu'il arrive. Comptez des éléments précis, et assurez-vous d'avoir vu le contrôle échouer.
+- **Un écran qui envoie moins que ce que l'API exige échoue en silence.** L'écran de demande de rendez-vous n'envoyait que le motif ; l'API réclamait aussi un établissement, faute de structure préférée au dossier. Le build était vert, la page s'affichait, et le bouton ne faisait rien d'autre qu'un 400. Vérifiez un formulaire **contre l'API**, pas seulement à l'écran.
 - **Les scripts de vérification déclenchent la limitation de débit** (429 après quelques connexions). Elle est en mémoire faute de `REDIS_URL` : redémarrer l'API la remet à zéro.
 - **Ne jamais déduire le contenu d'un fichier de son nom.** `hero-patient.jpeg` est une plaquette d'ibuprofène vide ; `hero-hospital.jpeg` un portrait de médecin.
 - Un mot de passe se vérifie **contre l'empreinte stockée**, pas contre le script de seed censé l'avoir posé. Mieux : en tentant réellement la connexion sur l'API.

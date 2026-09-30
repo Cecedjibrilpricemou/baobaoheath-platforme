@@ -6,15 +6,18 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as hopital from '../services/hopital.service';
+import * as demandeRdv from '../services/demande-rendez-vous.service';
 import {
   annulerDemandeSchema,
   createDemandeAnalyseSchema,
   createEpisodeSchema,
   episodesQuerySchema,
   orientationSchema,
+  orienterDemandeRendezVousSchema,
   updateEpisodeSchema,
 } from '../validators/api.schemas';
 import type {
+  DemandeRendezVousView,
   PresenceDuJourView,
   DemandeAnalyseView,
   EpisodeSoinsView,
@@ -41,6 +44,19 @@ const ACTE_MEDICAL = requireRole('MEDECIN', 'ADMIN_STRUCTURE');
 
 // Les erreurs metier (AppError) remontent au middleware global : pas de
 // try/catch ici, Express 5 propage les rejets des handlers async.
+
+// ── Demandes de rendez-vous à distance sans médecin désigné ──────────
+// L'accueil les oriente : c'est son métier, et le seul qu'il garde sur ce
+// circuit. Il ne fixe pas l'heure.
+router.get('/demandes', async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView[] = await demandeRdv.demandesAOrienter(req.user!);
+  res.json({ success: true, data });
+});
+
+router.post('/demandes/:id/orienter', validateBody(orienterDemandeRendezVousSchema), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView = await demandeRdv.orienterDemande(req.user!, req.params['id'] as string, req.body.idMedecin);
+  res.json({ success: true, data, message: 'Demande orientée : le médecin est prévenu' });
+});
 
 // ── Pointage de présence (addendum du 2026-09-28, point 2) ───────────
 // Le seul geste de l'accueil sur un rendez-vous : il ne le crée pas et n'en

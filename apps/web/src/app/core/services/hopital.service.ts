@@ -6,6 +6,7 @@ import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
+  DemandeRendezVousView,
   PresenceDuJourView,
   CreateDemandeAnalyseDto,
   CreateEpisodeDto,
@@ -64,6 +65,15 @@ export class HopitalService {
 
   annulerEpisode(id: string): Observable<ApiResponse<EpisodeSoinsView>> {
     return this.api.post<ApiResponse<EpisodeSoinsView>>(`/hopital/episodes/${id}/annuler`, {});
+  }
+
+  /** Demandes a distance que personne ne vise : l'accueil les oriente. */
+  demandesAOrienter(): Observable<ApiResponse<DemandeRendezVousView[]>> {
+    return this.api.get<ApiResponse<DemandeRendezVousView[]>>('/hopital/demandes');
+  }
+
+  orienterDemande(id: string, idMedecin: string): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>(`/hopital/demandes/${id}/orienter`, { idMedecin });
   }
 
   /** Les patients attendus aujourd'hui (addendum, point 2). */

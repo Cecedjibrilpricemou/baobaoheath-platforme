@@ -94,6 +94,29 @@ export const updateStructurePrefereeSchema = z.object({
  * Le medecin fixe le creneau (addendum du 2026-09-28, point 3). L'accueil ne
  * propose plus d'heure : `orientationSchema` a perdu son `prevuLe`.
  */
+/**
+ * Prise de rendez-vous a distance (addendum du 2026-09-28, point 6). Le motif
+ * est libre : c'est le patient qui l'ecrit, avec ses mots.
+ */
+export const creerDemandeRendezVousSchema = z.object({
+  motif: z.string().trim().min(5).max(1000),
+  idStructure: id.optional(),
+  idMedecin: id.optional(),
+}).strict();
+
+export const accepterDemandeRendezVousSchema = z.object({
+  prevuLe: z.string().min(1),
+}).strict();
+
+/** Un refus sans explication est un mur : le motif est obligatoire. */
+export const refuserDemandeRendezVousSchema = z.object({
+  motif: z.string().trim().min(5).max(500),
+}).strict();
+
+export const orienterDemandeRendezVousSchema = z.object({
+  idMedecin: id,
+}).strict();
+
 export const fixerRendezVousSchema = z.object({
   prevuLe: z.string().min(1),
   motif: z.string().trim().max(500).optional(),

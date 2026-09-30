@@ -217,6 +217,8 @@ model Utilisateur {
   alertesEscaladees    AlerteResultatCritique[] @relation("EscaladeVers")
   rendezVousMedecin    RendezVous[]    @relation("RendezVousMedecin")
   rendezVousPointes    RendezVous[]    @relation("PointageArrivee")
+  demandesRdvVisees    DemandeRendezVous[] @relation("DemandesRendezVousMedecin")
+  demandesRdvTraitees  DemandeRendezVous[] @relation("DemandesRendezVousTraitees")
   syncEvents            SyncEvent[]
   syncMutations         SyncMutation[]
   consentementsDonnes   ConsentementPatient[]
@@ -360,6 +362,7 @@ model StructureSante {
   pharmacienProfiles      PharmacienProfile[]
   stocks                  Stock[]
   patientsPreferent       PatientProfile[]    @relation("StructurePreferee")
+  demandesRendezVous      DemandeRendezVous[] @relation("DemandesRendezVous")
   referencementsSource    Referencement[]     @relation("StructureSource")
   referencementsCible     Referencement[]     @relation("StructureCible")
   episodes                EpisodeSoins[]
@@ -396,6 +399,8 @@ model PatientProfile {
 
   // â”€â”€ MODELE HYBRIDE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Structure prÃ©fÃ©rÃ©e choisie par le patient (optionnel)
+  demandesRendezVous  DemandeRendezVous[]
+
   idStructurePreferee String?
   structurePreferee   StructureSante? @relation("StructurePreferee", fields: [idStructurePreferee], references: [id])
 
@@ -731,6 +736,56 @@ model Vaccination {
 
 // â”€â”€â”€ DOMAINE 4 â€” COORDINATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+/// Ou en est la demande qu'un patient a faite depuis chez lui.
+enum StatutDemandeRendezVous {
+  EN_ATTENTE // personne ne l'a encore prise
+  ACCEPTEE   // un medecin a fixe un creneau ; l'episode est ouvert
+  REFUSEE    // avec un motif, que le patient lit
+  ANNULEE    // le patient s'est ravise
+}
+
+/// Demande de rendez-vous faite a distance (addendum du 2026-09-28, point 6).
+///
+/// Le patient n'ouvre pas un episode de soins : un episode est une visite, et
+/// une demande n'en est pas encore une. Elle devient un episode le jour ou un
+/// medecin l'accepte, et pas avant — sinon la file de l'hopital se remplirait
+/// de visites qui n'auront jamais lieu.
+model DemandeRendezVous {
+  id      String                  @id @default(cuid())
+  motif   String
+  statut  StatutDemandeRendezVous @default(EN_ATTENTE)
+  creeLe  DateTime                @default(now())
+  modifieLe DateTime              @updatedAt
+
+  traiteeLe   DateTime?
+  motifRefus  String?
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idStructure String
+  structure   StructureSante @relation("DemandesRendezVous", fields: [idStructure], references: [id])
+
+  /// Le medecin que le patient souhaite, s'il en connait un. Sinon l'accueil
+  /// oriente la demande : c'est son metier, et le seul qu'il garde ici.
+  idMedecin String?
+  medecin   Utilisateur? @relation("DemandesRendezVousMedecin", fields: [idMedecin], references: [id])
+
+  idTraitePar String?
+  traitePar   Utilisateur? @relation("DemandesRendezVousTraitees", fields: [idTraitePar], references: [id])
+
+  /// Rempli a l'acceptation : la demande devient une visite.
+  idEpisode String?       @unique
+  episode   EpisodeSoins? @relation(fields: [idEpisode], references: [id])
+
+  @@index([idPatient, creeLe(sort: Desc)])
+  /// File du medecin : les demandes qui le visent et attendent.
+  @@index([idMedecin, statut])
+  /// File de l'accueil : celles de sa structure que personne ne vise.
+  @@index([idStructure, statut])
+  @@map("demandes_rendez_vous")
+}
+
 /// Le cycle d'un rendez-vous, de la prise au depart du patient.
 ///
 /// C'etait une chaine libre jusqu'au 2026-09-30 : la base n'interdisait aucune
@@ -1011,6 +1066,10 @@ model EpisodeSoins {
   demandesAnalyse DemandeAnalyse[]
   consultations   Consultation[]
   rendezVous      RendezVous[]
+
+  /// La demande a distance qui a donne naissance a cet episode, s'il y en a
+  /// une (addendum du 2026-09-28, point 6).
+  demandeRendezVous DemandeRendezVous?
 
   @@index([idStructure, statut, ouvertLe(sort: Desc)])
   @@index([idPatient, ouvertLe(sort: Desc)])

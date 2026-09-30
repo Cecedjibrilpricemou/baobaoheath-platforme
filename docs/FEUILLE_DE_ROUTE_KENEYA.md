@@ -195,7 +195,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 ### P13 — Extension (lot V4) · L
 - [ ] Comptes aidants avec mandat et périmètre (EF-06-05) ; mineurs (EF-06-06).
 - [ ] Rappels de prise de traitement (EF-06-09) ; code d'urgence (EF-06-08).
-- [ ] **Prise de rendez-vous à distance** → **remontée le 2026-09-28** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le créneau, l'assistante le pointe à son arrivée. Se construit avec le circuit RDV ci-dessus.
+- [x] ✅ **Livré le 2026-09-30 (API + front)** — **Prise de rendez-vous à distance** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le créneau, l'assistante le pointe à son arrivée. Se construit avec le circuit RDV ci-dessus.
 - [ ] **Téléconsultation réelle (EF-05-10/11)** — visioconférence, acte à distance : **reste en lot V4**, décision du chef de projet (« on verra un peu plus tard »), et toujours suspendue à **D2**. Elle s'appuiera sur le circuit de prise de rendez-vous à distance : on ne consulte pas à distance quelqu'un qui n'a pas pu prendre rendez-vous à distance.
 - [ ] Statistiques anonymisées (EF-12-08).
 
@@ -319,6 +319,7 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-30 | P13→P1 | **Bloc 5 de l'addendum livré (API + front)** : le patient demande un rendez-vous depuis chez lui, l'accueil oriente ce que personne ne vise, le médecin accepte en fixant l'heure — ce geste ouvre l'épisode et le rendez-vous dans la même transaction. La demande n'ouvre pas d'épisode tant qu'elle n'est pas acceptée : un épisode est une visite, et une demande n'en est pas encore une. 376 tests API. |
 | 2026-09-30 | P2 | **Bloc 4 de l'addendum livré** : le rôle `BIOLOGISTE` disparaît, le laborantin valide. Migration écrite à la main — Prisma proposait une conversion d'énumération qui **échoue** sur les comptes existants, et un `DROP COLUMN` qui aurait effacé les 4 conclusions de laboratoire. Vérifié : 2 comptes migrés, 4 conclusions préservées. `commentaireBiologiste` devient `commentaireLaboratoire`. Le compte rendu n'imprime plus « Biologiste » sous le signataire : cette qualification n'a jamais été stockée. |
 | 2026-09-30 | P1 | **Bloc 3 de l'addendum livré (API + front)** : l'accueil oriente sans date, le médecin fixe le créneau et tient son agenda, l'assistante pointe l'arrivée. `RendezVous.statut` devient une énumération — ce qui a révélé que `asc.service.ts` comptait des rendez-vous « HONORE » que personne n'écrivait jamais, compteur structurellement à zéro. Migration écrite à la main : `prisma migrate diff` proposait un DROP COLUMN qui aurait effacé les statuts. 351 tests API. |
 | 2026-09-29 | P1/P2 | **Bloc 2 de l'addendum livré (API + front)** : le médecin prescrit les analyses depuis un écran « Dossier de la visite » ; l'accueil ne fait plus rien de médical. Vérifié en appelant réellement l'API avec le compte du médecin avant d'écrire quoi que ce soit — il avait déjà le droit. `requireRole` porte désormais ses rôles, ce qui rend le câblage des permissions vérifiable : 14 tests décrivent qui peut atteindre quoi, alors qu'aucun ne le faisait avant. 321 tests API. |

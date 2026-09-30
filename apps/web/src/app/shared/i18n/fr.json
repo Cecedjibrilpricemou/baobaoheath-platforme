@@ -541,7 +541,37 @@
       "COL_DEMANDE": "Demande"
     },
     "EXPLICATION_MEDECIN": "Explication de votre médecin",
-    "PAS_ENCORE_LIBERE": "Vos résultats sont prêts. Votre médecin doit d'abord les relire avant de vous les transmettre."
+    "PAS_ENCORE_LIBERE": "Vos résultats sont prêts. Votre médecin doit d'abord les relire avant de vous les transmettre.",
+    "NAV_RENDEZ_VOUS": "Demander un RDV",
+    "RDV": {
+      "TITLE": "Mes demandes de rendez-vous",
+      "SUB": "Demandez un rendez-vous depuis chez vous. Un médecin vous répondra en fixant l'heure.",
+      "APPEL": "Vous n'avez aucune demande en cours.",
+      "DEMANDER": "Demander un rendez-vous",
+      "MOTIF": "Pourquoi souhaitez-vous consulter ?",
+      "MOTIF_AIDE": "Écrivez avec vos mots : c'est ce texte que le médecin lira pour décider.",
+      "MOTIF_EX": "Ex. : j'ai des maux de tête depuis une semaine, surtout le matin.",
+      "ENVOYER": "Envoyer la demande",
+      "ANNULER": "Retirer ma demande",
+      "ENVOYEE_LE": "envoyée le",
+      "EN_COURS_AIDE": "Votre demande est en attente de réponse. Vous serez prévenu(e) dès qu'un médecin l'aura traitée.",
+      "HISTORIQUE": "Demandes précédentes",
+      "MOTIF_REFUS": "Motif :",
+      "ACCEPTEE_AIDE": "Votre rendez-vous est fixé. Retrouvez-le dans « Mon parcours ».",
+      "OK": "Demande envoyée. Vous serez prévenu(e) de la réponse.",
+      "ERR_LOAD": "Impossible de charger vos demandes.",
+      "ERR_ENVOI": "L'envoi a échoué.",
+      "ERR_ANNULER": "Le retrait a échoué.",
+      "STATUT": {
+        "EN_ATTENTE": "en attente",
+        "ACCEPTEE": "acceptée",
+        "REFUSEE": "refusée",
+        "ANNULEE": "retirée"
+      },
+      "ETABLISSEMENT": "Où souhaitez-vous être vu(e) ?",
+      "ETABLISSEMENT_AIDE": "Laissez vide pour utiliser l'établissement de votre dossier, s'il y en a un.",
+      "ETABLISSEMENT_CHOISIR": "— Établissement de mon dossier —"
+    }
   },
   "ASC": {
     "ROLE": "Agent de Santé",
@@ -1002,6 +1032,23 @@
       "TERMINE": "terminé",
       "ABSENT": "absent",
       "ANNULE": "annulé"
+    },
+    "NAV_DEMANDES": "Demandes de RDV",
+    "DEMANDES": {
+      "TITLE": "Demandes de rendez-vous",
+      "SUB": "Des patients vous demandent un rendez-vous depuis chez eux.",
+      "EMPTY": "Aucune demande en attente.",
+      "ATTEND_DEPUIS": "en attente depuis {{n}} jour(s)",
+      "ACCEPTER": "Accepter",
+      "REFUSER": "Refuser",
+      "ACCEPTER_AIDE": "Accepter ouvre le dossier de la visite et prévient le patient de l'heure.",
+      "MOTIF_REFUS": "Motif du refus",
+      "MOTIF_REFUS_AIDE": "Le patient le lira dans son espace. Un refus sans explication est un mur.",
+      "CONFIRMER_REFUS": "Confirmer le refus",
+      "OK_ACCEPTEE": "{{patient}} est prévenu(e) : le rendez-vous est fixé.",
+      "ERR_LOAD": "Impossible de charger les demandes.",
+      "ERR_ACCEPTER": "L'acceptation a échoué.",
+      "ERR_REFUSER": "Le refus a échoué."
     }
   },
   "PHARMACIEN": {
@@ -1589,6 +1636,18 @@
       "OK": "Arrivée pointée : {{patient}} — le médecin est prévenu.",
       "ERR_LOAD": "Impossible de charger les présences.",
       "ERR_POINTER": "Le pointage a échoué."
+    },
+    "NAV_DEMANDES": "Demandes à orienter",
+    "DEMANDES": {
+      "TITLE": "Demandes à orienter",
+      "SUB": "Des patients ont demandé un rendez-vous sans désigner de médecin. Choisissez-en un ; c'est lui qui fixera l'heure.",
+      "EMPTY": "Aucune demande à orienter.",
+      "ATTEND_DEPUIS": "en attente depuis {{n}} jour(s)",
+      "CHOISIR": "Choisir un médecin",
+      "ORIENTER": "Orienter",
+      "OK": "Demande de {{patient}} orientée : le médecin est prévenu.",
+      "ERR_LOAD": "Impossible de charger les demandes.",
+      "ERR_ORIENTER": "L'orientation a échoué."
     }
   },
   "LABO": {

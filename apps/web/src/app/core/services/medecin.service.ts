@@ -9,6 +9,8 @@ import { ApiResponse } from '../models/api.model';
 import type {
   DemandeAnalyseView,
   LibererResultatsDto,
+  AccepterDemandeRendezVousDto,
+  DemandeRendezVousView,
   FixerRendezVousDto,
   OrientationMedecinView,
   RendezVousMedecinView,
@@ -35,6 +37,22 @@ export class MedecinService {
   libererResultats(idDemande: string, commentaire?: string): Observable<ApiResponse<DemandeAnalyseView>> {
     const payload: LibererResultatsDto = commentaire ? { commentaire } : {};
     return this.api.post<ApiResponse<DemandeAnalyseView>>(`/medecin/resultats/${idDemande}/liberer`, payload);
+  }
+
+  // ── Demandes de rendez-vous a distance (addendum, point 6) ──────
+
+  mesDemandesRendezVous(): Observable<ApiResponse<DemandeRendezVousView[]>> {
+    return this.api.get<ApiResponse<DemandeRendezVousView[]>>('/medecin/demandes');
+  }
+
+  /** Accepter, c'est fixer l'heure — ce geste ouvre la visite. */
+  accepterDemandeRendezVous(id: string, dto: AccepterDemandeRendezVousDto): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>(`/medecin/demandes/${id}/accepter`, dto);
+  }
+
+  /** Un refus sans explication est un mur : le motif est obligatoire. */
+  refuserDemandeRendezVous(id: string, motif: string): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>(`/medecin/demandes/${id}/refuser`, { motif });
   }
 
   /** Le medecin pose le creneau : l'accueil ne propose plus d'heure. */

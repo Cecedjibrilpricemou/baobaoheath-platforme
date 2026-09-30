@@ -541,7 +541,37 @@
       "COL_DEMANDE": "Request"
     },
     "EXPLICATION_MEDECIN": "Your doctor’s explanation",
-    "PAS_ENCORE_LIBERE": "Your results are ready. Your doctor needs to review them before sharing them with you."
+    "PAS_ENCORE_LIBERE": "Your results are ready. Your doctor needs to review them before sharing them with you.",
+    "NAV_RENDEZ_VOUS": "Request an appointment",
+    "RDV": {
+      "TITLE": "My appointment requests",
+      "SUB": "Request an appointment from home. A doctor will answer by setting the time.",
+      "APPEL": "You have no pending request.",
+      "DEMANDER": "Request an appointment",
+      "MOTIF": "Why do you want to be seen?",
+      "MOTIF_AIDE": "Write it in your own words: this is what the doctor reads to decide.",
+      "MOTIF_EX": "E.g. I have had headaches for a week, mostly in the morning.",
+      "ENVOYER": "Send the request",
+      "ANNULER": "Withdraw my request",
+      "ENVOYEE_LE": "sent on",
+      "EN_COURS_AIDE": "Your request is awaiting an answer. You will be notified as soon as a doctor handles it.",
+      "HISTORIQUE": "Previous requests",
+      "MOTIF_REFUS": "Reason:",
+      "ACCEPTEE_AIDE": "Your appointment is set. You will find it under “My care journey”.",
+      "OK": "Request sent. You will be notified of the answer.",
+      "ERR_LOAD": "Could not load your requests.",
+      "ERR_ENVOI": "Sending failed.",
+      "ERR_ANNULER": "Withdrawal failed.",
+      "STATUT": {
+        "EN_ATTENTE": "pending",
+        "ACCEPTEE": "accepted",
+        "REFUSEE": "declined",
+        "ANNULEE": "withdrawn"
+      },
+      "ETABLISSEMENT": "Where would you like to be seen?",
+      "ETABLISSEMENT_AIDE": "Leave empty to use the facility on your record, if there is one.",
+      "ETABLISSEMENT_CHOISIR": "— Facility on my record —"
+    }
   },
   "ASC": {
     "ROLE": "Health Worker",
@@ -1002,6 +1032,23 @@
       "TERMINE": "completed",
       "ABSENT": "absent",
       "ANNULE": "cancelled"
+    },
+    "NAV_DEMANDES": "Appointment requests",
+    "DEMANDES": {
+      "TITLE": "Appointment requests",
+      "SUB": "Patients are requesting an appointment from home.",
+      "EMPTY": "No pending request.",
+      "ATTEND_DEPUIS": "pending for {{n}} day(s)",
+      "ACCEPTER": "Accept",
+      "REFUSER": "Decline",
+      "ACCEPTER_AIDE": "Accepting opens the visit record and tells the patient the time.",
+      "MOTIF_REFUS": "Reason for declining",
+      "MOTIF_REFUS_AIDE": "The patient reads it in their space. A refusal without explanation is a wall.",
+      "CONFIRMER_REFUS": "Confirm refusal",
+      "OK_ACCEPTEE": "{{patient}} has been notified: the appointment is set.",
+      "ERR_LOAD": "Could not load the requests.",
+      "ERR_ACCEPTER": "Accepting failed.",
+      "ERR_REFUSER": "Declining failed."
     }
   },
   "ADMIN": {
@@ -1589,6 +1636,18 @@
       "OK": "{{patient}} checked in — the doctor has been notified.",
       "ERR_LOAD": "Could not load arrivals.",
       "ERR_POINTER": "Check-in failed."
+    },
+    "NAV_DEMANDES": "Requests to route",
+    "DEMANDES": {
+      "TITLE": "Requests to route",
+      "SUB": "Patients requested an appointment without naming a doctor. Pick one; they will set the time.",
+      "EMPTY": "No request to route.",
+      "ATTEND_DEPUIS": "pending for {{n}} day(s)",
+      "CHOISIR": "Pick a doctor",
+      "ORIENTER": "Route",
+      "OK": "{{patient}}'s request routed: the doctor has been notified.",
+      "ERR_LOAD": "Could not load the requests.",
+      "ERR_ORIENTER": "Routing failed."
     }
   },
   "LABO": {

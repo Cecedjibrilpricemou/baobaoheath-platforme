@@ -135,6 +135,22 @@ describe('ce qui revient au medecin', () => {
   });
 });
 
+describe('prise de rendez-vous a distance (addendum, point 6)', () => {
+  // Chaque metier a son geste, et un seul.
+  it('seul le medecin accepte ou refuse une demande', () => {
+    expect(rolesPour(medecin, 'get', '/demandes')).toEqual(['MEDECIN']);
+    expect(rolesPour(medecin, 'post', '/demandes/:id/accepter')).toEqual(['MEDECIN']);
+    expect(rolesPour(medecin, 'post', '/demandes/:id/refuser')).toEqual(['MEDECIN']);
+  });
+
+  // L'accueil oriente ce que personne ne vise : c'est son metier.
+  it('l accueil oriente, et n a pas de route pour accepter', () => {
+    expect(rolesPour(hopital, 'get', '/demandes')).toContain('AGENT_ACCUEIL');
+    expect(rolesPour(hopital, 'post', '/demandes/:id/orienter')).toContain('AGENT_ACCUEIL');
+    expect(rolesPour(hopital, 'post', '/demandes/:id/accepter')).toBeNull();
+  });
+});
+
 describe('le pointage de presence reste a l accueil (addendum, point 2)', () => {
   // C'est le seul geste de l'accueil sur un rendez-vous : il ne le cree pas et
   // n'en change pas l'heure. Le lui retirer le priverait de son metier.

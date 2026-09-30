@@ -15,6 +15,9 @@ import {
   updateStructurePrefereeController,
 } from '../controllers/patient.controller';
 import { getMesConsultationsController } from '../controllers/consultation.controller';
+import * as demandeRdv from '../services/demande-rendez-vous.service';
+import type { DemandeRendezVousView } from '@baobaoheath/shared-types';
+import { creerDemandeRendezVousSchema } from '../validators/api.schemas';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
@@ -32,6 +35,23 @@ router.get('/me', authenticate, requireRole('PATIENT'), getMyProfileController);
 router.put('/me', authenticate, requireRole('PATIENT'), validateBody(updatePatientSchema), updateMyProfileController);
 router.put('/me/structure', authenticate, requireRole('PATIENT'), validateBody(updateStructurePrefereeSchema), updateStructurePrefereeController);
 router.get('/me/export', authenticate, requireRole('PATIENT'), exportDossierController);
+
+// ── Prise de rendez-vous a distance (addendum du 2026-09-28, point 6) ─
+// Le patient demande depuis chez lui ; un medecin repond en fixant l'heure.
+router.post('/me/demandes-rendez-vous', authenticate, requireRole('PATIENT'), validateBody(creerDemandeRendezVousSchema), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView = await demandeRdv.creerDemande(req.user!.userId, req.body);
+  res.status(201).json({ success: true, data, message: 'Demande envoyee' });
+});
+
+router.get('/me/demandes-rendez-vous', authenticate, requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView[] = await demandeRdv.mesDemandes(req.user!.userId);
+  res.json({ success: true, data });
+});
+
+router.post('/me/demandes-rendez-vous/:id/annuler', authenticate, requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView = await demandeRdv.annulerDemande(req.user!.userId, req.params['id'] as string);
+  res.json({ success: true, data });
+});
 router.get('/me/consultations', authenticate, requireRole('PATIENT'), getMesConsultationsController);
 
 // P1 — parcours hospitalier du patient : episodes, demandes d'analyse, orientations.

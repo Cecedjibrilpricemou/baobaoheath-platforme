@@ -11,6 +11,11 @@ export const HOPITAL_ROUTES: Routes = [
       { path: 'tableau-de-bord', loadComponent: () => import('./tableau-de-bord/tableau-de-bord.component').then(m => m.TableauDeBordComponent) },
       { path: 'admission', loadComponent: () => import('./admission/admission.component').then(m => m.AdmissionComponent) },
       {
+        path: 'demandes',
+        loadComponent: () =>
+          import('./demandes/demandes.component').then(m => m.DemandesComponent)
+      },
+      {
         path: 'presences',
         loadComponent: () =>
           import('./presences/presences.component').then(m => m.PresencesComponent)

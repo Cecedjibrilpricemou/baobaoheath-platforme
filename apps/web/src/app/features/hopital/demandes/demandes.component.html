@@ -1,0 +1,54 @@
+<div class="bb-hdem">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-directions" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'HOPITAL.DEMANDES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'HOPITAL.DEMANDES.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-hdem__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (demandes().length === 0) {
+    <div class="bb-hdem__empty">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <p>{{ 'HOPITAL.DEMANDES.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    @for (d of demandes(); track d.id) {
+      <article class="bb-hdem__card">
+        <div class="bb-hdem__head">
+          <div>
+            <span class="bb-hdem__patient">{{ d.patient.prenom }} {{ d.patient.nom }}</span>
+            <span class="bb-hdem__meta">{{ d.patient.sexe }} · {{ d.patient.telephone }}</span>
+          </div>
+          <span class="bb-hdem__attente">
+            {{ d.creeLe | date:'short' }}
+            @if (joursDAttente(d.creeLe); as j) {
+              — <strong>{{ 'HOPITAL.DEMANDES.ATTEND_DEPUIS' | translate: { n: j } }}</strong>
+            }
+          </span>
+        </div>
+
+        <p class="bb-hdem__motif">{{ d.motif }}</p>
+
+        <!-- L'accueil désigne le médecin ; c'est lui qui fixera l'heure. -->
+        <div class="bb-hdem__actions">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-hdem__select">
+            <mat-select [(ngModel)]="choix[d.id]" [placeholder]="'HOPITAL.DEMANDES.CHOISIR' | translate">
+              @for (m of medecins(); track m.id) {
+                <mat-option [value]="m.id">Dr {{ m.prenom }} {{ m.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <button matButton="filled" type="button"
+                  [disabled]="enCours() === d.id || !choix[d.id]"
+                  (click)="orienter(d)">
+            {{ (enCours() === d.id ? 'COMMON.LOADING' : 'HOPITAL.DEMANDES.ORIENTER') | translate }}
+          </button>
+        </div>
+      </article>
+    }
+  }
+</div>

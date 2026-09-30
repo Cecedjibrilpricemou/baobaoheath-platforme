@@ -41,6 +41,11 @@ export const PATIENT_ROUTES: Routes = [
           import('./parcours/parcours.component').then(m => m.ParcoursComponent)
       },
       {
+        path: 'rendez-vous',
+        loadComponent: () =>
+          import('./rendez-vous/rendez-vous.component').then(m => m.RendezVousComponent)
+      },
+      {
         path: 'ordonnances',
         loadComponent: () =>
           import('./ordonnances/ordonnances.component').then(m => m.OrdonnancesComponent)

@@ -1422,6 +1422,45 @@ export interface ScanLaboratoireView {
   totalDemandes: number;
 }
 
+/** Ou en est la demande qu'un patient a faite depuis chez lui. */
+export type StatutDemandeRendezVous = 'EN_ATTENTE' | 'ACCEPTEE' | 'REFUSEE' | 'ANNULEE';
+
+/** POST /patients/me/demandes-rendez-vous — le patient demande depuis chez lui. */
+export interface CreerDemandeRendezVousDto {
+  motif: string;
+  /** A defaut, l'etablissement prefere du dossier. */
+  idStructure?: string;
+  /** S'il connait un medecin ; sinon l'accueil oriente la demande. */
+  idMedecin?: string;
+}
+
+/** POST /medecin/demandes/:id/accepter — accepter, c'est fixer l'heure. */
+export interface AccepterDemandeRendezVousDto {
+  prevuLe: HorodatageApi;
+}
+
+export interface DemandeRendezVousView {
+  id: string;
+  motif: string;
+  statut: StatutDemandeRendezVous;
+  creeLe: HorodatageApi;
+  traiteeLe?: HorodatageApi | null;
+  motifRefus?: string | null;
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  structure: { id: string; nom: string; prefecture: string };
+  medecin?: { id: string; prenom: string; nom: string } | null;
+  /** Rempli a l'acceptation : la demande est devenue une visite. */
+  idEpisode?: string | null;
+  numeroEpisode?: string | null;
+}
+
 /** Le cycle d'un rendez-vous, de la prise au depart du patient. */
 export type StatutRendezVous =
   | 'PLANIFIE'

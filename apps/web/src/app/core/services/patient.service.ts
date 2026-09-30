@@ -1,12 +1,29 @@
 // core/services/patient.service.ts
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import type { CreerDemandeRendezVousDto, DemandeRendezVousView } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
 import { Patient, PatientCreatePayload, PatientUpdatePayload, Consultation } from '../models/patient.model';
 import { ApiResponse, PaginatedData } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class PatientService {
+
+  // ── Prise de rendez-vous a distance (addendum, point 6) ──────────
+  // Le patient demande depuis chez lui ; le medecin repond en fixant l'heure.
+
+  mesDemandesRendezVous(): Observable<ApiResponse<DemandeRendezVousView[]>> {
+    return this.api.get<ApiResponse<DemandeRendezVousView[]>>('/patients/me/demandes-rendez-vous');
+  }
+
+  creerDemandeRendezVous(dto: CreerDemandeRendezVousDto): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>('/patients/me/demandes-rendez-vous', dto);
+  }
+
+  annulerDemandeRendezVous(id: string): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>(`/patients/me/demandes-rendez-vous/${id}/annuler`, {});
+  }
+
   private api = inject(ApiService);
 
   createPatient(payload: PatientCreatePayload): Observable<ApiResponse<{ patient: Patient }>> {

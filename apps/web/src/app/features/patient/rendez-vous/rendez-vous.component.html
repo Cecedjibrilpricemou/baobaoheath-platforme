@@ -1,0 +1,99 @@
+<div class="bb-rdvp">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-calendar-plus" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.RDV.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.RDV.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-rdvp__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else {
+
+    <!-- ── La demande en cours, s'il y en a une ─────────────────────── -->
+    @if (enAttente(); as d) {
+      <section class="bb-rdvp__carte bb-rdvp__carte--attente">
+        <div class="bb-rdvp__head">
+          <span class="bb-rdvp__statut" [attr.data-statut]="d.statut">{{ libelleStatut(d.statut) }}</span>
+          <span class="bb-rdvp__date">{{ 'PATIENT.RDV.ENVOYEE_LE' | translate }} {{ d.creeLe | date:'short' }}</span>
+        </div>
+        <p class="bb-rdvp__motif">{{ d.motif }}</p>
+        <p class="bb-rdvp__meta">
+          {{ d.structure.nom }}
+          @if (d.medecin) { · Dr {{ d.medecin.prenom }} {{ d.medecin.nom }} }
+        </p>
+        <p class="bb-rdvp__attente">{{ 'PATIENT.RDV.EN_COURS_AIDE' | translate }}</p>
+        <button matButton type="button" [disabled]="enCours()" (click)="annuler(d)">
+          {{ 'PATIENT.RDV.ANNULER' | translate }}
+        </button>
+      </section>
+    } @else {
+      <!-- ── Sinon, on peut demander ────────────────────────────────── -->
+      @if (!formulaireOuvert()) {
+        <div class="bb-rdvp__appel">
+          <p>{{ 'PATIENT.RDV.APPEL' | translate }}</p>
+          <button matButton="filled" type="button" (click)="formulaireOuvert.set(true)">
+            <i class="pi pi-calendar-plus" aria-hidden="true"></i>
+            {{ 'PATIENT.RDV.DEMANDER' | translate }}
+          </button>
+        </div>
+      } @else {
+        <section class="bb-rdvp__carte">
+          <label class="bb-rdvp__label" for="rdv-structure">{{ 'PATIENT.RDV.ETABLISSEMENT' | translate }}</label>
+          <p class="bb-rdvp__aide">{{ 'PATIENT.RDV.ETABLISSEMENT_AIDE' | translate }}</p>
+          <select id="rdv-structure" class="bb-rdvp__select" [(ngModel)]="idStructure">
+            <option value="">{{ 'PATIENT.RDV.ETABLISSEMENT_CHOISIR' | translate }}</option>
+            @for (e of etablissements(); track e.id) {
+              <option [value]="e.id">{{ e.nom }} · {{ e.prefecture }}</option>
+            }
+          </select>
+
+          <label class="bb-rdvp__label" for="rdv-motif">{{ 'PATIENT.RDV.MOTIF' | translate }}</label>
+          <p class="bb-rdvp__aide">{{ 'PATIENT.RDV.MOTIF_AIDE' | translate }}</p>
+          <textarea id="rdv-motif" class="bb-rdvp__textarea" rows="4" maxlength="1000"
+                    [placeholder]="'PATIENT.RDV.MOTIF_EX' | translate"
+                    [(ngModel)]="motif"></textarea>
+
+          <div class="bb-rdvp__actions">
+            <button matButton type="button" (click)="formulaireOuvert.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button matButton="filled" type="button"
+                    [disabled]="enCours() || motif.trim().length < 5"
+                    (click)="envoyer()">
+              {{ (enCours() ? 'COMMON.LOADING' : 'PATIENT.RDV.ENVOYER') | translate }}
+            </button>
+          </div>
+        </section>
+      }
+    }
+
+    <!-- ── Ce qui a déjà été traité ─────────────────────────────────── -->
+    @if (historique().length) {
+      <h2 class="bb-rdvp__section">{{ 'PATIENT.RDV.HISTORIQUE' | translate }}</h2>
+      @for (d of historique(); track d.id) {
+        <article class="bb-rdvp__carte bb-rdvp__carte--passee">
+          <div class="bb-rdvp__head">
+            <span class="bb-rdvp__statut" [attr.data-statut]="d.statut">{{ libelleStatut(d.statut) }}</span>
+            <span class="bb-rdvp__date">{{ d.creeLe | date:'short' }}</span>
+          </div>
+          <p class="bb-rdvp__motif">{{ d.motif }}</p>
+
+          <!-- Le motif de refus vit ici, pas dans la notification : il peut
+               porter un détail que rien ne doit sortir de la plateforme. -->
+          @if (d.statut === 'REFUSEE' && d.motifRefus) {
+            <p class="bb-rdvp__refus">
+              <strong>{{ 'PATIENT.RDV.MOTIF_REFUS' | translate }}</strong>
+              {{ d.motifRefus }}
+            </p>
+          }
+          @if (d.statut === 'ACCEPTEE') {
+            <p class="bb-rdvp__accepte">
+              <i class="pi pi-check-circle" aria-hidden="true"></i>
+              {{ 'PATIENT.RDV.ACCEPTEE_AIDE' | translate }}
+            </p>
+          }
+        </article>
+      }
+    }
+  }
+</div>
