@@ -107,7 +107,7 @@ export const libererResultatsSchema = z.object({
   commentaire: z.string().trim().max(2000).optional(),
 });
 
-export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'BIOLOGISTE']);
+export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO']);
 
 export const createAgentStructureSchema = z.object({
   telephone: phone,

@@ -269,7 +269,7 @@
     "HOW_STEP3_DESC": "À l'hôpital, l'accueil ouvre votre épisode de soins et prescrit vos analyses. Tout le reste se fera depuis votre dossier.",
     "HOW_STEP3_ALT": "Accueil d'un établissement de santé",
     "HOW_STEP4_TITLE": "Vos analyses au laboratoire",
-    "HOW_STEP4_DESC": "Prélèvement sur place ou à domicile. Les résultats arrivent dans votre dossier, validés par le biologiste.",
+    "HOW_STEP4_DESC": "Prélèvement sur place ou à domicile. Les résultats arrivent dans votre dossier, validés par le laboratoire.",
     "HOW_STEP5_TITLE": "Consultation et ordonnance",
     "HOW_STEP5_DESC": "Le médecin voit vos résultats et signe votre ordonnance : un numéro unique, un code de vérification, une durée de validité.",
     "HOW_STEP5_ALT": "Médicaments sur un plan de travail",
@@ -495,7 +495,7 @@
       "ETAPE_PHARMACIE": "Pharmacie",
       "ETAPE_LIVRAISON": "Livraison",
       "BIENTOT": "bientôt",
-      "CONCLUSION": "Conclusion du biologiste",
+      "CONCLUSION": "Conclusion du laboratoire",
       "RESULTATS_BIENTOT": "Résultats validés, diffusion en cours.",
       "CR": "Compte rendu",
       "COURBES": "Mes courbes"
@@ -1373,8 +1373,7 @@
       "ERR_CREATE": "Erreur lors de la création.",
       "SUCCESS_DEACTIVATED": "Agent désactivé.",
       "ROLE_AGENT_ACCUEIL": "Agent d'accueil",
-      "ROLE_TECHNICIEN_LABO": "Technicien de laboratoire",
-      "ROLE_BIOLOGISTE": "Biologiste"
+      "ROLE_TECHNICIEN_LABO": "Technicien de laboratoire"
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Agents actifs",
@@ -1691,7 +1690,7 @@
       "COL_COMMENTAIRE": "Commentaire",
       "COMMENTAIRE_PH": "Commentaire",
       "EN_ATTENTE": "En attente",
-      "VALIDER_TITLE": "Validation biologiste",
+      "VALIDER_TITLE": "Validation du laboratoire",
       "VALIDER_HINT": "Votre nom et l’heure sont apposés sur le compte rendu. Les résultats critiques déclenchent une alerte au prescripteur.",
       "CONCLUSION": "Conclusion",
       "CONCLUSION_PH": "Conclusion ou recommandation (facultatif)",

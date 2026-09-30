@@ -64,7 +64,7 @@
                       </div>
                     }
                   </div>
-                  @if (d.commentaireBiologiste) { <div class="bb-hop-sub__consignes"><strong>{{ 'PATIENT.PARCOURS.CONCLUSION' | translate }}</strong>{{ '\n' + d.commentaireBiologiste }}</div> }
+                  @if (d.commentaireLaboratoire) { <div class="bb-hop-sub__consignes"><strong>{{ 'PATIENT.PARCOURS.CONCLUSION' | translate }}</strong>{{ '\n' + d.commentaireLaboratoire }}</div> }
                 } @else {
                   <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral">{{ l.examen.libelle }}</span> }</div>
                   <!-- Validés par le laboratoire mais pas encore relus : le dire

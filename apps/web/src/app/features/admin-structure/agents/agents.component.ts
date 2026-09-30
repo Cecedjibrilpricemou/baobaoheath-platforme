@@ -47,8 +47,7 @@ export class AgentsComponent implements OnInit {
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'), value: 'MEDECIN' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'), value: 'PHARMACIEN' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL'), value: 'AGENT_ACCUEIL' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'), value: 'TECHNICIEN_LABO' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_BIOLOGISTE'), value: 'BIOLOGISTE' }
+      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'), value: 'TECHNICIEN_LABO' }
     ];
   }
 
@@ -123,8 +122,7 @@ export class AgentsComponent implements OnInit {
       'MEDECIN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'),
       'PHARMACIEN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'),
       'AGENT_ACCUEIL': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL'),
-      'TECHNICIEN_LABO': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'),
-      'BIOLOGISTE': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_BIOLOGISTE')
+      'TECHNICIEN_LABO': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO')
     };
     return map[role] ?? role;
   }

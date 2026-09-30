@@ -197,7 +197,7 @@
                   </div>
                 }
               </div>
-              @if (d.commentaireBiologiste) { <div class="bb-hop-sub__consignes"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireBiologiste }}</div> }
+              @if (d.commentaireLaboratoire) { <div class="bb-hop-sub__consignes"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireLaboratoire }}</div> }
               @if (d.alerteCritiqueEnAttente) { <p class="bb-hop-sub__line" style="color:var(--bb-danger);font-weight:700"><i class="pi pi-bell" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.CRITIQUE_A_ACCUSER' | translate }} <a routerLink="/hopital/alertes">{{ 'HOPITAL.NAV_ALERTES' | translate }}</a></p> }
             } @else {
               <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral" [title]="l.examen.codeLoinc">{{ l.examen.libelle }}@if (l.commentaire) { — {{ l.commentaire }} }</span> }</div>

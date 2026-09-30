@@ -495,7 +495,7 @@
       "ETAPE_PHARMACIE": "Pharmacy",
       "ETAPE_LIVRAISON": "Delivery",
       "BIENTOT": "soon",
-      "CONCLUSION": "Biologist’s conclusion",
+      "CONCLUSION": "Laboratory conclusion",
       "RESULTATS_BIENTOT": "Results validated, release in progress.",
       "CR": "Report",
       "COURBES": "My charts"
@@ -1373,8 +1373,7 @@
       "ERR_CREATE": "Error while creating.",
       "SUCCESS_DEACTIVATED": "Agent deactivated.",
       "ROLE_AGENT_ACCUEIL": "Front desk agent",
-      "ROLE_TECHNICIEN_LABO": "Laboratory technician",
-      "ROLE_BIOLOGISTE": "Biologist"
+      "ROLE_TECHNICIEN_LABO": "Laboratory technician"
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Active agents",
@@ -1691,7 +1690,7 @@
       "COL_COMMENTAIRE": "Comment",
       "COMMENTAIRE_PH": "Comment",
       "EN_ATTENTE": "Pending",
-      "VALIDER_TITLE": "Biologist validation",
+      "VALIDER_TITLE": "Laboratory validation",
       "VALIDER_HINT": "Your name and the time are stamped on the report. Critical results trigger an alert to the prescriber.",
       "CONCLUSION": "Conclusion",
       "CONCLUSION_PH": "Conclusion or recommendation (optional)",

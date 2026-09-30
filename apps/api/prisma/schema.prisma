@@ -16,8 +16,7 @@ enum Role {
   MEDECIN
   PHARMACIEN
   AGENT_ACCUEIL    // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
-  TECHNICIEN_LABO  // Laboratoire : reception, prelevement, saisie des resultats (EF-04)
-  BIOLOGISTE       // Laboratoire : idem + validation nominative des resultats (EF-04-05)
+  TECHNICIEN_LABO  // Laborantin : reception, prelevement, saisie ET validation (EF-04)
   LIVREUR          // Taxi-moto : courses de livraison de medicaments (EF-10)
   ADMIN_STRUCTURE
   ADMIN_REGIONAL
@@ -1064,7 +1063,10 @@ model DemandeAnalyse {
   recueLe               DateTime?
   preleveeLe            DateTime?
   valideeLe             DateTime?
-  commentaireBiologiste String?
+  /// Conclusion du laboratoire, ecrite par le laborantin qui valide.
+  /// S'appelait `commentaireBiologiste` jusqu'au 2026-09-30 : le role de
+  /// biologiste a ete supprime (addendum, point 4).
+  commentaireLaboratoire String?
   /// Moment ou le patient a pu voir ses resultats. Depuis l'addendum du
   /// 2026-09-28, il n'est jamais pose par le temps qui passe : seul un medecin
   /// qui libere les resultats le renseigne. Avant, un resultat non critique

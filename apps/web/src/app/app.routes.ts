@@ -68,7 +68,7 @@ export const routes: Routes = [
   {
     path: 'laboratoire',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['TECHNICIEN_LABO', 'BIOLOGISTE'] },
+    data: { roles: ['TECHNICIEN_LABO'] },
     loadChildren: () =>
       import('./features/laboratoire/laboratoire.routes').then(m => m.LABORATOIRE_ROUTES)
   },

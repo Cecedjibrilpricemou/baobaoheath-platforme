@@ -1586,7 +1586,7 @@ export interface DemandeAnalyseView {
   preleveeLe: HorodatageApi | null;
   valideeLe: HorodatageApi | null;
   valideur: PersonneRefView | null;
-  commentaireBiologiste: string | null;
+  commentaireLaboratoire: string | null;
   /**
    * Traduction en langage clair, ecrite par le medecin quand il a libere les
    * resultats (addendum du 2026-09-28). C'est elle qui donne son sens au

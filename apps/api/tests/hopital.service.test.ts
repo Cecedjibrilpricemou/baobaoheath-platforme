@@ -257,14 +257,14 @@ describe('getEpisode : valeurs masquees pour l accueil', () => {
       indicationClinique: 'Suspicion d anemie', consignesPatient: null,
       creeLe: new Date(), transmiseLe: new Date(), annuleeLe: null, motifAnnulation: null,
       lieuPrelevement: null, creneauPrelevement: null, recueLe: null, preleveeLe: null,
-      valideeLe: new Date(), commentaireBiologiste: 'Anemie moderee',
+      valideeLe: new Date(), commentaireLaboratoire: 'Anemie moderee',
       commentaireMedecin: 'Rien d inquietant', diffuseePatientLe: new Date(),
       idEpisode: 'ep-1', idPatient: 'pat-1',
       episode: { numero: 'EP-2026-000001' },
       patient: { id: 'pat-1', utilisateur: { prenom: 'Awa', nom: 'Diallo' } },
       prescripteur: { id: 'med-1', prenom: 'D', nom: 'C', role: 'MEDECIN' },
       laboratoire: { id: 'labo-A', nom: 'Labo Kindia', type: 'LABORATOIRE', prefecture: 'Kindia' },
-      valideur: { id: 'bio-1', prenom: 'A', nom: 'C', role: 'BIOLOGISTE' },
+      valideur: { id: 'bio-1', prenom: 'A', nom: 'C', role: 'TECHNICIEN_LABO' },
       liberePar: { id: 'med-1', prenom: 'D', nom: 'C', role: 'MEDECIN' },
       echantillons: [],
       lignes: [{
@@ -291,7 +291,7 @@ describe('getEpisode : valeurs masquees pour l accueil', () => {
     expect(d!.lignes[0]!.examen.libelle).toBe('Hemoglobine');
     // Mais pas la valeur, ni les conclusions.
     expect(d!.lignes[0]!.resultat).toBeNull();
-    expect(d!.commentaireBiologiste).toBeNull();
+    expect(d!.commentaireLaboratoire).toBeNull();
     expect(d!.commentaireMedecin).toBeNull();
     expect(d!.libereePar).toBeNull();
   });

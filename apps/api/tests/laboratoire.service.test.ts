@@ -52,7 +52,9 @@ const { notifierSansBloquer, envoyerSmsSimule } = jest.requireMock('../src/servi
 const { getIdentitePlateforme } = jest.requireMock('../src/services/parametres.service') as { getIdentitePlateforme: M };
 
 const technicien: JwtPayload = { userId: 'tech-1', role: 'TECHNICIEN_LABO', sessionId: 's' } as JwtPayload;
-const biologiste: JwtPayload = { userId: 'bio-1', role: 'BIOLOGISTE', sessionId: 's' } as JwtPayload;
+// Le role BIOLOGISTE a ete supprime le 2026-09-30 : c'est le laborantin qui
+// valide, et il n'y a plus qu'un seul metier au laboratoire.
+const laborantin: JwtPayload = { userId: 'tech-2', role: 'TECHNICIEN_LABO', sessionId: 's' } as JwtPayload;
 const medecin: JwtPayload = { userId: 'med-1', role: 'MEDECIN', sessionId: 's' } as JwtPayload;
 
 const hemoglobine = { id: 'ex-hb', codeLoinc: '718-7', libelle: 'Hemoglobine', categorie: 'HEMATOLOGIE', specimen: 'SANG', unite: 'g/dL', aJeun: false, consignes: null, prixGnf: null, refMin: 12, refMax: 17, refTexte: null, critiqueMin: 7, critiqueMax: 20 };
@@ -64,7 +66,7 @@ function demande(statut: string, extra: Record<string, unknown> = {}) {
   return {
     id: 'da-1', numero: 'DA-2026-000001', urgence: 'ROUTINE', statut, indicationClinique: null, consignesPatient: null,
     creeLe: new Date(), transmiseLe: new Date(), annuleeLe: null, motifAnnulation: null,
-    lieuPrelevement: null, creneauPrelevement: null, recueLe: null, preleveeLe: null, valideeLe: null, commentaireBiologiste: null, diffuseePatientLe: null,
+    lieuPrelevement: null, creneauPrelevement: null, recueLe: null, preleveeLe: null, valideeLe: null, commentaireLaboratoire: null, diffuseePatientLe: null,
     idEpisode: 'ep-1', idPatient: 'pat-1', idPrescripteur: 'med-1', idLaboratoire: 'labo-A', idValideur: null,
     episode: { numero: 'EP-2026-000001' },
     patient: { id: 'pat-1', utilisateur: { prenom: 'Awa', nom: 'Diallo' } },
@@ -175,15 +177,17 @@ describe('saisirResultats (EF-04-04, EF-04-06)', () => {
 
   it('ne modifie plus une demande validee', async () => {
     prisma.demandeAnalyse.findFirst.mockResolvedValue(demande('VALIDEE'));
-    await expect(saisirResultats(biologiste, 'da-1', { resultats: [{ idLigne: 'li-hb', valeur: '14' }] })).rejects.toBeInstanceOf(ConflictError);
+    await expect(saisirResultats(laborantin, 'da-1', { resultats: [{ idLigne: 'li-hb', valeur: '14' }] })).rejects.toBeInstanceOf(ConflictError);
   });
 });
 
 describe('validerResultats (EF-04-05, EF-04-07, EF-04-09)', () => {
   const resultat = (interpretation: string, id = 'res-1') => ({ id, valeur: '6', valeurNumerique: 6, unite: 'g/dL', refMin: 12, refMax: 17, refTexte: null, interpretation, commentaire: null, saisiLe: new Date(), saisiPar: personne('tech-1', 'TECHNICIEN_LABO'), echantillon: null });
 
-  it('est reservee au biologiste', async () => {
-    await expect(validerResultats(technicien, 'da-1', {})).rejects.toBeInstanceOf(ForbiddenError);
+  // La validation reste reservee au laboratoire : ni le medecin prescripteur
+  // ni personne d'autre ne peut signer a sa place.
+  it('reste fermee a qui n est pas du laboratoire', async () => {
+    await expect(validerResultats(medecin, 'da-1', {})).rejects.toBeInstanceOf(ForbiddenError);
     expect(prisma.demandeAnalyse.findFirst).not.toHaveBeenCalled();
   });
 
@@ -192,7 +196,7 @@ describe('validerResultats (EF-04-05, EF-04-07, EF-04-09)', () => {
       { id: 'li-hb', examen: hemoglobine, resultat: resultat('NORMAL') },
       { id: 'li-vih', examen: vih, resultat: null },
     ] }));
-    await expect(validerResultats(biologiste, 'da-1', {})).rejects.toThrow(/Serologie VIH/);
+    await expect(validerResultats(laborantin, 'da-1', {})).rejects.toThrow(/Serologie VIH/);
     expect(prisma.demandeAnalyse.update).not.toHaveBeenCalled();
   });
 
@@ -205,10 +209,10 @@ describe('validerResultats (EF-04-05, EF-04-07, EF-04-09)', () => {
       { id: 'li-hb', examen: hemoglobine, resultat: resultat('ANORMAL') },
       { id: 'li-vih', examen: vih, resultat: resultat('NORMAL', 'res-2') },
     ] }));
-    await validerResultats(biologiste, 'da-1', { commentaire: 'Anemie moderee' });
+    await validerResultats(laborantin, 'da-1', { commentaire: 'Anemie moderee' });
 
     const data = prisma.demandeAnalyse.update.mock.calls[0][0].data;
-    expect(data).toMatchObject({ statut: 'VALIDEE', idValideur: 'bio-1', commentaireBiologiste: 'Anemie moderee' });
+    expect(data).toMatchObject({ statut: 'VALIDEE', idValideur: 'tech-2', commentaireLaboratoire: 'Anemie moderee' });
     // Ni pose, ni efface : la validation ne touche plus a ce champ.
     expect(data.diffuseePatientLe).toBeUndefined();
     expect(prisma.alerteResultatCritique.create).not.toHaveBeenCalled();
@@ -226,7 +230,7 @@ describe('validerResultats (EF-04-05, EF-04-07, EF-04-09)', () => {
       { id: 'li-hb', examen: hemoglobine, resultat: resultat('CRITIQUE') },
       { id: 'li-vih', examen: vih, resultat: resultat('NORMAL', 'res-2') },
     ] }));
-    await validerResultats(biologiste, 'da-1', {});
+    await validerResultats(laborantin, 'da-1', {});
 
     expect(prisma.alerteResultatCritique.create).toHaveBeenCalledWith({ data: { idDemande: 'da-1', idResultat: 'res-1', idDestinataire: 'med-1' } });
     expect(prisma.demandeAnalyse.update.mock.calls[0][0].data.diffuseePatientLe).toBeUndefined();
@@ -253,7 +257,7 @@ describe('libererResultats', () => {
   }
 
   it('est reservee au medecin', async () => {
-    await expect(libererResultats(biologiste, 'da-1', {})).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(libererResultats(laborantin, 'da-1', {})).rejects.toBeInstanceOf(ForbiddenError);
     expect(prisma.demandeAnalyse.findUnique).not.toHaveBeenCalled();
   });
 

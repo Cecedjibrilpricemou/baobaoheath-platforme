@@ -1,7 +1,8 @@
 // features/laboratoire/demande-detail — poste de travail du laboratoire sur
 // une demande : reception, planification et enregistrement du prelevement
 // (EF-04-02/03), saisie des resultats (EF-04-04), validation nominative du
-// biologiste (EF-04-05), compte rendu.
+// laborantin (EF-04-05), compte rendu. Le role BIOLOGISTE a ete supprime
+// le 2026-09-30 (addendum, point 4).
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -52,11 +53,12 @@ export class LaboDemandeDetailComponent implements OnInit {
   isSaving  = signal(false);
   panneau   = signal<Panneau>('aucun');
 
-  readonly estBiologiste = computed(() => this.auth.currentUser()?.role === 'BIOLOGISTE');
+  /** Qui peut valider : le laborantin, depuis la suppression du role biologiste. */
+  readonly peutSigner = computed(() => this.auth.currentUser()?.role === 'TECHNICIEN_LABO');
   readonly etapeCourante = computed(() => { const d = this.demande(); return d ? indexEtape(d.statut) : -1; });
   readonly peutSaisir = computed(() => { const s = this.demande()?.statut; return s === 'PRELEVEE' || s === 'EN_ANALYSE'; });
   readonly toutSaisi = computed(() => { const d = this.demande(); return !!d && d.lignes.length > 0 && d.lignes.every((l) => l.resultat); });
-  readonly peutValider = computed(() => this.estBiologiste() && this.demande()?.statut === 'EN_ANALYSE' && this.toutSaisi());
+  readonly peutValider = computed(() => this.peutSigner() && this.demande()?.statut === 'EN_ANALYSE' && this.toutSaisi());
   readonly saisieModifiee = computed(() => {
     const d = this.demande(); if (!d) return false;
     return d.lignes.some((l) => { const s = this.saisies()[l.id]; return s && (s.valeur.trim() !== (l.resultat?.valeur ?? '') || s.commentaire.trim() !== (l.resultat?.commentaire ?? '')); });
@@ -70,7 +72,7 @@ export class LaboDemandeDetailComponent implements OnInit {
   // Saisie des resultats, par ligne
   saisies = signal<Record<string, Saisie>>({});
   // Validation
-  commentaireBiologiste = '';
+  commentaireLaboratoire = '';
 
   ngOnInit() {
     this.charger(this.route.snapshot.paramMap.get('id')!);
@@ -185,7 +187,7 @@ export class LaboDemandeDetailComponent implements OnInit {
     this.dialog.open(ConfirmDialogComponent, { data, width: '420px', autoFocus: false }).afterClosed().subscribe((ok) => {
       if (!ok) return;
       this.isSaving.set(true);
-      this.labo.validerResultats(d.id, { commentaire: this.commentaireBiologiste.trim() || undefined }).subscribe({
+      this.labo.validerResultats(d.id, { commentaire: this.commentaireLaboratoire.trim() || undefined }).subscribe({
         next: (r) => { this.isSaving.set(false); this.appliquer(r.data ?? d); this.panneau.set('aucun'); this.succes('LABO.DETAIL.VALIDE_OK'); },
         error: (err) => { this.isSaving.set(false); this.erreur(err); },
       });

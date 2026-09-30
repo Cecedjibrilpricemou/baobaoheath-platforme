@@ -20,7 +20,7 @@ export const E2E = {
   pharmacien: { email: 'pharma.e2e@baobao.test', telephone: '690000003', prenom: 'Ibrahima', nom: 'Sow' },
   adminStructure: { email: 'admin.centre.e2e@baobao.test', telephone: '690000004', prenom: 'Aissatou', nom: 'Barry' },
   accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
-  biologiste: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
+  laborantin2: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
   medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
   // Molecule a laquelle la patiente se declare allergique : elle sert a
@@ -93,8 +93,9 @@ async function main() {
 
   // Accueil du centre : admission, episodes, demandes d'analyse (P1).
   await upsertUtilisateur(E2E.accueil, Role.AGENT_ACCUEIL, motDePasseHash, centre.id);
-  // Biologiste du laboratoire : prelevement, resultats, validation (P2).
-  await upsertUtilisateur(E2E.biologiste, Role.BIOLOGISTE, motDePasseHash, laboratoire.id);
+  // Second laborantin : prelevement, resultats, validation (P2). Le role de
+  // biologiste a ete supprime le 2026-09-30 (addendum, point 4).
+  await upsertUtilisateur(E2E.laborantin2, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
 
   const pharmacien = await upsertUtilisateur(E2E.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
   await prisma.pharmacienProfile.upsert({

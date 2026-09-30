@@ -347,7 +347,7 @@ Les trois reprises d'abord : elles portent sur du code en production, et **chaqu
 | 1 | ✅ **Résultats libérés par le médecin** (point 7) — **livré le 2026-09-28, API + front** | M | Le seul point à conséquence clinique. Aujourd'hui un patient peut lire un résultat que personne ne lui a expliqué. |
 | 2 | ✅ **Le médecin prescrit, l'accueil se recentre** (point 9) — **livré le 2026-09-29, API + front** | M | L'écran de prescription d'analyses côté médecin **d'abord**, le retrait des droits de l'accueil **ensuite**. Absorbe le reliquat de P2. |
 | 3 | ✅ **RDV fixés par le médecin + agenda + pointage** (points 2, 3, 8) — **livré le 2026-09-30, API + front** | M | Un seul circuit, une seule reprise. Séparer ferait refaire l'écran d'accueil deux fois — et un médecin qui fixe ses rendez-vous a besoin de l'endroit où les voir. |
-| 4 | **Suppression du rôle biologiste** (point 4) | M | Migration de comptes : plus elle tarde, plus il y a de comptes et de comptes rendus concernés. |
+| 4 | ✅ **Suppression du rôle biologiste** (point 4) — **livré le 2026-09-30** | M | Migration de comptes : plus elle tarde, plus il y a de comptes et de comptes rendus concernés. |
 | 5 | **Demande de rendez-vous à distance par le patient** (point 6) | M | Se branche sur le circuit RDV du bloc 3, qui doit exister avant. La **téléconsultation réelle** n'est pas dans ce total : elle attend D2. |
 | 6 | **Pharmacie : lots, approvisionnement, péremptions** (points 1.3, 1.4) | L | Le blocage de modèle est ici. À faire avant la vente, qui s'appuie dessus. |
 | 7 | **Pharmacie : vente et tableau de bord** (points 1.1, 1.2) | M | Suppose les lots. |

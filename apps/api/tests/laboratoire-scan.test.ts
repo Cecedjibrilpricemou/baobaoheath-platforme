@@ -133,7 +133,7 @@ describe('scanPatient (laboratoire)', () => {
     const demandeSelect = prisma.demandeAnalyse.findMany.mock.calls[0][0].select;
     // Aucun resultat : le comptoir n'est pas l'endroit pour les lire.
     expect(demandeSelect.lignes.select.resultat).toBeUndefined();
-    expect(demandeSelect.commentaireBiologiste).toBeUndefined();
+    expect(demandeSelect.commentaireLaboratoire).toBeUndefined();
   });
 
   it('classe par urgence puis par anciennete, comme la file', async () => {

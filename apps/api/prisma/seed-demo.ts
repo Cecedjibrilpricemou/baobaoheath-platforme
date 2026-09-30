@@ -39,7 +39,9 @@ export const DEMO = {
   accueil:    { telephone: '620100001', email: 'accueil.donka@demo.test',   prenom: 'Fatoumata', nom: 'Keita' },
   medecin:    { telephone: '620100002', email: 'david.medecin@demo.test',   prenom: 'David',     nom: 'Camara' },
   technicien: { telephone: '620100003', email: 'tech.cece@demo.test',       prenom: 'Sekou',     nom: 'Cece' },
-  biologiste: { telephone: '620100004', email: 'bio.cece@demo.test',        prenom: 'Aminata',   nom: 'Cece' },
+  // Deuxieme laborantin : c'est lui qui valide, le role de biologiste ayant
+  // ete supprime le 2026-09-30 (addendum, point 4).
+  laborantin2: { telephone: '620100004', email: 'bio.cece@demo.test',      prenom: 'Aminata',   nom: 'Cece' },
   pharmacien: { telephone: '620100005', email: 'pharma.pricemou@demo.test', prenom: 'Ousmane',   nom: 'Pricemou' },
   adminHopital: { telephone: '620100006', email: 'admin.donka@demo.test',   prenom: 'Mariama',   nom: 'Sow' },
 
@@ -133,7 +135,7 @@ async function main() {
   await upsertUtilisateur(DEMO.accueil, Role.AGENT_ACCUEIL, motDePasseHash, hopital.id);
   const medecin = await upsertUtilisateur(DEMO.medecin, Role.MEDECIN, motDePasseHash, hopital.id);
   await upsertUtilisateur(DEMO.technicien, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
-  await upsertUtilisateur(DEMO.biologiste, Role.BIOLOGISTE, motDePasseHash, laboratoire.id);
+  await upsertUtilisateur(DEMO.laborantin2, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
   await upsertUtilisateur(DEMO.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
 
   // Le profil medecin est requis pour que l'espace medecin s'ouvre.
@@ -142,7 +144,7 @@ async function main() {
     update: {},
     create: { idUtilisateur: medecin.id, specialite: 'Medecine generale' },
   });
-  console.log('2. Professionnels : accueil, Dr David, technicien, biologiste, pharmacien, admin');
+  console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien, admin');
 
   // ── 3. Le patient ───────────────────────────────────────────────
   const utilisateurPatient = await upsertUtilisateur(DEMO.patient, Role.PATIENT, motDePasseHash, null);

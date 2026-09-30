@@ -18,7 +18,7 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types` |
 | API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — 25 fichiers de routes, 30 services |
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN |
-| Modèle | 40 modèles Prisma, 21 enums, 21 migrations, **13 rôles** |
+| Modèle | 40 modèles Prisma, 22 enums, 23 migrations, **12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward) |
 | Tests | **351 API** (Jest, 24 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
@@ -148,7 +148,7 @@ Corollaire sur le thème sombre : dans un SCSS **de composant**, utiliser `:host
 
 40 modèles, 21 enums, 21 migrations.
 
-- **`Utilisateur`** — 13 rôles : `PATIENT`, `ASC`, `ASC_SUPERVISOR`, `MEDECIN`, `PHARMACIEN`, `AGENT_ACCUEIL`, `TECHNICIEN_LABO`, `BIOLOGISTE`, `LIVREUR`, `ADMIN_STRUCTURE`, `ADMIN_REGIONAL`, `ADMIN_NATIONAL`, `SUPER_ADMIN`.
+- **`Utilisateur`** — 12 rôles : `PATIENT`, `ASC`, `ASC_SUPERVISOR`, `MEDECIN`, `PHARMACIEN`, `AGENT_ACCUEIL`, `TECHNICIEN_LABO`, `LIVREUR`, `ADMIN_STRUCTURE`, `ADMIN_REGIONAL`, `ADMIN_NATIONAL`, `SUPER_ADMIN`. Le rôle `BIOLOGISTE` a été supprimé le 2026-09-30 : c'est le laborantin qui valide.
 - **`PatientProfile`** — dossier, QR code, géographie (`prefecture`, `commune`, `quartier`), allergies et maladies chroniques en **texte libre** (d'où la comparaison tolérante aux accents, §5).
 - **`EpisodeSoins` → `DemandeAnalyse` → `Echantillon` → `ResultatAnalyse`** — le parcours hôpital → laboratoire.
 - **`Consultation` → `Ordonnance` → `LigneOrdonnance`** — voir ci-dessous.
@@ -280,7 +280,7 @@ L'addendum du 2026-09-28 (`docs/ADDENDUM-CDC-2026-09-28.md`) contient neuf point
 | Ce qui change | Ce que faisait le code | État |
 |---|---|---|
 | **Le médecin fixe les RDV** | `hopital.service.ts` est le **seul** endroit du code qui crée un rendez-vous — et c'est l'agent d'accueil. Le médecin n'en crée aucun. | à faire (bloc 3) |
-| **Plus de biologiste, juste laborantin** | Le rôle `BIOLOGISTE` est exigé à **sept endroits**. La validation nominative reste bloquante : quelqu'un continue de signer. | à faire (bloc 4) |
+| **Plus de biologiste, juste laborantin** | Le rôle était exigé à **sept endroits**. La validation nominative reste bloquante : quelqu'un continue de signer. | ✅ **livré le 2026-09-30** |
 | **Résultats libérés par le médecin** | Tout résultat non critique partait au patient dès la validation ; un critique partait seul au bout de 24 h. | ✅ **livré le 2026-09-28** |
 
 Décisions prises le même jour, à ne pas rediscuter :
@@ -304,7 +304,7 @@ Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté h
 | 1 | ✅ Résultats libérés par le médecin | M | **P2** — livré |
 | 2 | ✅ Le médecin prescrit, l'accueil se recentre | M | **P2** — livré le 2026-09-29 |
 | 3 | ✅ RDV fixés par le médecin + agenda + pointage | M | **P1** — livré le 2026-09-30 |
-| 4 | Suppression du rôle biologiste | M | **P2** — réécrit une case déjà cochée |
+| 4 | ✅ Suppression du rôle biologiste | M | **P2** — livré le 2026-09-30 |
 | 5 | Prise de rendez-vous à distance | M | **P13 → remonte** |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | L | **P6** — travail réellement neuf |
 | 7 | Pharmacie : vente et tableau de bord | M | **P6** — travail réellement neuf |

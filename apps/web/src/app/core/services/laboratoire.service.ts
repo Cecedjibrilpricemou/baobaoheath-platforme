@@ -1,5 +1,5 @@
 // core/services/laboratoire.service.ts
-// P2 — Laboratoire (EF-04) : appels /laboratoire/* (technicien, biologiste),
+// P2 — Laboratoire (EF-04) : appels /laboratoire/* (laborantin),
 // /resultats/* (prescripteurs) et /patients/me/resultats/*.
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';

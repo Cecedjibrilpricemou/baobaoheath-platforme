@@ -1,5 +1,5 @@
 // shared/components/labo-layout/labo-layout.component.ts
-// Espace « Laboratoire » (roles TECHNICIEN_LABO, BIOLOGISTE) : file des
+// Espace « Laboratoire » (role TECHNICIEN_LABO) : file des
 // demandes, prelevements, resultats, validation. Meme coquille que les autres espaces.
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';

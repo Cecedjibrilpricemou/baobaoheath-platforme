@@ -113,7 +113,7 @@ export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
     preleveeLe: d.preleveeLe,
     valideeLe: d.valideeLe,
     valideur: d.valideur,
-    commentaireBiologiste: d.commentaireBiologiste,
+    commentaireLaboratoire: d.commentaireLaboratoire,
     commentaireMedecin: d.commentaireMedecin,
     libereePar: d.liberePar ?? null,
     diffuseePatientLe: d.diffuseePatientLe,
@@ -124,12 +124,12 @@ export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
 
 /**
  * Vue patient : les resultats ne sont visibles qu'une fois diffuses
- * (validation du biologiste, et accuse du prescripteur si critique — EF-04-09).
+ * (validation du laboratoire, et accuse du prescripteur si critique — EF-04-09).
  */
 export function versDemandeViewPatient(d: DemandeRow): DemandeAnalyseView {
   const vue = versDemandeView(d);
   if (vue.diffuseePatientLe) return vue;
-  return { ...vue, commentaireBiologiste: null, commentaireMedecin: null, libereePar: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
+  return { ...vue, commentaireLaboratoire: null, commentaireMedecin: null, libereePar: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
 }
 
 function versEpisodeView(e: EpisodeRow): EpisodeSoinsView {
@@ -316,7 +316,7 @@ function sansValeursPourLAccueil(user: JwtPayload, vue: EpisodeSoinsView): Episo
     ...vue,
     demandesAnalyse: vue.demandesAnalyse.map((d) => ({
       ...d,
-      commentaireBiologiste: null,
+      commentaireLaboratoire: null,
       commentaireMedecin: null,
       libereePar: null,
       lignes: d.lignes.map((l) => ({ ...l, resultat: null })),

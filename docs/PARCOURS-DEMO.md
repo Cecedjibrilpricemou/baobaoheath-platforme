@@ -22,7 +22,7 @@ Le script est **idempotent** : il peut être rejoué sans rien casser.
 | AGENT_ACCUEIL | Fatoumata Keïta | `accueil.donka@demo.test` | Hôpital Donka |
 | MEDECIN | **David** Camara | `david.medecin@demo.test` | Hôpital Donka |
 | TECHNICIEN_LABO | Sékou Cécé | `tech.cece@demo.test` | Laboratoire Cécé |
-| BIOLOGISTE | Aminata Cécé | `bio.cece@demo.test` | Laboratoire Cécé |
+| TECHNICIEN_LABO | Aminata Cécé | `bio.cece@demo.test` | Laboratoire Cécé |
 | PHARMACIEN | Ousmane Pricemou | `pharma.pricemou@demo.test` | Pharmacie Pricemou |
 | ADMIN_STRUCTURE | Mariama Sow | `admin.donka@demo.test` | Hôpital Donka |
 
@@ -69,7 +69,9 @@ Puis **orienter la patiente vers le Dr David Camara**, avec ou sans date. Le mé
 ### 2. Laboratoire — du prélèvement au résultat validé
 
 **Sékou Cécé** (technicien) reçoit la demande, planifie le prélèvement, saisit les résultats.
-**Aminata Cécé** (biologiste) valide — *la validation est bloquante* : rien ne se diffuse avant.
+**Aminata Cécé** (second laborantin) valide — *la validation est bloquante* : rien ne se diffuse avant.
+
+> Le rôle de biologiste a été supprimé le 2026-09-30 : il n'y en a pas dans ces laboratoires. Quelqu'un continue de signer, et son nom reste sur le compte rendu.
 
 > Pour voir le circuit des valeurs critiques, saisir une valeur hors des seuils de l'examen.
 

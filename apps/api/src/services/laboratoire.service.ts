@@ -1,6 +1,6 @@
 // src/services/laboratoire.service.ts
 // P2 — Laboratoire (EF-04) : file des demandes, prelevement et echantillons,
-// saisie ou import des resultats, validation nominative du biologiste,
+// saisie ou import des resultats, validation nominative du laborantin,
 // resultats critiques (alerte, accuse de lecture, escalade), diffusion au
 // patient et courbes d'evolution.
 import { InterpretationResultat, Prisma, StatutDemandeAnalyse } from '../config/generated/client/client';
@@ -312,7 +312,10 @@ export async function saisirResultats(user: JwtPayload, idDemande: string, dto: 
 
 // ── EF-04-05 : validation nominative, bloquante avant diffusion ────────
 export async function validerResultats(user: JwtPayload, idDemande: string, dto: ValiderResultatsDto): Promise<DemandeAnalyseView> {
-  if (user.role !== 'BIOLOGISTE') throw new ForbiddenError('Seul un biologiste peut valider des resultats');
+  // Le role BIOLOGISTE a ete supprime (addendum du 2026-09-28, point 4) :
+  // il n'y a pas de biologiste dans ces laboratoires. La validation reste
+  // nominative et bloquante — c'est le laborantin qui signe.
+  if (user.role !== 'TECHNICIEN_LABO') throw new ForbiddenError('Seul un laborantin peut valider des resultats');
   const d = await demandeDuLabo(user, idDemande);
   exigerStatut(d, ['EN_ANALYSE'], 'valider');
   const manquantes = d.lignes.filter((l) => !l.resultat);
@@ -328,7 +331,7 @@ export async function validerResultats(user: JwtPayload, idDemande: string, dto:
     return tx.demandeAnalyse.update({
       where: { id: d.id },
       data: {
-        statut: 'VALIDEE', valideeLe: maintenant, idValideur: user.userId, commentaireBiologiste: dto.commentaire ?? null,
+        statut: 'VALIDEE', valideeLe: maintenant, idValideur: user.userId, commentaireLaboratoire: dto.commentaire ?? null,
         // `diffuseePatientLe` reste volontairement vide : la validation du
         // laboratoire ne rend plus rien visible au patient. Il faut qu'un
         // medecin libere (addendum du 2026-09-28).
@@ -682,8 +685,8 @@ ${valide ? '' : '<div class="filigrane">NON VALIDE</div>'}
 <ul>${echantillons || '<li>—</li>'}</ul>
 <h2>Resultats</h2>
 <table><thead><tr><th>Examen</th><th>Resultat</th><th>Unite</th><th>Reference</th><th>Lecture</th><th>Commentaire</th></tr></thead><tbody>${lignes}</tbody></table>
-${d.commentaireBiologiste ? `<h2>Conclusion du biologiste</h2><p>${echapper(d.commentaireBiologiste)}</p>` : ''}
-<div class="sign"><div>${valide && d.valideur ? `Valide par ${echapper(d.valideur.prenom)} ${echapper(d.valideur.nom)}<br><small>Biologiste · ${date(d.valideeLe)}</small>` : 'Validation biologiste en attente'}</div></div>
+${d.commentaireLaboratoire ? `<h2>Conclusion du laboratoire</h2><p>${echapper(d.commentaireLaboratoire)}</p>` : ''}
+<div class="sign"><div>${valide && d.valideur ? `Valide par ${echapper(d.valideur.prenom)} ${echapper(d.valideur.nom)}<br><small>Laboratoire · ${date(d.valideeLe)}</small>` : 'Validation du laboratoire en attente'}</div></div>
 <footer><span>${echapper(identite.copyright)}</span><span>${[identite.telephone, identite.emailContact].filter(Boolean).map(echapper).join(' · ')}</span></footer>
 </body></html>`;
 }
