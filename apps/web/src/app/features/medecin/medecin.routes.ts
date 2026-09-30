@@ -30,6 +30,11 @@ export const MEDECIN_ROUTES: Routes = [
           import('./resultats/resultats.component').then(m => m.ResultatsComponent)
       },
       {
+        path: 'agenda',
+        loadComponent: () =>
+          import('./agenda/agenda.component').then(m => m.AgendaComponent)
+      },
+      {
         path: 'orientations',
         loadComponent: () =>
           import('./orientations/orientations.component').then(m => m.OrientationsComponent)

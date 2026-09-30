@@ -70,12 +70,13 @@
           </mat-form-field>
         </div>
         @if (orientation.idMedecin) {
-          <div class="form-field-wrap">
-            <label class="form-label" for="or-date">{{ 'HOPITAL.DETAIL.ORIENT_DATE' | translate }}</label>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <input matInput id="or-date" type="datetime-local" [(ngModel)]="orientation.prevuLe" [disabled]="!orientation.avecRdv" />
-            </mat-form-field>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px;cursor:pointer"><input type="checkbox" [(ngModel)]="orientation.avecRdv" style="accent-color:var(--bb-primary)" /> {{ 'HOPITAL.DETAIL.ORIENT_DATE' | translate }}</label>
+          <!-- Le champ de date a disparu le 2026-09-30 : c'est le médecin qui
+               fixe le créneau, lui seul connaissant son agenda. -->
+          <div class="form-field-wrap bb-hop-panel__full">
+            <p class="bb-hop-note">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              {{ 'HOPITAL.DETAIL.ORIENT_SANS_DATE' | translate }}
+            </p>
           </div>
           <div class="form-field-wrap">
             <label class="form-label" for="or-motif">{{ 'HOPITAL.DETAIL.ORIENT_MOTIF' | translate }}</label>

@@ -1,0 +1,68 @@
+<div class="bb-pres">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-user-edit" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'HOPITAL.PRESENCES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'HOPITAL.PRESENCES.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-pres__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (presences().length === 0) {
+    <div class="bb-pres__empty">
+      <i class="pi pi-calendar" aria-hidden="true"></i>
+      <p>{{ 'HOPITAL.PRESENCES.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+
+    @if (attendus().length) {
+      <h2 class="bb-pres__section">{{ 'HOPITAL.PRESENCES.ATTENDUS' | translate }}</h2>
+      @for (p of attendus(); track p.idRendezVous) {
+        <article class="bb-pres__card" [class.bb-pres__card--retard]="enRetard(p)">
+          <div class="bb-pres__heure">{{ p.prevuLe | date:'HH:mm' }}</div>
+
+          <div class="bb-pres__corps">
+            <span class="bb-pres__patient">{{ p.patient.prenom }} {{ p.patient.nom }}</span>
+            <span class="bb-pres__meta">
+              {{ p.patient.telephone }} ·
+              @if (p.medecin) {
+                {{ 'HOPITAL.PRESENCES.AVEC' | translate }} Dr {{ p.medecin.prenom }} {{ p.medecin.nom }}
+              } @else {
+                {{ 'HOPITAL.PRESENCES.SANS_MEDECIN' | translate }}
+              }
+            </span>
+          </div>
+
+          <button matButton="filled" type="button"
+                  [disabled]="enCours() === p.idRendezVous"
+                  (click)="pointer(p)">
+            <i class="pi pi-check" aria-hidden="true"></i>
+            {{ (enCours() === p.idRendezVous ? 'COMMON.LOADING' : 'HOPITAL.PRESENCES.POINTER') | translate }}
+          </button>
+        </article>
+      }
+    }
+
+    @if (arrives().length) {
+      <h2 class="bb-pres__section">{{ 'HOPITAL.PRESENCES.ARRIVES' | translate }}</h2>
+      @for (p of arrives(); track p.idRendezVous) {
+        <article class="bb-pres__card bb-pres__card--arrive">
+          <div class="bb-pres__heure">{{ p.prevuLe | date:'HH:mm' }}</div>
+
+          <div class="bb-pres__corps">
+            <span class="bb-pres__patient">{{ p.patient.prenom }} {{ p.patient.nom }}</span>
+            <span class="bb-pres__meta">
+              @if (p.arriveeLe) { {{ 'HOPITAL.PRESENCES.ARRIVE_A' | translate }} {{ p.arriveeLe | date:'HH:mm' }} · }
+              @if (p.medecin) {
+                {{ 'HOPITAL.PRESENCES.AVEC' | translate }} Dr {{ p.medecin.prenom }} {{ p.medecin.nom }}
+              }
+            </span>
+          </div>
+
+          <span class="bb-pres__statut" [attr.data-statut]="p.statut">{{ libelleStatut(p.statut) }}</span>
+        </article>
+      }
+    }
+  }
+</div>

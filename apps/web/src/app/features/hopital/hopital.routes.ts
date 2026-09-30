@@ -10,6 +10,11 @@ export const HOPITAL_ROUTES: Routes = [
       { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
       { path: 'tableau-de-bord', loadComponent: () => import('./tableau-de-bord/tableau-de-bord.component').then(m => m.TableauDeBordComponent) },
       { path: 'admission', loadComponent: () => import('./admission/admission.component').then(m => m.AdmissionComponent) },
+      {
+        path: 'presences',
+        loadComponent: () =>
+          import('./presences/presences.component').then(m => m.PresencesComponent)
+      },
       { path: 'episodes', loadComponent: () => import('./episodes/episodes.component').then(m => m.EpisodesComponent) },
       { path: 'episodes/:id', loadComponent: () => import('./episode-detail/episode-detail.component').then(m => m.EpisodeDetailComponent) },
       { path: 'alertes', loadComponent: () => import('./alertes/alertes.component').then(m => m.AlertesComponent) },

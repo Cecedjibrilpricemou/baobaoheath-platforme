@@ -65,7 +65,34 @@
       <a class="bb-orient__lien" [routerLink]="['/medecin/dossier', o.idEpisode]">
         {{ 'MEDECIN.ORIENTATIONS.OUVRIR' | translate }}
       </a>
+      @if (!o.rendezVous) {
+        <button type="button" class="bb-orient__btn" (click)="ouvrirRdv(o.idEpisode)">
+          {{ (ouverte() === o.idEpisode ? 'COMMON.CANCEL' : 'MEDECIN.RDV.FIXER') | translate }}
+        </button>
+      }
     </p>
+
+    <!-- C'est ici, et nulle part ailleurs, qu'une heure est annoncee au
+         patient : l'accueil n'en propose plus. -->
+    @if (ouverte() === o.idEpisode) {
+      <div class="bb-orient__form">
+        <label class="bb-orient__label" [attr.for]="'q-' + o.idEpisode">
+          {{ 'MEDECIN.RDV.QUAND' | translate }}
+        </label>
+        <input class="bb-orient__champ" type="datetime-local" [id]="'q-' + o.idEpisode" [(ngModel)]="quand" />
+
+        <label class="bb-orient__label" [attr.for]="'m-' + o.idEpisode">
+          {{ 'MEDECIN.RDV.MOTIF' | translate }}
+        </label>
+        <input class="bb-orient__champ" type="text" maxlength="500" [id]="'m-' + o.idEpisode" [(ngModel)]="motifRdv" />
+
+        <button type="button" class="bb-orient__btn bb-orient__btn--primaire"
+                [disabled]="enCours() === o.idEpisode || !quand"
+                (click)="fixer(o)">
+          {{ (enCours() === o.idEpisode ? 'COMMON.LOADING' : 'MEDECIN.RDV.CONFIRMER') | translate }}
+        </button>
+      </div>
+    }
 
     <p class="bb-orient__pied">
       <span class="bb-orient__numero">{{ o.numeroEpisode }}</span>

@@ -971,6 +971,37 @@
       "A_LIBERER_LIEN": "Release them",
       "CLOTURER_CONFIRM": "Close this episode? Care will be considered complete.",
       "INTROUVABLE": "Record not found."
+    },
+    "NAV_AGENDA": "Schedule",
+    "AGENDA": {
+      "TITLE": "My schedule",
+      "SUB": "Your appointments, soonest first.",
+      "EMPTY": "No upcoming appointment.",
+      "AUJOURDHUI": "Today",
+      "DEMAIN": "Tomorrow",
+      "ARRIVE": "arrived at",
+      "PRENDRE": "See the patient",
+      "TERMINER": "Complete",
+      "ABSENT": "Mark as absent",
+      "ERR_LOAD": "Could not load your schedule.",
+      "ERR_STATUT": "The change failed."
+    },
+    "RDV": {
+      "FIXER": "Set the appointment",
+      "QUAND": "Date and time",
+      "MOTIF": "Reason (optional)",
+      "CONFIRMER": "Confirm",
+      "OK": "Appointment set: {{patient}} has been notified.",
+      "ERR": "Could not set this appointment.",
+      "AUCUN": "No appointment yet"
+    },
+    "STATUT_RDV": {
+      "PLANIFIE": "scheduled",
+      "PRESENT": "present",
+      "EN_CONSULTATION": "in consultation",
+      "TERMINE": "completed",
+      "ABSENT": "absent",
+      "ANNULE": "cancelled"
     }
   },
   "ADMIN": {
@@ -1519,7 +1550,8 @@
       "EPISODE_CLOS": "Episode closed.",
       "EPISODE_ANNULE": "Episode cancelled.",
       "CR": "Report",
-      "CRITIQUE_A_ACCUSER": "Critical result to acknowledge:"
+      "CRITIQUE_A_ACCUSER": "Critical result to acknowledge:",
+      "ORIENT_SANS_DATE": "The doctor will set the appointment. The patient will be notified then."
     },
     "RDV_STATUT": {
       "PLANIFIE": "Planned",
@@ -1543,6 +1575,21 @@
       "ACCUSE_OK": "Acknowledgement recorded.",
       "HISTORIQUE": "Acknowledged alerts",
       "ACCUSEE": "Acknowledged"
+    },
+    "NAV_PRESENCES": "Today's arrivals",
+    "PRESENCES": {
+      "TITLE": "Today's arrivals",
+      "SUB": "Patients expected today. Check them in and the doctor is notified.",
+      "EMPTY": "No patient expected today.",
+      "ATTENDUS": "Expected",
+      "ARRIVES": "Arrived",
+      "POINTER": "Check in",
+      "ARRIVE_A": "arrived at",
+      "AVEC": "with",
+      "SANS_MEDECIN": "no doctor assigned",
+      "OK": "{{patient}} checked in — the doctor has been notified.",
+      "ERR_LOAD": "Could not load arrivals.",
+      "ERR_POINTER": "Check-in failed."
     }
   },
   "LABO": {

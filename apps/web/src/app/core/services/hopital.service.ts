@@ -6,6 +6,7 @@ import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
+  PresenceDuJourView,
   CreateDemandeAnalyseDto,
   CreateEpisodeDto,
   DemandeAnalyseView,
@@ -63,6 +64,16 @@ export class HopitalService {
 
   annulerEpisode(id: string): Observable<ApiResponse<EpisodeSoinsView>> {
     return this.api.post<ApiResponse<EpisodeSoinsView>>(`/hopital/episodes/${id}/annuler`, {});
+  }
+
+  /** Les patients attendus aujourd'hui (addendum, point 2). */
+  presencesDuJour(jour?: string): Observable<ApiResponse<PresenceDuJourView[]>> {
+    return this.api.get<ApiResponse<PresenceDuJourView[]>>('/hopital/presences', jour ? { jour } : undefined);
+  }
+
+  /** L'assistante pointe l'arrivee : c'est la que l'attente commence. */
+  pointerPresence(idRendezVous: string): Observable<ApiResponse<PresenceDuJourView>> {
+    return this.api.post<ApiResponse<PresenceDuJourView>>(`/hopital/rendez-vous/${idRendezVous}/presence`, {});
   }
 
   orienter(id: string, dto: OrientationDto): Observable<ApiResponse<EpisodeSoinsView>> {

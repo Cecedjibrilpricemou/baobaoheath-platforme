@@ -87,6 +87,7 @@ export class HopitalLayoutComponent {
       { labelKey: 'HOPITAL.NAV_DASHBOARD', icon: 'pi-th-large',  route: '/hopital/tableau-de-bord' },
       { labelKey: 'HOPITAL.NAV_ADMISSION', icon: 'pi-user-plus', route: '/hopital/admission' },
       { labelKey: 'HOPITAL.NAV_EPISODES',  icon: 'pi-folder',    route: '/hopital/episodes' },
+      { labelKey: 'HOPITAL.NAV_PRESENCES', icon: 'pi-user-edit', route: '/hopital/presences' },
     ];
     if (this.currentUser()?.role !== 'AGENT_ACCUEIL') {
       items.push({ labelKey: 'HOPITAL.NAV_ALERTES', icon: 'pi-bell', route: '/hopital/alertes' });

@@ -1,0 +1,71 @@
+<div class="bb-agenda">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-calendar" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'MEDECIN.AGENDA.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'MEDECIN.AGENDA.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-agenda__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (rdvs().length === 0) {
+    <div class="bb-agenda__empty">
+      <i class="pi pi-calendar" aria-hidden="true"></i>
+      <p>{{ 'MEDECIN.AGENDA.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    @for (g of groupes(); track g.cle) {
+      <h2 class="bb-agenda__jour">{{ g.libelle }}</h2>
+
+      @for (r of g.rdvs; track r.id) {
+        <article class="bb-agenda__card"
+                 [class.bb-agenda__card--attend]="attend(r)"
+                 [class.bb-agenda__card--retard]="enRetard(r)">
+          <div class="bb-agenda__heure">
+            {{ r.prevuLe | date:'HH:mm' }}
+            @if (r.arriveeLe) {
+              <small>{{ 'MEDECIN.AGENDA.ARRIVE' | translate }} {{ r.arriveeLe | date:'HH:mm' }}</small>
+            }
+          </div>
+
+          <div class="bb-agenda__corps">
+            <span class="bb-agenda__patient">{{ r.patient.prenom }} {{ r.patient.nom }}</span>
+            <span class="bb-agenda__meta">
+              @if (age(r.patient.dateNaissance); as a) { {{ a }} ans · }
+              {{ r.patient.sexe }} · {{ r.patient.telephone }}
+            </span>
+            @if (r.motif) { <span class="bb-agenda__motif">{{ r.motif }}</span> }
+          </div>
+
+          <div class="bb-agenda__droite">
+            <span class="bb-agenda__statut" [attr.data-statut]="r.statut">{{ libelleStatut(r.statut) }}</span>
+
+            <div class="bb-agenda__actions">
+              @if (r.idEpisode) {
+                <a class="bb-agenda__lien" [routerLink]="['/medecin/dossier', r.idEpisode]">
+                  {{ 'MEDECIN.DOSSIER.TITLE' | translate }}
+                </a>
+              }
+              @if (r.statut === 'PRESENT') {
+                <button matButton="filled" type="button" [disabled]="enCours() === r.id" (click)="changer(r, 'EN_CONSULTATION')">
+                  {{ 'MEDECIN.AGENDA.PRENDRE' | translate }}
+                </button>
+              }
+              @if (r.statut === 'EN_CONSULTATION') {
+                <button matButton="filled" type="button" [disabled]="enCours() === r.id" (click)="changer(r, 'TERMINE')">
+                  {{ 'MEDECIN.AGENDA.TERMINER' | translate }}
+                </button>
+              }
+              @if (r.statut === 'PLANIFIE' && enRetard(r)) {
+                <button matButton type="button" [disabled]="enCours() === r.id" (click)="changer(r, 'ABSENT')">
+                  {{ 'MEDECIN.AGENDA.ABSENT' | translate }}
+                </button>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    }
+  }
+</div>

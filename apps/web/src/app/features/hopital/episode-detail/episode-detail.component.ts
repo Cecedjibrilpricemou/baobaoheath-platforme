@@ -16,7 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { dateLocaleParDefaut, statutDemandeClasse, statutEpisodeClasse, urgenceClasse } from '../hopital.utils';
+import { statutDemandeClasse, statutEpisodeClasse, urgenceClasse } from '../hopital.utils';
 import { LaboratoireService } from '../../../core/services/laboratoire.service';
 import { interpretationClasse, referenceLisible } from '../../laboratoire/laboratoire.utils';
 
@@ -67,7 +67,8 @@ export class EpisodeDetailComponent implements OnInit {
   examens      = signal<ExamenView[]>([]);
 
   // Orientation
-  orientation = { idMedecin: '', service: '', avecRdv: true, prevuLe: dateLocaleParDefaut(), motif: '' };
+  // Plus de date ici : le medecin fixe le creneau (addendum, point 3).
+  orientation = { idMedecin: '', service: '', motif: '' };
 
   // Demande d'analyse
   demande = { idLaboratoire: '', urgence: 'ROUTINE' as Urgence, indicationClinique: '', consignesPatient: '' };
@@ -118,7 +119,6 @@ export class EpisodeDetailComponent implements OnInit {
     this.hopital.orienter(ep.id, {
       idMedecin: o.idMedecin || undefined,
       service: o.service.trim() || undefined,
-      prevuLe: o.avecRdv && o.idMedecin ? new Date(o.prevuLe).toISOString() : undefined,
       motif: o.motif.trim() || undefined,
     }).subscribe({
       next: (r) => { this.isSaving.set(false); this.episode.set(r.data ?? ep); this.panneau.set('aucun'); this.toastr.success(this.i18n.t('HOPITAL.DETAIL.ORIENT_SUCCESS'), this.i18n.t('COMMON.SUCCESS')); },

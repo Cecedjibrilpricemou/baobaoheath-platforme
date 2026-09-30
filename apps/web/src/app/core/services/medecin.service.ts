@@ -9,7 +9,9 @@ import { ApiResponse } from '../models/api.model';
 import type {
   DemandeAnalyseView,
   LibererResultatsDto,
+  FixerRendezVousDto,
   OrientationMedecinView,
+  RendezVousMedecinView,
   ResultatALibererView,
   ReferencementATraiterView,
   ReferralStatus,
@@ -33,6 +35,23 @@ export class MedecinService {
   libererResultats(idDemande: string, commentaire?: string): Observable<ApiResponse<DemandeAnalyseView>> {
     const payload: LibererResultatsDto = commentaire ? { commentaire } : {};
     return this.api.post<ApiResponse<DemandeAnalyseView>>(`/medecin/resultats/${idDemande}/liberer`, payload);
+  }
+
+  /** Le medecin pose le creneau : l'accueil ne propose plus d'heure. */
+  fixerRendezVous(idEpisode: string, dto: FixerRendezVousDto): Observable<ApiResponse<RendezVousMedecinView>> {
+    return this.api.post<ApiResponse<RendezVousMedecinView>>(`/medecin/orientations/${idEpisode}/rendez-vous`, dto);
+  }
+
+  /** L'agenda, du plus proche au plus lointain. */
+  getAgenda(params: { du?: string; au?: string } = {}): Observable<ApiResponse<RendezVousMedecinView[]>> {
+    const q: Record<string, string> = {};
+    if (params.du) q['du'] = params.du;
+    if (params.au) q['au'] = params.au;
+    return this.api.get<ApiResponse<RendezVousMedecinView[]>>('/medecin/rendez-vous', q);
+  }
+
+  changerStatutRendezVous(id: string, statut: 'EN_CONSULTATION' | 'TERMINE' | 'ABSENT'): Observable<ApiResponse<RendezVousMedecinView>> {
+    return this.api.patch<ApiResponse<RendezVousMedecinView>>(`/medecin/rendez-vous/${id}/statut`, { statut });
   }
 
   /** Les patients que l'accueil a orientes vers ce medecin (EF-03-05). */

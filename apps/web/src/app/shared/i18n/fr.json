@@ -971,6 +971,37 @@
       "A_LIBERER_LIEN": "Les libérer",
       "CLOTURER_CONFIRM": "Clôturer cet épisode ? La prise en charge sera considérée comme terminée.",
       "INTROUVABLE": "Dossier introuvable."
+    },
+    "NAV_AGENDA": "Agenda",
+    "AGENDA": {
+      "TITLE": "Mon agenda",
+      "SUB": "Vos rendez-vous, du plus proche au plus lointain.",
+      "EMPTY": "Aucun rendez-vous à venir.",
+      "AUJOURDHUI": "Aujourd'hui",
+      "DEMAIN": "Demain",
+      "ARRIVE": "arrivé à",
+      "PRENDRE": "Prendre le patient",
+      "TERMINER": "Terminer",
+      "ABSENT": "Noter absent",
+      "ERR_LOAD": "Impossible de charger votre agenda.",
+      "ERR_STATUT": "Le changement a échoué."
+    },
+    "RDV": {
+      "FIXER": "Fixer le rendez-vous",
+      "QUAND": "Date et heure",
+      "MOTIF": "Motif (facultatif)",
+      "CONFIRMER": "Confirmer",
+      "OK": "Rendez-vous fixé : {{patient}} est prévenu(e).",
+      "ERR": "Impossible de fixer ce rendez-vous.",
+      "AUCUN": "Pas encore de rendez-vous"
+    },
+    "STATUT_RDV": {
+      "PLANIFIE": "planifié",
+      "PRESENT": "présent",
+      "EN_CONSULTATION": "en consultation",
+      "TERMINE": "terminé",
+      "ABSENT": "absent",
+      "ANNULE": "annulé"
     }
   },
   "PHARMACIEN": {
@@ -1519,7 +1550,8 @@
       "EPISODE_CLOS": "Épisode clôturé.",
       "EPISODE_ANNULE": "Épisode annulé.",
       "CR": "Compte rendu",
-      "CRITIQUE_A_ACCUSER": "Résultat critique à accuser :"
+      "CRITIQUE_A_ACCUSER": "Résultat critique à accuser :",
+      "ORIENT_SANS_DATE": "Le médecin fixera lui-même le rendez-vous. Le patient sera prévenu à ce moment-là."
     },
     "RDV_STATUT": {
       "PLANIFIE": "Planifié",
@@ -1543,6 +1575,21 @@
       "ACCUSE_OK": "Accusé de lecture enregistré.",
       "HISTORIQUE": "Alertes accusées",
       "ACCUSEE": "Accusée"
+    },
+    "NAV_PRESENCES": "Présences du jour",
+    "PRESENCES": {
+      "TITLE": "Présences du jour",
+      "SUB": "Les patients attendus aujourd'hui. Pointez leur arrivée, le médecin est prévenu.",
+      "EMPTY": "Aucun patient attendu aujourd'hui.",
+      "ATTENDUS": "Attendus",
+      "ARRIVES": "Arrivés",
+      "POINTER": "Pointer l'arrivée",
+      "ARRIVE_A": "arrivé à",
+      "AVEC": "avec",
+      "SANS_MEDECIN": "médecin non désigné",
+      "OK": "Arrivée pointée : {{patient}} — le médecin est prévenu.",
+      "ERR_LOAD": "Impossible de charger les présences.",
+      "ERR_POINTER": "Le pointage a échoué."
     }
   },
   "LABO": {

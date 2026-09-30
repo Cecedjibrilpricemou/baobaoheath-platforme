@@ -20,7 +20,7 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN |
 | Modèle | 40 modèles Prisma, 21 enums, 21 migrations, **13 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward) |
-| Tests | **321 API** (Jest, 22 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
+| Tests | **351 API** (Jest, 24 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -165,7 +165,6 @@ Vérifié le 2026-09-28. **La géographie, le partenariat des pharmacies et le r
 | **`LotStock`** | bloc 6 | `Stock` porte `@@unique([idStructure, idMedicament])` et **une seule** `datePeremption`. Deux lots du même produit périmant à deux dates différentes ne rentrent pas — or c'est exactement ce que produit un approvisionnement par facture. |
 | **Vente au comptoir** | bloc 7 | `Facture` est attachée à une consultation (`idConsultation @unique`). Une boîte vendue à un passant n'a aucun objet pour l'enregistrer — donc rien à totaliser dans un tableau de bord. |
 | **Catégorie de produit fermée** | bloc 8 | `Medicament.categorie` est un **texte libre facultatif**. On ne fonde pas une exclusion d'assurance dessus : « cosmétique », « Cosmetique » et « cosmetiques » seraient trois catégories. Le catalogue devra en outre accepter des **articles non médicamenteux** (lait, cosmétiques). |
-| **État de présence du patient** | bloc 3 | `RendezVous.statut` est une **chaîne libre** (`String @default("PLANIFIE")`) : la base n'interdit aucune valeur. À fermer en `enum` quand le pointage y ajoutera ses états. |
 | **Modèle d'assurance** | bloc 8 | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance ». |
 
 ### L'ordonnance est un *document*, pas un médicament
@@ -304,7 +303,7 @@ Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté h
 |---|---|---|---|
 | 1 | ✅ Résultats libérés par le médecin | M | **P2** — livré |
 | 2 | ✅ Le médecin prescrit, l'accueil se recentre | M | **P2** — livré le 2026-09-29 |
-| 3 | RDV fixés par le médecin + agenda + pointage | M | **P1** — remplace « orientation avec RDV » |
+| 3 | ✅ RDV fixés par le médecin + agenda + pointage | M | **P1** — livré le 2026-09-30 |
 | 4 | Suppression du rôle biologiste | M | **P2** — réécrit une case déjà cochée |
 | 5 | Prise de rendez-vous à distance | M | **P13 → remonte** |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | L | **P6** — travail réellement neuf |
@@ -387,6 +386,11 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 - `--bb-surface-1` **vaut** `--bb-surface-card` en sombre : un bandeau qui compte dessus pour se détacher devient invisible.
 - Les styles Material se chargent **après** la feuille globale et gagnent à spécificité égale : doubler la classe (`&__x#{&}__x`) quand il faut l'emporter.
 
+**Migrations**
+
+- **Lisez le SQL avant d'appliquer une migration qui change un type.** Pour passer `RendezVous.statut` de `String` à un `enum`, `prisma migrate diff` proposait `DROP COLUMN` puis `ADD COLUMN` : les statuts auraient été effacés et les rendez-vous annulés seraient repassés à « planifié ». Il faut l'écrire à la main avec `USING`, et vérifier les valeurs avant/après.
+- Un BOM UTF-8 en tête d'un `.prisma` le rend invalide (« This line is invalid »). `Set-Content -Encoding utf8` de PowerShell en ajoute un ; préférez Python ou l'outil d'écriture.
+
 **Prisma**
 
 - `ALTER TYPE … ADD VALUE` et l'usage de la valeur ajoutée **ne peuvent pas cohabiter dans la même transaction**. Deux fichiers de migration.
@@ -409,6 +413,8 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 
 **Méthode**
 
+- **Une vérification qui ne peut pas échouer ne vérifie rien.** Un contrôle du pointage cherchait `/Arriv/` dans la page — or le bouton s'appelle « Pointer l'arrivée », donc il passait quoi qu'il arrive. Comptez des éléments précis, et assurez-vous d'avoir vu le contrôle échouer.
+- **Les scripts de vérification déclenchent la limitation de débit** (429 après quelques connexions). Elle est en mémoire faute de `REDIS_URL` : redémarrer l'API la remet à zéro.
 - **Ne jamais déduire le contenu d'un fichier de son nom.** `hero-patient.jpeg` est une plaquette d'ibuprofène vide ; `hero-hospital.jpeg` un portrait de médecin.
 - Un mot de passe se vérifie **contre l'empreinte stockée**, pas contre le script de seed censé l'avoir posé. Mieux : en tentant réellement la connexion sur l'API.
 - Une migration de données se prouve **en l'exécutant sur une base jetable**.

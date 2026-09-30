@@ -279,3 +279,19 @@
   &__demande { background: rgba(255, 255, 255, .04); }
   &__jeune { color: #FBBF24; }
 }
+
+// ── Note explicative dans un panneau (2026-09-30) ────────────────────
+// Posee la ou un champ vient de disparaitre : sans elle, l'agent se demande
+// ou est passee la date du rendez-vous.
+.bb-hop-note {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 0; padding: 11px 13px;
+  border-radius: var(--bb-radius);
+  background: var(--bb-info-bg); border: 1px solid var(--bb-info-border);
+  font-size: 13px; line-height: 1.55; color: var(--bb-text-primary);
+
+  i { font-size: 14px; color: var(--bb-info); flex-shrink: 0; margin-top: 2px; }
+}
+
+// En sombre, --bb-info (#1E40AF) sur #0A0F2D serait illisible.
+[data-theme='dark'] .bb-hop-note i { color: #60A5FA; }

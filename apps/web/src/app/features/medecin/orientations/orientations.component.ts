@@ -6,6 +6,7 @@
 // vers quelqu'un qui ne le voyait pas arriver.
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import type { OrientationMedecinView } from '@baobaoheath/shared-types';
@@ -17,7 +18,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
 @Component({
   selector: 'app-medecin-orientations',
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, RouterLink, TranslatePipe],
+  imports: [DatePipe, FormsModule, NgTemplateOutlet, RouterLink, TranslatePipe],
   templateUrl: './orientations.component.html',
   styleUrl: './orientations.component.scss',
 })
@@ -41,7 +42,69 @@ export class OrientationsComponent implements OnInit {
 
   readonly sansRendezVous = computed(() => this.orientations().filter((o) => !o.rendezVous));
 
+  /**
+   * Poser le creneau (addendum du 2026-09-28, point 3). C'est le geste qui
+   * manquait : l'accueil oriente sans heure, et c'est ici que le medecin en
+   * fixe une — la seule que le patient recevra.
+   */
+  ouverte = signal<string | null>(null);
+  quand = '';
+  motifRdv = '';
+  enCours = signal<string | null>(null);
+
+  ouvrirRdv(idEpisode: string) {
+    this.ouverte.set(this.ouverte() === idEpisode ? null : idEpisode);
+    this.quand = this.creneauParDefaut();
+    this.motifRdv = '';
+  }
+
+  /** Demain a 9 h : une proposition plausible, pas une contrainte. */
+  private creneauParDefaut(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    const deuxChiffres = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${deuxChiffres(d.getMonth() + 1)}-${deuxChiffres(d.getDate())}`
+      + `T${deuxChiffres(d.getHours())}:${deuxChiffres(d.getMinutes())}`;
+  }
+
+  fixer(o: OrientationMedecinView) {
+    if (this.enCours() || !this.quand) return;
+    this.enCours.set(o.idEpisode);
+
+    this.service.fixerRendezVous(o.idEpisode, {
+      prevuLe: new Date(this.quand).toISOString(),
+      motif: this.motifRdv.trim() || undefined,
+    }).subscribe({
+      next: () => {
+        this.enCours.set(null);
+        this.ouverte.set(null);
+        this.toastr.success(
+          this.i18n.t('MEDECIN.RDV.OK', { patient: `${o.patient.prenom} ${o.patient.nom}` }),
+          this.i18n.t('COMMON.SUCCESS')
+        );
+        // Recharger : l'orientation bascule de « a planifier » vers « planifies ».
+        this.charger();
+      },
+      error: (err) => {
+        this.enCours.set(null);
+        const e = err as { status?: number; error?: { error?: string } };
+        this.toastr.error(
+          e?.status === 0
+            ? this.i18n.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE')
+            : e?.error?.error ?? this.i18n.t('MEDECIN.RDV.ERR'),
+          this.i18n.t('COMMON.ERROR_TITLE')
+        );
+      },
+    });
+  }
+
   ngOnInit() {
+    this.charger();
+  }
+
+  private charger() {
+    this.isLoading.set(true);
     this.service.getOrientations().subscribe({
       next: (res) => {
         this.orientations.set(res.data ?? []);
