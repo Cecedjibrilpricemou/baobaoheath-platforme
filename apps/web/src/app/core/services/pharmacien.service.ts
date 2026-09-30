@@ -2,9 +2,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { PharmacieStock, OrdonnanceDelivrance, DelivrancePayload } from '../models/pharmacien.model';
+import { PharmacieStock, MedicamentInfo, OrdonnanceDelivrance, DelivrancePayload } from '../models/pharmacien.model';
 import { ApiResponse } from '../models/api.model';
 import type {
+  ApprovisionnementView,
+  CreerApprovisionnementDto,
+  LotStockView,
+  PeremptionProcheView,
   OrdonnanceEnAttenteView,
   VerificationOrdonnanceView,
   VerifierOrdonnanceDto,
@@ -50,12 +54,39 @@ export class PharmacienService {
     return this.api.get<ApiResponse<PharmacieStock[]>>('/pharmacien/stocks');
   }
 
-  getMedicaments(): Observable<ApiResponse<PharmacieStock[]>> {
-    return this.api.get<ApiResponse<PharmacieStock[]>>('/pharmacien/medicaments');
+  /**
+   * Le catalogue, pas le stock. L'API rend des medicaments a plat ; cette
+   * methode annoncait `PharmacieStock[]` jusqu'au 2026-09-30, et tout
+   * appelant qui lisait `m.medicament` recevait `undefined` sans erreur.
+   */
+  getMedicaments(): Observable<ApiResponse<MedicamentInfo[]>> {
+    return this.api.get<ApiResponse<MedicamentInfo[]>>('/pharmacien/medicaments');
   }
 
   reapprovisionner(payload: Record<string, unknown>): Observable<ApiResponse<PharmacieStock>> {
     return this.api.post<ApiResponse<PharmacieStock>>('/pharmacien/stocks/reapprovisionner', payload);
+  }
+
+  // ── Approvisionnement et peremptions (addendum, points 1.3 et 1.4) ──
+
+  /** Enregistre une facture : chaque ligne devient un lot. */
+  enregistrerApprovisionnement(dto: CreerApprovisionnementDto): Observable<ApiResponse<ApprovisionnementView>> {
+    return this.api.post<ApiResponse<ApprovisionnementView>>('/pharmacien/approvisionnements', dto);
+  }
+
+  getApprovisionnements(): Observable<ApiResponse<ApprovisionnementView[]>> {
+    return this.api.get<ApiResponse<ApprovisionnementView[]>>('/pharmacien/approvisionnements');
+  }
+
+  /** Les lots qui approchent de leur date, ou l'ont depassee. */
+  getPeremptions(jours?: number): Observable<ApiResponse<PeremptionProcheView[]>> {
+    return this.api.get<ApiResponse<PeremptionProcheView[]>>(
+      '/pharmacien/peremptions', jours ? { jours: String(jours) } : undefined);
+  }
+
+  /** Les lots d'un produit, du plus proche de sa peremption au plus lointain. */
+  getLots(idMedicament: string): Observable<ApiResponse<LotStockView[]>> {
+    return this.api.get<ApiResponse<LotStockView[]>>(`/pharmacien/medicaments/${idMedicament}/lots`);
   }
 
   getAgents(): Observable<ApiResponse<unknown[]>> {

@@ -104,6 +104,22 @@ Connexion **Ousmane Pricemou**. Deux entrées :
 
 Essayer un **code faux** : le refus doit être indiscernable d'un numéro inconnu. Puis délivrer — **ligne par ligne**.
 
+### 6. Pharmacie — tenir le stock par lots
+
+Toujours sous **Ousmane Pricemou**, deux entrées nouvelles dans la barre.
+
+**Approvisionnement.** *Saisir une facture* : un fournisseur, un numéro, puis **une ligne par lot** — même produit, deux dates de péremption différentes. C'est précisément ce que l'ancien modèle ne savait pas porter. Le total se recalcule à la frappe. À l'enregistrement, l'entrée rejoint l'historique en montrant ses lots.
+
+Un refus à essayer, il est volontaire : mettre une **péremption déjà passée** sur une ligne. L'enregistrement est refusé et le motif s'affiche tel quel — *« Un lot déjà périmé ne peut pas entrer en stock »*. Laisser entrer un tel lot ferait sortir un produit périmé plus tard.
+
+> Un second garde-fou existe côté API — une facture citant un **produit hors catalogue** est rejetée — mais il n'est **pas atteignable depuis l'écran** : la liste ne propose que des produits du catalogue.
+
+**Péremptions.** L'horizon se choisit (30/60/90/180 jours). Les lots **déjà périmés** sont présentés à part, en tête : ils sont à retirer, pas à surveiller. Le lot saisi à 40 jours disparaît de la liste si l'on redescend à 30 jours.
+
+La facture de démonstration **AP-2026-000001** (*Grossiste Kindia*, 2 lots) est déjà en base.
+
+> La sortie de stock suit la péremption la plus proche, pas l'ordre d'arrivée. Ce n'est pas visible à l'écran : cela se constate en délivrant une ordonnance, puis en regardant quel lot a baissé.
+
 ---
 
 ## Ce qui n'est pas encore testable
@@ -113,6 +129,8 @@ Ces points ont une **API mais pas d'écran**, ou pas de modèle du tout.
 | Point | État |
 |---|---|
 | **Appel aux pharmacies du quartier** (P6) | API livrée, **aucun écran**. Testable via `POST /api/v1/commandes`. |
+| **Vente au comptoir et tableau de bord officine** | Pas de modèle : `Facture` est attachée à une consultation. C'est le bloc 7 de l'addendum. |
+| **Extraction automatique des factures** (OCR) | Non construite. La saisie assistée la remplace, la facture restant attachée en justificatif. |
 | **Assurance « Pricemou & Frère »** | **Impossible à créer** : ni modèle `Assureur`, ni type de structure « assurance ». C'est P10, non construit. |
 | Offres des motards, suivi sur carte | P8, non construit. |
 | Paiement | P7, non construit. |

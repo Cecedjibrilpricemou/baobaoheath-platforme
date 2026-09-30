@@ -1,0 +1,87 @@
+<div class="bb-per">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-clock" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.PEREMPTIONS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.PEREMPTIONS.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  <div class="bb-per__horizon">
+    <span class="bb-per__horizon-label">{{ 'PHARMACIEN.PEREMPTIONS.SEUIL' | translate }}</span>
+    <div class="bb-pills" role="tablist">
+      @for (h of horizons; track h) {
+        <button type="button" role="tab" class="bb-pill"
+                [class.bb-pill--active]="jours() === h"
+                [attr.aria-selected]="jours() === h"
+                (click)="changerHorizon(h)">
+          {{ h }} {{ 'PHARMACIEN.PEREMPTIONS.JOURS' | translate }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <p class="bb-per__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (lots().length === 0) {
+    <div class="bb-per__empty">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <p>{{ 'PHARMACIEN.PEREMPTIONS.EMPTY' | translate: { n: jours() } }}</p>
+    </div>
+  } @else {
+
+    <!-- Les périmés d'abord : ils sont à retirer, pas à surveiller. -->
+    @if (perimes().length) {
+      <h2 class="bb-per__section bb-per__section--danger">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.PEREMPTIONS.PERIMES' | translate }}
+      </h2>
+      @for (l of perimes(); track l.idLot) {
+        <article class="bb-per__carte bb-per__carte--perime">
+          <div class="bb-per__corps">
+            <span class="bb-per__nom">{{ nom(l) }}</span>
+            <span class="bb-per__meta">
+              @if (l.numeroLot) {
+                {{ 'PHARMACIEN.PEREMPTIONS.LOT' | translate }} {{ l.numeroLot }}
+              } @else {
+                {{ 'PHARMACIEN.PEREMPTIONS.SANS_LOT' | translate }}
+              }
+              · {{ l.quantite }} {{ l.unite }}
+            </span>
+          </div>
+          <div class="bb-per__droite">
+            <span class="bb-per__date">{{ l.datePeremption | date:'dd/MM/yyyy' }}</span>
+            <span class="bb-per__delai bb-per__delai--perime">
+              {{ 'PHARMACIEN.PEREMPTIONS.DEPUIS' | translate: { n: jourAbsolu(l) } }}
+            </span>
+          </div>
+        </article>
+      }
+    }
+
+    @if (proches().length) {
+      <h2 class="bb-per__section">{{ 'PHARMACIEN.PEREMPTIONS.PROCHES' | translate }}</h2>
+      @for (l of proches(); track l.idLot) {
+        <article class="bb-per__carte">
+          <div class="bb-per__corps">
+            <span class="bb-per__nom">{{ nom(l) }}</span>
+            <span class="bb-per__meta">
+              @if (l.numeroLot) {
+                {{ 'PHARMACIEN.PEREMPTIONS.LOT' | translate }} {{ l.numeroLot }}
+              } @else {
+                {{ 'PHARMACIEN.PEREMPTIONS.SANS_LOT' | translate }}
+              }
+              · {{ l.quantite }} {{ l.unite }}
+            </span>
+          </div>
+          <div class="bb-per__droite">
+            <span class="bb-per__date">{{ l.datePeremption | date:'dd/MM/yyyy' }}</span>
+            <span class="bb-per__delai">
+              {{ 'PHARMACIEN.PEREMPTIONS.RESTE' | translate: { n: jourAbsolu(l) } }}
+            </span>
+          </div>
+        </article>
+      }
+    }
+  }
+</div>

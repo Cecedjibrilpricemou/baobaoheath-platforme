@@ -140,12 +140,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Validation nominative obligatoire du pharmacien (EF-07-03) ; substitution tracée et notifiée (EF-07-04) ; refus motivé (EF-07-05).
 - [ ] Stock temps réel + pharmacie alternative (EF-07-06) ; délivrance partielle (EF-07-07) ; pas de retour (EF-07-11).
 - [ ] Historique et renouvellement (EF-07-09).
-- [ ] **`LotStock`** : quantité, date de péremption, facture d'origine, prix d'achat. Sortie au plus proche de la péremption, et délivrance d'un lot périmé bloquée.
+- [x] **API + front livrés le 2026-09-30** — **`LotStock`** : quantité, date de péremption, facture d'origine, prix d'achat. Sortie au plus proche de la péremption (`consommerLots`), et délivrance d'un lot périmé bloquée. `Stock.datePeremption` a disparu ; `Stock.quantite` est la somme de ses lots.
 - [ ] **Vente au comptoir** : lignes, remise, mode de paiement, vendeur, avec ou sans ordonnance, avec ou sans assurance. Un produit réglementé ne s'y vend pas sans ordonnance (EF-05-12).
 - [ ] **Tableau de bord officine** : chiffre du jour, produits les plus vendus, ruptures, encaissements par mode.
 - [ ] **Import Excel du catalogue**, avec rapport ligne par ligne — un import qui échoue en silence sur trois lignes est pire que pas d'import.
-- [ ] **Approvisionnement par facture**, en deux temps : saisie assistée avec la facture en justificatif d'abord, extraction automatique ensuite, **toujours relue avant enregistrement**. Une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
-- [ ] **Alerte de péremption proche**, seuil paramétrable (30/60/90 jours).
+- [~] **Approvisionnement par facture** — **premier temps livré le 2026-09-30 (API + front)** : saisie assistée, une ligne par lot avec sa propre péremption, facture attachée en justificatif, total recalculé à la frappe. **Reste l'extraction automatique**, qui devra **toujours** être relue avant enregistrement : une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
+- [x] **API + front livrés le 2026-09-30** — **Alerte de péremption proche**, seuil paramétrable (`STOCK_PEREMPTION_ALERTE_JOURS`, 90 par défaut) et horizon choisi à l'écran (30/60/90/180). Les lots déjà périmés sont présentés à part : ils sont à retirer, pas à surveiller.
 
 ### P7 — Paiement fiable (fournisseur simulé) · M · EF-08
 - [ ] `TentativePaiement` avec référence unique → idempotence (EF-08-03).

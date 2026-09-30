@@ -162,7 +162,7 @@ Vérifié le 2026-09-28. **La géographie, le partenariat des pharmacies et le r
 
 | Manque | Bloque | Détail |
 |---|---|---|
-| **`LotStock`** | bloc 6 | `Stock` porte `@@unique([idStructure, idMedicament])` et **une seule** `datePeremption`. Deux lots du même produit périmant à deux dates différentes ne rentrent pas — or c'est exactement ce que produit un approvisionnement par facture. |
+| ~~**`LotStock`**~~ | ~~bloc 6~~ | **Comblé le 2026-09-30.** `LotStock` et `Approvisionnement` existent, `Stock.datePeremption` a disparu, et la consommation se fait au plus proche de la péremption. La migration `20260930160000_lots_de_stock_et_approvisionnement` a reversé les 7 stocks existants en 7 lots, 2 362 unités conservées. |
 | **Vente au comptoir** | bloc 7 | `Facture` est attachée à une consultation (`idConsultation @unique`). Une boîte vendue à un passant n'a aucun objet pour l'enregistrer — donc rien à totaliser dans un tableau de bord. |
 | **Catégorie de produit fermée** | bloc 8 | `Medicament.categorie` est un **texte libre facultatif**. On ne fonde pas une exclusion d'assurance dessus : « cosmétique », « Cosmetique » et « cosmetiques » seraient trois catégories. Le catalogue devra en outre accepter des **articles non médicamenteux** (lait, cosmétiques). |
 | **Modèle d'assurance** | bloc 8 | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance ». |
@@ -297,7 +297,7 @@ Décisions prises le même jour, à ne pas rediscuter :
 
 Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté huit chantiers aux soixante restants : il en a déplacé, supprimé et précisé.
 
-### A. Les blocs de l'addendum — 1 livré sur 8, ~20 à 27 jours
+### A. Les blocs de l'addendum — 6 livrés sur 8, restent le 7 et le 8
 
 | | Bloc | Taille | Où il tombe dans l'ancienne feuille |
 |---|---|---|---|
@@ -306,7 +306,7 @@ Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté h
 | 3 | ✅ RDV fixés par le médecin + agenda + pointage | M | **P1** — livré le 2026-09-30 |
 | 4 | ✅ Suppression du rôle biologiste | M | **P2** — livré le 2026-09-30 |
 | 5 | ✅ Prise de rendez-vous à distance | M | **P13 → remonté** — livré le 2026-09-30 |
-| 6 | Pharmacie : lots, approvisionnement, péremptions | L | **P6** — travail réellement neuf |
+| 6 | ✅ Pharmacie : lots, approvisionnement, péremptions | L | **P6** — livré le 2026-09-30 |
 | 7 | Pharmacie : vente et tableau de bord | M | **P6** — travail réellement neuf |
 | 8 | Assurance enrichie | L | **P10** — précise, n'ajoute pas de bloc |
 
@@ -322,7 +322,7 @@ Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté h
 | P3 Ordonnance | 5 | 1 |
 | P4 Identité, consentement, accès | 0 | 7 |
 | P5 Fil d'avancement | 0 | 3 |
-| P6 Pharmacie et officine | 1 | 12 |
+| P6 Pharmacie et officine | 3 | 10 — dont l'extraction automatique de facture |
 | P7 Paiement | 0 | 5 |
 | P8 Livraison, carte, annuaire | 0 | 9 |
 | P9 Notifications neutres | 0 | 2 |
@@ -343,10 +343,9 @@ Ces blocs n'ont pas été évoqués par le chef de projet, mais ils conditionnen
 
 ### D. Questions ouvertes
 
-Quatre, listées en fin d'addendum. Deux bloquent le bloc 6 :
+Quatre, listées en fin d'addendum. La première est **tranchée par l'usage** : le bloc 6 est livré en saisie assistée, la facture restant attachée en justificatif ; l'extraction automatique reste à décider et devra toujours passer par une relecture à l'écran. Reste bloquante pour le bloc 8 :
 
-- Scan de facture : saisie assistée d'abord, extraction automatique ensuite ?
-- Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ? Ce point conditionne **aussi** les exclusions d'assurance du bloc 8.
+- Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ? Ce point conditionne les exclusions d'assurance du bloc 8.
 
 Deux propositions de `PARCOURS-COMMANDE-LIVRAISON.md` attendent encore validation : la double voie de preuve de remise, et le circuit de substitution pharmacien → médecin.
 

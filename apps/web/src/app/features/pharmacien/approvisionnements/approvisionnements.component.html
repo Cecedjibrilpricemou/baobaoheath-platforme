@@ -1,0 +1,138 @@
+<div class="bb-appro">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-truck" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.APPRO.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.APPRO.SUB' | translate }}</p>
+    </div>
+    @if (!formulaireOuvert()) {
+      <div class="bb-page-head__actions">
+        <button matButton="filled" type="button" (click)="formulaireOuvert.set(true)">
+          <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.APPRO.NOUVELLE' | translate }}
+        </button>
+      </div>
+    }
+  </header>
+
+  <!-- ── Saisie de la facture ──────────────────────────────────────── -->
+  @if (formulaireOuvert()) {
+    <section class="bb-appro__carte">
+      <div class="bb-appro__grille">
+        <div>
+          <label class="bb-appro__label" for="ap-fournisseur">{{ 'PHARMACIEN.APPRO.FOURNISSEUR' | translate }} *</label>
+          <input id="ap-fournisseur" class="bb-appro__champ" type="text" maxlength="200" [(ngModel)]="fournisseur" />
+        </div>
+        <div>
+          <label class="bb-appro__label" for="ap-date">{{ 'PHARMACIEN.APPRO.DATE_FACTURE' | translate }} *</label>
+          <input id="ap-date" class="bb-appro__champ" type="date" [(ngModel)]="dateFacture" />
+        </div>
+        <div>
+          <label class="bb-appro__label" for="ap-numero">{{ 'PHARMACIEN.APPRO.NUMERO_FACTURE' | translate }}</label>
+          <input id="ap-numero" class="bb-appro__champ" type="text" maxlength="100" [(ngModel)]="numeroFacture" />
+        </div>
+        <div>
+          <label class="bb-appro__label" for="ap-justif">{{ 'PHARMACIEN.APPRO.JUSTIFICATIF' | translate }}</label>
+          <input id="ap-justif" class="bb-appro__champ" type="url" maxlength="500" [(ngModel)]="justificatifUrl" />
+        </div>
+      </div>
+      <p class="bb-appro__aide">{{ 'PHARMACIEN.APPRO.JUSTIFICATIF_AIDE' | translate }}</p>
+
+      <h2 class="bb-appro__section">{{ 'PHARMACIEN.APPRO.LIGNES' | translate }}</h2>
+
+      @for (l of lignes(); track $index) {
+        <div class="bb-appro__ligne">
+          <div class="bb-appro__ligne-produit">
+            <label class="bb-appro__label-mini" [attr.for]="'l-med-' + $index">{{ 'PHARMACIEN.APPRO.PRODUIT' | translate }}</label>
+            <select [id]="'l-med-' + $index" class="bb-appro__champ" [(ngModel)]="l.idMedicament">
+              <option value="">—</option>
+              @for (m of medicaments(); track m.id) {
+                <option [value]="m.id">{{ libelleProduit(m) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="bb-appro__ligne-champ">
+            <label class="bb-appro__label-mini" [attr.for]="'l-qte-' + $index">{{ 'PHARMACIEN.APPRO.QUANTITE' | translate }}</label>
+            <input [id]="'l-qte-' + $index" class="bb-appro__champ" type="number" min="1" [(ngModel)]="l.quantite" />
+          </div>
+
+          <div class="bb-appro__ligne-champ">
+            <label class="bb-appro__label-mini" [attr.for]="'l-lot-' + $index">{{ 'PHARMACIEN.APPRO.LOT' | translate }}</label>
+            <input [id]="'l-lot-' + $index" class="bb-appro__champ" type="text" maxlength="100" [(ngModel)]="l.numeroLot" />
+          </div>
+
+          <!-- La date appartient au lot, pas au stock : c'est tout l'objet
+               de ce bloc. -->
+          <div class="bb-appro__ligne-champ">
+            <label class="bb-appro__label-mini" [attr.for]="'l-per-' + $index">{{ 'PHARMACIEN.APPRO.PEREMPTION' | translate }}</label>
+            <input [id]="'l-per-' + $index" class="bb-appro__champ" type="date" [(ngModel)]="l.datePeremption" />
+          </div>
+
+          <div class="bb-appro__ligne-champ">
+            <label class="bb-appro__label-mini" [attr.for]="'l-prix-' + $index">{{ 'PHARMACIEN.APPRO.PRIX_ACHAT' | translate }}</label>
+            <input [id]="'l-prix-' + $index" class="bb-appro__champ" type="number" min="0" [(ngModel)]="l.prixAchatGnf" />
+          </div>
+
+          <button class="bb-appro__retirer" type="button" [disabled]="lignes().length === 1"
+                  [attr.aria-label]="'PHARMACIEN.APPRO.RETIRER' | translate"
+                  (click)="retirerLigne($index)">
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+        </div>
+      }
+
+      <button matButton type="button" (click)="ajouterLigne()">
+        <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.APPRO.AJOUTER_LIGNE' | translate }}
+      </button>
+
+      <div class="bb-appro__pied">
+        <span class="bb-appro__total">
+          {{ 'PHARMACIEN.APPRO.TOTAL' | translate }} : <strong>{{ total() | number }} GNF</strong>
+        </span>
+        <div class="bb-appro__actions">
+          <button matButton type="button" (click)="formulaireOuvert.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button matButton="filled" type="button" [disabled]="enCours() || !peutEnregistrer()" (click)="enregistrer()">
+            {{ (enCours() ? 'COMMON.LOADING' : 'PHARMACIEN.APPRO.ENREGISTRER') | translate }}
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ── Historique ────────────────────────────────────────────────── -->
+  <h2 class="bb-appro__section">{{ 'PHARMACIEN.APPRO.HISTORIQUE' | translate }}</h2>
+
+  @if (isLoading()) {
+    <p class="bb-appro__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (historique().length === 0) {
+    <p class="bb-appro__muted">{{ 'PHARMACIEN.APPRO.AUCUNE' | translate }}</p>
+  } @else {
+    @for (a of historique(); track a.id) {
+      <article class="bb-appro__entree">
+        <div class="bb-appro__entree-head">
+          <div>
+            <span class="bb-appro__numero">{{ a.numero }}</span>
+            <span class="bb-appro__meta">
+              {{ a.fournisseur }}
+              @if (a.numeroFacture) { · {{ a.numeroFacture }} }
+              · {{ a.dateFacture | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <span class="bb-appro__montant">{{ a.montantTotalGnf | number }} GNF</span>
+        </div>
+
+        <p class="bb-appro__lots-titre">{{ a.lots.length }} {{ 'PHARMACIEN.APPRO.LOTS_RECUS' | translate }}</p>
+        @for (l of a.lots; track l.id) {
+          <div class="bb-appro__lot">
+            <span class="bb-appro__lot-nom">{{ l.medicament.nomCommercial || l.medicament.dci }} · {{ l.medicament.dosage }}</span>
+            <span class="bb-appro__lot-qte">{{ l.quantite }} / {{ l.quantiteRecue }}</span>
+            @if (l.numeroLot) { <span class="bb-appro__lot-num">{{ 'PHARMACIEN.PEREMPTIONS.LOT' | translate }} {{ l.numeroLot }}</span> }
+            @if (l.datePeremption) {
+              <span class="bb-appro__lot-date">{{ l.datePeremption | date:'dd/MM/yyyy' }}</span>
+            }
+          </div>
+        }
+      </article>
+    }
+  }
+</div>
