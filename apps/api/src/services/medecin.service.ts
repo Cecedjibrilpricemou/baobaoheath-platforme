@@ -1,3 +1,4 @@
+import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import {
     ValiderConsultationDto,
@@ -8,12 +9,12 @@ import {
 import { JwtPayload } from '../types/auth.types';
 import { assertCanAccessConsultation } from './access-control.service';
 import { avecExpirationEtAlertes } from './ordonnance.service';
-import { getValeursParametres } from './parametres.service';
-import type { OrientationMedecinView } from '@baobaoheath/shared-types';
-import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { getIdentitePlateforme, getValeursParametres } from './parametres.service';
+import type { OrientationMedecinView, RendezVousMedecinView } from '@baobaoheath/shared-types';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { withCache, cacheDel } from '../utils/cache';
 import { emitToUser } from '../realtime/socket.server';
-import { notifierSansBloquer } from './notification.service';
+import { envoyerSmsSimule, notifierSansBloquer } from './notification.service';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
@@ -518,5 +519,143 @@ async function _getDashboardStats(userId: string) {
         referencementsEnAttente,
         messagesNonLus,
         structure: medecin?.structure ?? null,
+    };
+}
+
+// ── Rendez-vous (addendum du 2026-09-28, points 3 et 8) ──────────────
+//
+// C'est le medecin qui fixe le creneau : jusqu'ici l'accueil posait une
+// convocation que le medecin subissait, sans connaitre son agenda.
+
+/** Le medecin pose le creneau d'un patient qui lui a ete oriente. */
+export async function fixerRendezVous(
+    userId: string,
+    idEpisode: string,
+    dto: { prevuLe: string; motif?: string }
+): Promise<RendezVousMedecinView> {
+    const prevuLe = new Date(dto.prevuLe);
+    if (Number.isNaN(prevuLe.getTime())) throw new ValidationError('Date de rendez-vous invalide');
+
+    const episode = await prisma.episodeSoins.findFirst({
+        where: { id: idEpisode, idResponsable: userId },
+        select: { id: true, numero: true, motif: true, statut: true, idPatient: true, structure: { select: { nom: true } } },
+    });
+    if (!episode) throw new NotFoundError('Aucun patient ne vous est oriente sur cet episode');
+    if (episode.statut === 'CLOS' || episode.statut === 'ANNULE') throw new ConflictError('Cet episode est termine');
+
+    const rdv = await prisma.$transaction(async (tx) => {
+        // Un seul rendez-vous en vigueur par episode : deplacer le creneau
+        // remplace le precedent, il ne s'y ajoute pas.
+        await tx.rendezVous.updateMany({
+            where: { idEpisode, statut: 'PLANIFIE' },
+            data: { statut: 'ANNULE' },
+        });
+        return tx.rendezVous.create({
+            data: {
+                idPatient: episode.idPatient,
+                idMedecin: userId,
+                idEpisode,
+                prevuLe,
+                motif: dto.motif?.trim() || episode.motif,
+                statut: 'PLANIFIE',
+            },
+            include: RDV_MEDECIN_INCLUDE,
+        });
+    });
+
+    // Maintenant seulement le patient apprend une heure : elle est confirmee.
+    const patientUser = await prisma.utilisateur.findFirst({
+        where: { patientProfile: { id: episode.idPatient } },
+        select: { id: true, telephone: true },
+    });
+    if (patientUser) {
+        const quand = prevuLe.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+        await notifierSansBloquer({
+            idUtilisateur: patientUser.id,
+            type: 'RAPPEL_RENDEZ_VOUS',
+            titre: 'Votre rendez-vous est fixe',
+            contenu: `Rendez-vous a ${episode.structure.nom} le ${quand}. Presentez-vous a l'accueil.`,
+            lienAction: '/patient/parcours',
+            metadonnees: { idEpisode, idRendezVous: rdv.id },
+        });
+        const { nomCourt } = await getIdentitePlateforme();
+        await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: rendez-vous a ${episode.structure.nom} le ${quand}.`);
+    }
+
+    return versRendezVousMedecin(rdv);
+}
+
+/** L'agenda du medecin, du plus proche au plus lointain. */
+export async function getAgenda(userId: string, filtres: { du?: string; au?: string } = {}): Promise<RendezVousMedecinView[]> {
+    const du = filtres.du ? new Date(filtres.du) : debutDuJour(new Date());
+    const au = filtres.au ? new Date(filtres.au) : null;
+
+    const rdvs = await prisma.rendezVous.findMany({
+        where: {
+            idMedecin: userId,
+            // Un rendez-vous annule ne dit plus rien de la journee.
+            statut: { not: 'ANNULE' },
+            prevuLe: { gte: du, ...(au ? { lte: au } : {}) },
+        },
+        include: RDV_MEDECIN_INCLUDE,
+        orderBy: { prevuLe: 'asc' },
+        take: 200,
+    });
+    return rdvs.map(versRendezVousMedecin);
+}
+
+/** Le medecin prend le patient, le termine, ou constate son absence. */
+export async function changerStatutRendezVous(
+    userId: string,
+    idRendezVous: string,
+    statut: 'EN_CONSULTATION' | 'TERMINE' | 'ABSENT'
+): Promise<RendezVousMedecinView> {
+    const rdv = await prisma.rendezVous.findFirst({ where: { id: idRendezVous, idMedecin: userId } });
+    if (!rdv) throw new NotFoundError('Rendez-vous introuvable');
+    if (rdv.statut === 'ANNULE') throw new ConflictError('Ce rendez-vous est annule');
+
+    const maj = await prisma.rendezVous.update({
+        where: { id: idRendezVous },
+        data: { statut },
+        include: RDV_MEDECIN_INCLUDE,
+    });
+    return versRendezVousMedecin(maj);
+}
+
+function debutDuJour(d: Date): Date {
+    const j = new Date(d);
+    j.setHours(0, 0, 0, 0);
+    return j;
+}
+
+const RDV_MEDECIN_INCLUDE = {
+    patient: {
+        select: {
+            id: true, dateNaissance: true, sexe: true,
+            utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+        },
+    },
+    episode: { select: { id: true, numero: true } },
+} satisfies Prisma.RendezVousInclude;
+
+type RdvMedecinRow = Prisma.RendezVousGetPayload<{ include: typeof RDV_MEDECIN_INCLUDE }>;
+
+function versRendezVousMedecin(r: RdvMedecinRow): RendezVousMedecinView {
+    return {
+        id: r.id,
+        prevuLe: r.prevuLe.toISOString(),
+        statut: r.statut,
+        motif: r.motif,
+        arriveeLe: r.arriveeLe?.toISOString() ?? null,
+        patient: {
+            id: r.patient.id,
+            prenom: r.patient.utilisateur.prenom,
+            nom: r.patient.utilisateur.nom,
+            dateNaissance: r.patient.dateNaissance.toISOString(),
+            sexe: r.patient.sexe,
+            telephone: r.patient.utilisateur.telephone,
+        },
+        idEpisode: r.episode?.id ?? null,
+        numeroEpisode: r.episode?.numero ?? null,
     };
 }

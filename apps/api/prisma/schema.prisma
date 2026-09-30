@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── ENUMS ───────────────────────────────────────────────
+// â”€â”€â”€ ENUMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 enum Role {
   PATIENT
@@ -93,7 +93,7 @@ enum TypeStructure {
   HOPITAL_REG
   CHU
   CLINIQUE
-  PHARMACIE        // ← NOUVEAU
+  PHARMACIE        // â† NOUVEAU
   LABORATOIRE      // Laboratoire d'analyses (EF-04)
 }
 
@@ -170,7 +170,7 @@ enum NiveauAlerteEpidemique {
   URGENCE
 }
 
-// ─── DOMAINE 1 — UTILISATEURS & ACCES ────────────────────
+// â”€â”€â”€ DOMAINE 1 â€” UTILISATEURS & ACCES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Utilisateur {
   id                String    @id @default(cuid())
@@ -217,6 +217,7 @@ model Utilisateur {
   alertesCritiques     AlerteResultatCritique[] @relation("DestinataireAlerte")
   alertesEscaladees    AlerteResultatCritique[] @relation("EscaladeVers")
   rendezVousMedecin    RendezVous[]    @relation("RendezVousMedecin")
+  rendezVousPointes    RendezVous[]    @relation("PointageArrivee")
   syncEvents            SyncEvent[]
   syncMutations         SyncMutation[]
   consentementsDonnes   ConsentementPatient[]
@@ -328,7 +329,7 @@ model SyncMutation {
   @@map("sync_mutations")
 }
 
-// ─── DOMAINE 2 — ACTEURS DE SANTE ────────────────────────
+// â”€â”€â”€ DOMAINE 2 â€” ACTEURS DE SANTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model StructureSante {
   id          String        @id @default(cuid())
@@ -394,12 +395,12 @@ model PatientProfile {
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
-  // ── MODELE HYBRIDE ────────────────────────────────────────
-  // Structure préférée choisie par le patient (optionnel)
+  // â”€â”€ MODELE HYBRIDE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Structure prÃ©fÃ©rÃ©e choisie par le patient (optionnel)
   idStructurePreferee String?
   structurePreferee   StructureSante? @relation("StructurePreferee", fields: [idStructurePreferee], references: [id])
 
-  // ASC attitré du patient (optionnel)
+  // ASC attitrÃ© du patient (optionnel)
   idAscPrincipal String?
   ascPrincipal   AscProfile? @relation("PatientAscPrincipal", fields: [idAscPrincipal], references: [id])
 
@@ -458,7 +459,7 @@ model MedecinProfile {
   @@map("profils_medecin")
 }
 
-// ── NOUVEAU : PharmacienProfile ───────────────────────────
+// â”€â”€ NOUVEAU : PharmacienProfile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model PharmacienProfile {
   id             String   @id @default(cuid())
   photoUrl       String?
@@ -474,7 +475,7 @@ model PharmacienProfile {
   @@map("profils_pharmacien")
 }
 
-// ─── DOMAINE 3 — ACTES MEDICAUX ──────────────────────────
+// â”€â”€â”€ DOMAINE 3 â€” ACTES MEDICAUX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Consultation {
   id               String          @id @default(cuid())
@@ -570,7 +571,7 @@ model Medicament {
   imageUrl         String?
   listeEssentielle Boolean  @default(false)
   estActif         Boolean  @default(true)
-  prixUnitaireGnf  Int      @default(0) // prix national de référence en GNF
+  prixUnitaireGnf  Int      @default(0) // prix national de rÃ©fÃ©rence en GNF
 
   // Classification ATC (EF-05-05, decision D6). Elle permet de rapprocher deux
   // specialites de la meme famille : un patient allergique a l'amoxicilline
@@ -648,7 +649,7 @@ model Ordonnance {
 
   // EF-05-09 : nombre de fois que l'ordonnance peut etre servie a nouveau
   // apres avoir ete entierement delivree. Le numero et le code ne changent
-  // pas — c'est le meme papier que le patient represente au comptoir.
+  // pas â€” c'est le meme papier que le patient represente au comptoir.
   renouvellementsAutorises Int @default(0)
   renouvellementsUtilises  Int @default(0)
 
@@ -729,17 +730,38 @@ model Vaccination {
   @@map("vaccinations")
 }
 
-// ─── DOMAINE 4 — COORDINATION ────────────────────────────
+// â”€â”€â”€ DOMAINE 4 â€” COORDINATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+/// Le cycle d'un rendez-vous, de la prise au depart du patient.
+///
+/// C'etait une chaine libre jusqu'au 2026-09-30 : la base n'interdisait aucune
+/// valeur, et `asc.service.ts` comptait des rendez-vous `HONORE` que personne
+/// n'ecrivait jamais â€” la statistique valait structurellement zero.
+enum StatutRendezVous {
+  PLANIFIE        // le medecin a fixe le creneau (addendum, point 3)
+  PRESENT         // l'assistante a pointe l'arrivee du patient
+  EN_CONSULTATION // le medecin a pris le patient
+  TERMINE         // consultation faite â€” remplace l'ancien Â« HONORE Â»
+  ABSENT          // le patient n'est pas venu
+  ANNULE          // remplace par un autre rendez-vous, ou annule
+}
 
 model RendezVous {
-  id        String   @id @default(cuid())
-  statut    String   @default("PLANIFIE")
+  id        String           @id @default(cuid())
+  statut    StatutRendezVous @default(PLANIFIE)
   motif     String?
   prevuLe   DateTime
-  rappel24h Boolean  @default(false)
-  rappel2h  Boolean  @default(false)
-  creeLe    DateTime @default(now())
-  modifieLe DateTime @updatedAt
+  rappel24h Boolean          @default(false)
+  rappel2h  Boolean          @default(false)
+  creeLe    DateTime         @default(now())
+  modifieLe DateTime         @updatedAt
+
+  /// Pointage de l'arrivee par l'assistante (addendum, point 2). C'est le
+  /// moment ou l'attente commence, et il n'a rien a voir avec `prevuLe` : un
+  /// patient arrive en avance ou en retard.
+  arriveeLe   DateTime?
+  idPointePar String?
+  pointePar   Utilisateur? @relation("PointageArrivee", fields: [idPointePar], references: [id])
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -813,7 +835,7 @@ model Message {
   @@map("messages")
 }
 
-// ─── DOMAINE 5 — GESTION OPERATIONNELLE ──────────────────
+// â”€â”€â”€ DOMAINE 5 â€” GESTION OPERATIONNELLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Stock {
   id              String    @id @default(cuid())
@@ -821,7 +843,7 @@ model Stock {
   seuilAlerte     Int       @default(10)
   unite           String
   datePeremption  DateTime?
-  margeGnf        Int       @default(0) // ← NOUVEAU : marge appliquée par la pharmacie
+  margeGnf        Int       @default(0) // â† NOUVEAU : marge appliquÃ©e par la pharmacie
   modifieLe       DateTime  @updatedAt
 
   idAsc String?
@@ -842,7 +864,7 @@ model Facture {
   id                 String        @id @default(cuid())
   montantGnf         Int
   statut             InvoiceStatus @default(EN_ATTENTE)
-  modePaiement       ModePaiement? // ← NOUVEAU : enum au lieu de String
+  modePaiement       ModePaiement? // â† NOUVEAU : enum au lieu de String
   referenceOperateur String?       @unique
   numeroOperateur    String?
   urlRecu            String?
@@ -950,9 +972,9 @@ model ParametresSysteme {
   @@map("parametres_systeme")
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// P1 — Hopital : episode de soins et demande d'analyse (EF-03)
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// P1 â€” Hopital : episode de soins et demande d'analyse (EF-03)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // Numerotation lisible et continue (EP-2026-000123, DA-2026-000045...).
 // Une ligne par cle ; l'increment se fait en SQL atomique (numero.service).
@@ -1047,7 +1069,7 @@ model DemandeAnalyse {
   /// 2026-09-28, il n'est jamais pose par le temps qui passe : seul un medecin
   /// qui libere les resultats le renseigne. Avant, un resultat non critique
   /// partait des la validation du laboratoire, et un resultat critique finissait
-  /// par partir seul au bout de 24 h — le patient lisait alors des termes que
+  /// par partir seul au bout de 24 h â€” le patient lisait alors des termes que
   /// personne ne lui avait expliques.
   diffuseePatientLe     DateTime?
   /// Traduction en langage clair, redigee par le medecin au moment ou il libere
@@ -1055,7 +1077,7 @@ model DemandeAnalyse {
   commentaireMedecin    String?
   /// Garde-fou : sans ces deux dates, un medecin absent laisserait un patient
   /// sans ses resultats indefiniment. On relance, puis on escalade vers
-  /// l'administrateur de la structure — jamais vers le patient.
+  /// l'administrateur de la structure â€” jamais vers le patient.
   relanceLiberationLe   DateTime?
   escaladeLiberationLe  DateTime?
 
@@ -1085,7 +1107,7 @@ model DemandeAnalyse {
   @@index([idLaboratoire, statut, urgence, creeLe])
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([idEpisode])
-  /// File « a liberer » du medecin : ses demandes validees que le patient ne
+  /// File Â« a liberer Â» du medecin : ses demandes validees que le patient ne
   /// voit pas encore.
   @@index([idPrescripteur, statut, diffuseePatientLe])
   /// Job de relance et d'escalade : les validees que personne n'a liberees.
@@ -1183,10 +1205,10 @@ model AlerteResultatCritique {
   @@map("alertes_resultat_critique")
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// P6 — Commande pharmacie (EF-07)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// P6 â€” Commande pharmacie (EF-07)
 // Voir docs/PARCOURS-COMMANDE-LIVRAISON.md
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 enum StatutCommande {
   /// L'appel est lance, aucune pharmacie n'a encore declare tout avoir.
@@ -1226,7 +1248,7 @@ model Commande {
   ordonnance   Ordonnance @relation(fields: [idOrdonnance], references: [id], onDelete: Cascade)
 
   /// La pharmacie qui a pris la commande. Nul tant que personne n'a declare
-  /// detenir la totalite — c'est ce champ qui porte le verrou d'attribution.
+  /// detenir la totalite â€” c'est ce champ qui porte le verrou d'attribution.
   idPharmacie     String?
   pharmacie       StructureSante? @relation("PharmacieCommande", fields: [idPharmacie], references: [id])
   priseEnChargeLe DateTime?
@@ -1239,8 +1261,8 @@ model Commande {
 }
 
 /// Ce que chaque pharmacie sollicitee a repondu. On garde la trace meme des
-/// reponses negatives : c'est ce qui permet de dire au patient « trois
-/// pharmacies ont ete interrogees, aucune n'avait tout ».
+/// reponses negatives : c'est ce qui permet de dire au patient Â« trois
+/// pharmacies ont ete interrogees, aucune n'avait tout Â».
 model ReponsePharmacie {
   id               String   @id @default(cuid())
   aTousLesProduits Boolean

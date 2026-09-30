@@ -18,6 +18,14 @@ process.env['JWT_REFRESH_SECRET'] ??= 'test-refresh-au-moins-seize-caracteres';
 process.env['DB_ENCRYPTION_KEY'] ??= '0'.repeat(64);
 process.env['DATABASE_URL'] ??= 'postgresql://test:test@127.0.0.1:5432/test';
 
+// Ce fichier est le seul a importer de vrais routeurs : ils tirent
+// `auth.middleware`, qui lit ces secrets au chargement du module. Les autres
+// suites n'en ont pas besoin, d'ou l'absence de fichier de setup global.
+process.env['JWT_SECRET'] ??= 'test-secret-au-moins-seize-caracteres';
+process.env['JWT_REFRESH_SECRET'] ??= 'test-refresh-au-moins-seize-caracteres';
+process.env['DB_ENCRYPTION_KEY'] ??= '0'.repeat(64);
+process.env['DATABASE_URL'] ??= 'postgresql://test:test@127.0.0.1:5432/test';
+
 jest.mock('../src/config/prisma', () => ({ prisma: {} }));
 jest.mock('../src/config/redis', () => ({ getRedis: () => null }));
 
@@ -116,5 +124,32 @@ describe('ce qui revient au medecin', () => {
   it('liberer des resultats est reserve au seul MEDECIN', () => {
     expect(rolesPour(medecin, 'post', '/resultats/:id/liberer')).toEqual(['MEDECIN']);
     expect(rolesPour(medecin, 'get', '/resultats')).toEqual(['MEDECIN']);
+  });
+
+  // Addendum, point 3 : le creneau appartient au medecin. L'administrateur de
+  // structure atteint le reste du routeur mais n'a pas d'agenda a tenir.
+  it('fixer un rendez-vous et tenir son agenda sont reserves au MEDECIN', () => {
+    expect(rolesPour(medecin, 'post', '/orientations/:idEpisode/rendez-vous')).toEqual(['MEDECIN']);
+    expect(rolesPour(medecin, 'get', '/rendez-vous')).toEqual(['MEDECIN']);
+    expect(rolesPour(medecin, 'patch', '/rendez-vous/:id/statut')).toEqual(['MEDECIN']);
+  });
+});
+
+describe('le pointage de presence reste a l accueil (addendum, point 2)', () => {
+  // C'est le seul geste de l'accueil sur un rendez-vous : il ne le cree pas et
+  // n'en change pas l'heure. Le lui retirer le priverait de son metier.
+  it.each([
+    ['get', '/presences'],
+    ['post', '/rendez-vous/:id/presence'],
+  ])('%s %s reste ouverte a AGENT_ACCUEIL', (methode, chemin) => {
+    expect(rolesPour(hopital, methode, chemin)).toContain('AGENT_ACCUEIL');
+  });
+
+  // Mais il ne doit pas pouvoir creer de rendez-vous par cette porte.
+  it('l accueil n a aucune route de creation de rendez-vous', () => {
+    const cheminsRdv = hopital.stack
+      .filter((c) => c.route?.path.includes('rendez-vous'))
+      .map((c) => `${Object.keys(c.route!.methods)[0]} ${c.route!.path}`);
+    expect(cheminsRdv).toEqual(['post /rendez-vous/:id/presence']);
   });
 });

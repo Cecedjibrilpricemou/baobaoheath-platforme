@@ -142,24 +142,59 @@ describe('orienter (EF-03-05)', () => {
     await expect(orienter(agent, 'ep-1', { idMedecin: 'med-x' })).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it('cree le rendez-vous medecin, passe l episode EN_COURS et envoie un SMS neutre', async () => {
+  // Addendum du 2026-09-28 : l'accueil oriente, il ne fixe plus l'heure.
+  // Avant, il posait une convocation que le medecin subissait sans connaitre
+  // son agenda.
+  it('passe l episode EN_COURS et designe le medecin, sans creer de rendez-vous', async () => {
     prisma.episodeSoins.findFirst.mockResolvedValue(episodeRow);
     prisma.utilisateur.findFirst
       .mockResolvedValueOnce({ id: 'med-1' })                                   // verification du medecin
       .mockResolvedValueOnce({ id: 'pat-u', telephone: '620000000' });          // utilisateur du patient
     prisma.episodeSoins.update.mockResolvedValue(episodeRow);
-    prisma.rendezVous.create.mockResolvedValue({});
-    prisma.rendezVous.updateMany.mockResolvedValue({ count: 1 });
+    prisma.rendezVous.updateMany.mockResolvedValue({ count: 0 });
 
-    await orienter(agent, 'ep-1', { idMedecin: 'med-1', prevuLe: '2026-09-22T09:00:00+00:00', service: 'Medecine interne' });
+    await orienter(agent, 'ep-1', { idMedecin: 'med-1', service: 'Medecine interne' });
 
     expect(prisma.episodeSoins.update.mock.calls[0][0].data).toMatchObject({ statut: 'EN_COURS', idResponsable: 'med-1', service: 'Medecine interne' });
-    // Le rendez-vous encore planifie de l'episode est remplace, pas cumule.
-    expect(prisma.rendezVous.updateMany.mock.calls[0][0]).toMatchObject({ where: { idEpisode: 'ep-1', statut: 'PLANIFIE' }, data: { statut: 'ANNULE' } });
-    expect(prisma.rendezVous.create.mock.calls[0][0].data).toMatchObject({ idMedecin: 'med-1', idEpisode: 'ep-1', idPatient: 'pat-1', statut: 'PLANIFIE' });
-    expect(envoyerSmsSimule).toHaveBeenCalledTimes(1);
-    expect(envoyerSmsSimule.mock.calls[0][1]).toMatch(/^KENEYA:/);
-    expect(envoyerSmsSimule.mock.calls[0][1]).not.toContain('abdominales');
+    expect(prisma.rendezVous.create).not.toHaveBeenCalled();
+    // Aucune heure n'etant fixee, aucun SMS n'annonce de rendez-vous : le
+    // patient ne doit pas se deplacer pour un creneau qui n'existe pas.
+    expect(envoyerSmsSimule).not.toHaveBeenCalled();
+  });
+
+  // Reorienter vers quelqu'un d'autre annule la convocation precedente : un
+  // patient ne peut pas etre attendu par deux medecins.
+  it('annule le rendez-vous planifie d un autre medecin', async () => {
+    prisma.episodeSoins.findFirst.mockResolvedValue(episodeRow);
+    prisma.utilisateur.findFirst
+      .mockResolvedValueOnce({ id: 'med-2' })
+      .mockResolvedValueOnce({ id: 'pat-u', telephone: '620000000' });
+    prisma.episodeSoins.update.mockResolvedValue(episodeRow);
+    prisma.rendezVous.updateMany.mockResolvedValue({ count: 1 });
+
+    await orienter(agent, 'ep-1', { idMedecin: 'med-2' });
+
+    expect(prisma.rendezVous.updateMany.mock.calls[0][0]).toMatchObject({
+      where: { idEpisode: 'ep-1', statut: 'PLANIFIE', idMedecin: { not: 'med-2' } },
+      data: { statut: 'ANNULE' },
+    });
+  });
+
+  // Le medecin doit savoir qu'il lui revient de poser le creneau.
+  it('demande au medecin de fixer le rendez-vous', async () => {
+    prisma.episodeSoins.findFirst.mockResolvedValue(episodeRow);
+    prisma.utilisateur.findFirst
+      .mockResolvedValueOnce({ id: 'med-1' })
+      .mockResolvedValueOnce({ id: 'pat-u', telephone: '620000000' });
+    prisma.episodeSoins.update.mockResolvedValue(episodeRow);
+    prisma.rendezVous.updateMany.mockResolvedValue({ count: 0 });
+
+    await orienter(agent, 'ep-1', { idMedecin: 'med-1' });
+
+    const pourMedecin = notifierSansBloquer.mock.calls.find((c: unknown[]) =>
+      (c[0] as { idUtilisateur: string }).idUtilisateur === 'med-1'
+    );
+    expect(pourMedecin![0].contenu).toMatch(/rendez-vous/i);
   });
 
   // Le defaut constate en usage : l'orientation s'ecrivait bien, mais personne

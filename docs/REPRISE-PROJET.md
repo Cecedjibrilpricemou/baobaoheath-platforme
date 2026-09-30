@@ -373,6 +373,7 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 | Images de la landing | Banques d'images génériques, **noms de fichiers trompeurs**, une avec signalétique en espagnol. Manquent : laboratoire, livraison. |
 | Marque | Le bandeau latéral affiche encore « Santé Pour Tous » alors que les SMS partent sous « KENEYA ». |
 | Rôle `LIVREUR` | Existe dans le modèle, **sans aucune route ni écran** : un tel compte atterrirait sur `/unauthorized`. |
+| Journal d'audit | Les scans de QR sont tracés depuis le 2026-09-29 (**vérifié en base** : une ligne par scan, avec le rôle et la personne). Mais `idRessource` reste vide — le middleware ne lit que `req.params.id`, or le paramètre s'appelle `qrCode`. Le patient concerné n'est que dans `metadonnees.params`, donc non indexé. Répondre à « qui a consulté mon dossier ? » est possible mais coûteux. **EF-02-08 n'est pas couvert**, il reste en P4. |
 
 ### Pièges rencontrés — à ne pas repayer
 

@@ -258,7 +258,11 @@ export async function getRapportMensuel(
             totalReferences: references.length,
             totalVaccinations: vaccinations.length,
             totalRendezVous: rendezVous.length,
-            rendezVousHonores: rendezVous.filter((r) => r.statut === 'HONORE').length,
+            // 'HONORE' jusqu'au 2026-09-30 : une valeur que personne n'ecrivait
+            // jamais, donc un compteur structurellement a zero. Le statut est
+            // desormais une enumeration, et c'est 'TERMINE' qui marque un
+            // rendez-vous tenu.
+            rendezVousHonores: rendezVous.filter((r) => r.statut === 'TERMINE').length,
         },
         topDiagnostics,
         alertesStock: await prisma.stock.count({

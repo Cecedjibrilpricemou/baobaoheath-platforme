@@ -15,6 +15,7 @@ import {
   updateEpisodeSchema,
 } from '../validators/api.schemas';
 import type {
+  PresenceDuJourView,
   DemandeAnalyseView,
   EpisodeSoinsView,
   ExamenView,
@@ -40,6 +41,22 @@ const ACTE_MEDICAL = requireRole('MEDECIN', 'ADMIN_STRUCTURE');
 
 // Les erreurs metier (AppError) remontent au middleware global : pas de
 // try/catch ici, Express 5 propage les rejets des handlers async.
+
+// ── Pointage de présence (addendum du 2026-09-28, point 2) ───────────
+// Le seul geste de l'accueil sur un rendez-vous : il ne le crée pas et n'en
+// change pas l'heure.
+router.get('/presences', async (req: AuthRequest, res: Response) => {
+  const data: PresenceDuJourView[] = await hopital.presencesDuJour(
+    req.user!,
+    typeof req.query['jour'] === 'string' ? req.query['jour'] : undefined
+  );
+  res.json({ success: true, data });
+});
+
+router.post('/rendez-vous/:id/presence', async (req: AuthRequest, res: Response) => {
+  const data: PresenceDuJourView = await hopital.pointerPresence(req.user!, req.params['id'] as string);
+  res.json({ success: true, data, message: 'Arrivée pointée : le médecin est prévenu' });
+});
 
 // ── Tableau de bord (EF-03-07) ───────────────────────────────────────
 router.get('/tableau-de-bord', async (req: AuthRequest, res: Response) => {

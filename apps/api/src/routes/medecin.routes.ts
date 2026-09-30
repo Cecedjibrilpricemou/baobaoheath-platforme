@@ -4,6 +4,9 @@ import {
   getConsultationsAValiderController,
   validerConsultationController,
   getOrientationsController,
+  fixerRendezVousController,
+  getAgendaController,
+  changerStatutRendezVousController,
   getResultatsALibererController,
   libererResultatsController,
   getReferencementsController,
@@ -16,7 +19,9 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import {
   validerConsultationSchema,
+  fixerRendezVousSchema,
   libererResultatsSchema,
+  statutRendezVousSchema,
   repondreReferencementSchema,
   sendMessageSchema,
 } from '../validators/api.schemas';
@@ -33,6 +38,12 @@ router.get('/dashboard', getDashboardStatsController);
 // ─── Consultations ────────────────────────────────────────
 router.get('/consultations', getConsultationsAValiderController);
 router.put('/consultations/:id/valider', validateBody(validerConsultationSchema), validerConsultationController);
+
+// ─── Rendez-vous ──────────────────────────────────────────
+// Addendum du 2026-09-28 : c'est le médecin qui fixe le créneau, pas l'accueil.
+router.post('/orientations/:idEpisode/rendez-vous', requireRole('MEDECIN'), validateBody(fixerRendezVousSchema), fixerRendezVousController);
+router.get('/rendez-vous', requireRole('MEDECIN'), getAgendaController);
+router.patch('/rendez-vous/:id/statut', requireRole('MEDECIN'), validateBody(statutRendezVousSchema), changerStatutRendezVousController);
 
 // ─── Résultats d'analyse à libérer ────────────────────────
 // Addendum du 2026-09-28 : le patient ne voit un résultat qu'après qu'un

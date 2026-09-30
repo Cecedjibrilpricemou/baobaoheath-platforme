@@ -1,4 +1,4 @@
-﻿// shared/components/hopital-layout/hopital-layout.component.ts
+// shared/components/hopital-layout/hopital-layout.component.ts
 // Espace Â« Accueil hopital Â» (role AGENT_ACCUEIL) : admission, episodes de
 // soins, demandes d'analyse. Meme coquille que les autres espaces.
 import { Component, computed, inject, signal } from '@angular/core';

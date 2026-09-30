@@ -14,6 +14,7 @@ import { prochainNumero } from './numero.service';
 import { envoyerSmsSimule, notifierSansBloquer } from './notification.service';
 import { getIdentitePlateforme } from './parametres.service';
 import type {
+  PresenceDuJourView,
   CreateDemandeAnalyseDto,
   CreateEpisodeDto,
   DemandeAnalyseView,
@@ -358,15 +359,15 @@ export async function cloturerEpisode(user: JwtPayload, idEpisode: string, annul
 }
 
 // ── EF-03-05 : orientation vers un medecin ou un service ─────────────
+//
+// L'accueil oriente, il ne fixe plus l'heure (addendum du 2026-09-28,
+// point 3). Le creneau appartient au medecin, qui seul connait son agenda :
+// jusqu'ici l'accueil posait une convocation que le medecin subissait.
 export async function orienter(user: JwtPayload, idEpisode: string, dto: OrientationDto): Promise<EpisodeSoinsView> {
   const episode = await episodeDeLaStructure(user, idEpisode);
   if (episode.statut === 'CLOS' || episode.statut === 'ANNULE') throw new ConflictError('Cet episode est termine');
   if (!dto.idMedecin && !dto.service) throw new ValidationError('Indiquez un medecin ou un service');
   if (dto.idMedecin) await verifierMedecinDeLaStructure(dto.idMedecin, episode.idStructure);
-  if (dto.prevuLe && !dto.idMedecin) throw new ValidationError('Un rendez-vous doit viser un medecin');
-
-  const prevuLe = dto.prevuLe ? new Date(dto.prevuLe) : null;
-  if (prevuLe && Number.isNaN(prevuLe.getTime())) throw new ValidationError('Date de rendez-vous invalide');
 
   await prisma.$transaction(async (tx) => {
     await tx.episodeSoins.update({
@@ -377,54 +378,43 @@ export async function orienter(user: JwtPayload, idEpisode: string, dto: Orienta
         ...(dto.idMedecin && { idResponsable: dto.idMedecin }),
       },
     });
-    if (prevuLe && dto.idMedecin) {
-      // Une nouvelle orientation datee remplace le rendez-vous encore planifie
-      // de l'episode : on ne cumule pas les convocations.
-      await tx.rendezVous.updateMany({ where: { idEpisode, statut: 'PLANIFIE' }, data: { statut: 'ANNULE' } });
-      await tx.rendezVous.create({
-        data: {
-          idPatient: episode.idPatient,
-          idMedecin: dto.idMedecin,
-          idEpisode,
-          prevuLe,
-          motif: dto.motif ?? episode.motif,
-          statut: 'PLANIFIE',
-        },
+    // Reorienter vers quelqu'un d'autre annule la convocation precedente : on
+    // ne laisse pas un patient attendu par deux medecins.
+    if (dto.idMedecin) {
+      await tx.rendezVous.updateMany({
+        where: { idEpisode, statut: 'PLANIFIE', idMedecin: { not: dto.idMedecin } },
+        data: { statut: 'ANNULE' },
       });
     }
   });
 
   // Le medecin destinataire doit etre prevenu : sans cela l'orientation
-  // s'ecrit en base et personne ne voit arriver le patient.
+  // s'ecrit en base et personne ne voit arriver le patient. C'est a lui, et
+  // non plus a l'accueil, de poser le rendez-vous.
   if (dto.idMedecin) {
-    const quandMedecin = prevuLe
-      ? ` le ${prevuLe.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}`
-      : '';
     await notifierSansBloquer({
       idUtilisateur: dto.idMedecin,
       type: 'ORIENTATION',
       titre: 'Un patient vous est oriente',
-      contenu: `Episode ${episode.numero} — ${dto.motif ?? episode.motif}${quandMedecin}.`,
+      contenu: `Episode ${episode.numero} — ${dto.motif ?? episode.motif}. Fixez-lui un rendez-vous.`,
       lienAction: '/medecin/orientations',
-      metadonnees: { idEpisode, prevuLe: prevuLe?.toISOString() ?? null },
+      metadonnees: { idEpisode },
     });
   }
 
+  // Le patient n'est prevenu d'aucune heure ici : il n'y en a pas encore. Lui
+  // en annoncer une que le medecin n'a pas confirmee serait lui faire perdre
+  // un deplacement.
   const patientUser = await prisma.utilisateur.findFirst({ where: { patientProfile: { id: episode.idPatient } }, select: { id: true, telephone: true } });
   if (patientUser) {
-    const quand = prevuLe ? ` le ${prevuLe.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}` : '';
     await notifierSansBloquer({
       idUtilisateur: patientUser.id,
       type: 'ORIENTATION',
       titre: 'Orientation',
-      contenu: `Vous etes oriente(e) vers ${dto.service ?? 'un medecin'} a ${episode.structure.nom}${quand}. Details dans votre espace.`,
+      contenu: `Vous etes oriente(e) vers ${dto.service ?? 'un medecin'} a ${episode.structure.nom}. Vous serez prevenu(e) des qu'un rendez-vous sera fixe.`,
       lienAction: '/patient/parcours',
       metadonnees: { idEpisode },
     });
-    if (prevuLe) {
-      const { nomCourt } = await getIdentitePlateforme();
-      await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: rendez-vous a ${episode.structure.nom}${quand}. Details dans votre espace.`);
-    }
   }
 
   return versEpisodeView(await episodeDeLaStructure(user, idEpisode));
@@ -648,4 +638,95 @@ export async function documentDemandePourPatient(userId: string, idDemande: stri
   const d = await prisma.demandeAnalyse.findFirst({ where: { id: idDemande, patient: { idUtilisateur: userId } }, include: DEMANDE_INCLUDE });
   if (!d) throw new NotFoundError('Demande introuvable');
   return rendreBonExamen(versDemandeViewPatient(d));
+}
+
+// ── Pointage de presence (addendum du 2026-09-28, point 2) ───────────
+//
+// Le patient arrive avec ou sans rendez-vous ; l'assistante pointe son
+// arrivee, voit avec quel medecin il a rendez-vous, et le redirige au moment
+// opportun. C'est le seul geste de l'accueil qui touche au rendez-vous : il
+// ne le cree pas et n'en change pas l'heure.
+
+const PRESENCE_INCLUDE = {
+  patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true, telephone: true } } } },
+  medecin: { select: { id: true, prenom: true, nom: true } },
+  episode: { select: { id: true } },
+} satisfies Prisma.RendezVousInclude;
+
+type PresenceRow = Prisma.RendezVousGetPayload<{ include: typeof PRESENCE_INCLUDE }>;
+
+function versPresence(r: PresenceRow): PresenceDuJourView {
+  return {
+    idRendezVous: r.id,
+    prevuLe: r.prevuLe.toISOString(),
+    statut: r.statut,
+    arriveeLe: r.arriveeLe?.toISOString() ?? null,
+    patient: {
+      id: r.patient.id,
+      prenom: r.patient.utilisateur.prenom,
+      nom: r.patient.utilisateur.nom,
+      telephone: r.patient.utilisateur.telephone,
+    },
+    medecin: r.medecin,
+    idEpisode: r.episode?.id ?? null,
+  };
+}
+
+/** Les patients attendus aujourd'hui dans cette structure. */
+export async function presencesDuJour(user: JwtPayload, jour?: string): Promise<PresenceDuJourView[]> {
+  const idStructure = await structureDe(user);
+
+  const base = jour ? new Date(jour) : new Date();
+  if (Number.isNaN(base.getTime())) throw new ValidationError('Date invalide');
+  const debut = new Date(base); debut.setHours(0, 0, 0, 0);
+  const fin = new Date(base); fin.setHours(23, 59, 59, 999);
+
+  const rdvs = await prisma.rendezVous.findMany({
+    where: {
+      episode: { idStructure },
+      statut: { not: 'ANNULE' },
+      prevuLe: { gte: debut, lte: fin },
+    },
+    include: PRESENCE_INCLUDE,
+    orderBy: { prevuLe: 'asc' },
+    take: 200,
+  });
+  return rdvs.map(versPresence);
+}
+
+/** L'assistante pointe l'arrivee : c'est la que l'attente commence. */
+export async function pointerPresence(user: JwtPayload, idRendezVous: string): Promise<PresenceDuJourView> {
+  const idStructure = await structureDe(user);
+
+  const rdv = await prisma.rendezVous.findFirst({
+    where: { id: idRendezVous, episode: { idStructure } },
+    select: { id: true, statut: true, idMedecin: true, idEpisode: true, patient: { select: { utilisateur: { select: { prenom: true, nom: true } } } } },
+  });
+  if (!rdv) throw new NotFoundError('Rendez-vous introuvable');
+  if (rdv.statut === 'ANNULE') throw new ConflictError('Ce rendez-vous est annule');
+
+  const maintenant = new Date();
+  // Attribution atomique : deux agents qui pointent en meme temps donnent un
+  // gagnant et un perdant, jamais deux notifications au medecin.
+  const prise = await prisma.rendezVous.updateMany({
+    where: { id: idRendezVous, statut: 'PLANIFIE' },
+    data: { statut: 'PRESENT', arriveeLe: maintenant, idPointePar: user.userId },
+  });
+  if (prise.count === 0) throw new ConflictError('Ce patient est deja pointe');
+
+  // Le medecin doit savoir que son patient attend, sinon le pointage ne sert
+  // a rien : l'assistante devrait aller le lui dire de vive voix.
+  if (rdv.idMedecin) {
+    await notifierSansBloquer({
+      idUtilisateur: rdv.idMedecin,
+      type: 'RAPPEL_RENDEZ_VOUS',
+      titre: 'Votre patient est arrive',
+      contenu: `${rdv.patient.utilisateur.prenom} ${rdv.patient.utilisateur.nom} attend a l'accueil.`,
+      lienAction: '/medecin/agenda',
+      metadonnees: { idRendezVous, idEpisode: rdv.idEpisode },
+    });
+  }
+
+  const maj = await prisma.rendezVous.findUniqueOrThrow({ where: { id: idRendezVous }, include: PRESENCE_INCLUDE });
+  return versPresence(maj);
 }

@@ -90,6 +90,19 @@ export const updateStructurePrefereeSchema = z.object({
  * est facultatif : un bilan sans particularite n'appelle pas d'explication, et
  * en exiger une produirait des « RAS » systematiques qui n'apprennent rien.
  */
+/**
+ * Le medecin fixe le creneau (addendum du 2026-09-28, point 3). L'accueil ne
+ * propose plus d'heure : `orientationSchema` a perdu son `prevuLe`.
+ */
+export const fixerRendezVousSchema = z.object({
+  prevuLe: z.string().min(1),
+  motif: z.string().trim().max(500).optional(),
+});
+
+export const statutRendezVousSchema = z.object({
+  statut: z.enum(['EN_CONSULTATION', 'TERMINE', 'ABSENT']),
+});
+
 export const libererResultatsSchema = z.object({
   commentaire: z.string().trim().max(2000).optional(),
 });
@@ -423,10 +436,12 @@ export const updateEpisodeSchema = z.object({
   statut: z.enum(['OUVERT', 'EN_COURS']).optional(),
 }).strict();
 
+// `prevuLe` a ete retire le 2026-09-30 : l'accueil oriente, le medecin fixe
+// le creneau (addendum, point 3). `.strict()` fait donc echouer un ancien
+// appel qui enverrait encore une date, plutot que de l'ignorer en silence.
 export const orientationSchema = z.object({
   service: texteLibre(120).optional(),
   idMedecin: id.optional(),
-  prevuLe: z.string().datetime({ offset: true }).optional(),
   motif: texteLibre(300).optional(),
 }).strict().refine((v) => v.idMedecin || v.service, { message: 'Indiquez un medecin ou un service' });
 

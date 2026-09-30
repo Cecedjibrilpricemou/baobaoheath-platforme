@@ -1422,6 +1422,52 @@ export interface ScanLaboratoireView {
   totalDemandes: number;
 }
 
+/** Le cycle d'un rendez-vous, de la prise au depart du patient. */
+export type StatutRendezVous =
+  | 'PLANIFIE'
+  | 'PRESENT'
+  | 'EN_CONSULTATION'
+  | 'TERMINE'
+  | 'ABSENT'
+  | 'ANNULE';
+
+/** POST /medecin/orientations/:idEpisode/rendez-vous — le medecin pose le creneau. */
+export interface FixerRendezVousDto {
+  prevuLe: HorodatageApi;
+  motif?: string;
+}
+
+/** GET /medecin/rendez-vous — l'agenda, par ordre chronologique. */
+export interface RendezVousMedecinView {
+  id: string;
+  prevuLe: HorodatageApi;
+  statut: StatutRendezVous;
+  motif?: string | null;
+  /** Moment ou l'assistante a pointe l'arrivee ; absent tant qu'il n'est pas la. */
+  arriveeLe?: HorodatageApi | null;
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  idEpisode?: string | null;
+  numeroEpisode?: string | null;
+}
+
+/** GET /hopital/presences — les patients attendus aujourd'hui, vus de l'accueil. */
+export interface PresenceDuJourView {
+  idRendezVous: string;
+  prevuLe: HorodatageApi;
+  statut: StatutRendezVous;
+  arriveeLe?: HorodatageApi | null;
+  patient: { id: string; prenom: string; nom: string; telephone: string };
+  medecin?: { id: string; prenom: string; nom: string } | null;
+  idEpisode?: string | null;
+}
+
 /** GET /medecin/resultats — la file des resultats qu'un medecin doit liberer. */
 export interface ResultatALibererView {
   idDemande: string;

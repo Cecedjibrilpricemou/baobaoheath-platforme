@@ -7,6 +7,7 @@ import { ReferralStatus } from '@baobaoheath/shared-types';
 import type {
   DemandeAnalyseView,
   OrientationMedecinView,
+  RendezVousMedecinView,
   ResultatALibererView,
   ConsultationAValiderView,
   MedecinDashboardView,
@@ -76,6 +77,34 @@ export async function libererResultatsController(req: AuthRequest, res: Response
         req.body
     );
     res.json({ success: true, data, message: 'Resultats liberes : le patient peut les consulter' });
+}
+
+// Rendez-vous : le medecin fixe, consulte son agenda, et suit le patient
+// jusqu'au bout de la consultation (addendum, points 3 et 8).
+export async function fixerRendezVousController(req: AuthRequest, res: Response): Promise<void> {
+    const data: RendezVousMedecinView = await medecinService.fixerRendezVous(
+        req.user!.userId,
+        req.params['idEpisode'] as string,
+        req.body
+    );
+    res.status(201).json({ success: true, data, message: 'Rendez-vous fixe : le patient est prevenu' });
+}
+
+export async function getAgendaController(req: AuthRequest, res: Response): Promise<void> {
+    const data: RendezVousMedecinView[] = await medecinService.getAgenda(req.user!.userId, {
+        du: typeof req.query['du'] === 'string' ? req.query['du'] : undefined,
+        au: typeof req.query['au'] === 'string' ? req.query['au'] : undefined,
+    });
+    res.json({ success: true, data });
+}
+
+export async function changerStatutRendezVousController(req: AuthRequest, res: Response): Promise<void> {
+    const data: RendezVousMedecinView = await medecinService.changerStatutRendezVous(
+        req.user!.userId,
+        req.params['id'] as string,
+        req.body.statut
+    );
+    res.json({ success: true, data });
 }
 
 export async function getReferencementsController(
