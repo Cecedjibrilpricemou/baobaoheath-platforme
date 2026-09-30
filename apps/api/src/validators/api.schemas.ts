@@ -98,6 +98,26 @@ export const updateStructurePrefereeSchema = z.object({
  * Prise de rendez-vous a distance (addendum du 2026-09-28, point 6). Le motif
  * est libre : c'est le patient qui l'ecrit, avec ses mots.
  */
+/**
+ * Facture d'approvisionnement (addendum du 2026-09-28, point 1.3). Chaque
+ * ligne devient un lot : c'est la que la date de peremption se pose, et non
+ * plus sur le stock.
+ */
+export const creerApprovisionnementSchema = z.object({
+  fournisseur: z.string().trim().min(2).max(200),
+  dateFacture: z.string().min(1),
+  numeroFacture: z.string().trim().max(100).optional(),
+  justificatifUrl: z.string().trim().max(500).optional(),
+  lignes: z.array(z.object({
+    idMedicament: id,
+    quantite: positiveInt.max(100000),
+    numeroLot: z.string().trim().max(100).optional(),
+    datePeremption: z.string().optional(),
+    prixAchatGnf: nonNegativeInt.optional(),
+    unite: z.string().trim().max(40).optional(),
+  })).min(1).max(200),
+}).strict();
+
 export const creerDemandeRendezVousSchema = z.object({
   motif: z.string().trim().min(5).max(1000),
   idStructure: id.optional(),

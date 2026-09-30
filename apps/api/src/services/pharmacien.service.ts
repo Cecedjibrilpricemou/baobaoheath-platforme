@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { prisma } from '../config/prisma';
+import { consommerLots } from './approvisionnement.service';
 import { Role, StatutOrdonnance, TypeStructure } from '../config/generated/client/client';
 import { hashPassword } from '../utils/password.utils';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
@@ -233,6 +234,12 @@ export async function delivrerLigneOrdonnance(
     });
     if (decremented.count === 0) throw new ValidationError('Stock insuffisant pour delivrer ce medicament');
 
+    // Sortie au plus proche de la peremption, et jamais un lot perime
+    // (addendum du 2026-09-28, point 1.3). Dans la meme transaction que le
+    // decrement du total : les deux doivent tomber ensemble, sinon le total
+    // et le detail divergeraient.
+    await consommerLots(tx, stock.id, quantiteDelivree);
+
     const maj = await tx.ligneOrdonnance.update({
       where: { id: ligneId },
       data: { statut: StatutOrdonnance.DELIVREE },
@@ -436,16 +443,30 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
     },
   });
 
+  // Depuis le 2026-09-30, chaque entree cree son lot : la date de peremption
+  // appartient au lot, pas au stock (addendum, point 1.3). Une entree rapide
+  // reste possible ici ; la saisie par facture passe par
+  // `approvisionnement.service`, qui garde en plus le fournisseur et la piece.
   if (stockExistant) {
-    return prisma.stock.update({
-      where: { id: stockExistant.id },
-      data: {
-        quantite: { increment: dto.quantiteAjoutee },
-        ...(dto.unite && { unite: dto.unite }),
-        ...(dto.datePeremption && { datePeremption: new Date(dto.datePeremption) }),
-        ...(dto.margeGnf !== undefined && { margeGnf: dto.margeGnf }),
-      },
-      include: { medicament: true },
+    return prisma.$transaction(async (tx) => {
+      const maj = await tx.stock.update({
+        where: { id: stockExistant.id },
+        data: {
+          quantite: { increment: dto.quantiteAjoutee },
+          ...(dto.unite && { unite: dto.unite }),
+          ...(dto.margeGnf !== undefined && { margeGnf: dto.margeGnf }),
+        },
+        include: { medicament: true },
+      });
+      await tx.lotStock.create({
+        data: {
+          idStock: stockExistant.id,
+          quantite: dto.quantiteAjoutee,
+          quantiteRecue: dto.quantiteAjoutee,
+          datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
+        },
+      });
+      return maj;
     });
   }
 
@@ -454,17 +475,27 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
   const { facturation } = await getValeursParametres();
   const margeParDefautGnf = Math.round(medicament.prixUnitaireGnf * facturation.margePct / 100);
 
-  return prisma.stock.create({
-    data: {
-      idMedicament: dto.idMedicament,
-      idStructure: pharmacien.idStructure,
-      quantite: dto.quantiteAjoutee,
-      seuilAlerte: 10,
-      unite: dto.unite ?? 'unite',
-      datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
-      margeGnf: dto.margeGnf ?? margeParDefautGnf,
-    },
-    include: { medicament: true },
+  return prisma.$transaction(async (tx) => {
+    const cree = await tx.stock.create({
+      data: {
+        idMedicament: dto.idMedicament,
+        idStructure: pharmacien.idStructure,
+        quantite: dto.quantiteAjoutee,
+        seuilAlerte: 10,
+        unite: dto.unite ?? 'unite',
+        margeGnf: dto.margeGnf ?? margeParDefautGnf,
+      },
+      include: { medicament: true },
+    });
+    await tx.lotStock.create({
+      data: {
+        idStock: cree.id,
+        quantite: dto.quantiteAjoutee,
+        quantiteRecue: dto.quantiteAjoutee,
+        datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
+      },
+    });
+    return cree;
   });
 }
 

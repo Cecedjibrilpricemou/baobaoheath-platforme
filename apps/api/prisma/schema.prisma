@@ -219,6 +219,7 @@ model Utilisateur {
   rendezVousPointes    RendezVous[]    @relation("PointageArrivee")
   demandesRdvVisees    DemandeRendezVous[] @relation("DemandesRendezVousMedecin")
   demandesRdvTraitees  DemandeRendezVous[] @relation("DemandesRendezVousTraitees")
+  approvisionnementsSaisis Approvisionnement[] @relation("ApprovisionnementsSaisis")
   syncEvents            SyncEvent[]
   syncMutations         SyncMutation[]
   consentementsDonnes   ConsentementPatient[]
@@ -363,6 +364,7 @@ model StructureSante {
   stocks                  Stock[]
   patientsPreferent       PatientProfile[]    @relation("StructurePreferee")
   demandesRendezVous      DemandeRendezVous[] @relation("DemandesRendezVous")
+  approvisionnements      Approvisionnement[] @relation("ApprovisionnementsStructure")
   referencementsSource    Referencement[]     @relation("StructureSource")
   referencementsCible     Referencement[]     @relation("StructureCible")
   episodes                EpisodeSoins[]
@@ -893,11 +895,13 @@ model Message {
 
 model Stock {
   id              String    @id @default(cuid())
+  /// Le total, somme des lots encore disponibles. Il reste porte ici : le
+  /// decrement conditionnel de la delivrance s'appuie dessus, et le recalculer
+  /// a chaque lecture couterait cher pour rien.
   quantite        Int       @default(0)
   seuilAlerte     Int       @default(10)
   unite           String
-  datePeremption  DateTime?
-  margeGnf        Int       @default(0) // â† NOUVEAU : marge appliquÃ©e par la pharmacie
+  margeGnf        Int       @default(0) // Marge appliquee par la pharmacie
   modifieLe       DateTime  @updatedAt
 
   idAsc String?
@@ -909,9 +913,78 @@ model Stock {
   idMedicament String
   medicament   Medicament @relation(fields: [idMedicament], references: [id])
 
+  /// Le detail par lot (addendum du 2026-09-28, point 1.3). `datePeremption`
+  /// etait porte sur le stock jusqu'au 2026-09-30 : une seule date par produit
+  /// et par officine, alors qu'un approvisionnement apporte des lots aux
+  /// peremptions differentes. Le modele ecrasait l'une des deux dates, et le
+  /// stock affichait une peremption fausse.
+  lots LotStock[]
+
   @@unique([idAsc, idMedicament])
   @@unique([idStructure, idMedicament])
   @@map("stocks")
+}
+
+/// Entree en stock, telle que la facture du fournisseur la decrit
+/// (addendum du 2026-09-28, point 1.3).
+///
+/// En deux temps, a dessein : ici la saisie assistee, avec la facture attachee
+/// en justificatif. L'extraction automatique viendra ensuite, et devra
+/// toujours etre relue avant enregistrement — une erreur sur une quantite ou
+/// une peremption entrerait sinon en silence dans le stock d'un medicament.
+model Approvisionnement {
+  id              String   @id @default(cuid())
+  numero          String   @unique
+  /// Reference de la facture chez le fournisseur, telle qu'elle y figure.
+  numeroFacture   String?
+  fournisseur     String
+  dateFacture     DateTime
+  /// Photo ou scan de la facture : la piece qui justifie l'entree.
+  justificatifUrl String?
+  montantTotalGnf Int      @default(0)
+  creeLe          DateTime @default(now())
+
+  idStructure String
+  structure   StructureSante @relation("ApprovisionnementsStructure", fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idSaisiPar String
+  saisiPar   Utilisateur @relation("ApprovisionnementsSaisis", fields: [idSaisiPar], references: [id], onDelete: Restrict)
+
+  lots LotStock[]
+
+  @@index([idStructure, dateFacture(sort: Desc)])
+  @@map("approvisionnements")
+}
+
+/// Un lot recu : une quantite, une date de peremption, une origine.
+///
+/// C'est lui qui rend possible la sortie au plus proche de la peremption
+/// plutot qu'au hasard — la regle attendue dans une pharmacie — et l'alerte
+/// sur les lots qui approchent de leur date.
+model LotStock {
+  id             String    @id @default(cuid())
+  /// Numero de lot du fabricant, quand la boite le porte.
+  numeroLot      String?
+  /// Ce qui reste de ce lot. Un lot a zero est garde : il porte la trace de
+  /// ce qui est entre et de ce qui est sorti.
+  quantite       Int
+  quantiteRecue  Int
+  datePeremption DateTime?
+  prixAchatGnf   Int       @default(0)
+  creeLe         DateTime  @default(now())
+  modifieLe      DateTime  @updatedAt
+
+  idStock String
+  stock   Stock  @relation(fields: [idStock], references: [id], onDelete: Cascade)
+
+  /// Absent pour les lots repris de l'existant a la migration : ils n'ont pas
+  /// de facture d'origine, et inventer un fournisseur serait mentir.
+  idApprovisionnement String?
+  approvisionnement   Approvisionnement? @relation(fields: [idApprovisionnement], references: [id])
+
+  /// Sortie au plus proche de la peremption : cet index sert la regle.
+  @@index([idStock, datePeremption])
+  @@map("lots_stock")
 }
 
 model Facture {

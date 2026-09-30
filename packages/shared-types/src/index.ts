@@ -1422,6 +1422,75 @@ export interface ScanLaboratoireView {
   totalDemandes: number;
 }
 
+/** Un lot recu : une quantite, une date de peremption, une origine. */
+export interface LotStockView {
+  id: string;
+  numeroLot?: string | null;
+  /** Ce qui reste de ce lot. */
+  quantite: number;
+  quantiteRecue: number;
+  datePeremption?: HorodatageApi | null;
+  prixAchatGnf: number;
+  medicament: {
+    id: string;
+    dci: string;
+    nomCommercial?: string | null;
+    dosage: string;
+    forme: string;
+  };
+}
+
+/** POST /pharmacien/approvisionnements — une ligne de la facture. */
+export interface LigneApprovisionnementDto {
+  idMedicament: string;
+  quantite: number;
+  numeroLot?: string;
+  datePeremption?: HorodatageApi;
+  prixAchatGnf?: number;
+  unite?: string;
+}
+
+export interface CreerApprovisionnementDto {
+  fournisseur: string;
+  dateFacture: HorodatageApi;
+  numeroFacture?: string;
+  /** Photo ou scan de la facture : la piece qui justifie l'entree. */
+  justificatifUrl?: string;
+  lignes: LigneApprovisionnementDto[];
+}
+
+export interface ApprovisionnementView {
+  id: string;
+  numero: string;
+  numeroFacture?: string | null;
+  fournisseur: string;
+  dateFacture: HorodatageApi;
+  justificatifUrl?: string | null;
+  montantTotalGnf: number;
+  creeLe: HorodatageApi;
+  saisiPar: { id: string; prenom: string; nom: string };
+  lots: LotStockView[];
+}
+
+/** GET /pharmacien/peremptions — ce qui approche de sa date, ou l'a depassee. */
+export interface PeremptionProcheView {
+  idLot: string;
+  numeroLot?: string | null;
+  quantite: number;
+  datePeremption: HorodatageApi;
+  /** Negatif quand la date est passee. */
+  joursRestants: number;
+  perime: boolean;
+  unite: string;
+  medicament: {
+    id: string;
+    dci: string;
+    nomCommercial?: string | null;
+    dosage: string;
+    forme: string;
+  };
+}
+
 /** Ou en est la demande qu'un patient a faite depuis chez lui. */
 export type StatutDemandeRendezVous = 'EN_ATTENTE' | 'ACCEPTEE' | 'REFUSEE' | 'ANNULEE';
 

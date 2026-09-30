@@ -3,29 +3,39 @@
 import { createStock, getAscStocks, updateStock } from '../src/services/asc.service';
 import { ConflictError, ForbiddenError, NotFoundError } from '../src/utils/app-error';
 
-jest.mock('../src/config/prisma', () => ({
-  prisma: {
+jest.mock('../src/config/prisma', () => {
+  const prisma: Record<string, unknown> = {
     ascProfile: { findUnique: jest.fn() },
     medicament: { findUnique: jest.fn() },
+    // Le stock se detaille en lots depuis le 2026-09-30 : la date de
+    // peremption y descend, et la creation d'une ligne en pose un.
+    lotStock: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     stock: {
       findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn(), create: jest.fn(), update: jest.fn(),
       // Reference de colonne utilisee par le filtre quantite <= seuilAlerte.
       fields: { seuilAlerte: { __field: 'seuilAlerte' } },
     },
-  },
-}));
+  };
+  prisma['$transaction'] = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+  return { prisma };
+});
 
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     ascProfile: { findUnique: jest.Mock };
     medicament: { findUnique: jest.Mock };
+    lotStock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
     stock: { findUnique: jest.Mock; findMany: jest.Mock; count: jest.Mock; create: jest.Mock; update: jest.Mock; fields: unknown };
+    $transaction: jest.Mock;
   };
 };
 
 const ASC = { id: 'asc-1', idUtilisateur: 'asc-u' };
 
 afterEach(() => jest.resetAllMocks());
+beforeEach(() => {
+  prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+});
 
 describe('getAscStocks', () => {
   beforeEach(() => prisma.ascProfile.findUnique.mockResolvedValue(ASC));
@@ -97,7 +107,7 @@ describe('createStock', () => {
     await createStock('asc-u', { idMedicament: 'm-1', quantite: 30, unite: 'boite', datePeremption: '2027-01-31' });
 
     expect(prisma.stock.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: { idAsc: 'asc-1', idMedicament: 'm-1', quantite: 30, unite: 'boite', seuilAlerte: 10, datePeremption: new Date('2027-01-31') },
+      data: { idAsc: 'asc-1', idMedicament: 'm-1', quantite: 30, unite: 'boite', seuilAlerte: 10 },
     }));
   });
 });
@@ -123,7 +133,7 @@ describe('updateStock', () => {
 
     await updateStock('asc-u', 's1', { quantite: 7, unite: 'boite', seuilAlerte: 0, datePeremption: '2027-06-01' });
     expect(prisma.stock.update).toHaveBeenLastCalledWith(expect.objectContaining({
-      data: { quantite: 7, unite: 'boite', seuilAlerte: 0, datePeremption: new Date('2027-06-01') },
+      data: { quantite: 7, unite: 'boite', seuilAlerte: 0 },
     }));
   });
 });

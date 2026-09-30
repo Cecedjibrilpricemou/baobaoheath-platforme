@@ -125,18 +125,32 @@ export async function createStock(userId: string, dto: CreateStockDto) {
         );
     }
 
-    return prisma.stock.create({
-        data: {
-            idAsc: asc.id,
-            idMedicament: dto.idMedicament,
-            quantite: dto.quantite,
-            unite: dto.unite,
-            seuilAlerte: dto.seuilAlerte ?? 10,
-            datePeremption: dto.datePeremption
-                ? new Date(dto.datePeremption)
-                : undefined,
-        },
-        include: { medicament: true },
+    // La date de peremption descend dans un lot depuis le 2026-09-30 : une
+    // seule date par produit ne tenait pas, un reapprovisionnement en apporte
+    // d'autres (addendum, point 1.3).
+    return prisma.$transaction(async (tx) => {
+        const cree = await tx.stock.create({
+            data: {
+                idAsc: asc.id,
+                idMedicament: dto.idMedicament,
+                quantite: dto.quantite,
+                unite: dto.unite,
+                seuilAlerte: dto.seuilAlerte ?? 10,
+            },
+            include: { medicament: true },
+        });
+
+        if (dto.quantite > 0) {
+            await tx.lotStock.create({
+                data: {
+                    idStock: cree.id,
+                    quantite: dto.quantite,
+                    quantiteRecue: dto.quantite,
+                    datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
+                },
+            });
+        }
+        return cree;
     });
 }
 
@@ -162,17 +176,32 @@ export async function updateStock(
         throw new ForbiddenError('Stock non trouvé ou accès refusé');
     }
 
-    return prisma.stock.update({
-        where: { id: stockId },
-        data: {
-            quantite: dto.quantite,
-            unite: dto.unite,
-            ...(dto.seuilAlerte !== undefined && { seuilAlerte: dto.seuilAlerte }),
-            ...(dto.datePeremption && {
-                datePeremption: new Date(dto.datePeremption),
-            }),
-        },
-        include: { medicament: true },
+    return prisma.$transaction(async (tx) => {
+        const maj = await tx.stock.update({
+            where: { id: stockId },
+            data: {
+                quantite: dto.quantite,
+                unite: dto.unite,
+                ...(dto.seuilAlerte !== undefined && { seuilAlerte: dto.seuilAlerte }),
+            },
+            include: { medicament: true },
+        });
+
+        // Une date de peremption donnee ici porte sur le lot en cours : c'est
+        // une correction de saisie, pas une nouvelle entree en stock.
+        if (dto.datePeremption) {
+            const lot = await tx.lotStock.findFirst({
+                where: { idStock: stockId },
+                orderBy: { creeLe: 'desc' },
+            });
+            if (lot) {
+                await tx.lotStock.update({
+                    where: { id: lot.id },
+                    data: { datePeremption: new Date(dto.datePeremption) },
+                });
+            }
+        }
+        return maj;
     });
 }
 

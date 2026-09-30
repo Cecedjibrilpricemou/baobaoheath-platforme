@@ -19,6 +19,7 @@ jest.mock('../src/config/prisma', () => ({
     ligneOrdonnance: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     medicament: { findUnique: jest.fn() },
     stock: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+    lotStock: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -33,6 +34,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     ligneOrdonnance: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
     medicament: { findUnique: jest.Mock };
     stock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    lotStock: { findMany: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
     $transaction: jest.Mock;
   };
 };
@@ -88,6 +90,15 @@ function pharmacienValide() {
 }
 
 afterEach(() => jest.resetAllMocks());
+
+// Le stock se detaille en lots depuis le 2026-09-30 : entrees comme sorties
+// passent par une transaction. Le defaut ci-dessous la rend transparente ;
+// le bloc « delivrance » l'affine pour suivre la consommation des lots.
+beforeEach(() => {
+  prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(prisma));
+  prisma.lotStock.create.mockResolvedValue({});
+  prisma.lotStock.update.mockResolvedValue({});
+});
 
 describe('garde commune : le compte doit etre rattache a une pharmacie', () => {
   it('refuse un pharmacien sans structure', async () => {
@@ -187,10 +198,23 @@ describe('delivrerLigneOrdonnance', () => {
     getValeursParametres.mockResolvedValue(PARAMETRES);
     prisma.ligneOrdonnance.findFirst.mockResolvedValue(null);
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn({
-      stock: { updateMany: prisma.stock.updateMany },
+      stock: { updateMany: prisma.stock.updateMany, update: prisma.stock.update, create: prisma.stock.create },
+      // La delivrance sort desormais du lot le plus proche de sa peremption.
+      lotStock: {
+        findMany: prisma.lotStock.findMany,
+        findFirst: prisma.lotStock.findFirst,
+        create: prisma.lotStock.create,
+        update: prisma.lotStock.update,
+      },
       ligneOrdonnance: { update: prisma.ligneOrdonnance.update },
       ordonnance: { findUnique: prisma.ordonnance.findUnique, update: prisma.ordonnance.update },
     }));
+    // Un lot disponible, largement suffisant, pour que la sortie aboutisse.
+    prisma.lotStock.findMany.mockResolvedValue([
+      { id: 'lot-1', quantite: 1000, datePeremption: new Date('2030-01-01') },
+    ]);
+    prisma.lotStock.update.mockResolvedValue({});
+    prisma.lotStock.create.mockResolvedValue({});
     // Etat du document relu par recalculerStatut apres la sortie de stock.
     prisma.ordonnance.findUnique.mockResolvedValue({
       ...ORD_VALIDE,
