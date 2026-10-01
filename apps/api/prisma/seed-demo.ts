@@ -172,22 +172,60 @@ async function main() {
       ? await prisma.medicament.update({ where: { id: existant.id }, data: { ...m } })
       : await prisma.medicament.create({ data: { ...m, listeEssentielle: true } });
 
-    // La pharmacie doit avoir du stock, sinon la delivrance echoue.
-    await prisma.stock.upsert({
+    // La pharmacie doit avoir du stock, sinon la delivrance echoue. Depuis le
+    // 2026-09-30 la sortie se fait par lots, au plus proche de la peremption :
+    // une quantite sans lot est indelivrable.
+    const stock = await prisma.stock.upsert({
       where: { idStructure_idMedicament: { idStructure: pharmacie.id, idMedicament: medicament.id } },
       update: { quantite: 500 },
       create: { idStructure: pharmacie.id, idMedicament: medicament.id, quantite: 500, unite: 'boite', seuilAlerte: 10 },
     });
+
+    // Semence rejouable : un lot unique, refait a chaque execution, sinon la
+    // somme des lots quitte la quantite du stock.
+    await prisma.lotStock.deleteMany({ where: { idStock: stock.id } });
+    await prisma.lotStock.create({
+      data: {
+        idStock: stock.id,
+        numeroLot: `DEMO-${(medicament.nomCommercial ?? 'LOT').slice(0, 6).toUpperCase()}-1`,
+        quantite: 500,
+        quantiteRecue: 500,
+        // Un lot a quatre mois : l'ecran des peremptions a quelque chose a
+        // montrer sans qu'on ait a saisir une facture d'abord.
+        datePeremption: new Date(Date.now() + 120 * 86_400_000),
+      },
+    });
   }
-  console.log('4. Catalogue : 4 medicaments, dont un allergene et un reglemente, en stock');
+  console.log('4. Catalogue : 4 medicaments, dont un allergene et un reglemente, en stock par lots');
 
   // ── 5. Le referentiel d'examens ─────────────────────────────────
   await seedExamens(prisma);
   console.log('5. Examens de laboratoire (codes LOINC)');
 
+  await verifierInvariantDesLots();
+
   console.log(`\nMot de passe de tous les comptes : ${MOT_DE_PASSE}`);
   console.log(`Quartier commun : ${QUARTIER} (${COMMUNE}, ${PREFECTURE})`);
   console.log('\nParcours a derouler : voir docs/PARCOURS-DEMO.md');
+}
+
+/**
+ * La quantite d'un stock est la somme de ses lots. Rien dans le schema ne
+ * l'impose, et une semence qui l'oublie laisse une pharmacie incapable de
+ * delivrer tout en affichant du stock. On echoue ici plutot qu'au milieu
+ * d'une demonstration.
+ */
+async function verifierInvariantDesLots() {
+  const stocks = await prisma.stock.findMany({ include: { lots: true } });
+  const ecarts = stocks
+    .map((s) => ({ id: s.id, quantite: s.quantite, lots: s.lots.reduce((t, l) => t + l.quantite, 0) }))
+    .filter((e) => e.quantite !== e.lots);
+  if (ecarts.length > 0) {
+    throw new Error(
+      'Stock sans lots ou lots incoherents : ' +
+        ecarts.map((e) => `${e.id} (quantite=${e.quantite}, lots=${e.lots})`).join(', ')
+    );
+  }
 }
 
 main()

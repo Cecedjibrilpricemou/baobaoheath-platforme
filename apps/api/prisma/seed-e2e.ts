@@ -144,13 +144,51 @@ async function main() {
 
   // La pharmacie doit avoir du stock pour delivrer ; l'ASC n'en a pas encore
   // (le test d'ajout de stock le cree).
-  await prisma.stock.upsert({
+  //
+  // Le stock seul ne suffit plus depuis le 2026-09-30 : la sortie se fait par
+  // lots, au plus proche de la peremption. Une quantite sans lot est
+  // indelivrable — et c'est ainsi que la delivrance e2e a casse.
+  const stockPharmacie = await prisma.stock.upsert({
     where: { idStructure_idMedicament: { idStructure: pharmacie.id, idMedicament: medicament.id } },
     update: { quantite: 500 },
     create: { idStructure: pharmacie.id, idMedicament: medicament.id, quantite: 500, unite: 'boite', seuilAlerte: 10 },
   });
 
+  // Semence rejouable : on repart d'un lot unique plutot que d'en empiler un
+  // de plus a chaque execution, sinon la somme des lots quitte la quantite.
+  await prisma.lotStock.deleteMany({ where: { idStock: stockPharmacie.id } });
+  await prisma.lotStock.create({
+    data: {
+      idStock: stockPharmacie.id,
+      numeroLot: 'E2E-LOT-001',
+      quantite: 500,
+      quantiteRecue: 500,
+      datePeremption: new Date(Date.now() + 540 * 86_400_000),
+    },
+  });
+
+  await verifierInvariantDesLots();
+
   console.log('Seed e2e termine.');
+}
+
+/**
+ * La quantite d'un stock est la somme de ses lots. Rien dans le schema ne
+ * l'impose, et une semence qui l'oublie laisse une pharmacie incapable de
+ * delivrer tout en affichant du stock. On echoue ici plutot qu'au milieu
+ * d'un parcours.
+ */
+async function verifierInvariantDesLots() {
+  const stocks = await prisma.stock.findMany({ include: { lots: true } });
+  const ecarts = stocks
+    .map((s) => ({ id: s.id, quantite: s.quantite, lots: s.lots.reduce((t, l) => t + l.quantite, 0) }))
+    .filter((e) => e.quantite !== e.lots);
+  if (ecarts.length > 0) {
+    throw new Error(
+      'Stock sans lots ou lots incoherents : ' +
+        ecarts.map((e) => `${e.id} (quantite=${e.quantite}, lots=${e.lots})`).join(', ')
+    );
+  }
 }
 
 main()
