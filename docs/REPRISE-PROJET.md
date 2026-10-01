@@ -367,6 +367,7 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 | `REDIS_URL` | Non configuré : limitation de débit **en mémoire**, donc inopérante à plusieurs instances. |
 | Gmail | Non configuré : OTP en repli développement. Inacceptable en production. |
 | `README.md` | Périmé (nom du produit, PrimeNG). |
+| Semences hors typage | `apps/api/tsconfig.json` déclare `include: src/**/*` : **`prisma/seed*.ts` n'est pas type-vérifié**. Une erreur y reste invisible jusqu'à l'exécution. |
 | Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend. |
 | Images de la landing | Banques d'images génériques, **noms de fichiers trompeurs**, une avec signalétique en espagnol. Manquent : laboratoire, livraison. |
 | Marque | Le bandeau latéral affiche encore « Santé Pour Tous » alors que les SMS partent sous « KENEYA ». |
@@ -374,6 +375,11 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 | Journal d'audit | Les scans de QR sont tracés depuis le 2026-09-29 (**vérifié en base** : une ligne par scan, avec le rôle et la personne). Mais `idRessource` reste vide — le middleware ne lit que `req.params.id`, or le paramètre s'appelle `qrCode`. Le patient concerné n'est que dans `metadonnees.params`, donc non indexé. Répondre à « qui a consulté mon dossier ? » est possible mais coûteux. **EF-02-08 n'est pas couvert**, il reste en P4. |
 
 ### Pièges rencontrés — à ne pas repayer
+
+**Base de données**
+
+- **La quantité d'un stock est la somme de ses lots, et rien ne l'impose.** Depuis le 2026-09-30 la sortie passe par `consommerLots` : une quantité sans lot est indélivrable, alors que l'écran affiche du stock. Les deux semences l'avaient oublié, et la CI e2e l'a trouvé — pas les tests, pas le type-checking, pas la base locale, dont les lots venaient de la migration. Chaque semence vérifie maintenant l'invariant en terminant.
+- Corollaire : **une base locale qui marche ne prouve rien sur une base neuve.** Ce qui marchait ici venait d'une reprise de données que personne ne rejouera.
 
 **Angular**
 
