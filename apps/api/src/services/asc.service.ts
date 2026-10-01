@@ -5,6 +5,7 @@ import {
     StockFilters,
     RapportFilters,
 } from '../types/asc.types';
+import { peremptionLaPlusProche } from './approvisionnement.service';
 import { ConflictError, ForbiddenError, NotFoundError } from '../utils/app-error';
 
 // ─── Récupérer le planning (rendez-vous) de l'ASC ────────
@@ -68,16 +69,21 @@ export async function getAscStocks(userId: string, filters: StockFilters) {
             where,
             skip,
             take: limit,
-            include: { medicament: true },
+            include: {
+                medicament: true,
+                // La peremption appartient aux lots depuis le 2026-09-30.
+                lots: { select: { quantite: true, datePeremption: true } },
+            },
             orderBy: { modifieLe: 'desc' },
         }),
         prisma.stock.count({ where }),
     ]);
 
     // Identifier les stocks en alerte
-    const stocksAvecAlerte = stocks.map((s) => ({
+    const stocksAvecAlerte = stocks.map(({ lots, ...s }) => ({
         ...s,
         enAlerte: s.quantite <= s.seuilAlerte,
+        peremptionLaPlusProche: peremptionLaPlusProche(lots),
     }));
 
     return {

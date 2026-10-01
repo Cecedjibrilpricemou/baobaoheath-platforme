@@ -264,6 +264,23 @@ export async function lotsDuMedicament(user: JwtPayload, idMedicament: string): 
  * A appeler dans la transaction qui decremente le total, jamais seule : les
  * deux doivent tomber ensemble.
  */
+/**
+ * La peremption la plus proche parmi les lots encore en stock. C'est celle qui
+ * sortira la premiere, donc la seule qui interesse un ecran de stock.
+ *
+ * `Stock.datePeremption` a disparu le 2026-09-30 : les ecrans qui la lisaient
+ * ont cesse d'afficher quoi que ce soit, sans erreur.
+ */
+export function peremptionLaPlusProche(
+  lots: { quantite: number; datePeremption: Date | null }[]
+): string | null {
+  const dates = lots
+    .filter((l) => l.quantite > 0 && l.datePeremption !== null)
+    .map((l) => l.datePeremption as Date)
+    .sort((x, y) => x.getTime() - y.getTime());
+  return dates.length > 0 ? dates[0]!.toISOString() : null;
+}
+
 export async function consommerLots(
   // Le client de transaction tel que ce projet le produit : le client Prisma
   // est etendu (chiffrement), donc `Prisma.TransactionClient` ne correspond

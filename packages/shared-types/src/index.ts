@@ -848,7 +848,13 @@ export interface StockAscView {
   quantite: number;
   seuilAlerte: number;
   unite: string;
-  datePeremption?: HorodatageApi | null;
+  /**
+   * La peremption la plus proche parmi les lots encore en stock, puisque la
+   * sortie se fait au plus proche de la date. `Stock.datePeremption` a disparu
+   * le 2026-09-30 ; ce contrat l'annoncait encore, et les deux ecrans de stock
+   * affichaient donc une date que l'API n'envoyait plus.
+   */
+  peremptionLaPlusProche?: HorodatageApi | null;
   enAlerte: boolean;
   medicament: MedicamentView & { classeTherapeutique?: string | null };
 }
@@ -1016,7 +1022,13 @@ export interface StockPharmacieView {
   quantite: number;
   seuilAlerte: number;
   unite: string;
-  datePeremption?: HorodatageApi | null;
+  /**
+   * La peremption la plus proche parmi les lots encore en stock, puisque la
+   * sortie se fait au plus proche de la date. `Stock.datePeremption` a disparu
+   * le 2026-09-30 ; ce contrat l'annoncait encore, et les deux ecrans de stock
+   * affichaient donc une date que l'API n'envoyait plus.
+   */
+  peremptionLaPlusProche?: HorodatageApi | null;
   margeGnf: number;
   medicament: MedicamentTarifeView;
 }

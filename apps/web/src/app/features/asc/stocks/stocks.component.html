@@ -205,11 +205,11 @@
         </div>
 
         <!-- Date expiration -->
-        @if (stock.datePeremption) {
-        <div class="stock-card__expiry" [class.stock-card__expiry--soon]="isExpireSoon(stock.datePeremption)">
+        @if (stock.peremptionLaPlusProche) {
+        <div class="stock-card__expiry" [class.stock-card__expiry--soon]="isExpireSoon(stock.peremptionLaPlusProche)">
           <i class="pi pi-calendar"></i>
-          {{ 'ASC.STOCKS.EXPIRES' | translate }} {{ formatDate(stock.datePeremption) }}
-          @if (isExpireSoon(stock.datePeremption)) {
+          {{ 'ASC.STOCKS.EXPIRES' | translate }} {{ formatDate(stock.peremptionLaPlusProche) }}
+          @if (isExpireSoon(stock.peremptionLaPlusProche)) {
           <span class="expiry-warning">⚠️ {{ 'ASC.STOCKS.EXPIRES_SOON' | translate }}</span>
           }
         </div>

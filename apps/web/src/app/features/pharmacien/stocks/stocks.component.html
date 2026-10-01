@@ -164,9 +164,9 @@
 
           <div class="bb-ph-stocks__card-footer">
             <span><i class="pi pi-bell"></i> {{ 'PHARMACIEN.STOCKS.ALERT_THRESHOLD' | translate: { value: s.seuilAlerte, unit: s.unite } }}</span>
-            @if (s.datePeremption) {
+            @if (s.peremptionLaPlusProche) {
               <span [class.bb-ph-stocks__expire]="isExpireSoon(s)">
-                <i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.EXPIRY_LABEL' | translate: { date: formatDate(s.datePeremption) } }}
+                <i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.EXPIRY_LABEL' | translate: { date: formatDate(s.peremptionLaPlusProche) } }}
               </span>
             } @else {
               <span><i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.NO_EXPIRY' | translate }}</span>

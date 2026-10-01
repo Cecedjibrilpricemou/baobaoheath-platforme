@@ -168,7 +168,7 @@ export class PharmacienStocksComponent implements OnInit {
   }
 
   isExpireSoon(s: StockPharmacieView): boolean {
-    if (!s.datePeremption) return false;
-    return new Date(s.datePeremption).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
+    if (!s.peremptionLaPlusProche) return false;
+    return new Date(s.peremptionLaPlusProche).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
   }
 }

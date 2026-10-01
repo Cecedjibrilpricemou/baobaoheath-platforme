@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { prisma } from '../config/prisma';
+import { peremptionLaPlusProche } from './approvisionnement.service';
 import { consommerLots } from './approvisionnement.service';
 import { Role, StatutOrdonnance, TypeStructure } from '../config/generated/client/client';
 import { hashPassword } from '../utils/password.utils';
@@ -14,6 +15,7 @@ import {
   renouvellementsRestants,
 } from './ordonnance.service';
 import type {
+  StockPharmacieView,
   MedicamentTarifeView,
   ProduitResumeView,
   OrdonnanceDelivranceView,
@@ -356,14 +358,23 @@ export async function renouvelerAuComptoir(pharmacienId: string, idOrdonnance: s
   };
 }
 
-export async function getStocksPharmacie(pharmacienId: string) {
+export async function getStocksPharmacie(pharmacienId: string): Promise<StockPharmacieView[]> {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
 
-  return prisma.stock.findMany({
+  const stocks = await prisma.stock.findMany({
     where: { idStructure: pharmacien.idStructure },
-    include: { medicament: true },
+    include: {
+      medicament: true,
+      // La peremption appartient aux lots depuis le 2026-09-30.
+      lots: { select: { quantite: true, datePeremption: true } },
+    },
     orderBy: { quantite: 'asc' },
   });
+
+  return stocks.map(({ lots, ...s }) => ({
+    ...s,
+    peremptionLaPlusProche: peremptionLaPlusProche(lots),
+  }));
 }
 
 // Une ordonnance n'est rattachee a aucune pharmacie avant sa delivrance : on

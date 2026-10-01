@@ -42,9 +42,9 @@ describe('getAscStocks', () => {
 
   it('marque enAlerte les lignes dont la quantite est au seuil ou en dessous, et les compte', async () => {
     prisma.stock.findMany.mockResolvedValue([
-      { id: 's1', quantite: 5, seuilAlerte: 10 },
-      { id: 's2', quantite: 10, seuilAlerte: 10 },
-      { id: 's3', quantite: 40, seuilAlerte: 10 },
+      { id: 's1', quantite: 5, seuilAlerte: 10, lots: [] },
+      { id: 's2', quantite: 10, seuilAlerte: 10, lots: [] },
+      { id: 's3', quantite: 40, seuilAlerte: 10, lots: [] },
     ]);
     prisma.stock.count.mockResolvedValue(3);
 
@@ -53,6 +53,47 @@ describe('getAscStocks', () => {
     expect(res.data.map(s => s.enAlerte)).toEqual([true, true, false]);
     expect(res.meta.alertes).toBe(2);
     expect(res.meta).toEqual(expect.objectContaining({ total: 3, page: 1, limit: 20, totalPages: 1 }));
+  });
+
+  // `Stock.datePeremption` a disparu le 2026-09-30 : l'ecran lisait un champ
+  // que l'API n'envoyait plus, et n'affichait donc aucune date sans que rien
+  // ne le signale. C'est la plus proche parmi les lots qui compte, puisque
+  // c'est elle qui sortira la premiere.
+  it('rend la peremption la plus proche parmi les lots encore en stock', async () => {
+    const dans30 = new Date('2026-11-01T00:00:00.000Z');
+    const dans300 = new Date('2027-07-01T00:00:00.000Z');
+    prisma.stock.findMany.mockResolvedValue([
+      { id: 's1', quantite: 60, seuilAlerte: 10, lots: [
+        { quantite: 40, datePeremption: dans300 },
+        { quantite: 20, datePeremption: dans30 },
+      ] },
+      // Un lot epuise ne sortira jamais : sa date ne doit pas etre retenue.
+      { id: 's2', quantite: 40, seuilAlerte: 10, lots: [
+        { quantite: 0, datePeremption: dans30 },
+        { quantite: 40, datePeremption: dans300 },
+      ] },
+      // Sans lot date, il n'y a rien a afficher.
+      { id: 's3', quantite: 10, seuilAlerte: 10, lots: [{ quantite: 10, datePeremption: null }] },
+    ]);
+    prisma.stock.count.mockResolvedValue(3);
+
+    const res = await getAscStocks('asc-u', {});
+
+    expect(res.data.map(s => s.peremptionLaPlusProche)).toEqual([
+      dans30.toISOString(),
+      dans300.toISOString(),
+      null,
+    ]);
+  });
+
+  it('demande bien les lots : sans eux la date ne peut pas etre calculee', async () => {
+    prisma.stock.findMany.mockResolvedValue([]);
+    prisma.stock.count.mockResolvedValue(0);
+
+    await getAscStocks('asc-u', {});
+
+    const [args] = prisma.stock.findMany.mock.calls[0] as [{ include: Record<string, unknown> }];
+    expect(args.include).toHaveProperty('lots');
   });
 
   it('applique le filtre seuilAlerte aux deux requetes (liste et total)', async () => {
