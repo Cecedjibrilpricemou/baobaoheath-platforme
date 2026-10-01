@@ -22,13 +22,13 @@ export const E2E = {
   accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
   laborantin2: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
-  medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
+  medicament: { libelle: 'Doliprane e2e 500mg', dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
   // Molecule a laquelle la patiente se declare allergique : elle sert a
   // verifier que l'alerte de prescription (EF-05-05) arrive a l'ecran.
-  allergene: { dci: 'Amoxicilline', nomCommercial: 'Clamoxyl e2e', forme: 'gelule', dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
+  allergene: { libelle: 'Clamoxyl e2e 500mg', dci: 'Amoxicilline', nomCommercial: 'Clamoxyl e2e', forme: 'gelule', dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
   // Produit a circuit reglemente (EF-05-12) : ni renouvelable, validite
   // reduite, signature d'un medecin exigee.
-  reglemente: { dci: 'Morphine', nomCommercial: 'Morphine e2e', forme: 'ampoule', dosage: '10mg', prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
+  reglemente: { libelle: 'Morphine e2e 10mg', dci: 'Morphine', nomCommercial: 'Morphine e2e', forme: 'ampoule', dosage: '10mg', prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
 } as const;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });

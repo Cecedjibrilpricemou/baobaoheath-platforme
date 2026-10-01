@@ -4,6 +4,8 @@
 // passee sous silence.
 import {
   delivrerLigneOrdonnance,
+  getMedicaments,
+  getMedicamentsPrescriptibles,
   getOrdonnances,
   reapprovisionnerStock,
   scanPatient,
@@ -17,7 +19,7 @@ jest.mock('../src/config/prisma', () => ({
     patientProfile: { findUnique: jest.fn() },
     ordonnance: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     ligneOrdonnance: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-    medicament: { findUnique: jest.fn() },
+    medicament: { findUnique: jest.fn(), findMany: jest.fn() },
     stock: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     lotStock: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
@@ -32,7 +34,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     patientProfile: { findUnique: jest.Mock };
     ordonnance: { findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
     ligneOrdonnance: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
-    medicament: { findUnique: jest.Mock };
+    medicament: { findUnique: jest.Mock; findMany: jest.Mock };
     stock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     lotStock: { findMany: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
     $transaction: jest.Mock;
@@ -524,5 +526,39 @@ describe('reapprovisionnerStock', () => {
     expect(prisma.stock.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ margeGnf: 300 }),
     }));
+  });
+});
+
+// ── Les deux catalogues ──────────────────────────────────────────────
+//
+// Depuis le 2026-10-01 le catalogue contient des articles non medicamenteux.
+// Le comptoir les vend ; la prescription ne doit pas les proposer, sinon le
+// prescripteur choisit un lait infantile et decouvre le refus apres coup.
+describe('catalogues', () => {
+  it('le comptoir voit tout le catalogue, articles compris', async () => {
+    prisma.medicament.findMany.mockResolvedValue([]);
+    await getMedicaments();
+
+    const [args] = prisma.medicament.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where).toEqual({ estActif: true });
+    expect(args.where).not.toHaveProperty('categorie');
+  });
+
+  it('la prescription ne voit que des medicaments', async () => {
+    prisma.medicament.findMany.mockResolvedValue([]);
+    await getMedicamentsPrescriptibles();
+
+    const [args] = prisma.medicament.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where).toEqual({ estActif: true, categorie: 'MEDICAMENT' });
+  });
+
+  it('les deux trient sur le libelle, seul champ toujours renseigne', async () => {
+    prisma.medicament.findMany.mockResolvedValue([]);
+    await getMedicaments();
+    await getMedicamentsPrescriptibles();
+
+    for (const [args] of prisma.medicament.findMany.mock.calls as [{ orderBy: unknown }][]) {
+      expect(JSON.stringify(args.orderBy)).toContain('libelle');
+    }
   });
 });

@@ -1809,5 +1809,17 @@
     "SCAN_A_JEUN": "fasting",
     "SCAN_FERMER": "Close",
     "SCAN_ERREUR": "Unknown QR code, or no test for this patient here."
+  },
+  "CATALOGUE": {
+    "CATEGORIE": {
+      "MEDICAMENT": "Medicine",
+      "LAIT_INFANTILE": "Infant formula",
+      "COMPLEMENT_ALIMENTAIRE": "Food supplement",
+      "COSMETIQUE": "Cosmetic",
+      "HYGIENE": "Hygiene",
+      "PARAPHARMACIE": "Parapharmacy",
+      "DISPOSITIF_MEDICAL": "Medical device",
+      "AUTRE": "Other"
+    }
   }
 }

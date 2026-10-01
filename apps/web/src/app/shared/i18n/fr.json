@@ -1809,5 +1809,17 @@
     "SCAN_A_JEUN": "à jeun",
     "SCAN_FERMER": "Fermer",
     "SCAN_ERREUR": "QR code inconnu, ou patient sans analyse ici."
+  },
+  "CATALOGUE": {
+    "CATEGORIE": {
+      "MEDICAMENT": "Médicament",
+      "LAIT_INFANTILE": "Lait infantile",
+      "COMPLEMENT_ALIMENTAIRE": "Complément alimentaire",
+      "COSMETIQUE": "Cosmétique",
+      "HYGIENE": "Hygiène",
+      "PARAPHARMACIE": "Parapharmacie",
+      "DISPOSITIF_MEDICAL": "Dispositif médical",
+      "AUTRE": "Autre"
+    }
   }
 }

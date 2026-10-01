@@ -101,7 +101,7 @@
               <span class="meta">{{ ord.medecinNom }} · {{ 'PHARMACIEN.ORDONNANCES.VALID_UNTIL' | translate: { date: (ord.valideJusquau | date:'shortDate') ?? '' } }}</span>
               <ul class="bb-ordo__verif-meds">
                 @for (l of ord.lignes; track l.id) {
-                  <li>{{ l.medicament.nomCommercial ?? l.medicament.dci }} — {{ l.posologie }} · {{ l.frequence }} · {{ l.dureeJours }}j</li>
+                  <li>{{ l.medicament.libelle }} — {{ l.posologie }} · {{ l.frequence }} · {{ l.dureeJours }}j</li>
                 }
               </ul>
             </div>
@@ -146,7 +146,7 @@
                   <span class="bb-ordo__pending-meds">
                     @for (o of g.lignes; track o.id) {
                       @for (m of o.medicaments; track m.id; let last = $last) {
-                        {{ m.nomCommercial || m.dci }}@if (!last) {, }
+                        {{ m.libelle }}@if (!last) {, }
                       }
                     }
                   </span>
@@ -270,7 +270,7 @@
                   <div class="bb-ordo__item-content">
                     <div class="bb-ordo__item-left">
                       <span class="bb-ordo__item-med">
-                        {{ o.medicament.nomCommercial ?? o.medicament.dci }} <span class="badge">{{ o.medicament.dosage }}</span>
+                        {{ o.medicament.libelle }}
                       </span>
                       <span class="bb-ordo__item-details">
                         <i class="pi pi-clock" aria-hidden="true"></i> {{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j <br>
@@ -283,7 +283,7 @@
                         class="bb-ordo__btn-select"
                         [disabled]="ordonnance.expiree"
                         (click)="selectionner(ordonnance, o)"
-                        [attr.aria-label]="('PHARMACIEN.ORDONNANCES.DELIVER_ARIA' | translate: { med: o.medicament.nomCommercial ?? o.medicament.dci }) + (o.alerteAllergie ? ('PHARMACIEN.ORDONNANCES.DELIVER_ARIA_ALLERGY_SUFFIX' | translate) : '')"
+                        [attr.aria-label]="('PHARMACIEN.ORDONNANCES.DELIVER_ARIA' | translate: { med: o.medicament.libelle }) + (o.alerteAllergie ? ('PHARMACIEN.ORDONNANCES.DELIVER_ARIA_ALLERGY_SUFFIX' | translate) : '')"
                       >
                         {{ 'PHARMACIEN.ORDONNANCES.DELIVER' | translate }} <i class="pi pi-chevron-right" aria-hidden="true"></i>
                       </button>
@@ -320,7 +320,7 @@
           </h3>
 
           <div class="bb-ordo__form-med">
-            <strong>{{ selected()!.ligne.medicament.nomCommercial ?? selected()!.ligne.medicament.dci }}</strong>
+            <strong>{{ selected()!.ligne.medicament.libelle }}</strong>
             <span>{{ selected()!.ligne.medicament.dosage }} — {{ selected()!.ligne.medicament.forme }}</span>
           </div>
 

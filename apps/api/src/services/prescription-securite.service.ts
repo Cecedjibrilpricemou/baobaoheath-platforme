@@ -14,7 +14,7 @@
 //     est ce qui a ete montre ce jour-la.
 import { NiveauInteraction, StatutOrdonnance } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
-import { NotFoundError } from '../utils/app-error';
+import { NotFoundError, ValidationError } from '../utils/app-error';
 import type { AlertePrescriptionView, AlertesPrescriptionView } from '@baobaoheath/shared-types';
 
 /** Rang de gravite ; au-dela de PRECAUTION, un motif est attendu. */
@@ -62,8 +62,16 @@ export function memeClasseAtc(a: string | null, b: string | null): boolean {
   return na.slice(0, 4) === nb.slice(0, 4);
 }
 
+/**
+ * Le candidat, deja reduit a ce qui se prescrit. Depuis le 2026-10-01 le
+ * catalogue contient aussi des articles non medicamenteux, dont la DCI est
+ * nulle : `analyserPrescription` les refuse avant d'en arriver ici, pour que
+ * `dci` reste une chaine et que la comparaison d'allergie ne puisse pas porter
+ * sur rien.
+ */
 type MedicamentCandidat = {
   id: string;
+  libelle: string;
   dci: string;
   nomCommercial: string | null;
   codeAtc: string | null;
@@ -86,7 +94,7 @@ function alerteAllergie(
       ? `${medicament.dci} appartient a la meme famille (ATC ${medicament.codeAtc}) qu'un produit auquel le patient se declare allergique.`
       : `Le patient se declare allergique a ${allergie}.`,
     conduite: 'Choisir une alternative therapeutique, ou documenter la tolerance.',
-    medicamentEnCause: medicament.nomCommercial ?? medicament.dci,
+    medicamentEnCause: medicament.libelle,
     source: 'Dossier patient',
   };
 }
@@ -109,11 +117,32 @@ export async function analyserPrescription(
   });
   if (!consultation) throw new NotFoundError('Consultation non trouvee');
 
-  const medicament = await prisma.medicament.findUnique({
+  const produit = await prisma.medicament.findUnique({
     where: { id: idMedicament },
-    select: { id: true, dci: true, nomCommercial: true, codeAtc: true, contreIndications: true },
+    select: {
+      id: true, libelle: true, categorie: true, dci: true, nomCommercial: true,
+      codeAtc: true, contreIndications: true,
+    },
   });
-  if (!medicament) throw new NotFoundError('Medicament non trouve');
+  if (!produit) throw new NotFoundError('Medicament non trouve');
+
+  // Le catalogue contient des articles non medicamenteux depuis le
+  // 2026-10-01 (lait, cosmetiques). Ils ne se prescrivent pas : il n'y a ni
+  // posologie, ni allergie de classe, ni interaction a chercher. On refuse ici
+  // plutot que de comparer une allergie a une DCI absente.
+  if (produit.categorie !== 'MEDICAMENT' || produit.dci === null) {
+    throw new ValidationError(`« ${produit.libelle} » n'est pas un medicament et ne peut pas etre prescrit`);
+  }
+
+  // Recopie explicite : la DCI est une chaine a partir d'ici, et le type le dit.
+  const medicament: MedicamentCandidat = {
+    id: produit.id,
+    libelle: produit.libelle,
+    dci: produit.dci,
+    nomCommercial: produit.nomCommercial,
+    codeAtc: produit.codeAtc,
+    contreIndications: produit.contreIndications,
+  };
 
   const alertes: AlertePrescriptionView[] = [];
 
@@ -160,7 +189,7 @@ export async function analyserPrescription(
       libelle: `Contre-indication : ${contreIndication}`,
       detail: `Le dossier du patient mentionne « ${maladie} », qui figure parmi les contre-indications de ${medicament.dci}.`,
       conduite: 'Verifier le rapport benefice/risque avant de prescrire.',
-      medicamentEnCause: medicament.nomCommercial ?? medicament.dci,
+      medicamentEnCause: medicament.libelle,
       source: 'Fiche medicament',
     });
   }
@@ -213,16 +242,21 @@ async function traitementsEnCours(idPatient: string, idMedicamentExclu: string):
         consultation: { idPatient },
       },
     },
-    select: { medicament: { select: { dci: true, nomCommercial: true } } },
+    select: { medicament: { select: { dci: true, libelle: true } } },
     take: 50,
   });
 
   // Deux ordonnances peuvent porter la meme molecule : une alerte suffit.
   const vues = new Map<string, DejaPrescrit>();
   for (const l of lignes) {
-    const cle = normaliser(l.medicament.dci);
+    // Une ligne d'ordonnance ne porte qu'un medicament, donc toujours une DCI
+    // (contrainte `medicaments_medicament_complet`). Le test est la pour que le
+    // type le dise, pas pour rattraper un cas attendu.
+    const dci = l.medicament.dci;
+    if (!dci) continue;
+    const cle = normaliser(dci);
     if (!vues.has(cle)) {
-      vues.set(cle, { dci: l.medicament.dci, libelle: l.medicament.nomCommercial ?? l.medicament.dci });
+      vues.set(cle, { dci, libelle: l.medicament.libelle });
     }
   }
   return [...vues.values()];

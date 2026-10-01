@@ -1,5 +1,6 @@
 // features/pharmacien/stocks/stocks.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
 import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -15,7 +16,7 @@ import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@b
   selector: 'app-pharmacien-stocks',
   standalone: true,
   imports: [
-    SeveriteVariantePipe,
+    CategorieProduitPipe, SeveriteVariantePipe,
     MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
@@ -76,19 +77,17 @@ export class PharmacienStocksComponent implements OnInit {
   }
 
   get medicamentOptions() {
-    return this.medicaments().map(m => ({
-      label: m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} — ${m.dosage}`,
-      value: m.id
-    }));
+    return this.medicaments().map(m => ({ label: m.libelle, value: m.id }));
   }
 
   get stocksFiltres(): StockPharmacieView[] {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s =>
+      s.medicament.libelle.toLowerCase().includes(q) ||
       s.medicament.dci?.toLowerCase().includes(q) ||
       s.medicament.nomCommercial?.toLowerCase().includes(q) ||
-      s.medicament.categorie?.toLowerCase().includes(q)
+      s.medicament.classeTherapeutique?.toLowerCase().includes(q)
     );
   }
 
@@ -121,10 +120,21 @@ export class PharmacienStocksComponent implements OnInit {
     });
   }
 
+  /**
+   * Le libelle est le nom complet du produit. On n'ajoute la DCI que si elle
+   * apporte quelque chose : un article non medicamenteux n'en a pas, et la
+   * formule precedente affichait « null null » pour un lait infantile.
+   */
   getMedicamentLabel(s: StockPharmacieView): string {
-    return s.medicament.nomCommercial
-      ? `${s.medicament.nomCommercial} (${s.medicament.dci})`
-      : `${s.medicament.dci} ${s.medicament.dosage}`;
+    const m = s.medicament;
+    return m.dci && !m.libelle.toLowerCase().includes(m.dci.toLowerCase())
+      ? `${m.libelle} (${m.dci})`
+      : m.libelle;
+  }
+
+  /** Vide pour un article non medicamenteux : il n'a ni forme ni dosage. */
+  formeEtDosage(s: StockPharmacieView): string {
+    return [s.medicament.forme, s.medicament.dosage].filter(Boolean).join(' · ');
   }
 
   getPrixVente(s: StockPharmacieView): number { return s.medicament.prixUnitaireGnf + (s.margeGnf ?? 0); }

@@ -1,20 +1,24 @@
 // core/models/pharmacien.model.ts
-export interface MedicamentInfo {
-  id: string;
-  dci: string;
-  nomCommercial?: string;
-  forme: string;
-  dosage: string;
-}
+//
+// Ces interfaces etaient une copie parallele du contrat, et elles avaient
+// derive : `MedicamentInfo` annoncait `dci` et `dosage` obligatoires, et
+// `PharmacieStock` portait `prixUnitaire` et `dateExpiration`, deux noms que
+// l'API n'a jamais envoyes. C'est ce genre d'ecart qui avait vide la liste
+// deroulante de l'approvisionnement sans qu'aucune erreur n'apparaisse. On
+// reprend donc le contrat au lieu de le redecrire.
+import type { MedicamentTarifeView, MedicamentView } from '@baobaoheath/shared-types';
 
+/** Une entree du catalogue, telle que l'API la rend. */
+export type MedicamentInfo = MedicamentView;
+
+/** Une ligne de stock de l'officine. La peremption vit sur les lots. */
 export interface PharmacieStock {
   id: string;
   quantite: number;
   seuilAlerte: number;
   unite: string;
-  prixUnitaire: number;
-  dateExpiration?: string;
-  medicament: MedicamentInfo;
+  margeGnf: number;
+  medicament: MedicamentTarifeView;
 }
 
 export interface LigneOrdonnance {

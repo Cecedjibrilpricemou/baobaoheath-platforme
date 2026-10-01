@@ -165,6 +165,17 @@ export class ApprovisionnementsComponent implements OnInit {
   }
 
   libelleProduit(m: MedicamentInfo): string {
-    return [m.nomCommercial || m.dci, m.dosage, m.forme].filter(Boolean).join(' · ');
+    return this.composer(m.libelle, m.dosage, m.forme);
   }
+  /**
+   * Le libelle est le nom complet du produit. On n'ajoute la forme et le
+   * dosage que s'ils n'y figurent pas deja : « Doliprane 500mg · 500mg » est
+   * du bruit, et un article non medicamenteux n'a ni l'un ni l'autre.
+   */
+  private composer(libelle: string, dosage?: string | null, forme?: string | null): string {
+    const bas = libelle.toLowerCase();
+    const sup = [dosage, forme].filter((x): x is string => !!x && !bas.includes(x.toLowerCase()));
+    return [libelle, ...sup].join(' · ');
+  }
+
 }

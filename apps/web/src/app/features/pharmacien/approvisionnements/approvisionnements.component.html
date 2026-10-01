@@ -124,7 +124,7 @@
         <p class="bb-appro__lots-titre">{{ a.lots.length }} {{ 'PHARMACIEN.APPRO.LOTS_RECUS' | translate }}</p>
         @for (l of a.lots; track l.id) {
           <div class="bb-appro__lot">
-            <span class="bb-appro__lot-nom">{{ l.medicament.nomCommercial || l.medicament.dci }} · {{ l.medicament.dosage }}</span>
+            <span class="bb-appro__lot-nom">{{ l.medicament.libelle }}</span>
             <span class="bb-appro__lot-qte">{{ l.quantite }} / {{ l.quantiteRecue }}</span>
             @if (l.numeroLot) { <span class="bb-appro__lot-num">{{ 'PHARMACIEN.PEREMPTIONS.LOT' | translate }} {{ l.numeroLot }}</span> }
             @if (l.datePeremption) {

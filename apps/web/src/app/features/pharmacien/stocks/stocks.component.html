@@ -138,10 +138,10 @@
           <div class="bb-ph-stocks__card-header">
             <div class="bb-ph-stocks__card-info">
               <span class="bb-ph-stocks__card-nom" [title]="getMedicamentLabel(s)">{{ getMedicamentLabel(s) }}</span>
-              <span class="bb-ph-stocks__card-forme">{{ s.medicament.forme }} · {{ s.medicament.dosage }}</span>
-              @if (s.medicament.categorie) {
-                <span class="bb-ph-stocks__card-cat">{{ s.medicament.categorie }}</span>
+              @if (formeEtDosage(s)) {
+                <span class="bb-ph-stocks__card-forme">{{ formeEtDosage(s) }}</span>
               }
+              <span class="bb-ph-stocks__card-cat">{{ s.medicament.categorie | categorieProduit }}</span>
             </div>
             <div class="bb-ph-stocks__card-right">
               <span [class]="'bb-badge bb-badge--' + (getNiveauSeverity(s) | severiteVariante)">{{ getNiveauLabel(s) }}</span>

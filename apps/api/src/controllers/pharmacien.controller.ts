@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as pharmacienService from '../services/pharmacien.service';
 import type {
+  MedicamentTarifeView,
   ScanPatientView,
   StockPharmacieView,
   VerificationOrdonnanceView,
@@ -60,6 +61,9 @@ export async function reapprovisionnerStockController(req: AuthRequest, res: Res
 }
 
 export async function getMedicamentsController(_req: AuthRequest, res: Response): Promise<void> {
-  const data = await pharmacienService.getMedicaments();
-    res.json({ success: true, data });
+  // Le type est annonce ici : c'est ce qui a manque jusqu'au 2026-09-30, ou le
+  // front declarait recevoir des lignes de stock et lisait `m.medicament`,
+  // obtenant `undefined` sans qu'aucune erreur n'apparaisse.
+  const data: MedicamentTarifeView[] = await pharmacienService.getMedicaments();
+  res.json({ success: true, data });
 }

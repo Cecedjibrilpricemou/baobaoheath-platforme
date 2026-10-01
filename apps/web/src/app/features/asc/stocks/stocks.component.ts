@@ -110,7 +110,7 @@ export class StocksComponent implements OnInit {
   }
 
   libelleMedicament(m: MedicamentView): string {
-    return m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} — ${m.dosage}`;
+    return m.libelle;
   }
 
   private loadStocks() {
@@ -135,7 +135,11 @@ export class StocksComponent implements OnInit {
   getMedicamentLabel(s: StockAscView): string {
     const m = s.medicament;
     if (!m) return '—';
-    return m.nomCommercial ? `${m.nomCommercial} (${m.dci})` : `${m.dci} ${m.dosage}`;
+    // Le libelle est le nom complet ; la DCI n'est ajoutee que si elle apporte
+    // quelque chose. L'ancienne formule rendait « null null » hors medicament.
+    return m.dci && !m.libelle.toLowerCase().includes(m.dci.toLowerCase())
+      ? `${m.libelle} (${m.dci})`
+      : m.libelle;
   }
 
   get stocksFiltres(): StockAscView[] {
@@ -144,9 +148,10 @@ export class StocksComponent implements OnInit {
     return this.stocks().filter(s => {
       const m = s.medicament;
       return (
+        m?.libelle?.toLowerCase().includes(q) ||
         m?.dci?.toLowerCase().includes(q) ||
         m?.nomCommercial?.toLowerCase().includes(q) ||
-        s.medicament.categorie?.toLowerCase().includes(q)
+        m?.classeTherapeutique?.toLowerCase().includes(q)
       );
     });
   }
@@ -179,7 +184,7 @@ export class StocksComponent implements OnInit {
     this.isSaving.set(true); this.errorMessage.set('');
     const stock = this.stocks().find(s => s.id === stockId);
     const libelle = stock
-      ? `${stock.medicament.nomCommercial || stock.medicament.dci} — ${this.editQuantite()} ${stock.unite}`
+      ? `${stock.medicament.libelle} — ${this.editQuantite()} ${stock.unite}`
       : undefined;
 
     const nouvelleQuantite = this.editQuantite();

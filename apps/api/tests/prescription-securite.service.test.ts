@@ -4,7 +4,7 @@
 // qui apprend au prescripteur a ne plus les lire. Les deux echecs comptent, et
 // les tests ci-dessous couvrent les deux sens.
 import { analyserPrescription, libellesCorrespondent, memeClasseAtc, normaliser } from '../src/services/prescription-securite.service';
-import { NotFoundError } from '../src/utils/app-error';
+import { NotFoundError, ValidationError } from '../src/utils/app-error';
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
@@ -26,14 +26,17 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
 
 type FicheMedicament = {
   id: string;
-  dci: string;
+  libelle: string;
+  categorie: 'MEDICAMENT' | 'LAIT_INFANTILE' | 'COSMETIQUE' | 'HYGIENE' | 'PARAPHARMACIE' | 'DISPOSITIF_MEDICAL' | 'COMPLEMENT_ALIMENTAIRE' | 'AUTRE';
+  dci: string | null;
   nomCommercial: string | null;
   codeAtc: string | null;
   contreIndications: string[];
 };
 
 const AMOXICILLINE: FicheMedicament = {
-  id: 'm-amox', dci: 'Amoxicilline', nomCommercial: 'Clamoxyl',
+  id: 'm-amox', libelle: 'Clamoxyl', categorie: 'MEDICAMENT',
+  dci: 'Amoxicilline', nomCommercial: 'Clamoxyl',
   codeAtc: 'J01CA04', contreIndications: [],
 };
 
@@ -53,9 +56,9 @@ function candidat(m: Partial<FicheMedicament> = {}) {
 }
 
 /** Ce que le patient prend deja. */
-function traitementsEnCours(...molecules: { dci: string; nomCommercial?: string | null }[]) {
+function traitementsEnCours(...molecules: { dci: string | null; libelle?: string }[]) {
   prisma.ligneOrdonnance.findMany.mockResolvedValue(
-    molecules.map((m) => ({ medicament: { dci: m.dci, nomCommercial: m.nomCommercial ?? null } }))
+    molecules.map((m) => ({ medicament: { dci: m.dci, libelle: m.libelle ?? m.dci ?? '' } }))
   );
 }
 
@@ -269,5 +272,41 @@ describe('garde-fous', () => {
   it('404 sur un medicament inconnu', async () => {
     prisma.medicament.findUnique.mockResolvedValue(null);
     await expect(analyserPrescription('cons-1', 'm-x')).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  // Depuis le 2026-10-01 le catalogue contient des articles non
+  // medicamenteux. Les laisser entrer ici ferait comparer une allergie a une
+  // DCI absente : le patient allergique a la penicilline ne serait pas alerte,
+  // et personne ne verrait rien.
+  it('refuse de prescrire un article non medicamenteux', async () => {
+    consultation({ allergies: ['Amoxicilline'] });
+    candidat({ id: 'a-lait', libelle: 'Lait Guigoz 1er age', categorie: 'LAIT_INFANTILE', dci: null, nomCommercial: null, codeAtc: null });
+
+    await expect(analyserPrescription('cons-1', 'a-lait')).rejects.toBeInstanceOf(ValidationError);
+    await expect(analyserPrescription('cons-1', 'a-lait')).rejects.toThrow(/Lait Guigoz 1er age/);
+  });
+
+  // La contrainte SQL autorise un article non medicamenteux a porter une DCI
+  // (une creme peut citer sa molecule). C'est donc bien la categorie qui
+  // decide, pas l'absence de DCI.
+  it('refuse un article non medicamenteux meme s il porte une DCI', async () => {
+    consultation({ allergies: ['Hydrocortisone'] });
+    candidat({ id: 'a-creme', libelle: 'Creme apaisante', categorie: 'COSMETIQUE', dci: 'Hydrocortisone' });
+
+    await expect(analyserPrescription('cons-1', 'a-creme')).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('refuse aussi un MEDICAMENT sans DCI, que la contrainte SQL interdit', async () => {
+    consultation();
+    candidat({ dci: null });
+    await expect(analyserPrescription('cons-1', 'm-amox')).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('nomme le produit par son libelle, pas par un repli sur la DCI', async () => {
+    consultation({ allergies: ['Amoxicilline'] });
+    candidat({ libelle: 'Clamoxyl 500mg', nomCommercial: null });
+
+    const { alertes } = await analyserPrescription('cons-1', 'm-amox');
+    expect(alertes[0]?.medicamentEnCause).toBe('Clamoxyl 500mg');
   });
 });

@@ -14,6 +14,8 @@ import {
   renouvellementsRestants,
 } from './ordonnance.service';
 import type {
+  MedicamentTarifeView,
+  ProduitResumeView,
   OrdonnanceDelivranceView,
   OrdonnanceEnAttenteView,
   VerificationOrdonnanceView,
@@ -69,7 +71,7 @@ type OrdonnanceAvecLignes = {
     quantite: number;
     statut: StatutOrdonnance;
     instructions: string | null;
-    medicament: { id: string; dci: string; nomCommercial: string | null; forme: string; dosage: string; prixUnitaireGnf: number; estReglemente: boolean };
+    medicament: ProduitResumeView & { prixUnitaireGnf: number; estReglemente: boolean };
   }[];
 };
 
@@ -85,11 +87,8 @@ function vueDelivrance(
 ): OrdonnanceDelivranceView {
   const signataire = o.signataire ?? agentDefaut;
   const lignes = o.lignes.map((l) => {
-    const alerteAllergie = allergies.some(
-      (a) =>
-        a.toLowerCase() === l.medicament.dci.toLowerCase() ||
-        (!!l.medicament.nomCommercial && a.toLowerCase() === l.medicament.nomCommercial.toLowerCase())
-    );
+    const noms = [l.medicament.dci, l.medicament.nomCommercial].filter((n): n is string => !!n);
+    const alerteAllergie = allergies.some((a) => noms.some((n) => a.toLowerCase() === n.toLowerCase()));
     return {
       id: l.id,
       posologie: l.posologie,
@@ -396,7 +395,7 @@ export async function getOrdonnances(pharmacienId: string): Promise<OrdonnanceEn
       lignes: {
         where: { statut: StatutOrdonnance.EN_ATTENTE },
         select: {
-          medicament: { select: { id: true, dci: true, nomCommercial: true, forme: true, dosage: true } },
+          medicament: { select: { id: true, libelle: true, categorie: true, dci: true, nomCommercial: true, forme: true, dosage: true } },
         },
       },
       consultation: {
@@ -499,10 +498,40 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
   });
 }
 
-export async function getMedicaments() {
+const CHAMPS_CATALOGUE = {
+  id: true, libelle: true, categorie: true, dci: true, nomCommercial: true,
+  forme: true, dosage: true, classeTherapeutique: true, prixUnitaireGnf: true,
+  estReglemente: true,
+} as const;
+
+/**
+ * Le catalogue de l'officine, a plat. Depuis le 2026-10-01 il contient aussi
+ * des articles non medicamenteux, dont la DCI est nulle : le tri se fait donc
+ * sur le libelle, le seul champ toujours renseigne.
+ *
+ * C'est le catalogue du comptoir : une pharmacie vend aussi du lait et du
+ * savon. Pour prescrire, voir `getMedicamentsPrescriptibles`.
+ */
+export async function getMedicaments(): Promise<MedicamentTarifeView[]> {
   return prisma.medicament.findMany({
     where: { estActif: true },
-    orderBy: { dci: 'asc' },
+    orderBy: [{ categorie: 'asc' }, { libelle: 'asc' }],
+    select: CHAMPS_CATALOGUE,
+  });
+}
+
+/**
+ * Ce qui se prescrit, et rien d'autre.
+ *
+ * Servir le catalogue entier a l'ecran de prescription proposerait du lait
+ * infantile a un medecin ; `analyserPrescription` le refuserait, mais
+ * seulement apres que le prescripteur l'ait choisi. On ne le propose pas.
+ */
+export async function getMedicamentsPrescriptibles(): Promise<MedicamentTarifeView[]> {
+  return prisma.medicament.findMany({
+    where: { estActif: true, categorie: 'MEDICAMENT' },
+    orderBy: { libelle: 'asc' },
+    select: CHAMPS_CATALOGUE,
   });
 }
 

@@ -59,11 +59,22 @@ export const DEMO = {
   },
 
   medicaments: [
-    { dci: 'Paracetamol',  nomCommercial: 'Doliprane Pricemou', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
-    { dci: 'Amoxicilline', nomCommercial: 'Clamoxyl Pricemou',  forme: 'gelule',   dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
-    { dci: 'Metformine',   nomCommercial: 'Glucophage Pricemou', forme: 'comprime', dosage: '850mg', prixUnitaireGnf: 1800, codeAtc: 'A10BA02',
+    { libelle: 'Doliprane Pricemou 500mg', dci: 'Paracetamol',  nomCommercial: 'Doliprane Pricemou', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
+    { libelle: 'Clamoxyl Pricemou 500mg', dci: 'Amoxicilline', nomCommercial: 'Clamoxyl Pricemou',  forme: 'gelule',   dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
+    { libelle: 'Glucophage Pricemou 850mg', dci: 'Metformine',   nomCommercial: 'Glucophage Pricemou', forme: 'comprime', dosage: '850mg', prixUnitaireGnf: 1800, codeAtc: 'A10BA02',
       contreIndications: ['Insuffisance renale'] },
-    { dci: 'Morphine',     nomCommercial: 'Morphine Pricemou',  forme: 'ampoule',  dosage: '10mg',  prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
+    { libelle: 'Morphine Pricemou 10mg', dci: 'Morphine',     nomCommercial: 'Morphine Pricemou',  forme: 'ampoule',  dosage: '10mg',  prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
+  ],
+
+  // Articles non medicamenteux (decision du 2026-10-01). Ni DCI, ni forme, ni
+  // dosage : c'est precisement ce que l'ancien modele ne savait pas porter.
+  // Ils ne se prescrivent pas ; ils se vendent au comptoir, et l'assurance
+  // s'appuie sur leur categorie pour les exclure.
+  articles: [
+    { libelle: 'Lait infantile 1er age 400g', categorie: 'LAIT_INFANTILE', prixUnitaireGnf: 45000 },
+    { libelle: 'Creme hydratante 100ml',      categorie: 'COSMETIQUE',     prixUnitaireGnf: 30000 },
+    { libelle: 'Savon antiseptique',          categorie: 'HYGIENE',        prixUnitaireGnf: 12000 },
+    { libelle: 'Thermometre digital',         categorie: 'DISPOSITIF_MEDICAL', prixUnitaireGnf: 85000 },
   ],
 } as const;
 
@@ -166,37 +177,69 @@ async function main() {
   console.log(`3. Patiente : Maomou Conde (${DEMO.patient.telephone}), allergique a l'amoxicilline`);
 
   // ── 4. Le catalogue et le stock ─────────────────────────────────
+
+  /**
+   * Met un produit en stock dans l'officine, avec son lot. Une quantite sans
+   * lot est indelivrable depuis le 2026-09-30 : la sortie se fait au plus
+   * proche de la peremption.
+   *
+   * Semence rejouable : un lot unique, refait a chaque execution. Empiler un
+   * lot de plus a chaque passage ferait quitter la quantite du stock.
+   */
+  async function mettreEnStock(idProduit: string, cleLot: string, quantite = 500) {
+    const stock = await prisma.stock.upsert({
+      where: { idStructure_idMedicament: { idStructure: pharmacie.id, idMedicament: idProduit } },
+      update: {},
+      create: { idStructure: pharmacie.id, idMedicament: idProduit, quantite, unite: 'boite', seuilAlerte: 10 },
+    });
+
+    // Un stock qui porte deja une entree enregistree par facture n'est plus un
+    // stock de semence : le remettre a 500 et refaire ses lots effacerait
+    // l'approvisionnement, et la facture se retrouverait sans ses lots. On le
+    // laisse tel quel.
+    const dejaApprovisionne = await prisma.lotStock.count({
+      where: { idStock: stock.id, idApprovisionnement: { not: null } },
+    });
+    if (dejaApprovisionne > 0) return;
+
+    await prisma.stock.update({ where: { id: stock.id }, data: { quantite } });
+    await prisma.lotStock.deleteMany({ where: { idStock: stock.id } });
+    await prisma.lotStock.create({
+      data: {
+        idStock: stock.id,
+        numeroLot: `DEMO-${cleLot.slice(0, 6).toUpperCase()}-1`,
+        quantite,
+        quantiteRecue: quantite,
+        // Quatre mois : l'ecran des peremptions a quelque chose a montrer sans
+        // qu'on ait a saisir une facture d'abord.
+        datePeremption: new Date(Date.now() + 120 * 86_400_000),
+      },
+    });
+  }
+
   for (const m of DEMO.medicaments) {
     const existant = await prisma.medicament.findFirst({ where: { nomCommercial: m.nomCommercial } });
     const medicament = existant
       ? await prisma.medicament.update({ where: { id: existant.id }, data: { ...m } })
       : await prisma.medicament.create({ data: { ...m, listeEssentielle: true } });
 
-    // La pharmacie doit avoir du stock, sinon la delivrance echoue. Depuis le
-    // 2026-09-30 la sortie se fait par lots, au plus proche de la peremption :
-    // une quantite sans lot est indelivrable.
-    const stock = await prisma.stock.upsert({
-      where: { idStructure_idMedicament: { idStructure: pharmacie.id, idMedicament: medicament.id } },
-      update: { quantite: 500 },
-      create: { idStructure: pharmacie.id, idMedicament: medicament.id, quantite: 500, unite: 'boite', seuilAlerte: 10 },
-    });
-
-    // Semence rejouable : un lot unique, refait a chaque execution, sinon la
-    // somme des lots quitte la quantite du stock.
-    await prisma.lotStock.deleteMany({ where: { idStock: stock.id } });
-    await prisma.lotStock.create({
-      data: {
-        idStock: stock.id,
-        numeroLot: `DEMO-${(medicament.nomCommercial ?? 'LOT').slice(0, 6).toUpperCase()}-1`,
-        quantite: 500,
-        quantiteRecue: 500,
-        // Un lot a quatre mois : l'ecran des peremptions a quelque chose a
-        // montrer sans qu'on ait a saisir une facture d'abord.
-        datePeremption: new Date(Date.now() + 120 * 86_400_000),
-      },
-    });
+    await mettreEnStock(medicament.id, medicament.nomCommercial ?? 'LOT');
   }
-  console.log('4. Catalogue : 4 medicaments, dont un allergene et un reglemente, en stock par lots');
+
+  // Les articles se reperent par leur libelle : n'ayant pas de nom commercial,
+  // ils n'ont pas d'autre cle stable.
+  for (const a of DEMO.articles) {
+    const existant = await prisma.medicament.findFirst({ where: { libelle: a.libelle } });
+    const article = existant
+      ? await prisma.medicament.update({ where: { id: existant.id }, data: { ...a } })
+      : await prisma.medicament.create({ data: { ...a } });
+    await mettreEnStock(article.id, a.libelle.replace(/\s/g, ''), 60);
+  }
+
+  console.log(
+    `4. Catalogue : ${DEMO.medicaments.length} medicaments (dont un allergene et un reglemente) ` +
+      `et ${DEMO.articles.length} articles non medicamenteux, en stock par lots`
+  );
 
   // ── 5. Le referentiel d'examens ─────────────────────────────────
   await seedExamens(prisma);

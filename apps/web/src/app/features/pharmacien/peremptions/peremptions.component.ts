@@ -64,12 +64,22 @@ export class PeremptionsComponent implements OnInit {
   }
 
   nom(l: PeremptionProcheView): string {
-    return [l.medicament.nomCommercial || l.medicament.dci, l.medicament.dosage, l.medicament.forme]
-      .filter(Boolean).join(' · ');
+    return this.composer(l.medicament.libelle, l.medicament.dosage, l.medicament.forme);
   }
 
   /** Un nombre de jours toujours positif, le sens étant porté par le libellé. */
   jourAbsolu(l: PeremptionProcheView): number {
     return Math.abs(l.joursRestants);
   }
+  /**
+   * Le libelle est le nom complet du produit. On n'ajoute la forme et le
+   * dosage que s'ils n'y figurent pas deja : « Doliprane 500mg · 500mg » est
+   * du bruit, et un article non medicamenteux n'a ni l'un ni l'autre.
+   */
+  private composer(libelle: string, dosage?: string | null, forme?: string | null): string {
+    const bas = libelle.toLowerCase();
+    const sup = [dosage, forme].filter((x): x is string => !!x && !bas.includes(x.toLowerCase()));
+    return [libelle, ...sup].join(' · ');
+  }
+
 }

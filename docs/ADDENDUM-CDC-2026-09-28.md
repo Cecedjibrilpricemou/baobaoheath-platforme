@@ -331,8 +331,8 @@ Les deux gestes forment donc **un seul bloc** : on construit l'écran du médeci
 | # | Question | Pourquoi ça bloque |
 |---|---|---|
 | ~~A~~ | ~~Téléconsultation : à distance pour de vrai, ou prise de RDV à distance ?~~ | **Tranché le 2026-09-28** : la prise de rendez-vous à distance se fait **maintenant**, la téléconsultation réelle **plus tard** (toujours suspendue à D2). |
-| B | Scan de facture : saisie assistée d'abord, extraction automatique ensuite ? | Détermine si le bloc pharmacie est livrable en une fois ou en deux. |
-| C | Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ? | Conditionne le modèle de catalogue **et** les exclusions d'assurance. |
+| ~~B~~ | ~~Scan de facture : saisie assistée d'abord, extraction automatique ensuite ?~~ | **Tranché par l'usage le 2026-09-30** : le bloc 6 est livré en **saisie assistée**, la facture restant attachée en justificatif. L'extraction automatique reste à décider et devra **toujours** passer par une relecture à l'écran. |
+| ~~C~~ | ~~Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ?~~ | **Tranché le 2026-10-01 : oui, avec une catégorie fermée.** `CategorieProduit` compte huit valeurs ; `dci`, `forme` et `dosage` deviennent facultatifs, et une contrainte SQL garantit qu'un `MEDICAMENT` les porte toutes les trois. Seul un `MEDICAMENT` se prescrit — l'écran de prescription ne propose rien d'autre. |
 | ~~D~~ | ~~Résultats : qui libère quand le prescripteur est un agent d'accueil ?~~ | **Supprimée le 2026-09-28** : l'accueil ne prescrit plus rien (voir point 9). Sans prescription par l'accueil, pas de résultat orphelin. |
 | E | Vente au comptoir sans ordonnance : autorisée pour tous les produits ? | Un produit réglementé ne se vend pas sans ordonnance (EF-05-12). |
 

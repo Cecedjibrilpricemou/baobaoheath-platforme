@@ -150,7 +150,7 @@
         <div class="stock-card__header">
           <div class="stock-card__icon"><i class="pi pi-box" aria-hidden="true"></i></div>
           <div class="stock-card__info">
-            <h3 class="stock-card__name">{{ stock.medicament.nomCommercial || stock.medicament.dci }}</h3>
+            <h3 class="stock-card__name">{{ stock.medicament.libelle }}</h3>
             @if (stock.medicament.dosage || stock.medicament.forme) {
             <span class="stock-card__posologie">{{ stock.medicament.forme }} {{ stock.medicament.dosage }}</span>
             }

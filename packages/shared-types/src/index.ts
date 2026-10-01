@@ -31,7 +31,6 @@ export type Role =
   | 'PHARMACIEN'
   | 'AGENT_ACCUEIL'
   | 'TECHNICIEN_LABO'
-  | 'BIOLOGISTE'
   | 'LIVREUR'
   | 'ADMIN_STRUCTURE'
   | 'ADMIN_REGIONAL'
@@ -563,7 +562,7 @@ export interface LigneOrdonnanceView {
   dureeJours: number;
   quantite?: number | null;
   instructions?: string | null;
-  medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string; estReglemente?: boolean };
+  medicament?: { id: string; libelle: string; dci?: string | null; nomCommercial?: string | null; forme?: string | null; dosage?: string | null; estReglemente?: boolean };
   /** Ce qui a ete montre au prescripteur au moment de la prescription. */
   alertes?: AlertePrescriptionView[] | null;
   motifDepassement?: string | null;
@@ -782,18 +781,56 @@ export interface ConsultationDetailView {
 }
 
 // ─── Catalogues (listes deroulantes) ──────────────────────────────────────────
+
+/**
+ * Ce que le catalogue peut contenir, en liste fermee (decision du 2026-10-01).
+ * Porte les exclusions d'assurance. Seul `MEDICAMENT` se prescrit.
+ */
+export type CategorieProduit =
+  | 'MEDICAMENT'
+  | 'LAIT_INFANTILE'
+  | 'COMPLEMENT_ALIMENTAIRE'
+  | 'COSMETIQUE'
+  | 'HYGIENE'
+  | 'PARAPHARMACIE'
+  | 'DISPOSITIF_MEDICAL'
+  | 'AUTRE';
+
 export interface MedicamentView {
   id: string;
-  dci: string;
+  /** Le nom a afficher, quelle que soit la categorie. Toujours present. */
+  libelle: string;
+  categorie: CategorieProduit;
+  /**
+   * DCI, forme et dosage n'existent que pour un medicament : un lait infantile
+   * n'en a pas. La contrainte SQL `medicaments_medicament_complet` garantit
+   * qu'un `MEDICAMENT` les porte toutes les trois.
+   */
+  dci?: string | null;
   nomCommercial?: string | null;
-  forme: string;
-  dosage: string;
+  forme?: string | null;
+  dosage?: string | null;
   /**
    * EF-05-12 : circuit reglemente (stupefiant, psychotrope). L'ecran de
    * prescription le signale avant la saisie ; l'API applique la regle de toute
    * facon.
    */
   estReglemente?: boolean;
+}
+
+/**
+ * Ce qu'il faut d'un produit du catalogue pour l'afficher dans une liste.
+ * Remplace deux formes en ligne identiques, qui annonçaient `dci` et `dosage`
+ * obligatoires alors qu'un article non medicamenteux n'en a pas.
+ */
+export interface ProduitResumeView {
+  id: string;
+  libelle: string;
+  categorie: CategorieProduit;
+  dci?: string | null;
+  nomCommercial?: string | null;
+  dosage?: string | null;
+  forme?: string | null;
 }
 
 export interface StructureView {
@@ -813,7 +850,7 @@ export interface StockAscView {
   unite: string;
   datePeremption?: HorodatageApi | null;
   enAlerte: boolean;
-  medicament: MedicamentView & { categorie?: string | null };
+  medicament: MedicamentView & { classeTherapeutique?: string | null };
 }
 
 // ─── Planning (rendez-vous d'un agent) ────────────────────────────────────────
@@ -884,7 +921,8 @@ export interface MessageView {
 // ─── Espace pharmacien ────────────────────────────────────────────────────────
 // Medicament + tarif : le catalogue porte un prix national de reference.
 export interface MedicamentTarifeView extends MedicamentView {
-  categorie?: string | null;
+  /** Classe therapeutique en texte libre (« Antalgique »). Autre axe que `categorie`. */
+  classeTherapeutique?: string | null;
   prixUnitaireGnf: number;
 }
 
@@ -1431,13 +1469,7 @@ export interface LotStockView {
   quantiteRecue: number;
   datePeremption?: HorodatageApi | null;
   prixAchatGnf: number;
-  medicament: {
-    id: string;
-    dci: string;
-    nomCommercial?: string | null;
-    dosage: string;
-    forme: string;
-  };
+  medicament: ProduitResumeView;
 }
 
 /** POST /pharmacien/approvisionnements — une ligne de la facture. */
@@ -1482,13 +1514,7 @@ export interface PeremptionProcheView {
   joursRestants: number;
   perime: boolean;
   unite: string;
-  medicament: {
-    id: string;
-    dci: string;
-    nomCommercial?: string | null;
-    dosage: string;
-    forme: string;
-  };
+  medicament: ProduitResumeView;
 }
 
 /** Ou en est la demande qu'un patient a faite depuis chez lui. */
@@ -1803,7 +1829,7 @@ export interface EpisodePatientView {
 
 // ═══════════════════════════════════════════════════════════════════
 // P2 — Laboratoire (EF-04)
-// Routes /laboratoire/* (TECHNICIEN_LABO, BIOLOGISTE, ADMIN_STRUCTURE),
+// Routes /laboratoire/* (TECHNICIEN_LABO, ADMIN_STRUCTURE),
 // /resultats/* (prescripteurs) et /patients/me/resultats/*.
 // ═══════════════════════════════════════════════════════════════════
 

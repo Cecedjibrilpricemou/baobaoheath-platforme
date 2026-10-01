@@ -164,7 +164,7 @@ Vérifié le 2026-09-28. **La géographie, le partenariat des pharmacies et le r
 |---|---|---|
 | ~~**`LotStock`**~~ | ~~bloc 6~~ | **Comblé le 2026-09-30.** `LotStock` et `Approvisionnement` existent, `Stock.datePeremption` a disparu, et la consommation se fait au plus proche de la péremption. La migration `20260930160000_lots_de_stock_et_approvisionnement` a reversé les 7 stocks existants en 7 lots, 2 362 unités conservées. |
 | **Vente au comptoir** | bloc 7 | `Facture` est attachée à une consultation (`idConsultation @unique`). Une boîte vendue à un passant n'a aucun objet pour l'enregistrer — donc rien à totaliser dans un tableau de bord. |
-| **Catégorie de produit fermée** | bloc 8 | `Medicament.categorie` est un **texte libre facultatif**. On ne fonde pas une exclusion d'assurance dessus : « cosmétique », « Cosmetique » et « cosmetiques » seraient trois catégories. Le catalogue devra en outre accepter des **articles non médicamenteux** (lait, cosmétiques). |
+| ~~**Catégorie de produit fermée**~~ | ~~bloc 8~~ | **Comblé le 2026-10-01.** `CategorieProduit` est une énumération de huit valeurs ; l'ancien texte libre est devenu `classeTherapeutique`, qui est un autre axe. Le catalogue accepte des articles sans DCI ni dosage, et une contrainte SQL (`medicaments_medicament_complet`) garantit qu'un `MEDICAMENT` porte toujours DCI, forme et dosage. Deux catalogues distincts : le comptoir voit tout, la prescription ne voit que des médicaments. |
 | **Modèle d'assurance** | bloc 8 | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance ». |
 
 ### L'ordonnance est un *document*, pas un médicament

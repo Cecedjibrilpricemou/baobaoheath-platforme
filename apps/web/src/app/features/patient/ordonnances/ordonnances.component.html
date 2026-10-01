@@ -74,7 +74,7 @@
     <ul class="bb-pord__meds">
       @for (l of o.lignes; track l.id) {
         <li [class.bb-pord__med--delivree]="l.statut === 'DELIVREE'">
-          <strong>{{ l.medicament?.nomCommercial ?? l.medicament?.dci }}</strong>
+          <strong>{{ l.medicament?.libelle }}</strong>
           <span>{{ l.posologie }} · {{ l.frequence }} · {{ l.dureeJours }} {{ 'PATIENT.ORDONNANCES.DAYS' | translate }}</span>
           @if (l.statut === 'DELIVREE') {
             <span class="bb-pord__retire"><i class="pi pi-check" aria-hidden="true"></i> {{ 'PATIENT.ORDONNANCES.RETIRE' | translate }}</span>

@@ -215,7 +215,7 @@ export class ConsultationDetailComponent implements OnInit {
   readonly medicamentOptions = computed(() =>
     this.medicaments().map(m => ({
       value: m.id,
-      label: [m.dci, m.dosage, m.forme].filter(Boolean).join(' · '),
+      label: [m.libelle, m.forme].filter(Boolean).join(' · '),
     }))
   );
 
@@ -469,7 +469,9 @@ export class ConsultationDetailComponent implements OnInit {
   }
 
   getMedicamentLabel(m: MedicamentView): string {
-    return m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} ${m.dosage}`;
+    return m.dci && !m.libelle.toLowerCase().includes(m.dci.toLowerCase())
+      ? `${m.libelle} (${m.dci})`
+      : m.libelle;
   }
 
   getPatientNom(): string {

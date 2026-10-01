@@ -33,7 +33,7 @@ async function structureDe(userId: string): Promise<string> {
 const APPRO_INCLUDE = {
   saisiPar: { select: { id: true, prenom: true, nom: true } },
   lots: {
-    include: { stock: { include: { medicament: { select: { id: true, dci: true, nomCommercial: true, dosage: true, forme: true } } } } },
+    include: { stock: { include: { medicament: { select: { id: true, libelle: true, categorie: true, dci: true, nomCommercial: true, dosage: true, forme: true } } } } },
     orderBy: { creeLe: 'asc' },
   },
 } satisfies Prisma.ApprovisionnementInclude;
@@ -50,6 +50,8 @@ function versLotView(l: ApproRow['lots'][number]): LotStockView {
     prixAchatGnf: l.prixAchatGnf,
     medicament: {
       id: l.stock.medicament.id,
+      libelle: l.stock.medicament.libelle,
+      categorie: l.stock.medicament.categorie,
       dci: l.stock.medicament.dci,
       nomCommercial: l.stock.medicament.nomCommercial,
       dosage: l.stock.medicament.dosage,
@@ -187,7 +189,7 @@ export async function peremptionsProches(user: JwtPayload, jours?: number): Prom
       stock: { idStructure },
     },
     include: {
-      stock: { include: { medicament: { select: { id: true, dci: true, nomCommercial: true, dosage: true, forme: true } } } },
+      stock: { include: { medicament: { select: { id: true, libelle: true, categorie: true, dci: true, nomCommercial: true, dosage: true, forme: true } } } },
     },
     orderBy: { datePeremption: 'asc' },
     take: 200,
@@ -206,6 +208,8 @@ export async function peremptionsProches(user: JwtPayload, jours?: number): Prom
       perime: joursRestants < 0,
       medicament: {
         id: l.stock.medicament.id,
+        libelle: l.stock.medicament.libelle,
+        categorie: l.stock.medicament.categorie,
         dci: l.stock.medicament.dci,
         nomCommercial: l.stock.medicament.nomCommercial,
         dosage: l.stock.medicament.dosage,
@@ -222,7 +226,7 @@ export async function lotsDuMedicament(user: JwtPayload, idMedicament: string): 
   const stock = await prisma.stock.findFirst({
     where: { idStructure, idMedicament },
     include: {
-      medicament: { select: { id: true, dci: true, nomCommercial: true, dosage: true, forme: true } },
+      medicament: { select: { id: true, libelle: true, categorie: true, dci: true, nomCommercial: true, dosage: true, forme: true } },
       lots: { orderBy: [{ datePeremption: { sort: 'asc', nulls: 'last' } }, { creeLe: 'asc' }] },
     },
   });
@@ -237,6 +241,8 @@ export async function lotsDuMedicament(user: JwtPayload, idMedicament: string): 
     prixAchatGnf: l.prixAchatGnf,
     medicament: {
       id: stock.medicament.id,
+      libelle: stock.medicament.libelle,
+      categorie: stock.medicament.categorie,
       dci: stock.medicament.dci,
       nomCommercial: stock.medicament.nomCommercial,
       dosage: stock.medicament.dosage,
