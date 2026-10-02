@@ -25,6 +25,16 @@ export const PHARMACIEN_ROUTES: Routes = [
           import('./peremptions/peremptions.component').then(m => m.PeremptionsComponent)
       },
       {
+        path: 'caisse',
+        loadComponent: () =>
+          import('./caisse/caisse.component').then(m => m.CaisseComponent)
+      },
+      {
+        path: 'tableau-de-bord',
+        loadComponent: () =>
+          import('./tableau-de-bord/tableau-de-bord.component').then(m => m.TableauDeBordComponent)
+      },
+      {
         path: 'stocks',
         loadComponent: () =>
           import('./stocks/stocks.component').then(m => m.PharmacienStocksComponent)

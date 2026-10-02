@@ -27,11 +27,11 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 |---|---|
 | Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types`. **Un seul `package-lock.json`, à la racine.** |
 | API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **25 fichiers de routes, 33 services, 26 groupes d'endpoints** |
-| Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **48 écrans dans 10 espaces** |
+| Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **50 écrans dans 10 espaces** |
 | Modèle | **45 modèles Prisma, 25 enums, 27 migrations, 12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
-| Tests | **447 API** (Jest, 27 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
-| Avancement | Feuille de route : **36 cases faites, 3 partielles, 56 restantes sur 95**. Addendum : **6 blocs livrés sur 8**, le 7e livré côté API. |
+| Tests | **452 API** (Jest, 27 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
+| Avancement | Feuille de route : **38 cases faites, 1 partielle, 56 restantes sur 95**. Addendum : **7 blocs livrés sur 8** ; reste l'assurance. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -235,7 +235,7 @@ Swagger est servi sur `/api-docs` et décrit dans `apps/api/src/config/swagger.t
 | `hopital` | 7 | accueil, épisodes, **pointage des présences**, **demandes de RDV**, triage |
 | `laboratoire` | 3 | file, fiche de demande, scan du QR patient |
 | `medecin` | 9 | consultations, dossier, **orientations**, **agenda**, **résultats à libérer**, **demandes** |
-| `pharmacien` | 4 | ordonnances, stocks, **approvisionnement**, **péremptions** |
+| `pharmacien` | 6 | ordonnances, stocks, approvisionnement, péremptions, **caisse**, **tableau de bord** |
 | `admin-structure` | 2 | agents, statistiques de l'établissement |
 | `admin` | 4 | paramètres de plateforme, référentiels, analytique, utilisateurs |
 
@@ -405,7 +405,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | **P13** | Extension | ⏳ 1 case sur 5 — la prise de RDV à distance a été remontée ici |
 | P4, P5, P7 – P12 | identité/consentement, fil d'avancement, paiement, livraison, notifications, assurance, administration, interopérabilité | ❌ non commencés |
 
-### Les huit blocs de l'addendum — 6 livrés
+### Les huit blocs de l'addendum — 7 livrés
 
 `docs/ADDENDUM-CDC-2026-09-28.md` contient neuf points du chef de projet. Trois contredisaient du code déjà écrit ; ils ont été repris.
 
@@ -417,8 +417,8 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | 4 | Suppression du rôle biologiste | 2026-09-30 | Le laborantin valide. Migration des comptes faite **avant** la recréation de l'énumération, sinon la conversion échoue. Les comptes rendus gardent le nom de leur valideur. |
 | 5 | Prise de rendez-vous à distance | 2026-09-30 | Le patient demande depuis chez lui ; l'accueil ou le médecin accepte, ce qui crée l'épisode et le rendez-vous en une transaction. |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | 2026-09-30 | `Stock.datePeremption` disparaît au profit de `LotStock`. Saisie de facture, une ligne par lot avec sa propre date. Sortie **au plus proche de la péremption**, lot périmé bloqué. |
-| 7 | Pharmacie : vente au comptoir et tableau de bord | **API livrée le 2026-10-02**, front à faire | Le blocage de modèle est levé. Reste le volet assurance de la vente, qui dépend du bloc 8. |
-| 8 | Assurance | — | Débloqué le 01/10 côté catalogue ; reste à modéliser `Assureur`, `ContratAssurance` et le type de structure « assurance ». |
+| 7 | Pharmacie : vente au comptoir et tableau de bord | 2026-10-02 | `VenteComptoir` + `LigneVente`. Client **facultatif**, remise plafonnée par paramètre, ordonnance exigée pour un produit réglementé (EF-05-12) et annoncée **avant** l'encaissement. Annulation d'une erreur de saisie qui remet exactement les lots sortis. **Reste le volet assurance**, qui dépend du bloc 8. |
+| 8 | Assurance | — | **Le dernier bloc.** Débloqué le 01/10 côté catalogue, et la vente au comptoir existe désormais pour y accrocher la prise en charge. Reste à modéliser `Assureur`, `ContratAssurance` et le type de structure « assurance ». |
 
 ### Décisions prises, à ne pas rediscuter
 
@@ -504,6 +504,7 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 | Point | Constat |
 |---|---|
 | ~~`apps/api/prisma.config.js`~~ | ✅ **Résolu le 2026-09-28** — supprimé et ignoré. |
+| ~~Section de paramètres non enregistrable~~ | ✅ **Résolu le 2026-10-02.** `updateParametresSystemeSchema` est `.strict()` et **n'avait aucune section `prescription`** : l'onglet « Ordonnances » de l'écran d'administration s'affichait, son bouton répondait, et rien ne s'enregistrait. Trouvé en ajoutant la section « Comptoir ». Un test vérifie désormais que **chaque** section du contrat passe le schéma. |
 | Swagger | **10 routes pharmacien documentées sur 19** (recompté le 02/10, après le bloc 7). Manquent `scan`, `renouveler`, les stocks, le catalogue, les agents et `stocks/reapprovisionner`, alors que le CDC exige la documentation. |
 | CI | ✅ **Les actions sont en `@v5` et Node 24** (vérifié le 02/10 ; la dette de dépréciation est levée). Reste : `ubuntu-latest` bascule vers **Ubuntu 26 le 19/10/2026**, et le runner l'annonce à chaque exécution. |
 | `REDIS_URL` | Non configuré : limitation de débit **en mémoire**, donc inopérante à plusieurs instances. |

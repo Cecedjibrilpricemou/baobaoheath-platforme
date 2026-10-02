@@ -42,7 +42,8 @@
     "OPEN_MENU_ARIA": "Open navigation menu",
     "OPEN_PROFILE_ARIA": "Open profile",
     "CHANGE_LANG_ARIA": "Change language",
-    "ERROR_GENERIC": "Something went wrong. Please try again."
+    "ERROR_GENERIC": "Something went wrong. Please try again.",
+    "REFRESH": "Refresh"
   },
   "PROFIL_MODAL": {
     "CLOSE_ARIA": "Close",
@@ -1232,7 +1233,14 @@
       "IDENTITY_COPYRIGHT": "Copyright notice",
       "IDENTITY_COPYRIGHT_HINT": "Empty = \"© year Name — All rights reserved\".",
       "IDENTITY_DEVISE": "Currency (ISO code)",
-      "IDENTITY_LOGO_SAVED": "Logo updated."
+      "IDENTITY_LOGO_SAVED": "Logo updated.",
+      "TAB_PHARMACIE": "Till",
+      "PHARMACIE_TITLE": "Pharmacy counter",
+      "PHARMACIE_DESC": "Till rules. They apply to every pharmacy on the platform.",
+      "PHARMACIE_REMISE_LABEL": "Maximum discount (%)",
+      "PHARMACIE_REMISE_HINT": "Cap as a percentage of the total. Without a cap, a typo brings a sale to zero with nothing to stop it.",
+      "PHARMACIE_CATEGORIES_TITLE": "Categories requiring a prescription",
+      "PHARMACIE_CATEGORIES_DESC": "In addition to controlled products, which always require one (EF-05-12). Still pending a decision: leaving everything off means only controlled products require a prescription."
     },
     "ANALYTICS": {
       "SUBTITLE": "Epidemiological dashboard — {{nom}} Guinea 🇬🇳",
@@ -1417,6 +1425,60 @@
       "SEUIL": "Horizon",
       "JOURS": "days",
       "ERR_LOAD": "Could not load expiry dates."
+    },
+    "NAV_CAISSE": "Till",
+    "NAV_TABLEAU_DE_BORD": "Dashboard",
+    "CAISSE": {
+      "TITLE": "Till",
+      "SUB": "Over-the-counter sale. The customer needs no record.",
+      "PANIER": "Basket",
+      "PRODUIT": "Product",
+      "QUANTITE": "Qty",
+      "PRIX_UNITAIRE": "Unit price",
+      "SOUS_TOTAL": "Subtotal",
+      "AJOUTER": "Add a product",
+      "RETIRER": "Remove line",
+      "PAIEMENT": "Payment",
+      "MODE": "Payment method",
+      "NUMERO": "Subscriber number",
+      "REMISE": "Discount",
+      "ORDONNANCE": "Prescription no.",
+      "BRUT": "Total",
+      "NET": "To collect",
+      "ENCAISSER": "Collect",
+      "ORDONNANCE_EXIGEE": "Prescription required for: {{produits}}. Enter its number before collecting.",
+      "STOCK_INSUFFISANT": "Not enough stock for: {{produits}}.",
+      "DERNIERES": "Recent sales",
+      "AUCUNE": "No sale recorded.",
+      "ANNULER": "Void",
+      "ANNULEE_BADGE": "Voided",
+      "MOTIF": "Reason",
+      "MOTIF_PROMPT": "Reason for voiding (at least 5 characters) — stock will be restored:",
+      "MOTIF_COURT": "The reason must be at least 5 characters.",
+      "ANNULEE": "Sale voided, stock restored.",
+      "OK": "Sale {{numero}} recorded.",
+      "ERR_LOAD": "Could not load sales.",
+      "ERR_ENCAISSER": "The sale failed.",
+      "ERR_ANNULER": "Voiding failed."
+    },
+    "TDB": {
+      "TITLE": "Dashboard",
+      "SUB": "What the pharmacy did",
+      "CHIFFRE": "Today's revenue",
+      "VENTES": "Sales",
+      "VENTES_COURT": "sale(s)",
+      "PANIER": "Average basket",
+      "RUPTURES": "Low stock",
+      "PEREMPTIONS": "Batches expiring",
+      "ENCAISSEMENTS": "Collections by payment method",
+      "AUCUN_ENCAISSEMENT": "No collection today.",
+      "TOP": "Best-selling products",
+      "TOP_NOTE": "Over the last 30 days, voided sales excluded.",
+      "AUCUNE_VENTE": "No sale in the period.",
+      "RUPTURES_TITRE": "Low stock",
+      "AUCUNE_RUPTURE": "No product at its alert threshold.",
+      "APPROVISIONNER": "Record an invoice",
+      "ERR_LOAD": "Could not load the dashboard."
     }
   },
   "ADMIN_STRUCTURE": {
@@ -1820,6 +1882,13 @@
       "PARAPHARMACIE": "Parapharmacy",
       "DISPOSITIF_MEDICAL": "Medical device",
       "AUTRE": "Other"
+    }
+  },
+  "PAIEMENT": {
+    "MODE": {
+      "ESPECES": "Cash",
+      "ORANGE_MONEY": "Orange Money",
+      "MTN_MOMO": "MTN MoMo"
     }
   }
 }

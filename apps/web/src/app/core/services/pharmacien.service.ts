@@ -5,7 +5,11 @@ import { ApiService } from './api.service';
 import { PharmacieStock, MedicamentInfo, OrdonnanceDelivrance, DelivrancePayload } from '../models/pharmacien.model';
 import { ApiResponse } from '../models/api.model';
 import type {
+  AnnulerVenteDto,
   ApprovisionnementView,
+  CreerVenteDto,
+  TableauDeBordOfficineView,
+  VenteComptoirView,
   CreerApprovisionnementDto,
   LotStockView,
   PeremptionProcheView,
@@ -87,6 +91,30 @@ export class PharmacienService {
   /** Les lots d'un produit, du plus proche de sa peremption au plus lointain. */
   getLots(idMedicament: string): Observable<ApiResponse<LotStockView[]>> {
     return this.api.get<ApiResponse<LotStockView[]>>(`/pharmacien/medicaments/${idMedicament}/lots`);
+  }
+
+  // ── Vente au comptoir et tableau de bord (addendum, points 1.1 et 1.2) ──
+
+  /** Enregistre une vente. Payee sur place : il n'y a pas d'etat intermediaire. */
+  enregistrerVente(dto: CreerVenteDto): Observable<ApiResponse<VenteComptoirView>> {
+    return this.api.post<ApiResponse<VenteComptoirView>>('/pharmacien/ventes', dto);
+  }
+
+  getVentes(limite?: number): Observable<ApiResponse<VenteComptoirView[]>> {
+    return this.api.get<ApiResponse<VenteComptoirView[]>>(
+      '/pharmacien/ventes', limite ? { limite: String(limite) } : undefined);
+  }
+
+  /**
+   * Annule une erreur de saisie et remet les lots en stock. Ce n'est pas un
+   * retour client : EF-07-11 l'interdit.
+   */
+  annulerVente(idVente: string, dto: AnnulerVenteDto): Observable<ApiResponse<VenteComptoirView>> {
+    return this.api.post<ApiResponse<VenteComptoirView>>(`/pharmacien/ventes/${idVente}/annuler`, dto);
+  }
+
+  getTableauDeBord(): Observable<ApiResponse<TableauDeBordOfficineView>> {
+    return this.api.get<ApiResponse<TableauDeBordOfficineView>>('/pharmacien/tableau-de-bord');
   }
 
   getAgents(): Observable<ApiResponse<unknown[]>> {

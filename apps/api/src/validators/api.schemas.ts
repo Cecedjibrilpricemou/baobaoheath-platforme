@@ -479,6 +479,26 @@ export const updateParametresSystemeSchema = z.object({
     frequenceMinutes: z.coerce.number().int().min(1).max(1440),
     ussdTimeoutSecondes: z.coerce.number().int().min(30).max(3600),
   }).partial().strict().optional(),
+
+  // Ces deux sections manquaient. Le schema etant `.strict()`, l'onglet
+  // « Ordonnances » de l'ecran d'administration envoyait un corps rejete en
+  // 400 : il s'affichait, son bouton repondait, et rien ne s'enregistrait.
+  // Constate le 2026-10-02 en ajoutant la section « pharmacie ».
+  prescription: z.object({
+    dureeValiditeJours: z.coerce.number().int().min(1).max(365),
+    longueurCodeVerification: z.coerce.number().int().min(4).max(12),
+    signatureObligatoire: z.boolean(),
+    dureeValiditeReglementeJours: z.coerce.number().int().min(1).max(365),
+    renouvellementsMax: z.coerce.number().int().min(0).max(24),
+  }).partial().strict().optional(),
+
+  pharmacie: z.object({
+    remiseMaxPourcent: z.coerce.number().int().min(0).max(100),
+    categoriesExigeantOrdonnance: z.array(z.enum([
+      'MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE',
+      'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',
+    ])).max(8),
+  }).partial().strict().optional(),
 }).strict();
 
 // ─── P1 Hopital : episodes de soins et demandes d'analyse (EF-03) ────────────

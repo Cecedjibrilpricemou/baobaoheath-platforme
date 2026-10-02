@@ -138,6 +138,26 @@ La facture de démonstration **AP-2026-000001** (*Grossiste Kindia*, 2 lots) est
 
 > La sortie de stock suit la péremption la plus proche, pas l'ordre d'arrivée. Ce n'est pas visible à l'écran : cela se constate en délivrant une ordonnance, puis en regardant quel lot a baissé.
 
+### 7. Pharmacie — la caisse et le tableau de bord
+
+Toujours sous **Ousmane Pricemou**. Deux entrées de plus : *Caisse* et *Tableau de bord*.
+
+**Caisse.** Les neuf produits sont proposés **avec leur quantité disponible**. Choisissez du paracétamol, mettez 3 : le total suit la frappe. Ajoutez une remise : le net se recalcule. Le client est **facultatif** — un passant n'ouvre pas un dossier pour acheter du savon.
+
+Trois refus à essayer, chacun annoncé **avant** l'encaissement plutôt qu'après :
+
+- choisir la **Morphine** : un bandeau dit que l'ordonnance est obligatoire (EF-05-12), et le bouton reste bloqué jusqu'à ce qu'un numéro soit saisi ;
+- demander **plus que le stock** : un bandeau le dit, le bouton se bloque ;
+- choisir **Orange Money** sans numéro d'abonné : le champ apparaît, le bouton reste bloqué.
+
+Puis encaisser. La vente rejoint la liste avec son numéro `VE-2026-NNNNNN`, ses lignes et sa catégorie.
+
+**Annuler** la vente : un motif de cinq caractères au moins est exigé, la vente se barre et prend son badge, et **le stock revient exactement à ce qu'il était**. Ce n'est pas un retour client — EF-07-11 l'interdit — mais la correction d'une erreur de saisie.
+
+**Tableau de bord.** Chiffre du jour, panier moyen, encaissements par moyen de paiement, dix produits les plus vendus sur trente jours, ruptures et lots à périmer. Faites une vente, revenez : le chiffre monte. Annulez-la, revenez : il redescend. **Les ventes annulées sont exclues de tous les agrégats** — une erreur de caisse corrigée ne gonfle pas le chiffre d'affaires.
+
+> Le plafond de remise (20 % par défaut) et les catégories soumises à ordonnance s'administrent dans l'onglet **Comptoir** de l'écran de paramètres, qui demande un compte `SUPER_ADMIN`.
+
 ---
 
 ## Ce qui n'est pas encore testable
@@ -147,7 +167,7 @@ Ces points ont une **API mais pas d'écran**, ou pas de modèle du tout.
 | Point | État |
 |---|---|
 | **Appel aux pharmacies du quartier** (P6) | API livrée, **aucun écran**. Testable via `POST /api/v1/commandes`. |
-| **Vente au comptoir et tableau de bord officine** | Pas de modèle : `Facture` est attachée à une consultation. C'est le bloc 7 de l'addendum. |
+| **Assurance « Pricemou & Frère »** — rappel | C'est le **dernier bloc** de l'addendum. La vente au comptoir existe désormais pour y accrocher la prise en charge. |
 | **Extraction automatique des factures** (OCR) | Non construite. La saisie assistée la remplace, la facture restant attachée en justificatif. |
 | **Assurance « Pricemou & Frère »** | **Impossible à créer** : ni modèle `Assureur`, ni type de structure « assurance ». C'est P10, non construit. |
 | Offres des motards, suivi sur carte | P8, non construit. |

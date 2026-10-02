@@ -42,7 +42,8 @@
     "OPEN_MENU_ARIA": "Ouvrir le menu de navigation",
     "OPEN_PROFILE_ARIA": "Ouvrir le profil",
     "CHANGE_LANG_ARIA": "Changer de langue",
-    "ERROR_GENERIC": "Une erreur est survenue. Veuillez réessayer."
+    "ERROR_GENERIC": "Une erreur est survenue. Veuillez réessayer.",
+    "REFRESH": "Actualiser"
   },
   "PROFIL_MODAL": {
     "CLOSE_ARIA": "Fermer",
@@ -1183,6 +1184,60 @@
       "SEUIL": "Horizon",
       "JOURS": "jours",
       "ERR_LOAD": "Impossible de charger les péremptions."
+    },
+    "NAV_CAISSE": "Caisse",
+    "NAV_TABLEAU_DE_BORD": "Tableau de bord",
+    "CAISSE": {
+      "TITLE": "Caisse",
+      "SUB": "Vente au comptoir. Le client n'a pas besoin de dossier.",
+      "PANIER": "Panier",
+      "PRODUIT": "Produit",
+      "QUANTITE": "Qté",
+      "PRIX_UNITAIRE": "Prix unitaire",
+      "SOUS_TOTAL": "Sous-total",
+      "AJOUTER": "Ajouter un produit",
+      "RETIRER": "Retirer la ligne",
+      "PAIEMENT": "Paiement",
+      "MODE": "Moyen de paiement",
+      "NUMERO": "Numéro de l'abonné",
+      "REMISE": "Remise",
+      "ORDONNANCE": "N° d'ordonnance",
+      "BRUT": "Total",
+      "NET": "À encaisser",
+      "ENCAISSER": "Encaisser",
+      "ORDONNANCE_EXIGEE": "Ordonnance obligatoire pour : {{produits}}. Saisissez son numéro avant d'encaisser.",
+      "STOCK_INSUFFISANT": "Stock insuffisant pour : {{produits}}.",
+      "DERNIERES": "Dernières ventes",
+      "AUCUNE": "Aucune vente enregistrée.",
+      "ANNULER": "Annuler",
+      "ANNULEE_BADGE": "Annulée",
+      "MOTIF": "Motif",
+      "MOTIF_PROMPT": "Motif de l'annulation (au moins 5 caractères) — le stock sera remis :",
+      "MOTIF_COURT": "Le motif doit comporter au moins 5 caractères.",
+      "ANNULEE": "Vente annulée, stock remis.",
+      "OK": "Vente {{numero}} enregistrée.",
+      "ERR_LOAD": "Impossible de charger les ventes.",
+      "ERR_ENCAISSER": "L'encaissement a échoué.",
+      "ERR_ANNULER": "L'annulation a échoué."
+    },
+    "TDB": {
+      "TITLE": "Tableau de bord",
+      "SUB": "Ce que l'officine a fait",
+      "CHIFFRE": "Chiffre du jour",
+      "VENTES": "Ventes",
+      "VENTES_COURT": "vente(s)",
+      "PANIER": "Panier moyen",
+      "RUPTURES": "Ruptures",
+      "PEREMPTIONS": "Lots à périmer",
+      "ENCAISSEMENTS": "Encaissements par moyen de paiement",
+      "AUCUN_ENCAISSEMENT": "Aucun encaissement aujourd'hui.",
+      "TOP": "Produits les plus vendus",
+      "TOP_NOTE": "Sur les 30 derniers jours, ventes annulées exclues.",
+      "AUCUNE_VENTE": "Aucune vente sur la période.",
+      "RUPTURES_TITRE": "Ruptures de stock",
+      "AUCUNE_RUPTURE": "Aucun produit au seuil d’alerte.",
+      "APPROVISIONNER": "Saisir une facture",
+      "ERR_LOAD": "Impossible de charger le tableau de bord."
     }
   },
   "ADMIN": {
@@ -1366,7 +1421,14 @@
       "IDENTITY_COPYRIGHT": "Mention de copyright",
       "IDENTITY_COPYRIGHT_HINT": "Vide = « © année Nom — Tous droits réservés ».",
       "IDENTITY_DEVISE": "Devise (code ISO)",
-      "IDENTITY_LOGO_SAVED": "Logo mis à jour."
+      "IDENTITY_LOGO_SAVED": "Logo mis à jour.",
+      "TAB_PHARMACIE": "Comptoir",
+      "PHARMACIE_TITLE": "Comptoir d'officine",
+      "PHARMACIE_DESC": "Les règles de la caisse. Elles s'appliquent à toutes les pharmacies de la plateforme.",
+      "PHARMACIE_REMISE_LABEL": "Remise maximale accordable (%)",
+      "PHARMACIE_REMISE_HINT": "Plafond en pourcentage du total. Sans plafond, une erreur de frappe ramène une vente à zéro sans que rien ne s'y oppose.",
+      "PHARMACIE_CATEGORIES_TITLE": "Catégories soumises à ordonnance",
+      "PHARMACIE_CATEGORIES_DESC": "En plus des produits réglementés, qui exigent toujours une ordonnance (EF-05-12). Décision encore en attente du chef de projet : laisser tout désactivé revient à n'exiger une ordonnance que pour les produits réglementés."
     },
     "ANALYTICS": {
       "SUBTITLE": "Tableau de bord épidémiologique — {{nom}} Guinée 🇬🇳",
@@ -1820,6 +1882,13 @@
       "PARAPHARMACIE": "Parapharmacie",
       "DISPOSITIF_MEDICAL": "Dispositif médical",
       "AUTRE": "Autre"
+    }
+  },
+  "PAIEMENT": {
+    "MODE": {
+      "ESPECES": "Espèces",
+      "ORANGE_MONEY": "Orange Money",
+      "MTN_MOMO": "MTN MoMo"
     }
   }
 }

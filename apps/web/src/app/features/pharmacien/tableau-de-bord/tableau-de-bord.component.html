@@ -1,0 +1,125 @@
+<div class="bb-tdb">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-chart-bar" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.TDB.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">
+        @if (tb()) {
+          {{ 'PHARMACIEN.TDB.SUB' | translate }} — {{ tb()!.jour | date:'EEEE d MMMM y' }}
+        } @else {
+          {{ 'PHARMACIEN.TDB.SUB' | translate }}
+        }
+      </p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button matButton type="button" (click)="charger()">
+        <i class="pi pi-refresh" aria-hidden="true"></i> {{ 'COMMON.REFRESH' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-tdb__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (!tb()) {
+    <div class="bb-tdb__empty">
+      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+      <p>{{ 'PHARMACIEN.TDB.ERR_LOAD' | translate }}</p>
+    </div>
+  } @else {
+
+    <!-- ── Les chiffres du jour ───────────────────────────────────── -->
+    <div class="bb-tdb__stats">
+      <article class="bb-tdb__stat bb-tdb__stat--primaire">
+        <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.CHIFFRE' | translate }}</span>
+        <span class="bb-tdb__stat-valeur">{{ tb()!.chiffreDuJourGnf | number }}</span>
+        <span class="bb-tdb__stat-unite">GNF</span>
+      </article>
+
+      <article class="bb-tdb__stat">
+        <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.VENTES' | translate }}</span>
+        <span class="bb-tdb__stat-valeur">{{ tb()!.nombreVentesDuJour }}</span>
+      </article>
+
+      <article class="bb-tdb__stat">
+        <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.PANIER' | translate }}</span>
+        <span class="bb-tdb__stat-valeur">{{ tb()!.panierMoyenGnf | number }}</span>
+        <span class="bb-tdb__stat-unite">GNF</span>
+      </article>
+
+      <article class="bb-tdb__stat" [class.bb-tdb__stat--alerte]="tb()!.ruptures.length > 0">
+        <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.RUPTURES' | translate }}</span>
+        <span class="bb-tdb__stat-valeur">{{ tb()!.ruptures.length }}</span>
+      </article>
+
+      <article class="bb-tdb__stat" [class.bb-tdb__stat--alerte]="tb()!.lotsAPerimer > 0">
+        <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.PEREMPTIONS' | translate }}</span>
+        <span class="bb-tdb__stat-valeur">{{ tb()!.lotsAPerimer }}</span>
+      </article>
+    </div>
+
+    <!-- ── Encaissements par moyen de paiement ────────────────────── -->
+    <h2 class="bb-tdb__section">{{ 'PHARMACIEN.TDB.ENCAISSEMENTS' | translate }}</h2>
+
+    @if (tb()!.encaissementsParMode.length === 0) {
+      <p class="bb-tdb__muted">{{ 'PHARMACIEN.TDB.AUCUN_ENCAISSEMENT' | translate }}</p>
+    } @else {
+      @for (m of parts(); track m.modePaiement) {
+        <div class="bb-tdb__mode">
+          <span class="bb-tdb__mode-nom">{{ 'PAIEMENT.MODE.' + m.modePaiement | translate }}</span>
+          <span class="bb-tdb__mode-nombre">{{ m.nombre }} {{ 'PHARMACIEN.TDB.VENTES_COURT' | translate }}</span>
+          <div class="bb-tdb__jauge">
+            <div class="bb-tdb__jauge-part" [style.width.%]="m.pourcent"></div>
+          </div>
+          <span class="bb-tdb__mode-montant">{{ m.montantGnf | number }} GNF</span>
+        </div>
+      }
+    }
+
+    <!-- ── Produits les plus vendus ───────────────────────────────── -->
+    <h2 class="bb-tdb__section">{{ 'PHARMACIEN.TDB.TOP' | translate }}</h2>
+    <p class="bb-tdb__muted bb-tdb__note">{{ 'PHARMACIEN.TDB.TOP_NOTE' | translate }}</p>
+
+    @if (tb()!.produitsLesPlusVendus.length === 0) {
+      <p class="bb-tdb__muted">{{ 'PHARMACIEN.TDB.AUCUNE_VENTE' | translate }}</p>
+    } @else {
+      @for (p of tb()!.produitsLesPlusVendus; track p.medicament.id) {
+        <div class="bb-tdb__produit">
+          <div class="bb-tdb__produit-tete">
+            <span class="bb-tdb__produit-nom">{{ p.medicament.libelle }}</span>
+            <span class="bb-tdb__produit-cat">{{ p.medicament.categorie | categorieProduit }}</span>
+          </div>
+          <div class="bb-tdb__jauge">
+            <div class="bb-tdb__jauge-part bb-tdb__jauge-part--top" [style.width]="largeur(p.quantite)"></div>
+          </div>
+          <span class="bb-tdb__produit-qte">{{ p.quantite }}</span>
+          <span class="bb-tdb__produit-montant">{{ p.montantGnf | number }} GNF</span>
+        </div>
+      }
+    }
+
+    <!-- ── Ruptures ───────────────────────────────────────────────── -->
+    <h2 class="bb-tdb__section" [class.bb-tdb__section--danger]="tb()!.ruptures.length > 0">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      {{ 'PHARMACIEN.TDB.RUPTURES_TITRE' | translate }}
+    </h2>
+
+    @if (tb()!.ruptures.length === 0) {
+      <p class="bb-tdb__muted">{{ 'PHARMACIEN.TDB.AUCUNE_RUPTURE' | translate }}</p>
+    } @else {
+      @for (r of tb()!.ruptures; track r.medicament.id) {
+        <div class="bb-tdb__rupture">
+          <span class="bb-tdb__rupture-nom">{{ r.medicament.libelle }}</span>
+          <span class="bb-tdb__rupture-cat">{{ r.medicament.categorie | categorieProduit }}</span>
+          <span class="bb-tdb__rupture-qte">
+            {{ r.quantite }} / {{ r.seuilAlerte }} {{ r.unite }}
+          </span>
+        </div>
+      }
+      <div class="bb-tdb__actions">
+        <a matButton="filled" routerLink="/pharmacien/approvisionnements">
+          <i class="pi pi-truck" aria-hidden="true"></i> {{ 'PHARMACIEN.TDB.APPROVISIONNER' | translate }}
+        </a>
+      </div>
+    }
+  }
+</div>

@@ -399,6 +399,45 @@
         </div>
       }
 
+      <!-- ONGLET : COMPTOIR D'OFFICINE (addendum du 2026-09-28, point 1.1) -->
+      @if (activeTab() === 'pharmacie') {
+        <div class="settings-panel">
+          <h2>{{ 'ADMIN.SETTINGS.PHARMACIE_TITLE' | translate }}</h2>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.PHARMACIE_DESC' | translate }}</p>
+
+          <div class="field">
+            <label for="pharma-remise">{{ 'ADMIN.SETTINGS.PHARMACIE_REMISE_LABEL' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="pharma-remise" type="number" min="0" max="100"
+                     [(ngModel)]="pharmacie.remiseMaxPourcent" />
+            </mat-form-field>
+            <small class="text-secondary mt-1 block">{{ 'ADMIN.SETTINGS.PHARMACIE_REMISE_HINT' | translate }}</small>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Question E de l'addendum, non tranchee : quelles categories, en
+               plus des produits reglementes, ne se vendent pas sans
+               ordonnance. Les reglementes le sont toujours (EF-05-12). -->
+          <h3 class="panel-subtitle">{{ 'ADMIN.SETTINGS.PHARMACIE_CATEGORIES_TITLE' | translate }}</h3>
+          <p class="panel-desc">{{ 'ADMIN.SETTINGS.PHARMACIE_CATEGORIES_DESC' | translate }}</p>
+
+          @for (c of categoriesDisponibles; track c) {
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-title">{{ c | categorieProduit }}</span>
+              </div>
+              <mat-slide-toggle
+                [attr.aria-label]="c | categorieProduit"
+                [ngModel]="categorieSoumise(c)"
+                (ngModelChange)="basculerCategorie(c, $event)"></mat-slide-toggle>
+            </div>
+          }
+
+          <ng-container *ngTemplateOutlet="footer; context: { section: 'pharmacie' }"></ng-container>
+        </div>
+      }
+
       }
     </div>
   </div>

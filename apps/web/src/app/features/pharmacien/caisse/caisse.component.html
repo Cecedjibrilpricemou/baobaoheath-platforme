@@ -1,0 +1,170 @@
+<div class="bb-caisse">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shopping-cart" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.CAISSE.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.CAISSE.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  <!-- ── Le panier ─────────────────────────────────────────────────── -->
+  <section class="bb-caisse__carte">
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PANIER' | translate }}</h2>
+
+    @for (l of lignes(); track $index) {
+      <div class="bb-caisse__ligne">
+        <div class="bb-caisse__ligne-produit">
+          <label class="bb-caisse__label-mini" [attr.for]="'c-med-' + $index">{{ 'PHARMACIEN.CAISSE.PRODUIT' | translate }}</label>
+          <select [id]="'c-med-' + $index" class="bb-caisse__champ" [(ngModel)]="l.idMedicament">
+            <option value="">—</option>
+            @for (s of stocks(); track s.medicament.id) {
+              <option [value]="s.medicament.id">{{ libelleProduit(s) }} — {{ s.quantite }} {{ s.unite }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="bb-caisse__ligne-champ">
+          <label class="bb-caisse__label-mini" [attr.for]="'c-qte-' + $index">{{ 'PHARMACIEN.CAISSE.QUANTITE' | translate }}</label>
+          <input [id]="'c-qte-' + $index" class="bb-caisse__champ" type="number" min="1" [(ngModel)]="l.quantite" />
+        </div>
+
+        <div class="bb-caisse__ligne-champ bb-caisse__ligne-champ--lecture">
+          <span class="bb-caisse__label-mini">{{ 'PHARMACIEN.CAISSE.PRIX_UNITAIRE' | translate }}</span>
+          <span class="bb-caisse__valeur">{{ prixDe(l.idMedicament()) | number }} GNF</span>
+        </div>
+
+        <div class="bb-caisse__ligne-champ bb-caisse__ligne-champ--lecture">
+          <span class="bb-caisse__label-mini">{{ 'PHARMACIEN.CAISSE.SOUS_TOTAL' | translate }}</span>
+          <span class="bb-caisse__valeur">{{ prixDe(l.idMedicament()) * (l.quantite() ?? 0) | number }} GNF</span>
+        </div>
+
+        <button class="bb-caisse__retirer" type="button" [disabled]="lignes().length === 1"
+                [attr.aria-label]="'PHARMACIEN.CAISSE.RETIRER' | translate"
+                (click)="retirerLigne($index)">
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      </div>
+    }
+
+    <button matButton type="button" (click)="ajouterLigne()">
+      <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.AJOUTER' | translate }}
+    </button>
+
+    <!-- Dit avant d'encaisser, pas apres le refus de l'API (EF-05-12). -->
+    @if (exigentOrdonnance().length) {
+      <p class="bb-caisse__avis bb-caisse__avis--exige">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.CAISSE.ORDONNANCE_EXIGEE' | translate: { produits: exigentOrdonnance().join(', ') } }}
+      </p>
+    }
+
+    @if (depassements().length) {
+      <p class="bb-caisse__avis bb-caisse__avis--danger">
+        <i class="pi pi-ban" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.CAISSE.STOCK_INSUFFISANT' | translate: { produits: depassements().join(', ') } }}
+      </p>
+    }
+
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PAIEMENT' | translate }}</h2>
+
+    <div class="bb-caisse__grille">
+      <div>
+        <label class="bb-caisse__label" for="c-mode">{{ 'PHARMACIEN.CAISSE.MODE' | translate }}</label>
+        <select id="c-mode" class="bb-caisse__champ" [(ngModel)]="modePaiement">
+          @for (m of modes; track m) {
+            <option [value]="m">{{ 'PAIEMENT.MODE.' + m | translate }}</option>
+          }
+        </select>
+      </div>
+
+      @if (modePaiement() !== 'ESPECES') {
+        <div>
+          <label class="bb-caisse__label" for="c-numero">{{ 'PHARMACIEN.CAISSE.NUMERO' | translate }} *</label>
+          <input id="c-numero" class="bb-caisse__champ" type="tel" maxlength="40" [(ngModel)]="numeroOperateur" />
+        </div>
+      }
+
+      <div>
+        <label class="bb-caisse__label" for="c-remise">{{ 'PHARMACIEN.CAISSE.REMISE' | translate }}</label>
+        <input id="c-remise" class="bb-caisse__champ" type="number" min="0" [(ngModel)]="remiseGnf" />
+      </div>
+
+      <div>
+        <label class="bb-caisse__label" for="c-ordo">
+          {{ 'PHARMACIEN.CAISSE.ORDONNANCE' | translate }}@if (exigentOrdonnance().length) { * }
+        </label>
+        <input id="c-ordo" class="bb-caisse__champ" type="text" maxlength="60" [(ngModel)]="idOrdonnance" />
+      </div>
+    </div>
+
+    <div class="bb-caisse__pied">
+      <div class="bb-caisse__totaux">
+        <span class="bb-caisse__total-ligne">
+          {{ 'PHARMACIEN.CAISSE.BRUT' | translate }} : <strong>{{ montantBrut() | number }} GNF</strong>
+        </span>
+        @if (remiseAppliquee() > 0) {
+          <span class="bb-caisse__total-ligne bb-caisse__total-ligne--remise">
+            {{ 'PHARMACIEN.CAISSE.REMISE' | translate }} : <strong>− {{ remiseAppliquee() | number }} GNF</strong>
+          </span>
+        }
+        <span class="bb-caisse__total">
+          {{ 'PHARMACIEN.CAISSE.NET' | translate }} : <strong>{{ montantNet() | number }} GNF</strong>
+        </span>
+      </div>
+      <button matButton="filled" type="button" [disabled]="enCours() || !peutEncaisser()" (click)="encaisser()">
+        {{ (enCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.ENCAISSER') | translate }}
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Les ventes du jour ────────────────────────────────────────── -->
+  <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.DERNIERES' | translate }}</h2>
+
+  @if (isLoading()) {
+    <p class="bb-caisse__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (ventes().length === 0) {
+    <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.AUCUNE' | translate }}</p>
+  } @else {
+    @for (v of ventes(); track v.id) {
+      <article class="bb-caisse__vente" [class.bb-caisse__vente--annulee]="v.statut === 'ANNULEE'">
+        <div class="bb-caisse__vente-head">
+          <div>
+            <span class="bb-caisse__numero">{{ v.numero }}</span>
+            <span class="bb-caisse__meta">
+              {{ v.creeLe | date:'dd/MM/yyyy HH:mm' }}
+              · {{ 'PAIEMENT.MODE.' + v.modePaiement | translate }}
+              · {{ v.vendeur.prenom }} {{ v.vendeur.nom }}
+              @if (v.numeroOrdonnance) { · {{ v.numeroOrdonnance }} }
+            </span>
+          </div>
+          <div class="bb-caisse__vente-droite">
+            <span class="bb-caisse__montant">{{ v.montantNetGnf | number }} GNF</span>
+            @if (v.statut === 'ANNULEE') {
+              <span class="bb-caisse__badge-annulee">{{ 'PHARMACIEN.CAISSE.ANNULEE_BADGE' | translate }}</span>
+            } @else {
+              <button class="bb-caisse__annuler" type="button" (click)="annuler(v)">
+                <i class="pi pi-undo" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.ANNULER' | translate }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @for (l of v.lignes; track l.id) {
+          <div class="bb-caisse__vente-ligne">
+            <span class="bb-caisse__vente-nom">{{ l.medicament.libelle }}</span>
+            <span class="bb-caisse__vente-cat">{{ l.medicament.categorie | categorieProduit }}</span>
+            <span class="bb-caisse__vente-qte">{{ l.quantite }} × {{ l.prixUnitaireGnf | number }}</span>
+            <span class="bb-caisse__vente-montant">{{ l.montantGnf | number }} GNF</span>
+          </div>
+        }
+
+        @if (v.statut === 'ANNULEE' && v.motifAnnulation) {
+          <p class="bb-caisse__motif">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            {{ 'PHARMACIEN.CAISSE.MOTIF' | translate }} : {{ v.motifAnnulation }}
+          </p>
+        }
+      </article>
+    }
+  }
+</div>
