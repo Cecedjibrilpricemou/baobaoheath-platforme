@@ -2,9 +2,49 @@
 
 > Référence : *Cahier des charges Kènèya v2.0* du 13 septembre 2026 (exigences EF-01…EF-13, ENF-01…06, priorités M/S/C, lots V1→V4).
 > Ce fichier est le plan de travail vivant : on coche au fur et à mesure, on renumérote jamais.
-> Dernière mise à jour : 2026-09-28.
+> Dernière mise à jour : **2026-10-02**.
 >
-> ⚠️ **Un addendum du 2026-09-28** (`ADDENDUM-CDC-2026-09-28.md`) ajoute huit points remontés par le chef de projet, dont **trois rouvrent du code livré** : le médecin fixe désormais les rendez-vous, le rôle biologiste disparaît, et les résultats d'analyse ne sont visibles du patient qu'après accord du médecin. Les blocs concernés portent la mention **🔁 rouvert**.
+> ⚠️ **Un addendum du 2026-09-28** (`ADDENDUM-CDC-2026-09-28.md`) ajoute huit points remontés par le chef de projet, dont **trois rouvraient du code livré** : le médecin fixe désormais les rendez-vous, le rôle biologiste disparaît, et les résultats d'analyse ne sont visibles du patient qu'après accord du médecin. **Six des huit blocs sont livrés** ; les blocs concernés portent la mention **🔁 rouvert**.
+>
+> ⚠️ Tout ce qui est coché ci-dessous est sur **`develop`**. La branche `main` s'arrête au **2026-09-26** et ne contient aucun bloc de l'addendum.
+
+## Où nous en sommes — recompté le 2026-10-02
+
+Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc livré en partie.
+
+| Bloc | Fait | Partiel | Reste | État |
+|---|---|---|---|---|
+| **P0** Identité de la plateforme | 5 | — | 0 | ✅ **fini** |
+| **P1** Épisode de soins + demande d'analyse | 11 | — | 0 | ✅ **fini** (🔁 repris puis complété) |
+| **P2** Laboratoire | 11 | — | 1 | ⏳ reste la synchronisation hors connexion (EF-04-11) |
+| **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
+| **P4** Identité patient, consentement, accès | 0 | — | 7 | ❌ **non commencé** — le plus sensible réglementairement |
+| **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
+| **P6** Commande pharmacie et gestion d'officine | 3 | 1 | 9 | ⏳ lots, approvisionnement et péremptions livrés ; **vente au comptoir bloquée par le modèle** |
+| **P7** Paiement | 0 | — | 5 | ❌ non commencé |
+| **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
+| **P9** Notifications neutres | 0 | — | 2 | ❌ non commencé |
+| **P10** Assurance et tiers payant | 0 | — | 9 | ❌ non commencé — **débloqué** côté catalogue le 01/10 |
+| **P11** Administration, audit, référentiels | 0 | — | 5 | ❌ non commencé — **conditionne les référentiels** |
+| **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
+| **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
+| **Total** | **36** | **1** | **58** | sur 95 |
+
+**Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
+
+### Ce qui a été livré hors feuille de route, et qui compte
+
+| Date | Objet | Pourquoi ça ne figure dans aucune case |
+|---|---|---|
+| 2026-09-26 | Écran « Orientations » du médecin | L'accueil orientait un patient : l'épisode recevait son responsable, mais **rien ne le disait au médecin**. L'orientation écrivait dans le vide. |
+| 2026-09-26 | « Serveur injoignable » ≠ « identifiants incorrects » | La page de connexion accusait le mot de passe quand l'API était éteinte. |
+| 2026-10-01 | **Catégorie de produit fermée** (`CategorieProduit`) | Préalable aux blocs 7 et 8 de l'addendum. Le catalogue accepte des articles non médicamenteux ; une contrainte SQL garantit qu'un médicament porte DCI, forme et dosage. |
+| 2026-10-01 | Garde-fou d'invariant dans les semences | Une quantité de stock sans lot est **indélivrable** depuis les lots. Les deux semences le vérifient en terminant. |
+| 2026-09-30 → 10-02 | Trois correctifs de sécurité amont | `engine.io`, `brace-expansion`, `nodemailer`, `@angular/router`, et une exception datée pour `piscina`. |
+
+### Le chemin critique n'est pas le code
+
+L'agrément de l'hébergeur de données de santé (ENF-05) et la reprise des données commandent la date de mise en service. Ils ne s'accélèrent pas en écrivant plus vite : **à lancer en parallèle, maintenant**. Six décisions externes (D1, D2, D4, D5, D6, D7, D8) conditionnent des blocs entiers ; toutes sont déjà des paramètres, les trancher ne demande aucun développement.
 
 ## Objectif produit
 
@@ -47,7 +87,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Plus aucune valeur de marque en dur dans le code (API et web).
 - [x] Écran super-admin : section « Identité » avec téléversement du logo.
 
-### P1 — Épisode de soins + demande d'analyse · M · EF-03 · ✅ livré le 2026-09-19 (API + front)
+### P1 — Épisode de soins + demande d'analyse · M · EF-03 · ✅ **complet** (livré le 2026-09-19, 🔁 repris et complété le 2026-09-30)
 - [x] `EpisodeSoins` (motif, service, professionnel responsable, statut, dates), rattaché au patient. Rôle `AGENT_ACCUEIL`, espace web « Accueil hôpital ».
 - [x] Recherche patient obligatoire avant création (EF-03-01).
 - [x] Référentiel `Examen` avec codes LOINC (33 seedés ; import admin à venir avec P11).
@@ -60,7 +100,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
 - [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
 
-### P2 — Laboratoire · L · EF-04 · ✅ livré le 2026-09-19 (API + front)
+### P2 — Laboratoire · L · EF-04 · ⏳ **11 cases sur 12** (livré le 2026-09-19, 🔁 repris les 28 et 30/09) — reste la synchronisation hors connexion
 - [x] Rôles `BIOLOGISTE` (validation) et `TECHNICIEN_LABO` (réception, prélèvement, saisie) ; type de structure `LABORATOIRE` (P1).
 - [x] ✅ **Livré le 2026-09-30** — **le rôle `BIOLOGISTE` est supprimé** : c'est le laborantin (`TECHNICIEN_LABO`) qui valide (addendum, point 4). La validation nominative **reste bloquante** — quelqu'un continue de signer. Migration des comptes existants obligatoire ; les comptes rendus déjà validés gardent le nom de leur valideur.
 - [x] File des demandes triée par urgence puis ancienneté (EF-04-01) ; tableau de bord du laboratoire.
@@ -74,7 +114,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Front : espace « Laboratoire » (tableau de bord, file, fiche demande avec frise, planification, prélèvement, saisie, validation biologiste, compte rendu), page « Alertes critiques » côté accueil, résultats dans la fiche épisode et dans « Mon parcours », page « Mes résultats » (courbe SVG + tableau) côté patient.
 - [x] ✅ **Livré le 2026-09-29** — Médecin prescripteur : écran « Dossier de la visite » côté médecin (analyses de l'épisode, prescription, clôture). L'API l'autorisait déjà ; c'est l'écran qui manquait. Dans le même mouvement, l'accueil perd prescription, lecture de résultats, bon d'examen, clôture et envoi aux pharmacies (addendum, point 9). Les valeurs d'analyse sont masquées dans la fiche d'épisode qu'il continue de voir : fermer les routes ne suffisait pas.
 
-### P3 — Ordonnance infalsifiable + sécurité de prescription · M · EF-05
+### P3 — Ordonnance infalsifiable + sécurité de prescription · M · EF-05 · ⏳ **5 cases sur 6**
 - [x] **API livrée le 2026-09-23** — Numéro unique + code de vérification, durée de validité, statuts `PARTIELLEMENT_SERVIE`/`SERVIE`, vérification côté pharmacie (EF-05-07/08, EF-07-01).
   - L'ordonnance devient un **document** (`ordonnances`) et les médicaments ses **lignes** (`lignes_ordonnance`) : avant, trois médicaments prescrits le même jour formaient trois objets sans lien, donc rien à numéroter ni à contrôler.
   - Numérotation `OR-AAAA-NNNNNN` par le compteur atomique existant ; code de vérification tiré au CSPRNG sur un alphabet sans caractères ambigus (ni 0/O, ni 1/I/L).
@@ -103,7 +143,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
-### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02
+### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ❌ **0 sur 7 — non commencé**
 - [ ] Champs identito-vigilance (lieu de naissance, nom de la mère), identifiant définitif.
 - [ ] Niveaux d'identité `PROVISOIRE` / `VERIFIEE` et verrou tiers payant / produits sur prescription (EF-01-04/10).
 - [ ] Détection de doublons à la création et fusion par agent habilité, réversible (EF-01-05/06).
@@ -112,12 +152,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Bris de glace motivé, tracé, notifié, contrôlé (EF-02-06).
 - [ ] Journal des accès au dossier consultable par le patient (EF-02-08).
 
-### P5 — Fil d'avancement du parcours · S · EF-06
+### P5 — Fil d'avancement du parcours · S · EF-06 · ❌ **0 sur 3**
 - [ ] Endpoint patient agrégeant épisode → analyses → consultation → ordonnance → commande → livraison avec horodatages (EF-06-01).
 - [ ] Tous les documents téléchargeables/imprimables (EF-06-02/03).
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
-### P6 — Commande pharmacie **et gestion d'officine** · L · EF-07 / §3.2
+### P6 — Commande pharmacie **et gestion d'officine** · L · EF-07 / §3.2 · ⏳ **3 faites + 1 partielle sur 13**
 
 > **Élargi le 2026-09-28** (addendum, point 1) : il ne s'agit plus seulement de servir des ordonnances, mais de **tenir une pharmacie**. S'ajoutent la vente au comptoir, l'import Excel du catalogue, l'approvisionnement par facture et les alertes de péremption.
 >
@@ -147,14 +187,14 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [~] **Approvisionnement par facture** — **premier temps livré le 2026-09-30 (API + front)** : saisie assistée, une ligne par lot avec sa propre péremption, facture attachée en justificatif, total recalculé à la frappe. **Reste l'extraction automatique**, qui devra **toujours** être relue avant enregistrement : une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
 - [x] **API + front livrés le 2026-09-30** — **Alerte de péremption proche**, seuil paramétrable (`STOCK_PEREMPTION_ALERTE_JOURS`, 90 par défaut) et horizon choisi à l'écran (30/60/90/180). Les lots déjà périmés sont présentés à part : ils sont à retirer, pas à surveiller.
 
-### P7 — Paiement fiable (fournisseur simulé) · M · EF-08
+### P7 — Paiement fiable (fournisseur simulé) · M · EF-08 · ❌ **0 sur 5**
 - [ ] `TentativePaiement` avec référence unique → idempotence (EF-08-03).
 - [ ] Statuts en attente et job de vérification répétée (EF-08-04).
 - [ ] Détail du calcul avant paiement (EF-08-01) ; reçu et facture téléchargeables (EF-08-06).
 - [ ] Remboursements totaux/partiels motivés (EF-08-07) ; rapprochement quotidien avec signalement des écarts (EF-08-08).
 - [ ] Aucune donnée de carte stockée (EF-08-05).
 
-### P8 — Livraison + carte + annuaire · L · EF-10
+### P8 — Livraison + carte + annuaire · L · EF-10 · ❌ **0 sur 9**
 - [ ] Rôle `LIVREUR` ; `OrdreLivraison` créé après paiement et préparation (EF-10-01).
 - [ ] Adresse avec points de repère, instructions, position GPS (EF-10-02) ; créneaux (EF-10-03).
 - [ ] Affectation au livreur ; positions horodatées pour le **suivi du trajet** (EF-10-04/05).
@@ -165,11 +205,11 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Le retrait en pharmacie n'est **pas un repli** : c'est un mode de remise permanent, à égalité avec la livraison.
 - [ ] Annuaire public géolocalisé : cliniques, pharmacies, laboratoires (horaires, services, coordonnées).
 
-### P9 — Notifications neutres · S · EF-11
+### P9 — Notifications neutres · S · EF-11 · ❌ **0 sur 2**
 - [ ] Aucun contenu médical dans un message sortant (EF-11-02) ; SMS en repli (EF-11-03).
 - [ ] Préférences de canaux et de langue (EF-11-04) ; rejeu des non délivrées (EF-11-05).
 
-### P10 — Assurance et tiers payant · L · EF-09
+### P10 — Assurance et tiers payant · L · EF-09 · ❌ **0 sur 9** — débloqué côté catalogue le 2026-10-01
 - [ ] `Assureur`, `ContratAssurance`, bénéficiaires, date d'effet (EF-09-01).
 - [ ] Taux par acte/analyse/produit avec date d'effet ; plafonds, franchises, exclusions, carence (EF-09-03/04).
 - [ ] Calcul du reste à charge ligne par ligne (ENF-04-08).
@@ -180,19 +220,19 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] **Exclusions par catégorie de produit** (lait, cosmétiques…). Suppose deux préalables : que le catalogue accepte des **articles non médicamenteux**, et que `Medicament.categorie` — aujourd'hui **texte libre et facultatif** — devienne une catégorie issue d'un **référentiel fermé**. On ne fonde pas une règle de remboursement sur un champ que chacun remplit comme il veut.
 - [ ] **Un taux de 100 % ne couvre pas tout** : il s'applique après exclusions et dans la limite des plafonds. Le détail ligne par ligne — couvert, à quel taux, exclu **et pourquoi** — doit être montré avant paiement ; un reste à charge sans explication se conteste au comptoir.
 
-### P11 — Administration, audit, référentiels · M · EF-12
+### P11 — Administration, audit, référentiels · M · EF-12 · ❌ **0 sur 5** — conditionne l'import des référentiels
 - [ ] Journal non modifiable incluant les **lectures** de dossier ; recherche et export (EF-12-04/05).
 - [ ] Suspension immédiate d'un compte (EF-12-01) ; conventions des partenaires (EF-12-02).
 - [ ] Référentiels importables : LOINC, CIM-10, ATC, tarifs, taux, zones de livraison (EF-12-03).
 - [ ] Demandes RGPD : accès, rectification, effacement, portabilité (EF-12-09).
 - [ ] Détection d'anomalies d'accès (EF-12-06).
 
-### P12 — Interopérabilité · L · EF-13
+### P12 — Interopérabilité · L · EF-13 · ❌ **0 sur 3**
 - [ ] HL7 v2 en réception (EF-13-03) ; ressources FHIR R4 étendues (EF-13-02).
 - [ ] Connecteur fichier CSV/XML (EF-13-05) ; portail de saisie manuelle (EF-13-06).
 - [ ] Journal et rejeu des échanges externes (EF-13-07) ; environnement de test partenaires (EF-13-08).
 
-### P13 — Extension (lot V4) · L
+### P13 — Extension (lot V4) · L · ⏳ **1 sur 5**
 - [ ] Comptes aidants avec mandat et périmètre (EF-06-05) ; mineurs (EF-06-06).
 - [ ] Rappels de prise de traitement (EF-06-09) ; code d'urgence (EF-06-08).
 - [x] ✅ **Livré le 2026-09-30 (API + front)** — **Prise de rendez-vous à distance** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le créneau, l'assistante le pointe à son arrivée. Se construit avec le circuit RDV ci-dessus.

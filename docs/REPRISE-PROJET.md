@@ -1,9 +1,19 @@
 # KÈNÈYA — dossier de reprise
 
 > Écrit pour qu'une personne **ou une IA** puisse reprendre ce projet sans rien deviner.
-> Dernière mise à jour : **2026-09-28**, après l'addendum du chef de projet. Chaque chiffre et chaque affirmation ont été vérifiés dans le dépôt le jour même, pas recopiés d'une version antérieure.
+> Dernière mise à jour : **2026-10-02**. Chaque chiffre de ce fichier a été recompté dans le dépôt ce jour-là — compteurs de modèles, de tests, de cases de la feuille de route, état des branches. Aucun n'est recopié d'une version antérieure.
 >
 > Si vous constatez un écart entre ce fichier et le code, **le code a raison** — corrigez ce fichier.
+
+> ### ⚠️ À lire avant de cloner
+>
+> **`main` est 24 commits en retard sur `develop`.** Son dernier commit date du **2026-09-26** (socle API de la commande pharmacie). Les six blocs de l'addendum, les lots de stock, le référentiel de catégories et tous les correctifs de sécurité **ne sont que sur `develop`**.
+>
+> ```bash
+> git clone <url> && cd baobaoheath-platforme && git checkout develop
+> ```
+>
+> Travaillez sur `develop`. La promotion vers `main` se fait en *fast-forward* quand la CI est verte, et elle n'a pas été faite depuis le 26/09.
 
 ---
 
@@ -15,17 +25,18 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 
 | | |
 |---|---|
-| Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types` |
-| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — 25 fichiers de routes, 30 services |
-| Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN |
-| Modèle | 41 modèles Prisma, 23 enums, 24 migrations, **12 rôles** |
-| Branches | `develop` (travail) → CI verte → `main` (fast-forward) |
-| Tests | **376 API** (Jest, 25 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright) |
+| Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types`. **Un seul `package-lock.json`, à la racine.** |
+| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **25 fichiers de routes, 32 services, 26 groupes d'endpoints** |
+| Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **48 écrans dans 10 espaces** |
+| Modèle | **43 modèles Prisma, 24 enums, 26 migrations, 12 rôles** |
+| Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
+| Tests | **400 API** (Jest, 26 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
+| Avancement | Feuille de route : **36 cases faites, 1 partielle, 58 restantes sur 95**. Addendum : **6 blocs livrés sur 8**. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
 >
-> ⚠️ Le `README.md` à la racine est **périmé** : il parle encore de « BaoBaoHealth » et de PrimeNG, retiré depuis. Ce fichier-ci fait foi.
+> Le `README.md` à la racine a été repris le 2026-10-02 et pointe sur ce fichier. En cas de contradiction, **ce fichier-ci fait foi** : il est plus détaillé et tenu à jour avec le code.
 
 ---
 
@@ -81,6 +92,41 @@ npm run api      # API seule
 npm run web      # web seul
 ```
 
+### Pièges de l'environnement — chacun a coûté du temps le 30/09 ou le 01/10
+
+1. **Lancez l'API par le script du projet, pas à la main.** `npm run api` fait `tsx watch src/index.ts` et se recharge. En revanche `npx tsx src/index.ts` — ce qu'on écrit naturellement quand on veut rediriger le journal — **ne surveille rien** : modifier un service ne change alors rien tant qu'on n'a pas redémarré. Un sabotage de vérification est ainsi passé pour un succès le 30/09, alors que le code saboté n'avait jamais été chargé. *Si vous lancez l'API à la main, redémarrez-la après chaque modification.*
+
+2. **La limitation de débit est en mémoire.** Une dizaine de connexions successives — ce que fait un script de vérification — déclenche un 429, et la page de connexion n'affiche alors aucun code OTP. Le symptôme ressemble à un bug d'authentification. *Redémarrer l'API remet le compteur à zéro* (`REDIS_URL` n'est pas configuré, voir la dette).
+
+3. **Le journal de l'API est tamponné sous PowerShell.** `... | Out-File` n'écrit rien avant la fin du processus. N'attendez pas le démarrage en lisant `.api.log` : interrogez `http://localhost:3000/health`.
+
+   ```bash
+   until curl -sf http://localhost:3000/health >/dev/null; do sleep 2; done
+   ```
+
+4. **Playwright réutilise les serveurs déjà lancés** (`reuseExistingServer: !process.env.CI`). Si votre API de développement tourne sur le port 3000, les parcours e2e s'exécutent **contre votre base de développement** au lieu de la base e2e. *Libérez le port 3000 avant de lancer `npm run e2e`.*
+
+5. **Les parcours e2e ont besoin de leur propre base.** Sans `E2E_DATABASE_URL`, la configuration pointe sur `postgresql://baobaoheath:baobaoheath@localhost:55433/baobaoheath_e2e`, qui n'existe pas en local : les migrations et la semence échouent, et l'échec se présente comme « les comptes e2e n'existent pas ».
+
+   ```bash
+   docker exec baobao_db psql -U baobao_user -d postgres -c "CREATE DATABASE keneya_e2e;"
+   cd apps/web
+   E2E_DATABASE_URL=postgresql://baobao_user:<mdp>@127.0.0.1:5433/keneya_e2e npx playwright test
+   ```
+
+6. **Pour éprouver une migration ou une semence, prenez une base jetable.** Ne le faites pas sur votre base de démonstration : les semences remettent des quantités à leur valeur de référence.
+
+   ```bash
+   docker exec baobao_db psql -U baobao_user -d postgres -c "CREATE DATABASE keneya_essai;"
+   cd apps/api
+   DATABASE_URL=postgresql://baobao_user:<mdp>@127.0.0.1:5433/keneya_essai npx prisma migrate deploy
+   DATABASE_URL=... npx tsx prisma/seed.ts && DATABASE_URL=... npx tsx prisma/seed-demo.ts
+   ```
+
+   Les deux semences sont **idempotentes** et vérifient en terminant que la quantité de chaque stock égale la somme de ses lots. Elles échouent en nommant les écarts.
+
+7. **Les semences ne sont pas type-vérifiées.** `apps/api/tsconfig.json` déclare `include: src/**/*` ; `prisma/seed*.ts` en est exclu. Une erreur y reste invisible jusqu'à l'exécution — d'où le point précédent.
+
 ### Se connecter
 
 Les comptes et mots de passe **ne sont pas dans le dépôt** (volontairement). Voir `f:\perso\BaoBaoHealth\COMPTES-KENEYA.md`, hors versionnement, vérifié contre les empreintes en base.
@@ -106,7 +152,7 @@ apps/api/src/
   config/      prisma, env (valide + exit), swagger, générés Prisma, extension de chiffrement
   routes/      25 fichiers — déclarent les chemins, les rôles et les validateurs
   controllers/ traduisent HTTP ↔ service, ne contiennent aucune règle
-  services/    30 fichiers — toutes les règles métier vivent ici
+  services/    32 fichiers — toutes les règles métier vivent ici
   validators/  schémas Zod (api.schemas.ts)
   middlewares/ authenticate, requireRole, validateBody, audit
   realtime/    Socket.IO
@@ -142,11 +188,64 @@ Tous les composants n'ont **pas** de `styleUrl`. Plusieurs écrans — dont `pat
 
 Corollaire sur le thème sombre : dans un SCSS **de composant**, utiliser `:host-context([data-theme='dark'])` ; dans une feuille **globale**, `[data-theme='dark']` — l'attribut est porté par `<html>`, et `:host-context` n'y a pas de sens.
 
+### Carte des endpoints
+
+Les 26 groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier. C'est la table d'entrée la plus rapide pour savoir où chercher.
+
+| Préfixe `/api/v1/…` | Pour qui | Fichier de routes |
+|---|---|---|
+| `auth` | tous | `auth.routes.ts` |
+| `patients` | patient, soignants | `patient.routes.ts` |
+| `consultations` | ASC, médecin | `consultation.routes.ts` |
+| `ordonnances` | prescripteurs, patient | `ordonnance.routes.ts` |
+| `commandes` | patient, pharmacies | `commande.routes.ts` |
+| `medicaments` | prescripteurs | `medicament.routes.ts` — **ne rend que des médicaments** |
+| `asc` | agent de santé communautaire | `asc.routes.ts` |
+| `medecin` | médecin | `medecin.routes.ts` |
+| `paiements` | patient | `paiement.routes.ts` |
+| `vaccinations` | patient, ASC | `vaccination.routes.ts` |
+| `notifications` | tous | `notification.routes.ts` |
+| `analytics` | administrations | `analytics.routes.ts` |
+| `admin-structure` | admin d'établissement | `admin-structure.routes.ts` |
+| `pharmacien` | pharmacien | `pharmacien.routes.ts` — **catalogue complet, articles compris** |
+| `sync` | ASC hors connexion | `sync.routes.ts` |
+| `fhir` | interopérabilité | `fhir.routes.ts` |
+| `triage` | ASC | `triage.routes.ts` |
+| `privacy` | patient | `privacy.routes.ts` |
+| `ussd` | passerelle USSD | `ussd.routes.ts` |
+| `stats` | administrations | `stats.routes.ts` |
+| `uploads` | tous | `upload.routes.ts` |
+| `parametres` | admin national | `parametres.routes.ts` |
+| `hopital` | agent d'accueil | `hopital.routes.ts` |
+| `laboratoire` | laborantin | `laboratoire.routes.ts` |
+| `resultats` | prescripteurs | `resultats.routes.ts` |
+
+Swagger est servi sur `/api-docs` et décrit dans `apps/api/src/config/swagger.ts`. **Il est incomplet** — voir la dette.
+
+### Les écrans, par espace
+
+48 composants dans 10 espaces (`apps/web/src/app/features/`).
+
+| Espace | Écrans | Ce qu'on y fait |
+|---|---|---|
+| `auth` | 4 | connexion, OTP, mot de passe oublié, inscription |
+| `landing` | 3 | page publique, annuaire des structures, contact |
+| `patient` | 8 | parcours, ordonnances, QR, résultats, **demande de rendez-vous à distance** |
+| `asc` | 4 | consultations, fiche de consultation, stocks, planning |
+| `hopital` | 7 | accueil, épisodes, **pointage des présences**, **demandes de RDV**, triage |
+| `laboratoire` | 3 | file, fiche de demande, scan du QR patient |
+| `medecin` | 9 | consultations, dossier, **orientations**, **agenda**, **résultats à libérer**, **demandes** |
+| `pharmacien` | 4 | ordonnances, stocks, **approvisionnement**, **péremptions** |
+| `admin-structure` | 2 | agents, statistiques de l'établissement |
+| `admin` | 4 | paramètres de plateforme, référentiels, analytique, utilisateurs |
+
+En **gras** : ce qui a été ajouté entre le 28/09 et le 02/10. Aucun écran n'existe pour le rôle `LIVREUR` ni pour l'assurance.
+
 ---
 
 ## 4. Modèle de données
 
-40 modèles, 21 enums, 21 migrations.
+**43 modèles, 24 enums, 26 migrations** (recompté le 2026-10-02).
 
 - **`Utilisateur`** — 12 rôles : `PATIENT`, `ASC`, `ASC_SUPERVISOR`, `MEDECIN`, `PHARMACIEN`, `AGENT_ACCUEIL`, `TECHNICIEN_LABO`, `LIVREUR`, `ADMIN_STRUCTURE`, `ADMIN_REGIONAL`, `ADMIN_NATIONAL`, `SUPER_ADMIN`. Le rôle `BIOLOGISTE` a été supprimé le 2026-09-30 : c'est le laborantin qui valide.
 - **`PatientProfile`** — dossier, QR code, géographie (`prefecture`, `commune`, `quartier`), allergies et maladies chroniques en **texte libre** (d'où la comparaison tolérante aux accents, §5).
@@ -154,11 +253,14 @@ Corollaire sur le thème sombre : dans un SCSS **de composant**, utiliser `:host
 - **`Consultation` → `Ordonnance` → `LigneOrdonnance`** — voir ci-dessous.
 - **`Commande` + `ReponsePharmacie`** — l'appel aux pharmacies du quartier et l'attribution au premier déclarant (P6, socle livré le 2026-09-26).
 - **`ParametresSysteme`** — une seule ligne, `valeurs` en JSON, défauts dans `parametres.service.ts`. **Ajouter un paramètre ne demande aucune migration.**
-- **`Compteur`** — numérotation lisible et atomique (`EP-2026-000123`, `DA-`, `EC-`, `OR-`), via `numero.service.ts`.
+- **`Compteur`** — numérotation lisible et atomique (`EP-2026-000123`, `DA-`, `EC-`, `OR-`, `AP-`), via `numero.service.ts`.
+- **`Medicament`** — le catalogue, qui contient aussi des **articles non médicamenteux** depuis le 2026-10-01 (`categorie: CategorieProduit`). Le nom du modèle est désormais trop étroit ; le renommer en `Produit` est un chantier mécanique mais large, non fait.
+- **`Stock` → `LotStock` ← `Approvisionnement`** — depuis le 2026-09-30, la quantité d'un stock est **la somme de ses lots**, et la date de péremption appartient au lot. Rien dans le schéma ne l'impose : les deux semences le vérifient en terminant, et `consommerLots` sort au plus proche de la date.
+- **`RendezVous` + `DemandeRendezVous`** — le créneau fixé par le médecin, et la demande que le patient fait depuis chez lui.
 
 ### Ce que le modèle ne sait pas encore
 
-Vérifié le 2026-09-28. **La géographie, le partenariat des pharmacies et le rôle `LIVREUR` existent désormais** — ils manquaient dans les versions précédentes de ce document.
+Vérifié le 2026-10-02. **Deux manques sur quatre ont été comblés** depuis le 28/09 ; la géographie, le partenariat des pharmacies et le rôle `LIVREUR` existent.
 
 | Manque | Bloque | Détail |
 |---|---|---|
@@ -213,22 +315,40 @@ cd apps/api && npx tsc --noEmit && npm test && npm run build
 cd apps/web && npx tsc --noEmit && npm test
 npm run build -- --configuration=production     # seul le build vérifie les templates
 
-# Parcours e2e (démarre API + web tout seul)
-docker run -d --name keneya_e2e_db \
-  -e POSTGRES_USER=baobaoheath -e POSTGRES_PASSWORD=baobaoheath \
-  -e POSTGRES_DB=baobaoheath_e2e -p 55433:5432 postgres:16-alpine
-cd apps/web && npm run e2e
+# Parcours e2e — Playwright demarre l'API et le web lui-meme, applique les
+# migrations et la semence e2e. Deux conditions, voir §2 :
+#   - le port 3000 doit etre LIBRE (sinon il reutilise votre API de dev) ;
+#   - E2E_DATABASE_URL doit pointer sur une base qui existe.
+docker exec baobao_db psql -U baobao_user -d postgres -c "CREATE DATABASE keneya_e2e;"
+cd apps/web
+E2E_DATABASE_URL=postgresql://baobao_user:<mdp>@127.0.0.1:5433/keneya_e2e npm run e2e
 ```
+
+**Les quatre niveaux ne voient pas la même chose, et c'est voulu** :
+
+| Niveau | Attrape | N'attrape pas |
+|---|---|---|
+| `tsc --noEmit` | les écarts au contrat partagé | les templates Angular, les semences (`prisma/` est hors `include`) |
+| `npm test` | les règles métier, sur des mocks Prisma | ce qui dépend d'une vraie base, et tout l'affichage |
+| `ng build --configuration production` | les templates, les pipes non importés | qu'une page rende effectivement quelque chose |
+| `npm run e2e` | le produit de bout en bout, vraie base | ce qui n'est pas dans les cinq parcours |
+
+C'est **le job e2e de la CI** qui a trouvé que les semences ne créaient aucun lot, donc qu'une base fraîche ne pouvait rien délivrer. Ni les 400 tests, ni le typage, ni la base locale ne l'avaient vu — la base locale marchait grâce à une reprise de données que personne ne rejouera.
 
 **`tsc --noEmit` ne vérifie pas les templates Angular.** Seul `ng build` le fait.
 
 ### Un build vert ne prouve pas qu'une page rend quelque chose
 
-C'est la leçon la plus chère du projet, payée **trois fois** :
+C'est la leçon la plus chère du projet, payée **six fois** :
 
 1. `*ngTemplateOutlet` sans importer `NgTemplateOutlet` → page vide, build vert.
-2. `computed()` sur une propriété `ngModel` ordinaire → valeur figée, bandeau jamais affiché.
+2. `computed()` sur une propriété `ngModel` ordinaire → valeur figée. L'application est **zoneless** : `[(ngModel)]` qui écrit dans un champ ordinaire — ou qui mute un objet rangé dans un signal — ne notifie personne. Le 30/09, un formulaire de facture affichait un total faux (60 000 au lieu de 160 000) et son bouton d'enregistrement restait mort.
 3. Un `.scss` créé à côté d'un composant **sans `styleUrl`** → bloc affiché sans aucune mise en forme, build vert.
+4. Une classe CSS citée dans un gabarit mais **jamais définie** → aucun style, aucune erreur.
+5. Un **service web mal typé** : `getMedicaments()` annonçait `PharmacieStock[]` quand l'API rend des médicaments à plat. Tout appelant lisant `m.medicament` recevait `undefined`, et la liste déroulante restait vide, sans erreur.
+6. Un **champ retiré du modèle mais laissé dans le contrat**, en optionnel : `Stock.datePeremption` a disparu le 30/09, les deux écrans de stock ont cessé d'afficher les dates pendant un jour, et le compilateur s'est tu parce que le champ était `?`.
+
+Les points 5 et 6 ont la même racine : **un type qui mentait**. Quand un champ est calculé ou retiré, rendez le contrat strict — c'est le compilateur qui doit refuser, pas l'écran qui doit se vider.
 
 **Toute question d'affichage se vérifie dans un vrai navigateur**, dans les deux thèmes. Playwright pilote le Chrome installé (`channel: 'chrome'`) ; un script jetable qui se connecte, navigue, lit `getComputedStyle` et prend une capture coûte quelques minutes et attrape ce que la compilation ne voit pas.
 
@@ -253,101 +373,123 @@ La convention du projet est de **saboter ses propres tests** avant de les croire
 
 Signe qui ne trompe pas : quand un changement de règle fait échouer des tests existants, **lisez leurs noms**. Le 2026-09-28, quatre tests sont tombés — ils s'appelaient « diffuse aussitôt au patient » et « diffuse au patient passé le délai ». Ils faisaient exactement leur travail.
 
+#### Les quatre façons dont un sabotage mentit, et comment les éviter
+
+Sur treize sabotages menés entre le 30/09 et le 02/10, **quatre ont révélé un défaut du contrôle, pas du code**. Chacun est une erreur reproductible :
+
+1. **Un marqueur partagé par le succès et l'échec.** Un contrôle comptait l'icône `pi-calendar-times` pour vérifier qu'une date s'affichait — mais les **deux branches** du `@if` rendent cette icône. Le compte valait 9 dans tous les cas. Même erreur qu'un contrôle antérieur qui cherchait `/Arriv/`, motif que portait aussi le bouton « Pointer l'arrivée ». *Demandez-vous toujours : si la règle tombait, cette assertion changerait-elle de valeur ?*
+
+2. **Des données laissées par les passages précédents.** Un contrôle cherchait des numéros de lot dans toute la page ; l'historique des exécutions antérieures suffisait à le satisfaire, donc un sabotage qui n'enregistrait qu'un lot sur deux passait. *Étiquetez chaque exécution et ne faites porter les assertions que sur son étiquette.*
+
+3. **Un sabotage qui ne compile pas.** Deux fois, le code saboté a été rejeté par le compilateur : le serveur de développement a continué à servir l'ancien paquet, et le contrôle est passé. *Attendez une reconstruction réellement postérieure à l'édition* — comptez les « bundle generation complete » dans `.web.log` — *et vérifiez que le sabotage compile.*
+
+4. **Un sabotage sur une cible que le code ne touche pas.** La protection des stocks approvisionnés a été « vérifiée » sur un produit `e2e` que `seed-demo` ne gère jamais. *Vérifiez que le chemin saboté est bien celui que le test emprunte.*
+
+Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `tail`. Mesurez le code de la commande, pas celui du tube.
+
 ---
 
 ## 7. Où nous en sommes
 
-### Livrés sur `main` (API **et** front)
+### Les blocs du cahier des charges
 
-| Bloc | Objet |
-|---|---|
-| **P0** | Identité de la plateforme administrable (nom, logo, coordonnées) |
-| **P1** | Épisode de soins, demande d'analyse, espace Accueil hôpital, « Mon parcours » patient |
-| **P2** | Laboratoire complet — file, prélèvement, résultats, validation, valeurs critiques, courbes |
-| **P3** | Ordonnance infalsifiable (numéro + code + validité + signature), sécurité de prescription (allergies, interactions, contre-indications), renouvellement, produits réglementés |
-| **P6** | **Socle API seulement** — géographie, pharmacie partenaire, `Commande`, appel au quartier, attribution atomique. **Aucun écran.** |
+« Livré » veut dire **API et front, vérifiés dans un navigateur**. Tout ce qui suit est sur `develop` ; `main` s'arrête au 26/09.
 
-Ajouts récents hors blocs :
-
-- **2026-09-26** — écran « Orientations » côté médecin. L'accueil orientait un patient vers un médecin : l'épisode recevait bien son `idResponsable` et un rendez-vous était créé, mais **aucune notification ni aucun écran** ne le disait au médecin. L'orientation écrivait dans le vide.
-- **2026-09-26** — la page de connexion ne confond plus « serveur injoignable » et « identifiants incorrects ».
-- **2026-09-28** — **bloc 1 de l'addendum** : la libération des résultats par le médecin (voir ci-dessous).
-
-### ⚠️ Trois blocs marqués « livrés » ont été rouverts
-
-L'addendum du 2026-09-28 (`docs/ADDENDUM-CDC-2026-09-28.md`) contient neuf points du chef de projet, dont **trois contredisent du code en production**. Ne lisez pas P1 et P2 comme terminés.
-
-| Ce qui change | Ce que faisait le code | État |
+| Bloc | Objet | État |
 |---|---|---|
-| **Le médecin fixe les RDV** | `hopital.service.ts` est le **seul** endroit du code qui crée un rendez-vous — et c'est l'agent d'accueil. Le médecin n'en crée aucun. | à faire (bloc 3) |
-| **Plus de biologiste, juste laborantin** | Le rôle était exigé à **sept endroits**. La validation nominative reste bloquante : quelqu'un continue de signer. | ✅ **livré le 2026-09-30** |
-| **Résultats libérés par le médecin** | Tout résultat non critique partait au patient dès la validation ; un critique partait seul au bout de 24 h. | ✅ **livré le 2026-09-28** |
+| **P0** | Identité de la plateforme administrable (nom, logo, coordonnées) | ✅ complet |
+| **P1** | Épisode de soins, demande d'analyse, espace Accueil, « Mon parcours » patient | ✅ complet, **repris** par l'addendum (RDV, périmètre de l'accueil) |
+| **P2** | Laboratoire — file, prélèvement, résultats, validation, valeurs critiques, courbes | ✅ quasi complet (1 case : synchronisation hors connexion du laboratoire), **repris** (biologiste, libération) |
+| **P3** | Ordonnance infalsifiable, sécurité de prescription, renouvellement, produits réglementés | ✅ quasi complet (1 case) |
+| **P6** | Pharmacie et officine | ⏳ **4 cases sur 13** — socle de commande (API seule), lots de stock, approvisionnement par facture, alerte de péremption |
+| **P13** | Extension | ⏳ 1 case sur 5 — la prise de RDV à distance a été remontée ici |
+| P4, P5, P7 – P12 | identité/consentement, fil d'avancement, paiement, livraison, notifications, assurance, administration, interopérabilité | ❌ non commencés |
 
-Décisions prises le même jour, à ne pas rediscuter :
+### Les huit blocs de l'addendum — 6 livrés
 
-- **Seul le médecin crée le rendez-vous** ; l'accueil oriente sans proposer d'heure.
-- **Le laborantin valide**, `BIOLOGISTE` est supprimé ; migration des comptes obligatoire, les comptes rendus déjà validés gardent le nom de leur valideur.
-- **L'« assistante » est l'`AGENT_ACCUEIL` existant**, à qui on ajoute le pointage. Pas de nouveau rôle.
-- **L'accueil ne fait plus rien de médical** : ni prescription d'analyses, ni envoi aux pharmacies, ni lecture de résultats. Il garde : chercher/créer le patient, **ouvrir l'épisode**, pointer la présence, rediriger. Le médecin ferme l'épisode.
-- **La prise de rendez-vous à distance se fait maintenant** ; la **téléconsultation réelle** (visioconférence) reste en lot V4, suspendue à D2.
+`docs/ADDENDUM-CDC-2026-09-28.md` contient neuf points du chef de projet. Trois contredisaient du code déjà écrit ; ils ont été repris.
+
+| # | Bloc | Livré le | Ce qu'il a changé |
+|---|---|---|---|
+| 1 | Résultats libérés par le médecin | 2026-09-28 | Un résultat ne part plus au patient à la validation. Le médecin le libère, avec un commentaire. Relance à 12 h, escalade à 48 h, **aucune diffusion automatique**. |
+| 2 | Le médecin prescrit, l'accueil se recentre | 2026-09-29 | L'écran de prescription d'analyses passe au médecin ; l'accueil perd le droit, et **les valeurs de résultats lui sont masquées jusque dans la vue d'épisode** — fermer les routes ne suffisait pas. |
+| 3 | RDV fixés par le médecin, agenda, pointage | 2026-09-30 | L'accueil oriente **sans proposer d'heure** ; le médecin fixe le créneau et voit son agenda ; l'assistante pointe l'arrivée. `StatutRendezVous` devient une énumération. |
+| 4 | Suppression du rôle biologiste | 2026-09-30 | Le laborantin valide. Migration des comptes faite **avant** la recréation de l'énumération, sinon la conversion échoue. Les comptes rendus gardent le nom de leur valideur. |
+| 5 | Prise de rendez-vous à distance | 2026-09-30 | Le patient demande depuis chez lui ; l'accueil ou le médecin accepte, ce qui crée l'épisode et le rendez-vous en une transaction. |
+| 6 | Pharmacie : lots, approvisionnement, péremptions | 2026-09-30 | `Stock.datePeremption` disparaît au profit de `LotStock`. Saisie de facture, une ligne par lot avec sa propre date. Sortie **au plus proche de la péremption**, lot périmé bloqué. |
+| 7 | Pharmacie : vente au comptoir et tableau de bord | — | **Bloqué par le modèle** : `Facture` est attachée à une consultation (`idConsultation @unique`). Rien ne peut enregistrer une vente à un passant. |
+| 8 | Assurance | — | Débloqué le 01/10 côté catalogue ; reste à modéliser `Assureur`, `ContratAssurance` et le type de structure « assurance ». |
+
+### Décisions prises, à ne pas rediscuter
+
+- **Seul le médecin crée le rendez-vous.** L'accueil oriente sans proposer d'heure.
+- **Le laborantin valide**, `BIOLOGISTE` est supprimé du modèle et du contrat.
+- **L'« assistante » est l'`AGENT_ACCUEIL` existant**, à qui on a ajouté le pointage. Pas de nouveau rôle.
+- **L'accueil ne fait plus rien de médical** : ni prescription, ni ordonnance, ni lecture de résultats. Il garde : chercher ou créer le patient, ouvrir l'épisode, pointer la présence, rediriger. Le médecin ferme l'épisode.
+- **La prise de rendez-vous à distance est faite** ; la **téléconsultation réelle** reste en lot V4, suspendue à la décision D2.
+- **Le catalogue accepte des articles non médicamenteux**, par catégorie fermée (décision du 2026-10-01, voir ci-dessous).
+
+### Le catalogue, depuis le 2026-10-01
+
+Le point le plus structurant livré après l'addendum, parce qu'il conditionnait les deux blocs restants.
+
+- `CategorieProduit` est une **énumération de huit valeurs** (`MEDICAMENT`, `LAIT_INFANTILE`, `COMPLEMENT_ALIMENTAIRE`, `COSMETIQUE`, `HYGIENE`, `PARAPHARMACIE`, `DISPOSITIF_MEDICAL`, `AUTRE`). L'ancien texte libre est devenu `classeTherapeutique` — c'est un autre axe, et il reste libre.
+- `dci`, `forme` et `dosage` sont **facultatifs** : un lait infantile n'en a pas. L'invariant est une **contrainte SQL**, `medicaments_medicament_complet` : un `MEDICAMENT` porte toujours les trois. Ce n'est pas du zèle — le contrôle d'allergie et la recherche d'interaction comparent sur la DCI, et une ligne de médicament sans DCI les traverserait en silence.
+- `libelle` est le nom affiché, **toujours renseigné**. Treize écrans recomposaient `nomCommercial ?? dci`, ce qui ne veut rien dire pour un article.
+- **Deux catalogues** : `GET /pharmacien/medicaments` rend tout (une officine vend aussi du lait) ; `GET /medicaments` ne rend que des médicaments. `analyserPrescription` refuse de toute façon un article non médicamenteux, mais autant ne pas le proposer.
 
 ---
 
 ## 8. Ce qui reste
 
-Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté huit chantiers aux soixante restants : il en a déplacé, supprimé et précisé.
+Deux listes qui **se recouvrent largement**. Le chef de projet n'a pas ajouté huit chantiers aux cinquante-huit restants : il en a déplacé, supprimé et précisé.
 
-### A. Les blocs de l'addendum — 6 livrés sur 8, restent le 7 et le 8
+### A. Décompte de la feuille de route
 
-| | Bloc | Taille | Où il tombe dans l'ancienne feuille |
+Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les cases à cocher. `[~]` note un bloc livré en partie.
+
+| Bloc | Fait | Partiel | Reste | Ce qui manque |
+|---|---|---|---|---|
+| P0 Identité plateforme | 5 | — | **0** | ✅ fini |
+| P1 Épisode de soins | 11 | — | **0** | ✅ fini |
+| P2 Laboratoire | 11 | — | 1 | synchronisation hors connexion du laboratoire (EF-04-11) |
+| P3 Ordonnance | 5 | — | 1 | — |
+| P4 Identité, consentement, accès | 0 | — | 7 | **rien n'est commencé** |
+| P5 Fil d'avancement | 0 | — | 3 | rien |
+| P6 Pharmacie et officine | 3 | 1 | 9 | vente au comptoir, tableau de bord, import Excel, écrans de commande, OCR de facture |
+| P7 Paiement | 0 | — | 5 | rien |
+| P8 Livraison, carte, annuaire | 0 | — | 9 | rien |
+| P9 Notifications neutres | 0 | — | 2 | rien |
+| P10 Assurance | 0 | — | 9 | rien |
+| P11 Admin, audit, référentiels | 0 | — | 5 | rien |
+| P12 Interopérabilité | 0 | — | 3 | rien |
+| P13 Extension | 1 | — | 4 | téléconsultation réelle (suspendue à D2) |
+| **Total** | **36** | **1** | **58** | sur 95 |
+
+**Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
+
+### B. Les deux blocs d'addendum restants
+
+| # | Bloc | Taille | Ce qui bloque, précisément |
 |---|---|---|---|
-| 1 | ✅ Résultats libérés par le médecin | M | **P2** — livré |
-| 2 | ✅ Le médecin prescrit, l'accueil se recentre | M | **P2** — livré le 2026-09-29 |
-| 3 | ✅ RDV fixés par le médecin + agenda + pointage | M | **P1** — livré le 2026-09-30 |
-| 4 | ✅ Suppression du rôle biologiste | M | **P2** — livré le 2026-09-30 |
-| 5 | ✅ Prise de rendez-vous à distance | M | **P13 → remonté** — livré le 2026-09-30 |
-| 6 | ✅ Pharmacie : lots, approvisionnement, péremptions | L | **P6** — livré le 2026-09-30 |
-| 7 | Pharmacie : vente et tableau de bord | M | **P6** — travail réellement neuf |
-| 8 | Assurance enrichie | L | **P10** — précise, n'ajoute pas de bloc |
-
-**L'ordre n'est pas négociable pour le bloc 2** : le seul écran permettant de prescrire une analyse est aujourd'hui celui de l'accueil. Retirer le droit avant de construire l'écran du médecin rendrait tout le bloc laboratoire inaccessible.
-
-### B. L'ancienne feuille de route — décompte réel des cases
-
-| Bloc | Fait | Reste |
-|---|---|---|
-| P0 Identité plateforme | 5 | **0** ✅ |
-| P1 Épisode de soins | 7 | 4 — *rouvert* |
-| P2 Laboratoire | 9 | 3 — *rouvert* |
-| P3 Ordonnance | 5 | 1 |
-| P4 Identité, consentement, accès | 0 | 7 |
-| P5 Fil d'avancement | 0 | 3 |
-| P6 Pharmacie et officine | 3 | 10 — dont l'extraction automatique de facture |
-| P7 Paiement | 0 | 5 |
-| P8 Livraison, carte, annuaire | 0 | 9 |
-| P9 Notifications neutres | 0 | 2 |
-| P10 Assurance | 0 | 9 |
-| P11 Admin, audit, référentiels | 0 | 5 |
-| P12 Interopérabilité | 0 | 3 |
-| P13 Extension | 0 | 5 |
-
-**Seul P0 est réellement fini.**
+| 7 | Pharmacie : vente au comptoir et tableau de bord | M | **`Facture` est attachée à une consultation** (`idConsultation @unique` dans `schema.prisma`). Une boîte vendue à un passant n'a aucun objet pour être enregistrée — donc rien à totaliser dans un tableau de bord. Il faut un modèle de vente propre, avec ses lignes, son mode de paiement et son vendeur. La catégorie de produit existe désormais, donc la règle « un produit réglementé ne se vend pas sans ordonnance » (EF-05-12) est exprimable. |
+| 8 | Assurance et tiers payant | L | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance » dans le modèle. Les exclusions sont désormais **exprimables** grâce à `CategorieProduit`, et la règle du chef de projet — « assuré à 100 % ne veut pas dire tout est pris » — demande des plafonds et des taux par catégorie. Suppose le bloc 7 pour les ventes au comptoir. |
 
 ### C. Ce que l'addendum ne couvre pas et qu'il ne faut pas perdre
 
 Ces blocs n'ont pas été évoqués par le chef de projet, mais ils conditionnent une mise en service :
 
-- **P4** (7 cases) — identito-vigilance, doublons, consentement versionné, bris de glace, journal des accès patient. Le plus lourd non commencé, et le plus sensible réglementairement.
-- **P11** (5 cases) — **il conditionne le reste** : il apporte l'import des référentiels. Sans lui, le référentiel d'interactions reste vide et le catalogue de médicaments ne se gère qu'en base.
+- **P4** (7 cases) — identito-vigilance, doublons, consentement versionné, bris de glace, journal des accès patient. Le plus lourd non commencé, et le plus sensible réglementairement. **EF-02-08 en dépend** : le journal d'audit trace les scans de QR mais `idRessource` reste vide (voir la dette), donc « qui a consulté mon dossier ? » n'a pas de réponse indexée.
+- **P11** (5 cases) — **il conditionne le reste** : il apporte l'import des référentiels. Sans lui, le référentiel d'interactions médicamenteuses reste **vide** et le catalogue ne se gère qu'en base.
 - **P9** (2 cases, S) — aucun contenu médical dans un message sortant. Petit, mais c'est une exigence.
 
 ### D. Questions ouvertes
 
-Quatre, listées en fin d'addendum. La première est **tranchée par l'usage** : le bloc 6 est livré en saisie assistée, la facture restant attachée en justificatif ; l'extraction automatique reste à décider et devra toujours passer par une relecture à l'écran. Reste bloquante pour le bloc 8 :
+Trois des cinq questions de l'addendum sont tranchées (A, B, C, D ; voir le tableau en fin d'addendum). Reste :
 
-- Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ? Ce point conditionne les exclusions d'assurance du bloc 8.
-
-Deux propositions de `PARCOURS-COMMANDE-LIVRAISON.md` attendent encore validation : la double voie de preuve de remise, et le circuit de substitution pharmacien → médecin.
+- **E — Vente au comptoir sans ordonnance : autorisée pour tous les produits ?** Un produit réglementé ne se vend pas sans ordonnance (EF-05-12), et c'est acquis. La question porte sur le reste : un antibiotique non classé, par exemple. Elle bloque le bloc 7.
+- **Deux propositions de `PARCOURS-COMMANDE-LIVRAISON.md`** attendent validation : la double voie de preuve de remise, et le circuit de substitution pharmacien → médecin.
+- **Non décidé et signalé** : une photo de QR code ouvre la même porte au comptoir de pharmacie et au guichet du laboratoire. J'ai recommandé de demander la date de naissance après le scan, aux deux endroits simultanément. Sans réponse à ce jour.
 
 ### E. Le chemin critique n'est pas le code
 
@@ -357,21 +499,24 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 
 ## 9. Dette et pièges connus
 
-### Dette (vérifiée le 2026-09-28)
+### Dette (vérifiée le 2026-10-02)
 
 | Point | Constat |
 |---|---|
 | ~~`apps/api/prisma.config.js`~~ | ✅ **Résolu le 2026-09-28** — supprimé et ignoré. |
-| Swagger | **2 routes pharmacien documentées sur 10** (`verifier` et `delivrer` ; manquent `scan`, `renouveler`, stocks, catalogue, agents), alors que le CDC l'exige. |
-| CI | `actions/checkout@v4` et `setup-node@v4` ciblent Node 20, déprécié. `ubuntu-latest` bascule vers Ubuntu 26 le 19/10/2026. |
+| Swagger | **5 routes pharmacien documentées sur 14** (recompté le 02/10 : `ordonnances/verifier`, `ordonnances/{id}/delivrer`, `approvisionnements`, `peremptions`, `medicaments/{id}/lots`). Manquent `scan`, `renouveler`, les stocks, le catalogue et les agents, alors que le CDC exige la documentation. |
+| CI | ✅ **Les actions sont en `@v5` et Node 24** (vérifié le 02/10 ; la dette de dépréciation est levée). Reste : `ubuntu-latest` bascule vers **Ubuntu 26 le 19/10/2026**, et le runner l'annonce à chaque exécution. |
 | `REDIS_URL` | Non configuré : limitation de débit **en mémoire**, donc inopérante à plusieurs instances. |
 | Gmail | Non configuré : OTP en repli développement. Inacceptable en production. |
-| `README.md` | Périmé (nom du produit, PrimeNG). |
+| ~~`README.md`~~ | ✅ **Repris le 2026-10-02** — il annonçait « BaoBaoHealth », PrimeNG et neuf rôles. Il pointe désormais sur ce dossier et sur l'addendum. |
 | Espace ASC non démontrable | La semence de démonstration ne crée **aucun compte ASC**, et le mot de passe des comptes ASC existants n'est pas connu (voir `COMPTES-KENEYA.md`). L'espace agent de santé communautaire ne peut donc pas être montré, ni vérifié au navigateur. |
 | Semences hors typage | `apps/api/tsconfig.json` déclare `include: src/**/*` : **`prisma/seed*.ts` n'est pas type-vérifié**. Une erreur y reste invisible jusqu'à l'exécution. |
-| Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend. |
+| Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend — c'est la dernière case de P2. |
+| Modèle `Medicament` mal nommé | Le catalogue contient des cosmétiques et du lait depuis le 02/10. Le renommer `Produit` est mécanique mais touche presque tous les services ; non fait, et la relation `Stock.medicament` désigne donc parfois un savon. |
+| Exceptions d'audit | Quatre avis `high`/`critical` sont couverts par des exceptions datées dans `scripts/audit-gate.mjs` : `deepmerge-ts`, `mysql2` (×2) et `piscina`. **Réexamen : 01/11/2026 pour piscina, 01/12/2026 pour les trois autres.** Chacune dit pourquoi elle ne nous expose pas. |
+| `overrides` npm inopérants | npm 11 **ne déplace pas** une dépendance épinglée en version exacte par un parent, ni à plat ni en forme imbriquée. Retirer l'entrée du verrou pour forcer une résolution fait **perdre des paquets** à l'arbre. Constaté sur `prisma` en septembre et reconfirmé sur `@angular/build`/`piscina` le 02/10. |
 | Images de la landing | Banques d'images génériques, **noms de fichiers trompeurs**, une avec signalétique en espagnol. Manquent : laboratoire, livraison. |
-| Marque | Le bandeau latéral affiche encore « Santé Pour Tous » alors que les SMS partent sous « KENEYA ». |
+| Marque | Le bandeau latéral **et la réponse de `/health`** affichent encore « Santé Pour Tous » alors que les SMS partent sous « KENEYA ». |
 | Rôle `LIVREUR` | Existe dans le modèle, **sans aucune route ni écran** : un tel compte atterrirait sur `/unauthorized`. |
 | Journal d'audit | Les scans de QR sont tracés depuis le 2026-09-29 (**vérifié en base** : une ligne par scan, avec le rôle et la personne). Mais `idRessource` reste vide — le middleware ne lit que `req.params.id`, or le paramètre s'appelle `qrCode`. Le patient concerné n'est que dans `metadonnees.params`, donc non indexé. Répondre à « qui a consulté mon dossier ? » est possible mais coûteux. **EF-02-08 n'est pas couvert**, il reste en P4. |
 
@@ -440,6 +585,29 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 6. `apps/api/prisma/schema.prisma` — le modèle, largement commenté sur les choix non évidents.
 7. `apps/api/src/services/ordonnance.service.ts` et `laboratoire.service.ts` — représentatifs du style attendu : règles explicites, commentaires qui disent *pourquoi*, pas *quoi*.
 8. `apps/web/e2e/parcours.spec.ts` — les cinq parcours décrivent le produit mieux qu'une spécification.
+
+### Le premier chantier recommandé
+
+Si vous reprenez le projet et cherchez par où entrer, **le bloc 7 est le bon point de départ** — mais il commence par une décision de modèle, pas par du code.
+
+1. Lisez le point 1 de `docs/ADDENDUM-CDC-2026-09-28.md` (gestion complète d'une pharmacie).
+2. Regardez `Facture` dans `schema.prisma` : `idConsultation` y est `@unique`. **Rien ne peut enregistrer une vente sans consultation.** C'est le verrou.
+3. Tranchez la question **E** des questions ouvertes (vente sans ordonnance), qui détermine les règles de la caisse.
+4. Modélisez la vente au comptoir : lignes, remise, mode de paiement (`ModePaiement` existe déjà avec `ESPECES`, `ORANGE_MONEY`, `MTN_MOMO`), vendeur, avec ou sans ordonnance. `CategorieProduit` permet déjà d'appliquer EF-05-12.
+5. La sortie de stock passe par `consommerLots` (`approvisionnement.service.ts`) : réutilisez-la, ne la réécrivez pas — elle sort au plus proche de la péremption et refuse un lot périmé.
+6. API d'abord, front ensuite, **dans le même bloc**. C'est la règle du projet.
+
+Le bloc 8 (assurance) suit, et suppose le 7 pour les ventes au comptoir.
+
+### Si vous êtes une IA qui reprend ce dépôt
+
+- **Vérifiez `git branch --show-current`.** Le travail est sur `develop` ; `main` est en retard de six jours.
+- **Ne faites pas confiance à une suite verte.** La convention est le sabotage, et la section 6 liste les quatre façons dont un sabotage mentit ici.
+- **Lisez le SQL avant d'appliquer une migration** qui change un type ou retire une colonne. Prisma a proposé du SQL destructeur **cinq fois sur cinq** : `DROP COLUMN` avant la reprise des données, `ADD COLUMN NOT NULL` sans valeur sur une table peuplée, recréation d'énumération avant la migration des lignes.
+- **Reconstruisez `packages/shared-types` après l'avoir modifié**, sinon l'API et le front voient l'ancien type.
+- **Redémarrez l'API après toute modification** : `tsx` tourne sans `--watch`.
+- **Un build vert ne prouve pas qu'une page rend quelque chose.** Quatre défauts d'affichage sont passés par une compilation verte : un pipe non importé, un `computed()` sur un champ `ngModel` ordinaire (l'application est *zoneless*), un `.scss` orphelin, une classe CSS jamais définie.
+- **Dites ce qui reste ouvert** plutôt que de le passer sous silence. Ce fichier contient plusieurs limites assumées ; c'est voulu.
 
 ### Ce qu'on attend d'une contribution
 

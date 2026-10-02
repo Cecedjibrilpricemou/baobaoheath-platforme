@@ -54,7 +54,25 @@ Maomou Condé, née le 17/03/1992. QR : `DEMO-QR-MAOMOU-0001`.
 | Metformine 850mg | A10BA02 | contre-indication « Insuffisance rénale » |
 | Morphine 10mg | N02AA01 | **produit réglementé** |
 
-500 boîtes de chacun en stock à la Pharmacie Pricemou.
+La semence en met **500 boîtes de chacun** en stock à la Pharmacie Pricemou, **chacune en un lot** portant une péremption à quatre mois — l'écran des péremptions a donc quelque chose à montrer d'emblée.
+
+> Le paracétamol affiche davantage : la facture de démonstration **AP-2026-000001** (*Grossiste Kindia*, 2 lots) lui en a ajouté. C'est voulu — elle donne au bloc approvisionnement une entrée à montrer, et la semence ne l'écrase pas.
+
+### Et quatre articles qui ne sont pas des médicaments
+
+Depuis la décision du 2026-10-01, le catalogue en accepte. Ils n'ont **ni DCI, ni forme, ni dosage**, et c'est précisément ce que l'ancien modèle ne savait pas porter.
+
+| Article | Catégorie | Prix |
+|---|---|---|
+| Lait infantile 1er âge 400g | `LAIT_INFANTILE` | 45 000 GNF |
+| Crème hydratante 100ml | `COSMETIQUE` | 30 000 GNF |
+| Savon antiseptique | `HYGIENE` | 12 000 GNF |
+| Thermomètre digital | `DISPOSITIF_MEDICAL` | 85 000 GNF |
+
+60 unités de chacun en stock. **Deux choses à vérifier** :
+
+- côté **pharmacien**, l'écran des stocks et la saisie de facture proposent les **9 produits** ;
+- côté **médecin ou ASC**, la liste de prescription n'en propose que **5** — on ne prescrit pas du lait. L'API le refuserait de toute façon, mais autant ne pas le proposer.
 
 ---
 
