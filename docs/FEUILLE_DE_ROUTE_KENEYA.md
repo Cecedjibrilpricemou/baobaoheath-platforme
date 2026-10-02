@@ -163,7 +163,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 >
 > ⚠️ **Un blocage de modèle est à lever d'abord.** `Stock` porte `@@unique([idStructure, idMedicament])` et **une seule** `datePeremption` : deux lots du même produit périmant à deux dates différentes ne tiennent pas dedans, alors que c'est exactement ce que produit un approvisionnement. Il faut un modèle `LotStock`, `Stock` devenant la somme de ses lots. Migration avec reprise.
 >
-> De même, la **vente au comptoir n'existe pas** : `Facture` est attachée à une consultation (`idConsultation @unique`). Une boîte vendue à un passant n'a aucun objet pour l'enregistrer — donc rien à totaliser dans un tableau de bord.
+> De même, la **vente au comptoir n'existe pas**. `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Sans lignes, il n'y a rien à totaliser dans un tableau de bord.
 
 > **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**. Le front reste à faire.
 >

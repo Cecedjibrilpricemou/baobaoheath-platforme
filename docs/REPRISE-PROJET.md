@@ -265,7 +265,7 @@ Vérifié le 2026-10-02. **Deux manques sur quatre ont été comblés** depuis l
 | Manque | Bloque | Détail |
 |---|---|---|
 | ~~**`LotStock`**~~ | ~~bloc 6~~ | **Comblé le 2026-09-30.** `LotStock` et `Approvisionnement` existent, `Stock.datePeremption` a disparu, et la consommation se fait au plus proche de la péremption. La migration `20260930160000_lots_de_stock_et_approvisionnement` a reversé les 7 stocks existants en 7 lots, 2 362 unités conservées. |
-| **Vente au comptoir** | bloc 7 | `Facture` est attachée à une consultation (`idConsultation @unique`). Une boîte vendue à un passant n'a aucun objet pour l'enregistrer — donc rien à totaliser dans un tableau de bord. |
+| **Vente au comptoir** | bloc 7 | `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Sans lignes, il n'y a rien à totaliser dans un tableau de bord ni à rapprocher du stock. |
 | ~~**Catégorie de produit fermée**~~ | ~~bloc 8~~ | **Comblé le 2026-10-01.** `CategorieProduit` est une énumération de huit valeurs ; l'ancien texte libre est devenu `classeTherapeutique`, qui est un autre axe. Le catalogue accepte des articles sans DCI ni dosage, et une contrainte SQL (`medicaments_medicament_complet`) garantit qu'un `MEDICAMENT` porte toujours DCI, forme et dosage. Deux catalogues distincts : le comptoir voit tout, la prescription ne voit que des médicaments. |
 | **Modèle d'assurance** | bloc 8 | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance ». |
 
@@ -417,7 +417,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | 4 | Suppression du rôle biologiste | 2026-09-30 | Le laborantin valide. Migration des comptes faite **avant** la recréation de l'énumération, sinon la conversion échoue. Les comptes rendus gardent le nom de leur valideur. |
 | 5 | Prise de rendez-vous à distance | 2026-09-30 | Le patient demande depuis chez lui ; l'accueil ou le médecin accepte, ce qui crée l'épisode et le rendez-vous en une transaction. |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | 2026-09-30 | `Stock.datePeremption` disparaît au profit de `LotStock`. Saisie de facture, une ligne par lot avec sa propre date. Sortie **au plus proche de la péremption**, lot périmé bloqué. |
-| 7 | Pharmacie : vente au comptoir et tableau de bord | — | **Bloqué par le modèle** : `Facture` est attachée à une consultation (`idConsultation @unique`). Rien ne peut enregistrer une vente à un passant. |
+| 7 | Pharmacie : vente au comptoir et tableau de bord | — | **Bloqué par le modèle** : `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) |
 | 8 | Assurance | — | Débloqué le 01/10 côté catalogue ; reste à modéliser `Assureur`, `ContratAssurance` et le type de structure « assurance ». |
 
 ### Décisions prises, à ne pas rediscuter
@@ -472,7 +472,7 @@ Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les ca
 
 | # | Bloc | Taille | Ce qui bloque, précisément |
 |---|---|---|---|
-| 7 | Pharmacie : vente au comptoir et tableau de bord | M | **`Facture` est attachée à une consultation** (`idConsultation @unique` dans `schema.prisma`). Une boîte vendue à un passant n'a aucun objet pour être enregistrée — donc rien à totaliser dans un tableau de bord. Il faut un modèle de vente propre, avec ses lignes, son mode de paiement et son vendeur. La catégorie de produit existe désormais, donc la règle « un produit réglementé ne se vend pas sans ordonnance » (EF-05-12) est exprimable. |
+| 7 | Pharmacie : vente au comptoir et tableau de bord | M | `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Il faut donc un modèle de vente propre : lignes, remise, mode de paiement (`ModePaiement` existe déjà), vendeur, établissement, et un client **facultatif**. La catégorie de produit existe depuis le 01/10, donc la règle « un produit réglementé ne se vend pas sans ordonnance » (EF-05-12) est exprimable. |
 | 8 | Assurance et tiers payant | L | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance » dans le modèle. Les exclusions sont désormais **exprimables** grâce à `CategorieProduit`, et la règle du chef de projet — « assuré à 100 % ne veut pas dire tout est pris » — demande des plafonds et des taux par catégorie. Suppose le bloc 7 pour les ventes au comptoir. |
 
 ### C. Ce que l'addendum ne couvre pas et qu'il ne faut pas perdre
@@ -591,7 +591,7 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 Si vous reprenez le projet et cherchez par où entrer, **le bloc 7 est le bon point de départ** — mais il commence par une décision de modèle, pas par du code.
 
 1. Lisez le point 1 de `docs/ADDENDUM-CDC-2026-09-28.md` (gestion complète d'une pharmacie).
-2. Regardez `Facture` dans `schema.prisma` : `idConsultation` y est `@unique`. **Rien ne peut enregistrer une vente sans consultation.** C'est le verrou.
+2. Regardez `Facture` dans `schema.prisma`. Le verrou n'est pas le lien à la consultation — `idConsultation` est `String?`. Ce sont **trois autres choses** : la facture n'a **aucune ligne** (juste un `montantGnf`, donc on ne sait pas ce qui a été vendu), elle exige un **`idPatient`** (un client de passage sans dossier ne peut pas être facturé), et elle ne porte ni vendeur, ni remise, ni établissement. Le seul code qui en crée une est `creerPaiementConsultation` dans `paiement.service.ts`, qui part d'une consultation.
 3. Tranchez la question **E** des questions ouvertes (vente sans ordonnance), qui détermine les règles de la caisse.
 4. Modélisez la vente au comptoir : lignes, remise, mode de paiement (`ModePaiement` existe déjà avec `ESPECES`, `ORANGE_MONEY`, `MTN_MOMO`), vendeur, avec ou sans ordonnance. `CategorieProduit` permet déjà d'appliquer EF-05-12.
 5. La sortie de stock passe par `consommerLots` (`approvisionnement.service.ts`) : réutilisez-la, ne la réécrivez pas — elle sort au plus proche de la péremption et refuse un lot périmé.
