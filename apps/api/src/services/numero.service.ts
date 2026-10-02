@@ -6,7 +6,7 @@
 // patient au meme instant ne peuvent pas obtenir le meme numero.
 import { prisma } from '../config/prisma';
 
-export type PrefixeNumero = 'EP' | 'DA' | 'EC' | 'OR' | 'CM' | 'LV' | 'AP';
+export type PrefixeNumero = 'EP' | 'DA' | 'EC' | 'OR' | 'CM' | 'LV' | 'AP' | 'VE';
 
 // Seule capacite requise : $queryRaw. Le client Prisma (etendu) et le client
 // de transaction la fournissent tous deux.

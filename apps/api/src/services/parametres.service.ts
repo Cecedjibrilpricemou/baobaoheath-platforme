@@ -82,6 +82,17 @@ export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
     // EF-05-09 : plafond de ce qu'un prescripteur peut accorder d'un trait.
     renouvellementsMax: 6,
   },
+  // Le comptoir d'officine (addendum du 2026-09-28, point 1.1).
+  pharmacie: {
+    // Sans plafond, une erreur de frappe ramene une vente a zero sans que rien
+    // ne s'y oppose. 20 % est un depart prudent, administrable.
+    remiseMaxPourcent: 20,
+    // Vide par defaut : seuls les produits reglementes exigent une ordonnance
+    // (EF-05-12), ce qui est acquis. La question E de l'addendum — faut-il en
+    // soumettre d'autres categories ? — n'est pas tranchee, et la reponse se
+    // posera ici sans toucher au code.
+    categoriesExigeantOrdonnance: [],
+  },
 };
 
 type Section = keyof ParametresSystemeValeurs;

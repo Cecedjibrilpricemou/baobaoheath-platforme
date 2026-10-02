@@ -1359,6 +1359,27 @@ export interface ParametresPrescriptionView {
   renouvellementsMax: number;
 }
 
+/** Regles du comptoir d'officine (addendum du 2026-09-28, point 1.1). */
+export interface ParametresPharmacieView {
+  /**
+   * Plafond de remise qu'un vendeur peut accorder, en pourcentage du brut.
+   * Sans plafond, une erreur de frappe — ou une complaisance — ramene une
+   * vente a zero sans que rien ne s'y oppose.
+   */
+  remiseMaxPourcent: number;
+
+  /**
+   * Categories soumises a ordonnance **en plus** des produits reglementes,
+   * qui le sont toujours (EF-05-12).
+   *
+   * La question E de l'addendum — « la vente sans ordonnance est-elle
+   * autorisee pour tous les produits ? » — n'est pas tranchee. La reponse
+   * s'administre donc ici, comme les decisions D1 a D10, plutot que de vivre
+   * en constante dans le code.
+   */
+  categoriesExigeantOrdonnance: CategorieProduit[];
+}
+
 export interface ParametresSystemeValeurs {
   identite: ParametresIdentiteView;
   facturation: ParametresFacturationView;
@@ -1366,6 +1387,7 @@ export interface ParametresSystemeValeurs {
   alertes: ParametresAlertesView;
   sync: ParametresSyncView;
   prescription: ParametresPrescriptionView;
+  pharmacie: ParametresPharmacieView;
 }
 
 /** GET/PUT /admin-structure/parametres */
@@ -1382,6 +1404,7 @@ export interface UpdateParametresSystemeDto {
   alertes?: Partial<ParametresAlertesView>;
   sync?: Partial<ParametresSyncView>;
   prescription?: Partial<ParametresPrescriptionView>;
+  pharmacie?: Partial<ParametresPharmacieView>;
 }
 
 /** POST /admin-structure/parametres/logo — reponse. */
@@ -1922,4 +1945,104 @@ export interface ExamenSuiviView {
   libelle: string;
   unite: string | null;
   nbPoints: number;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// P6 — Vente au comptoir et tableau de bord d'officine
+// Routes /pharmacien/ventes et /pharmacien/tableau-de-bord (PHARMACIEN).
+// Addendum du 2026-09-28, points 1.1 et 1.2.
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Une vente au comptoir est payee sur place : il n'y a pas d'etat « en
+ * attente ». `ANNULEE` ne sert pas a un retour client — EF-07-11 l'interdit —
+ * mais a corriger une erreur de saisie, et elle remet les lots consommes.
+ */
+export type StatutVente = 'PAYEE' | 'ANNULEE';
+
+export interface LigneVenteView {
+  id: string;
+  quantite: number;
+  /** Prix figes a la vente : tarif de reference plus la marge de l'officine. */
+  prixUnitaireGnf: number;
+  montantGnf: number;
+  medicament: ProduitResumeView;
+}
+
+export interface VenteComptoirView {
+  id: string;
+  numero: string;
+  statut: StatutVente;
+  montantBrutGnf: number;
+  remiseGnf: number;
+  montantNetGnf: number;
+  modePaiement: ModePaiement;
+  numeroOperateur?: string | null;
+  creeLe: HorodatageApi;
+  annuleeLe?: HorodatageApi | null;
+  motifAnnulation?: string | null;
+  vendeur: { id: string; prenom: string; nom: string };
+  /** Absent pour un client de passage, qui n'a pas de dossier. */
+  patient?: { id: string; prenom: string; nom: string } | null;
+  /** Renseigne quand la vente sert une ordonnance. */
+  numeroOrdonnance?: string | null;
+  lignes: LigneVenteView[];
+}
+
+/** POST /pharmacien/ventes — une ligne du panier. */
+export interface LigneVenteDto {
+  idMedicament: string;
+  quantite: number;
+}
+
+export interface CreerVenteDto {
+  lignes: LigneVenteDto[];
+  modePaiement: ModePaiement;
+  /** Numero mobile money, hors paiement en especes. */
+  numeroOperateur?: string;
+  remiseGnf?: number;
+  /** Facultatif : un passant n'a pas de dossier. */
+  idPatient?: string;
+  /**
+   * Obligatoire si le panier contient un produit reglemente, ou d'une
+   * categorie que les parametres soumettent a ordonnance.
+   */
+  idOrdonnance?: string;
+}
+
+export interface AnnulerVenteDto {
+  /** Motif obligatoire : une annulation sans raison n'est pas tracable. */
+  motif: string;
+}
+
+/** Une ligne du classement des produits les plus vendus. */
+export interface ProduitVenduView {
+  medicament: ProduitResumeView;
+  quantite: number;
+  montantGnf: number;
+}
+
+/** Un produit dont le stock est au seuil d'alerte ou en dessous. */
+export interface RuptureStockView {
+  medicament: ProduitResumeView;
+  quantite: number;
+  seuilAlerte: number;
+  unite: string;
+}
+
+/** GET /pharmacien/tableau-de-bord. */
+export interface TableauDeBordOfficineView {
+  /** Le jour couvert par les chiffres « du jour », au fuseau du serveur. */
+  jour: HorodatageApi;
+  chiffreDuJourGnf: number;
+  nombreVentesDuJour: number;
+  panierMoyenGnf: number;
+  /** Ce que la caisse a encaisse, par moyen de paiement, sur le jour. */
+  encaissementsParMode: { modePaiement: ModePaiement; montantGnf: number; nombre: number }[];
+  /** Classement sur les 30 derniers jours, ventes annulees exclues. */
+  produitsLesPlusVendus: ProduitVenduView[];
+  ruptures: RuptureStockView[];
+  /** Nombre de lots qui approchent de leur date, ou l'ont depassee. */
+  lotsAPerimer: number;
 }

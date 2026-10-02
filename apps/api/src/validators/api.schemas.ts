@@ -118,6 +118,27 @@ export const creerApprovisionnementSchema = z.object({
   })).min(1).max(200),
 }).strict();
 
+// ── Vente au comptoir (addendum, point 1.1) ──────────────────────────
+//
+// La remise n'est pas plafonnee ici : le plafond est un parametre
+// administrable (`pharmacie.remiseMaxPourcent`), donc la regle vit dans le
+// service. Ce schema ne verifie que la forme.
+export const creerVenteSchema = z.object({
+  lignes: z.array(z.object({
+    idMedicament: id,
+    quantite: positiveInt.max(10000),
+  })).min(1).max(100),
+  modePaiement: z.enum(['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO']),
+  numeroOperateur: z.string().trim().max(40).optional(),
+  remiseGnf: nonNegativeInt.optional(),
+  idPatient: id.optional(),
+  idOrdonnance: id.optional(),
+}).strict();
+
+export const annulerVenteSchema = z.object({
+  motif: z.string().trim().min(5).max(500),
+}).strict();
+
 export const creerDemandeRendezVousSchema = z.object({
   motif: z.string().trim().min(5).max(1000),
   idStructure: id.optional(),

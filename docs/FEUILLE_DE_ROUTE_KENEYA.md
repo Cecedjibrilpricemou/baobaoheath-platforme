@@ -20,7 +20,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
 | **P4** Identité patient, consentement, accès | 0 | — | 7 | ❌ **non commencé** — le plus sensible réglementairement |
 | **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
-| **P6** Commande pharmacie et gestion d'officine | 3 | 1 | 9 | ⏳ lots, approvisionnement et péremptions livrés ; **vente au comptoir bloquée par le modèle** |
+| **P6** Commande pharmacie et gestion d'officine | 3 | 3 | 7 | ⏳ lots, approvisionnement et péremptions livrés ; **vente au comptoir et tableau de bord : API livrée le 02/10, front à faire** |
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
 | **P9** Notifications neutres | 0 | — | 2 | ❌ non commencé |
@@ -28,7 +28,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P11** Administration, audit, référentiels | 0 | — | 5 | ❌ non commencé — **conditionne les référentiels** |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
-| **Total** | **36** | **1** | **58** | sur 95 |
+| **Total** | **36** | **3** | **56** | sur 95 |
 
 **Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
 
@@ -157,7 +157,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Tous les documents téléchargeables/imprimables (EF-06-02/03).
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
-### P6 — Commande pharmacie **et gestion d'officine** · L · EF-07 / §3.2 · ⏳ **3 faites + 1 partielle sur 13**
+### P6 — Commande pharmacie **et gestion d'officine** · L · EF-07 / §3.2 · ⏳ **3 faites + 3 partielles sur 13**
 
 > **Élargi le 2026-09-28** (addendum, point 1) : il ne s'agit plus seulement de servir des ordonnances, mais de **tenir une pharmacie**. S'ajoutent la vente au comptoir, l'import Excel du catalogue, l'approvisionnement par facture et les alertes de péremption.
 >
@@ -181,8 +181,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Stock temps réel + pharmacie alternative (EF-07-06) ; délivrance partielle (EF-07-07) ; pas de retour (EF-07-11).
 - [ ] Historique et renouvellement (EF-07-09).
 - [x] **API + front livrés le 2026-09-30** — **`LotStock`** : quantité, date de péremption, facture d'origine, prix d'achat. Sortie au plus proche de la péremption (`consommerLots`), et délivrance d'un lot périmé bloquée. `Stock.datePeremption` a disparu ; `Stock.quantite` est la somme de ses lots.
-- [ ] **Vente au comptoir** : lignes, remise, mode de paiement, vendeur, avec ou sans ordonnance, avec ou sans assurance. Un produit réglementé ne s'y vend pas sans ordonnance (EF-05-12).
-- [ ] **Tableau de bord officine** : chiffre du jour, produits les plus vendus, ruptures, encaissements par mode.
+- [~] **Vente au comptoir** — **API livree le 2026-10-02** : modeles `VenteComptoir` et `LigneVente`, lignes, remise plafonnee par parametre, mode de paiement, vendeur, client **facultatif** (un passant n'a pas de dossier), ordonnance exigee pour un produit reglemente (EF-05-12) et verifiee par les memes regles qu'au guichet de delivrance. Sortie de stock par `consommerLots`. Annulation d'une erreur de saisie qui remet **exactement** les lots sortis — ce n'est pas un retour client (EF-07-11). **Reste le front**, et le volet assurance qui depend de P10.
+- [~] **Tableau de bord officine** — **API livree le 2026-10-02** : chiffre du jour depuis minuit, panier moyen, encaissements par moyen de paiement, dix produits les plus vendus sur trente jours, ruptures et lots a perimer. Les ventes annulees sont exclues de tous les agregats. **Reste le front.**
 - [ ] **Import Excel du catalogue**, avec rapport ligne par ligne — un import qui échoue en silence sur trois lignes est pire que pas d'import.
 - [~] **Approvisionnement par facture** — **premier temps livré le 2026-09-30 (API + front)** : saisie assistée, une ligne par lot avec sa propre péremption, facture attachée en justificatif, total recalculé à la frappe. **Reste l'extraction automatique**, qui devra **toujours** être relue avant enregistrement : une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
 - [x] **API + front livrés le 2026-09-30** — **Alerte de péremption proche**, seuil paramétrable (`STOCK_PEREMPTION_ALERTE_JOURS`, 90 par défaut) et horizon choisi à l'écran (30/60/90/180). Les lots déjà périmés sont présentés à part : ils sont à retirer, pas à surveiller.

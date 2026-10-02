@@ -65,6 +65,7 @@ const hopital = require('../src/routes/hopital.routes').default as { stack: Couc
 const commande = require('../src/routes/commande.routes').default as { stack: Couche[] };
 const resultats = require('../src/routes/resultats.routes').default as { stack: Couche[] };
 const medecin = require('../src/routes/medecin.routes').default as { stack: Couche[] };
+const pharmacien = require('../src/routes/pharmacien.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -167,5 +168,39 @@ describe('le pointage de presence reste a l accueil (addendum, point 2)', () => 
       .filter((c) => c.route?.path.includes('rendez-vous'))
       .map((c) => `${Object.keys(c.route!.methods)[0]} ${c.route!.path}`);
     expect(cheminsRdv).toEqual(['post /rendez-vous/:id/presence']);
+  });
+});
+
+
+// ── La caisse appartient a l'officine (addendum, points 1.1 et 1.2) ──
+describe('le comptoir d officine est reserve au pharmacien', () => {
+  it.each([
+    ['post', '/ventes'],
+    ['get', '/ventes'],
+    ['get', '/ventes/:id'],
+    ['post', '/ventes/:id/annuler'],
+    ['get', '/tableau-de-bord'],
+  ])('%s %s n est ouverte qu a PHARMACIEN', (methode, chemin) => {
+    expect(rolesPour(pharmacien, methode, chemin)).toEqual(['PHARMACIEN']);
+  });
+
+  // Le chiffre d'affaires d'une officine n'est pas une donnee de soin : ni le
+  // medecin, ni l'accueil, ni l'ASC n'ont a le lire.
+  it.each(['MEDECIN', 'AGENT_ACCUEIL', 'ASC', 'TECHNICIEN_LABO', 'PATIENT'] as const)(
+    'ferme le tableau de bord a %s',
+    (role) => {
+      expect(rolesPour(pharmacien, 'get', '/tableau-de-bord')).not.toContain(role);
+    }
+  );
+
+  // Une route qu'on croit protegee mais qui n'existe pas donnerait un test
+  // vert sans rien garder.
+  it('les cinq routes existent bien', () => {
+    for (const [methode, chemin] of [
+      ['post', '/ventes'], ['get', '/ventes'], ['get', '/ventes/:id'],
+      ['post', '/ventes/:id/annuler'], ['get', '/tableau-de-bord'],
+    ] as const) {
+      expect(rolesPour(pharmacien, methode, chemin)).not.toBeNull();
+    }
   });
 });

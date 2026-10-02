@@ -26,12 +26,12 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | | |
 |---|---|
 | Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types`. **Un seul `package-lock.json`, à la racine.** |
-| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **25 fichiers de routes, 32 services, 26 groupes d'endpoints** |
+| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **25 fichiers de routes, 33 services, 26 groupes d'endpoints** |
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **48 écrans dans 10 espaces** |
-| Modèle | **43 modèles Prisma, 24 enums, 26 migrations, 12 rôles** |
+| Modèle | **45 modèles Prisma, 25 enums, 27 migrations, 12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
-| Tests | **400 API** (Jest, 26 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
-| Avancement | Feuille de route : **36 cases faites, 1 partielle, 58 restantes sur 95**. Addendum : **6 blocs livrés sur 8**. |
+| Tests | **447 API** (Jest, 27 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
+| Avancement | Feuille de route : **36 cases faites, 3 partielles, 56 restantes sur 95**. Addendum : **6 blocs livrés sur 8**, le 7e livré côté API. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -265,7 +265,7 @@ Vérifié le 2026-10-02. **Deux manques sur quatre ont été comblés** depuis l
 | Manque | Bloque | Détail |
 |---|---|---|
 | ~~**`LotStock`**~~ | ~~bloc 6~~ | **Comblé le 2026-09-30.** `LotStock` et `Approvisionnement` existent, `Stock.datePeremption` a disparu, et la consommation se fait au plus proche de la péremption. La migration `20260930160000_lots_de_stock_et_approvisionnement` a reversé les 7 stocks existants en 7 lots, 2 362 unités conservées. |
-| **Vente au comptoir** | bloc 7 | `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Sans lignes, il n'y a rien à totaliser dans un tableau de bord ni à rapprocher du stock. |
+| ~~**Vente au comptoir**~~ | ~~bloc 7~~ | **Comblé le 2026-10-02.** `VenteComptoir` + `LigneVente`, avec client **facultatif**, remise plafonnée par paramètre, vendeur, établissement, et les lots consommés gardés sur chaque ligne. `Facture` est restée la note d'une consultation : l'élargir aurait rendu ambiguë chaque requête existante. Trois contraintes SQL tiennent les invariants d'argent. |
 | ~~**Catégorie de produit fermée**~~ | ~~bloc 8~~ | **Comblé le 2026-10-01.** `CategorieProduit` est une énumération de huit valeurs ; l'ancien texte libre est devenu `classeTherapeutique`, qui est un autre axe. Le catalogue accepte des articles sans DCI ni dosage, et une contrainte SQL (`medicaments_medicament_complet`) garantit qu'un `MEDICAMENT` porte toujours DCI, forme et dosage. Deux catalogues distincts : le comptoir voit tout, la prescription ne voit que des médicaments. |
 | **Modèle d'assurance** | bloc 8 | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance ». |
 
@@ -417,7 +417,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | 4 | Suppression du rôle biologiste | 2026-09-30 | Le laborantin valide. Migration des comptes faite **avant** la recréation de l'énumération, sinon la conversion échoue. Les comptes rendus gardent le nom de leur valideur. |
 | 5 | Prise de rendez-vous à distance | 2026-09-30 | Le patient demande depuis chez lui ; l'accueil ou le médecin accepte, ce qui crée l'épisode et le rendez-vous en une transaction. |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | 2026-09-30 | `Stock.datePeremption` disparaît au profit de `LotStock`. Saisie de facture, une ligne par lot avec sa propre date. Sortie **au plus proche de la péremption**, lot périmé bloqué. |
-| 7 | Pharmacie : vente au comptoir et tableau de bord | — | **Bloqué par le modèle** : `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) |
+| 7 | Pharmacie : vente au comptoir et tableau de bord | **API livrée le 2026-10-02**, front à faire | Le blocage de modèle est levé. Reste le volet assurance de la vente, qui dépend du bloc 8. |
 | 8 | Assurance | — | Débloqué le 01/10 côté catalogue ; reste à modéliser `Assureur`, `ContratAssurance` et le type de structure « assurance ». |
 
 ### Décisions prises, à ne pas rediscuter
@@ -504,7 +504,7 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 | Point | Constat |
 |---|---|
 | ~~`apps/api/prisma.config.js`~~ | ✅ **Résolu le 2026-09-28** — supprimé et ignoré. |
-| Swagger | **5 routes pharmacien documentées sur 14** (recompté le 02/10 : `ordonnances/verifier`, `ordonnances/{id}/delivrer`, `approvisionnements`, `peremptions`, `medicaments/{id}/lots`). Manquent `scan`, `renouveler`, les stocks, le catalogue et les agents, alors que le CDC exige la documentation. |
+| Swagger | **10 routes pharmacien documentées sur 19** (recompté le 02/10, après le bloc 7). Manquent `scan`, `renouveler`, les stocks, le catalogue, les agents et `stocks/reapprovisionner`, alors que le CDC exige la documentation. |
 | CI | ✅ **Les actions sont en `@v5` et Node 24** (vérifié le 02/10 ; la dette de dépréciation est levée). Reste : `ubuntu-latest` bascule vers **Ubuntu 26 le 19/10/2026**, et le runner l'annonce à chaque exécution. |
 | `REDIS_URL` | Non configuré : limitation de débit **en mémoire**, donc inopérante à plusieurs instances. |
 | Gmail | Non configuré : OTP en repli développement. Inacceptable en production. |
@@ -512,7 +512,7 @@ L'agrément de l'hébergeur santé (ENF-05) et la reprise de données commandent
 | Espace ASC non démontrable | La semence de démonstration ne crée **aucun compte ASC**, et le mot de passe des comptes ASC existants n'est pas connu (voir `COMPTES-KENEYA.md`). L'espace agent de santé communautaire ne peut donc pas être montré, ni vérifié au navigateur. |
 | Semences hors typage | `apps/api/tsconfig.json` déclare `include: src/**/*` : **`prisma/seed*.ts` n'est pas type-vérifié**. Une erreur y reste invisible jusqu'à l'exécution. |
 | Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend — c'est la dernière case de P2. |
-| Modèle `Medicament` mal nommé | Le catalogue contient des cosmétiques et du lait depuis le 02/10. Le renommer `Produit` est mécanique mais touche presque tous les services ; non fait, et la relation `Stock.medicament` désigne donc parfois un savon. |
+| Modèle `Medicament` mal nommé | Le catalogue contient des cosmétiques et du lait depuis le 01/10. Le renommer `Produit` est mécanique mais touche presque tous les services ; non fait, et les relations `Stock.medicament` et `LigneVente.medicament` désignent donc parfois un savon. |
 | Exceptions d'audit | Quatre avis `high`/`critical` sont couverts par des exceptions datées dans `scripts/audit-gate.mjs` : `deepmerge-ts`, `mysql2` (×2) et `piscina`. **Réexamen : 01/11/2026 pour piscina, 01/12/2026 pour les trois autres.** Chacune dit pourquoi elle ne nous expose pas. |
 | `overrides` npm inopérants | npm 11 **ne déplace pas** une dépendance épinglée en version exacte par un parent, ni à plat ni en forme imbriquée. Retirer l'entrée du verrou pour forcer une résolution fait **perdre des paquets** à l'arbre. Constaté sur `prisma` en septembre et reconfirmé sur `@angular/build`/`piscina` le 02/10. |
 | Images de la landing | Banques d'images génériques, **noms de fichiers trompeurs**, une avec signalétique en espagnol. Manquent : laboratoire, livraison. |

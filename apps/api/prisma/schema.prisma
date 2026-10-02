@@ -110,6 +110,14 @@ enum StatutOrdonnance {
   ANNULEE
 }
 
+/// Une vente au comptoir est payee sur place : il n'y a pas d'etat « en
+/// attente ». ANNULEE ne sert pas a un retour client — EF-07-11 l'interdit —
+/// mais a corriger une erreur de saisie, et elle remet les lots consommes.
+enum StatutVente {
+  PAYEE
+  ANNULEE
+}
+
 /// Ce que le catalogue peut contenir, en liste fermee (decision du 2026-10-01).
 ///
 /// `Medicament.categorie` etait un texte libre facultatif : « cosmetique »,
@@ -240,6 +248,8 @@ model Utilisateur {
   demandesRdvVisees    DemandeRendezVous[] @relation("DemandesRendezVousMedecin")
   demandesRdvTraitees  DemandeRendezVous[] @relation("DemandesRendezVousTraitees")
   approvisionnementsSaisis Approvisionnement[] @relation("ApprovisionnementsSaisis")
+  ventesVendues            VenteComptoir[]     @relation("VentesVendeur")
+  ventesAnnulees           VenteComptoir[]     @relation("VentesAnnulees")
   syncEvents            SyncEvent[]
   syncMutations         SyncMutation[]
   consentementsDonnes   ConsentementPatient[]
@@ -370,6 +380,7 @@ model StructureSante {
 
   commandes         Commande[]         @relation("PharmacieCommande")
   reponsesCommandes ReponsePharmacie[] @relation("ReponsesPharmacie")
+  ventesComptoir    VenteComptoir[]
   latitude    Float?
   longitude   Float?
   telephone   String?
@@ -433,6 +444,7 @@ model PatientProfile {
   consultations Consultation[]
   vaccinations  Vaccination[]
   factures      Facture[]
+  ventesComptoir VenteComptoir[]
   rendezVous    RendezVous[]
   consentements ConsentementPatient[]
   episodes      EpisodeSoins[]
@@ -635,6 +647,7 @@ model Medicament {
 
   lignesOrdonnance LigneOrdonnance[]
   stocks           Stock[]
+  lignesVente      LigneVente[]
 
   @@index([codeAtc])
   @@index([categorie])
@@ -711,6 +724,7 @@ model Ordonnance {
   signeLe    DateTime?
 
   lignes   LigneOrdonnance[]
+  ventesComptoir VenteComptoir[]
   commande Commande?
 
   @@index([idConsultation])
@@ -1451,4 +1465,88 @@ model ReponsePharmacie {
   @@unique([idCommande, idStructure])
   @@index([idCommande])
   @@map("reponses_pharmacie")
+}
+
+
+// ============================================================
+// Vente au comptoir (addendum du 2026-09-28, points 1.1 et 1.2)
+// ============================================================
+
+/// Une vente au comptoir d'officine.
+///
+/// `Facture` ne pouvait pas la porter : elle n'a aucune ligne — donc on ne
+/// sait pas ce qui a ete vendu, et il n'y a rien a totaliser dans un tableau
+/// de bord — elle exige un `idPatient`, alors qu'un client de passage n'a pas
+/// de dossier, et elle ne porte ni vendeur, ni remise, ni etablissement.
+/// Elle reste donc la note d'une consultation, et la vente vit ici.
+model VenteComptoir {
+  id     String      @id @default(cuid())
+  numero String      @unique
+  statut StatutVente @default(PAYEE)
+
+  /// Somme des lignes avant remise, la remise, et ce qui est reellement
+  /// encaisse. Les trois sont stockes : recalculer le net a la lecture
+  /// supposerait que la regle de remise n'a jamais change.
+  montantBrutGnf Int
+  remiseGnf      Int @default(0)
+  montantNetGnf  Int
+
+  modePaiement    ModePaiement
+  numeroOperateur String?
+
+  /// Facultatif : un passant n'a pas de dossier, et l'obliger a en ouvrir un
+  /// pour acheter du savon n'a pas de sens. Renseigne, il relie la vente a
+  /// l'historique du patient.
+  idPatient String?
+  patient   PatientProfile? @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  /// Facultative, sauf si la vente contient un produit reglemente ou d'une
+  /// categorie que les parametres soumettent a ordonnance (EF-05-12).
+  idOrdonnance String?
+  ordonnance   Ordonnance? @relation(fields: [idOrdonnance], references: [id], onDelete: Restrict)
+
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idVendeur String
+  vendeur   Utilisateur @relation("VentesVendeur", fields: [idVendeur], references: [id], onDelete: Restrict)
+
+  annuleeLe       DateTime?
+  motifAnnulation String?
+  idAnnuleePar    String?
+  annuleePar      Utilisateur? @relation("VentesAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
+
+  creeLe DateTime @default(now())
+
+  lignes LigneVente[]
+
+  @@index([idStructure, creeLe(sort: Desc)])
+  @@index([idStructure, statut])
+  @@map("ventes_comptoir")
+}
+
+model LigneVente {
+  id       String @id @default(cuid())
+  quantite Int
+
+  /// Prix figes au moment de la vente : prix national de reference plus la
+  /// marge de l'officine. Les relire du catalogue plus tard donnerait un
+  /// chiffre d'affaires qui change quand un tarif change.
+  prixUnitaireGnf Int
+  montantGnf      Int
+
+  /// Les lots effectivement consommes, au format `[{ idLot, quantite }]`.
+  /// Deux usages : annuler une erreur de saisie en remettant exactement ce qui
+  /// est sorti, et savoir quel lot est parti chez qui en cas de rappel.
+  lotsConsommes Json
+
+  idVente String
+  vente   VenteComptoir @relation(fields: [idVente], references: [id], onDelete: Cascade)
+
+  idMedicament String
+  medicament   Medicament @relation(fields: [idMedicament], references: [id], onDelete: Restrict)
+
+  @@index([idVente])
+  @@index([idMedicament])
+  @@map("lignes_vente")
 }
