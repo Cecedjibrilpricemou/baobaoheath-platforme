@@ -212,10 +212,15 @@ export class ConsultationDetailComponent implements OnInit {
   /** Affiche lorsqu'un catalogue (medicaments, structures) n'a pas pu etre charge. */
   erreurCatalogue = signal('');
 
+  /**
+   * Un prescripteur choisit par molecule : la DCI doit rester visible, meme
+   * quand le libelle porte deja le nom commercial. Elle avait disparu du
+   * libelle le 2026-10-01, et la liste ne se cherchait plus par molecule.
+   */
   readonly medicamentOptions = computed(() =>
     this.medicaments().map(m => ({
       value: m.id,
-      label: [m.libelle, m.forme].filter(Boolean).join(' · '),
+      label: this.getMedicamentLabel(m) + (m.forme ? ` · ${m.forme}` : ''),
     }))
   );
 
