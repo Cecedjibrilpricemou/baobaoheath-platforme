@@ -5,6 +5,12 @@
 // patient et courbes d'evolution.
 import { InterpretationResultat, Prisma, StatutDemandeAnalyse } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import {
+  messagePatientInformation,
+  messageProfessionnelIntervention,
+  messageProfessionnelUrgent,
+  messageRendezVous,
+} from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { buildPatientWhereForUser } from './access-control.service';
@@ -221,7 +227,9 @@ export async function planifierPrelevement(user: JwtPayload, idDemande: string, 
       metadonnees: { idDemande: d.id, idEpisode: d.idEpisode },
     });
     const { nomCourt } = await getIdentitePlateforme();
-    await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: prelevement prevu ${ou}${quand}. Details dans votre espace.`);
+    // EF-11-02 : un rendez-vous, sans dire pour quoi. La date et le lieu
+    // restent, le patient devant pouvoir se presenter.
+    await envoyerSmsSimule(patientUser.telephone, messageRendezVous(nomCourt, quand.trim(), ou.trim() || undefined));
   }
   return versDemandeView(maj);
 }
@@ -352,7 +360,10 @@ export async function validerResultats(user: JwtPayload, idDemande: string, dto:
         lienAction: '/hopital/alertes',
         metadonnees: { idDemande: d.id, idEpisode: d.idEpisode, critique: true },
       });
-      await envoyerSmsSimule(prescripteur.telephone, `${nomCourt}: RESULTAT CRITIQUE demande ${d.numero}. Connectez-vous pour accuser lecture.`);
+      // EF-11-02 : meme vers un professionnel, un SMS s'affiche sur un ecran
+      // verrouille. Le numero de demande est opaque et suffit a retrouver le
+      // dossier ; l'urgence passe, la nature du resultat non.
+      await envoyerSmsSimule(prescripteur.telephone, messageProfessionnelUrgent(nomCourt, d.numero));
     } else {
       await notifierSansBloquer({
         idUtilisateur: prescripteur.id,
@@ -383,7 +394,8 @@ async function informerPatient(idPatient: string, idDemande: string, numero: str
     metadonnees: { idDemande, idEpisode },
   });
   const { nomCourt } = await getIdentitePlateforme();
-  await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: vos resultats d'analyses sont disponibles dans votre espace.`);
+  // EF-11-02 : le patient apprend qu'une information l'attend, pas laquelle.
+  await envoyerSmsSimule(patientUser.telephone, messagePatientInformation(nomCourt));
 }
 
 // ── Liberation des resultats par le medecin (addendum du 2026-09-28) ───
@@ -515,7 +527,7 @@ export async function traiterAlertesCritiques(maintenant = new Date()): Promise<
       lienAction: '/hopital/alertes',
       metadonnees: { idAlerte: a.id, idDemande: a.idDemande, critique: true },
     });
-    await envoyerSmsSimule(admin.telephone, `${nomCourt}: resultat critique sans accuse (demande ${a.demande.numero}). Intervention requise.`);
+    await envoyerSmsSimule(admin.telephone, messageProfessionnelIntervention(nomCourt, a.demande.numero));
   }
 
   // Garde-fou de la liberation (addendum du 2026-09-28). Aucune branche de ce
@@ -582,7 +594,7 @@ async function escaladerLiberations(maintenant: Date): Promise<number> {
       lienAction: '/hopital/alertes',
       metadonnees: { idDemande: d.id, idEpisode: d.idEpisode },
     });
-    await envoyerSmsSimule(admin.telephone, `${nomCourt}: resultats non liberes au patient (demande ${d.numero}). Intervention requise.`);
+    await envoyerSmsSimule(admin.telephone, messageProfessionnelIntervention(nomCourt, d.numero));
   }
   return enAttente.length;
 }

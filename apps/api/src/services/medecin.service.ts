@@ -1,5 +1,6 @@
 import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { messageRendezVous } from './message-sortant.service';
 import {
     ValiderConsultationDto,
     RepondreReferencementDto,
@@ -579,7 +580,9 @@ export async function fixerRendezVous(
             metadonnees: { idEpisode, idRendezVous: rdv.id },
         });
         const { nomCourt } = await getIdentitePlateforme();
-        await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: rendez-vous a ${episode.structure.nom} le ${quand}.`);
+        // Par le constructeur : un nom d'etablissement revelateur est retire,
+        // et le patient le retrouve dans son espace.
+        await envoyerSmsSimule(patientUser.telephone, messageRendezVous(nomCourt, quand, episode.structure.nom));
     }
 
     return versRendezVousMedecin(rdv);

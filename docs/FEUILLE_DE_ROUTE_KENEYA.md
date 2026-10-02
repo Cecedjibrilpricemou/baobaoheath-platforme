@@ -23,12 +23,12 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
-| **P9** Notifications neutres | 0 | — | 2 | ❌ non commencé |
+| **P9** Notifications neutres | 1 | — | 1 | ⏳ **la neutralité est livrée le 02/10** — c'était un défaut en service, pas une case vide. Restent les préférences de canaux et le rejeu |
 | **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
 | **P11** Administration, audit, référentiels | 0 | — | 5 | ❌ non commencé — **conditionne les référentiels** |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
-| **Total** | **41** | **5** | **49** | sur 95 |
+| **Total** | **42** | **5** | **48** | sur 95 |
 
 **Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
 
@@ -205,8 +205,8 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Le retrait en pharmacie n'est **pas un repli** : c'est un mode de remise permanent, à égalité avec la livraison.
 - [ ] Annuaire public géolocalisé : cliniques, pharmacies, laboratoires (horaires, services, coordonnées).
 
-### P9 — Notifications neutres · S · EF-11 · ❌ **0 sur 2**
-- [ ] Aucun contenu médical dans un message sortant (EF-11-02) ; SMS en repli (EF-11-03).
+### P9 — Notifications neutres · S · EF-11 · ⏳ **1 sur 2**
+- [x] **API livrée le 2026-10-02** — **aucun contenu médical dans un message sortant** (EF-11-02). Ce n'était pas une case vide mais un **défaut en service** : le code envoyait « des analyses vous attendent », « prélèvement prévu », « vos résultats d'analyses sont disponibles », « RESULTAT CRITIQUE », « votre vaccination BCG est due ». Le contrôle vit au **point de sortie** des SMS, donc un site d'appel oublié ne peut pas fuir ; des constructeurs nommés produisent les messages. Hors production le refus **lève** ; en production il remplace par un message neutre et journalise. Un message tapé par un administrateur est refusé en **400** avec le mot fautif. SMS en repli (EF-11-03) : reste à faire.
 - [ ] Préférences de canaux et de langue (EF-11-04) ; rejeu des non délivrées (EF-11-05).
 
 ### P10 — Assurance et tiers payant · L · EF-09 · ⏳ **3 faites + 4 partielles sur 9** — livré le 2026-10-02 (API + caisse) ; restent la vue assureur et l'administration des assureurs à l'écran

@@ -8,6 +8,7 @@
 // structure l'acces au dossier du patient (access-control.service).
 import { Prisma, Role, StatutEpisode, Urgence } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { messagePatientInformation } from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
@@ -510,7 +511,9 @@ export async function creerDemandeAnalyse(user: JwtPayload, idEpisode: string, d
       metadonnees: { idDemande: demande.id, idEpisode },
     });
     const { nomCourt } = await getIdentitePlateforme();
-    await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: des analyses vous attendent au laboratoire ${labo.nom}. Consignes et details dans votre espace.`);
+    // EF-11-02 : le SMS ne dit pas qu'il s'agit d'analyses. Le detail, les
+    // consignes et le laboratoire se lisent dans l'espace du patient.
+    await envoyerSmsSimule(patientUser.telephone, messagePatientInformation(nomCourt));
   }
 
   return versDemandeView(demande);

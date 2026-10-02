@@ -1,5 +1,6 @@
 // P2 — Laboratoire (EF-04) : lecture des resultats, cycle prelevement /
 // saisie / validation, circuit des resultats critiques. Prisma est simule.
+import { motInterditDans } from '../src/services/message-sortant.service';
 import {
   accuserAlerte,
   libererResultats,
@@ -236,7 +237,16 @@ describe('validerResultats (EF-04-05, EF-04-07, EF-04-09)', () => {
     expect(prisma.demandeAnalyse.update.mock.calls[0][0].data.diffuseePatientLe).toBeUndefined();
     expect(notifierSansBloquer).toHaveBeenCalledTimes(1);
     expect(notifierSansBloquer.mock.calls[0][0]).toMatchObject({ idUtilisateur: 'x', type: 'RESULTAT_CRITIQUE' });
-    expect(envoyerSmsSimule.mock.calls[0][1]).toContain('CRITIQUE');
+    // Ce test exigeait le mot « CRITIQUE » dans le SMS, et verrouillait ainsi
+    // une fuite : EF-11-02 interdit tout contenu medical dans un message
+    // sortant, meme vers un professionnel. L'intention — une alerte urgente au
+    // prescripteur, rien au patient — est conservee, et l'assertion est
+    // devenue plus exigeante : le SMS doit porter le numero de demande,
+    // appeler a agir, et ne contenir aucun mot de soin.
+    const sms = envoyerSmsSimule.mock.calls[0][1] as string;
+    expect(sms).toContain('DA-2026-000001');
+    expect(sms).toMatch(/attention immediate/i);
+    expect(motInterditDans(sms)).toBeNull();
   });
 });
 

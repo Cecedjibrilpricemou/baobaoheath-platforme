@@ -16,6 +16,7 @@
 // la file de l'hopital se remplirait de visites qui n'auront jamais lieu.
 import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { messageRendezVous } from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
@@ -339,7 +340,9 @@ export async function accepterDemande(
       metadonnees: { idDemande },
     });
     const { nomCourt } = await getIdentitePlateforme();
-    await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: rendez-vous a ${d.structure.nom} le ${quand}.`);
+    // Par le constructeur, pour que le nom de l'etablissement passe le meme
+    // controle : « Centre de traitement X » revelerait la nature du soin.
+    await envoyerSmsSimule(patientUser.telephone, messageRendezVous(nomCourt, quand, d.structure.nom));
   }
 
   const maj = await prisma.demandeRendezVous.findUniqueOrThrow({ where: { id: idDemande }, include: DEMANDE_INCLUDE });

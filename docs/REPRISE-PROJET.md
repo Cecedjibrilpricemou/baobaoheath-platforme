@@ -26,12 +26,12 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | | |
 |---|---|
 | Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types`. **Un seul `package-lock.json`, à la racine.** |
-| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **26 fichiers de routes, 34 services, 26 groupes d'endpoints** |
+| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **26 fichiers de routes, 35 services, 26 groupes d'endpoints** |
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **50 écrans dans 10 espaces** |
 | Modèle | **49 modèles Prisma, 27 enums, 28 migrations, 12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
-| Tests | **513 API** (Jest, 28 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
-| Avancement | Feuille de route : **41 cases faites, 5 partielles, 49 restantes sur 95**. Addendum : **les 8 blocs livrés**, avec des reliquats nommés bloc par bloc. |
+| Tests | **568 API** (Jest, 30 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
+| Avancement | Feuille de route : **42 cases faites, 5 partielles, 48 restantes sur 95**. Addendum : **les 8 blocs livrés**, avec des reliquats nommés bloc par bloc. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -484,7 +484,7 @@ Ces blocs n'ont pas été évoqués par le chef de projet, mais ils conditionnen
 
 - **P4** (7 cases) — identito-vigilance, doublons, consentement versionné, bris de glace, journal des accès patient. Le plus lourd non commencé, et le plus sensible réglementairement. **EF-02-08 en dépend** : le journal d'audit trace les scans de QR mais `idRessource` reste vide (voir la dette), donc « qui a consulté mon dossier ? » n'a pas de réponse indexée.
 - **P11** (5 cases) — **il conditionne le reste** : il apporte l'import des référentiels. Sans lui, le référentiel d'interactions médicamenteuses reste **vide** et le catalogue ne se gère qu'en base.
-- **P9** (2 cases, S) — aucun contenu médical dans un message sortant. Petit, mais c'est une exigence.
+- ~~**P9**~~ — la neutralité des messages sortants est **livrée le 2026-10-02**, et ce n'était pas une case vide : le code envoyait du contenu médical en SMS clair. Reste une case : préférences de canaux et de langue, rejeu des non délivrées.
 
 ### D. Questions ouvertes
 
@@ -569,6 +569,9 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 
 **Méthode**
 
+- **Un `try/catch` qui n'écrit qu'un avertissement avale aussi vos garde-fous.** `envoyerSmsSimule` enveloppait l'envoi pour qu'une panne d'opérateur ne fasse pas échouer un parcours de soin ; un contrôle placé à l'intérieur se serait transformé en simple `logger.warn`. Le contrôle est donc **hors** du try, et le `try` ne couvre que l'envoi.
+- **Un `replace(motif, 1)` prend la première occurrence, pas celle que vous visez.** Un sabotage a ainsi retiré un garde-fou d'une fonction voisine portant la même ligne, et le test est resté vert — à raison. Quand un motif existe en plusieurs exemplaires, ciblez la fonction, pas le fichier.
+- **Un test qui affirme une capacité que le code n'a pas est pire que pas de test.** Le filtre de vocabulaire ne peut pas détecter un nom de produit ni un nom d'établissement : ils viennent de la base. Le test le dit explicitement au lieu de prétendre le contraire, et la défense est déplacée dans le constructeur, qui ne reçoit pas ces valeurs.
 - **Un schéma Zod `.strict()` rejette tout champ qu'il ne connaît pas, même si le contrat et le service le portent.** Le symptôme est un 400 « Unrecognized key », et **les tests unitaires ne le voient pas** : ils appellent le service, pas Zod. Payé deux fois le 2026-10-02 — `prescription` dans les paramètres, puis `avecAssurance` sur la vente. Un test par schéma vérifie désormais que chaque champ optionnel du DTO passe.
 - **Une vérification qui ne peut pas échouer ne vérifie rien.** Un contrôle du pointage cherchait `/Arriv/` dans la page — or le bouton s'appelle « Pointer l'arrivée », donc il passait quoi qu'il arrive. Comptez des éléments précis, et assurez-vous d'avoir vu le contrôle échouer.
 - **Un écran qui envoie moins que ce que l'API exige échoue en silence.** L'écran de demande de rendez-vous n'envoyait que le motif ; l'API réclamait aussi un établissement, faute de structure préférée au dossier. Le build était vert, la page s'affichait, et le bouton ne faisait rien d'autre qu'un 400. Vérifiez un formulaire **contre l'API**, pas seulement à l'écran.
