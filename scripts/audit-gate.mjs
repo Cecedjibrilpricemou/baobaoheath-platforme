@@ -60,6 +60,24 @@ const EXCEPTIONS = [
       "Deni de service par bombe de decompression dans le protocole MySQL " +
       "compresse. Meme raison : aucune connexion MySQL n'est jamais ouverte.",
   },
+  {
+    ghsa: 'GHSA-67c8-pqhq-4rmx',
+    paquet: 'piscina',
+    reexamen: '2026-11-01',
+    motif:
+      "Pollution de prototype dans ThreadPool.options, exploitable par " +
+      "execArgv / loadBalancer / env pour obtenir une execution de code. Ces " +
+      "options sont fournies par le code de compilation d'Angular, jamais par " +
+      "une entree exterieure. Verifie le 2026-10-02 : piscina est absent du " +
+      "bundle livre (grep sur dist/), absent de l'arbre de production " +
+      "(npm ls --omit=dev vide) et absent de l'arbre de l'API — c'est un " +
+      "outil de compilation, il ne tourne ni dans le navigateur ni sur le " +
+      "serveur. Corrige en amont par piscina 5.3.2, mais @angular/build " +
+      "21.2.24, la derniere version publiee, epingle encore 5.2.0 en version " +
+      "exacte ; l'override npm ne la deplace pas (voir la piste ecartee " +
+      "ci-dessous, reproduite le 2026-10-02 : l'arbre perdait 19 paquets). " +
+      "Reexamen court : Angular relevera cette epingle.",
+  },
 ];
 
 // Ce que couvrent ces trois exceptions ne tourne pas en production : depuis
@@ -68,11 +86,14 @@ const EXCEPTIONS = [
 // pas. Elles restent dans l'arbre audite ici parce que la CI et le job Deploy
 // en ont besoin (migrate deploy depuis le runner).
 //
-// Piste ecartee (13/09/2026) : `overrides` npm sur mysql2 / deepmerge-ts.
-// Avec npm 11 et les workspaces, l'override d'une dependance epinglee en
-// version exacte par prisma retire le paquet de l'arbre au lieu de le
-// remplacer, et la CLI ne demarre plus. A reessayer quand prisma > 7.10
-// relachera ses epingles.
+// Piste ecartee (13/09/2026, reconfirmee le 02/10/2026) : `overrides` npm sur
+// une dependance epinglee en version exacte. Avec npm 11 et les workspaces,
+// l'override est ignore — ni l'override plat `piscina: ^5.3.2`, ni la forme
+// imbriquee `@angular/build: { piscina: ^5.3.2 }`, ni une reinstallation apres
+// suppression de node_modules/.package-lock.json ne deplacent l'epingle. Et
+// retirer l'entree du verrou pour forcer une resolution fait perdre 19 paquets
+// a l'arbre au lieu d'en remplacer un. A reessayer quand prisma > 7.10 et
+// @angular/build > 21.2.24 relacheront leurs epingles.
 
 const AUTORISES = new Set(EXCEPTIONS.map((e) => e.ghsa));
 const BLOQUANTS = new Set(['high', 'critical']);
