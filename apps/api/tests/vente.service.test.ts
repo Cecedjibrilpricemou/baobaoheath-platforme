@@ -38,6 +38,10 @@ jest.mock('../src/config/prisma', () => {
 jest.mock('../src/config/redis', () => ({ getRedis: () => null }));
 jest.mock('../src/services/numero.service', () => ({ prochainNumero: jest.fn() }));
 jest.mock('../src/services/parametres.service', () => ({ getValeursParametres: jest.fn() }));
+// Le chiffrage de l'assurance est teste pour lui-meme dans
+// assurance.service.test.ts : ici on verifie seulement comment la caisse s'en
+// sert, et ce qu'elle fige sur la vente.
+jest.mock('../src/services/assurance.service', () => ({ chiffrer: jest.fn() }));
 
 type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
@@ -59,6 +63,7 @@ const { prochainNumero } = jest.requireMock('../src/services/numero.service') as
 const { getValeursParametres } = jest.requireMock('../src/services/parametres.service') as {
   getValeursParametres: M;
 };
+const { chiffrer } = jest.requireMock('../src/services/assurance.service') as { chiffrer: M };
 
 const pharmacien: JwtPayload = { userId: 'pharma-1', role: 'PHARMACIEN', sessionId: 's' } as JwtPayload;
 
@@ -119,6 +124,7 @@ beforeEach(() => {
   prisma.lotStock.update.mockResolvedValue({});
   prisma.stock.update.mockResolvedValue({});
   prisma.ligneVente.create.mockResolvedValue({});
+  chiffrer.mockResolvedValue(null);
 });
 
 // ── Fonctions pures ──────────────────────────────────────────────────
@@ -503,5 +509,142 @@ describe('tableauDeBord', () => {
     const [args] = prisma.venteComptoir.aggregate.mock.calls[0] as [{ where: { creeLe: { gte: Date } } }];
     expect(args.where.creeLe.gte.getHours()).toBe(0);
     expect(args.where.creeLe.gte.getMinutes()).toBe(0);
+  });
+});
+
+
+// ── Tiers payant au comptoir (EF-09) ─────────────────────────────────
+describe('creerVente avec assurance', () => {
+  beforeEach(() => {
+    prisma.stock.findMany.mockResolvedValue([STOCK_PARA]);
+  });
+
+  // On ne couvre pas un passant : sans dossier, il n'y a pas de contrat a
+  // opposer a l'assureur.
+  it('refuse le tiers payant sans patient', async () => {
+    await expect(creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES', avecAssurance: true,
+    })).rejects.toThrow(/demande un patient/i);
+    expect(chiffrer).not.toHaveBeenCalled();
+  });
+
+  // Encaisser le patient a son insu alors qu'il presente une carte serait
+  // pire qu'un refus : il croirait etre couvert.
+  it('refuse la vente quand aucun contrat n est utilisable', async () => {
+    chiffrer.mockResolvedValue(null);
+    await expect(creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true,
+    })).rejects.toThrow(/Aucun contrat/i);
+  });
+
+  it('fige la part de l assureur et celle du patient sur la vente', async () => {
+    chiffrer.mockResolvedValue({
+      idContrat: 'ct-1',
+      assureur: { id: 'as-1', nom: 'Pricemou & Frere', code: 'PF' },
+      montantAssureGnf: 1_920,
+      montantPatientGnf: 480,
+      notes: [],
+      lignes: [{ idMedicament: 'm-para', libelle: 'Doliprane 500mg', montantGnf: 2_400, couvert: true, tauxAppliquePourcent: 80, montantAssureGnf: 1_920, motifExclusion: null }],
+    });
+
+    await creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true,
+    });
+
+    expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        idContratAssurance: 'ct-1',
+        montantAssureGnf: 1_920,
+        montantPatientGnf: 480,
+      }),
+    }));
+  });
+
+  // « Un reste a charge sans explication se conteste au comptoir. »
+  it('fige le detail de couverture sur chaque ligne', async () => {
+    chiffrer.mockResolvedValue({
+      idContrat: 'ct-1',
+      assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 0,
+      montantPatientGnf: 2_400,
+      notes: [],
+      lignes: [{ idMedicament: 'm-para', libelle: 'Doliprane 500mg', montantGnf: 2_400, couvert: false, tauxAppliquePourcent: 0, montantAssureGnf: 0, motifExclusion: 'Categorie MEDICAMENT exclue par l assureur' }],
+    });
+
+    await creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true,
+    });
+
+    expect(prisma.ligneVente.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        couvert: false,
+        tauxAppliquePourcent: 0,
+        montantAssureGnf: 0,
+        motifExclusion: 'Categorie MEDICAMENT exclue par l assureur',
+      }),
+    }));
+  });
+
+  it('chiffre sur le net, remise deduite', async () => {
+    chiffrer.mockResolvedValue({
+      idContrat: 'ct-1', assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 0, montantPatientGnf: 2_000, notes: [], lignes: [],
+    });
+
+    await creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true, remiseGnf: 400,
+    });
+
+    const [, , montantNet] = chiffrer.mock.calls[0] as [string, unknown, number];
+    expect(montantNet).toBe(2_000);
+  });
+
+  it('sans assurance, le patient paie tout et on ne chiffre rien', async () => {
+    await creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+    });
+
+    expect(chiffrer).not.toHaveBeenCalled();
+    expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        idContratAssurance: null,
+        montantAssureGnf: 0,
+        montantPatientGnf: 2_400,
+      }),
+    }));
+  });
+});
+
+
+// ── Le schema de la requete, pas seulement le service ────────────────
+//
+// Les tests ci-dessus appellent le service directement : ils ne traversent
+// pas Zod. Or `creerVenteSchema` est `.strict()`, et un champ oublie la fait
+// rejeter en 400 alors que le contrat et le service le portent. C'est arrive
+// deux fois le 2026-10-02 — pour `prescription` dans les parametres, puis
+// pour `avecAssurance` ici.
+describe('schema de creation de vente', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { creerVenteSchema } = require('../src/validators/api.schemas');
+  const minimal = { lignes: [{ idMedicament: 'm-1', quantite: 1 }], modePaiement: 'ESPECES' };
+
+  it.each(['numeroOperateur', 'remiseGnf', 'idPatient', 'idOrdonnance', 'avecAssurance'])(
+    'accepte le champ optionnel %s',
+    (champ) => {
+      const valeurs: Record<string, unknown> = {
+        numeroOperateur: '620000000', remiseGnf: 100,
+        idPatient: 'p-1', idOrdonnance: 'or-1', avecAssurance: true,
+      };
+      const r = creerVenteSchema.safeParse({ ...minimal, [champ]: valeurs[champ] });
+      expect({ champ, ok: r.success }).toEqual({ champ, ok: true });
+    }
+  );
+
+  it('refuse un champ inconnu : le schema reste strict', () => {
+    expect(creerVenteSchema.safeParse({ ...minimal, inconnu: 1 }).success).toBe(false);
   });
 });

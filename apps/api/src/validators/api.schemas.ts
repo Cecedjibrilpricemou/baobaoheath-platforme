@@ -133,6 +133,11 @@ export const creerVenteSchema = z.object({
   remiseGnf: nonNegativeInt.optional(),
   idPatient: id.optional(),
   idOrdonnance: id.optional(),
+  // Tiers payant (EF-09). Le schema etant `.strict()`, oublier ce champ ici
+  // fait rejeter la requete en 400 alors que le contrat et le service le
+  // portent. C'est arrive le 2026-10-02, et seul le controle contre la vraie
+  // API l'a vu : les tests unitaires appellent le service, pas Zod.
+  avecAssurance: z.boolean().optional(),
 }).strict();
 
 export const annulerVenteSchema = z.object({
@@ -588,3 +593,57 @@ export const evolutionQuerySchema = z.object({
 export const notificationsQuerySchema = paginationQuerySchema.extend({
   lu: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
 });
+
+// ── Assurance et tiers payant (EF-09, addendum point 5) ──────────────
+
+const categorieProduit = z.enum([
+  'MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE',
+  'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',
+]);
+
+export const verifierEligibiliteSchema = z.object({
+  idPatient: id,
+}).strict();
+
+export const simulerPriseEnChargeSchema = z.object({
+  idPatient: id,
+  lignes: z.array(z.object({
+    idMedicament: id,
+    libelle: z.string().trim().min(1).max(200),
+    categorie: categorieProduit,
+    montantGnf: nonNegativeInt.max(1_000_000_000),
+  })).min(1).max(100),
+  montantNetGnf: nonNegativeInt.max(1_000_000_000),
+}).strict();
+
+export const creerAssureurSchema = z.object({
+  nom: z.string().trim().min(2).max(120),
+  // Le code figure sur la carte de l'assure : court, sans espace, lisible.
+  code: z.string().trim().min(2).max(16).regex(/^[A-Za-z0-9-]+$/, 'Lettres, chiffres et tirets uniquement'),
+  telephone: z.string().trim().max(40).optional(),
+  email: z.string().trim().email().max(120).optional(),
+  modeEchange: z.enum(['MANUEL', 'PORTAIL', 'API']).optional(),
+  idStructure: id.optional(),
+}).strict();
+
+// `exclu` et `tauxPourcent` ensemble seraient contradictoires ; le service le
+// refuse, et une contrainte SQL le refuse aussi.
+export const creerRegleCouvertureSchema = z.object({
+  categorie: categorieProduit,
+  exclu: z.boolean().optional(),
+  tauxPourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondLigneGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: z.string().optional(),
+}).strict();
+
+export const creerContratAssuranceSchema = z.object({
+  idAssureur: id,
+  idPatient: id,
+  numeroPolice: z.string().trim().min(2).max(60),
+  tauxBasePourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: z.string().min(1),
+  dateFin: z.string().optional(),
+  carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+}).strict();

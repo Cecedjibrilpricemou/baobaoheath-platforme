@@ -94,6 +94,7 @@ enum TypeStructure {
   CLINIQUE
   PHARMACIE        // â† NOUVEAU
   LABORATOIRE      // Laboratoire d'analyses (EF-04)
+  ASSURANCE        // Assureur : ses agents s'y connectent comme les autres (EF-09)
 }
 
 // Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
@@ -108,6 +109,21 @@ enum StatutOrdonnance {
   SERVIE
   EXPIREE
   ANNULEE
+}
+
+/// Comment la plateforme echange avec l'assureur (EF-09-02). `MANUEL` est le
+/// depart : un agent valide a la main. Les deux autres attendent une
+/// convention technique avec chaque assureur.
+enum ModeEchangeAssureur {
+  MANUEL
+  PORTAIL
+  API
+}
+
+enum StatutContrat {
+  ACTIF
+  SUSPENDU
+  RESILIE
 }
 
 /// Une vente au comptoir est payee sur place : il n'y a pas d'etat « en
@@ -250,6 +266,7 @@ model Utilisateur {
   approvisionnementsSaisis Approvisionnement[] @relation("ApprovisionnementsSaisis")
   ventesVendues            VenteComptoir[]     @relation("VentesVendeur")
   ventesAnnulees           VenteComptoir[]     @relation("VentesAnnulees")
+  controlesEligibilite     ControleEligibilite[] @relation("ControlesEligibilite")
   syncEvents            SyncEvent[]
   syncMutations         SyncMutation[]
   consentementsDonnes   ConsentementPatient[]
@@ -381,6 +398,8 @@ model StructureSante {
   commandes         Commande[]         @relation("PharmacieCommande")
   reponsesCommandes ReponsePharmacie[] @relation("ReponsesPharmacie")
   ventesComptoir    VenteComptoir[]
+  assureur          Assureur?
+  controlesEligibilite ControleEligibilite[]
   latitude    Float?
   longitude   Float?
   telephone   String?
@@ -445,6 +464,8 @@ model PatientProfile {
   vaccinations  Vaccination[]
   factures      Facture[]
   ventesComptoir VenteComptoir[]
+  contratsAssurance   ContratAssurance[]
+  controlesEligibilite ControleEligibilite[]
   rendezVous    RendezVous[]
   consentements ConsentementPatient[]
   episodes      EpisodeSoins[]
@@ -1511,6 +1532,17 @@ model VenteComptoir {
   idVendeur String
   vendeur   Utilisateur @relation("VentesVendeur", fields: [idVendeur], references: [id], onDelete: Restrict)
 
+  /// Tiers payant (EF-09). Sans contrat, l'assure paie tout : `montantAssureGnf`
+  /// reste a 0 et `montantPatientGnf` egale le net.
+  idContratAssurance String?
+  contratAssurance   ContratAssurance? @relation(fields: [idContratAssurance], references: [id], onDelete: Restrict)
+
+  /// Ce que l'assureur prend, et ce que le patient paie. Les deux sont
+  /// stockes : recalculer la part de l'assureur a la lecture supposerait que
+  /// ni les taux ni les exclusions n'ont change depuis.
+  montantAssureGnf  Int @default(0)
+  montantPatientGnf Int @default(0)
+
   annuleeLe       DateTime?
   motifAnnulation String?
   idAnnuleePar    String?
@@ -1540,6 +1572,15 @@ model LigneVente {
   /// est sorti, et savoir quel lot est parti chez qui en cas de rappel.
   lotsConsommes Json
 
+  /// Le detail de la prise en charge, ligne par ligne (addendum, point 5.4).
+  ///
+  /// « Un reste a charge sans explication se conteste au comptoir » : le taux
+  /// applique et, le cas echeant, le motif d'exclusion sont donc figes ici.
+  couvert              Boolean @default(false)
+  tauxAppliquePourcent Int     @default(0)
+  montantAssureGnf     Int     @default(0)
+  motifExclusion       String?
+
   idVente String
   vente   VenteComptoir @relation(fields: [idVente], references: [id], onDelete: Cascade)
 
@@ -1549,4 +1590,155 @@ model LigneVente {
   @@index([idVente])
   @@index([idMedicament])
   @@map("lignes_vente")
+}
+
+
+// ============================================================
+// Assurance et tiers payant (EF-09, addendum du 2026-09-28 point 5)
+// ============================================================
+
+/// Un assureur.
+///
+/// Rattache a une structure de type ASSURANCE quand il a des agents sur la
+/// plateforme : ils se connectent alors comme tout le monde, avec les droits
+/// de leur structure. Un assureur sans agents reste utilisable — ses contrats
+/// sont saisis par l'administration.
+model Assureur {
+  id       String  @id @default(cuid())
+  nom      String
+  /// Code court, celui qui figure sur la carte de l'assure.
+  code     String  @unique
+  telephone String?
+  email     String?
+  estActif  Boolean @default(true)
+
+  modeEchange ModeEchangeAssureur @default(MANUEL)
+
+  idStructure String?         @unique
+  structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
+
+  contrats ContratAssurance[]
+  regles   RegleCouverture[]
+
+  creeLe   DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@map("assureurs")
+}
+
+/// Le contrat d'un patient chez un assureur.
+model ContratAssurance {
+  id           String @id @default(cuid())
+  /// Le numero de police, tel qu'il figure sur la carte.
+  numeroPolice String
+
+  /// Taux de base, en pourcentage.
+  ///
+  /// **100 ne veut pas dire « tout est pris »** : il s'applique a ce qui est
+  /// couvert, apres exclusions et dans la limite des plafonds. Un assure a
+  /// 100 % paie quand meme son lait infantile.
+  tauxBasePourcent Int @default(80)
+
+  /// Plafond annuel de prise en charge, en GNF. 0 = pas de plafond.
+  plafondAnnuelGnf Int @default(0)
+
+  /// Franchise, en GNF : toujours a la charge du patient, deduite de la part
+  /// de l'assureur.
+  franchiseGnf Int @default(0)
+
+  dateEffet DateTime
+  dateFin   DateTime?
+
+  /// Carence : jours apres la date d'effet pendant lesquels rien n'est pris.
+  /// C'est ce qui empeche de s'assurer la veille d'une depense connue.
+  carenceJours Int @default(0)
+
+  statut StatutContrat @default(ACTIF)
+
+  idAssureur String
+  assureur   Assureur @relation(fields: [idAssureur], references: [id], onDelete: Restrict)
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  ventes    VenteComptoir[]
+  controles ControleEligibilite[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@unique([idAssureur, numeroPolice])
+  @@index([idPatient, statut])
+  @@map("contrats_assurance")
+}
+
+/// Une regle de couverture par categorie de produit.
+///
+/// C'est ici que vivent les exclusions citees par le chef de projet : le lait
+/// infantile, les cosmetiques. Elles visent `CategorieProduit`, une
+/// enumeration fermee — on ne fonde pas une regle de remboursement sur un
+/// champ que chacun remplit comme il veut.
+///
+/// `dateEffet` permet de changer un taux sans reecrire le passe : le calcul
+/// retient la regle en vigueur a la date de la vente (EF-09-03).
+model RegleCouverture {
+  id        String           @id @default(cuid())
+  categorie CategorieProduit
+
+  /// Exclu : rien n'est pris, quel que soit le taux du contrat.
+  exclu Boolean @default(false)
+
+  /// Taux propre a cette categorie. Null : le taux de base du contrat.
+  tauxPourcent Int?
+
+  /// Plafond par ligne de vente, en GNF. 0 = pas de plafond.
+  plafondLigneGnf Int @default(0)
+
+  dateEffet DateTime @default(now())
+
+  idAssureur String
+  assureur   Assureur @relation(fields: [idAssureur], references: [id], onDelete: Cascade)
+
+  creeLe DateTime @default(now())
+
+  @@index([idAssureur, categorie, dateEffet])
+  @@map("regles_couverture")
+}
+
+/// Un controle d'eligibilite au comptoir (addendum, point 5.1).
+///
+/// La reponse est **figee** : c'est elle qui sera opposable si l'assureur
+/// contente la prise en charge plus tard. On ne la recalcule donc jamais, on
+/// la relit.
+model ControleEligibilite {
+  id String @id @default(cuid())
+
+  eligible Boolean
+  /// Pourquoi la reponse est negative, en clair : c'est ce que le comptoir
+  /// explique au patient.
+  motif String?
+
+  /// Ce qui a ete lu au moment du controle, recopie pour que la reponse reste
+  /// lisible meme si le contrat change ensuite.
+  numeroPolice     String?
+  tauxBasePourcent Int?
+
+  idContrat String?
+  contrat   ContratAssurance? @relation(fields: [idContrat], references: [id], onDelete: SetNull)
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  /// Ou le controle a eu lieu, et qui l'a fait.
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idControlePar String
+  controlePar   Utilisateur @relation("ControlesEligibilite", fields: [idControlePar], references: [id], onDelete: Restrict)
+
+  creeLe DateTime @default(now())
+
+  @@index([idPatient, creeLe(sort: Desc)])
+  @@index([idStructure, creeLe(sort: Desc)])
+  @@map("controles_eligibilite")
 }

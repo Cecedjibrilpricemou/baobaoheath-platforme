@@ -66,6 +66,20 @@ export const DEMO = {
     { libelle: 'Morphine Pricemou 10mg', dci: 'Morphine',     nomCommercial: 'Morphine Pricemou',  forme: 'ampoule',  dosage: '10mg',  prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
   ],
 
+  // L'assureur de la demonstration (EF-09, addendum point 5).
+  //
+  // Un contrat a **100 %** avec le lait et les cosmetiques exclus : c'est la
+  // phrase du chef de projet rendue demontrable — « un assure a 100 % paie
+  // quand meme son lait infantile ».
+  assureur: {
+    nom: 'Pricemou & Frere Assurances',
+    code: 'PFA',
+    telephone: '620100099',
+    numeroPolice: 'PFA-2026-00042',
+    tauxBasePourcent: 100,
+    exclusions: ['LAIT_INFANTILE', 'COSMETIQUE'] as const,
+  },
+
   // Articles non medicamenteux (decision du 2026-10-01). Ni DCI, ni forme, ni
   // dosage : c'est precisement ce que l'ancien modele ne savait pas porter.
   // Ils ne se prescrivent pas ; ils se vendent au comptoir, et l'assurance
@@ -169,7 +183,7 @@ async function main() {
     allergies: [...DEMO.patient.allergies],
     maladiesChroniques: [...DEMO.patient.maladiesChroniques],
   };
-  await prisma.patientProfile.upsert({
+  const patientProfile = await prisma.patientProfile.upsert({
     where: { idUtilisateur: utilisateurPatient.id },
     update: donneesPatient,
     create: { idUtilisateur: utilisateurPatient.id, qrCode: DEMO.patient.qrCode, ...donneesPatient },
@@ -241,9 +255,57 @@ async function main() {
       `et ${DEMO.articles.length} articles non medicamenteux, en stock par lots`
   );
 
-  // ── 5. Le referentiel d'examens ─────────────────────────────────
+  // ── 5. L'assurance ──────────────────────────────────────────────
+  const assureur = await prisma.assureur.upsert({
+    where: { code: DEMO.assureur.code },
+    update: { nom: DEMO.assureur.nom, telephone: DEMO.assureur.telephone, estActif: true },
+    create: {
+      nom: DEMO.assureur.nom,
+      code: DEMO.assureur.code,
+      telephone: DEMO.assureur.telephone,
+    },
+  });
+
+  // Semence rejouable : on repart des exclusions declarees plutot que d'en
+  // empiler une de plus a chaque execution. Les regles portant une date
+  // d'effet, les empiler changerait le chiffrage sans que personne ne l'ait
+  // demande.
+  await prisma.regleCouverture.deleteMany({ where: { idAssureur: assureur.id } });
+  for (const categorie of DEMO.assureur.exclusions) {
+    await prisma.regleCouverture.create({
+      data: { categorie, exclu: true, idAssureur: assureur.id, dateEffet: new Date('2026-01-01') },
+    });
+  }
+
+  const contratExistant = await prisma.contratAssurance.findFirst({
+    where: { idAssureur: assureur.id, numeroPolice: DEMO.assureur.numeroPolice },
+    select: { id: true },
+  });
+  const donneesContrat = {
+    tauxBasePourcent: DEMO.assureur.tauxBasePourcent,
+    dateEffet: new Date('2026-01-01'),
+    statut: 'ACTIF' as const,
+  };
+  if (contratExistant) {
+    await prisma.contratAssurance.update({ where: { id: contratExistant.id }, data: donneesContrat });
+  } else {
+    await prisma.contratAssurance.create({
+      data: {
+        ...donneesContrat,
+        numeroPolice: DEMO.assureur.numeroPolice,
+        idAssureur: assureur.id,
+        idPatient: patientProfile.id,
+      },
+    });
+  }
+  console.log(
+    `5. Assurance : ${DEMO.assureur.nom} (${DEMO.assureur.code}), police ${DEMO.assureur.numeroPolice} ` +
+      `a ${DEMO.assureur.tauxBasePourcent} %, ${DEMO.assureur.exclusions.length} categories exclues`
+  );
+
+  // ── 6. Le referentiel d'examens ─────────────────────────────────
   await seedExamens(prisma);
-  console.log('5. Examens de laboratoire (codes LOINC)');
+  console.log('6. Examens de laboratoire (codes LOINC)');
 
   await verifierInvariantDesLots();
 

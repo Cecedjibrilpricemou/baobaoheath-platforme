@@ -16,6 +16,7 @@ import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { consommerLots, peremptionLaPlusProche } from './approvisionnement.service';
+import { chiffrer, type LigneAChiffrer } from './assurance.service';
 import { prochainNumero } from './numero.service';
 import { motifDeRefus, renouvellementsRestants } from './ordonnance.service';
 import { getValeursParametres } from './parametres.service';
@@ -39,6 +40,7 @@ const VENTE_INCLUDE = {
   vendeur: { select: { id: true, prenom: true, nom: true } },
   patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
   ordonnance: { select: { numero: true } },
+  contratAssurance: { select: { assureur: { select: { id: true, nom: true, code: true } } } },
   lignes: {
     include: {
       medicament: {
@@ -59,6 +61,15 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
     montantBrutGnf: v.montantBrutGnf,
     remiseGnf: v.remiseGnf,
     montantNetGnf: v.montantNetGnf,
+    montantAssureGnf: v.montantAssureGnf,
+    montantPatientGnf: v.montantPatientGnf,
+    assureur: v.contratAssurance
+      ? {
+          id: v.contratAssurance.assureur.id,
+          nom: v.contratAssurance.assureur.nom,
+          code: v.contratAssurance.assureur.code,
+        }
+      : null,
     modePaiement: v.modePaiement,
     numeroOperateur: v.numeroOperateur,
     creeLe: v.creeLe.toISOString(),
@@ -75,6 +86,12 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
       prixUnitaireGnf: l.prixUnitaireGnf,
       montantGnf: l.montantGnf,
       medicament: l.medicament,
+      // Couverture figee a la vente : relire les regles plus tard donnerait un
+      // reste a charge qui change apres coup.
+      couvert: l.couvert,
+      tauxAppliquePourcent: l.tauxAppliquePourcent,
+      montantAssureGnf: l.montantAssureGnf,
+      motifExclusion: l.motifExclusion,
     })),
   };
 }
@@ -217,6 +234,34 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
     );
   }
 
+  const montantNetGnf = montantBrutGnf - remiseGnf;
+
+  // ── Tiers payant (EF-09) ─────────────────────────────────────────
+  //
+  // On ne couvre pas un passant anonyme : sans dossier, il n'y a pas de
+  // contrat a opposer. Et sans contrat utilisable, on refuse la vente plutot
+  // que d'encaisser le patient a son insu alors qu'il presente une carte.
+  let prise: Awaited<ReturnType<typeof chiffrer>> = null;
+  if (dto.avecAssurance) {
+    if (!dto.idPatient) {
+      throw new ValidationError("Le tiers payant demande un patient : un client de passage n'a pas de contrat");
+    }
+    const lignesAChiffrer: LigneAChiffrer[] = detail.map((l) => {
+      const m = parProduit.get(l.idMedicament)!.medicament;
+      return { idMedicament: l.idMedicament, libelle: m.libelle, categorie: m.categorie, montantGnf: l.montantGnf };
+    });
+    prise = await chiffrer(dto.idPatient, lignesAChiffrer, montantNetGnf);
+    if (!prise) {
+      throw new ValidationError(
+        "Aucun contrat d'assurance utilisable pour ce patient : verifiez son eligibilite"
+      );
+    }
+  }
+
+  const couvertureParProduit = new Map(
+    (prise?.lignes ?? []).map((l) => [l.idMedicament, l])
+  );
+
   const cree = await prisma.$transaction(async (tx) => {
     const numero = await prochainNumero('VE', tx);
 
@@ -225,7 +270,10 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         numero,
         montantBrutGnf,
         remiseGnf,
-        montantNetGnf: montantBrutGnf - remiseGnf,
+        montantNetGnf,
+        montantAssureGnf: prise?.montantAssureGnf ?? 0,
+        montantPatientGnf: montantNetGnf - (prise?.montantAssureGnf ?? 0),
+        idContratAssurance: prise?.idContrat ?? null,
         modePaiement: dto.modePaiement,
         numeroOperateur: dto.numeroOperateur?.trim() || null,
         idPatient: dto.idPatient ?? null,
@@ -242,6 +290,7 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
       // chez qui en cas de rappel.
       const lots = await consommerLots(tx, l.idStock, l.quantite);
       await tx.stock.update({ where: { id: l.idStock }, data: { quantite: { decrement: l.quantite } } });
+      const couverture = couvertureParProduit.get(l.idMedicament);
       await tx.ligneVente.create({
         data: {
           idVente: vente.id,
@@ -250,6 +299,12 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
           prixUnitaireGnf: l.prixUnitaireGnf,
           montantGnf: l.montantGnf,
           lotsConsommes: lots as unknown as Prisma.InputJsonValue,
+          // Le detail est fige : « un reste a charge sans explication se
+          // conteste au comptoir » (addendum, point 5.4).
+          couvert: couverture?.couvert ?? false,
+          tauxAppliquePourcent: couverture?.tauxAppliquePourcent ?? 0,
+          montantAssureGnf: couverture?.montantAssureGnf ?? 0,
+          motifExclusion: couverture?.motifExclusion ?? null,
         },
       });
     }

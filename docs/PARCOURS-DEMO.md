@@ -158,6 +158,29 @@ Puis encaisser. La vente rejoint la liste avec son numéro `VE-2026-NNNNNN`, ses
 
 > Le plafond de remise (20 % par défaut) et les catégories soumises à ordonnance s'administrent dans l'onglet **Comptoir** de l'écran de paramètres, qui demande un compte `SUPER_ADMIN`.
 
+### 8. Assurance — « assuré à 100 % » ne veut pas dire « tout est pris »
+
+La semence crée l'assureur **Pricemou & Frère Assurances** (code `PFA`) et, pour Maomou Conde, la police `PFA-2026-00042` **à 100 %**, avec le **lait infantile et les cosmétiques exclus**. C'est l'exemple du chef de projet, rendu démontrable.
+
+Sous **Ousmane Pricemou**, à la caisse : panier avec **2 paracétamol et 1 lait infantile**, client = Maomou Conde, tiers payant activé.
+
+| | Montant |
+|---|---|
+| Total | 47 000 GNF |
+| Pris par l'assureur | **2 000 GNF** — le paracétamol, à 100 % |
+| À payer par la patiente | **45 000 GNF** — le lait, intégralement |
+
+Le détail ligne par ligne dit pourquoi : *« Catégorie LAIT_INFANTILE exclue par l'assureur »*. C'est l'exigence de l'addendum — un reste à charge sans explication se conteste au comptoir.
+
+Deux refus à essayer :
+
+- **tiers payant sans client** : refusé. Un passant n'a pas de dossier, donc pas de contrat à opposer ;
+- **tiers payant pour Aminata Camara**, qui n'a pas de contrat : refusé avec son motif. Encaisser la patiente à son insu alors qu'elle présente une carte serait pire qu'un refus.
+
+Le **contrôle d'éligibilité** répond immédiatement et **reste enregistré** : c'est lui qui justifiera le tiers payant si l'assureur le conteste.
+
+> Pour créer un autre assureur, une autre règle ou un autre contrat, il faut un compte `ADMIN_NATIONAL` ou `SUPER_ADMIN` : le comptoir contrôle et chiffre, il ne crée rien. Un pharmacien qui pourrait créer un contrat pourrait s'assurer lui-même.
+
 ---
 
 ## Ce qui n'est pas encore testable
@@ -167,7 +190,7 @@ Ces points ont une **API mais pas d'écran**, ou pas de modèle du tout.
 | Point | État |
 |---|---|
 | **Appel aux pharmacies du quartier** (P6) | API livrée, **aucun écran**. Testable via `POST /api/v1/commandes`. |
-| **Assurance « Pricemou & Frère »** — rappel | C'est le **dernier bloc** de l'addendum. La vente au comptoir existe désormais pour y accrocher la prise en charge. |
+| **Vue de l'assureur sur ses pharmacies** | L'assureur ne peut pas encore voir, par officine conventionnée, ce qui a été délivré, facturé, payé et reste dû. C'est le reliquat du bloc 8 (EF-09-06/07), avec le front. |
 | **Extraction automatique des factures** (OCR) | Non construite. La saisie assistée la remplace, la facture restant attachée en justificatif. |
 | **Assurance « Pricemou & Frère »** | **Impossible à créer** : ni modèle `Assureur`, ni type de structure « assurance ». C'est P10, non construit. |
 | Offres des motards, suivi sur carte | P8, non construit. |

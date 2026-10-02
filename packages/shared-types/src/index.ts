@@ -70,7 +70,9 @@ export type TypeStructure =
   | 'CHU'
   | 'CLINIQUE'
   | 'PHARMACIE'
-  | 'LABORATOIRE';
+  | 'LABORATOIRE'
+  // Un assureur : ses agents se connectent comme les autres (EF-09).
+  | 'ASSURANCE';
 
 /**
  * Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
@@ -1968,6 +1970,11 @@ export interface LigneVenteView {
   prixUnitaireGnf: number;
   montantGnf: number;
   medicament: ProduitResumeView;
+  /** Couverture figee a la vente (addendum, point 5.4). */
+  couvert: boolean;
+  tauxAppliquePourcent: number;
+  montantAssureGnf: number;
+  motifExclusion?: string | null;
 }
 
 export interface VenteComptoirView {
@@ -1977,6 +1984,10 @@ export interface VenteComptoirView {
   montantBrutGnf: number;
   remiseGnf: number;
   montantNetGnf: number;
+  /** Tiers payant : 0 sans contrat, l'assure payant alors tout. */
+  montantAssureGnf: number;
+  montantPatientGnf: number;
+  assureur?: AssureurResumeView | null;
   modePaiement: ModePaiement;
   numeroOperateur?: string | null;
   creeLe: HorodatageApi;
@@ -2009,6 +2020,12 @@ export interface CreerVenteDto {
    * categorie que les parametres soumettent a ordonnance.
    */
   idOrdonnance?: string;
+  /**
+   * Appliquer le tiers payant. Suppose `idPatient` : on ne couvre pas un
+   * passant anonyme. Sans contrat utilisable, la vente est refusee plutot que
+   * d'encaisser le patient a son insu.
+   */
+  avecAssurance?: boolean;
 }
 
 export interface AnnulerVenteDto {
@@ -2045,4 +2062,141 @@ export interface TableauDeBordOfficineView {
   ruptures: RuptureStockView[];
   /** Nombre de lots qui approchent de leur date, ou l'ont depassee. */
   lotsAPerimer: number;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// P10 — Assurance et tiers payant (EF-09)
+// Routes /assurance/* et /pharmacien/ventes (part assureur).
+// Addendum du 2026-09-28, point 5.
+// ═══════════════════════════════════════════════════════════════════
+
+export type ModeEchangeAssureur = 'MANUEL' | 'PORTAIL' | 'API';
+export type StatutContrat = 'ACTIF' | 'SUSPENDU' | 'RESILIE';
+
+export interface AssureurResumeView {
+  id: string;
+  nom: string;
+  /** Code court, celui qui figure sur la carte de l'assure. */
+  code: string;
+}
+
+/**
+ * GET/POST /assurance/eligibilite — le controle au comptoir.
+ *
+ * La reponse est **figee en base** : c'est elle qui justifiera le tiers
+ * payant si l'assureur le conteste. Un refus porte toujours son motif, sans
+ * quoi le comptoir n'aurait rien a expliquer au patient.
+ */
+export interface ControleEligibiliteView {
+  id: string;
+  eligible: boolean;
+  /** Toujours renseigne quand `eligible` est faux. */
+  motif?: string | null;
+  numeroPolice?: string | null;
+  tauxBasePourcent?: number | null;
+  creeLe: HorodatageApi;
+  patient: { id: string; prenom: string; nom: string };
+  assureur?: AssureurResumeView | null;
+}
+
+/** Le detail de la couverture pour une ligne (addendum, point 5.4). */
+export interface CouvertureLigneView {
+  libelle: string;
+  /** Montant de la ligne avant remise de caisse. */
+  montantGnf: number;
+  couvert: boolean;
+  tauxAppliquePourcent: number;
+  montantAssureGnf: number;
+  /** Pourquoi la ligne n'est pas prise : exclusion, ou taux nul. */
+  motifExclusion?: string | null;
+}
+
+/**
+ * POST /assurance/simulation — ce que l'assureur prendrait, **avant**
+ * paiement. « Un reste a charge sans explication se conteste au comptoir. »
+ */
+export interface PriseEnChargeView {
+  idContrat: string;
+  assureur: AssureurResumeView;
+  montantNetGnf: number;
+  montantAssureGnf: number;
+  montantPatientGnf: number;
+  /**
+   * Ce qui a rabote la part de l'assureur : franchise, plafond par ligne,
+   * plafond annuel. Affiche tel quel, pour que le reste a charge s'explique.
+   */
+  notes: string[];
+  lignes: (CouvertureLigneView & { idMedicament: string })[];
+}
+
+/** POST /assurance/assureurs — creation par l'administration. */
+export interface CreerAssureurDto {
+  nom: string;
+  code: string;
+  telephone?: string;
+  email?: string;
+  modeEchange?: ModeEchangeAssureur;
+  idStructure?: string;
+}
+
+export interface AssureurView extends AssureurResumeView {
+  telephone?: string | null;
+  email?: string | null;
+  estActif: boolean;
+  modeEchange: ModeEchangeAssureur;
+  nombreContrats: number;
+  regles: RegleCouvertureView[];
+}
+
+export interface RegleCouvertureView {
+  id: string;
+  categorie: CategorieProduit;
+  exclu: boolean;
+  /** Null : le taux de base du contrat s'applique. */
+  tauxPourcent?: number | null;
+  plafondLigneGnf: number;
+  dateEffet: HorodatageApi;
+}
+
+/**
+ * POST /assurance/assureurs/{id}/regles — une regle de couverture.
+ *
+ * Une categorie exclue n'a pas de taux : porter les deux serait
+ * contradictoire, et une contrainte SQL le refuse.
+ */
+export interface CreerRegleCouvertureDto {
+  categorie: CategorieProduit;
+  exclu?: boolean;
+  tauxPourcent?: number;
+  plafondLigneGnf?: number;
+  dateEffet?: HorodatageApi;
+}
+
+export interface CreerContratDto {
+  idAssureur: string;
+  idPatient: string;
+  numeroPolice: string;
+  tauxBasePourcent?: number;
+  plafondAnnuelGnf?: number;
+  franchiseGnf?: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi;
+  carenceJours?: number;
+}
+
+export interface ContratAssuranceView {
+  id: string;
+  numeroPolice: string;
+  tauxBasePourcent: number;
+  plafondAnnuelGnf: number;
+  franchiseGnf: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  carenceJours: number;
+  statut: StatutContrat;
+  assureur: AssureurResumeView;
+  patient: { id: string; prenom: string; nom: string };
+  /** Ce que l'assureur a deja pris cette annee sur ce contrat. */
+  consommeAnneeGnf: number;
 }

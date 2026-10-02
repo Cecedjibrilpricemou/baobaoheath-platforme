@@ -26,12 +26,12 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | | |
 |---|---|
 | Monorepo | npm workspaces — `apps/api`, `apps/web`, `packages/shared-types`. **Un seul `package-lock.json`, à la racine.** |
-| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **25 fichiers de routes, 33 services, 26 groupes d'endpoints** |
+| API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **26 fichiers de routes, 34 services, 26 groupes d'endpoints** |
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **50 écrans dans 10 espaces** |
-| Modèle | **45 modèles Prisma, 25 enums, 27 migrations, 12 rôles** |
+| Modèle | **49 modèles Prisma, 27 enums, 28 migrations, 12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
-| Tests | **452 API** (Jest, 27 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
-| Avancement | Feuille de route : **38 cases faites, 1 partielle, 56 restantes sur 95**. Addendum : **7 blocs livrés sur 8** ; reste l'assurance. |
+| Tests | **513 API** (Jest, 28 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
+| Avancement | Feuille de route : **41 cases faites, 5 partielles, 49 restantes sur 95**. Addendum : **7 blocs livrés sur 8**, le 8e livré côté API. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -190,7 +190,9 @@ Corollaire sur le thème sombre : dans un SCSS **de composant**, utiliser `:host
 
 ### Carte des endpoints
 
-Les 26 groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier. C'est la table d'entrée la plus rapide pour savoir où chercher.
+Les **26** groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier. C'est la table d'entrée la plus rapide pour savoir où chercher.
+
+> Recompté le 2026-10-02 : une version précédente de ce fichier annonçait 26 alors qu'il y en avait 25. Le 26e est `assurance`.
 
 | Préfixe `/api/v1/…` | Pour qui | Fichier de routes |
 |---|---|---|
@@ -219,6 +221,7 @@ Les 26 groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier. C'
 | `hopital` | agent d'accueil | `hopital.routes.ts` |
 | `laboratoire` | laborantin | `laboratoire.routes.ts` |
 | `resultats` | prescripteurs | `resultats.routes.ts` |
+| `assurance` | comptoir **et** administration nationale | `assurance.routes.ts` — les deux publics sont séparés par les gardes de rôle |
 
 Swagger est servi sur `/api-docs` et décrit dans `apps/api/src/config/swagger.ts`. **Il est incomplet** — voir la dette.
 
@@ -267,7 +270,7 @@ Vérifié le 2026-10-02. **Deux manques sur quatre ont été comblés** depuis l
 | ~~**`LotStock`**~~ | ~~bloc 6~~ | **Comblé le 2026-09-30.** `LotStock` et `Approvisionnement` existent, `Stock.datePeremption` a disparu, et la consommation se fait au plus proche de la péremption. La migration `20260930160000_lots_de_stock_et_approvisionnement` a reversé les 7 stocks existants en 7 lots, 2 362 unités conservées. |
 | ~~**Vente au comptoir**~~ | ~~bloc 7~~ | **Comblé le 2026-10-02.** `VenteComptoir` + `LigneVente`, avec client **facultatif**, remise plafonnée par paramètre, vendeur, établissement, et les lots consommés gardés sur chaque ligne. `Facture` est restée la note d'une consultation : l'élargir aurait rendu ambiguë chaque requête existante. Trois contraintes SQL tiennent les invariants d'argent. |
 | ~~**Catégorie de produit fermée**~~ | ~~bloc 8~~ | **Comblé le 2026-10-01.** `CategorieProduit` est une énumération de huit valeurs ; l'ancien texte libre est devenu `classeTherapeutique`, qui est un autre axe. Le catalogue accepte des articles sans DCI ni dosage, et une contrainte SQL (`medicaments_medicament_complet`) garantit qu'un `MEDICAMENT` porte toujours DCI, forme et dosage. Deux catalogues distincts : le comptoir voit tout, la prescription ne voit que des médicaments. |
-| **Modèle d'assurance** | bloc 8 | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance ». |
+| ~~**Modèle d'assurance**~~ | ~~bloc 8~~ | **Comblé le 2026-10-02.** `Assureur`, `ContratAssurance`, `RegleCouverture`, `ControleEligibilite`, et `TypeStructure.ASSURANCE`. Cinq contraintes SQL tiennent les invariants d'argent et de traçabilité — dont « un refus d'éligibilité porte toujours son motif », sans quoi il ne serait pas opposable. |
 
 ### L'ordonnance est un *document*, pas un médicament
 
@@ -405,7 +408,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | **P13** | Extension | ⏳ 1 case sur 5 — la prise de RDV à distance a été remontée ici |
 | P4, P5, P7 – P12 | identité/consentement, fil d'avancement, paiement, livraison, notifications, assurance, administration, interopérabilité | ❌ non commencés |
 
-### Les huit blocs de l'addendum — 7 livrés
+### Les huit blocs de l'addendum — 7 livrés, le 8e livré côté API
 
 `docs/ADDENDUM-CDC-2026-09-28.md` contient neuf points du chef de projet. Trois contredisaient du code déjà écrit ; ils ont été repris.
 
@@ -418,7 +421,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | 5 | Prise de rendez-vous à distance | 2026-09-30 | Le patient demande depuis chez lui ; l'accueil ou le médecin accepte, ce qui crée l'épisode et le rendez-vous en une transaction. |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | 2026-09-30 | `Stock.datePeremption` disparaît au profit de `LotStock`. Saisie de facture, une ligne par lot avec sa propre date. Sortie **au plus proche de la péremption**, lot périmé bloqué. |
 | 7 | Pharmacie : vente au comptoir et tableau de bord | 2026-10-02 | `VenteComptoir` + `LigneVente`. Client **facultatif**, remise plafonnée par paramètre, ordonnance exigée pour un produit réglementé (EF-05-12) et annoncée **avant** l'encaissement. Annulation d'une erreur de saisie qui remet exactement les lots sortis. **Reste le volet assurance**, qui dépend du bloc 8. |
-| 8 | Assurance | — | **Le dernier bloc.** Débloqué le 01/10 côté catalogue, et la vente au comptoir existe désormais pour y accrocher la prise en charge. Reste à modéliser `Assureur`, `ContratAssurance` et le type de structure « assurance ». |
+| 8 | Assurance | **API livrée le 2026-10-02**, front à faire | Éligibilité opposable et tracée, règles d'exclusion par catégorie, reste à charge ligne par ligne, tiers payant sur la vente au comptoir. **Restent** : le front, la vue de l'assureur sur ses pharmacies conventionnées, les bénéficiaires d'un contrat, les taux par acte et par analyse (supposent P11), et les échanges automatiques avec les assureurs. |
 
 ### Décisions prises, à ne pas rediscuter
 
@@ -566,6 +569,7 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 
 **Méthode**
 
+- **Un schéma Zod `.strict()` rejette tout champ qu'il ne connaît pas, même si le contrat et le service le portent.** Le symptôme est un 400 « Unrecognized key », et **les tests unitaires ne le voient pas** : ils appellent le service, pas Zod. Payé deux fois le 2026-10-02 — `prescription` dans les paramètres, puis `avecAssurance` sur la vente. Un test par schéma vérifie désormais que chaque champ optionnel du DTO passe.
 - **Une vérification qui ne peut pas échouer ne vérifie rien.** Un contrôle du pointage cherchait `/Arriv/` dans la page — or le bouton s'appelle « Pointer l'arrivée », donc il passait quoi qu'il arrive. Comptez des éléments précis, et assurez-vous d'avoir vu le contrôle échouer.
 - **Un écran qui envoie moins que ce que l'API exige échoue en silence.** L'écran de demande de rendez-vous n'envoyait que le motif ; l'API réclamait aussi un établissement, faute de structure préférée au dossier. Le build était vert, la page s'affichait, et le bouton ne faisait rien d'autre qu'un 400. Vérifiez un formulaire **contre l'API**, pas seulement à l'écran.
 - **Les scripts de vérification déclenchent la limitation de débit** (429 après quelques connexions). Elle est en mémoire faute de `REDIS_URL` : redémarrer l'API la remet à zéro.

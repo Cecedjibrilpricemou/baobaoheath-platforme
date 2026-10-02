@@ -66,6 +66,7 @@ const commande = require('../src/routes/commande.routes').default as { stack: Co
 const resultats = require('../src/routes/resultats.routes').default as { stack: Couche[] };
 const medecin = require('../src/routes/medecin.routes').default as { stack: Couche[] };
 const pharmacien = require('../src/routes/pharmacien.routes').default as { stack: Couche[] };
+const assurance = require('../src/routes/assurance.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -201,6 +202,52 @@ describe('le comptoir d officine est reserve au pharmacien', () => {
       ['post', '/ventes/:id/annuler'], ['get', '/tableau-de-bord'],
     ] as const) {
       expect(rolesPour(pharmacien, methode, chemin)).not.toBeNull();
+    }
+  });
+});
+
+
+// ── Assurance : deux publics, deux niveaux (EF-09) ───────────────────
+describe('l assurance separe le comptoir de l administration', () => {
+  // Le comptoir controle et chiffre ; il ne cree ni assureur ni contrat.
+  it.each([
+    ['post', '/eligibilite'],
+    ['get', '/patients/:id/eligibilite'],
+  ])('%s %s est ouverte au comptoir', (methode, chemin) => {
+    const roles = rolesPour(assurance, methode, chemin);
+    expect(roles).toContain('PHARMACIEN');
+    expect(roles).toContain('AGENT_ACCUEIL');
+  });
+
+  it.each([
+    ['post', '/assureurs'],
+    ['post', '/assureurs/:id/regles'],
+    ['post', '/contrats'],
+  ])('%s %s est reservee a l administration nationale', (methode, chemin) => {
+    expect(rolesPour(assurance, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
+  });
+
+  // Un pharmacien qui pourrait creer un contrat pourrait s'assurer lui-meme.
+  it.each(['PHARMACIEN', 'AGENT_ACCUEIL', 'MEDECIN', 'PATIENT', 'ADMIN_STRUCTURE'] as const)(
+    'ferme la creation de contrat a %s',
+    (role) => {
+      expect(rolesPour(assurance, 'post', '/contrats')).not.toContain(role);
+    }
+  );
+
+  // Et un patient ne doit pas pouvoir lire l'eligibilite de quelqu'un d'autre.
+  it('ferme le controle d eligibilite au patient', () => {
+    expect(rolesPour(assurance, 'post', '/eligibilite')).not.toContain('PATIENT');
+  });
+
+  it('les sept routes existent bien', () => {
+    for (const [methode, chemin] of [
+      ['post', '/eligibilite'], ['get', '/patients/:id/eligibilite'],
+      ['post', '/simulation'], ['get', '/patients/:id/contrats'],
+      ['get', '/assureurs'], ['post', '/assureurs'],
+      ['post', '/assureurs/:id/regles'], ['post', '/contrats'],
+    ] as const) {
+      expect(rolesPour(assurance, methode, chemin)).not.toBeNull();
     }
   });
 });

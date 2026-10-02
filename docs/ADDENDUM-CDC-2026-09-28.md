@@ -334,7 +334,7 @@ Les deux gestes forment donc **un seul bloc** : on construit l'écran du médeci
 | ~~B~~ | ~~Scan de facture : saisie assistée d'abord, extraction automatique ensuite ?~~ | **Tranché par l'usage le 2026-09-30** : le bloc 6 est livré en **saisie assistée**, la facture restant attachée en justificatif. L'extraction automatique reste à décider et devra **toujours** passer par une relecture à l'écran. |
 | ~~C~~ | ~~Le catalogue doit-il accepter des articles non médicamenteux (lait, cosmétiques) ?~~ | **Tranché le 2026-10-01 : oui, avec une catégorie fermée.** `CategorieProduit` compte huit valeurs ; `dci`, `forme` et `dosage` deviennent facultatifs, et une contrainte SQL garantit qu'un `MEDICAMENT` les porte toutes les trois. Seul un `MEDICAMENT` se prescrit — l'écran de prescription ne propose rien d'autre. |
 | ~~D~~ | ~~Résultats : qui libère quand le prescripteur est un agent d'accueil ?~~ | **Supprimée le 2026-09-28** : l'accueil ne prescrit plus rien (voir point 9). Sans prescription par l'accueil, pas de résultat orphelin. |
-| E | Vente au comptoir sans ordonnance : autorisée pour tous les produits ? | Un produit réglementé ne se vend pas sans ordonnance (EF-05-12). |
+| E | Vente au comptoir sans ordonnance : autorisée pour tous les produits ? | Un produit réglementé ne se vend pas sans ordonnance (EF-05-12), c'est acquis. La question porte sur le reste, et **la réponse est devenue un paramètre administrable** (`pharmacie.categoriesExigeantOrdonnance`, vide par défaut) : la trancher ne demande plus de développement. |
 
 ---
 
@@ -350,8 +350,10 @@ Les trois reprises d'abord : elles portent sur du code en production, et **chaqu
 | 4 | ✅ **Suppression du rôle biologiste** (point 4) — **livré le 2026-09-30** | M | Migration de comptes : plus elle tarde, plus il y a de comptes et de comptes rendus concernés. |
 | 5 | ✅ **Demande de rendez-vous à distance par le patient** (point 6) — **livré le 2026-09-30, API + front** | M | Se branche sur le circuit RDV du bloc 3, qui doit exister avant. La **téléconsultation réelle** n'est pas dans ce total : elle attend D2. |
 | 6 | ✅ **Pharmacie : lots, approvisionnement, péremptions** (points 1.3, 1.4) — **livré le 2026-09-30, API + front** | L | Le blocage de modèle est ici. À faire avant la vente, qui s'appuie dessus. |
-| 7 | **Pharmacie : vente et tableau de bord** (points 1.1, 1.2) | M | Suppose les lots. |
-| 8 | **Assurance** (point 5) | L | Inchangé en P10, enrichi des précisions ci-dessus. Suppose la catégorie de produits. |
+| 7 | ✅ **Pharmacie : vente et tableau de bord** (points 1.1, 1.2) — **livré le 2026-10-02, API + front** | M | Suppose les lots. `VenteComptoir` + `LigneVente` : `Facture` est restée la note d'une consultation. |
+| 8 | ⏳ **Assurance** (point 5) — **API livrée le 2026-10-02**, front à faire | L | Inchangé en P10, enrichi des précisions ci-dessus. Supposait la catégorie de produits, levée le 01/10. Livré : éligibilité opposable et tracée (5.1), exclusions par catégorie (5.3), taux y compris 100 % avec détail ligne par ligne (5.4). **Reste** la vue de l'assureur sur ses pharmacies conventionnées (5.2), et le front. |
+
+> **Une décision à confirmer, née du calcul de prise en charge (2026-10-02).** La remise accordée au comptoir est déduite de la part du **patient**, pas de celle de l'assureur : la part de l'assureur est calculée sur les lignes avant remise, puis plafonnée au montant encaissé. Un total de 10 000 avec 1 000 de remise et un taux de 80 % donne donc 8 000 pour l'assureur et 1 000 pour le patient, au lieu de 7 200 / 1 800. C'est favorable au patient et simple à expliquer au comptoir, mais un assureur pourrait le contester. À confirmer avec les conventions.
 
 **Total estimé : ~22 à 30 jours de développement**, hors recette et hors décisions externes.
 
