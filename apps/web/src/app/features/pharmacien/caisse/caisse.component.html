@@ -65,6 +65,89 @@
       </p>
     }
 
+    <!-- ── Tiers payant (EF-09) ──────────────────────────────────── -->
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.ASSURANCE' | translate }}</h2>
+
+    @if (!patient()) {
+      <div class="bb-caisse__qr">
+        <div class="bb-caisse__qr-champ">
+          <label class="bb-caisse__label" for="c-qr">{{ 'PHARMACIEN.CAISSE.QR_PATIENT' | translate }}</label>
+          <input id="c-qr" class="bb-caisse__champ" type="text" maxlength="80"
+                 [(ngModel)]="qrPatient" (keyup.enter)="scannerPatient()" />
+        </div>
+        <button matButton type="button" [disabled]="enCoursAssurance() || !qrPatient().trim()" (click)="scannerPatient()">
+          <i class="pi pi-qrcode" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.RECONNAITRE' | translate }}
+        </button>
+      </div>
+      <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.SANS_PATIENT' | translate }}</p>
+    } @else {
+      <div class="bb-caisse__patient">
+        <span class="bb-caisse__patient-nom">
+          <i class="pi pi-user" aria-hidden="true"></i> {{ patient()!.prenom }} {{ patient()!.nom }}
+        </span>
+        @if (!eligibilite()) {
+          <button matButton type="button" [disabled]="enCoursAssurance()" (click)="verifierEligibilite()">
+            <i class="pi pi-shield" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER' | translate }}
+          </button>
+        }
+        <button class="bb-caisse__annuler" type="button" (click)="oublierPatient()">
+          <i class="pi pi-times" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.OUBLIER' | translate }}
+        </button>
+      </div>
+
+      @if (eligibilite()) {
+        @if (eligibilite()!.eligible) {
+          <p class="bb-caisse__avis bb-caisse__avis--ok">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            {{ 'PHARMACIEN.CAISSE.ELIGIBLE' | translate: { assureur: eligibilite()!.assureur?.nom ?? '', police: eligibilite()!.numeroPolice ?? '', taux: eligibilite()!.tauxBasePourcent ?? 0 } }}
+          </p>
+        } @else {
+          <!-- Un refus n'est pas une erreur : il porte son motif, et c'est ce
+               que le comptoir explique au patient. -->
+          <p class="bb-caisse__avis bb-caisse__avis--danger">
+            <i class="pi pi-times-circle" aria-hidden="true"></i>
+            {{ 'PHARMACIEN.CAISSE.NON_ELIGIBLE' | translate }} — {{ eligibilite()!.motif }}
+          </p>
+        }
+      }
+
+      @if (peutAppliquerAssurance()) {
+        <div class="bb-caisse__bascule">
+          <label class="bb-caisse__bascule-label" for="c-assurance">
+            <input id="c-assurance" type="checkbox" [(ngModel)]="avecAssurance" />
+            {{ 'PHARMACIEN.CAISSE.APPLIQUER' | translate }}
+          </label>
+          <button matButton type="button" [disabled]="enCoursAssurance()" (click)="simuler()">
+            <i class="pi pi-refresh" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.RECALCULER' | translate }}
+          </button>
+        </div>
+      }
+
+      <!-- Le detail ligne par ligne, montre AVANT le paiement : un reste a
+           charge sans explication se conteste au comptoir (point 5.4). -->
+      @if (prise()) {
+        <div class="bb-caisse__prise">
+          @for (l of prise()!.lignes; track l.idMedicament) {
+            <div class="bb-caisse__prise-ligne" [class.bb-caisse__prise-ligne--exclue]="!l.couvert">
+              <span class="bb-caisse__prise-nom">{{ l.libelle }}</span>
+              <span class="bb-caisse__prise-taux">
+                @if (l.couvert) {
+                  {{ l.tauxAppliquePourcent }} %
+                } @else {
+                  {{ 'PHARMACIEN.CAISSE.NON_COUVERT' | translate }}
+                }
+              </span>
+              <span class="bb-caisse__prise-motif">{{ l.motifExclusion }}</span>
+              <span class="bb-caisse__prise-montant">{{ l.montantAssureGnf | number }} GNF</span>
+            </div>
+          }
+          @for (n of prise()!.notes; track n) {
+            <p class="bb-caisse__prise-note"><i class="pi pi-info-circle" aria-hidden="true"></i> {{ n }}</p>
+          }
+        </div>
+      }
+    }
+
     <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PAIEMENT' | translate }}</h2>
 
     <div class="bb-caisse__grille">
@@ -107,8 +190,13 @@
             {{ 'PHARMACIEN.CAISSE.REMISE' | translate }} : <strong>− {{ remiseAppliquee() | number }} GNF</strong>
           </span>
         }
+        @if (avecAssurance() && prise()) {
+          <span class="bb-caisse__total-ligne bb-caisse__total-ligne--assureur">
+            {{ 'PHARMACIEN.CAISSE.PART_ASSUREUR' | translate }} : <strong>− {{ prise()!.montantAssureGnf | number }} GNF</strong>
+          </span>
+        }
         <span class="bb-caisse__total">
-          {{ 'PHARMACIEN.CAISSE.NET' | translate }} : <strong>{{ montantNet() | number }} GNF</strong>
+          {{ 'PHARMACIEN.CAISSE.NET' | translate }} : <strong>{{ aEncaisser() | number }} GNF</strong>
         </span>
       </div>
       <button matButton="filled" type="button" [disabled]="enCours() || !peutEncaisser()" (click)="encaisser()">
@@ -139,6 +227,11 @@
           </div>
           <div class="bb-caisse__vente-droite">
             <span class="bb-caisse__montant">{{ v.montantNetGnf | number }} GNF</span>
+            @if (v.montantAssureGnf > 0) {
+              <span class="bb-caisse__badge-assure">
+                {{ 'PHARMACIEN.CAISSE.ASSURE_BADGE' | translate: { montant: (v.montantAssureGnf | number) ?? '', assureur: v.assureur?.code ?? '' } }}
+              </span>
+            }
             @if (v.statut === 'ANNULEE') {
               <span class="bb-caisse__badge-annulee">{{ 'PHARMACIEN.CAISSE.ANNULEE_BADGE' | translate }}</span>
             } @else {

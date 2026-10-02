@@ -1004,6 +1004,12 @@ export interface OrdonnanceEnAttenteView {
 }
 
 export interface PatientScanView {
+  /**
+   * L'identifiant du dossier. Necessaire au comptoir pour le tiers payant :
+   * sans lui, un pharmacien pouvait scanner un patient sans pouvoir ensuite
+   * controler son eligibilite.
+   */
+  id: string;
   prenom: string;
   nom: string;
   dateNaissance: string;

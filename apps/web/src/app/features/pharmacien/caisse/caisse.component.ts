@@ -18,7 +18,14 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { ToastrService } from 'ngx-toastr';
-import type { CreerVenteDto, LigneVenteDto, ModePaiement, VenteComptoirView } from '@baobaoheath/shared-types';
+import type {
+  ControleEligibiliteView,
+  CreerVenteDto,
+  LigneVenteDto,
+  ModePaiement,
+  PriseEnChargeView,
+  VenteComptoirView,
+} from '@baobaoheath/shared-types';
 
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { PharmacieStock } from '../../../core/models/pharmacien.model';
@@ -88,7 +95,31 @@ export class CaisseComponent implements OnInit {
     this.lignes().some((l) => l.idMedicament() && (l.quantite() ?? 0) > 0) &&
     this.depassements().length === 0 &&
     (this.modePaiement() === 'ESPECES' || this.numeroOperateur().trim().length > 0) &&
-    (this.exigentOrdonnance().length === 0 || this.idOrdonnance().trim().length > 0)
+    (this.exigentOrdonnance().length === 0 || this.idOrdonnance().trim().length > 0) &&
+    // Le tiers payant demande un patient reconnu eligible : l'API refuserait
+    // de toute facon, autant ne pas laisser encaisser a blanc.
+    (!this.avecAssurance() || this.peutAppliquerAssurance())
+  );
+
+  /** Ce que la caisse encaisse reellement du patient. */
+  readonly aEncaisser = computed(() =>
+    this.avecAssurance() && this.prise() ? this.prise()!.montantPatientGnf : this.montantNet()
+  );
+
+  // ── Tiers payant (EF-09, addendum point 5) ───────────────────────
+  //
+  // Le patient se reconnait par son QR : c'est le geste deja en place au
+  // comptoir. Sans lui, pas de contrat a opposer — et le tiers payant reste
+  // ferme.
+  qrPatient = signal('');
+  patient = signal<{ id: string; prenom: string; nom: string } | null>(null);
+  eligibilite = signal<ControleEligibiliteView | null>(null);
+  prise = signal<PriseEnChargeView | null>(null);
+  avecAssurance = signal(false);
+  enCoursAssurance = signal(false);
+
+  readonly peutAppliquerAssurance = computed(
+    () => this.eligibilite()?.eligible === true && this.montantBrut() > 0
   );
 
   readonly modes: ModePaiement[] = ['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO'];
@@ -133,6 +164,93 @@ export class CaisseComponent implements OnInit {
     return [m.libelle, ...sup].join(' · ');
   }
 
+  /** Reconnait le patient par son QR, comme au guichet de delivrance. */
+  scannerPatient() {
+    const qr = this.qrPatient().trim();
+    if (!qr) return;
+    this.enCoursAssurance.set(true);
+    this.pharma.scanQrCode(qr).subscribe({
+      next: (r) => {
+        this.enCoursAssurance.set(false);
+        const p = (r.data as unknown as { patient?: { id: string; prenom: string; nom: string } })?.patient;
+        if (!p?.id) {
+          this.toastr.error(this.i18n.t('PHARMACIEN.CAISSE.QR_INCONNU'), this.i18n.t('COMMON.ERROR_TITLE'));
+          return;
+        }
+        this.patient.set({ id: p.id, prenom: p.prenom, nom: p.nom });
+        this.eligibilite.set(null);
+        this.prise.set(null);
+        this.avecAssurance.set(false);
+      },
+      error: (err) => {
+        this.enCoursAssurance.set(false);
+        this.signaler(err, 'PHARMACIEN.CAISSE.QR_INCONNU');
+      },
+    });
+  }
+
+  oublierPatient() {
+    this.patient.set(null);
+    this.qrPatient.set('');
+    this.eligibilite.set(null);
+    this.prise.set(null);
+    this.avecAssurance.set(false);
+  }
+
+  /**
+   * Controle d'eligibilite. La reponse est enregistree cote API : un refus
+   * n'est pas une erreur, il porte son motif et s'affiche tel quel.
+   */
+  verifierEligibilite() {
+    const p = this.patient();
+    if (!p) return;
+    this.enCoursAssurance.set(true);
+    this.pharma.verifierEligibilite(p.id).subscribe({
+      next: (r) => {
+        this.enCoursAssurance.set(false);
+        this.eligibilite.set(r.data ?? null);
+        if (r.data?.eligible) this.simuler();
+        else this.avecAssurance.set(false);
+      },
+      error: (err) => {
+        this.enCoursAssurance.set(false);
+        this.signaler(err, 'PHARMACIEN.CAISSE.ERR_ELIGIBILITE');
+      },
+    });
+  }
+
+  /** Chiffre la prise en charge avant le paiement, sans rien enregistrer. */
+  simuler() {
+    const p = this.patient();
+    if (!p || this.montantBrut() <= 0) return;
+
+    const lignes = this.lignes()
+      .map((l) => ({ stock: this.stockDe(l.idMedicament()), quantite: l.quantite() ?? 0 }))
+      .filter((x) => x.stock && x.quantite > 0)
+      .map((x) => ({
+        idMedicament: x.stock!.medicament.id,
+        libelle: x.stock!.medicament.libelle,
+        categorie: x.stock!.medicament.categorie,
+        montantGnf: this.prixDe(x.stock!.medicament.id) * x.quantite,
+      }));
+    if (lignes.length === 0) return;
+
+    this.enCoursAssurance.set(true);
+    this.pharma.simulerPriseEnCharge(p.id, lignes, this.montantNet()).subscribe({
+      next: (r) => {
+        this.enCoursAssurance.set(false);
+        this.prise.set(r.data ?? null);
+        if (r.data) this.avecAssurance.set(true);
+      },
+      error: (err) => {
+        this.enCoursAssurance.set(false);
+        this.prise.set(null);
+        this.avecAssurance.set(false);
+        this.signaler(err, 'PHARMACIEN.CAISSE.ERR_SIMULATION');
+      },
+    });
+  }
+
   ajouterLigne() {
     this.lignes.update((l) => [...l, this.ligneVide()]);
   }
@@ -155,6 +273,8 @@ export class CaisseComponent implements OnInit {
       ...(this.modePaiement() !== 'ESPECES' ? { numeroOperateur: this.numeroOperateur().trim() } : {}),
       ...(this.remiseAppliquee() > 0 ? { remiseGnf: this.remiseAppliquee() } : {}),
       ...(this.idOrdonnance().trim() ? { idOrdonnance: this.idOrdonnance().trim() } : {}),
+      ...(this.patient() ? { idPatient: this.patient()!.id } : {}),
+      ...(this.avecAssurance() && this.peutAppliquerAssurance() ? { avecAssurance: true } : {}),
     };
 
     this.pharma.enregistrerVente(dto).subscribe({
@@ -209,6 +329,7 @@ export class CaisseComponent implements OnInit {
   }
 
   private reinitialiser() {
+    this.oublierPatient();
     this.lignes.set([this.ligneVide()]);
     this.modePaiement.set('ESPECES');
     this.numeroOperateur.set('');

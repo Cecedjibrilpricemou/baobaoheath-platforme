@@ -6,6 +6,9 @@ import { PharmacieStock, MedicamentInfo, OrdonnanceDelivrance, DelivrancePayload
 import { ApiResponse } from '../models/api.model';
 import type {
   AnnulerVenteDto,
+  CategorieProduit,
+  ControleEligibiliteView,
+  PriseEnChargeView,
   ApprovisionnementView,
   CreerVenteDto,
   TableauDeBordOfficineView,
@@ -115,6 +118,31 @@ export class PharmacienService {
 
   getTableauDeBord(): Observable<ApiResponse<TableauDeBordOfficineView>> {
     return this.api.get<ApiResponse<TableauDeBordOfficineView>>('/pharmacien/tableau-de-bord');
+  }
+
+  // ── Assurance et tiers payant (EF-09, addendum point 5) ──────────────
+
+  /**
+   * Controle d'eligibilite. La reponse est enregistree cote API : c'est elle
+   * qui justifiera le tiers payant si l'assureur le conteste.
+   */
+  verifierEligibilite(idPatient: string): Observable<ApiResponse<ControleEligibiliteView>> {
+    return this.api.post<ApiResponse<ControleEligibiliteView>>('/assurance/eligibilite', { idPatient });
+  }
+
+  /**
+   * Chiffre la prise en charge **sans rien enregistrer**, pour la montrer
+   * avant le paiement : un reste a charge sans explication se conteste au
+   * comptoir.
+   */
+  simulerPriseEnCharge(
+    idPatient: string,
+    lignes: { idMedicament: string; libelle: string; categorie: CategorieProduit; montantGnf: number }[],
+    montantNetGnf: number
+  ): Observable<ApiResponse<PriseEnChargeView>> {
+    return this.api.post<ApiResponse<PriseEnChargeView>>('/assurance/simulation', {
+      idPatient, lignes, montantNetGnf,
+    });
   }
 
   getAgents(): Observable<ApiResponse<unknown[]>> {

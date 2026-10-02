@@ -31,7 +31,7 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | Modèle | **49 modèles Prisma, 27 enums, 28 migrations, 12 rôles** |
 | Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
 | Tests | **513 API** (Jest, 28 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
-| Avancement | Feuille de route : **41 cases faites, 5 partielles, 49 restantes sur 95**. Addendum : **7 blocs livrés sur 8**, le 8e livré côté API. |
+| Avancement | Feuille de route : **41 cases faites, 5 partielles, 49 restantes sur 95**. Addendum : **les 8 blocs livrés**, avec des reliquats nommés bloc par bloc. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
 
 > ⚠️ **Deux documents font autorité sur le périmètre, dans cet ordre** : `docs/ADDENDUM-CDC-2026-09-28.md` (le plus récent, il **rouvre** des blocs marqués livrés), puis `docs/FEUILLE_DE_ROUTE_KENEYA.md`.
@@ -238,7 +238,7 @@ Swagger est servi sur `/api-docs` et décrit dans `apps/api/src/config/swagger.t
 | `hopital` | 7 | accueil, épisodes, **pointage des présences**, **demandes de RDV**, triage |
 | `laboratoire` | 3 | file, fiche de demande, scan du QR patient |
 | `medecin` | 9 | consultations, dossier, **orientations**, **agenda**, **résultats à libérer**, **demandes** |
-| `pharmacien` | 6 | ordonnances, stocks, approvisionnement, péremptions, **caisse**, **tableau de bord** |
+| `pharmacien` | 6 | ordonnances, stocks, approvisionnement, péremptions, **caisse** (avec le tiers payant), **tableau de bord** |
 | `admin-structure` | 2 | agents, statistiques de l'établissement |
 | `admin` | 4 | paramètres de plateforme, référentiels, analytique, utilisateurs |
 
@@ -408,7 +408,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | **P13** | Extension | ⏳ 1 case sur 5 — la prise de RDV à distance a été remontée ici |
 | P4, P5, P7 – P12 | identité/consentement, fil d'avancement, paiement, livraison, notifications, assurance, administration, interopérabilité | ❌ non commencés |
 
-### Les huit blocs de l'addendum — 7 livrés, le 8e livré côté API
+### Les huit blocs de l'addendum — les huit livrés
 
 `docs/ADDENDUM-CDC-2026-09-28.md` contient neuf points du chef de projet. Trois contredisaient du code déjà écrit ; ils ont été repris.
 
@@ -421,7 +421,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 | 5 | Prise de rendez-vous à distance | 2026-09-30 | Le patient demande depuis chez lui ; l'accueil ou le médecin accepte, ce qui crée l'épisode et le rendez-vous en une transaction. |
 | 6 | Pharmacie : lots, approvisionnement, péremptions | 2026-09-30 | `Stock.datePeremption` disparaît au profit de `LotStock`. Saisie de facture, une ligne par lot avec sa propre date. Sortie **au plus proche de la péremption**, lot périmé bloqué. |
 | 7 | Pharmacie : vente au comptoir et tableau de bord | 2026-10-02 | `VenteComptoir` + `LigneVente`. Client **facultatif**, remise plafonnée par paramètre, ordonnance exigée pour un produit réglementé (EF-05-12) et annoncée **avant** l'encaissement. Annulation d'une erreur de saisie qui remet exactement les lots sortis. **Reste le volet assurance**, qui dépend du bloc 8. |
-| 8 | Assurance | **API livrée le 2026-10-02**, front à faire | Éligibilité opposable et tracée, règles d'exclusion par catégorie, reste à charge ligne par ligne, tiers payant sur la vente au comptoir. **Restent** : le front, la vue de l'assureur sur ses pharmacies conventionnées, les bénéficiaires d'un contrat, les taux par acte et par analyse (supposent P11), et les échanges automatiques avec les assureurs. |
+| 8 | Assurance | 2026-10-02, API + caisse | Éligibilité opposable et tracée, règles d'exclusion par catégorie, reste à charge ligne par ligne, tiers payant sur la vente au comptoir. **Restent** : le front, la vue de l'assureur sur ses pharmacies conventionnées, les bénéficiaires d'un contrat, les taux par acte et par analyse (supposent P11), et les échanges automatiques avec les assureurs. |
 
 ### Décisions prises, à ne pas rediscuter
 

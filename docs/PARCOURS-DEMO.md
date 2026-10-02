@@ -162,7 +162,7 @@ Puis encaisser. La vente rejoint la liste avec son numéro `VE-2026-NNNNNN`, ses
 
 La semence crée l'assureur **Pricemou & Frère Assurances** (code `PFA`) et, pour Maomou Conde, la police `PFA-2026-00042` **à 100 %**, avec le **lait infantile et les cosmétiques exclus**. C'est l'exemple du chef de projet, rendu démontrable.
 
-Sous **Ousmane Pricemou**, à la caisse : panier avec **2 paracétamol et 1 lait infantile**, client = Maomou Conde, tiers payant activé.
+Sous **Ousmane Pricemou**, à la caisse : panier avec **2 paracétamol et 1 lait infantile**. Dans la section *Tiers payant*, saisissez le QR `DEMO-QR-MAOMOU-0001` et cliquez sur **Reconnaître**, puis sur **Vérifier l'éligibilité**. La couverture se chiffre aussitôt.
 
 | | Montant |
 |---|---|

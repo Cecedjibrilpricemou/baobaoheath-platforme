@@ -24,7 +24,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
 | **P9** Notifications neutres | 0 | — | 2 | ❌ non commencé |
-| **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **API livrée le 02/10** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne. Restent le front, la vue assureur et les échanges automatiques |
+| **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
 | **P11** Administration, audit, référentiels | 0 | — | 5 | ❌ non commencé — **conditionne les référentiels** |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
@@ -209,16 +209,16 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Aucun contenu médical dans un message sortant (EF-11-02) ; SMS en repli (EF-11-03).
 - [ ] Préférences de canaux et de langue (EF-11-04) ; rejeu des non délivrées (EF-11-05).
 
-### P10 — Assurance et tiers payant · L · EF-09 · ⏳ **3 faites + 4 partielles sur 9** — API livrée le 2026-10-02, front à faire
+### P10 — Assurance et tiers payant · L · EF-09 · ⏳ **3 faites + 4 partielles sur 9** — livré le 2026-10-02 (API + caisse) ; restent la vue assureur et l'administration des assureurs à l'écran
 - [~] **API livrée le 2026-10-02** — `Assureur` (code, mode d'échange, structure de type `ASSURANCE`) et `ContratAssurance` (police, taux de base, plafond annuel, franchise, date d'effet, date de fin, carence). **Reste les bénéficiaires** : un contrat couvre aujourd'hui un seul patient, pas ses ayants droit.
 - [~] **API livrée le 2026-10-02** — taux **par catégorie de produit** avec date d'effet, plafond par ligne, plafond annuel, franchise, carence. `RegleCouverture` ne remplace jamais la précédente : sa date d'effet décide, et le calcul retient celle en vigueur à la date de la vente. **Reste les taux par acte et par analyse**, qui supposent un référentiel d'actes (P11).
-- [x] **API livrée le 2026-10-02** — calcul du reste à charge **ligne par ligne**, fonction pure et testée pour elle-même. Le détail s'additionne exactement à la part de l'assureur, franchise et plafonds compris : sinon l'écran afficherait une somme qui ne tombe pas juste.
+- [x] **API + front livrés le 2026-10-02** — calcul du reste à charge **ligne par ligne**, fonction pure et testée pour elle-même. Le détail s'additionne exactement à la part de l'assureur, franchise et plafonds compris : sinon l'écran afficherait une somme qui ne tombe pas juste. La caisse l'affiche **avant** l'encaissement.
 - [ ] Autorisation préalable bloquante au-delà d'un seuil paramétrable (EF-09-05).
 - [ ] Trois modes : API, portail assureur, validation manuelle (EF-09-02) — `Assureur.modeEchange` existe, **seul `MANUEL` fonctionne** ; dossier de facturation et suivi (EF-09-06/07).
 - [~] Non assurés en **paiement direct** : acquis, une vente sans `avecAssurance` est intégralement payée par le client (EF-09-09). **Reste la règle de rejet après délivrance** (EF-09-08, décision D4).
-- [~] **API livrée le 2026-10-02** — contrôle d'éligibilité **opposable et tracé** : la réponse est figée en base, jamais recalculée, et un refus porte toujours son motif (contrainte SQL). **Reste la vue de l'assureur sur ses pharmacies conventionnées** (délivré, facturé, payé, dû, écarts) — elle suppose un suivi de règlement qui n'existe pas encore.
+- [~] **API + front livrés le 2026-10-02** — contrôle d'éligibilité **opposable et tracé** : le patient se reconnaît par son QR au comptoir, la réponse est figée en base, jamais recalculée, et un refus porte toujours son motif (contrainte SQL). **Reste la vue de l'assureur sur ses pharmacies conventionnées** (délivré, facturé, payé, dû, écarts) — elle suppose un suivi de règlement qui n'existe pas encore.
 - [x] **API livrée le 2026-10-02** — **exclusions par catégorie de produit**. Les deux préalables ont été levés le 2026-10-01 : le catalogue accepte des articles non médicamenteux, et `CategorieProduit` est une énumération fermée. Une catégorie exclue n'a pas de taux : porter les deux serait contradictoire, et une contrainte SQL le refuse.
-- [x] **API livrée le 2026-10-02** — **un taux de 100 % ne couvre pas tout**. Vérifié contre la vraie API : un assuré à 100 % chez qui le lait est exclu paie 45 000 GNF de lait et rien pour son paracétamol. `POST /assurance/simulation` montre le détail **avant** paiement : couvert, à quel taux, exclu et pourquoi, plus les notes disant ce qui a raboté la part de l'assureur.
+- [x] **API + front livrés le 2026-10-02** — **un taux de 100 % ne couvre pas tout**. Vérifié à l'écran : un assuré à 100 % chez qui le lait est exclu voit « Total 47 000 · Pris par l'assureur − 2 000 · À encaisser 45 000 », et la ligne de lait porte « Catégorie LAIT_INFANTILE exclue par l'assureur ». Le détail est montré **avant** paiement, avec les notes disant ce qui a raboté la part de l'assureur.
 
 ### P11 — Administration, audit, référentiels · M · EF-12 · ❌ **0 sur 5** — conditionne l'import des référentiels
 - [ ] Journal non modifiable incluant les **lectures** de dossier ; recherche et export (EF-12-04/05).

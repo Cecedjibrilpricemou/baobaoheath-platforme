@@ -164,6 +164,7 @@ export async function scanPatient(qrCode: string, pharmacienId: string) {
 
   return {
     patient: {
+      id: patient.id,
       prenom: patient.utilisateur.prenom,
       nom: patient.utilisateur.nom,
       dateNaissance: patient.dateNaissance.toISOString(),
@@ -316,6 +317,7 @@ export async function verifierOrdonnance(
     motif: refus ?? undefined,
     ordonnance: vue,
     patient: {
+      id: patient.id,
       prenom: patient.utilisateur.prenom,
       nom: patient.utilisateur.nom,
       dateNaissance: patient.dateNaissance.toISOString(),
