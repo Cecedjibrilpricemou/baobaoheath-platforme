@@ -465,24 +465,33 @@ Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les ca
 | P3 Ordonnance | 5 | — | 1 | — |
 | P4 Identité, consentement, accès | 0 | — | 7 | **rien n'est commencé** |
 | P5 Fil d'avancement | 0 | — | 3 | rien |
-| P6 Pharmacie et officine | 3 | 1 | 9 | vente au comptoir, tableau de bord, import Excel, écrans de commande, OCR de facture |
+| P6 Pharmacie et officine | 5 | 1 | 7 | lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR de facture |
 | P7 Paiement | 0 | — | 5 | rien |
 | P8 Livraison, carte, annuaire | 0 | — | 9 | rien |
-| P9 Notifications neutres | 0 | — | 2 | rien |
-| P10 Assurance | 0 | — | 9 | rien |
+| P9 Notifications neutres | 1 | — | 1 | **neutralité des messages sortants** livrée le 02/10 ; restent les préférences de canaux et le rejeu |
+| P10 Assurance | 3 | 4 | 2 | assureur, contrat, règles par catégorie, éligibilité tracée, tiers payant à la caisse (02/10) ; restent la vue assureur, l'administration à l'écran et les échanges automatiques |
 | P11 Admin, audit, référentiels | 5 | 1 | — | **référentiels**, **journal d'audit**, **suspension de compte** et **détection d'anomalies** (03/10). La chaîne est complète : on détecte dans le journal, on enquête d'un clic, on suspend sur l'écran d'à côté |
 | P12 Interopérabilité | 0 | — | 3 | rien |
 | P13 Extension | 1 | — | 4 | téléconsultation réelle (suspendue à D2) |
-| **Total** | **36** | **1** | **58** | sur 95 |
+| **Total** | **42** | **5** | **48** | sur 95 |
 
-**Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
+**Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun, et P11 n'a plus que les conventions des partenaires.
 
-### B. Les deux blocs d'addendum restants
+> Ce tableau était faux jusqu'au 03/10 au soir : il annonçait encore P6, P9 et P10 au point où ils étaient le 01/10, et un total de 36 au lieu de 42. Les comptes sont désormais repris de `FEUILLE_DE_ROUTE_KENEYA.md`, qui fait foi. Un pack de reprise qui ment sur l'état du projet est pire qu'un pack absent.
 
-| # | Bloc | Taille | Ce qui bloque, précisément |
-|---|---|---|---|
-| 7 | Pharmacie : vente au comptoir et tableau de bord | M | `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Il faut donc un modèle de vente propre : lignes, remise, mode de paiement (`ModePaiement` existe déjà), vendeur, établissement, et un client **facultatif**. La catégorie de produit existe depuis le 01/10, donc la règle « un produit réglementé ne se vend pas sans ordonnance » (EF-05-12) est exprimable. |
-| 8 | Assurance et tiers payant | L | Ni `Assureur`, ni `ContratAssurance`, ni type de structure « assurance » dans le modèle. Les exclusions sont désormais **exprimables** grâce à `CategorieProduit`, et la règle du chef de projet — « assuré à 100 % ne veut pas dire tout est pris » — demande des plafonds et des taux par catégorie. Suppose le bloc 7 pour les ventes au comptoir. |
+### B. Les blocs d'addendum — tous livrés
+
+Les neuf points du chef de projet sont traités. Les blocs 7 (vente au comptoir) et 8 (assurance et
+tiers payant) ont été livrés le 2026-10-02 ; ils figuraient encore ici comme « restants » jusqu'au
+03/10 au soir, alors que la section « Les huit blocs de l'addendum » les donnait livrés juste
+au-dessus. Deux sections du même document se contredisaient.
+
+Ce qui reste de ces deux blocs n'est plus du modèle mais de l'écran et de l'échange :
+
+| # | Bloc | Ce qui reste |
+|---|---|---|
+| 7 | Vente au comptoir | L'import Excel des factures fournisseur, l'OCR, et les écrans de commande côté pharmacie. |
+| 8 | Assurance et tiers payant | La vue de l'assureur sur ses pharmacies conventionnées, l'écran d'administration des assureurs, les bénéficiaires d'un contrat, les taux par acte et par analyse (supposent un référentiel d'actes — l'import existe depuis le 03/10), et les échanges automatiques avec les assureurs. |
 
 ### C. Ce que l'addendum ne couvre pas et qu'il ne faut pas perdre
 
