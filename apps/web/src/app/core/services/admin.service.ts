@@ -1,5 +1,7 @@
 // core/services/admin.service.ts
 import { Injectable, inject } from '@angular/core';
+import { HttpResponse } from '@angular/common/http';
+import type { FiltreJournalDto, PageJournalView } from '@baobaoheath/shared-types';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
@@ -101,4 +103,32 @@ export class AdminService {
   exportAnalytics(format: string, periode: string): Observable<unknown> {
     return this.api.get<unknown>('/analytics/export', { format, periode });
   }
+
+  // --- Journal d audit (EF-12-05) --------------------------------------
+  //
+  // Les criteres partent en chaine de requete et le schema cote API est
+  // `.strict()` : un critere vide ne doit donc pas etre envoye, sinon il est
+  // refuse en 400. On ne transmet que ce qui est renseigne.
+
+  rechercherJournal(filtres: FiltreJournalDto): Observable<ApiResponse<PageJournalView>> {
+    return this.api.get<ApiResponse<PageJournalView>>('/journal', enParametres(filtres));
+  }
+
+  /**
+   * L export CSV, avec sa reponse entiere : le nom du fichier vient du
+   * serveur (`Content-Disposition`), et non d un nom reconstruit ici.
+   */
+  exporterJournal(filtres: FiltreJournalDto): Observable<HttpResponse<Blob>> {
+    return this.api.getFichier('/journal/export', enParametres(filtres));
+  }
+}
+
+/** Les criteres renseignes, en chaines. Les vides sont ecartes. */
+function enParametres(filtres: FiltreJournalDto): Record<string, string> {
+  const params: Record<string, string> = {};
+  for (const [cle, valeur] of Object.entries(filtres)) {
+    if (valeur === undefined || valeur === null || valeur === '' || valeur === false) continue;
+    params[cle] = String(valeur);
+  }
+  return params;
 }

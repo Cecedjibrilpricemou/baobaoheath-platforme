@@ -184,14 +184,28 @@ describe('rechercher', () => {
     expect(page.lignes[0]?.patientConcerne).toBeNull();
   });
 
-  // Le libelle part en cles, comme pour le journal du patient : l'ecran
-  // d'administration est bilingue lui aussi.
-  it('rend des cles de traduction, pas du texte', async () => {
+  // Le libelle part en cles, l'ecran d'administration etant bilingue lui
+  // aussi — mais ce sont **les cles d'administration**, pas celles du
+  // patient : « votre dossier a ete consulte » n'a aucun sens dans une
+  // enquete sur le dossier d'un tiers, que la colonne voisine nomme deja.
+  // Vu a l'ecran le 2026-10-03.
+  it('rend les cles de la redaction d administration, pas celles du patient', async () => {
     prisma.journalAudit.findMany.mockResolvedValue([LIGNE]);
     prisma.journalAudit.count.mockResolvedValue(1);
     const page = await rechercher({}, MAINTENANT);
-    expect(page.lignes[0]?.libelle).toMatch(/^PATIENT\.CONSENTS\.ACCESS_LABEL\./);
-    expect(page.lignes[0]?.libelleObjet).toMatch(/^PATIENT\.CONSENTS\.ACCESS_OBJECT\./);
+    expect(page.lignes[0]?.libelle).toBe('ADMIN.JOURNAL.ACTION_LABEL.READ');
+    expect(page.lignes[0]?.libelleObjet).toBe('ADMIN.JOURNAL.ACTION_OBJECT.RECORD');
+    expect(page.lignes[0]?.libelle).not.toMatch(/^PATIENT\./);
+  });
+
+  it('nomme un scan comme tel, sans objet', async () => {
+    prisma.journalAudit.findMany.mockResolvedValue([
+      { ...LIGNE, action: 'GET /scan/:qrCode', ressource: 'laboratoire' },
+    ]);
+    prisma.journalAudit.count.mockResolvedValue(1);
+    const page = await rechercher({}, MAINTENANT);
+    expect(page.lignes[0]?.libelle).toBe('ADMIN.JOURNAL.ACTION_LABEL.SCAN');
+    expect(page.lignes[0]?.libelleObjet).toBe('');
   });
 
   it('garde la trace technique a cote du libelle', async () => {

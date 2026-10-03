@@ -96,20 +96,47 @@ const OBJET: Record<string, string> = {
  * attirer l'oeil. Sans cette distinction, les consultations du patient noient
  * celles des tiers — 273 lignes sur 850 dans la base de demonstration.
  */
-export function libelleAcces(acces: AccesBrut, parMoi: boolean): LibelleAcces {
-  const suffixe = parMoi ? '_BY_ME' : '';
-
+/**
+ * Ce qu'une ligne de journal **est**, independamment de qui la lit.
+ *
+ * Le meme acces se raconte autrement selon le lecteur : « Votre dossier a ete
+ * consulte » pour le patient, « Dossier consulte » pour l'administrateur qui
+ * enquete sur le dossier d'un tiers. La premiere version de l'ecran
+ * d'administration reemployait les libelles du patient et affichait donc
+ * « votre dossier a ete consulte » a propos du dossier de quelqu'un d'autre —
+ * vu a l'ecran le 2026-10-03.
+ *
+ * Cette fonction rend les deux parties nues ; chaque vue en fabrique ses
+ * propres cles. Une seule table de correspondance, deux redactions.
+ */
+export function partiesAcces(acces: AccesBrut): { verbe: string; objet: string } {
   // Le scan d'un code au comptoir : le geste le plus concret du journal, et
-  // celui qui n'etait pas trace avant le 2026-09-29. Le patient se souvient
-  // d'avoir presente son code ; il doit pouvoir le retrouver ici. La phrase se
-  // suffit a elle-meme, donc pas d'objet.
+  // celui qui n'etait pas trace avant le 2026-09-29. La phrase se suffit a
+  // elle-meme, donc pas d'objet.
   if (/\/(scan|qr)\//.test(acces.action)) {
-    return { cle: `${PREFIXE}.SCAN${suffixe}`, objet: '' };
+    return { verbe: 'SCAN', objet: '' };
   }
+  return { verbe: verbeDe(acces.action), objet: OBJET[acces.ressource] ?? 'RECORD' };
+}
 
+export function libelleAcces(acces: AccesBrut, parMoi: boolean): LibelleAcces {
+  const { verbe, objet } = partiesAcces(acces);
+  const suffixe = parMoi ? '_BY_ME' : '';
   return {
-    cle: `${PREFIXE}.${verbeDe(acces.action)}${suffixe}`,
-    objet: `${PREFIXE_OBJET}.${OBJET[acces.ressource] ?? 'RECORD'}`,
+    cle: `${PREFIXE}.${verbe}${suffixe}`,
+    objet: objet ? `${PREFIXE_OBJET}.${objet}` : '',
+  };
+}
+
+/**
+ * Les memes cles, redigees pour une enquete : le patient est un tiers, et la
+ * colonne « patient concerne » le nomme deja juste a cote.
+ */
+export function libelleAccesAdministration(acces: AccesBrut): LibelleAcces {
+  const { verbe, objet } = partiesAcces(acces);
+  return {
+    cle: `ADMIN.JOURNAL.ACTION_LABEL.${verbe}`,
+    objet: objet ? `ADMIN.JOURNAL.ACTION_OBJECT.${objet}` : '',
   };
 }
 
@@ -125,9 +152,11 @@ export function toutesLesCles(): string[] {
   for (const verbe of ['READ', 'CREATE', 'UPDATE', 'DELETE', 'SCAN']) {
     cles.add(`${PREFIXE}.${verbe}`);
     cles.add(`${PREFIXE}.${verbe}_BY_ME`);
+    cles.add(`ADMIN.JOURNAL.ACTION_LABEL.${verbe}`);
   }
   for (const objet of [...Object.values(OBJET), 'RECORD']) {
     cles.add(`${PREFIXE_OBJET}.${objet}`);
+    cles.add(`ADMIN.JOURNAL.ACTION_OBJECT.${objet}`);
   }
   return [...cles].sort();
 }

@@ -207,12 +207,49 @@ describe('les phrases francaises sont redigees, pas bricolees', () => {
     expect(avecAccent.length).toBeGreaterThan(8);
   });
 
-  it('commencent par une majuscule pour les phrases, une minuscule pour les objets', () => {
+  // La casse n'obeit pas a la meme regle dans les deux redactions, et c'est
+  // voulu :
+  //
+  //   - cote patient, l'objet arrive **au milieu** d'une phrase — « Vous avez
+  //     consulte votre dossier » — donc il est en minuscule ;
+  //   - cote administration, l'objet **ouvre** la phrase — « Dossier
+  //     consulte » — donc il prend la majuscule. Reemployer les minuscules du
+  //     patient donnait « votre dossier a ete consulte » en tete de cellule,
+  //     vu a l'ecran le 2026-10-03.
+  it('respectent la casse propre a chaque redaction', () => {
     for (const cle of toutesLesCles()) {
       const phrase = FR[cle] ?? '';
-      const attendu = cle.includes('ACCESS_LABEL') ? /^[A-Z{]/ : /^[a-z]/;
-      expect({ cle, ok: attendu.test(phrase) }).toEqual({ cle, ok: true });
+      const cotePatient = cle.startsWith('PATIENT.');
+      const estUnObjet = cle.includes('_OBJECT');
+      const attendu = cotePatient && estUnObjet ? /^[a-z]/ : /^[A-ZÉ{]/;
+      expect({ cle, phrase, ok: attendu.test(phrase) }).toEqual({ cle, phrase, ok: true });
     }
+  });
+
+  // Cote administration, la colonne « patient concerne » nomme deja la
+  // personne : la phrase ne doit pas s'adresser a elle.
+  //
+  // Le motif compare des mots entiers, et « vous » n'est refuse qu'en tete de
+  // mot : sans cela « Rendez-vous » echouerait, ce qu'il a fait a la premiere
+  // ecriture de ce test. Meme piege que le filtre de neutralite des SMS, ou
+  // « analyser » ne doit pas declencher sur « analyse ».
+  const SADRESSE_AU_PATIENT = /\bvotre\b|(^|\s)vous\b/i;
+
+  it('la redaction d administration ne s adresse a personne', () => {
+    for (const cle of toutesLesCles().filter((c) => c.startsWith('ADMIN.'))) {
+      const phrase = FR[cle] ?? '';
+      expect({ cle, phrase, sAdresse: SADRESSE_AU_PATIENT.test(phrase) })
+        .toEqual({ cle, phrase, sAdresse: false });
+    }
+  });
+
+  // Et le controle inverse : le motif doit mordre sur les phrases du patient,
+  // sinon il ne prouve rien.
+  it('le meme motif reconnait bien les phrases du patient', () => {
+    expect(SADRESSE_AU_PATIENT.test(FR['PATIENT.CONSENTS.ACCESS_LABEL.READ_BY_ME'] ?? '')).toBe(true);
+    expect(SADRESSE_AU_PATIENT.test(FR['PATIENT.CONSENTS.ACCESS_OBJECT.RECORD'] ?? '')).toBe(true);
+    // Et il ne mord pas sur un mot qui contient « vous ».
+    expect(SADRESSE_AU_PATIENT.test('Rendez-vous')).toBe(false);
   });
 
   it('aucune n est vide, dans aucune des deux langues', () => {

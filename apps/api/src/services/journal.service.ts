@@ -2,7 +2,7 @@ import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { ValidationError } from '../utils/app-error';
 import { enCsv } from '../utils/csv';
-import { libelleAcces } from './libelle-acces';
+import { libelleAccesAdministration } from './libelle-acces';
 import type {
   FiltreJournalDto,
   LigneJournalView,
@@ -148,7 +148,10 @@ function lire(where: Filtre, options: { skip?: number; take?: number } = {}) {
 type LigneBrute = Awaited<ReturnType<typeof lire>>[number];
 
 function enVue(l: LigneBrute): LigneJournalView {
-  const { cle, objet } = libelleAcces({ action: l.action, ressource: l.ressource }, false);
+  // La redaction d administration : le patient est un tiers, et la colonne
+  // « patient concerne » le nomme deja a cote. Le libelle du patient dirait
+  // « votre dossier » a propos du dossier de quelqu un d autre.
+  const { cle, objet } = libelleAccesAdministration({ action: l.action, ressource: l.ressource });
   return {
     id: l.id,
     creeLe: l.creeLe.toISOString(),

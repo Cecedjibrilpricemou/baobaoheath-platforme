@@ -1,0 +1,156 @@
+// Journal d'audit — recherche et export (EF-12-05).
+//
+// Les jetons employes ici ont ete verifies un a un avant d'etre ecrits :
+// `--bb-radius-md` n'existe pas dans ce projet, et l'avoir suppose a deja
+// coute une page sans coins arrondis.
+
+.journal-avis {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8125rem;
+  border-radius: var(--bb-radius-sm);
+  border: 1px solid var(--bb-border-light);
+  background: var(--bb-surface-1);
+  color: var(--bb-text-secondary);
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; }
+}
+
+.journal-filtres {
+  padding: 1rem 1.15rem 0.85rem;
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.4rem 0.8rem;
+  }
+
+  &__cases {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 0.1rem 0 0.85rem;
+    font-size: 0.8125rem;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__espace { flex: 1 1 auto; }
+}
+
+.journal-avertissement {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--bb-warning);
+}
+
+.journal-erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8125rem;
+  border-radius: var(--bb-radius-sm);
+  background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+  color: var(--bb-danger);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+.journal-resultats {
+  margin-top: 1rem;
+  padding: 1rem 1.15rem 1.15rem;
+
+  &__tete {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+
+    h2 { margin: 0; font-size: 1rem; }
+  }
+
+  &__compte {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+  }
+}
+
+.journal-table-wrap { overflow-x: auto; }
+
+.journal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--bb-border-light);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bb-text-muted);
+    white-space: nowrap;
+  }
+
+  &__date { white-space: nowrap; color: var(--bb-text-secondary); }
+  &__who  { display: block; font-weight: 600; color: var(--bb-text-primary); }
+  &__role { font-size: 11.5px; color: var(--bb-text-muted); }
+  &__aucun { color: var(--bb-text-muted); }
+
+  &__statut {
+    font-variant-numeric: tabular-nums;
+    color: var(--bb-text-secondary);
+
+    &--refus { font-weight: 700; color: var(--bb-danger); }
+  }
+
+  // Un refus est une tentative, pas un acces : c'est souvent la ligne la
+  // plus interessante du tableau, elle doit se voir sans etre cherchee.
+  &__row--refus { background: color-mix(in srgb, var(--bb-danger) 6%, transparent); }
+}
+
+.journal-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+  font-size: 0.8125rem;
+  color: var(--bb-text-secondary);
+}
+
+// `.bb-empty` n'est pas une classe globale : chaque ecran la definit. Verifie
+// avant de l'employer — la supposer aurait donne un bloc vide sans style.
+.bb-empty {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  color: var(--bb-text-muted);
+
+  mat-icon { font-size: 26px; width: 26px; height: 26px; opacity: 0.45; }
+  p { font-size: 0.8125rem; margin: 0; }
+}
