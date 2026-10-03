@@ -2355,3 +2355,47 @@ export interface PageJournalView {
    */
   maxExport: number;
 }
+
+// --- Suspension de compte (EF-12-01) ---------------------------------------
+
+/** Ce qui a ferme un compte, quand la fermeture est documentee. */
+export interface SuspensionDetail {
+  suspenduLe: HorodatageApi;
+  motif: string;
+  /** Null si l auteur de la decision a depuis ete supprime. */
+  parQui: string | null;
+}
+
+export interface CompteView {
+  id: string;
+  prenom: string;
+  nom: string;
+  email: string | null;
+  telephone: string;
+  role: Role;
+  estActif: boolean;
+  structure: string | null;
+  derniereConnexion: HorodatageApi | null;
+  suspension: SuspensionDetail | null;
+  /**
+   * Compte ferme sans date ni motif : il vient de l ancienne voie, reservee a
+   * l admin de structure. On le dit plutot que de laisser croire a une
+   * suspension documentee.
+   */
+  fermeSansMotif: boolean;
+}
+
+/** Le resultat d une suspension ou d une reactivation. */
+export interface SuspensionView {
+  id: string;
+  nomComplet: string;
+  estActif: boolean;
+  motif: string | null;
+  /** Ce qui a reellement ete coupe : la mesure est dite « immediate ». */
+  sessionsFermees: number;
+  socketsFermes: number;
+}
+
+export interface SuspendreCompteDto {
+  motif: string;
+}

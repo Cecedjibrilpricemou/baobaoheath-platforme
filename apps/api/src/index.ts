@@ -35,6 +35,7 @@ import resultatsRoutes from './routes/resultats.routes';
 import assuranceRoutes from './routes/assurance.routes';
 import referentielRoutes from './routes/referentiel.routes';
 import journalRoutes from './routes/journal.routes';
+import compteRoutes from './routes/compte.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -208,6 +209,7 @@ app.use('/api/v1/resultats', resultatsRoutes);
 app.use('/api/v1/assurance', assuranceRoutes);
 app.use('/api/v1/referentiels', referentielRoutes);
 app.use('/api/v1/journal', journalRoutes);
+app.use('/api/v1/comptes', compteRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

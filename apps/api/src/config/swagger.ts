@@ -1212,6 +1212,72 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Identite a jour avec logoUrl' }, 400: { description: 'Image refusee' } },
       },
     },
+    // ── P11 Suspension de compte (EF-12-01) ───────────────────────────
+    '/api/v1/comptes': {
+      get: {
+        tags: ['Comptes'],
+        summary: 'Lister les comptes (EF-12-01)',
+        description: "La liste des comptes de la plateforme, les fermes d'abord. Reserve a `ADMIN_NATIONAL` et `SUPER_ADMIN`.\n\n`fermeSansMotif` distingue un compte ferme par l'ancienne voie (`desactiverAgent`, reservee a l'admin de structure, qui n'enregistre ni date ni motif) d'une suspension documentee. On le dit plutot que de laisser croire a une mesure expliquee.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Nom, prenom, e-mail ou telephone' },
+          { name: 'role', in: 'query', schema: { type: 'string' } },
+          { name: 'actifs', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 25, maximum: 100 } },
+        ],
+        responses: {
+          200: { description: 'Page de comptes', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            comptes: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' }, prenom: { type: 'string' }, nom: { type: 'string' },
+              email: { type: 'string', nullable: true }, telephone: { type: 'string' },
+              role: { type: 'string' }, estActif: { type: 'boolean' },
+              structure: { type: 'string', nullable: true },
+              derniereConnexion: { type: 'string', format: 'date-time', nullable: true },
+              suspension: { type: 'object', nullable: true, properties: { suspenduLe: { type: 'string', format: 'date-time' }, motif: { type: 'string' }, parQui: { type: 'string', nullable: true } } },
+              fermeSansMotif: { type: 'boolean', description: "Ferme par l'ancienne voie, sans date ni motif" },
+            } } },
+            total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' },
+          } } } }] } } } },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/comptes/{id}/suspendre': {
+      post: {
+        tags: ['Comptes'],
+        summary: 'Suspendre un compte immediatement (EF-12-01)',
+        description: "Ferme un compte **immediatement**. Le mot engage : trois portes sont fermees.\n\n1. `estActif = false` — chaque requete HTTP relit la session en base, donc le refus vaut des la requete suivante ;\n2. **les sessions sont supprimees** — sans quoi elles tiennent jusqu'a leur expiration ;\n3. **les connexions temps reel sont coupees** — un socket n'est authentifie qu'a la poignee de main. Avant le 2026-10-03, un compte suspendu continuait de recevoir les notifications de ses patients jusqu'a ce qu'il ferme son navigateur, alors que la moindre requete HTTP lui etait refusee.\n\nLa reponse dit **ce qui a reellement ete coupe** (`sessionsFermees`, `socketsFermes`) plutot qu'un simple « fait » : une mesure annoncee immediate doit pouvoir etre verifiee.\n\n**Le motif est obligatoire**, au moins dix caracteres. Une suspension coupe un soignant de ses patients ; une mesure qu'on ne peut pas expliquer ne peut pas etre contestee. La regle vit aussi dans une contrainte SQL, pour ne dependre d'aucun code seul.\n\n**Refus possibles** : se suspendre soi-meme, un compte deja ferme, un `SUPER_ADMIN` quand on n'en est pas un, et surtout **le dernier super administrateur actif** — le suspendre laisserait la plateforme sans administration, sans retour en arriere possible.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string', minLength: 10, maxLength: 500 } } } } } },
+        responses: {
+          200: { description: 'Compte ferme', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            id: { type: 'string' }, nomComplet: { type: 'string' }, estActif: { type: 'boolean' },
+            motif: { type: 'string', nullable: true },
+            sessionsFermees: { type: 'integer' }, socketsFermes: { type: 'integer' },
+          } } } }] } } } },
+          400: { description: 'Motif absent ou trop court' },
+          403: { description: 'Soi-meme, compte deja ferme, super administrateur, ou dernier administrateur actif' },
+          404: { description: 'Compte introuvable' },
+        },
+      },
+    },
+    '/api/v1/comptes/{id}/reactiver': {
+      post: {
+        tags: ['Comptes'],
+        summary: 'Reactiver un compte (EF-12-01)',
+        description: "Rouvre un compte. La fiche ne garde **aucune** trace de la suspension levee : une contrainte SQL l'exige, et un compte actif affichant encore un motif de suspension serait trompeur.\n\n**Le journal d'audit garde l'histoire** — il est en ajout seul (EF-12-04), et c'est la qu'une enquete retrouvera la suite des decisions.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Compte reactive' },
+          400: { description: 'Compte deja actif' },
+          403: { description: 'Reserve a un super administrateur pour un super administrateur' },
+          404: { description: 'Compte introuvable' },
+        },
+      },
+    },
     // ── P11 Journal d'audit : recherche et export (EF-12-05) ──────────
     '/api/v1/journal': {
       get: {

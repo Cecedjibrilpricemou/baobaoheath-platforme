@@ -233,6 +233,21 @@ model Utilisateur {
   creeLe                DateTime  @default(now())
   modifieLe             DateTime  @updatedAt
 
+  /// Quand la suspension a pris effet (EF-12-01).
+  ///
+  /// `estActif = false` dit qu'un compte est ferme, mais pas **qui** l'a
+  /// ferme, **quand**, ni **pourquoi**. Une suspension est une mesure grave —
+  /// elle coupe un soignant de ses patients — et doit pouvoir etre expliquee
+  /// et contestee. Ces trois colonnes sont donc renseignees ensemble, et une
+  /// contrainte SQL refuse qu'elles se contredisent.
+  suspenduLe            DateTime?
+  motifSuspension       String?
+  /// L'auteur de la suspension. `SetNull` : son depart ne doit pas effacer la
+  /// trace de sa decision, ni empecher la suppression de son compte.
+  idSuspenduPar         String?
+  suspenduPar           Utilisateur?  @relation("SuspensionsProoncees", fields: [idSuspenduPar], references: [id], onDelete: SetNull)
+  suspensionsPrononcees Utilisateur[] @relation("SuspensionsProoncees")
+
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 

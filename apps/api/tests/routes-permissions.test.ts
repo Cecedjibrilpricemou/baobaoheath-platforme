@@ -69,6 +69,7 @@ const pharmacien = require('../src/routes/pharmacien.routes').default as { stack
 const assurance = require('../src/routes/assurance.routes').default as { stack: Couche[] };
 const referentiels = require('../src/routes/referentiel.routes').default as { stack: Couche[] };
 const journal = require('../src/routes/journal.routes').default as { stack: Couche[] };
+const comptes = require('../src/routes/compte.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -303,5 +304,33 @@ describe('la recherche dans le journal est reservee a l administration nationale
   it('les deux routes existent bien', () => {
     expect(rolesPour(journal, 'get', '/')).not.toBeNull();
     expect(rolesPour(journal, 'get', '/export')).not.toBeNull();
+  });
+});
+
+
+// -- Suspension de compte (EF-12-01) --------------------------------
+describe('la suspension de compte est reservee a l administration nationale', () => {
+  it.each([
+    ['get', '/'],
+    ['post', '/:id/suspendre'],
+    ['post', '/:id/reactiver'],
+  ])('%s %s n est ouverte qu a ADMIN_NATIONAL et SUPER_ADMIN', (methode, chemin) => {
+    expect(rolesPour(comptes, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
+  });
+
+  // Un admin de structure dispose deja de `desactiverAgent`, borne a ses
+  // propres agents. Fermer n importe quel compte de la plateforme est une
+  // responsabilite d un autre ordre.
+  it.each([
+    'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'MEDECIN', 'PHARMACIEN', 'PATIENT', 'ASC',
+  ] as const)('ferme la suspension a %s', (role) => {
+    expect(rolesPour(comptes, 'post', '/:id/suspendre')).not.toContain(role);
+    expect(rolesPour(comptes, 'post', '/:id/reactiver')).not.toContain(role);
+  });
+
+  it('les trois routes existent bien', () => {
+    expect(rolesPour(comptes, 'get', '/')).not.toBeNull();
+    expect(rolesPour(comptes, 'post', '/:id/suspendre')).not.toBeNull();
+    expect(rolesPour(comptes, 'post', '/:id/reactiver')).not.toBeNull();
   });
 });

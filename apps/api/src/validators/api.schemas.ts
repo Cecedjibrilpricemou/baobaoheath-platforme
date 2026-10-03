@@ -676,6 +676,24 @@ const booleenDeRequete = z
   .transform((v) => v === 'true')
   .optional();
 
+// --- Suspension de compte (EF-12-01) --------------------------------
+//
+// Le motif est long d au moins dix caracteres : « non » ou « rgpd » ne disent
+// rien, et une suspension qu on ne peut pas expliquer ne peut pas etre
+// contestee. La meme regle vit dans le service et dans une contrainte SQL,
+// pour qu elle ne depende d aucune des trois seules.
+export const suspendreCompteSchema = z.object({
+  motif: z.string().trim().min(10).max(500),
+}).strict();
+
+export const filtreComptesSchema = z.object({
+  q: z.string().trim().min(1).max(100).optional(),
+  role: z.nativeEnum(Role).optional(),
+  actifs: booleenDeRequete,
+  page: positiveInt.optional(),
+  limit: positiveInt.max(100).optional(),
+}).strict();
+
 export const filtreJournalSchema = z.object({
   du: z.string().trim().min(1).optional(),
   au: z.string().trim().min(1).optional(),
