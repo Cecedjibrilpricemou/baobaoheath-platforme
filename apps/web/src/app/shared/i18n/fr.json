@@ -473,6 +473,38 @@
           "TITLE": "Recherche anonymisée",
           "DESC": "Contribuer, sans aucune donnée d'identité, aux statistiques de santé publique et à la recherche."
         }
+      },
+      "ACCESS_THIRD_PARTY_ONLY": "Afficher seulement les acces par une autre personne",
+      "ACCESS_BY_ME": "Vous",
+      "ACCESS_REFUSED": "Acces refuse",
+      "ACCESS_LABEL": {
+        "CREATE": "Une information a été ajoutée dans {{objet}}",
+        "CREATE_BY_ME": "Vous avez ajouté une information dans {{objet}}",
+        "DELETE": "Une information a été supprimée de {{objet}}",
+        "DELETE_BY_ME": "Vous avez supprimé une information de {{objet}}",
+        "READ": "{{objet}} a été consulté",
+        "READ_BY_ME": "Vous avez consulté {{objet}}",
+        "SCAN": "Votre code a été scanné au comptoir",
+        "SCAN_BY_ME": "Vous avez présenté votre code au comptoir",
+        "UPDATE": "{{objet}} a été modifié",
+        "UPDATE_BY_ME": "Vous avez modifié {{objet}}"
+      },
+      "ACCESS_OBJECT": {
+        "APPOINTMENT": "un rendez-vous",
+        "CARE_EPISODE": "un épisode de soins de votre dossier",
+        "CONSULTATION": "une consultation de votre dossier",
+        "DOCUMENT": "un document de votre dossier",
+        "EXTERNAL_EXCHANGE": "un échange avec un autre établissement",
+        "HOSPITAL_RECORD": "votre dossier hospitalier",
+        "IMMUNISATION": "votre suivi vaccinal",
+        "INSURANCE": "votre couverture d'assurance",
+        "INVOICE": "une facture",
+        "OFFLINE_SYNC": "une synchronisation hors connexion",
+        "PAYMENT": "un paiement",
+        "PHARMACY_ORDER": "une commande en pharmacie",
+        "PHARMACY_VISIT": "votre passage en pharmacie",
+        "PRIVACY_SETTINGS": "vos préférences de confidentialité",
+        "RECORD": "votre dossier"
       }
     },
     "PARCOURS": {

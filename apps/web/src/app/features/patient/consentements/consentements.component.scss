@@ -184,6 +184,38 @@
     color: var(--bb-text-primary);
   }
   &__res { color: var(--bb-text-secondary); }
+
+  // Le libelle redige pour le patient, a la place du motif de route. Le
+  // detail technique reste en infobulle.
+  &__libelle { color: var(--bb-text-primary); }
+
+  // Un refus est une tentative, pas un acces : il doit se distinguer d'un
+  // coup d'oeil, c'est le plus interessant du journal.
+  &__refus {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--bb-radius-sm);
+    background: color-mix(in srgb, var(--bb-danger) 12%, transparent);
+    color: var(--bb-danger);
+  }
+
+  // Ses propres acces s'effacent visuellement : ce ne sont pas eux qu'on
+  // cherche. Un fond plutot qu'une opacite, pour rester lisible.
+  &__row--moi {
+    background: var(--bb-surface-1);
+
+    .access-table__date,
+    .access-table__who,
+    .access-table__libelle { color: var(--bb-text-secondary); }
+  }
+}
+
+.access-filter {
+  margin: 0 0 0.75rem;
+  font-size: 13px;
 }
 
 .bb-empty {

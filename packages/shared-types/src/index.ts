@@ -1224,11 +1224,46 @@ export interface SetConsentementDto {
 }
 
 /** GET /privacy/me/audit-logs — acces journalises au dossier du patient. */
+/**
+ * Une ligne du journal des acces au dossier, telle que le patient la lit
+ * (EF-02-08).
+ */
 export interface AccesDossierView {
   id: string;
+  /**
+   * Le motif de route enregistre (`GET /:id`). Conserve pour une enquete ou
+   * un signalement : c'est la trace technique. **Ne pas l'afficher seul** —
+   * un patient ne lit pas « GET /:id ». Voir `libelle`.
+   */
   action: string;
   ressource: string;
   idRessource: string | null;
+  /**
+   * La meme chose en mots de patient, sous forme de **cles de traduction** :
+   * la phrase, et l'objet qu'elle designe.
+   *
+   * L'API ne rend pas de texte. L'application est bilingue — le selecteur de
+   * langue est a l'ecran — et une phrase francaise figee s'afficherait telle
+   * quelle a un patient ayant choisi l'anglais. La formulation vit donc dans
+   * `apps/web/src/app/shared/i18n/{fr,en}.json`, comme tout le reste de
+   * l'interface.
+   *
+   * La phrase attend un parametre `objet`, a remplacer par la traduction de
+   * `libelleObjet`. Ce dernier est vide pour les phrases qui se suffisent a
+   * elles-memes, comme le scan d'un code au comptoir.
+   */
+  libelle: string;
+  libelleObjet: string;
+  /**
+   * `true` quand c'est le patient lui-meme qui a agi.
+   *
+   * Sans cette distinction, ses propres consultations noient celles des
+   * tiers : dans la base de demonstration, elles representaient 273 lignes
+   * sur 850.
+   */
+  parMoi: boolean;
+  /** Le code HTTP rendu. Un refus (>= 400) est une tentative, pas un acces. */
+  statutHttp: number | null;
   creeLe: HorodatageApi;
   utilisateur: {
     id: string;

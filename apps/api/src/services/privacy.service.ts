@@ -2,6 +2,8 @@ import { ConsentScope } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { ForbiddenError, NotFoundError } from '../utils/app-error';
 import { getValeursParametres } from './parametres.service';
+import { libelleAcces } from './libelle-acces';
+import type { AccesDossierView, PaginationMeta } from '@baobaoheath/shared-types';
 
 // Consentements accordes d'office a la creation d'un dossier quand le
 // super-admin l'a choisi (securite.consentementDefaut). Uniquement ceux
@@ -112,22 +114,45 @@ export async function assertPatientConsent(
   }
 }
 
-export async function getMyAuditLogs(userId: string, params: { page?: number; limit?: number }) {
+/**
+ * « Qui a consulte mon dossier ? » (EF-02-08)
+ *
+ * **Avant le 2026-10-03**, cette fonction interrogeait quatre predicats JSON
+ * en OU — `metadonnees.params.id`, `metadonnees.body.idPatient`,
+ * `metadonnees.query.idPatient` et `idRessource`. Deux defauts :
+ *
+ *   - aucun index ne pouvait la servir, et `metadonnees` contient la requete
+ *     entiere, donc le cout grandissait avec le journal ;
+ *   - **elle manquait le scan d'un QR au comptoir**, qui ne laisse le patient
+ *     que dans `metadonnees.params.qrCode` — clause absente. Mesure sur la
+ *     base de demonstration : 30 scans invisibles pour la patiente concernee.
+ *
+ * Depuis, le patient concerne vit dans la colonne indexee
+ * `idPatientConcerne`. Verifie avant bascule : la nouvelle requete est un
+ * **sur-ensemble strict** de l'ancienne — 181 lignes contre 37, aucune perdue
+ * — et le plan d'execution montre bien un parcours d'index, sans tri.
+ *
+ * `parTiers: true` ne garde que les acces d'autrui. Un patient qui cherche
+ * une anomalie cherche cela ; ses propres consultations representaient 273
+ * lignes sur 850 dans la base de demonstration.
+ */
+export async function getMyAuditLogs(
+  userId: string,
+  params: { page?: number; limit?: number; parTiers?: boolean }
+): Promise<{ data: AccesDossierView[]; meta: PaginationMeta }> {
   const patient = await getPatientForUser(userId);
   const page = params.page ?? 1;
   const limit = Math.min(params.limit ?? 50, 100);
   const skip = (page - 1) * limit;
 
+  const ou = {
+    idPatientConcerne: patient.id,
+    ...(params.parTiers ? { idUtilisateur: { not: userId } } : {}),
+  };
+
   const [logs, total] = await Promise.all([
     prisma.journalAudit.findMany({
-      where: {
-        OR: [
-          { idRessource: patient.id },
-          { metadonnees: { path: ['params', 'id'], equals: patient.id } },
-          { metadonnees: { path: ['body', 'idPatient'], equals: patient.id } },
-          { metadonnees: { path: ['query', 'idPatient'], equals: patient.id } },
-        ],
-      },
+      where: ou,
       include: {
         utilisateur: {
           select: { id: true, prenom: true, nom: true, role: true },
@@ -137,20 +162,26 @@ export async function getMyAuditLogs(userId: string, params: { page?: number; li
       take: limit,
       orderBy: { creeLe: 'desc' },
     }),
-    prisma.journalAudit.count({
-      where: {
-        OR: [
-          { idRessource: patient.id },
-          { metadonnees: { path: ['params', 'id'], equals: patient.id } },
-          { metadonnees: { path: ['body', 'idPatient'], equals: patient.id } },
-          { metadonnees: { path: ['query', 'idPatient'], equals: patient.id } },
-        ],
-      },
-    }),
+    prisma.journalAudit.count({ where: ou }),
   ]);
 
   return {
-    data: logs,
+    data: logs.map((l) => {
+      const parMoi = l.idUtilisateur === userId;
+      const { cle, objet } = libelleAcces({ action: l.action, ressource: l.ressource }, parMoi);
+      return {
+        id: l.id,
+        action: l.action,
+        ressource: l.ressource,
+        idRessource: l.idRessource,
+        libelle: cle,
+        libelleObjet: objet,
+        parMoi,
+        statutHttp: l.statutHttp,
+        creeLe: l.creeLe.toISOString(),
+        utilisateur: l.utilisateur,
+      };
+    }),
     meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
   };
 }

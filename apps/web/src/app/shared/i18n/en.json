@@ -473,6 +473,38 @@
           "TITLE": "Anonymised research",
           "DESC": "Contribute, without any identifying data, to public health statistics and research."
         }
+      },
+      "ACCESS_THIRD_PARTY_ONLY": "Show only accesses by someone else",
+      "ACCESS_BY_ME": "You",
+      "ACCESS_REFUSED": "Access denied",
+      "ACCESS_LABEL": {
+        "CREATE": "Information was added to {{objet}}",
+        "CREATE_BY_ME": "You added information to {{objet}}",
+        "DELETE": "Information was removed from {{objet}}",
+        "DELETE_BY_ME": "You removed information from {{objet}}",
+        "READ": "{{objet}} was viewed",
+        "READ_BY_ME": "You viewed {{objet}}",
+        "SCAN": "Your code was scanned at a counter",
+        "SCAN_BY_ME": "You presented your code at a counter",
+        "UPDATE": "{{objet}} was changed",
+        "UPDATE_BY_ME": "You changed {{objet}}"
+      },
+      "ACCESS_OBJECT": {
+        "APPOINTMENT": "an appointment",
+        "CARE_EPISODE": "a care episode in your record",
+        "CONSULTATION": "a consultation in your record",
+        "DOCUMENT": "a document in your record",
+        "EXTERNAL_EXCHANGE": "an exchange with another facility",
+        "HOSPITAL_RECORD": "your hospital record",
+        "IMMUNISATION": "your immunisation history",
+        "INSURANCE": "your insurance cover",
+        "INVOICE": "an invoice",
+        "OFFLINE_SYNC": "an offline sync",
+        "PAYMENT": "a payment",
+        "PHARMACY_ORDER": "a pharmacy order",
+        "PHARMACY_VISIT": "your pharmacy visit",
+        "PRIVACY_SETTINGS": "your privacy settings",
+        "RECORD": "your record"
       }
     },
     "PARCOURS": {

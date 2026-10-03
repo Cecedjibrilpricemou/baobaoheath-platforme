@@ -25,6 +25,10 @@ export async function getMyAuditLogsController(req: AuthRequest, res: Response):
   const result = await privacyService.getMyAuditLogs(req.user!.userId, {
       page: req.query.page ? Number(req.query.page) : undefined,
       limit: req.query.limit ? Number(req.query.limit) : undefined,
+      // `?parTiers=true` ne garde que les acces d'autrui : c'est ce qu'on
+      // cherche quand on soupconne une anomalie. Par defaut le journal est
+      // complet, y compris les acces du patient lui-meme.
+      parTiers: req.query.parTiers === 'true',
     });
     res.status(200).json({ success: true, ...result });
 }

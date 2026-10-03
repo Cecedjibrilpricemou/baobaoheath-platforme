@@ -50,6 +50,15 @@ export class ConsentementsComponent implements OnInit {
   totalAcces = signal(0);
   isLoading = signal(true);
   isLoadingAcces = signal(true);
+  /**
+   * Ne montrer que les acces d'autrui.
+   *
+   * Les consultations du patient lui-meme representaient 273 lignes sur 850
+   * dans la base de demonstration : sans ce filtre, elles noient les deux
+   * lignes qui comptent. Le journal reste complet par defaut — on ne cache
+   * rien — mais il doit pouvoir se reduire a la question qu'on se pose.
+   */
+  parTiersSeulement = signal(false);
 
   constructor(iconRegistry: MatIconRegistry) {
     iconRegistry.registerFontClassAlias('pi', 'pi');
@@ -67,7 +76,31 @@ export class ConsentementsComponent implements OnInit {
       }
     });
 
-    this.privacyService.getAuditLogs(1, 20).subscribe({
+    this.chargerAcces();
+  }
+
+  /**
+   * La phrase a afficher pour une ligne du journal.
+   *
+   * L'API rend des cles, pas du texte : l'application est bilingue, et une
+   * phrase francaise figee s'afficherait telle quelle a un patient ayant
+   * choisi l'anglais. On traduit donc l'objet, puis la phrase qui le recoit.
+   * Les phrases qui se suffisent a elles-memes — le scan d'un code — n'ont
+   * pas d'objet.
+   */
+  libelleAcces(a: AccesDossierView): string {
+    const objet = a.libelleObjet ? this.i18n.t(a.libelleObjet) : '';
+    return this.i18n.t(a.libelle, { objet });
+  }
+
+  basculerParTiers(actif: boolean) {
+    this.parTiersSeulement.set(actif);
+    this.chargerAcces();
+  }
+
+  private chargerAcces() {
+    this.isLoadingAcces.set(true);
+    this.privacyService.getAuditLogs(1, 20, this.parTiersSeulement()).subscribe({
       next: res => {
         this.acces.set(res.data ?? []);
         this.totalAcces.set(res.meta?.total ?? (res.data?.length ?? 0));

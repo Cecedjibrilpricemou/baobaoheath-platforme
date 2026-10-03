@@ -23,10 +23,15 @@ export class PrivacyService {
   }
 
   // L'API renvoie { success, data, meta } a plat (pas de PaginatedData).
-  getAuditLogs(page = 1, limit = 20): Observable<ApiResponse<AccesDossierView[]> & { meta?: PaginationMeta }> {
+  // `parTiers` ne garde que les acces d autrui : c est ce qu on cherche quand
+  // on soupconne une anomalie. Dans la base de demonstration, les acces du
+  // patient lui-meme representaient 273 lignes sur 850 — sans ce filtre, ils
+  // noient les deux lignes qui comptent.
+  getAuditLogs(page = 1, limit = 20, parTiers = false): Observable<ApiResponse<AccesDossierView[]> & { meta?: PaginationMeta }> {
     return this.api.get<ApiResponse<AccesDossierView[]> & { meta?: PaginationMeta }>('/privacy/me/audit-logs', {
       page: page.toString(),
-      limit: limit.toString()
+      limit: limit.toString(),
+      ...(parTiers ? { parTiers: 'true' } : {}),
     });
   }
 }

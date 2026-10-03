@@ -65,6 +65,16 @@
         }
       </div>
 
+      <!-- Sans ce filtre, les acces du patient lui-meme noient ceux des tiers :
+           273 lignes sur 850 dans la base de demonstration. -->
+      <div class="access-filter">
+        <mat-slide-toggle
+          [checked]="parTiersSeulement()"
+          (change)="basculerParTiers($event.checked)">
+          {{ 'PATIENT.CONSENTS.ACCESS_THIRD_PARTY_ONLY' | translate }}
+        </mat-slide-toggle>
+      </div>
+
       @if (isLoadingAcces()) {
         <div class="bb-empty" role="status">
           <mat-spinner diameter="28"></mat-spinner>
@@ -87,13 +97,26 @@
             </thead>
             <tbody>
               @for (a of acces(); track a.id) {
-                <tr>
+                <tr [class.access-table__row--moi]="a.parMoi">
                   <td class="access-table__date">{{ a.creeLe | date:'short' }}</td>
                   <td>
-                    <span class="access-table__who">{{ a.utilisateur.prenom }} {{ a.utilisateur.nom }}</span>
-                    <span class="access-table__role">{{ 'ROLE.' + a.utilisateur.role | translate }}</span>
+                    @if (a.parMoi) {
+                      <span class="access-table__who">{{ 'PATIENT.CONSENTS.ACCESS_BY_ME' | translate }}</span>
+                    } @else {
+                      <span class="access-table__who">{{ a.utilisateur.prenom }} {{ a.utilisateur.nom }}</span>
+                      <span class="access-table__role">{{ 'ROLE.' + a.utilisateur.role | translate }}</span>
+                    }
                   </td>
-                  <td><code class="access-table__action">{{ a.action }}</code> <span class="access-table__res">{{ a.ressource }}</span></td>
+                  <!-- Le libelle vient de l'API, deja redige pour un patient.
+                       Cette colonne affichait « GET /:id » jusqu'au 03/10. Le
+                       motif de route reste disponible en infobulle, pour un
+                       signalement. -->
+                  <td>
+                    <span class="access-table__libelle" [title]="a.action + ' · ' + a.ressource">{{ libelleAcces(a) }}</span>
+                    @if (a.statutHttp !== null && a.statutHttp >= 400) {
+                      <span class="access-table__refus">{{ 'PATIENT.CONSENTS.ACCESS_REFUSED' | translate }}</span>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
