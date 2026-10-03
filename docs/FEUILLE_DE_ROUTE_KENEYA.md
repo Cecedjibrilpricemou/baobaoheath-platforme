@@ -25,7 +25,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
 | **P9** Notifications neutres | 1 | — | 1 | ⏳ **la neutralité est livrée le 02/10** — c'était un défaut en service, pas une case vide. Restent les préférences de canaux et le rejeu |
 | **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
-| **P11** Administration, audit, référentiels | 2 | 1 | 2 | ⏳ **import des référentiels + journal d'audit livrés le 03/10**. Le journal nomme désormais le patient concerné, en colonne indexée, et il est en ajout seul y compris contre `TRUNCATE`. Restent la recherche et l'export pour l'administration, la suspension de compte, le RGPD et la détection d'anomalies |
+| **P11** Administration, audit, référentiels | 3 | — | 2 | ⏳ **référentiels + journal d'audit complet, livrés le 03/10** (API, Swagger et écrans). Le journal nomme le patient concerné en colonne indexée, il est en ajout seul y compris contre `TRUNCATE`, et sa recherche est elle-même journalisée. Restent la suspension de compte et les conventions, le RGPD et la détection d'anomalies |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
 | **Total** | **42** | **5** | **48** | sur 95 |
@@ -220,13 +220,19 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] **API livrée le 2026-10-02** — **exclusions par catégorie de produit**. Les deux préalables ont été levés le 2026-10-01 : le catalogue accepte des articles non médicamenteux, et `CategorieProduit` est une énumération fermée. Une catégorie exclue n'a pas de taux : porter les deux serait contradictoire, et une contrainte SQL le refuse.
 - [x] **API + front livrés le 2026-10-02** — **un taux de 100 % ne couvre pas tout**. Vérifié à l'écran : un assuré à 100 % chez qui le lait est exclu voit « Total 47 000 · Pris par l'assureur − 2 000 · À encaisser 45 000 », et la ligne de lait porte « Catégorie LAIT_INFANTILE exclue par l'assureur ». Le détail est montré **avant** paiement, avec les notes disant ce qui a raboté la part de l'assureur.
 
-### P11 — Administration, audit, référentiels · M · EF-12 · ⏳ **2 sur 5**
+### P11 — Administration, audit, référentiels · M · EF-12 · ⏳ **3 sur 5**
 - [~] **API livrée le 03/10** — **journal non modifiable incluant les lectures** (EF-12-04). Trois constats en éprouvant la table :
   - l'**ajout seul existait déjà**, depuis la migration du 2026-06-19 : un déclencheur refuse `UPDATE` et `DELETE`. Cette case était comptée comme non commencée à tort ;
   - **mais `TRUNCATE` n'était pas couvert.** Ce déclencheur est `FOR EACH ROW`, et `TRUNCATE` ne déclenche jamais un déclencheur de ligne : `TRUNCATE journal_audit` vidait le journal entier sans obstacle. Fermé par un déclencheur d'instruction ;
   - la colonne `ressource` était **fausse en service** : Express tronque `req.path` du préfixe de montage, et le code y cherchait le segment `v1`. D'où 288 lignes de ressource « me » et 120 « unknown » dans la base de démonstration.
   - **Limite assumée** : le propriétaire de la table peut supprimer ou désactiver un déclencheur. Une inviolabilité complète suppose des droits restreints au niveau du SGBD, voire un stockage en écriture unique.
-  - **Reste** : la recherche et l'export pour l'administration (EF-12-05), qui n'ont ni route ni écran.
+  - **Reste sur EF-12-04** : rien. La recherche et l'export (EF-12-05) sont livrés le même jour, voir ci-dessous.
+- [x] **API, Swagger et écran livrés le 03/10** — **recherche et export du journal** (EF-12-05). `/admin/journal` : période, rôle, ressource, patient, auteur, refus seulement, et export CSV.
+  - **La recherche est elle-même journalisée.** Sans cela, le seul endroit d'où l'on voit tout serait le seul qu'on ne verrait pas. L'écran le dit à l'opérateur plutôt que de le lui cacher.
+  - **Un export trop large est refusé, jamais tronqué en silence** (limite 10 000 lignes, le message donne le nombre exact). Un journal d'audit amputé sans le dire est pire qu'un export absent : on conclut d'une absence de ligne qu'il ne s'est rien passé. L'écran prévient avant le clic.
+  - **Sans date de début, la recherche ne remonte pas au-delà de 30 jours** : le journal est la table qui grandit le plus vite.
+  - Deux fautes trouvées contre l'API réelle, pas par les tests : un critère mal orthographié passait en silence (le routeur recopiait les critères à la main, court-circuitant `.strict()`), et un rôle inconnu rendait 500 au lieu de 400.
+  - Au passage, l'**export d'analytics** joignait ses champs sur une virgule sans échappement : « Fièvre, toux » décalait toutes les colonnes suivantes, et le fichier s'ouvrait quand même. Il passe par le même générateur CSV, qui échappe, pose le BOM et sépare par des points-virgules.
 - [ ] Suspension immédiate d'un compte (EF-12-01) ; conventions des partenaires (EF-12-02).
 - [x] **API livrée le 2026-10-03** — **référentiels importables par CSV** (EF-12-03) : examens LOINC, interactions médicamenteuses, catalogue produits. `POST /api/v1/referentiels/{type}/import`, réservé à `ADMIN_NATIONAL` et `SUPER_ADMIN` — une règle d'interaction erronée se traduirait en alerte fausse, ou absente, chez chaque prescripteur.
   - **`simulation: true` valide tout et n'écrit rien** : c'est ce qu'on lance avant un import réel.
