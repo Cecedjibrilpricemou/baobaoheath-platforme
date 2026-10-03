@@ -44,7 +44,13 @@ function shouldAudit(req: Request): boolean {
     // (voir `patientConcerne`), et non plus seulement dans
     // `metadonnees.params.qrCode`. « Qui a consulte mon dossier ? » se repond
     // donc par une requete indexee.
-    req.originalUrl.includes('/scan/')
+    req.originalUrl.includes('/scan/') ||
+    // Consulter le journal d'audit est un acces aux dossiers de tous les
+    // patients a la fois : c'est l'ecran le plus sensible du produit
+    // (EF-12-05). Sans cette ligne, le seul endroit d'ou l'on voit tout
+    // serait le seul qu'on ne verrait pas — et le journal ne prouverait plus
+    // rien le jour ou il faudrait s'en servir.
+    req.originalUrl.includes('/journal')
   );
 }
 

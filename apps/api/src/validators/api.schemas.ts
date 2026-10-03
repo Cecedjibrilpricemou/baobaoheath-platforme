@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Role } from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
 const phone = z.string().trim().min(6).max(30);
@@ -653,6 +654,41 @@ export const creerContratAssuranceSchema = z.object({
 // Le contenu est un CSV entier : la borne haute est volontairement large
 // (2 Mo), un referentiel national comptant des milliers de lignes. Au-dela,
 // c'est un envoi de fichier qu'il faudra, pas un corps JSON.
+// --- Journal d audit : recherche et export (EF-12-05) ---------------
+//
+// Les criteres arrivent en chaine de requete. Le schema reste `.strict()` :
+// un critere mal orthographe doit se voir, pas s ignorer en silence et rendre
+// un resultat trop large a une enquete.
+//
+// La liste des roles vient de l enumere Prisma plutot que d une copie : une
+// copie se serait desynchronisee au premier role ajoute, et le filtre aurait
+// refuse un role parfaitement valide.
+//
+// Il s applique a `req.query` via `validateQuery`, donc **toutes les valeurs
+// arrivent en chaines** : les booleens sont lus depuis « true »/« false » et
+// les nombres sont convertis. Une premiere version recopiait les criteres a
+// la main dans le routeur, ce qui ecartait les cles inconnues avant que Zod
+// ne les voie : `.strict()` ne servait a rien, et `echecSeulement` mal
+// orthographie passait en silence avec un resultat trop large. Verifie contre
+// l API reelle.
+const booleenDeRequete = z
+  .enum(['true', 'false'])
+  .transform((v) => v === 'true')
+  .optional();
+
+export const filtreJournalSchema = z.object({
+  du: z.string().trim().min(1).optional(),
+  au: z.string().trim().min(1).optional(),
+  idUtilisateur: id.optional(),
+  idPatient: id.optional(),
+  role: z.nativeEnum(Role).optional(),
+  ressource: z.string().trim().min(1).max(60).optional(),
+  echecsSeulement: booleenDeRequete,
+  parTiers: booleenDeRequete,
+  page: positiveInt.optional(),
+  limit: positiveInt.max(200).optional(),
+}).strict();
+
 export const importerReferentielSchema = z.object({
   contenu: z.string().min(1).max(2_000_000),
   simulation: z.boolean().optional(),

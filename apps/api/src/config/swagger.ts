@@ -1212,6 +1212,74 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Identite a jour avec logoUrl' }, 400: { description: 'Image refusee' } },
       },
     },
+    // ── P11 Journal d'audit : recherche et export (EF-12-05) ──────────
+    '/api/v1/journal': {
+      get: {
+        tags: ['Journal d audit'],
+        summary: 'Rechercher dans le journal d audit (EF-12-05)',
+        description: "L'ecran le plus sensible du produit : c'est le seul endroit ou l'on voit, d'un coup, qui a touche au dossier de qui. Reserve a `ADMIN_NATIONAL` et `SUPER_ADMIN`.\n\n**Cette route est elle-meme journalisee.** Sans cela, le seul endroit d'ou l'on voit tout serait le seul qu'on ne verrait pas — et le journal ne prouverait plus rien le jour ou il faudrait s'en servir.\n\n**Sans `du`, la recherche ne remonte pas au-dela de 30 jours** : une requete sans critere ne doit pas balayer la table entiere, qui est celle qui grandit le plus vite de la plateforme. Une borne haute donnee en date seule (`2026-10-03`) inclut la journee entiere — « jusqu'au 3 » veut dire le 3 compris.\n\n**Un critere mal orthographie est refuse en 400, pas ignore** : un filtre silencieusement ecarte rendrait un resultat trop large a une enquete, sans que personne le sache.\n\n`libelle` et `libelleObjet` sont des cles d'i18n, comme pour le journal du patient ; `action` et `ressource` restent la trace technique.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'du', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne basse. Par defaut : il y a 30 jours.' },
+          { name: 'au', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne haute. Une date seule vaut la fin de la journee.' },
+          { name: 'idUtilisateur', in: 'query', schema: { type: 'string' }, description: "L'auteur de l'action." },
+          { name: 'idPatient', in: 'query', schema: { type: 'string' }, description: 'Le patient dont le dossier a ete touche.' },
+          { name: 'role', in: 'query', schema: { type: 'string', enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'LIVREUR', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] } },
+          { name: 'ressource', in: 'query', schema: { type: 'string' }, description: 'patients, consultations, laboratoire, journal...' },
+          { name: 'echecsSeulement', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'Ne garder que les refus (code HTTP >= 400) : une tentative, pas un acces. Souvent le premier critere d une enquete.' },
+          { name: 'parTiers', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: "Avec `idPatient` : exclure les acces du patient a son propre dossier. Sans `idPatient`, ce critere n'a pas de sens et reste sans effet." },
+        ],
+        responses: {
+          200: {
+            description: 'Page de lignes, de la plus recente a la plus ancienne',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+              lignes: { type: 'array', items: { type: 'object', properties: {
+                id: { type: 'string' },
+                creeLe: { type: 'string', format: 'date-time' },
+                action: { type: 'string', description: 'Trace technique : le motif de route' },
+                ressource: { type: 'string' },
+                idRessource: { type: 'string', nullable: true },
+                libelle: { type: 'string', description: "Cle d'i18n ; attend un parametre `objet`" },
+                libelleObjet: { type: 'string' },
+                statutHttp: { type: 'integer', nullable: true },
+                ipAdresse: { type: 'string', nullable: true },
+                idUtilisateur: { type: 'string' },
+                acteur: { type: 'object', properties: { prenom: { type: 'string' }, nom: { type: 'string' }, role: { type: 'string' } } },
+                idPatientConcerne: { type: 'string', nullable: true },
+                patientConcerne: { type: 'string', nullable: true, description: "Nom du patient, ou null quand l'action ne concernait aucun dossier — une liste ou une recherche, par exemple" },
+              } } },
+              meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' }, totalPages: { type: 'integer' } } },
+              maxExport: { type: 'integer', description: "Au-dela, l'export est refuse plutot que tronque" },
+            } } } }] } } },
+          },
+          400: { description: 'Critere inconnu, role inconnu, date illisible ou intervalle a l envers' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/journal/export': {
+      get: {
+        tags: ['Journal d audit'],
+        summary: 'Exporter le journal en CSV (EF-12-05)',
+        description: "L'export CSV des memes criteres. Point-virgule, BOM UTF-8 et fins de ligne CRLF : c'est Excel en francais qui l'ouvrira. Les champs contenant le separateur, un guillemet ou un saut de ligne sont entoures de guillemets, les guillemets interieurs doubles.\n\n**Un export trop large est refuse, jamais tronque en silence** (400, avec le nombre exact de lignes). Un journal d'audit ampute sans le dire est pire qu'un export absent : on conclut d'une absence de ligne qu'il ne s'est rien passe. L'operateur resserre la periode ou ajoute un critere ; la limite est annoncee par `maxExport` sur la route de recherche.\n\nLe fichier porte la trace technique (`action`, `ressource`) et non la phrase redigee pour le patient : un export sert une enquete, pas un ecran.\n\n`Content-Disposition` est expose au navigateur (CORS), pour que le front retrouve le nom du fichier propose.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'du', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne basse. Par defaut : il y a 30 jours.' },
+          { name: 'au', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne haute. Une date seule vaut la fin de la journee.' },
+          { name: 'idUtilisateur', in: 'query', schema: { type: 'string' }, description: "L'auteur de l'action." },
+          { name: 'idPatient', in: 'query', schema: { type: 'string' }, description: 'Le patient dont le dossier a ete touche.' },
+          { name: 'role', in: 'query', schema: { type: 'string', enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'LIVREUR', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] } },
+          { name: 'ressource', in: 'query', schema: { type: 'string' }, description: 'patients, consultations, laboratoire, journal...' },
+          { name: 'echecsSeulement', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'Ne garder que les refus (code HTTP >= 400) : une tentative, pas un acces. Souvent le premier critere d une enquete.' },
+          { name: 'parTiers', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: "Avec `idPatient` : exclure les acces du patient a son propre dossier. Sans `idPatient`, ce critere n'a pas de sens et reste sans effet." },
+        ],
+        responses: {
+          200: { description: 'Fichier CSV', content: { 'text/csv': { schema: { type: 'string' } } } },
+          400: { description: "Export trop large (le message donne le nombre exact de lignes), ou critere invalide" },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
     // ── P11 Referentiels : import CSV reserve a l'administration nationale (EF-12-03) ──
     '/api/v1/referentiels/{type}/colonnes': {
       get: {

@@ -68,6 +68,7 @@ const medecin = require('../src/routes/medecin.routes').default as { stack: Couc
 const pharmacien = require('../src/routes/pharmacien.routes').default as { stack: Couche[] };
 const assurance = require('../src/routes/assurance.routes').default as { stack: Couche[] };
 const referentiels = require('../src/routes/referentiel.routes').default as { stack: Couche[] };
+const journal = require('../src/routes/journal.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -275,5 +276,32 @@ describe('l import des referentiels est reserve a l administration nationale', (
   it('les deux routes existent bien', () => {
     expect(rolesPour(referentiels, 'post', '/:type/import')).not.toBeNull();
     expect(rolesPour(referentiels, 'get', '/:type/colonnes')).not.toBeNull();
+  });
+});
+
+
+// -- Le journal d audit : l ecran le plus sensible du produit (EF-12-05) --
+describe('la recherche dans le journal est reservee a l administration nationale', () => {
+  it.each([
+    ['get', '/'],
+    ['get', '/export'],
+  ])('%s %s n est ouverte qu a ADMIN_NATIONAL et SUPER_ADMIN', (methode, chemin) => {
+    expect(rolesPour(journal, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
+  });
+
+  // Un administrateur de structure n a pas a voir les acces des autres
+  // structures, et un soignant pas davantage. C est le seul endroit ou l on
+  // voit, d un coup, qui a touche au dossier de qui.
+  it.each([
+    'MEDECIN', 'PHARMACIEN', 'TECHNICIEN_LABO', 'AGENT_ACCUEIL',
+    'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'PATIENT', 'ASC',
+  ] as const)('ferme la recherche a %s', (role) => {
+    expect(rolesPour(journal, 'get', '/')).not.toContain(role);
+    expect(rolesPour(journal, 'get', '/export')).not.toContain(role);
+  });
+
+  it('les deux routes existent bien', () => {
+    expect(rolesPour(journal, 'get', '/')).not.toBeNull();
+    expect(rolesPour(journal, 'get', '/export')).not.toBeNull();
   });
 });

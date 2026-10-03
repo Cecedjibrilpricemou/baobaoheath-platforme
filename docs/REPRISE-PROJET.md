@@ -228,6 +228,8 @@ Swagger est servi sur **`/api/docs`** et décrit dans `apps/api/src/config/swagg
 
 > Ce document annonçait `/api-docs` jusqu'au 03/10 ; cette adresse rend un 404. Vérifié par un appel réel.
 
+> **Pour vérifier qu'une route figure dans Swagger, demandez d'abord `/api/docs/`.** Le fichier `/api/docs/swagger-ui-init.js` — celui qui porte le document — revient **vide** tant que la page HTML n'a pas été chargée une fois : `swaggerUi.serve` lit un cache que seul `setup()` remplit, et `setup()` ne tourne que sur la route HTML. Un navigateur charge toujours la page d'abord, donc aucun utilisateur n'est concerné ; mais un `curl` direct sur le script rend 200 avec 0 octet et laisse croire que le document est cassé. Payé deux fois le 03/10.
+
 ### Les écrans, par espace
 
 48 composants dans 10 espaces (`apps/web/src/app/features/`).

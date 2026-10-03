@@ -1,4 +1,5 @@
 import { NiveauAlerteEpidemique, Prisma } from '../config/generated/client/client';
+import { enCsv } from '../utils/csv';
 import { prisma } from '../config/prisma';
 import {
     AnalyticsFilters,
@@ -371,9 +372,18 @@ export async function exporterDonnees(filters: ExportFilters) {
     const meta = { total, page, limit, totalPages: Math.ceil(total / limit) };
 
     if (filters.format === 'CSV') {
-        const lignes = [
-            'Date,Patient,Prefecture,Motif,Diagnostics,Temperature,SpO2,Statut',
-            ...consultations.map((c) => [
+        // Cet export joignait les champs sur une virgule, sans guillemets ni
+        // echappement : un motif de consultation comme « Fievre, toux »
+        // decalait toutes les colonnes suivantes — et le fichier s'ouvrait
+        // quand meme, donc personne ne le voyait. Il n'avait pas non plus de
+        // BOM, et Excel en francais affichait « PrÃ©fecture ».
+        //
+        // `enCsv` echappe, pose le BOM et separe par des points-virgules, ce
+        // qu'attend Excel en francais. Trouve le 2026-10-03 en ecrivant
+        // l'export du journal d'audit (EF-12-05).
+        const contenu = enCsv(
+            ['Date', 'Patient', 'Prefecture', 'Motif', 'Diagnostics', 'Temperature', 'SpO2', 'Statut'],
+            consultations.map((c) => [
                 c.consulteeLE.toISOString().split('T')[0],
                 `${c.patient.utilisateur.prenom} ${c.patient.utilisateur.nom}`,
                 c.patient.prefecture,
@@ -382,10 +392,10 @@ export async function exporterDonnees(filters: ExportFilters) {
                 c.constantes?.temperature ?? '',
                 c.constantes?.spo2 ?? '',
                 c.statut,
-            ].join(',')),
-        ].join('\n');
+            ])
+        );
 
-        return { format: 'CSV', contenu: lignes, meta };
+        return { format: 'CSV', contenu, meta };
     }
 
     if (filters.format === 'DHIS2') {

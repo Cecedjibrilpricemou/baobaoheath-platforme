@@ -34,6 +34,7 @@ import laboratoireRoutes from './routes/laboratoire.routes';
 import resultatsRoutes from './routes/resultats.routes';
 import assuranceRoutes from './routes/assurance.routes';
 import referentielRoutes from './routes/referentiel.routes';
+import journalRoutes from './routes/journal.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -102,6 +103,13 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  // Le front tourne sur une autre origine que l'API : sans cette ligne, un
+  // `fetch` ne voit **aucun** en-tete hors de la liste sure du navigateur, et
+  // un telechargement lance en XHR perd le nom du fichier propose par le
+  // serveur (export du journal d'audit, comptes rendus). Constate le
+  // 2026-10-03 : `Content-Disposition` arrivait a `null` cote navigateur
+  // alors que le serveur l'envoyait correctement.
+  exposedHeaders: ['Content-Disposition'],
 };
 app.use(cors(corsOptions));
 app.use(requestContextMiddleware);
@@ -199,6 +207,7 @@ app.use('/api/v1/laboratoire', laboratoireRoutes);
 app.use('/api/v1/resultats', resultatsRoutes);
 app.use('/api/v1/assurance', assuranceRoutes);
 app.use('/api/v1/referentiels', referentielRoutes);
+app.use('/api/v1/journal', journalRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

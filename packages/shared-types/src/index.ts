@@ -2296,3 +2296,62 @@ export interface ColonnesReferentielView {
   obligatoires: string[];
   facultatives: string[];
 }
+
+// --- Journal d audit : recherche et export (EF-12-05) -----------------------
+
+/**
+ * Les criteres d une recherche dans le journal d audit.
+ *
+ * Sans `du`, la recherche ne remonte pas au-dela de 30 jours : une requete
+ * sans critere ne doit pas balayer la table entiere.
+ */
+export interface FiltreJournalDto {
+  /** Borne basse, ISO. Par defaut : il y a 30 jours. */
+  du?: string;
+  /** Borne haute, ISO. Une date seule vaut la fin de la journee. */
+  au?: string;
+  /** L auteur de l action. */
+  idUtilisateur?: string;
+  /** Le patient dont le dossier a ete touche. */
+  idPatient?: string;
+  /** Le role de l auteur. */
+  role?: Role;
+  /** Le premier segment de l URL : patients, consultations, laboratoire... */
+  ressource?: string;
+  /** Ne garder que les refus (code HTTP >= 400) : une tentative, pas un acces. */
+  echecsSeulement?: boolean;
+  /** Avec `idPatient` : exclure les acces du patient a son propre dossier. */
+  parTiers?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+/** Une ligne du journal, telle qu une enquete la lit. */
+export interface LigneJournalView {
+  id: string;
+  creeLe: HorodatageApi;
+  /** La trace technique : le motif de route. */
+  action: string;
+  ressource: string;
+  idRessource: string | null;
+  /** Cles d i18n, comme pour le journal du patient. */
+  libelle: string;
+  libelleObjet: string;
+  statutHttp: number | null;
+  ipAdresse: string | null;
+  idUtilisateur: string;
+  acteur: { prenom: string; nom: string; role: string };
+  idPatientConcerne: string | null;
+  /** Nom du patient, ou null quand l action ne concernait aucun dossier. */
+  patientConcerne: string | null;
+}
+
+export interface PageJournalView {
+  lignes: LigneJournalView[];
+  meta: PaginationMeta;
+  /**
+   * Au-dela de ce nombre, l export est refuse plutot que tronque : un export
+   * d audit ampute sans le dire est pire qu un export absent.
+   */
+  maxExport: number;
+}
