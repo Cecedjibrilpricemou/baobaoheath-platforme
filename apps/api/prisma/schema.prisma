@@ -15,9 +15,9 @@ enum Role {
   ASC_SUPERVISOR
   MEDECIN
   PHARMACIEN
-  AGENT_ACCUEIL    // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
-  TECHNICIEN_LABO  // Laborantin : reception, prelevement, saisie ET validation (EF-04)
-  LIVREUR          // Taxi-moto : courses de livraison de medicaments (EF-10)
+  AGENT_ACCUEIL // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
+  TECHNICIEN_LABO // Laborantin : reception, prelevement, saisie ET validation (EF-04)
+  LIVREUR // Taxi-moto : courses de livraison de medicaments (EF-10)
   ADMIN_STRUCTURE
   ADMIN_REGIONAL
   ADMIN_NATIONAL
@@ -92,9 +92,9 @@ enum TypeStructure {
   HOPITAL_REG
   CHU
   CLINIQUE
-  PHARMACIE        // â† NOUVEAU
-  LABORATOIRE      // Laboratoire d'analyses (EF-04)
-  ASSURANCE        // Assureur : ses agents s'y connectent comme les autres (EF-09)
+  PHARMACIE // â† NOUVEAU
+  LABORATOIRE // Laboratoire d'analyses (EF-04)
+  ASSURANCE // Assureur : ses agents s'y connectent comme les autres (EF-09)
 }
 
 // Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
@@ -196,9 +196,9 @@ enum TypeNotification {
   RESULTATS_DISPONIBLES
   RESULTAT_CRITIQUE
   ESCALADE_CRITIQUE
-  COMMANDE_A_SERVIR         // P6 : appel aux pharmacies du quartier
-  COMMANDE_PRISE_EN_CHARGE  // P6 : une pharmacie a tout, elle sert
-  COMMANDE_SANS_PHARMACIE   // P6 : aucune n'a la totalite
+  COMMANDE_A_SERVIR // P6 : appel aux pharmacies du quartier
+  COMMANDE_PRISE_EN_CHARGE // P6 : une pharmacie a tout, elle sert
+  COMMANDE_SANS_PHARMACIE // P6 : aucune n'a la totalite
 }
 
 enum UssdSessionStatus {
@@ -216,62 +216,62 @@ enum NiveauAlerteEpidemique {
 // â”€â”€â”€ DOMAINE 1 â€” UTILISATEURS & ACCES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Utilisateur {
-  id                String    @id @default(cuid())
-  telephone         String    @unique
-  email             String?   @unique
-  motDePasseHash    String
-  role              Role
-  prenom            String
-  nom               String
-  langue            String    @default("fr")
-  photoUrl          String?
-  estActif          Boolean   @default(true)
-  twoFaActive       Boolean   @default(false)
-  twoFaSecret       String?
-  doitChangerMotDePasse Boolean @default(false)
-  derniereConnexion DateTime?
-  creeLe            DateTime  @default(now())
-  modifieLe         DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  telephone             String    @unique
+  email                 String?   @unique
+  motDePasseHash        String
+  role                  Role
+  prenom                String
+  nom                   String
+  langue                String    @default("fr")
+  photoUrl              String?
+  estActif              Boolean   @default(true)
+  twoFaActive           Boolean   @default(false)
+  twoFaSecret           String?
+  doitChangerMotDePasse Boolean   @default(false)
+  derniereConnexion     DateTime?
+  creeLe                DateTime  @default(now())
+  modifieLe             DateTime  @updatedAt
 
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
-  patientProfile       PatientProfile?
-  ascProfile           AscProfile?
-  medecinProfile       MedecinProfile?
-  pharmacienProfile    PharmacienProfile?
-  sessions             Session[]
-  authOtps             AuthOtp[]
-  motDePasseResets     MotDePasseReset[]
-  auditLogs            JournalAudit[]
-  messagesEnvoyes      Message[]       @relation("Expediteur")
-  messagesRecus        Message[]       @relation("Destinataire")
-  consultationsSigne   Consultation[]  @relation("MedecinValideur")
-  ordonnancesSigne     Ordonnance[]    @relation("MedecinSignataire")
-  vaccinsAdministres   Vaccination[]
-  referencementsValide Referencement[] @relation("MedecinValideurRef")
-  episodesOuverts      EpisodeSoins[]  @relation("EpisodeOuvertPar")
-  episodesResponsable  EpisodeSoins[]  @relation("EpisodeResponsable")
-  demandesPrescrites   DemandeAnalyse[] @relation("Prescripteur")
-  demandesValidees     DemandeAnalyse[] @relation("Valideur")
-  demandesLiberees     DemandeAnalyse[] @relation("LibereParMedecin")
-  echantillonsPreleves Echantillon[]    @relation("Preleveur")
-  resultatsSaisis      ResultatAnalyse[] @relation("SaisiPar")
-  alertesCritiques     AlerteResultatCritique[] @relation("DestinataireAlerte")
-  alertesEscaladees    AlerteResultatCritique[] @relation("EscaladeVers")
-  rendezVousMedecin    RendezVous[]    @relation("RendezVousMedecin")
-  rendezVousPointes    RendezVous[]    @relation("PointageArrivee")
-  demandesRdvVisees    DemandeRendezVous[] @relation("DemandesRendezVousMedecin")
-  demandesRdvTraitees  DemandeRendezVous[] @relation("DemandesRendezVousTraitees")
-  approvisionnementsSaisis Approvisionnement[] @relation("ApprovisionnementsSaisis")
-  ventesVendues            VenteComptoir[]     @relation("VentesVendeur")
-  ventesAnnulees           VenteComptoir[]     @relation("VentesAnnulees")
-  controlesEligibilite     ControleEligibilite[] @relation("ControlesEligibilite")
-  syncEvents            SyncEvent[]
-  syncMutations         SyncMutation[]
-  consentementsDonnes   ConsentementPatient[]
-  ussdSessions          UssdSession[]
-  notifications         Notification[]
+  patientProfile           PatientProfile?
+  ascProfile               AscProfile?
+  medecinProfile           MedecinProfile?
+  pharmacienProfile        PharmacienProfile?
+  sessions                 Session[]
+  authOtps                 AuthOtp[]
+  motDePasseResets         MotDePasseReset[]
+  auditLogs                JournalAudit[]
+  messagesEnvoyes          Message[]                @relation("Expediteur")
+  messagesRecus            Message[]                @relation("Destinataire")
+  consultationsSigne       Consultation[]           @relation("MedecinValideur")
+  ordonnancesSigne         Ordonnance[]             @relation("MedecinSignataire")
+  vaccinsAdministres       Vaccination[]
+  referencementsValide     Referencement[]          @relation("MedecinValideurRef")
+  episodesOuverts          EpisodeSoins[]           @relation("EpisodeOuvertPar")
+  episodesResponsable      EpisodeSoins[]           @relation("EpisodeResponsable")
+  demandesPrescrites       DemandeAnalyse[]         @relation("Prescripteur")
+  demandesValidees         DemandeAnalyse[]         @relation("Valideur")
+  demandesLiberees         DemandeAnalyse[]         @relation("LibereParMedecin")
+  echantillonsPreleves     Echantillon[]            @relation("Preleveur")
+  resultatsSaisis          ResultatAnalyse[]        @relation("SaisiPar")
+  alertesCritiques         AlerteResultatCritique[] @relation("DestinataireAlerte")
+  alertesEscaladees        AlerteResultatCritique[] @relation("EscaladeVers")
+  rendezVousMedecin        RendezVous[]             @relation("RendezVousMedecin")
+  rendezVousPointes        RendezVous[]             @relation("PointageArrivee")
+  demandesRdvVisees        DemandeRendezVous[]      @relation("DemandesRendezVousMedecin")
+  demandesRdvTraitees      DemandeRendezVous[]      @relation("DemandesRendezVousTraitees")
+  approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
+  ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
+  ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
+  controlesEligibilite     ControleEligibilite[]    @relation("ControlesEligibilite")
+  syncEvents               SyncEvent[]
+  syncMutations            SyncMutation[]
+  consentementsDonnes      ConsentementPatient[]
+  ussdSessions             UssdSession[]
+  notifications            Notification[]
 
   @@map("utilisateurs")
 }
@@ -307,11 +307,11 @@ model AuthOtp {
 }
 
 model MotDePasseReset {
-  id         String    @id @default(cuid())
-  tokenHash  String    @unique
-  expireLe   DateTime
-  utiliseLe  DateTime?
-  creeLe     DateTime  @default(now())
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  expireLe  DateTime
+  utiliseLe DateTime?
+  creeLe    DateTime  @default(now())
 
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
@@ -320,6 +320,20 @@ model MotDePasseReset {
   @@map("mot_de_passe_resets")
 }
 
+/// Journal d'audit, en ajout seul (EF-12-04).
+///
+/// Deux declencheurs PostgreSQL refusent toute modification de cette table :
+/// `trg_journal_audit_immutable` (UPDATE et DELETE, pose le 2026-06-19) et
+/// `trg_journal_audit_pas_de_troncature` (TRUNCATE, pose le 2026-10-03 — un
+/// declencheur de ligne ne voit pas TRUNCATE, et le journal entier etait donc
+/// effacable d'une commande). La non-modifiabilite est structurelle, pas
+/// conventionnelle.
+///
+/// Sa limite, a connaitre : le proprietaire de la table peut supprimer ou
+/// desactiver un declencheur. Une inviolabilite complete suppose des droits
+/// restreints au niveau du SGBD, voire un stockage en ecriture unique. Ces
+/// declencheurs ferment la porte a une erreur de code ou de script, pas a un
+/// administrateur de base determine.
 model JournalAudit {
   id          String   @id @default(cuid())
   action      String
@@ -330,9 +344,35 @@ model JournalAudit {
   metadonnees Json?
   creeLe      DateTime @default(now())
 
+  /// Le code HTTP rendu. Sorti des metadonnees JSON pour etre indexable : une
+  /// rafale de 403 sur des dossiers differents est le motif que la detection
+  /// d'anomalies (EF-12-06) devra reconnaitre.
+  statutHttp Int?
+
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
+  /// Le patient dont le dossier a ete touche, quand la requete permet de le
+  /// determiner (EF-02-08).
+  ///
+  /// Sans cette colonne, « qui a consulte mon dossier ? » ne se repondait
+  /// qu'en fouillant `metadonnees`, du JSON non indexe : le scan d'un QR ne
+  /// laissait le patient que dans `metadonnees.params.qrCode`. La colonne est
+  /// nullable parce que beaucoup d'actions ne concernent aucun patient — se
+  /// connecter, importer un referentiel, modifier un parametre.
+  ///
+  /// `onDelete: Restrict` : un effacement RGPD (EF-12-09) ne doit pas pouvoir
+  /// faire disparaitre la trace des acces. Qui devra trancher ce que devient
+  /// le journal dans ce cas est une question ouverte, pas un oubli.
+  idPatientConcerne String?
+  patientConcerne   PatientProfile? @relation("AccesAuDossier", fields: [idPatientConcerne], references: [id], onDelete: Restrict)
+
+  /// Le journal du patient : ses acces, du plus recent au plus ancien.
+  @@index([idPatientConcerne, creeLe])
+  /// Ce qu'un utilisateur donne a fait, pour une enquete (EF-12-05).
+  @@index([idUtilisateur, creeLe])
+  /// La recherche par periode, sans filtre d'acteur ni de patient.
+  @@index([creeLe])
   @@map("journal_audit")
 }
 
@@ -381,13 +421,13 @@ model SyncMutation {
 // â”€â”€â”€ DOMAINE 2 â€” ACTEURS DE SANTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model StructureSante {
-  id          String        @id @default(cuid())
-  nom         String
-  type        TypeStructure
-  prefecture  String
-  commune     String?
-  quartier    String?
-  adresse     String?
+  id         String        @id @default(cuid())
+  nom        String
+  type       TypeStructure
+  prefecture String
+  commune    String?
+  quartier   String?
+  adresse    String?
 
   /// Partenaire conventionne : seules ces structures sont sollicitees pour une
   /// commande (EF-12-02). La gestion complete des conventions viendra avec
@@ -395,30 +435,30 @@ model StructureSante {
   estPartenaire    Boolean   @default(false)
   partenaireDepuis DateTime?
 
-  commandes         Commande[]         @relation("PharmacieCommande")
-  reponsesCommandes ReponsePharmacie[] @relation("ReponsesPharmacie")
-  ventesComptoir    VenteComptoir[]
-  assureur          Assureur?
+  commandes            Commande[]            @relation("PharmacieCommande")
+  reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
+  ventesComptoir       VenteComptoir[]
+  assureur             Assureur?
   controlesEligibilite ControleEligibilite[]
-  latitude    Float?
-  longitude   Float?
-  telephone   String?
-  photoUrl    String?
-  estActive   Boolean       @default(true)
-  creeLe      DateTime      @default(now())
+  latitude             Float?
+  longitude            Float?
+  telephone            String?
+  photoUrl             String?
+  estActive            Boolean               @default(true)
+  creeLe               DateTime              @default(now())
 
-  utilisateurs            Utilisateur[]
-  ascProfiles             AscProfile[]
-  medecinProfiles         MedecinProfile[]
-  pharmacienProfiles      PharmacienProfile[]
-  stocks                  Stock[]
-  patientsPreferent       PatientProfile[]    @relation("StructurePreferee")
-  demandesRendezVous      DemandeRendezVous[] @relation("DemandesRendezVous")
-  approvisionnements      Approvisionnement[] @relation("ApprovisionnementsStructure")
-  referencementsSource    Referencement[]     @relation("StructureSource")
-  referencementsCible     Referencement[]     @relation("StructureCible")
-  episodes                EpisodeSoins[]
-  demandesAnalyseRecues   DemandeAnalyse[]    @relation("Laboratoire")
+  utilisateurs          Utilisateur[]
+  ascProfiles           AscProfile[]
+  medecinProfiles       MedecinProfile[]
+  pharmacienProfiles    PharmacienProfile[]
+  stocks                Stock[]
+  patientsPreferent     PatientProfile[]    @relation("StructurePreferee")
+  demandesRendezVous    DemandeRendezVous[] @relation("DemandesRendezVous")
+  approvisionnements    Approvisionnement[] @relation("ApprovisionnementsStructure")
+  referencementsSource  Referencement[]     @relation("StructureSource")
+  referencementsCible   Referencement[]     @relation("StructureCible")
+  episodes              EpisodeSoins[]
+  demandesAnalyseRecues DemandeAnalyse[]    @relation("Laboratoire")
 
   @@map("structures")
 }
@@ -451,7 +491,7 @@ model PatientProfile {
 
   // â”€â”€ MODELE HYBRIDE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Structure prÃ©fÃ©rÃ©e choisie par le patient (optionnel)
-  demandesRendezVous  DemandeRendezVous[]
+  demandesRendezVous DemandeRendezVous[]
 
   idStructurePreferee String?
   structurePreferee   StructureSante? @relation("StructurePreferee", fields: [idStructurePreferee], references: [id])
@@ -460,16 +500,18 @@ model PatientProfile {
   idAscPrincipal String?
   ascPrincipal   AscProfile? @relation("PatientAscPrincipal", fields: [idAscPrincipal], references: [id])
 
-  consultations Consultation[]
-  vaccinations  Vaccination[]
-  factures      Facture[]
-  ventesComptoir VenteComptoir[]
-  contratsAssurance   ContratAssurance[]
+  consultations        Consultation[]
+  vaccinations         Vaccination[]
+  factures             Facture[]
+  ventesComptoir       VenteComptoir[]
+  contratsAssurance    ContratAssurance[]
   controlesEligibilite ControleEligibilite[]
-  rendezVous    RendezVous[]
-  consentements ConsentementPatient[]
-  episodes      EpisodeSoins[]
-  demandesAnalyse DemandeAnalyse[]
+  rendezVous           RendezVous[]
+  consentements        ConsentementPatient[]
+  /// Les acces a son dossier, qu'il peut consulter lui-meme (EF-02-08).
+  accesAuDossier       JournalAudit[]        @relation("AccesAuDossier")
+  episodes             EpisodeSoins[]
+  demandesAnalyse      DemandeAnalyse[]
 
   @@index([prefecture])
   @@index([idStructurePreferee])
@@ -494,23 +536,23 @@ model AscProfile {
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
-  consultations  Consultation[]
-  stocks         Stock[]
-  rendezVous     RendezVous[]
+  consultations    Consultation[]
+  stocks           Stock[]
+  rendezVous       RendezVous[]
   patientsAttitres PatientProfile[] @relation("PatientAscPrincipal")
 
   @@map("profils_asc")
 }
 
 model MedecinProfile {
-  id          String   @id @default(cuid())
-  numeroCom   String?
-  specialite  String?
-  photoUrl    String?
-  creeLe      DateTime @default(now())
+  id         String   @id @default(cuid())
+  numeroCom  String?
+  specialite String?
+  photoUrl   String?
+  creeLe     DateTime @default(now())
 
-  idUtilisateur String         @unique
-  utilisateur   Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+  idUtilisateur String      @unique
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
@@ -644,10 +686,10 @@ model Medicament {
   /// referentiel national (D6) n'est pas arrete. Autre axe que `categorie`.
   classeTherapeutique String?
 
-  imageUrl String?
-  listeEssentielle Boolean  @default(false)
-  estActif         Boolean  @default(true)
-  prixUnitaireGnf  Int      @default(0) // prix national de reference en GNF
+  imageUrl         String?
+  listeEssentielle Boolean @default(false)
+  estActif         Boolean @default(true)
+  prixUnitaireGnf  Int     @default(0) // prix national de reference en GNF
 
   // Classification ATC (EF-05-05, decision D6). Elle permet de rapprocher deux
   // specialites de la meme famille : un patient allergique a l'amoxicilline
@@ -696,10 +738,10 @@ model InteractionMedicament {
   niveau      NiveauInteraction
   description String
   /// Conduite a tenir, affichee au prescripteur avec l'alerte.
-  conduite String?
+  conduite    String?
   /// Referentiel d'origine, pour pouvoir reexaminer une regle contestee.
-  source String?
-  creeLe DateTime @default(now())
+  source      String?
+  creeLe      DateTime          @default(now())
 
   @@unique([dciA, dciB])
   @@index([dciA])
@@ -744,9 +786,9 @@ model Ordonnance {
   signataire Utilisateur? @relation("MedecinSignataire", fields: [signePar], references: [id])
   signeLe    DateTime?
 
-  lignes   LigneOrdonnance[]
+  lignes         LigneOrdonnance[]
   ventesComptoir VenteComptoir[]
-  commande Commande?
+  commande       Commande?
 
   @@index([idConsultation])
   @@index([statut])
@@ -788,15 +830,15 @@ model LigneOrdonnance {
 }
 
 model Vaccination {
-  id              String    @id @default(cuid())
-  vaccinNom       String
-  codeEpi         String?
-  numeroLot       String?
-  siteInjection   String?
-  reaction        String?
-  urlCertificat   String?
-  dateProchaineD  DateTime?
-  administreLe    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  vaccinNom      String
+  codeEpi        String?
+  numeroLot      String?
+  siteInjection  String?
+  reaction       String?
+  urlCertificat  String?
+  dateProchaineD DateTime?
+  administreLe   DateTime  @default(now())
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -814,9 +856,9 @@ model Vaccination {
 /// Ou en est la demande qu'un patient a faite depuis chez lui.
 enum StatutDemandeRendezVous {
   EN_ATTENTE // personne ne l'a encore prise
-  ACCEPTEE   // un medecin a fixe un creneau ; l'episode est ouvert
-  REFUSEE    // avec un motif, que le patient lit
-  ANNULEE    // le patient s'est ravise
+  ACCEPTEE // un medecin a fixe un creneau ; l'episode est ouvert
+  REFUSEE // avec un motif, que le patient lit
+  ANNULEE // le patient s'est ravise
 }
 
 /// Demande de rendez-vous faite a distance (addendum du 2026-09-28, point 6).
@@ -826,14 +868,14 @@ enum StatutDemandeRendezVous {
 /// medecin l'accepte, et pas avant — sinon la file de l'hopital se remplirait
 /// de visites qui n'auront jamais lieu.
 model DemandeRendezVous {
-  id      String                  @id @default(cuid())
-  motif   String
-  statut  StatutDemandeRendezVous @default(EN_ATTENTE)
-  creeLe  DateTime                @default(now())
-  modifieLe DateTime              @updatedAt
+  id        String                  @id @default(cuid())
+  motif     String
+  statut    StatutDemandeRendezVous @default(EN_ATTENTE)
+  creeLe    DateTime                @default(now())
+  modifieLe DateTime                @updatedAt
 
-  traiteeLe   DateTime?
-  motifRefus  String?
+  traiteeLe  DateTime?
+  motifRefus String?
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -867,12 +909,12 @@ model DemandeRendezVous {
 /// valeur, et `asc.service.ts` comptait des rendez-vous `HONORE` que personne
 /// n'ecrivait jamais â€” la statistique valait structurellement zero.
 enum StatutRendezVous {
-  PLANIFIE        // le medecin a fixe le creneau (addendum, point 3)
-  PRESENT         // l'assistante a pointe l'arrivee du patient
+  PLANIFIE // le medecin a fixe le creneau (addendum, point 3)
+  PRESENT // l'assistante a pointe l'arrivee du patient
   EN_CONSULTATION // le medecin a pris le patient
-  TERMINE         // consultation faite â€” remplace l'ancien Â« HONORE Â»
-  ABSENT          // le patient n'est pas venu
-  ANNULE          // remplace par un autre rendez-vous, ou annule
+  TERMINE // consultation faite â€” remplace l'ancien Â« HONORE Â»
+  ABSENT // le patient n'est pas venu
+  ANNULE // remplace par un autre rendez-vous, ou annule
 }
 
 model RendezVous {
@@ -967,15 +1009,15 @@ model Message {
 // â”€â”€â”€ DOMAINE 5 â€” GESTION OPERATIONNELLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Stock {
-  id              String    @id @default(cuid())
+  id          String   @id @default(cuid())
   /// Le total, somme des lots encore disponibles. Il reste porte ici : le
   /// decrement conditionnel de la delivrance s'appuie dessus, et le recalculer
   /// a chaque lecture couterait cher pour rien.
-  quantite        Int       @default(0)
-  seuilAlerte     Int       @default(10)
-  unite           String
-  margeGnf        Int       @default(0) // Marge appliquee par la pharmacie
-  modifieLe       DateTime  @updatedAt
+  quantite    Int      @default(0)
+  seuilAlerte Int      @default(10)
+  unite       String
+  margeGnf    Int      @default(0) // Marge appliquee par la pharmacie
+  modifieLe   DateTime @updatedAt
 
   idAsc String?
   asc   AscProfile? @relation(fields: [idAsc], references: [id], onDelete: Restrict)
@@ -1084,16 +1126,16 @@ model Facture {
 }
 
 model ConsentementPatient {
-  id            String       @id @default(cuid())
-  scope         ConsentScope
-  actif         Boolean      @default(true)
-  donneLe       DateTime     @default(now())
-  retireLe      DateTime?
-  source        String       @default("WEB")
-  commentaire   String?
+  id          String       @id @default(cuid())
+  scope       ConsentScope
+  actif       Boolean      @default(true)
+  donneLe     DateTime     @default(now())
+  retireLe    DateTime?
+  source      String       @default("WEB")
+  commentaire String?
 
-  idPatient     String
-  patient       PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Cascade)
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Cascade)
 
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
@@ -1104,15 +1146,15 @@ model ConsentementPatient {
 }
 
 model AlerteEpidemique {
-  id            String                  @id @default(cuid())
+  id            String                 @id @default(cuid())
   pathologie    String
   prefecture    String
   nombre        Int
   seuil         Int
   niveau        NiveauAlerteEpidemique
-  fenetreJours  Int                     @default(30)
-  statut        String                  @default("ACTIVE")
-  dateDetection DateTime                @default(now())
+  fenetreJours  Int                    @default(30)
+  statut        String                 @default("ACTIVE")
+  dateDetection DateTime               @default(now())
   metadonnees   Json?
 
   @@unique([pathologie, prefecture, fenetreJours, statut])
@@ -1122,14 +1164,14 @@ model AlerteEpidemique {
 }
 
 model UssdSession {
-  id          String            @id @default(cuid())
-  telephone   String
-  etape       String            @default("ACCUEIL")
-  statut      UssdSessionStatus @default(ACTIVE)
-  donnees     Json?
-  creeLe      DateTime          @default(now())
-  expireLe    DateTime
-  modifieLe   DateTime          @updatedAt
+  id        String            @id @default(cuid())
+  telephone String
+  etape     String            @default("ACCUEIL")
+  statut    UssdSessionStatus @default(ACTIVE)
+  donnees   Json?
+  creeLe    DateTime          @default(now())
+  expireLe  DateTime
+  modifieLe DateTime          @updatedAt
 
   idUtilisateur String?
   utilisateur   Utilisateur? @relation(fields: [idUtilisateur], references: [id], onDelete: SetNull)
@@ -1186,15 +1228,15 @@ model Compteur {
 }
 
 model EpisodeSoins {
-  id       String        @id @default(cuid())
-  numero   String        @unique
-  motif    String
-  service  String?
-  statut   StatutEpisode @default(OUVERT)
-  notes    String?
-  ouvertLe DateTime      @default(now())
-  closLe   DateTime?
-  modifieLe DateTime     @updatedAt
+  id        String        @id @default(cuid())
+  numero    String        @unique
+  motif     String
+  service   String?
+  statut    StatutEpisode @default(OUVERT)
+  notes     String?
+  ouvertLe  DateTime      @default(now())
+  closLe    DateTime?
+  modifieLe DateTime      @updatedAt
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -1227,8 +1269,8 @@ model Examen {
   id        String  @id @default(cuid())
   codeLoinc String  @unique
   libelle   String
-  categorie String  // HEMATOLOGIE, BIOCHIMIE, SEROLOGIE, PARASITOLOGIE, MICROBIOLOGIE, URINE...
-  specimen  String  // SANG, URINE, SELLES, ...
+  categorie String // HEMATOLOGIE, BIOCHIMIE, SEROLOGIE, PARASITOLOGIE, MICROBIOLOGIE, URINE...
+  specimen  String // SANG, URINE, SELLES, ...
   unite     String?
   aJeun     Boolean @default(false)
   consignes String?
@@ -1263,11 +1305,11 @@ model DemandeAnalyse {
   motifAnnulation    String?
 
   // Cycle laboratoire (EF-04)
-  lieuPrelevement       LieuPrelevement?
-  creneauPrelevement    DateTime?
-  recueLe               DateTime?
-  preleveeLe            DateTime?
-  valideeLe             DateTime?
+  lieuPrelevement        LieuPrelevement?
+  creneauPrelevement     DateTime?
+  recueLe                DateTime?
+  preleveeLe             DateTime?
+  valideeLe              DateTime?
   /// Conclusion du laboratoire, ecrite par le laborantin qui valide.
   /// S'appelait `commentaireBiologiste` jusqu'au 2026-09-30 : le role de
   /// biologiste a ete supprime (addendum, point 4).
@@ -1278,15 +1320,15 @@ model DemandeAnalyse {
   /// partait des la validation du laboratoire, et un resultat critique finissait
   /// par partir seul au bout de 24 h â€” le patient lisait alors des termes que
   /// personne ne lui avait expliques.
-  diffuseePatientLe     DateTime?
+  diffuseePatientLe      DateTime?
   /// Traduction en langage clair, redigee par le medecin au moment ou il libere
   /// les resultats. C'est elle qui donne son sens au chiffre.
-  commentaireMedecin    String?
+  commentaireMedecin     String?
   /// Garde-fou : sans ces deux dates, un medecin absent laisserait un patient
   /// sans ses resultats indefiniment. On relance, puis on escalade vers
   /// l'administrateur de la structure â€” jamais vers le patient.
-  relanceLiberationLe   DateTime?
-  escaladeLiberationLe  DateTime?
+  relanceLiberationLe    DateTime?
+  escaladeLiberationLe   DateTime?
 
   idValideur String?
   valideur   Utilisateur? @relation("Valideur", fields: [idValideur], references: [id])
@@ -1340,10 +1382,10 @@ model LigneDemandeAnalyse {
 
 // Echantillon code sans ambiguite (EF-04-03) : EC-2026-000123
 model Echantillon {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  specimen    String    // SANG, URINE, SELLES, CRACHATS...
-  preleveLe   DateTime  @default(now())
+  id          String   @id @default(cuid())
+  code        String   @unique
+  specimen    String // SANG, URINE, SELLES, CRACHATS...
+  preleveLe   DateTime @default(now())
   commentaire String?
 
   idDemande String
@@ -1471,11 +1513,11 @@ model Commande {
 /// reponses negatives : c'est ce qui permet de dire au patient Â« trois
 /// pharmacies ont ete interrogees, aucune n'avait tout Â».
 model ReponsePharmacie {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   aTousLesProduits Boolean
-  repondueLe       DateTime @default(now())
+  repondueLe       DateTime  @default(now())
   /// Renseigne quand une pharmacie se retracte apres avoir pris la commande.
-  retracteeLe DateTime?
+  retracteeLe      DateTime?
 
   idCommande String
   commande   Commande @relation(fields: [idCommande], references: [id], onDelete: Cascade)
@@ -1487,7 +1529,6 @@ model ReponsePharmacie {
   @@index([idCommande])
   @@map("reponses_pharmacie")
 }
-
 
 // ============================================================
 // Vente au comptoir (addendum du 2026-09-28, points 1.1 et 1.2)
@@ -1592,7 +1633,6 @@ model LigneVente {
   @@map("lignes_vente")
 }
 
-
 // ============================================================
 // Assurance et tiers payant (EF-09, addendum du 2026-09-28 point 5)
 // ============================================================
@@ -1604,10 +1644,10 @@ model LigneVente {
 /// de leur structure. Un assureur sans agents reste utilisable — ses contrats
 /// sont saisis par l'administration.
 model Assureur {
-  id       String  @id @default(cuid())
-  nom      String
+  id        String  @id @default(cuid())
+  nom       String
   /// Code court, celui qui figure sur la carte de l'assure.
-  code     String  @unique
+  code      String  @unique
   telephone String?
   email     String?
   estActif  Boolean @default(true)
@@ -1620,7 +1660,7 @@ model Assureur {
   contrats ContratAssurance[]
   regles   RegleCouverture[]
 
-  creeLe   DateTime @default(now())
+  creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
   @@map("assureurs")
@@ -1716,7 +1756,7 @@ model ControleEligibilite {
   eligible Boolean
   /// Pourquoi la reponse est negative, en clair : c'est ce que le comptoir
   /// explique au patient.
-  motif String?
+  motif    String?
 
   /// Ce qui a ete lu au moment du controle, recopie pour que la reponse reste
   /// lisible meme si le contrat change ensuite.

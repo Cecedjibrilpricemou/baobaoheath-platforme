@@ -78,13 +78,55 @@ const EXCEPTIONS = [
       "ci-dessous, reproduite le 2026-10-02 : l'arbre perdait 19 paquets). " +
       "Reexamen court : Angular relevera cette epingle.",
   },
+  {
+    ghsa: 'GHSA-vfj7-8cjw-p6xm',
+    paquet: 'braces',
+    reexamen: '2026-11-15',
+    motif:
+      "Epuisement de pile sur un motif glob profondement imbrique. Atteint " +
+      "par jest > micromatch > braces, c'est-a-dire le lanceur de tests : les " +
+      "motifs viennent de notre jest.config.cjs et de la ligne de commande, " +
+      "jamais d'une entree exterieure. Verifie le 2026-10-03 : braces est " +
+      "absent de l'arbre de production de la racine et de celui de l'API " +
+      "(npm ls --omit=dev vide), et absent du bundle web livre. " +
+      "**Aucune version corrigee n'existe** : l'avis couvre <=3.0.3 et 3.0.3 " +
+      "est la derniere version publiee. Le correctif que npm propose est un " +
+      "passage a jest 30, changement majeur sans rapport avec la faille et " +
+      "sans braces corrige au bout. Reexamen court : c'est un paquet tres " +
+      "utilise, un correctif amont viendra.",
+  },
+  {
+    ghsa: 'GHSA-ch52-4w7c-c8xp',
+    paquet: 'http-cache-semantics',
+    reexamen: '2026-11-15',
+    motif:
+      "Un max-stale mal interprete peut servir a un utilisateur la reponse " +
+      "mise en cache pour un autre. Atteint par @angular/cli > pacote > " +
+      "npm-registry-fetch > make-fetch-happen : le cache en question est " +
+      "celui des requetes au registre npm sur la machine de compilation, un " +
+      "cache local a un seul utilisateur, et non un cache HTTP partage " +
+      "servant plusieurs patients. Verifie le 2026-10-03 : absent des deux " +
+      "arbres de production et du bundle web livre. **Aucune version " +
+      "corrigee n'existe** : l'avis couvre <=4.2.0 et 4.2.0 est la derniere " +
+      "version publiee. Le correctif que npm propose est une retrogradation " +
+      "d'@angular/cli de 21.2.24 vers 7.2.4 — une version de 2019, " +
+      "incompatible avec tout le projet.",
+  },
 ];
 
-// Ce que couvrent ces trois exceptions ne tourne pas en production : depuis
-// le Dockerfile de l'API (etape prod-deps), l'image embarque les seules
-// dependances de production — la CLI prisma, mysql2 et deepmerge-ts n'y sont
-// pas. Elles restent dans l'arbre audite ici parce que la CI et le job Deploy
-// en ont besoin (migrate deploy depuis le runner).
+// Aucune de ces exceptions ne tourne en production : depuis le Dockerfile de
+// l'API (etape prod-deps), l'image embarque les seules dependances de
+// production — la CLI prisma, mysql2, deepmerge-ts, braces et
+// http-cache-semantics n'y sont pas. Elles restent dans l'arbre audite ici
+// parce que la CI et le job Deploy en ont besoin (migrate deploy depuis le
+// runner). Verifie a chaque ajout par `npm ls <paquet> --omit=dev --all` a la
+// racine et dans apps/api, plus un grep sur apps/web/dist.
+//
+// Le point commun des trois dernieres (piscina, braces,
+// http-cache-semantics) : **aucune version corrigee n'est publiee en amont**.
+// Ce que `npm audit` presente comme « fixAvailable » est, dans les trois cas,
+// un changement majeur sans rapport — parfois une retrogradation de plusieurs
+// annees. Lire la suggestion avant de la suivre.
 //
 // Piste ecartee (13/09/2026, reconfirmee le 02/10/2026) : `overrides` npm sur
 // une dependance epinglee en version exacte. Avec npm 11 et les workspaces,
