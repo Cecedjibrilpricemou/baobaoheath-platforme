@@ -1,0 +1,175 @@
+<div class="bb-comptes">
+
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-users" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.COMPTES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.COMPTES.SUBTITLE' | translate }}</p>
+    </div>
+  </header>
+
+  <mat-card class="comptes-filtres">
+    <div class="comptes-filtres__grille">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.COMPTES.SEARCH' | translate }}</mat-label>
+        <input matInput [ngModel]="q()" (ngModelChange)="q.set($event)"
+               (keyup.enter)="rechercher()" placeholder="Nom, e-mail, téléphone…" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.COMPTES.ROLE' | translate }}</mat-label>
+        <mat-select [ngModel]="role()" (ngModelChange)="role.set($event)">
+          <mat-option value="">{{ 'ADMIN.COMPTES.ALL_ROLES' | translate }}</mat-option>
+          @for (r of roles; track r) {
+            <mat-option [value]="r">{{ 'ROLE.' + r | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.COMPTES.STATE' | translate }}</mat-label>
+        <mat-select [ngModel]="etat()" (ngModelChange)="etat.set($event)">
+          <mat-option value="tous">{{ 'ADMIN.COMPTES.STATE_ALL' | translate }}</mat-option>
+          <mat-option value="actifs">{{ 'ADMIN.COMPTES.STATE_ACTIVE' | translate }}</mat-option>
+          <mat-option value="fermes">{{ 'ADMIN.COMPTES.STATE_CLOSED' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <button mat-flat-button color="primary" (click)="rechercher()" [disabled]="chargement()">
+      <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
+      {{ 'ADMIN.COMPTES.SEARCH_BTN' | translate }}
+    </button>
+  </mat-card>
+
+  @if (succes()) {
+    <div class="comptes-succes" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+  @if (erreur() && !cible()) {
+    <div class="comptes-erreur" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  <mat-card class="comptes-resultats">
+    <div class="comptes-resultats__tete">
+      <h2>{{ 'ADMIN.COMPTES.RESULTS' | translate }}</h2>
+      @if (!chargement()) { <span class="comptes-resultats__compte">{{ total() }}</span> }
+    </div>
+
+    @if (chargement()) {
+      <div class="bb-empty" role="status">
+        <mat-spinner diameter="28"></mat-spinner>
+        <p>{{ 'COMMON.LOADING' | translate }}</p>
+      </div>
+    } @else if (comptes().length === 0) {
+      <div class="bb-empty">
+        <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+        <p>{{ 'ADMIN.COMPTES.EMPTY' | translate }}</p>
+      </div>
+    } @else {
+      <div class="comptes-table-wrap">
+        <table class="comptes-table">
+          <thead>
+            <tr>
+              <th>{{ 'ADMIN.COMPTES.PERSON' | translate }}</th>
+              <th>{{ 'ADMIN.COMPTES.ROLE' | translate }}</th>
+              <th>{{ 'ADMIN.COMPTES.STATE' | translate }}</th>
+              <th>{{ 'ADMIN.COMPTES.LAST_SEEN' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of comptes(); track c.id) {
+              <tr [class.comptes-table__row--ferme]="!c.estActif">
+                <td>
+                  <span class="comptes-table__who">{{ c.prenom }} {{ c.nom }}</span>
+                  <span class="comptes-table__contact">{{ c.email ?? c.telephone }}</span>
+                  @if (c.structure) {
+                    <span class="comptes-table__structure">{{ c.structure }}</span>
+                  }
+                </td>
+                <td>{{ 'ROLE.' + c.role | translate }}</td>
+                <td>
+                  @if (c.estActif) {
+                    <span class="comptes-table__etat comptes-table__etat--actif">{{ 'ADMIN.COMPTES.ACTIVE' | translate }}</span>
+                  } @else {
+                    <span class="comptes-table__etat comptes-table__etat--ferme">{{ 'ADMIN.COMPTES.CLOSED' | translate }}</span>
+                    @if (c.suspension) {
+                      <!-- Qui, quand, pourquoi : une suspension qu'on ne peut
+                           pas expliquer ne peut pas être contestée. -->
+                      <span class="comptes-table__motif">{{ c.suspension.motif }}</span>
+                      <span class="comptes-table__par">
+                        {{ 'ADMIN.COMPTES.BY_WHOM' | translate:{ qui: c.suspension.parQui ?? '—' } }}
+                        · {{ c.suspension.suspenduLe | date:'short' }}
+                      </span>
+                    } @else if (c.fermeSansMotif) {
+                      <!-- On le dit plutôt que de laisser croire à une mesure
+                           documentée : ces comptes viennent de l'ancienne voie. -->
+                      <span class="comptes-table__sans-motif">{{ 'ADMIN.COMPTES.CLOSED_NO_REASON' | translate }}</span>
+                    }
+                  }
+                </td>
+                <td class="comptes-table__date">
+                  {{ c.derniereConnexion ? (c.derniereConnexion | date:'short') : '—' }}
+                </td>
+                <td class="comptes-table__actions">
+                  @if (c.estActif) {
+                    <button mat-stroked-button color="warn" (click)="demanderSuspension(c)" [disabled]="enCours()">
+                      {{ 'ADMIN.COMPTES.SUSPEND' | translate }}
+                    </button>
+                  } @else {
+                    <button mat-stroked-button (click)="reactiver(c)" [disabled]="enCours()">
+                      {{ 'ADMIN.COMPTES.REACTIVATE' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </mat-card>
+
+  <!-- La confirmation. On ne suspend pas d'un seul clic : la mesure coupe un
+       soignant de ses patients. -->
+  @if (cible(); as c) {
+    <div class="comptes-boite" role="dialog" aria-modal="true">
+      <mat-card class="comptes-boite__carte">
+        <h2>{{ 'ADMIN.COMPTES.CONFIRM_TITLE' | translate:{ nom: c.prenom + ' ' + c.nom } }}</h2>
+        <p class="comptes-boite__avertissement">
+          {{ 'ADMIN.COMPTES.CONFIRM_WARNING' | translate:{ role: ('ROLE.' + c.role | translate) } }}
+        </p>
+
+        <mat-form-field appearance="outline" class="comptes-boite__motif">
+          <mat-label>{{ 'ADMIN.COMPTES.REASON' | translate }}</mat-label>
+          <textarea matInput rows="3" [ngModel]="motif()" (ngModelChange)="motif.set($event)"
+                    [placeholder]="'ADMIN.COMPTES.REASON_PLACEHOLDER' | translate"></textarea>
+          <mat-hint>{{ 'ADMIN.COMPTES.REASON_HINT' | translate:{ min: motifMin } }}</mat-hint>
+        </mat-form-field>
+
+        @if (erreur()) {
+          <div class="comptes-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreur() }}</span>
+          </div>
+        }
+
+        <div class="comptes-boite__actions">
+          <button mat-stroked-button (click)="annuler()" [disabled]="enCours()">
+            {{ 'ADMIN.COMPTES.CANCEL' | translate }}
+          </button>
+          <button mat-flat-button color="warn" (click)="confirmerSuspension()"
+                  [disabled]="!motifValide() || enCours()">
+            {{ 'ADMIN.COMPTES.CONFIRM' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+</div>

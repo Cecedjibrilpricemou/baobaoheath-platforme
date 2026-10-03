@@ -1,7 +1,7 @@
 // core/services/admin.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
-import type { FiltreJournalDto, PageJournalView } from '@baobaoheath/shared-types';
+import type { CompteView, FiltreJournalDto, PageJournalView, Role, SuspensionView } from '@baobaoheath/shared-types';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
@@ -121,10 +121,34 @@ export class AdminService {
   exporterJournal(filtres: FiltreJournalDto): Observable<HttpResponse<Blob>> {
     return this.api.getFichier('/journal/export', enParametres(filtres));
   }
+
+  // --- Suspension de compte (EF-12-01) ----------------------------------
+
+  rechercherComptes(filtres: {
+    q?: string; role?: Role; actifs?: boolean; page?: number; limit?: number;
+  }): Observable<ApiResponse<{ comptes: CompteView[]; total: number; page: number; limit: number }>> {
+    return this.api.get<ApiResponse<{ comptes: CompteView[]; total: number; page: number; limit: number }>>(
+      '/comptes', enParametres(filtres)
+    );
+  }
+
+  /**
+   * Le motif est obligatoire cote API, et une contrainte SQL le refuse aussi :
+   * l'ecran ne doit donc pas tenter d'envoyer une suspension sans explication.
+   */
+  suspendreCompte(id: string, motif: string): Observable<ApiResponse<SuspensionView>> {
+    return this.api.post<ApiResponse<SuspensionView>>(`/comptes/${id}/suspendre`, { motif });
+  }
+
+  reactiverCompte(id: string): Observable<ApiResponse<SuspensionView>> {
+    return this.api.post<ApiResponse<SuspensionView>>(`/comptes/${id}/reactiver`, {});
+  }
 }
 
 /** Les criteres renseignes, en chaines. Les vides sont ecartes. */
-function enParametres(filtres: FiltreJournalDto): Record<string, string> {
+// Generique sur `object` et non `Record<string, unknown>` : une interface sans
+// signature d index — ce que sont nos DTO — n est pas assignable au second.
+function enParametres<T extends object>(filtres: T): Record<string, string> {
   const params: Record<string, string> = {};
   for (const [cle, valeur] of Object.entries(filtres)) {
     if (valeur === undefined || valeur === null || valeur === '' || valeur === false) continue;

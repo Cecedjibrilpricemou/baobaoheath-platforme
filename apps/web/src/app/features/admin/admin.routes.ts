@@ -24,6 +24,11 @@ export const ADMIN_ROUTES: Routes = [
           import('./export/export.component').then(m => m.ExportComponent)
       },
       {
+        path: 'comptes',
+        loadComponent: () =>
+          import('./comptes/comptes.component').then(m => m.ComptesComponent)
+      },
+      {
         path: 'journal',
         loadComponent: () =>
           import('./journal/journal.component').then(m => m.JournalComponent)
