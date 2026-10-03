@@ -1076,9 +1076,32 @@ export const swaggerDocument = {
     '/api/v1/privacy/me/audit-logs': {
       get: {
         tags: ['Confidentialite'],
-        summary: 'Voir les acces a mon dossier',
+        summary: 'Qui a consulte mon dossier (EF-02-08)',
+        description: "Le journal des acces au dossier du patient connecte, du plus recent au plus ancien.\n\n**Ce que chaque ligne porte** : qui a agi (nom, prenom, role), quand, le code HTTP rendu (`statutHttp` — un refus >= 400 est une tentative, pas un acces), et deux cles de traduction.\n\n**L'API ne rend pas de texte redige.** `libelle` et `libelleObjet` sont des cles d'i18n : la plateforme est bilingue, et une phrase francaise figee s'afficherait telle quelle a un patient ayant choisi l'anglais. Le client traduit `libelleObjet`, puis le passe en parametre `objet` a `libelle`. `libelleObjet` est vide pour les phrases qui se suffisent a elles-memes, comme le scan d'un code.\n\n`action` et `ressource` restent la trace technique (`GET /:id`), **a ne pas afficher seules** : elles servent une enquete ou un signalement.\n\n**Les objets restent generaux** (« un document de votre dossier », jamais « une ordonnance ») : un journal se lit parfois sur un ecran partage, et ces mots sont interdits par EF-11-02. Une anomalie se repere a l'auteur et a l'heure.\n\n**Ce que le journal ne nomme pas** : une recherche ou une liste touche plusieurs dossiers, ou aucun. Ces acces sont traces mais n'apparaissent dans le journal d'aucun patient. Le couvrir demanderait une ligne par patient affiche — un choix a trancher, pas un oubli.",
         security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Journal des acces' } },
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 50, maximum: 100 } },
+          { name: 'parTiers', in: 'query', schema: { type: 'boolean', default: false }, description: "Ne garder que les acces d'autrui. C'est ce qu'on cherche quand on soupconne une anomalie : les acces du patient lui-meme representaient 273 lignes sur 850 dans la base de demonstration." },
+        ],
+        responses: {
+          200: {
+            description: 'Journal des acces, page par page',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' },
+              action: { type: 'string', description: 'Trace technique : le motif de route' },
+              ressource: { type: 'string' },
+              idRessource: { type: 'string', nullable: true },
+              libelle: { type: 'string', description: "Cle d'i18n de la phrase ; attend un parametre `objet`" },
+              libelleObjet: { type: 'string', description: "Cle d'i18n de l'objet ; vide si la phrase se suffit" },
+              parMoi: { type: 'boolean', description: 'Vrai quand le patient est lui-meme l auteur' },
+              statutHttp: { type: 'integer', nullable: true },
+              creeLe: { type: 'string', format: 'date-time' },
+              utilisateur: { type: 'object', properties: { id: { type: 'string' }, prenom: { type: 'string' }, nom: { type: 'string' }, role: { type: 'string' } } },
+            } } }, meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' }, totalPages: { type: 'integer' } } } } }] } } },
+          },
+          404: { description: 'Profil patient non trouve' },
+        },
       },
     },
     '/api/v1/ussd/session': {

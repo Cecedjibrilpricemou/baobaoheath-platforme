@@ -467,7 +467,7 @@ Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les ca
 | P8 Livraison, carte, annuaire | 0 | — | 9 | rien |
 | P9 Notifications neutres | 0 | — | 2 | rien |
 | P10 Assurance | 0 | — | 9 | rien |
-| P11 Admin, audit, référentiels | 1 | — | 4 | **import CSV des référentiels** (03/10, API + Swagger) : examens, interactions, catalogue |
+| P11 Admin, audit, référentiels | 2 | 1 | 2 | **import CSV des référentiels** + **journal d'audit** (03/10) : le patient concerné est nommé en colonne indexée, le journal est en ajout seul y compris contre `TRUNCATE` |
 | P12 Interopérabilité | 0 | — | 3 | rien |
 | P13 Extension | 1 | — | 4 | téléconsultation réelle (suspendue à D2) |
 | **Total** | **36** | **1** | **58** | sur 95 |
@@ -486,7 +486,7 @@ Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les ca
 Ces blocs n'ont pas été évoqués par le chef de projet, mais ils conditionnent une mise en service :
 
 - **P4** (7 cases) — identito-vigilance, doublons, consentement versionné, bris de glace, journal des accès patient. Le plus lourd non commencé, et le plus sensible réglementairement. **EF-02-08 en dépend** : le journal d'audit trace les scans de QR mais `idRessource` reste vide (voir la dette), donc « qui a consulté mon dossier ? » n'a pas de réponse indexée.
-- **P11** (4 cases restantes) — l'import des référentiels est livré le 03/10, donc le verrou est levé côté outil. Restent le journal d'audit incluant les **lectures** (EF-12-04/05), la suspension de compte et les conventions (EF-12-01/02), les demandes RGPD (EF-12-09) et la détection d'anomalies d'accès (EF-12-06). Le référentiel d'interactions reste **vide en base** : il manque une source médicale validée, plus l'outil.
+- **P11** — l'import des référentiels et le journal d'audit sont livrés le 03/10. Restent la **recherche et l'export** du journal pour l'administration (EF-12-05, ni route ni écran), la suspension de compte et les conventions (EF-12-01/02), les demandes RGPD (EF-12-09) et la détection d'anomalies d'accès (EF-12-06 — le préalable est là, `statutHttp` est en colonne indexée). Le référentiel d'interactions reste **vide en base** : il manque une source médicale validée, plus l'outil.
 - ~~**P9**~~ — la neutralité des messages sortants est **livrée le 2026-10-02**, et ce n'était pas une case vide : le code envoyait du contenu médical en SMS clair. Reste une case : préférences de canaux et de langue, rejeu des non délivrées.
 
 ### D. Questions ouvertes
@@ -584,6 +584,10 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 - Une migration de données se prouve **en l'exécutant sur une base jetable**.
 - Un script de seed périmé peut annoncer « 0 compte mis à jour » et sortir en code 0. Lire la sortie, pas seulement le code de retour.
 - **Un numéro de ligne rendu à un humain doit être celui qu'il voit, pas un index de tableau.** Le rapport d'import des référentiels numérotait les lignes par leur position dans le tableau *après* avoir écarté les lignes vides. Une seule ligne blanche, et l'opérateur était renvoyé à la ligne précédant la fautive : il corrigeait une ligne saine et laissait la mauvaise. Les 40 tests unitaires ne le voyaient pas — ils travaillaient sur des CSV sans trou. Trouvé le 03/10 en interrogeant l'API réelle avec un fichier tel qu'Excel l'exporte. Corollaire : un champ entre guillemets qui occupe trois lignes décale de trois ce qui suit, donc le découpage doit compter les sauts de ligne **même à l'intérieur des guillemets**.
+- **`req.path` ment dans un routeur monté.** Express le tronque du préfixe de montage : pour `/api/v1/patients/abc`, un middleware applicatif voit `/abc`. Le service d'audit y cherchait le segment `v1` et retombait sur le premier segment restant — d'où 288 lignes de ressource « me » et des identifiants de patient pris pour des noms de ressource. `req.originalUrl` n'est jamais modifié ; il porte la chaîne de requête, qu'il faut retirer.
+- **Un test peut passer en encodant une hypothèse fausse.** Mes 28 premiers tests du résolveur d'audit fabriquaient une requête avec le chemin complet dans `req.path` — ce que le middleware ne voit jamais. Ils étaient verts et le code ne pouvait pas fonctionner en service. C'est l'API réelle qui l'a montré. Quand un test fabrique une entrée, vérifiez que vous la fabriquez comme le cadre la présente, pas comme vous l'imaginez.
+- **Mesurez avant de basculer une lecture d'une source à une autre.** Passer le journal des accès d'une requête JSON à une colonne indexée semblait un gain pur : la colonne trouvait 30 lignes de plus. Elle en manquait 33. Un journal qui perd des lignes est pire qu'un journal lent. La comparaison ligne à ligne, avant bascule, a imposé une seconde migration de reprise.
+- **Une API qui rend du texte rédigé casse l'i18n en silence.** Les libellés du journal partaient en français figé ; l'application est bilingue. Ils rendent maintenant des clés, et un test vérifie que chacune existe dans `fr.json` **et** `en.json` — une clé absente s'affiche telle quelle, en majuscules.
 - **Un garde-fou protégé en double ne peut pas être verrouillé par un test.** Le BOM d'Excel tombait à la fois avec le `trim()` du texte entier et celui des en-têtes ; aucun sabotage d'un seul des deux ne faisait échouer le test du BOM. La redondance n'était pas un tort, mais elle rendait le test incapable de prouver quoi que ce soit. Quand une protection est doublée, sachez-le, et dites-le dans le commentaire plutôt que d'affirmer qu'un test la tient.
 
 ---
