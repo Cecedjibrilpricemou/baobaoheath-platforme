@@ -154,3 +154,76 @@
   mat-icon { font-size: 26px; width: 26px; height: 26px; opacity: 0.45; }
   p { font-size: 0.8125rem; margin: 0; }
 }
+
+// ── Les anomalies (EF-12-06) ────────────────────────────────────────
+//
+// L'encart doit attirer l'oeil sans crier : ce sont des signaux a examiner,
+// pas des verdicts. Il ne devient rouge que s'il porte une alerte.
+.journal-anomalies {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1.15rem 1rem;
+  border-left: 3px solid var(--bb-warning);
+
+  &--alerte { border-left-color: var(--bb-danger); }
+
+  &__tete {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+
+    h2 { margin: 0; font-size: 0.9375rem; }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--bb-warning); }
+  }
+
+  &--alerte &__tete mat-icon { color: var(--bb-danger); }
+
+  &__avis {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 0;
+      border-top: 1px solid var(--bb-border-light);
+      font-size: 13px;
+    }
+  }
+
+  &__rang {
+    flex-shrink: 0;
+    min-width: 62px;
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bb-warning) 16%, transparent);
+    color: var(--bb-warning);
+
+    &--alerte {
+      background: color-mix(in srgb, var(--bb-danger) 14%, transparent);
+      color: var(--bb-danger);
+    }
+  }
+
+  &__texte { flex: 1 1 auto; color: var(--bb-text-primary); }
+  &__deja { margin-left: 6px; font-size: 11.5px; color: var(--bb-text-muted); }
+
+  // Les seuils, montres et non caches : ils ne sont pas calibres.
+  &__seuils {
+    margin: 0.75rem 0 0;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+  }
+}

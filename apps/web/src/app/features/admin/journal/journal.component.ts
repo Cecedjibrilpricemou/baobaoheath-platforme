@@ -25,7 +25,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import type { FiltreJournalDto, LigneJournalView, Role } from '@baobaoheath/shared-types';
+import type { AnomalieView, FiltreJournalDto, LigneJournalView, Role, SeuilsAnomalies } from '@baobaoheath/shared-types';
 import { AdminService } from '../../../core/services/admin.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -74,6 +74,16 @@ export class JournalComponent implements OnInit {
   exportEnCours = signal(false);
   erreur = signal('');
 
+  // ── Les anomalies (EF-12-06) ───────────────────────────────────────
+  //
+  // Des **signaux a examiner, pas des verdicts** : l'ecran le dit, et chaque
+  // signal mene au detail dans le tableau du dessous plutot que de conclure.
+  anomalies = signal<AnomalieView[]>([]);
+  seuils = signal<SeuilsAnomalies | null>(null);
+  anomaliesChargees = signal(false);
+
+  alertes = computed(() => this.anomalies().filter((a) => a.gravite === 'ALERTE').length);
+
   /** `parTiers` n'a de sens qu'avec un patient : tiers de qui, sinon ? */
   parTiersPossible = computed(() => this.idPatient().trim().length > 0);
 
@@ -86,6 +96,41 @@ export class JournalComponent implements OnInit {
 
   ngOnInit() {
     this.rechercher();
+    this.chargerAnomalies();
+  }
+
+  chargerAnomalies() {
+    this.admin.anomalies().subscribe({
+      next: (res) => {
+        this.anomalies.set(res.data?.anomalies ?? []);
+        this.seuils.set(res.data?.seuils ?? null);
+        this.anomaliesChargees.set(true);
+      },
+      // Un echec de la detection ne doit pas empecher de consulter le
+      // journal : c'est le journal qui porte la preuve, la detection n'est
+      // qu'une aide a la lecture.
+      error: () => this.anomaliesChargees.set(true),
+    });
+  }
+
+  /** Depuis un signal, on va voir les lignes qui l'ont produit. */
+  enqueterSur(a: AnomalieView) {
+    this.reinitialiserCriteres();
+    this.idUtilisateur.set(a.idUtilisateur);
+    if (a.type === 'REFUS_REPETES') this.echecsSeulement.set(true);
+    this.rechercher();
+    document.querySelector('.journal-resultats')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  private reinitialiserCriteres() {
+    this.du.set('');
+    this.au.set('');
+    this.role.set('');
+    this.ressource.set('');
+    this.idPatient.set('');
+    this.idUtilisateur.set('');
+    this.echecsSeulement.set(false);
+    this.parTiers.set(false);
   }
 
   rechercher(page = 1) {
@@ -110,14 +155,7 @@ export class JournalComponent implements OnInit {
   }
 
   reinitialiser() {
-    this.du.set('');
-    this.au.set('');
-    this.role.set('');
-    this.ressource.set('');
-    this.idPatient.set('');
-    this.idUtilisateur.set('');
-    this.echecsSeulement.set(false);
-    this.parTiers.set(false);
+    this.reinitialiserCriteres();
     this.rechercher();
   }
 

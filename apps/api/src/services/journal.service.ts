@@ -151,7 +151,11 @@ function enVue(l: LigneBrute): LigneJournalView {
   // La redaction d administration : le patient est un tiers, et la colonne
   // « patient concerne » le nomme deja a cote. Le libelle du patient dirait
   // « votre dossier » a propos du dossier de quelqu un d autre.
-  const { cle, objet } = libelleAccesAdministration({ action: l.action, ressource: l.ressource });
+  // Le code HTTP change la phrase : un acces refuse n a rien consulte.
+  const { cle, objet } = libelleAccesAdministration(
+    { action: l.action, ressource: l.ressource },
+    (l.statutHttp ?? 0) >= 400
+  );
   return {
     id: l.id,
     creeLe: l.creeLe.toISOString(),

@@ -198,6 +198,38 @@ describe('rechercher', () => {
     expect(page.lignes[0]?.libelle).not.toMatch(/^PATIENT\./);
   });
 
+  // **Un acces refuse n'a rien consulte.** L'ecran affichait « Dossier
+  // consulte » a cote d'un 403 : la phrase contredisait le code juste a cote,
+  // et c'est exactement ce qu'une enquete ne doit pas lire. Vu a l'ecran le
+  // 2026-10-03, pas en relisant le code.
+  it('dit « tentative refusee » quand le code est un refus', async () => {
+    prisma.journalAudit.findMany.mockResolvedValue([{ ...LIGNE, statutHttp: 403 }]);
+    prisma.journalAudit.count.mockResolvedValue(1);
+    const page = await rechercher({}, MAINTENANT);
+    expect(page.lignes[0]?.libelle).toBe('ADMIN.JOURNAL.ACTION_LABEL.REFUSE');
+  });
+
+  it.each([200, 201, 204, 304])('garde la phrase ordinaire pour un code %i', async (statutHttp) => {
+    prisma.journalAudit.findMany.mockResolvedValue([{ ...LIGNE, statutHttp }]);
+    prisma.journalAudit.count.mockResolvedValue(1);
+    const page = await rechercher({}, MAINTENANT);
+    expect(page.lignes[0]?.libelle).toBe('ADMIN.JOURNAL.ACTION_LABEL.READ');
+  });
+
+  // Les ressources d'administration n'apparaissent jamais dans le journal
+  // d'un patient, mais une enquete les voit : « Dossier » pour une tentative
+  // sur le journal d'audit serait trompeur.
+  it.each([
+    ['journal', 'AUDIT_LOG'],
+    ['comptes', 'ACCOUNTS'],
+    ['referentiels', 'REFERENCE_DATA'],
+  ])('nomme la ressource d administration « %s »', async (ressource, attendu) => {
+    prisma.journalAudit.findMany.mockResolvedValue([{ ...LIGNE, ressource }]);
+    prisma.journalAudit.count.mockResolvedValue(1);
+    const page = await rechercher({}, MAINTENANT);
+    expect(page.lignes[0]?.libelleObjet).toBe(`ADMIN.JOURNAL.ACTION_OBJECT.${attendu}`);
+  });
+
   it('nomme un scan comme tel, sans objet', async () => {
     prisma.journalAudit.findMany.mockResolvedValue([
       { ...LIGNE, action: 'GET /scan/:qrCode', ressource: 'laboratoire' },

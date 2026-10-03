@@ -1,7 +1,10 @@
 // core/services/admin.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
-import type { CompteView, FiltreJournalDto, PageJournalView, Role, SuspensionView } from '@baobaoheath/shared-types';
+import type {
+  AnomalieView, CompteView, FiltreJournalDto, PageJournalView, Role,
+  SeuilsAnomalies, SuspensionView,
+} from '@baobaoheath/shared-types';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
@@ -142,6 +145,16 @@ export class AdminService {
 
   reactiverCompte(id: string): Observable<ApiResponse<SuspensionView>> {
     return this.api.post<ApiResponse<SuspensionView>>(`/comptes/${id}/reactiver`, {});
+  }
+
+  // --- Anomalies d acces (EF-12-06) -------------------------------------
+
+  anomalies(fenetreHeures?: number): Observable<
+    ApiResponse<{ anomalies: AnomalieView[]; seuils: SeuilsAnomalies; depuis: string }>
+  > {
+    return this.api.get<ApiResponse<{ anomalies: AnomalieView[]; seuils: SeuilsAnomalies; depuis: string }>>(
+      '/journal/anomalies', fenetreHeures ? { fenetreHeures: String(fenetreHeures) } : undefined
+    );
   }
 }
 

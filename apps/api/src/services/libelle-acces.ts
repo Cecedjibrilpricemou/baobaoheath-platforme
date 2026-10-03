@@ -89,6 +89,26 @@ const OBJET: Record<string, string> = {
 };
 
 /**
+ * Les ressources que **seule une enquete** voit.
+ *
+ * Elles n'apparaissent jamais dans le journal d'un patient : ces actions ne
+ * touchent aucun dossier, donc elles n'ont pas de patient concerne. Les
+ * ranger a part evite d'exiger une traduction cote patient pour « votre
+ * journal d'audit », qui n'aurait aucun sens — c'est un test qui l'a signale,
+ * en reclamant `PATIENT.CONSENTS.ACCESS_OBJECT.AUDIT_LOG`.
+ *
+ * Sans elles, une tentative refusee sur le journal d'audit s'affichait
+ * « Dossier » dans l'ecran d'enquete. Vu a l'ecran le 2026-10-03.
+ */
+const OBJET_ADMINISTRATION: Record<string, string> = {
+  journal: 'AUDIT_LOG',
+  comptes: 'ACCOUNTS',
+  parametres: 'SETTINGS',
+  referentiels: 'REFERENCE_DATA',
+  analytics: 'STATISTICS',
+};
+
+/**
  * Les cles a traduire pour une ligne de journal.
  *
  * `parMoi` change la formulation, pas le contenu : « Vous avez consulte votre
@@ -116,7 +136,10 @@ export function partiesAcces(acces: AccesBrut): { verbe: string; objet: string }
   if (/\/(scan|qr)\//.test(acces.action)) {
     return { verbe: 'SCAN', objet: '' };
   }
-  return { verbe: verbeDe(acces.action), objet: OBJET[acces.ressource] ?? 'RECORD' };
+  return {
+    verbe: verbeDe(acces.action),
+    objet: OBJET[acces.ressource] ?? OBJET_ADMINISTRATION[acces.ressource] ?? 'RECORD',
+  };
 }
 
 export function libelleAcces(acces: AccesBrut, parMoi: boolean): LibelleAcces {
@@ -132,8 +155,20 @@ export function libelleAcces(acces: AccesBrut, parMoi: boolean): LibelleAcces {
  * Les memes cles, redigees pour une enquete : le patient est un tiers, et la
  * colonne « patient concerne » le nomme deja juste a cote.
  */
-export function libelleAccesAdministration(acces: AccesBrut): LibelleAcces {
+export function libelleAccesAdministration(acces: AccesBrut, refuse = false): LibelleAcces {
   const { verbe, objet } = partiesAcces(acces);
+
+  // **Un acces refuse n'a rien consulte.** L'ecran affichait « Dossier
+  // consulte » a cote d'un 403 : la phrase contredisait le code juste a cote,
+  // et c'est exactement ce qu'une enquete ne doit pas lire. Vu a l'ecran le
+  // 2026-10-03. Le detail de la tentative reste dans `action`.
+  if (refuse) {
+    return {
+      cle: 'ADMIN.JOURNAL.ACTION_LABEL.REFUSE',
+      objet: objet ? `ADMIN.JOURNAL.ACTION_OBJECT.${objet}` : 'ADMIN.JOURNAL.ACTION_OBJECT.RECORD',
+    };
+  }
+
   return {
     cle: `ADMIN.JOURNAL.ACTION_LABEL.${verbe}`,
     objet: objet ? `ADMIN.JOURNAL.ACTION_OBJECT.${objet}` : '',
@@ -154,8 +189,14 @@ export function toutesLesCles(): string[] {
     cles.add(`${PREFIXE}.${verbe}_BY_ME`);
     cles.add(`ADMIN.JOURNAL.ACTION_LABEL.${verbe}`);
   }
+  cles.add('ADMIN.JOURNAL.ACTION_LABEL.REFUSE');
   for (const objet of [...Object.values(OBJET), 'RECORD']) {
     cles.add(`${PREFIXE_OBJET}.${objet}`);
+    cles.add(`ADMIN.JOURNAL.ACTION_OBJECT.${objet}`);
+  }
+  // Celles-la n'existent que cote enquete : un patient ne verra jamais une
+  // ligne portant sur le journal d'audit ou sur les comptes.
+  for (const objet of Object.values(OBJET_ADMINISTRATION)) {
     cles.add(`ADMIN.JOURNAL.ACTION_OBJECT.${objet}`);
   }
   return [...cles].sort();

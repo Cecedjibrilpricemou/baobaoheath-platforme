@@ -17,6 +17,50 @@
     <span>{{ 'ADMIN.JOURNAL.SELF_AUDITED' | translate }}</span>
   </div>
 
+  <!-- Les anomalies (EF-12-06). Des signaux a examiner, pas des verdicts :
+       l'encart le dit, et chaque ligne mene au detail plus bas. -->
+  @if (anomaliesChargees() && anomalies().length > 0) {
+    <mat-card class="journal-anomalies" [class.journal-anomalies--alerte]="alertes() > 0">
+      <div class="journal-anomalies__tete">
+        <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+        <h2>{{ 'ADMIN.JOURNAL.ANOMALIES_TITLE' | translate:{ n: anomalies().length } }}</h2>
+      </div>
+      <p class="journal-anomalies__avis">{{ 'ADMIN.JOURNAL.ANOMALIES_NOTE' | translate }}</p>
+
+      <ul class="journal-anomalies__liste">
+        @for (a of anomalies(); track a.type + a.idUtilisateur) {
+          <li>
+            <span class="journal-anomalies__rang"
+                  [class.journal-anomalies__rang--alerte]="a.gravite === 'ALERTE'">
+              {{ 'ADMIN.JOURNAL.GRAVITE_' + a.gravite | translate }}
+            </span>
+            <span class="journal-anomalies__texte">
+              {{ 'ADMIN.JOURNAL.ANOMALIE_' + a.type | translate:{
+                   acteur: a.acteur, role: ('ROLE.' + a.role | translate),
+                   mesure: a.mesure, seuil: a.seuil } }}
+              @if (!a.acteurActif) {
+                <em class="journal-anomalies__deja">{{ 'ADMIN.JOURNAL.ALREADY_CLOSED' | translate }}</em>
+              }
+            </span>
+            <button mat-stroked-button (click)="enqueterSur(a)">
+              {{ 'ADMIN.JOURNAL.INVESTIGATE' | translate }}
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (seuils(); as s) {
+        <!-- Les seuils ne sont pas calibres sur du trafic reel : on les montre
+             plutot que de les cacher. -->
+        <p class="journal-anomalies__seuils">
+          {{ 'ADMIN.JOURNAL.THRESHOLDS' | translate:{
+               refus: s.refusRepetes, dossiers: s.dossiersDistincts,
+               adresses: s.adressesDistinctes, heures: s.fenetreHeures } }}
+        </p>
+      }
+    </mat-card>
+  }
+
   <mat-card class="journal-filtres">
     <div class="journal-filtres__grille">
       <mat-form-field appearance="outline">
