@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Role } from '../config/generated/client/client';
+import { Role, StatutDemandeRgpd, TypeDemandeRgpd } from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
 const phone = z.string().trim().min(6).max(30);
@@ -675,6 +675,29 @@ const booleenDeRequete = z
   .enum(['true', 'false'])
   .transform((v) => v === 'true')
   .optional();
+
+// --- Demandes d exercice de droits (EF-12-09) -----------------------
+//
+// La precision est obligatoire pour une rectification : sans elle, on ne sait
+// pas quoi corriger. Le service le verifie aussi, parce qu un schema ne peut
+// pas exprimer cette dependance sans devenir illisible.
+export const deposerDemandeRgpdSchema = z.object({
+  type: z.nativeEnum(TypeDemandeRgpd),
+  precision: z.string().trim().min(1).max(2000).optional(),
+}).strict();
+
+// La reponse fait au moins dix caracteres : un refus qu on ne motive pas n est
+// pas contestable. La meme regle vit dans le service et dans une contrainte
+// SQL, pour qu elle ne depende d aucun des trois seul.
+export const repondreDemandeRgpdSchema = z.object({
+  satisfaite: z.boolean(),
+  reponse: z.string().trim().min(10).max(4000),
+}).strict();
+
+export const filtreDemandesRgpdSchema = z.object({
+  statut: z.nativeEnum(StatutDemandeRgpd).optional(),
+  type: z.nativeEnum(TypeDemandeRgpd).optional(),
+}).strict();
 
 // --- Suspension de compte (EF-12-01) --------------------------------
 //

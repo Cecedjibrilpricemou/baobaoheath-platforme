@@ -1212,6 +1212,110 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Identite a jour avec logoUrl' }, 400: { description: 'Image refusee' } },
       },
     },
+    // ── P11 Demandes d'exercice de droits (EF-12-09) ──────────────────
+    '/api/v1/privacy/me/demandes-rgpd': {
+      get: {
+        tags: ['Confidentialite'],
+        summary: 'Mes demandes d exercice de droits (EF-12-09)',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Mes demandes, la plus recente d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' },
+              type: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] },
+              statut: { type: 'string', enum: ['RECUE', 'EN_COURS', 'SATISFAITE', 'REFUSEE'] },
+              precision: { type: 'string', nullable: true },
+              creeLe: { type: 'string', format: 'date-time' },
+              dateLimite: { type: 'string', format: 'date-time' },
+              joursRestants: { type: 'integer', nullable: true, description: "Null une fois la demande close : son delai ne court plus" },
+              enRetard: { type: 'boolean' },
+              reponse: { type: 'string', nullable: true },
+              traiteLe: { type: 'string', format: 'date-time', nullable: true },
+              traitePar: { type: 'string', nullable: true, description: "Null si l'agent a depuis quitte la plateforme" },
+              demandeur: { type: 'string' },
+            } } } } }] } } } },
+          404: { description: 'Profil patient non trouve' },
+        },
+      },
+      post: {
+        tags: ['Confidentialite'],
+        summary: 'Deposer une demande (EF-12-09)',
+        description: "Deposer une demande d'exercice de droits. C'est un droit du patient : la route lui est ouverte, et c'est l'administration nationale qui traite.\n\n**Rien n'est execute automatiquement.** Ni effacement, ni rectification d'un dossier de soins : ces actes ont des consequences legales et se decident. La demande est enregistree, suivie, et une reponse ecrite est obligatoire.\n\n**Sur l'effacement.** Un dossier de soins est soumis a une duree de conservation, et le journal d'audit doit survivre — c'est pourquoi `JournalAudit.idPatientConcerne` est en `onDelete: Restrict`. Ce que la plateforme peut offrir est une anonymisation de l'identite, le dossier restant pour sa duree legale. Une demande d'effacement est donc satisfaite *ainsi*, ou refusee avec son motif.\n\n`precision` est **obligatoire pour une rectification** : sans elle, on ne sait pas quoi corriger. Une seconde demande du meme type encore ouverte est refusee.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type'], properties: {
+          type: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] },
+          precision: { type: 'string', maxLength: 2000, description: 'Obligatoire pour une rectification' },
+        } } } } },
+        responses: {
+          201: { description: 'Demande enregistree, avec sa date limite' },
+          400: { description: 'Type inconnu, rectification sans precision, ou demande du meme type deja ouverte' },
+        },
+      },
+    },
+    '/api/v1/demandes-rgpd': {
+      get: {
+        tags: ['Demandes RGPD'],
+        summary: 'La file de traitement (EF-12-09)',
+        description: "La file de traitement : les demandes ouvertes d'abord, puis la plus urgente. Reserve a `ADMIN_NATIONAL` et `SUPER_ADMIN` — une demande RGPD engage le responsable de traitement, pas un etablissement.\n\n`enRetard` compte celles dont le delai est depasse. Le delai applique est de 30 jours ; le RGPD en donne un, prolongeable a trois pour une demande complexe, mais **la prolongation est une decision humaine qui se motive**, pas une regle qu'un service applique seul.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'statut', in: 'query', schema: { type: 'string', enum: ['RECUE', 'EN_COURS', 'SATISFAITE', 'REFUSEE'] } },
+          { name: 'type', in: 'query', schema: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] } },
+        ],
+        responses: {
+          200: { description: 'File de demandes', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            demandes: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' },
+              type: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] },
+              statut: { type: 'string', enum: ['RECUE', 'EN_COURS', 'SATISFAITE', 'REFUSEE'] },
+              precision: { type: 'string', nullable: true },
+              creeLe: { type: 'string', format: 'date-time' },
+              dateLimite: { type: 'string', format: 'date-time' },
+              joursRestants: { type: 'integer', nullable: true, description: "Null une fois la demande close : son delai ne court plus" },
+              enRetard: { type: 'boolean' },
+              reponse: { type: 'string', nullable: true },
+              traiteLe: { type: 'string', format: 'date-time', nullable: true },
+              traitePar: { type: 'string', nullable: true, description: "Null si l'agent a depuis quitte la plateforme" },
+              demandeur: { type: 'string' },
+            } } },
+            ouvertes: { type: 'integer' }, enRetard: { type: 'integer' }, delaiJours: { type: 'integer' },
+          } } } }] } } } },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/demandes-rgpd/{id}/prendre-en-charge': {
+      post: {
+        tags: ['Demandes RGPD'],
+        summary: 'Se declarer en charge (EF-12-09)',
+        description: "Reclamation atomique : deux agents ne peuvent pas se croire chacun en charge de la meme demande.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Demande passee EN_COURS' },
+          403: { description: 'Deja prise en charge' },
+          404: { description: 'Demande introuvable' },
+        },
+      },
+    },
+    '/api/v1/demandes-rgpd/{id}/repondre': {
+      post: {
+        tags: ['Demandes RGPD'],
+        summary: 'Clore la demande, avec sa reponse ecrite (EF-12-09)',
+        description: "Clore la demande. La reponse est **obligatoire dans les deux cas**, au moins dix caracteres : un refus qu'on ne motive pas n'est pas contestable, et une demande satisfaite doit dire ce qui a ete fait. La regle vit dans le schema, dans le service **et** dans une contrainte SQL, pour ne dependre d'aucun des trois seul.\n\nOn ne repond qu'une fois : une demande deja close est refusee en 403.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['satisfaite', 'reponse'], properties: {
+          satisfaite: { type: 'boolean' },
+          reponse: { type: 'string', minLength: 10, maxLength: 4000 },
+        } } } } },
+        responses: {
+          200: { description: 'Demande close' },
+          400: { description: 'Reponse absente ou trop courte' },
+          403: { description: 'Demande deja close' },
+          404: { description: 'Demande introuvable' },
+        },
+      },
+    },
     // ── P11 Suspension de compte (EF-12-01) ───────────────────────────
     '/api/v1/comptes': {
       get: {

@@ -36,6 +36,7 @@ import assuranceRoutes from './routes/assurance.routes';
 import referentielRoutes from './routes/referentiel.routes';
 import journalRoutes from './routes/journal.routes';
 import compteRoutes from './routes/compte.routes';
+import rgpdRoutes from './routes/rgpd.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -210,6 +211,7 @@ app.use('/api/v1/assurance', assuranceRoutes);
 app.use('/api/v1/referentiels', referentielRoutes);
 app.use('/api/v1/journal', journalRoutes);
 app.use('/api/v1/comptes', compteRoutes);
+app.use('/api/v1/demandes-rgpd', rgpdRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

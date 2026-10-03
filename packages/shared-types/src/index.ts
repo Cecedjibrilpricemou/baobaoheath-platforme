@@ -2442,3 +2442,61 @@ export interface AnomalieView {
   seuil: number;
   depuis: HorodatageApi;
 }
+
+// --- Demandes d exercice de droits (EF-12-09) ------------------------------
+
+export type TypeDemandeRgpd =
+  | 'ACCES'
+  | 'RECTIFICATION'
+  | 'EFFACEMENT'
+  | 'PORTABILITE'
+  | 'OPPOSITION'
+  | 'LIMITATION';
+
+export type StatutDemandeRgpd = 'RECUE' | 'EN_COURS' | 'SATISFAITE' | 'REFUSEE';
+
+/**
+ * Une demande et ce qu elle est devenue.
+ *
+ * **L effacement d un dossier de soins n est pas une suppression.** Des
+ * obligations de conservation s y opposent, et le journal d audit doit
+ * survivre. Une demande d effacement se traite par une anonymisation de l
+ * identite, ou se refuse avec son motif — jamais en silence.
+ */
+export interface DemandeRgpdView {
+  id: string;
+  type: TypeDemandeRgpd;
+  statut: StatutDemandeRgpd;
+  /** Ce que le patient demande, dans ses mots. */
+  precision: string | null;
+  creeLe: HorodatageApi;
+  dateLimite: HorodatageApi;
+  /** Null quand la demande est close : son delai ne court plus. */
+  joursRestants: number | null;
+  enRetard: boolean;
+  /** La reponse ecrite. Toujours presente des que la demande est close. */
+  reponse: string | null;
+  traiteLe: HorodatageApi | null;
+  /** Null si l agent qui a traite a depuis quitte la plateforme. */
+  traitePar: string | null;
+  demandeur: string;
+}
+
+export interface FileDemandesView {
+  demandes: DemandeRgpdView[];
+  ouvertes: number;
+  enRetard: number;
+  /** Le delai de reponse applique, en jours. */
+  delaiJours: number;
+}
+
+export interface DeposerDemandeRgpdDto {
+  type: TypeDemandeRgpd;
+  /** Obligatoire pour une rectification : sans cela on ne sait pas quoi corriger. */
+  precision?: string;
+}
+
+export interface RepondreDemandeRgpdDto {
+  satisfaite: boolean;
+  reponse: string;
+}

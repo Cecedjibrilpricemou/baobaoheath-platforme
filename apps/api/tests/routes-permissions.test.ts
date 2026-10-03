@@ -70,6 +70,8 @@ const assurance = require('../src/routes/assurance.routes').default as { stack: 
 const referentiels = require('../src/routes/referentiel.routes').default as { stack: Couche[] };
 const journal = require('../src/routes/journal.routes').default as { stack: Couche[] };
 const comptes = require('../src/routes/compte.routes').default as { stack: Couche[] };
+const rgpd = require('../src/routes/rgpd.routes').default as { stack: Couche[] };
+const privacy = require('../src/routes/privacy.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -334,5 +336,41 @@ describe('la suspension de compte est reservee a l administration nationale', ()
     expect(rolesPour(comptes, 'get', '/')).not.toBeNull();
     expect(rolesPour(comptes, 'post', '/:id/suspendre')).not.toBeNull();
     expect(rolesPour(comptes, 'post', '/:id/reactiver')).not.toBeNull();
+  });
+});
+
+
+// -- Demandes d exercice de droits (EF-12-09) ------------------------
+describe('les demandes RGPD : deposer est un droit, traiter une responsabilite', () => {
+  // Deposer une demande est un droit du patient.
+  it.each([
+    ['get', '/me/demandes-rgpd'],
+    ['post', '/me/demandes-rgpd'],
+  ])('%s %s est ouverte au patient', (methode, chemin) => {
+    expect(rolesPour(privacy, methode, chemin)).toEqual(['PATIENT']);
+  });
+
+  // Traiter engage le responsable de traitement, pas un etablissement.
+  it.each([
+    ['get', '/'],
+    ['post', '/:id/prendre-en-charge'],
+    ['post', '/:id/repondre'],
+  ])('%s %s n est ouverte qu a ADMIN_NATIONAL et SUPER_ADMIN', (methode, chemin) => {
+    expect(rolesPour(rgpd, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
+  });
+
+  it.each(['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'MEDECIN', 'PATIENT'] as const)(
+    'ferme le traitement a %s',
+    (role) => {
+      expect(rolesPour(rgpd, 'post', '/:id/repondre')).not.toContain(role);
+    }
+  );
+
+  it('les cinq routes existent bien', () => {
+    expect(rolesPour(privacy, 'get', '/me/demandes-rgpd')).not.toBeNull();
+    expect(rolesPour(privacy, 'post', '/me/demandes-rgpd')).not.toBeNull();
+    expect(rolesPour(rgpd, 'get', '/')).not.toBeNull();
+    expect(rolesPour(rgpd, 'post', '/:id/prendre-en-charge')).not.toBeNull();
+    expect(rolesPour(rgpd, 'post', '/:id/repondre')).not.toBeNull();
   });
 });

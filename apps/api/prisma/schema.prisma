@@ -248,6 +248,9 @@ model Utilisateur {
   suspenduPar           Utilisateur?  @relation("SuspensionsProoncees", fields: [idSuspenduPar], references: [id], onDelete: SetNull)
   suspensionsPrononcees Utilisateur[] @relation("SuspensionsProoncees")
 
+  /// Les demandes RGPD qu'il a traitees (EF-12-09).
+  demandesRgpdTraitees DemandeRgpd[] @relation("DemandesRgpdTraitees")
+
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
@@ -349,6 +352,85 @@ model MotDePasseReset {
 /// restreints au niveau du SGBD, voire un stockage en ecriture unique. Ces
 /// declencheurs ferment la porte a une erreur de code ou de script, pas a un
 /// administrateur de base determine.
+/// Les droits qu'un patient peut exercer sur ses donnees (EF-12-09).
+enum TypeDemandeRgpd {
+  /// Obtenir copie de ce que la plateforme detient.
+  ACCES
+  /// Faire corriger une donnee inexacte.
+  RECTIFICATION
+  /// Demander l'effacement. Voir la note du modele : sur un dossier de soins,
+  /// cela ne peut pas vouloir dire suppression.
+  EFFACEMENT
+  /// Recevoir ses donnees dans un format reutilisable.
+  PORTABILITE
+  /// S'opposer a un traitement — la recherche anonymisee, par exemple.
+  OPPOSITION
+  /// Demander le gel d'un traitement le temps d'une contestation.
+  LIMITATION
+}
+
+enum StatutDemandeRgpd {
+  RECUE
+  EN_COURS
+  SATISFAITE
+  /// Un refus est toujours motive : c'est ce qui le rend contestable.
+  REFUSEE
+}
+
+/// Une demande d'exercice de droits, et ce qu'elle est devenue (EF-12-09).
+///
+/// **Pourquoi un modele, et pas un simple bouton.** Une demande RGPD a un
+/// delai, un auteur, une decision et une motivation. Sans trace, on ne peut ni
+/// prouver qu'on a repondu, ni expliquer un refus, ni savoir ce qui a ete
+/// fait.
+///
+/// Le projet a deja paye l'absence de ce modele : 15 comptes de la base de
+/// demonstration ont vu leur telephone remplace par « purged-<id> » le
+/// 2026-08-04, sans aucune trace — ni au journal d'audit, ni dans le code du
+/// depot. Et la purge etait a moitie faite : nom et prenom sont restes
+/// lisibles, et un profil patient complet avec.
+///
+/// **L'effacement d'un dossier de soins n'est pas une suppression.** Des
+/// obligations de conservation s'y opposent, et le journal d'audit doit
+/// survivre — c'est pour cela que `JournalAudit.idPatientConcerne` est en
+/// `onDelete: Restrict`. Ce que la plateforme peut offrir est une
+/// anonymisation de l'identite, le dossier de soins restant pour la duree
+/// legale. Une demande d'effacement est donc satisfaite *ainsi*, ou refusee
+/// avec son motif — jamais executee en silence.
+model DemandeRgpd {
+  id        String            @id @default(cuid())
+  type      TypeDemandeRgpd
+  statut    StatutDemandeRgpd @default(RECUE)
+  /// Ce que le patient demande, dans ses mots. Indispensable pour une
+  /// rectification : sans cela on ne sait pas quoi corriger.
+  precision String?
+
+  /// Le delai de reponse. Pose a la creation plutot que calcule a la lecture :
+  /// une regle qui changerait ne doit pas deplacer retroactivement l'echeance
+  /// de demandes deja recues.
+  dateLimite DateTime
+
+  /// La reponse faite au demandeur. Obligatoire des que la demande est close,
+  /// et une contrainte SQL le verifie.
+  reponse  String?
+  traiteLe DateTime?
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  /// Qui a traite. `SetNull` : son depart n'efface pas la decision.
+  idTraitePar String?
+  traitePar   Utilisateur? @relation("DemandesRgpdTraitees", fields: [idTraitePar], references: [id], onDelete: SetNull)
+
+  /// La file de l'administration : les plus urgentes d'abord.
+  @@index([statut, dateLimite])
+  @@index([idPatient, creeLe])
+  @@map("demandes_rgpd")
+}
+
 model JournalAudit {
   id          String   @id @default(cuid())
   action      String
@@ -525,6 +607,8 @@ model PatientProfile {
   consentements        ConsentementPatient[]
   /// Les acces a son dossier, qu'il peut consulter lui-meme (EF-02-08).
   accesAuDossier       JournalAudit[]        @relation("AccesAuDossier")
+  /// Ses demandes d'exercice de droits (EF-12-09).
+  demandesRgpd         DemandeRgpd[]
   episodes             EpisodeSoins[]
   demandesAnalyse      DemandeAnalyse[]
 
