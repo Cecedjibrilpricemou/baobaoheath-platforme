@@ -2206,3 +2206,58 @@ export interface ContratAssuranceView {
   /** Ce que l'assureur a deja pris cette annee sur ce contrat. */
   consommeAnneeGnf: number;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// P11 — Referentiels importables (EF-12-03)
+// Routes /referentiels/* (ADMIN_NATIONAL, SUPER_ADMIN).
+// ═══════════════════════════════════════════════════════════════════
+
+export type TypeReferentiel = 'examens' | 'interactions' | 'medicaments';
+
+export type StatutLigneImport = 'CREEE' | 'MISE_A_JOUR' | 'REFUSEE';
+
+/** Le verdict d'une ligne. Aucune n'est passee sous silence. */
+export interface LigneImportView {
+  /** Le numero dans le fichier de l'operateur : la ligne 1 est l'en-tete. */
+  ligne: number;
+  /** De quoi reconnaitre la ligne : code LOINC, paire de DCI, libelle. */
+  cle: string;
+  statut: StatutLigneImport;
+  /** Toujours renseigne quand la ligne est refusee. */
+  motif?: string | null;
+}
+
+/**
+ * POST /referentiels/{type}/import.
+ *
+ * « Un import qui echoue en silence sur trois lignes est pire que pas
+ * d'import » : chaque ligne a son verdict, et `simulation` permet de tout
+ * valider avant d'ecrire quoi que ce soit.
+ *
+ * Les lignes valides sont appliquees meme si d'autres sont refusees :
+ * rejeter deux mille bonnes lignes pour trois mauvaises serait pire.
+ */
+export interface RapportImportView {
+  type: TypeReferentiel;
+  simulation: boolean;
+  total: number;
+  creees: number;
+  misesAJour: number;
+  refusees: number;
+  lignes: LigneImportView[];
+}
+
+export interface ImporterReferentielDto {
+  /** Le contenu du fichier CSV, tel quel. Le BOM d'Excel est tolere. */
+  contenu: string;
+  /** Valider sans rien ecrire. */
+  simulation?: boolean;
+}
+
+/** GET /referentiels/{type}/colonnes — ce qu'un operateur doit preparer. */
+export interface ColonnesReferentielView {
+  type: TypeReferentiel;
+  obligatoires: string[];
+  facultatives: string[];
+}

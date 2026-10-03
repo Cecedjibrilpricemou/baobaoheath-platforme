@@ -25,7 +25,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
 | **P9** Notifications neutres | 1 | — | 1 | ⏳ **la neutralité est livrée le 02/10** — c'était un défaut en service, pas une case vide. Restent les préférences de canaux et le rejeu |
 | **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
-| **P11** Administration, audit, référentiels | 0 | — | 5 | ❌ non commencé — **conditionne les référentiels** |
+| **P11** Administration, audit, référentiels | 1 | — | 4 | ⏳ **l'import des référentiels est livré le 03/10** (API + Swagger) — le verrou qui bloquait les interactions, les actes et les tarifs est levé. Restent le journal des lectures, la suspension de compte, le RGPD et la détection d'anomalies |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
 | **Total** | **42** | **5** | **48** | sur 95 |
@@ -131,7 +131,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les libellés étant saisis à la main, la comparaison est insensible aux accents et à la casse, avec un seuil de 4 caractères : sans lui, « fer » se rapprocherait de « fermeture » et les alertes deviendraient du bruit.
   - **Rien n'est bloqué** : le prescripteur voit le patient, le référentiel voit une paire de molécules. `POST /consultations/:id/ordonnances/alertes` renvoie ce qu'il doit savoir ; `motifRequis` n'est vrai qu'au-delà de la simple précaution, pour ne pas provoquer des « RAS » systématiques.
   - Les alertes sont **recalculées côté serveur** à la prescription (sauter l'appel ne les contourne pas) et **figées sur la ligne** avec le motif : le référentiel évoluera, ce qui compte est ce qui a été montré ce jour-là. La traçabilité du motif est en outre assurée par le journal d'audit, qui enregistre déjà le corps de chaque POST.
-  - ⚠️ **Le référentiel d'interactions est vide** : aucune donnée clinique n'a été inventée. Les alertes allergies et contre-indications fonctionnent dès maintenant depuis le dossier patient ; les interactions attendent l'import du référentiel (P11, décision D6).
+  - ⚠️ **Le référentiel d'interactions est vide** : aucune donnée clinique n'a été inventée. Les alertes allergies et contre-indications fonctionnent dès maintenant depuis le dossier patient. L'import qui permet de le remplir est livré depuis le 03/10 (EF-12-03) et vérifié de bout en bout : ce qui manque est **la source médicale validée**, pas l'outil (décision D6).
 - [x] **Front livré le 2026-09-23** : les alertes s'affichent dès le choix du médicament (pas à l'enregistrement — savoir après avoir rédigé la posologie n'aide personne), triées par gravité et colorées sur les tokens sémantiques (contre-indication → danger, déconseillée → warning, précaution → info), donc justes en clair comme en sombre. Le champ « motif de dépassement » n'apparaît qu'au-delà de la simple précaution, et le seuil vient de l'API.
   - Une analyse indisponible le dit au lieu de laisser croire que le dossier est sans particularité.
   - Parcours e2e étendu : la patiente du jeu d'essai est déclarée allergique à l'amoxicilline ; choisir cette molécule fait apparaître l'alerte et le motif, en changer les efface.
@@ -220,10 +220,16 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] **API livrée le 2026-10-02** — **exclusions par catégorie de produit**. Les deux préalables ont été levés le 2026-10-01 : le catalogue accepte des articles non médicamenteux, et `CategorieProduit` est une énumération fermée. Une catégorie exclue n'a pas de taux : porter les deux serait contradictoire, et une contrainte SQL le refuse.
 - [x] **API + front livrés le 2026-10-02** — **un taux de 100 % ne couvre pas tout**. Vérifié à l'écran : un assuré à 100 % chez qui le lait est exclu voit « Total 47 000 · Pris par l'assureur − 2 000 · À encaisser 45 000 », et la ligne de lait porte « Catégorie LAIT_INFANTILE exclue par l'assureur ». Le détail est montré **avant** paiement, avec les notes disant ce qui a raboté la part de l'assureur.
 
-### P11 — Administration, audit, référentiels · M · EF-12 · ❌ **0 sur 5** — conditionne l'import des référentiels
+### P11 — Administration, audit, référentiels · M · EF-12 · ⏳ **1 sur 5**
 - [ ] Journal non modifiable incluant les **lectures** de dossier ; recherche et export (EF-12-04/05).
 - [ ] Suspension immédiate d'un compte (EF-12-01) ; conventions des partenaires (EF-12-02).
-- [ ] Référentiels importables : LOINC, CIM-10, ATC, tarifs, taux, zones de livraison (EF-12-03).
+- [x] **API livrée le 2026-10-03** — **référentiels importables par CSV** (EF-12-03) : examens LOINC, interactions médicamenteuses, catalogue produits. `POST /api/v1/referentiels/{type}/import`, réservé à `ADMIN_NATIONAL` et `SUPER_ADMIN` — une règle d'interaction erronée se traduirait en alerte fausse, ou absente, chez chaque prescripteur.
+  - **`simulation: true` valide tout et n'écrit rien** : c'est ce qu'on lance avant un import réel.
+  - Le rapport porte **une ligne par ligne du fichier** avec son verdict (`CREEE`, `MISE_A_JOUR`, `REFUSEE`) et le motif de chaque refus. Les lignes valides passent malgré un refus : rejeter deux mille bonnes lignes pour trois mauvaises serait pire, mais rien n'est silencieux.
+  - Format réel d'Excel en français : séparateur `;` ou `,` déduit de l'en-tête, guillemets avec échappement par doublement, champs sur plusieurs lignes, CRLF, BOM, lignes vides.
+  - Les paires de DCI sont **normalisées et triées** avant écriture, parce que la détection d'interaction normalise et trie ses arguments : sans cela la règle serait en base et l'alerte ne sortirait jamais. Vérifié en rejouant la requête de la détection après un import réel.
+  - **Le numéro de ligne rendu est celui du tableur de l'opérateur**, lignes vides et champs multilignes compris. La première version numérotait par position dans le tableau après filtrage : une seule ligne vide et l'opérateur était renvoyé à la ligne précédant la fautive, donc il corrigeait une ligne saine. Trouvé en interrogeant l'API réelle, pas par les 40 tests unitaires. Six sabotages verrouillent la correction.
+  - **Reste à faire** : CIM-10, ATC, zones de livraison, tarifs par acte et par analyse — et un écran d'administration ; aujourd'hui l'import se fait par l'API.
 - [ ] Demandes RGPD : accès, rectification, effacement, portabilité (EF-12-09).
 - [ ] Détection d'anomalies d'accès (EF-12-06).
 
@@ -265,7 +271,7 @@ Ce qui rend la plateforme utilisable en établissement, sans commerce ni assuran
 | P9 | Notifications sans contenu médical, préférences de canal, rejeu | S | — |
 | P11 | Journal d'audit des **lectures**, référentiels importables, demandes RGPD | M | — |
 
-**P11 conditionne le reste** : c'est lui qui apporte l'import des référentiels (LOINC, CIM-10, ATC, tarifs). Sans lui, le référentiel d'interactions médicamenteuses reste vide et le catalogue de médicaments ne se gère qu'en base.
+**Le verrou P11 est partiellement levé** (03/10) : l'import CSV existe pour les examens, les interactions et le catalogue produits. Le référentiel d'interactions **reste vide en base** — aucune donnée clinique n'a été inventée — mais il est désormais remplissable sans toucher au SQL. Restent à couvrir par l'import : CIM-10, ATC, tarifs par acte et par analyse, zones de livraison.
 
 À l'issue de cette phase, le lot V1 du cahier des charges est couvert : **recette possible sur le parcours médical**.
 
@@ -306,7 +312,7 @@ Constatée et vérifiée le 2026-09-25. Rien ici n'est bloquant pour développer
 | CI | `actions/checkout@v4` et `setup-node@v4` ciblent Node 20, déprécié. Avertissement aujourd'hui, panne demain. | S |
 | Redis | `REDIS_URL` non configuré : la limitation de débit est **en mémoire**, donc inopérante dès qu'il y a plus d'une instance. | S |
 | E-mail | Gmail non configuré : l'OTP tombe en repli développement. Inacceptable en production. | S |
-| Référentiels | Interactions médicamenteuses **vides** (aucune donnée clinique inventée), catalogue médicaments non administrable depuis l'interface. | résolu par P11 |
+| Référentiels | Interactions médicamenteuses **vides** en base : aucune donnée clinique n'a été inventée, et il faut une source médicale validée pour les remplir. L'import existe depuis le 03/10 (EF-12-03), mais seulement par l'API : pas encore d'écran d'administration. | import livré, **données et écran à venir** |
 | Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend. | M |
 
 ### Ce qui n'est pas du code

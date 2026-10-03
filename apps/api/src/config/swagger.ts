@@ -1189,6 +1189,36 @@ export const swaggerDocument = {
         responses: { 200: { description: 'Identite a jour avec logoUrl' }, 400: { description: 'Image refusee' } },
       },
     },
+    // ── P11 Referentiels : import CSV reserve a l'administration nationale (EF-12-03) ──
+    '/api/v1/referentiels/{type}/colonnes': {
+      get: {
+        tags: ['Referentiels'],
+        summary: 'Les colonnes a preparer dans le fichier',
+        description: "A consulter **avant** l'import : l'operateur sait quelles colonnes sont exigees et lesquelles sont facultatives. L'ordre des colonnes dans le fichier n'a pas d'importance, seuls les en-tetes comptent (compares en minuscules, espaces retires).",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'type', in: 'path', required: true, schema: { type: 'string', enum: ['examens', 'interactions', 'medicaments'] } }],
+        responses: {
+          200: { description: 'Colonnes obligatoires et facultatives', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { type: { type: 'string' }, obligatoires: { type: 'array', items: { type: 'string' } }, facultatives: { type: 'array', items: { type: 'string' } } } } } }] } } } },
+          400: { description: 'Referentiel inconnu' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/referentiels/{type}/import': {
+      post: {
+        tags: ['Referentiels'],
+        summary: 'Importer un referentiel depuis un CSV (EF-12-03)',
+        description: "Reserve a l'administration nationale : un referentiel vaut pour toute la plateforme, et une regle d'interaction erronee se traduirait en alerte fausse — ou absente — chez chaque prescripteur.\n\n**Format accepte** : separateur `;` ou `,` (deduit de l'en-tete, `;` l'emporte car c'est ce qu'ecrit Excel en francais), guillemets avec echappement par doublement, champs sur plusieurs lignes, fins de ligne CRLF, BOM d'Excel tolere, lignes vides ignorees.\n\n**Toujours simuler d'abord** avec `simulation: true` : tout est valide, rien n'est ecrit. La reponse porte **une ligne par ligne du fichier** avec son verdict — un import qui echoue en silence sur trois lignes est pire que pas d'import. Une ligne refusee porte toujours son motif.\n\nL'import est une **mise a jour** quand la cle existe deja (code LOINC, paire de DCI, code produit), une creation sinon. Les paires de DCI sont normalisees et triees, pour que la detection d'interaction les retrouve dans les deux sens.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'type', in: 'path', required: true, schema: { type: 'string', enum: ['examens', 'interactions', 'medicaments'] } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['contenu'], properties: { contenu: { type: 'string', description: 'Le contenu du fichier CSV, tel quel' }, simulation: { type: 'boolean', default: false, description: 'Valider sans rien ecrire' } } } } } },
+        responses: {
+          200: { description: 'Rapport d import, ligne par ligne', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { type: { type: 'string' }, simulation: { type: 'boolean' }, total: { type: 'integer' }, creees: { type: 'integer' }, misesAJour: { type: 'integer' }, refusees: { type: 'integer' }, lignes: { type: 'array', items: { type: 'object', properties: { ligne: { type: 'integer', description: 'Le numero dans le fichier de l operateur : la ligne 1 est l en-tete' }, cle: { type: 'string' }, statut: { type: 'string', enum: ['CREEE', 'MISE_A_JOUR', 'REFUSEE'] }, motif: { type: 'string', nullable: true } } } } } } } }] } } } },
+          400: { description: 'Fichier vide, colonne obligatoire absente, ou referentiel inconnu' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
   },
 };
 

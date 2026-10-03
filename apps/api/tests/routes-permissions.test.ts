@@ -67,6 +67,7 @@ const resultats = require('../src/routes/resultats.routes').default as { stack: 
 const medecin = require('../src/routes/medecin.routes').default as { stack: Couche[] };
 const pharmacien = require('../src/routes/pharmacien.routes').default as { stack: Couche[] };
 const assurance = require('../src/routes/assurance.routes').default as { stack: Couche[] };
+const referentiels = require('../src/routes/referentiel.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -249,5 +250,30 @@ describe('l assurance separe le comptoir de l administration', () => {
     ] as const) {
       expect(rolesPour(assurance, methode, chemin)).not.toBeNull();
     }
+  });
+});
+
+
+// ── Les referentiels valent pour toute la plateforme (EF-12-03) ──────
+describe('l import des referentiels est reserve a l administration nationale', () => {
+  it.each([
+    ['post', '/:type/import'],
+    ['get', '/:type/colonnes'],
+  ])('%s %s n est ouverte qu a ADMIN_NATIONAL et SUPER_ADMIN', (methode, chemin) => {
+    expect(rolesPour(referentiels, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
+  });
+
+  // Une regle d'interaction erronee se traduit en alerte fausse — ou absente
+  // — chez chaque prescripteur. Ce n'est pas un droit de structure.
+  it.each(['MEDECIN', 'PHARMACIEN', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'TECHNICIEN_LABO'] as const)(
+    'ferme l import a %s',
+    (role) => {
+      expect(rolesPour(referentiels, 'post', '/:type/import')).not.toContain(role);
+    }
+  );
+
+  it('les deux routes existent bien', () => {
+    expect(rolesPour(referentiels, 'post', '/:type/import')).not.toBeNull();
+    expect(rolesPour(referentiels, 'get', '/:type/colonnes')).not.toBeNull();
   });
 });

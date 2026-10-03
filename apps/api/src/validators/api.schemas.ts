@@ -647,3 +647,13 @@ export const creerContratAssuranceSchema = z.object({
   dateFin: z.string().optional(),
   carenceJours: z.coerce.number().int().min(0).max(365).optional(),
 }).strict();
+
+// ── Referentiels importables (EF-12-03) ──────────────────────────────
+//
+// Le contenu est un CSV entier : la borne haute est volontairement large
+// (2 Mo), un referentiel national comptant des milliers de lignes. Au-dela,
+// c'est un envoi de fichier qu'il faudra, pas un corps JSON.
+export const importerReferentielSchema = z.object({
+  contenu: z.string().min(1).max(2_000_000),
+  simulation: z.boolean().optional(),
+}).strict();

@@ -190,9 +190,9 @@ Corollaire sur le thème sombre : dans un SCSS **de composant**, utiliser `:host
 
 ### Carte des endpoints
 
-Les **26** groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier. C'est la table d'entrée la plus rapide pour savoir où chercher.
+Les **27** groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier. C'est la table d'entrée la plus rapide pour savoir où chercher.
 
-> Recompté le 2026-10-02 : une version précédente de ce fichier annonçait 26 alors qu'il y en avait 25. Le 26e est `assurance`.
+> Recompté le 2026-10-03 en comptant les `app.use('/api/v1/…')` du fichier, pas de mémoire : 27. Le 26e est `assurance` (02/10), le 27e `referentiels` (03/10).
 
 | Préfixe `/api/v1/…` | Pour qui | Fichier de routes |
 |---|---|---|
@@ -222,8 +222,11 @@ Les **26** groupes montés dans `apps/api/src/index.ts`, dans l'ordre du fichier
 | `laboratoire` | laborantin | `laboratoire.routes.ts` |
 | `resultats` | prescripteurs | `resultats.routes.ts` |
 | `assurance` | comptoir **et** administration nationale | `assurance.routes.ts` — les deux publics sont séparés par les gardes de rôle |
+| `referentiels` | administration nationale seule | `referentiel.routes.ts` — import CSV ; un référentiel vaut pour toute la plateforme |
 
-Swagger est servi sur `/api-docs` et décrit dans `apps/api/src/config/swagger.ts`. **Il est incomplet** — voir la dette.
+Swagger est servi sur **`/api/docs`** et décrit dans `apps/api/src/config/swagger.ts`. **Il est incomplet** — voir la dette.
+
+> Ce document annonçait `/api-docs` jusqu'au 03/10 ; cette adresse rend un 404. Vérifié par un appel réel.
 
 ### Les écrans, par espace
 
@@ -464,7 +467,7 @@ Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les ca
 | P8 Livraison, carte, annuaire | 0 | — | 9 | rien |
 | P9 Notifications neutres | 0 | — | 2 | rien |
 | P10 Assurance | 0 | — | 9 | rien |
-| P11 Admin, audit, référentiels | 0 | — | 5 | rien |
+| P11 Admin, audit, référentiels | 1 | — | 4 | **import CSV des référentiels** (03/10, API + Swagger) : examens, interactions, catalogue |
 | P12 Interopérabilité | 0 | — | 3 | rien |
 | P13 Extension | 1 | — | 4 | téléconsultation réelle (suspendue à D2) |
 | **Total** | **36** | **1** | **58** | sur 95 |
@@ -483,7 +486,7 @@ Recompté dans `docs/FEUILLE_DE_ROUTE_KENEYA.md` le 2026-10-02, en lisant les ca
 Ces blocs n'ont pas été évoqués par le chef de projet, mais ils conditionnent une mise en service :
 
 - **P4** (7 cases) — identito-vigilance, doublons, consentement versionné, bris de glace, journal des accès patient. Le plus lourd non commencé, et le plus sensible réglementairement. **EF-02-08 en dépend** : le journal d'audit trace les scans de QR mais `idRessource` reste vide (voir la dette), donc « qui a consulté mon dossier ? » n'a pas de réponse indexée.
-- **P11** (5 cases) — **il conditionne le reste** : il apporte l'import des référentiels. Sans lui, le référentiel d'interactions médicamenteuses reste **vide** et le catalogue ne se gère qu'en base.
+- **P11** (4 cases restantes) — l'import des référentiels est livré le 03/10, donc le verrou est levé côté outil. Restent le journal d'audit incluant les **lectures** (EF-12-04/05), la suspension de compte et les conventions (EF-12-01/02), les demandes RGPD (EF-12-09) et la détection d'anomalies d'accès (EF-12-06). Le référentiel d'interactions reste **vide en base** : il manque une source médicale validée, plus l'outil.
 - ~~**P9**~~ — la neutralité des messages sortants est **livrée le 2026-10-02**, et ce n'était pas une case vide : le code envoyait du contenu médical en SMS clair. Reste une case : préférences de canaux et de langue, rejeu des non délivrées.
 
 ### D. Questions ouvertes
@@ -580,6 +583,8 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 - Un mot de passe se vérifie **contre l'empreinte stockée**, pas contre le script de seed censé l'avoir posé. Mieux : en tentant réellement la connexion sur l'API.
 - Une migration de données se prouve **en l'exécutant sur une base jetable**.
 - Un script de seed périmé peut annoncer « 0 compte mis à jour » et sortir en code 0. Lire la sortie, pas seulement le code de retour.
+- **Un numéro de ligne rendu à un humain doit être celui qu'il voit, pas un index de tableau.** Le rapport d'import des référentiels numérotait les lignes par leur position dans le tableau *après* avoir écarté les lignes vides. Une seule ligne blanche, et l'opérateur était renvoyé à la ligne précédant la fautive : il corrigeait une ligne saine et laissait la mauvaise. Les 40 tests unitaires ne le voyaient pas — ils travaillaient sur des CSV sans trou. Trouvé le 03/10 en interrogeant l'API réelle avec un fichier tel qu'Excel l'exporte. Corollaire : un champ entre guillemets qui occupe trois lignes décale de trois ce qui suit, donc le découpage doit compter les sauts de ligne **même à l'intérieur des guillemets**.
+- **Un garde-fou protégé en double ne peut pas être verrouillé par un test.** Le BOM d'Excel tombait à la fois avec le `trim()` du texte entier et celui des en-têtes ; aucun sabotage d'un seul des deux ne faisait échouer le test du BOM. La redondance n'était pas un tort, mais elle rendait le test incapable de prouver quoi que ce soit. Quand une protection est doublée, sachez-le, et dites-le dans le commentaire plutôt que d'affirmer qu'un test la tient.
 
 ---
 
