@@ -1323,6 +1323,34 @@ export const swaggerDocument = {
         },
       },
     },
+    '/api/v1/journal/anomalies': {
+      get: {
+        tags: ['Journal d audit'],
+        summary: 'Anomalies d acces a examiner (EF-12-06)',
+        description: "**Des signaux a examiner, pas des verdicts.** Un soignant de garde consulte beaucoup de dossiers la nuit sans rien faire de mal, et un comptoir de pharmacie scanne des dizaines de codes par jour. Un detecteur qui trancherait ferait suspendre des gens a tort — et une suspension coupe un soignant de ses patients. Chaque signal porte ce qui l'a declenche et de quoi aller voir le detail dans le journal ; il ne conclut rien.\n\n**Trois detecteurs**, sur une fenetre glissante :\n- `REFUS_REPETES` — refus d'acces repetes par le meme compte. **Seuls 401 et 403 comptent** : un 400 est une requete mal formee, pas une porte forcee (la base de demonstration en portait 58, tous issus de scripts de verification), et un 404 est trop bruyant pour declencher seul ;\n- `VOLUME_DOSSIERS` — dossiers **distincts** touches par le meme compte. Ouvrir dix fois le meme dossier ne compte que pour un ;\n- `ADRESSES_MULTIPLES` — un compte vu depuis plusieurs adresses IP : identifiants partages ou voles. Celui-la **ne monte jamais en alerte**, un soignant passant du wifi de l'etablissement a son telephone le declenche.\n\n`gravite` vaut `ALERTE` au-dela du triple du seuil, `SIGNAL` sinon : un compte a six refus et un compte a soixante n'appellent pas la meme reaction. Les alertes sont rendues en tete.\n\n**Les seuils ne sont pas calibres sur du trafic reel** et devront probablement varier selon le role. Ils sont rendus avec la reponse pour que l'ecran puisse les montrer plutot que de les cacher.\n\nDepuis un signal, l'enquete continue sur `/api/v1/journal?idUtilisateur=...&echecsSeulement=true`.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'fenetreHeures', in: 'query', schema: { type: 'integer', default: 1, maximum: 168 }, description: 'Fenetre glissante. Une valeur hors bornes retombe sur la valeur par defaut.' },
+        ],
+        responses: {
+          200: { description: 'Signaux, alertes en tete', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            anomalies: { type: 'array', items: { type: 'object', properties: {
+              type: { type: 'string', enum: ['REFUS_REPETES', 'VOLUME_DOSSIERS', 'ADRESSES_MULTIPLES'] },
+              gravite: { type: 'string', enum: ['SIGNAL', 'ALERTE'] },
+              idUtilisateur: { type: 'string' },
+              acteur: { type: 'string', description: "« Compte supprime » si le compte n'existe plus : le journal lui survit" },
+              role: { type: 'string', nullable: true },
+              acteurActif: { type: 'boolean', description: 'Faux si le compte est deja ferme' },
+              mesure: { type: 'integer' }, seuil: { type: 'integer' },
+              depuis: { type: 'string', format: 'date-time' },
+            } } },
+            seuils: { type: 'object', properties: { refusRepetes: { type: 'integer' }, dossiersDistincts: { type: 'integer' }, adressesDistinctes: { type: 'integer' }, fenetreHeures: { type: 'integer' } } },
+            depuis: { type: 'string', format: 'date-time' },
+          } } } }] } } } },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
     '/api/v1/journal/export': {
       get: {
         tags: ['Journal d audit'],

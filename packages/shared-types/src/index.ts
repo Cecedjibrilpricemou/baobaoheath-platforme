@@ -2399,3 +2399,46 @@ export interface SuspensionView {
 export interface SuspendreCompteDto {
   motif: string;
 }
+
+// --- Detection d anomalies d acces (EF-12-06) ------------------------------
+
+export type TypeAnomalie = 'REFUS_REPETES' | 'VOLUME_DOSSIERS' | 'ADRESSES_MULTIPLES';
+
+/**
+ * Les seuils de detection.
+ *
+ * **Ce sont des points de depart, pas des verites.** Ils n ont pas ete
+ * calibres sur du trafic reel, et devront probablement varier selon le role :
+ * un comptoir de pharmacie et un medecin n ont pas le meme volume normal.
+ */
+export interface SeuilsAnomalies {
+  /** Refus d acces (401 ou 403) par le meme compte sur la fenetre. */
+  refusRepetes: number;
+  /** Dossiers distincts touches par le meme compte sur la fenetre. */
+  dossiersDistincts: number;
+  /** Adresses IP distinctes pour le meme compte sur la fenetre. */
+  adressesDistinctes: number;
+  fenetreHeures: number;
+}
+
+/**
+ * Un signal a examiner — **pas un verdict**.
+ *
+ * Un soignant de garde consulte beaucoup de dossiers la nuit sans rien faire
+ * de mal. Ce que porte cette vue sert a aller voir le detail dans le journal,
+ * pas a decider seul.
+ */
+export interface AnomalieView {
+  type: TypeAnomalie;
+  /** `ALERTE` au-dela du triple du seuil ; `ADRESSES_MULTIPLES` reste toujours un signal. */
+  gravite: 'SIGNAL' | 'ALERTE';
+  idUtilisateur: string;
+  acteur: string;
+  role: Role | null;
+  /** Faux si le compte est deja ferme : inutile de proposer de le suspendre. */
+  acteurActif: boolean;
+  /** Ce qui a ete mesure, et ce qui etait attendu. */
+  mesure: number;
+  seuil: number;
+  depuis: HorodatageApi;
+}

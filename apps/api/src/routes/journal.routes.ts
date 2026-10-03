@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import * as journal from '../services/journal.service';
+import * as anomalie from '../services/anomalie.service';
 import { validateQuery } from '../middlewares/validate.middleware';
 import { filtreJournalSchema } from '../validators/api.schemas';
 import type { FiltreJournalDto, PageJournalView } from '@baobaoheath/shared-types';
@@ -30,6 +31,27 @@ router.use(requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN'));
  */
 router.get('/', validateQuery(filtreJournalSchema), async (req: AuthRequest, res: Response) => {
   const data: PageJournalView = await journal.rechercher(req.query as FiltreJournalDto);
+  res.json({ success: true, data });
+});
+
+/**
+ * Les anomalies d'acces (EF-12-06).
+ *
+ * **Des signaux a examiner, pas des verdicts.** Un soignant de garde consulte
+ * beaucoup de dossiers la nuit sans rien faire de mal, et un comptoir de
+ * pharmacie scanne des dizaines de codes par jour. Chaque signal porte ce qui
+ * l'a declenche et de quoi aller voir le detail dans le journal ; il ne
+ * conclut rien.
+ *
+ * Declaree avant `/:type` — il n'y en a pas ici, mais la regle vaut : une
+ * route litterale se declare avant une route a parametre.
+ */
+router.get('/anomalies', async (req: AuthRequest, res: Response) => {
+  const heures = Number((req.query as Record<string, string>)['fenetreHeures']);
+  const seuils = Number.isFinite(heures) && heures > 0 && heures <= 168
+    ? { ...anomalie.SEUILS_PAR_DEFAUT, fenetreHeures: heures }
+    : anomalie.SEUILS_PAR_DEFAUT;
+  const data = await anomalie.detecter(seuils);
   res.json({ success: true, data });
 });
 

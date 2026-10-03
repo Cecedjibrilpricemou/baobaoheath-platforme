@@ -286,6 +286,7 @@ describe('la recherche dans le journal est reservee a l administration nationale
   it.each([
     ['get', '/'],
     ['get', '/export'],
+    ['get', '/anomalies'],
   ])('%s %s n est ouverte qu a ADMIN_NATIONAL et SUPER_ADMIN', (methode, chemin) => {
     expect(rolesPour(journal, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
   });
@@ -301,9 +302,10 @@ describe('la recherche dans le journal est reservee a l administration nationale
     expect(rolesPour(journal, 'get', '/export')).not.toContain(role);
   });
 
-  it('les deux routes existent bien', () => {
+  it('les trois routes existent bien', () => {
     expect(rolesPour(journal, 'get', '/')).not.toBeNull();
     expect(rolesPour(journal, 'get', '/export')).not.toBeNull();
+    expect(rolesPour(journal, 'get', '/anomalies')).not.toBeNull();
   });
 });
 
