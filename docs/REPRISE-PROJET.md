@@ -622,6 +622,7 @@ Le projet utilise partout le même motif pour une prise de décision concurrente
 
 ## 10. Par où commencer
 
+0. **`docs/PARCOURS-TEST-ADMINISTRATION.md`** — pour dérouler soi-même ce qui a été livré en P11 et au début de P4 : journal des accès, demandes RGPD, audit, anomalies, suspension de compte, vérification d'identité. Chaque étape dit ce qu'on doit voir **et pourquoi**.
 1. **`docs/ADDENDUM-CDC-2026-09-28.md`** — à lire en premier : il rouvre des blocs que la feuille de route affiche comme livrés.
 2. `docs/FEUILLE_DE_ROUTE_KENEYA.md` — le plan vivant ; les blocs rouverts portent 🔁.
 3. `docs/PARCOURS-COMMANDE-LIVRAISON.md` — **indispensable avant P6, P7 ou P8** ; inutile avant.
