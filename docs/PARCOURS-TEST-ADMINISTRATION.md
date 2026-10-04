@@ -31,8 +31,18 @@ Si le front affiche « identifiants incorrects » alors que le mot de passe est 
 
 ### État des données au moment où ce document est écrit
 
-- **10 patients** : 3 à l'identité vérifiée, **7 provisoires**
+> Mis à jour le 2026-10-04 après la livraison d'EF-01-05.
+
+- **13 patients** : 1 à l'identité vérifiée, **12 provisoires**
+- Deux des trois identités « vérifiées » du 03/10 ne l'étaient pas : elles
+  avaient été posées par mes propres tests d'écran, avec un faux numéro de
+  pièce. Elles sont **remises en provisoire**, et les traits fabriqués retirés.
+- **3 dossiers de démonstration** ont été créés volontairement pour
+  l'étape 9 (voir cette étape) : `610000002`, `610000003`, `619000001`.
 - **3 demandes RGPD** : 1 reçue, 1 satisfaite, 1 refusée
+- **2 contrats d'assurance** : un sur une identité vérifiée, un sur une
+  identité provisoire — c'est ce second qui permet enfin de voir le verrou du
+  tiers payant **refuser**
 - **1 055 lignes** au journal d'audit
 - **15 comptes fermés**, dont les 15 à moitié purgés du 2026-08-04
 - **0 interaction médicamenteuse** en base — voir l'étape 7
@@ -160,11 +170,71 @@ Vous voyez **7 patients provisoires**, chacun marqué **« Tiers payant fermé �
 
 ### Ce qui se passe derrière
 
-Maomou Condé est la seule patiente avec un contrat d'assurance actif, et son identité est **vérifiée** : le tiers payant fonctionne pour elle à la caisse.
+Maomou Condé a un contrat d'assurance actif et son identité est **vérifiée** : le tiers payant fonctionne pour elle à la caisse.
 
-Si vous voulez voir le verrou **refuser**, il faut un patient provisoire avec un contrat. Aucun n'existe aujourd'hui dans les données de démonstration.
+**Aminata Camara a maintenant un contrat actif (`PFA-2026-00099`) et une identité provisoire.** C'est le cas qui manquait : passez à la caisse avec elle, et le tiers payant doit être **refusé**, avec le motif. Vérifiez que le motif parle d'identité, et non d'un défaut de couverture — ce ne sont pas les mêmes conséquences pour le patient.
+
+Vérifiez ensuite son identité, et refaites le même passage : le tiers payant doit s'ouvrir.
 
 > **Pourquoi ce verrou existe** : dans la région, « Mamadou Diallo, né en 1990 » peut désigner plusieurs personnes dans la même préfecture. Si l'identité est la mauvaise, c'est l'assureur qui paie pour quelqu'un d'autre — et le vrai titulaire qui voit son plafond annuel consommé sans le savoir. **L'assurance livrée le 02/10 facturait des tiers sur des identités simplement déclarées.**
+
+---
+
+## 9. Les doublons possibles (EF-01-05)
+
+Toujours en agent d'accueil, sur **Identités**.
+
+Trois dossiers ont été créés le 2026-10-04 **pour que cette étape soit
+testable**, parce qu'aucune ressemblance n'existait dans les données :
+
+| Dossier | Numéro | Ce qu'il sert à montrer |
+|---|---|---|
+| **Mamadou Diallo** | `619000001` | le dossier de départ |
+| **Mamadou Dialo** | `610000002` | le même nom transcrit à l'oreille — une lettre |
+| **Ousmane Diallo** | `610000003` | un frère : tout concorde **sauf** le prénom |
+
+Les trois portent la même mère (Kadiatou Barry), le même lieu (Mamou) et le
+1er janvier 2000.
+
+> Pour les retirer quand ils n'auront plus d'usage, supprimez les trois comptes
+> par leur numéro de téléphone. Ils n'ont ni consultation ni contrat.
+
+**Cliquez « Doublons possibles » sur la ligne de Mamadou Diallo.**
+
+Vous devez voir les deux autres dossiers, et surtout :
+
+- **aucun des deux n'est annoncé comme « Doublon probable »**, tous deux sont
+  « À vérifier » ;
+- sous *Ce qui concorde*, des phrases en français — « Même nom, écrit
+  autrement », « Même date, mais une date par défaut (1er janvier) » — et non
+  des codes ;
+- pour **Mamadou Dialo** : *« Le nom concorde à l'orthographe près : à
+  confirmer sur la pièce »* ;
+- pour **Ousmane Diallo** : *« Le nom ne concorde pas : ce sont peut-être deux
+  membres d'une même famille »* ;
+- en bas, la phrase qui dit que **la fusion n'est pas encore outillée**. Il n'y
+  a pas de bouton « Fusionner » : il ne ferait rien.
+
+**Essayez sur un patient sans ressemblance** (« Diag Test » par exemple). Le
+message ne dit pas « aucun doublon » tout court : il dit que cela **ne prouve
+pas** qu'il n'y en a pas, parce que la recherche s'appuie sur le nom, le numéro
+et le nom de la mère — un dossier dont aucun de ces traits n'est connu reste
+invisible.
+
+> **Pourquoi rien n'est annoncé « probable » ici.** Deux frères partagent leur
+> mère, leur ville et le téléphone familial ; des jumeaux partagent en plus
+> leur date. Tout concorde sauf le prénom, et le score atteignait 115 avant
+> correction — bien au-delà du seuil. Fusionner deux frères mélangerait leurs
+> dossiers médicaux. La règle est donc une **borne** et non un poids : sans
+> concordance de nom exacte, aucun cumul de traits familiaux ne franchit le
+> seuil. Même chose pour une variante d'orthographe, parce que « Mamadou » et
+> « Amadou » peuvent être deux frères autant qu'une faute de transcription.
+
+> **Pourquoi la date de naissance ne compte presque pas.** Dans la base,
+> 9 patients sur 10 portaient le 1er janvier 2000 : c'est la valeur que l'on
+> saisit quand on ignore la date. Un détecteur qui lui donnerait son poids
+> habituel les signalerait tous comme doublons les uns des autres, et vous
+> apprendriez à ignorer l'alerte — ce qui est pire que pas d'alerte du tout.
 
 ---
 
@@ -178,7 +248,9 @@ Si vous voulez voir le verrou **refuser**, il faut un patient provisoire avec un
 | **La durée légale de conservation** d'un dossier de soins en Guinée | Inconnue de moi. Elle détermine ce qu'on peut répondre à une demande d'effacement. |
 | **Les seuils de détection d'anomalies** | Non calibrés sur du trafic réel. Affichés à l'écran pour cette raison. |
 | **Import de référentiels** | API seulement, pas d'écran. |
-| **Détection de doublons** (EF-01-05) | Les traits sont recueillis, la détection reste à construire. |
+| **Fusion de deux doublons** (EF-01-06) | Pas construite. La détection propose, l'écran dit qu'il n'y a pas d'outil pour fusionner, et c'est tout ce qu'il promet. |
+| **Les poids de la détection de doublons** | Non calibrés sur du trafic réel : ils disent un ordre d'importance. La comparaison entre familles de traits reste arbitraire — un même nom de mère sans aucun nom commun (45) passe devant une variante d'orthographe avec téléphone partagé (42), alors que la seconde est plus probablement un doublon. Rien n'en découle, puisque aucun des deux ne conclut. |
+| **Les dossiers « Diag Test », « roi dave », « ki ki », « de de »…** | 6 des 13 dossiers patients portent des noms de test. Ils faussent toute lecture des chiffres. À trancher avec le reste des données de démonstration. |
 
 ---
 

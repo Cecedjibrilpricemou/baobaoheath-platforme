@@ -21,7 +21,7 @@ import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import type {
-  IdentitePatientView, NiveauIdentite, TypePieceIdentite,
+  CandidatDoublonView, IdentitePatientView, NiveauIdentite, TypePieceIdentite,
 } from '@baobaoheath/shared-types';
 import { HopitalService } from '../../../core/services/hopital.service';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -88,8 +88,45 @@ export class IdentitesComponent implements OnInit {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
+  // ── Les doublons possibles (EF-01-05) ──────────────────────────────
+  //
+  // **Ce ne sont pas des verdicts, et rien n'est fusionne.** L'ecran propose
+  // des dossiers a regarder ; un agent decide. Fusionner deux personnes
+  // distinctes melangerait leurs dossiers medicaux, ce qui est bien plus
+  // dangereux que de laisser un doublon.
+  //
+  // La fusion n'est pas encore outillee : l'ecran le dit, plutot que d'offrir
+  // un bouton qui ne ferait rien.
+  patientDoublons = signal<IdentitePatientView | null>(null);
+  candidats = signal<CandidatDoublonView[]>([]);
+  chargementDoublons = signal(false);
+  erreurDoublons = signal('');
+
   ngOnInit() {
     this.charger();
+  }
+
+  /** Charge a la demande : dix lignes affichees ne doivent pas faire dix requetes. */
+  voirDoublons(p: IdentitePatientView) {
+    this.patientDoublons.set(p);
+    this.candidats.set([]);
+    this.erreurDoublons.set('');
+    this.chargementDoublons.set(true);
+    this.hopital.doublons(p.id).subscribe({
+      next: (res) => {
+        this.candidats.set(res.data ?? []);
+        this.chargementDoublons.set(false);
+      },
+      error: (err) => {
+        this.chargementDoublons.set(false);
+        this.erreurDoublons.set(this.messageDe(err, 'HOPITAL.IDENTITES.DOUBLONS_ERREUR'));
+      },
+    });
+  }
+
+  fermerDoublons() {
+    this.patientDoublons.set(null);
+    this.candidats.set([]);
   }
 
   charger() {

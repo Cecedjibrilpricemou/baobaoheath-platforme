@@ -2561,3 +2561,63 @@ export interface NoterTraitsDto {
   lieuNaissance?: string;
   nomMere?: string;
 }
+
+// --- Detection de doublons (EF-01-05) --------------------------------------
+
+/** Ce qui a fait ressembler deux dossiers. */
+export type TraitConcordant =
+  | 'NOM_IDENTIQUE'
+  | 'NOM_PROCHE'
+  /**
+   * Le meme nom ecrit autrement : « Conde » et « Konde », « Diallo » et
+   * « Dialo ». Les noms sont transcrits a l oreille et varient d un guichet a
+   * l autre ; c est ainsi que naissent la plupart des doublons.
+   */
+  | 'NOM_VARIANTE' 
+  | 'MERE_IDENTIQUE'
+  | 'LIEU_IDENTIQUE'
+  | 'DATE_IDENTIQUE'
+  /**
+   * Meme date, mais une date par defaut — le 1er janvier, saisi quand on
+   * ignore le jour. Elle n apprend presque rien : 9 patients sur 10 la
+   * portaient dans la base du 2026-10-04.
+   */
+  | 'DATE_PAR_DEFAUT'
+  | 'TELEPHONE_IDENTIQUE'
+  /**
+   * Les traits concordent, mais **pas le nom**. C est la signature de deux
+   * freres : meme mere, meme lieu, meme telephone familial, et pour des
+   * jumeaux meme date. Le score est alors borne sous le seuil « probable » —
+   * fusionner deux freres melangerait leurs dossiers medicaux.
+   */
+  | 'SANS_CONCORDANCE_DE_NOM'
+  /**
+   * Le nom concorde, mais ecrit autrement. « Aissatou » et « Aissata » :
+   * variante d ecriture, ou deux soeurs ? La machine ne peut pas trancher, et
+   * personne ne le peut sans regarder le dossier. Le cas remonte en tete de
+   * liste, jamais annonce comme probable.
+   */
+  | 'ORTHOGRAPHE_A_CONFIRMER';
+
+/**
+ * Un dossier qui pourrait etre la meme personne.
+ *
+ * **Ce n est pas un verdict.** Un agent decide ; aucune fusion n est
+ * automatique. Fusionner deux personnes distinctes melange leurs dossiers
+ * medicaux, ce qui est bien plus dangereux que de laisser un doublon.
+ */
+export interface CandidatDoublonView {
+  id: string;
+  nomComplet: string;
+  telephone: string;
+  dateNaissance: HorodatageApi;
+  lieuNaissance: string | null;
+  nomMere: string | null;
+  prefecture: string;
+  niveauIdentite: NiveauIdentite;
+  /** Somme des traits concordants. Un ordre de grandeur, pas une probabilite. */
+  score: number;
+  /** Au-dela du seuil : a regarder en priorite. En deca : un doute a lever. */
+  probable: boolean;
+  traits: TraitConcordant[];
+}

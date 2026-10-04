@@ -18,7 +18,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P1** Épisode de soins + demande d'analyse | 11 | — | 0 | ✅ **fini** (🔁 repris puis complété) |
 | **P2** Laboratoire | 11 | — | 1 | ⏳ reste la synchronisation hors connexion (EF-04-11) |
 | **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
-| **P4** Identité patient, consentement, accès | 1 | — | 6 | ⏳ **le journal des accès patient est livré** (03/10, sous P11). Le reste — identito-vigilance, doublons, consentement versionné, bris de glace — n'est pas commencé. **Le plus sensible réglementairement** |
+| **P4** Identité patient, consentement, accès | 3 | — | 4 | ⏳ journal des accès patient (03/10), **identito-vigilance et verrou tiers payant** (04/10), **détection de doublons** (04/10, la fusion reste à faire). Restent le consentement versionné, le bris de glace, le n° d'ordre pro. **Le plus sensible réglementairement** |
 | **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
 | **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
@@ -28,7 +28,12 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P11** Administration, audit, référentiels | 6 | 1 | — | ⏳ **référentiels, journal d'audit, suspension de compte, détection d'anomalies et demandes RGPD livrés** (API, Swagger et écrans). Reste **EF-12-02**, les conventions des partenaires |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
-| **Total** | **42** | **5** | **48** | sur 95 |
+| **Total** | **51** | **6** | **40** | **sur 97** |
+
+> **La ligne de total était fausse** : elle annonçait 42 faites sur 95, alors
+> que la somme des blocs donne 51 sur 97. Recomptée le 2026-10-04 en
+> additionnant la colonne, pas en reportant le chiffre précédent. C'est
+> pourtant cette ligne qu'on lit pour répondre à « qu'est-ce qu'il reste ».
 
 **Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
 
@@ -64,7 +69,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 
 | Module | État | Existant | Manquant principal |
 |---|---|---|---|
-| EF-01 Identité | 🟡 | compte, OTP e-mail, 2FA (champ), reset, QR | OTP SMS, identito-vigilance, niveaux d'identité, doublons/fusion, n° d'ordre pro, 2FA imposé |
+| EF-01 Identité | 🟡 | compte, OTP e-mail, 2FA (champ), reset, QR ; *depuis le 04/10 : identito-vigilance, niveaux d'identité, détection de doublons* | OTP SMS, **fusion** de doublons, n° d'ordre pro, 2FA imposé |
 | EF-02 Consentement | 🟡 | 4 scopes, historique | versionnage du texte, granularité, bris de glace, journal des accès patient |
 | EF-03 Hôpital | 🟠 | structures, référencement | épisode de soins, demande d'analyse structurée, orientation avec RDV |
 | EF-04 Laboratoire | 🔴 | — | tout |
@@ -143,10 +148,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
-### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **1 sur 7**
-- [ ] Champs identito-vigilance (lieu de naissance, nom de la mère), identifiant définitif.
-- [ ] Niveaux d'identité `PROVISOIRE` / `VERIFIEE` et verrou tiers payant / produits sur prescription (EF-01-04/10).
-- [ ] Détection de doublons à la création et fusion par agent habilité, réversible (EF-01-05/06).
+### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **3 sur 7**
+- [x] **Livré le 2026-10-04** — champs identito-vigilance (lieu de naissance, nom de la mère) et niveaux d'identité `PROVISOIRE` / `VERIFIEE`, avec le **verrou du tiers payant** (EF-01-04/10). La contrainte SQL `patients_identite_verifiee_fondee` interdit une identité vérifiée sans pièce nommée : l'invariant est structurel, pas déclaratif. L'écran d'accueil dit que cela **ne conditionne pas les soins** — un agent qui refuserait quelqu'un sans papiers commettrait une faute grave. Le numéro de pièce n'est jamais réaffiché en entier.
+  > **Ce que cela réparait** : l'assurance livrée le 02/10 facturait des tiers sur des identités simplement déclarées. Le verrou par défaut était `VERIFIEE`, donc tout appelant qui l'oubliait passait — avec 1036 tests au vert. Le paramètre est désormais obligatoire.
+- [x] **Livré le 2026-10-04** — **détection de doublons** (EF-01-05). Proposition de candidats à un agent ; **aucune fusion n'est automatique**. Les poids viennent des données réelles : 9 patients sur 10 portaient le 1er janvier 2000, donc la date ne vaut presque rien et ce sont le nom de la mère et le lieu de naissance qui tranchent. Deux bornes structurelles : sans concordance de nom, et sur une simple variante d'orthographe, le score ne franchit jamais le seuil « probable » — deux frères partagent mère, ville, téléphone et parfois date, et atteignaient 115. Tolérance d'écriture (« Diallo » / « Dialo »), parce que c'est ainsi que naissent la plupart des doublons.
+  > **Trouvé en appelant la vraie API** : le pré-filtre SQL cherchait les mots du nom par sous-chaîne entière, donc « Dialo » ne retrouvait jamais « Diallo » et toute la tolérance d'orthographe était inatteignable — verte en test unitaire, muette en service. Et un dossier inexistant répondait 200 avec une liste vide, ce qui se lit « ce patient n'a pas de doublon ».
+- [ ] **Fusion** de deux dossiers par agent habilité, réversible (EF-01-06). L'écran dit qu'elle n'est pas outillée plutôt que d'offrir un bouton inerte.
 - [ ] Vérification du numéro d'ordre avant activation d'un compte pro (EF-01-08) ; 2FA imposée aux pros (EF-01-07).
 - [ ] Consentement versionné avec le texte présenté, granularité pro/document, retrait immédiat (EF-02-01/03/05/07).
 - [ ] Bris de glace motivé, tracé, notifié, contrôlé (EF-02-06).

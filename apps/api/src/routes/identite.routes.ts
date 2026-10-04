@@ -3,6 +3,7 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as identite from '../services/identite.service';
+import * as doublon from '../services/doublon.service';
 import {
   filtreIdentitesSchema, noterTraitsSchema, verifierIdentiteSchema,
 } from '../validators/api.schemas';
@@ -23,6 +24,26 @@ const router = Router();
 
 router.use(authenticate);
 router.use(requireRole('AGENT_ACCUEIL', 'ADMIN_STRUCTURE'));
+
+/**
+ * Les doublons possibles d'un dossier (EF-01-05).
+ *
+ * **Ce ne sont pas des verdicts.** Aucune fusion n'est automatique : un agent
+ * decide. Fusionner deux personnes distinctes melange leurs dossiers
+ * medicaux, ce qui est bien plus dangereux que de laisser un doublon.
+ *
+ * Declaree avant `/:id/...` pour rester lisible.
+ */
+router.get('/:id/doublons', async (req: AuthRequest, res: Response) => {
+  const data = await doublon.pourPatient(req.params['id'] as string);
+  // Un dossier introuvable n'a pas « aucun doublon » : il n'existe pas. Rendre
+  // une liste vide ferait lire a l'agent une affirmation fausse.
+  if (data === null) {
+    res.status(404).json({ success: false, error: 'Dossier patient introuvable' });
+    return;
+  }
+  res.json({ success: true, data });
+});
 
 /** Les patients et leur identite. Les provisoires d'abord : c'est le travail. */
 router.get('/', validateQuery(filtreIdentitesSchema), async (req: AuthRequest, res: Response) => {

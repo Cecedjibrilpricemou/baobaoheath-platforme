@@ -123,6 +123,11 @@
                   {{ (p.niveauIdentite === 'VERIFIEE' ? 'HOPITAL.IDENTITES.REPLACE' : 'HOPITAL.IDENTITES.VERIFY')
                      | translate }}
                 </button>
+                <!-- À la demande : dix lignes ne doivent pas faire dix requêtes. -->
+                <button mat-button class="identites-table__doublons" (click)="voirDoublons(p)">
+                  <mat-icon fontSet="pi" fontIcon="pi-users" aria-hidden="true"></mat-icon>
+                  {{ 'HOPITAL.IDENTITES.DOUBLONS' | translate }}
+                </button>
               </td>
             </tr>
           }
@@ -193,6 +198,92 @@
           </button>
           <button mat-flat-button color="primary" (click)="confirmer()" [disabled]="!peutVerifier()">
             {{ 'HOPITAL.IDENTITES.CONFIRM' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Les doublons possibles (EF-01-05).
+
+       Ce panneau ne conclut pas et ne fusionne rien. Il montre des dossiers à
+       regarder, avec **ce qui concorde** écrit en français : c'est cela que
+       l'agent lit pour décider, pas le score. Et il dit que la fusion n'est
+       pas encore outillée, plutôt que d'offrir un bouton inerte. -->
+  @if (patientDoublons(); as p) {
+    <div class="identites-boite" role="dialog" aria-modal="true">
+      <mat-card class="identites-boite__carte identites-doublons">
+        <h2>{{ 'HOPITAL.IDENTITES.DOUBLONS_TITRE' | translate:{ nom: p.nomComplet } }}</h2>
+
+        <div class="identites-avis" role="note">
+          <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+          <span>{{ 'HOPITAL.IDENTITES.DOUBLONS_AVIS' | translate }}</span>
+        </div>
+
+        @if (chargementDoublons()) {
+          <div class="bb-empty" role="status">
+            <mat-spinner diameter="28"></mat-spinner>
+            <p>{{ 'COMMON.LOADING' | translate }}</p>
+          </div>
+        } @else if (erreurDoublons()) {
+          <div class="identites-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreurDoublons() }}</span>
+          </div>
+        } @else if (candidats().length === 0) {
+          <!-- « Aucun » ne veut pas dire « il n'y en a pas » : la recherche a
+               ses angles morts, et l'écran les dit. -->
+          <div class="bb-empty">
+            <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+            <p>{{ 'HOPITAL.IDENTITES.DOUBLONS_AUCUN' | translate }}</p>
+          </div>
+        } @else {
+          <ul class="identites-doublons__liste">
+            @for (c of candidats(); track c.id) {
+              <li class="identites-doublons__ligne"
+                  [class.identites-doublons__ligne--probable]="c.probable">
+                <div class="identites-doublons__tete">
+                  <span class="identites-doublons__nom">{{ c.nomComplet }}</span>
+                  <span class="identites-doublons__etat"
+                        [class.identites-doublons__etat--probable]="c.probable">
+                    {{ (c.probable ? 'HOPITAL.IDENTITES.DOUBLONS_PROBABLE'
+                                   : 'HOPITAL.IDENTITES.DOUBLONS_A_VERIFIER') | translate }}
+                  </span>
+                  <span class="identites-doublons__score">
+                    {{ 'HOPITAL.IDENTITES.DOUBLONS_SCORE' | translate:{ score: c.score } }}
+                  </span>
+                </div>
+
+                <div class="identites-doublons__sous">
+                  {{ c.dateNaissance | date:'dd/MM/yyyy' }} · {{ c.telephone }}
+                  @if (c.lieuNaissance) { · {{ c.lieuNaissance }} }
+                  @if (c.nomMere) { · {{ 'HOPITAL.IDENTITES.MOTHER' | translate:{ nom: c.nomMere } }} }
+                </div>
+
+                <!-- C'est ici que l'agent décide. Le score seul ne dit rien. -->
+                <div class="identites-doublons__traits">
+                  <span class="identites-doublons__traits-titre">
+                    {{ 'HOPITAL.IDENTITES.DOUBLONS_POURQUOI' | translate }}
+                  </span>
+                  @for (t of c.traits; track t) {
+                    <span class="identites-doublons__trait">
+                      {{ 'HOPITAL.IDENTITES.TRAIT_' + t | translate }}
+                    </span>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+
+          <p class="identites-doublons__pas-outille">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            {{ 'HOPITAL.IDENTITES.DOUBLONS_PAS_OUTILLE' | translate }}
+          </p>
+        }
+
+        <div class="identites-boite__actions">
+          <button mat-flat-button color="primary" (click)="fermerDoublons()">
+            {{ 'HOPITAL.IDENTITES.DOUBLONS_FERMER' | translate }}
           </button>
         </div>
       </mat-card>

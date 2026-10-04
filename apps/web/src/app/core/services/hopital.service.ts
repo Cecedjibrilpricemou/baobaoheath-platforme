@@ -7,6 +7,7 @@ import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
   DemandeRendezVousView,
+  CandidatDoublonView,
   IdentitePatientView,
   NiveauIdentite,
   VerifierIdentiteDto,
@@ -138,5 +139,15 @@ export class HopitalService {
 
   verifierIdentite(id: string, dto: VerifierIdentiteDto): Observable<ApiResponse<IdentitePatientView>> {
     return this.api.post<ApiResponse<IdentitePatientView>>(`/identites/${id}/verifier`, dto);
+  }
+
+  /**
+   * Les dossiers qui pourraient etre la meme personne (EF-01-05).
+   *
+   * **Appele a la demande, pas pour chaque ligne.** Dix lignes affichees
+   * feraient dix requetes a l'ouverture de l'ecran, dont neuf pour rien.
+   */
+  doublons(id: string): Observable<ApiResponse<CandidatDoublonView[]>> {
+    return this.api.get<ApiResponse<CandidatDoublonView[]>>(`/identites/${id}/doublons`);
   }
 }

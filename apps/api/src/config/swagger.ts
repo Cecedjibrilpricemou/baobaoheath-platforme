@@ -1508,6 +1508,70 @@ export const swaggerDocument = {
         },
       },
     },
+    // ── P4 Identito-vigilance et doublons (EF-01-04/05/10) ────────────
+    '/api/v1/identites': {
+      get: {
+        tags: ['Identites'],
+        summary: 'Les patients et le niveau de leur identite (EF-01-04/10)',
+        description: "Les patients et le niveau de leur identite, pour le comptoir d'accueil.\n\n**Ce que ce niveau conditionne, et ce qu'il ne conditionne pas.** Une identite verifiee ouvre le tiers payant et la delivrance de produits reglementes. Elle ne conditionne **pas les soins** : un patient a l'identite provisoire est consulte, suivi et prescrit normalement. Un agent qui refuserait quelqu'un sans piece commettrait une faute grave.\n\n**Le numero de piece ne revient jamais en entier** : seuls ses quatre derniers caracteres sont lisibles. Il prouve qu'une piece a ete vue ; il n'a pas a etre recopie devant une file d'attente.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'q', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 100 }, description: 'Nom, prenom ou telephone.' },
+          { name: 'niveau', in: 'query', schema: { type: 'string', enum: ['PROVISOIRE', 'VERIFIEE'] } },
+        ],
+        responses: {
+          200: { description: 'Patients, numero de piece masque', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, telephone: { type: 'string' }, dateNaissance: { type: 'string', format: 'date-time' }, lieuNaissance: { type: 'string', nullable: true }, nomMere: { type: 'string', nullable: true }, prefecture: { type: 'string', nullable: true }, niveauIdentite: { type: 'string', enum: ['PROVISOIRE', 'VERIFIEE'] }, typePiece: { type: 'string', nullable: true }, numeroPieceMasque: { type: 'string', nullable: true, description: 'Quatre derniers caracteres seulement.' }, identiteVerifieeLe: { type: 'string', format: 'date-time', nullable: true }, verifiePar: { type: 'string', nullable: true } } } } } }] } } } },
+          400: { description: 'Critere inconnu ou hors bornes' },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/verifier': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Declarer avoir vu une piece d identite (EF-01-04/10)',
+        description: "Enregistrer qu'une piece d'identite a ete vue (EF-01-04/10).\n\n**C'est une declaration d'agent, pas une verification automatique.** L'agent dit avoir vu le document et lequel ; son identifiant et l'horodatage sont enregistres. C'est ce qui rend l'acte contestable plus tard.\n\n`numeroPiece` et `lieuNaissance` sont exiges : la contrainte SQL `patients_identite_verifiee_fondee` les reclame pour une identite verifiee. Une verification qui ne peut pas nommer le document sur lequel elle se fonde n'est ni verifiable ni contestable.\n\n**Pourquoi ce verrou existe.** Dans la region, « Mamadou Diallo, ne en 1990 » peut designer plusieurs personnes dans la meme prefecture. Si l'identite est la mauvaise, c'est l'assureur qui paie pour quelqu'un d'autre, et le vrai titulaire voit son plafond annuel consomme sans le savoir.\n\nReverifier un dossier deja verifie exige `remplacerPiece: true` : une piece se renouvelle, mais remplacer la trace d'une verification anterieure est un geste conscient.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Identifiant du dossier patient.' }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['typePiece', 'numeroPiece', 'lieuNaissance'], properties: { typePiece: { type: 'string', enum: ['CARTE_NATIONALE', 'PASSEPORT', 'ACTE_NAISSANCE', 'CARTE_CONSULAIRE', 'PERMIS_CONDUIRE', 'AUTRE'] }, numeroPiece: { type: 'string', minLength: 3, maxLength: 60 }, lieuNaissance: { type: 'string', minLength: 2, maxLength: 120 }, nomMere: { type: 'string', minLength: 2, maxLength: 120, description: 'Facultatif ici, mais c est le trait le plus discriminant pour les doublons.' }, remplacerPiece: { type: 'boolean', description: 'Exige pour reverifier un dossier deja verifie.' } } } } } },
+        responses: {
+          200: { description: 'Identite verifiee, tiers payant ouvert' },
+          400: { description: 'Piece incomplete, ou dossier deja verifie sans remplacerPiece' },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/traits': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Noter un trait d etat civil sans verifier (EF-01-04)',
+        description: "Noter un trait d'etat civil sans verifier d'identite.\n\nAu telephone ou sur declaration, un agent recueille le lieu de naissance et le nom de la mere sans voir de piece. **Ces traits servent la detection de doublons, qui n'attend pas une verification pour etre utile** — et ils ne font pas passer l'identite en `VERIFIEE`.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { lieuNaissance: { type: 'string', minLength: 2, maxLength: 120 }, nomMere: { type: 'string', minLength: 2, maxLength: 120 } } } } } },
+        responses: {
+          200: { description: 'Traits enregistres, niveau d identite inchange' },
+          400: { description: 'Aucun trait fourni' },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/doublons': {
+      get: {
+        tags: ['Identites'],
+        summary: 'Les doublons possibles d un dossier (EF-01-05)',
+        description: "Les dossiers qui pourraient etre la meme personne (EF-01-05).\n\n**Ce ne sont pas des verdicts, et rien n'est fusionne automatiquement.** Un agent decide. Fusionner deux personnes distinctes melange leurs dossiers medicaux : c'est bien plus dangereux que de laisser un doublon.\n\n**Ce que les donnees reelles ont impose.** Dans la base du 2026-10-04, 9 patients sur 10 portaient le 1er janvier 2000 comme date de naissance : c'est la valeur qu'on saisit quand on l'ignore. Elle ne vaut donc presque rien ici (`DATE_PAR_DEFAUT`, 5 points, contre 25 pour une vraie date partagee), sans quoi ces neuf patients seraient signales comme doublons les uns des autres et l'agent apprendrait a ignorer l'alerte.\n\nCe sont **le nom de la mere** (45) et **le lieu de naissance** (25) qui tranchent, comme dans les registres d'etat civil.\n\n**La regle qui empeche de fusionner deux freres.** Sans concordance de nom, le score est plafonne sous `probable`. Deux freres partagent leur mere, leur ville et le telephone familial ; des jumeaux partagent en plus leur date. Tout concorde sauf le prenom, et le score atteignait 115. Le cas remonte quand meme, en tete et avec ses traits, mais il ne sera jamais annonce comme probable.\n\n**Une variante d'orthographe ne conclut jamais non plus.** « Diallo » et « Dialo » sont reconnus comme le meme nom (`NOM_VARIANTE`), parce que c'est ainsi que naissent la plupart des doublons quand un nom est transcrit a l'oreille. Mais « Mamadou » et « Amadou » tombent dans la meme categorie et peuvent etre deux freres : le plafond s'applique, avec le trait `ORTHOGRAPHE_A_CONFIRMER` pour dire a l'agent que le nom concorde — mal ecrit — et non qu'il ne concorde pas.\n\n**Limites assumees.** Les poids disent un ordre d'importance, ils ne sont pas calibres sur du trafic reel. Et la comparaison entre familles de traits reste arbitraire : un meme nom de mere sans aucun nom commun (45) passe devant une variante d'orthographe avec telephone partage (42), alors que la seconde est plus probablement un doublon. Rien n'en decoule, puisque aucun des deux ne conclut.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Le dossier dont on cherche les doublons. Il est exclu du resultat.' }],
+        responses: {
+          200: { description: 'Candidats, le plus ressemblant d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, telephone: { type: 'string' }, dateNaissance: { type: 'string', format: 'date-time' }, lieuNaissance: { type: 'string', nullable: true }, nomMere: { type: 'string', nullable: true }, prefecture: { type: 'string', nullable: true }, niveauIdentite: { type: 'string', enum: ['PROVISOIRE', 'VERIFIEE'] }, score: { type: 'integer', description: 'A partir de 60 : doublon probable. De 40 a 59 : a verifier. En deca, le candidat n est pas rendu.' }, probable: { type: 'boolean', description: 'score >= 60. Jamais vrai sans concordance de nom exacte ou partielle.' }, traits: { type: 'array', items: { type: 'string', enum: ['NOM_IDENTIQUE', 'NOM_VARIANTE', 'NOM_PROCHE', 'MERE_IDENTIQUE', 'LIEU_IDENTIQUE', 'DATE_IDENTIQUE', 'DATE_PAR_DEFAUT', 'TELEPHONE_IDENTIQUE', 'SANS_CONCORDANCE_DE_NOM', 'ORTHOGRAPHE_A_CONFIRMER'] }, description: 'Ce qui a produit le score. C est ce que l agent lit pour decider : le score seul ne dit rien.' } } } } } }] } } } },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+    },
   },
 };
 
