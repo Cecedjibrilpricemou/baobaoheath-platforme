@@ -18,7 +18,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P1** Épisode de soins + demande d'analyse | 11 | — | 0 | ✅ **fini** (🔁 repris puis complété) |
 | **P2** Laboratoire | 11 | — | 1 | ⏳ reste la synchronisation hors connexion (EF-04-11) |
 | **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
-| **P4** Identité patient, consentement, accès | 0 | — | 7 | ❌ **non commencé** — le plus sensible réglementairement |
+| **P4** Identité patient, consentement, accès | 1 | — | 6 | ⏳ **le journal des accès patient est livré** (03/10, sous P11). Le reste — identito-vigilance, doublons, consentement versionné, bris de glace — n'est pas commencé. **Le plus sensible réglementairement** |
 | **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
 | **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
@@ -143,14 +143,16 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
-### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ❌ **0 sur 7 — non commencé**
+### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **1 sur 7**
 - [ ] Champs identito-vigilance (lieu de naissance, nom de la mère), identifiant définitif.
 - [ ] Niveaux d'identité `PROVISOIRE` / `VERIFIEE` et verrou tiers payant / produits sur prescription (EF-01-04/10).
 - [ ] Détection de doublons à la création et fusion par agent habilité, réversible (EF-01-05/06).
 - [ ] Vérification du numéro d'ordre avant activation d'un compte pro (EF-01-08) ; 2FA imposée aux pros (EF-01-07).
 - [ ] Consentement versionné avec le texte présenté, granularité pro/document, retrait immédiat (EF-02-01/03/05/07).
 - [ ] Bris de glace motivé, tracé, notifié, contrôlé (EF-02-06).
-- [ ] Journal des accès au dossier consultable par le patient (EF-02-08).
+- [x] **Livré le 2026-10-03** — **journal des accès consultable par le patient** (EF-02-08). Il existait, mais sa requête manquait les scans de QR (30 accès invisibles pour la patiente de démonstration) et n'était servie par aucun index. Le patient concerné vit désormais dans une colonne indexée, les libellés sont rédigés pour lui, et un filtre sépare les accès de tiers des siens. Détaillé en P11.
+
+> Cette case était comptée comme non commencée jusqu'au 2026-10-04, alors qu'elle était livrée la veille — la livraison ayant été faite sous P11, où vit le journal d'audit.
 
 ### P5 — Fil d'avancement du parcours · S · EF-06 · ❌ **0 sur 3**
 - [ ] Endpoint patient agrégeant épisode → analyses → consultation → ordonnance → commande → livraison avec horodatages (EF-06-01).

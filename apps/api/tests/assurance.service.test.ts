@@ -8,6 +8,7 @@
 // **« un assure a 100 % paie quand meme son lait infantile »**.
 import {
   calculerPriseEnCharge,
+  chiffrer,
   motifDInegibilite,
   regleEnVigueur,
   repartir,
@@ -63,39 +64,78 @@ describe('motifDInegibilite', () => {
   const base = { statut: 'ACTIF' as const, dateEffet: new Date('2026-01-01'), dateFin: null, carenceJours: 0 };
 
   it('ne dit rien quand le contrat couvre', () => {
-    expect(motifDInegibilite(base, LE_2_OCTOBRE)).toBeNull();
+    expect(motifDInegibilite(base, LE_2_OCTOBRE, 'VERIFIEE')).toBeNull();
   });
 
   it('refuse un contrat resilie', () => {
-    expect(motifDInegibilite({ ...base, statut: 'RESILIE' }, LE_2_OCTOBRE)).toBe('Contrat resilie');
+    expect(motifDInegibilite({ ...base, statut: 'RESILIE' }, LE_2_OCTOBRE, 'VERIFIEE')).toBe('Contrat resilie');
   });
 
   it('refuse un contrat suspendu', () => {
-    expect(motifDInegibilite({ ...base, statut: 'SUSPENDU' }, LE_2_OCTOBRE)).toBe('Contrat suspendu');
+    expect(motifDInegibilite({ ...base, statut: 'SUSPENDU' }, LE_2_OCTOBRE, 'VERIFIEE')).toBe('Contrat suspendu');
   });
 
   it('refuse un contrat pas encore en vigueur', () => {
-    expect(motifDInegibilite({ ...base, dateEffet: new Date('2027-01-01') }, LE_2_OCTOBRE))
+    expect(motifDInegibilite({ ...base, dateEffet: new Date('2027-01-01') }, LE_2_OCTOBRE, 'VERIFIEE'))
       .toMatch(/pas encore en vigueur/);
   });
 
   it('refuse un contrat expire', () => {
-    expect(motifDInegibilite({ ...base, dateFin: new Date('2026-06-30') }, LE_2_OCTOBRE)).toBe('Contrat expire');
+    expect(motifDInegibilite({ ...base, dateFin: new Date('2026-06-30') }, LE_2_OCTOBRE, 'VERIFIEE')).toBe('Contrat expire');
   });
 
   // La carence est ce qui empeche de s'assurer la veille d'une depense connue.
   it('refuse pendant la carence, et dit jusqu a quand', () => {
     const motif = motifDInegibilite(
       { ...base, dateEffet: new Date('2026-09-25'), carenceJours: 30 },
-      LE_2_OCTOBRE
+      LE_2_OCTOBRE,
+      'VERIFIEE'
     );
     expect(motif).toMatch(/carence/i);
     expect(motif).toContain('2026-10-25');
   });
 
   it('accepte une fois la carence passee', () => {
-    expect(motifDInegibilite({ ...base, dateEffet: new Date('2026-08-01'), carenceJours: 30 }, LE_2_OCTOBRE))
+    expect(motifDInegibilite({ ...base, dateEffet: new Date('2026-08-01'), carenceJours: 30 }, LE_2_OCTOBRE, 'VERIFIEE'))
       .toBeNull();
+  });
+
+  // ── Le verrou d'identito-vigilance (EF-01-10) ─────────────────────
+  //
+  // Le tiers payant engage un tiers : si l'identite est la mauvaise, c'est
+  // l'assureur qui paie pour quelqu'un d'autre, et le vrai titulaire qui voit
+  // son plafond annuel consomme sans le savoir. Dans la region, « Mamadou
+  // Diallo, ne en 1990 » peut designer plusieurs personnes dans la meme
+  // prefecture : le risque n'est pas theorique.
+  it('refuse le tiers payant sur une identite provisoire, contrat parfait', () => {
+    const motif = motifDInegibilite(base, LE_2_OCTOBRE, 'PROVISOIRE');
+    expect(motif).toMatch(/identite provisoire/i);
+  });
+
+  // Le message doit dire quoi faire, pas seulement refuser : c'est un agent
+  // d'accueil qui le lira, avec le patient devant lui.
+  it('dit comment lever le verrou', () => {
+    expect(motifDInegibilite(base, LE_2_OCTOBRE, 'PROVISOIRE')).toMatch(/piece a l'accueil/i);
+  });
+
+  // **Ce verrou ne refuse pas les soins.** Il refuse de faire payer un tiers
+  // sur une identite declaree. Le patient est servi et paie comptant — c'est
+  // la difference entre proteger l'assureur et trier les malades.
+  it('ne bloque que le tiers payant, et le dit', () => {
+    const motif = motifDInegibilite(base, LE_2_OCTOBRE, 'PROVISOIRE') ?? '';
+    expect(motif).toMatch(/tiers payant/i);
+    expect(motif).not.toMatch(/soins|refus de soin/i);
+  });
+
+  // L'identite passe avant les regles de contrat : inutile d'expliquer une
+  // carence a quelqu'un dont on ne sait meme pas si c'est la bonne personne.
+  it('passe avant les motifs de contrat', () => {
+    expect(motifDInegibilite({ ...base, statut: 'RESILIE' }, LE_2_OCTOBRE, 'PROVISOIRE'))
+      .toMatch(/identite provisoire/i);
+  });
+
+  it('laisse passer une identite verifiee', () => {
+    expect(motifDInegibilite(base, LE_2_OCTOBRE, 'VERIFIEE')).toBeNull();
   });
 });
 
@@ -363,5 +403,68 @@ describe('calculerPriseEnCharge', () => {
     ];
     const p = calculerPriseEnCharge([PARA], CONTRAT, regles, 0, 10_000, LE_2_OCTOBRE);
     expect(p.montantAssureGnf).toBe(9_000);
+  });
+});
+
+
+// ── Le verrou tient aussi au chiffrage (EF-01-10) ───────────────────
+//
+// `verifierEligibilite` et `chiffrer` lisent tous deux le niveau d'identite.
+// Si seul le premier le faisait, le verrou se contournerait en passant
+// directement a l'encaissement : la caisse appelle `chiffrer`, pas
+// `verifierEligibilite`.
+//
+// Un commentaire dans le code l'affirmait sans que rien ne l'eprouve — un
+// sabotage remplacant le niveau lu par « VERIFIEE » en dur ne faisait echouer
+// aucun test. Ces cas comblent ce trou.
+describe('chiffrer : le verrou d identito-vigilance', () => {
+  const CONTRAT = {
+    id: 'c1',
+    statut: 'ACTIF' as const,
+    dateEffet: new Date('2026-01-01'),
+    dateFin: null,
+    carenceJours: 0,
+    tauxBasePourcent: 80,
+    franchiseGnf: 0,
+    plafondAnnuelGnf: null,
+    assureur: { id: 'a1', nom: 'Assureur', code: 'ASS', estActif: true, regles: [] },
+    patient: { niveauIdentite: 'VERIFIEE' as const },
+  };
+  const LIGNES: LigneAChiffrer[] = [
+    { idMedicament: 'm1', libelle: 'Paracetamol', categorie: 'MEDICAMENT', montantGnf: 10_000 },
+  ];
+
+  // Le `resetAllMocks` de ce fichier vit dans un autre describe : sans celui-ci,
+  // les appels s accumulent d un cas a l autre et `mock.calls[0]` designe la
+  // requete d un test precedent.
+  beforeEach(() => {
+    jest.resetAllMocks();
+    prisma.venteComptoir.aggregate.mockResolvedValue({ _sum: { montantAssureGnf: 0 } });
+  });
+
+  it('chiffre normalement pour une identite verifiee', async () => {
+    prisma.contratAssurance.findFirst.mockResolvedValue(CONTRAT);
+    const r = await chiffrer('p1', LIGNES, 10_000, new Date('2026-10-02'));
+    expect(r).not.toBeNull();
+  });
+
+  // Le point du bloc : la caisse ne doit rien pouvoir faire payer a un
+  // assureur sur une identite declaree.
+  it('ne chiffre rien pour une identite provisoire', async () => {
+    prisma.contratAssurance.findFirst.mockResolvedValue({
+      ...CONTRAT, patient: { niveauIdentite: 'PROVISOIRE' as const },
+    });
+    const r = await chiffrer('p1', LIGNES, 10_000, new Date('2026-10-02'));
+    expect(r).toBeNull();
+  });
+
+  // Et il lit bien le niveau depuis la base, plutot que de le supposer.
+  it('demande le niveau d identite dans sa requete', async () => {
+    prisma.contratAssurance.findFirst.mockResolvedValue(CONTRAT);
+    await chiffrer('p1', LIGNES, 10_000, new Date('2026-10-02'));
+    const [args] = prisma.contratAssurance.findFirst.mock.calls[0] as [
+      { include: { patient: { select: { niveauIdentite: boolean } } } }
+    ];
+    expect(args.include.patient.select.niveauIdentite).toBe(true);
   });
 });

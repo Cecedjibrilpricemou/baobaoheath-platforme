@@ -248,6 +248,9 @@ model Utilisateur {
   suspenduPar           Utilisateur?  @relation("SuspensionsProoncees", fields: [idSuspenduPar], references: [id], onDelete: SetNull)
   suspensionsPrononcees Utilisateur[] @relation("SuspensionsProoncees")
 
+  /// Les identites de patients qu'il a verifiees (EF-01-04).
+  identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
+
   /// Les demandes RGPD qu'il a traitees (EF-12-09).
   demandesRgpdTraitees DemandeRgpd[] @relation("DemandesRgpdTraitees")
 
@@ -560,6 +563,34 @@ model StructureSante {
   @@map("structures")
 }
 
+/// Le degre de confiance dans l'identite d'un patient (EF-01-04).
+///
+/// **Ce que ces niveaux ne font pas : trier qui a droit aux soins.** Un
+/// patient a l'identite provisoire se fait consulter, suivre et prescrire
+/// normalement. Le niveau ne verrouille que ce qui engage un tiers — la
+/// facturation a un assureur et la delivrance de produits reglementes — parce
+/// que la, une erreur d'identite coute a quelqu'un d'autre.
+enum NiveauIdentite {
+  /// Identite declaree, aucun document presente. C'est l'etat par defaut :
+  /// un ASC qui enregistre quelqu'un en brousse n'a pas de piece a verifier,
+  /// et le refuser reviendrait a lui refuser les soins.
+  PROVISOIRE
+  /// Un agent habilite a vu une piece et a enregistre laquelle.
+  VERIFIEE
+}
+
+/// La piece presentee lors de la verification (EF-01-04).
+enum TypePieceIdentite {
+  CARTE_NATIONALE
+  PASSEPORT
+  /// Frequent pour les mineurs, qui n'ont pas de carte.
+  ACTE_NAISSANCE
+  CARTE_CONSULAIRE
+  PERMIS_CONDUIRE
+  /// Carte d'electeur, carte scolaire, attestation : l'agent precise laquelle.
+  AUTRE
+}
+
 model PatientProfile {
   id                 String   @id @default(cuid())
   qrCode             String   @unique @default(cuid())
@@ -570,6 +601,36 @@ model PatientProfile {
   maladiesChroniques String[]
   prefecture         String
   sousPrefecture     String?
+
+  // ── Identito-vigilance (EF-01-04/10) ──────────────────────────────
+  //
+  // Les traits qui distinguent deux personnes quand le nom ne suffit pas —
+  // et il ne suffit pas souvent. Dans la region, les homonymes sont la regle
+  // plutot que l'exception : « Mamadou Diallo, ne en 1990 » peut designer
+  // plusieurs personnes dans la meme prefecture. Le lieu de naissance et le
+  // nom de la mere sont les deux traits qui tranchent, et ce sont ceux
+  // qu'emploient les registres de l'etat civil.
+  //
+  // Facultatifs : un ASC qui enregistre quelqu'un en brousse ne les a pas
+  // toujours. Ils deviennent exigibles pour passer en identite verifiee.
+  /// Ville ou village de naissance, tel que declare.
+  lieuNaissance String?
+  /// Nom de la mere. Le trait le plus discriminant quand les noms se repetent.
+  nomMere       String?
+
+  /// Le degre de confiance dans cette identite. Voir `NiveauIdentite`.
+  niveauIdentite NiveauIdentite @default(PROVISOIRE)
+
+  /// La piece presentee, quand l'identite a ete verifiee.
+  typePiece   TypePieceIdentite?
+  /// Le numero de la piece. Jamais affiche en entier a l'ecran.
+  numeroPiece String?
+
+  /// Quand et par qui. Une verification sans auteur ne vaut rien : c'est
+  /// l'agent qui engage sa responsabilite en declarant avoir vu la piece.
+  identiteVerifieeLe DateTime?
+  idVerifiePar       String?
+  verifiePar         Utilisateur? @relation("IdentitesVerifiees", fields: [idVerifiePar], references: [id], onDelete: SetNull)
   // Maille reelle du parcours commande/livraison : c'est dans son quartier que
   // le patient cherche une pharmacie, pas dans sa prefecture.
   commune            String?
@@ -580,8 +641,8 @@ model PatientProfile {
   photoUrl           String?
   urgenceNom         String?
   urgenceTelephone   String?
-  creeLe             DateTime @default(now())
-  modifieLe          DateTime @updatedAt
+  creeLe             DateTime     @default(now())
+  modifieLe          DateTime     @updatedAt
 
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)

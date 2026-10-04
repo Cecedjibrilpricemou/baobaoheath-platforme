@@ -13,7 +13,7 @@
 // Le calcul est une **fonction pure**, separee de toute lecture de base. C'est
 // la partie que l'on ne peut pas se permettre d'avoir fausse : elle est
 // testee pour elle-meme.
-import { CategorieProduit, ModeEchangeAssureur, Prisma, StatutContrat, TypeStructure } from '../config/generated/client/client';
+import { CategorieProduit, ModeEchangeAssureur, NiveauIdentite, Prisma, StatutContrat, TypeStructure } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
@@ -234,8 +234,27 @@ export function calculerPriseEnCharge(
  */
 export function motifDInegibilite(
   contrat: { statut: StatutContrat; dateEffet: Date; dateFin: Date | null; carenceJours: number },
-  date = new Date()
+  date: Date,
+  // **Sans valeur par defaut, volontairement.** Un `= VERIFIEE` laissait tout
+  // appelant qui l'oubliait contourner le verrou en silence — et le compte de
+  // tests restait vert, ce qui est exactement le genre de faute qu'on ne voit
+  // pas. Un garde-fou doit echouer ferme. En le rendant obligatoire, c'est le
+  // compilateur qui force chaque appelant a trancher.
+  identite: NiveauIdentite
 ): string | null {
+  // **Le verrou d'identito-vigilance (EF-01-10).** Le tiers payant engage un
+  // tiers : si l'identite est la mauvaise, c'est l'assureur qui paie pour
+  // quelqu'un d'autre, et le vrai titulaire qui voit son plafond annuel
+  // consomme sans le savoir.
+  //
+  // Ce verrou ne refuse **pas les soins** : le patient est servi, et paie
+  // comptant. Il refuse seulement de faire payer un tiers sur une identite
+  // declaree. Un agent d'accueil leve le verrou en verifiant une piece, ce
+  // qui prend une minute — c'est le prix de l'engagement.
+  if (identite === NiveauIdentite.PROVISOIRE) {
+    return "Identite provisoire : le tiers payant demande une identite verifiee. Presentez une piece a l'accueil.";
+  }
+
   if (contrat.statut === StatutContrat.RESILIE) return 'Contrat resilie';
   if (contrat.statut === StatutContrat.SUSPENDU) return 'Contrat suspendu';
   if (date < contrat.dateEffet) return "Contrat pas encore en vigueur";
@@ -275,7 +294,12 @@ export async function verifierEligibilite(
 
   const patient = await prisma.patientProfile.findUnique({
     where: { id: idPatient },
-    select: { id: true, utilisateur: { select: { prenom: true, nom: true } } },
+    select: {
+      id: true,
+      // Le tiers payant engage un tiers : il demande une identite verifiee.
+      niveauIdentite: true,
+      utilisateur: { select: { prenom: true, nom: true } },
+    },
   });
   if (!patient) throw new NotFoundError('Patient non trouve');
 
@@ -295,7 +319,7 @@ export async function verifierEligibilite(
   } else if (!contrat.assureur.estActif) {
     motif = `Assureur ${contrat.assureur.nom} inactif sur la plateforme`;
   } else {
-    motif = motifDInegibilite(contrat, maintenant);
+    motif = motifDInegibilite(contrat, maintenant, patient.niveauIdentite);
     eligible = motif === null;
   }
 
@@ -397,11 +421,15 @@ export async function chiffrer(
           regles: { select: { categorie: true, exclu: true, tauxPourcent: true, plafondLigneGnf: true, dateEffet: true } },
         },
       },
+      // Le niveau d'identite est lu ici aussi, et pas seulement a la
+      // verification d'eligibilite : sans cela le verrou se contournerait en
+      // passant directement a l'encaissement.
+      patient: { select: { niveauIdentite: true } },
     },
     orderBy: { dateEffet: 'desc' },
   });
   if (!contrat || !contrat.assureur.estActif) return null;
-  if (motifDInegibilite(contrat, maintenant) !== null) return null;
+  if (motifDInegibilite(contrat, maintenant, contrat.patient.niveauIdentite) !== null) return null;
 
   // Ce que l'assureur a deja pris cette annee sur ce contrat. Les ventes
   // annulees ne comptent pas : une erreur de caisse corrigee ne doit pas
