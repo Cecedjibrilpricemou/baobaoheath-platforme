@@ -49,6 +49,21 @@ export async function getPatientForUser(userId: string) {
   return patient;
 }
 
+/**
+ * La langue dans laquelle l'utilisateur lit.
+ *
+ * Elle decide du texte de consentement qui lui sera presente — donc de ce a
+ * quoi il consent (EF-02-01).
+ */
+export async function langueDe(userId: string): Promise<string | null> {
+  const u = await prisma.utilisateur.findUnique({
+    where: { id: userId },
+    select: { langue: true },
+  });
+  return u?.langue ?? null;
+}
+
+/** @deprecated Remplace par `consentement.mesConsentements`, qui porte le texte vu. */
 export async function getMyConsents(userId: string) {
   const patient = await getPatientForUser(userId);
 

@@ -34,9 +34,83 @@
                 @if (item.modifieLe) {
                   <span class="consent-row__meta">
                     {{ (item.actif ? 'PATIENT.CONSENTS.GRANTED_ON' : 'PATIENT.CONSENTS.REVOKED_ON') | translate: { date: (item.modifieLe | date:'mediumDate') ?? '' } }}
+                    @if (item.source === 'DEFAUT_SYSTEME') {
+                      — {{ 'PATIENT.CONSENTS.PAR_SYSTEME' | translate }}
+                    }
                   </span>
                 } @else {
                   <span class="consent-row__meta">{{ 'PATIENT.CONSENTS.NOT_SET' | translate }}</span>
+                }
+
+                <!-- La différence entre un accord et une case cochée à sa
+                     place (EF-02-01). Deux des quatre consentements de la base
+                     avaient été posés par le système, sans que personne ne
+                     montre rien. Le dire est tout l'objet du versionnage. -->
+                @if (item.repondu && item.actif && item.etat === 'JAMAIS_RECUEILLI') {
+                  <div class="consent-row__avis consent-row__avis--grave" role="note">
+                    <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+                    <div>
+                      <strong>{{ 'PATIENT.CONSENTS.ETAT_JAMAIS_RECUEILLI' | translate }}</strong>
+                      <p>{{ 'PATIENT.CONSENTS.ETAT_JAMAIS_RECUEILLI_DIT' | translate }}</p>
+                      <button mat-stroked-button (click)="confirmer(item)" [disabled]="item.saving">
+                        {{ 'PATIENT.CONSENTS.ETAT_CONFIRMER' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <!-- On ne retire pas son accord à sa place : on le lui dit, et
+                     c'est lui qui tranche. -->
+                @if (item.repondu && item.actif && item.etat === 'TEXTE_PLUS_RECENT') {
+                  <div class="consent-row__avis" role="note">
+                    <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+                    <div>
+                      <strong>{{ 'PATIENT.CONSENTS.ETAT_TEXTE_PLUS_RECENT' | translate }}</strong>
+                      <p>{{ 'PATIENT.CONSENTS.ETAT_TEXTE_PLUS_RECENT_DIT' | translate }}</p>
+                      <button mat-stroked-button (click)="confirmer(item)" [disabled]="item.saving">
+                        {{ 'PATIENT.CONSENTS.ETAT_CONFIRMER' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <!-- Le texte lui-même. C'est à cela qu'il a dit oui. -->
+                @if (texteAMontrer(item); as texte) {
+                  <button mat-button class="consent-row__lire" (click)="basculerTexte(item)">
+                    <mat-icon fontSet="pi" [fontIcon]="item.texteOuvert ? 'pi-chevron-up' : 'pi-chevron-down'"
+                              aria-hidden="true"></mat-icon>
+                    {{ (item.texteOuvert ? 'PATIENT.CONSENTS.TEXT_MASQUER' : 'PATIENT.CONSENTS.TEXT_LIRE')
+                       | translate }}
+                  </button>
+
+                  @if (item.texteOuvert) {
+                    <div class="consent-texte">
+                      <span class="consent-texte__quoi">
+                        {{ (item.texteAccepte ? 'PATIENT.CONSENTS.TEXT_ACCEPTE'
+                                              : 'PATIENT.CONSENTS.TEXT_EN_VIGUEUR') | translate }}
+                      </span>
+                      <span class="consent-texte__version">
+                        {{ 'PATIENT.CONSENTS.TEXT_VERSION' | translate:{
+                              v: texte.version,
+                              date: (texte.publieLe | date:'mediumDate') ?? '' } }}
+                      </span>
+                      <!-- Un texte en français montré à quelqu'un qui lit le
+                           pular n'est pas un consentement éclairé. Le taire
+                           serait pire que de ne pas le traduire. -->
+                      @if (texte.dansUneAutreLangue) {
+                        <span class="consent-texte__langue">
+                          <mat-icon fontSet="pi" fontIcon="pi-globe" aria-hidden="true"></mat-icon>
+                          {{ 'PATIENT.CONSENTS.TEXT_AUTRE_LANGUE' | translate }}
+                        </span>
+                      }
+                      <h4>{{ texte.titre }}</h4>
+                      <p class="consent-texte__corps">{{ texte.corps }}</p>
+                    </div>
+                  }
+                } @else {
+                  <span class="consent-row__meta consent-row__meta--manque">
+                    {{ 'PATIENT.CONSENTS.TEXT_AUCUN' | translate }}
+                  </span>
                 }
               </div>
               <mat-slide-toggle
@@ -48,6 +122,54 @@
             </li>
           }
         </ul>
+
+        <!-- « Versionné » veut dire qu'on garde l'histoire, pas seulement
+             l'état. Avant, un retrait écrasait l'accord : on voyait le refus
+             d'aujourd'hui, jamais l'accord d'hier. -->
+        <button mat-button class="consent-historique__bascule" (click)="basculerHistorique()">
+          <mat-icon fontSet="pi" [fontIcon]="historiqueOuvert() ? 'pi-chevron-up' : 'pi-history'"
+                    aria-hidden="true"></mat-icon>
+          {{ (historiqueOuvert() ? 'PATIENT.CONSENTS.HISTORIQUE_MASQUER'
+                                 : 'PATIENT.CONSENTS.HISTORIQUE_VOIR') | translate }}
+        </button>
+
+        @if (historiqueOuvert()) {
+          <div class="consent-historique">
+            <h3>{{ 'PATIENT.CONSENTS.HISTORIQUE' | translate }}</h3>
+            <p class="consent-historique__inaltérable">
+              <mat-icon fontSet="pi" fontIcon="pi-lock" aria-hidden="true"></mat-icon>
+              {{ 'PATIENT.CONSENTS.HISTORIQUE_INALTERABLE' | translate }}
+            </p>
+
+            @if (historique().length === 0) {
+              <p class="consent-row__meta">{{ 'PATIENT.CONSENTS.HISTORIQUE_VIDE' | translate }}</p>
+            } @else {
+              <ul class="consent-historique__liste">
+                @for (e of historique(); track e.id) {
+                  <li>
+                    <span class="consent-historique__sens"
+                          [class.consent-historique__sens--retire]="e.sens === 'RETIRE'">
+                      {{ 'PATIENT.CONSENTS.SENS_' + e.sens | translate }}
+                    </span>
+                    <span class="consent-historique__quoi">
+                      {{ 'PATIENT.CONSENTS.SCOPE.' + e.scope + '.TITLE' | translate }}
+                    </span>
+                    <span class="consent-row__meta">
+                      {{ e.creeLe | date:'medium' }}
+                      @if (e.versionTexte) { · v{{ e.versionTexte }} ({{ e.langueTexte }}) }
+                      @if (e.source === 'DEFAUT_SYSTEME') {
+                        · {{ 'PATIENT.CONSENTS.PAR_SYSTEME' | translate }}
+                      }
+                    </span>
+                    @if (e.commentaire) {
+                      <span class="consent-historique__note">« {{ e.commentaire }} »</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
         <p class="consent-note">
           <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
           {{ 'PATIENT.CONSENTS.NOTE' | translate }}

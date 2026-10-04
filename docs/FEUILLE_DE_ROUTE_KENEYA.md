@@ -18,7 +18,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P1** Épisode de soins + demande d'analyse | 11 | — | 0 | ✅ **fini** (🔁 repris puis complété) |
 | **P2** Laboratoire | 11 | — | 1 | ⏳ reste la synchronisation hors connexion (EF-04-11) |
 | **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
-| **P4** Identité patient, consentement, accès | 4 | — | 3 | ⏳ journal des accès patient (03/10), **identito-vigilance et verrou tiers payant**, **détection de doublons**, **fusion réversible** (04/10). Restent le consentement versionné, le bris de glace, le n° d'ordre pro. **Le plus sensible réglementairement** |
+| **P4** Identité patient, consentement, accès | 5 | — | 2 | ⏳ journal des accès patient (03/10), identito-vigilance, doublons, fusion réversible, **consentement versionné** (04/10). Restent le bris de glace et le n° d'ordre pro. **Le plus sensible réglementairement** |
 | **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
 | **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
@@ -28,7 +28,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P11** Administration, audit, référentiels | 6 | 1 | — | ⏳ **référentiels, journal d'audit, suspension de compte, détection d'anomalies et demandes RGPD livrés** (API, Swagger et écrans). Reste **EF-12-02**, les conventions des partenaires |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
-| **Total** | **52** | **6** | **39** | **sur 97** |
+| **Total** | **53** | **6** | **38** | **sur 97** |
 
 > **La ligne de total était fausse** : elle annonçait 42 faites sur 95, alors
 > que la somme des blocs donne 51 sur 97. Recomptée le 2026-10-04 en
@@ -148,7 +148,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
-### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **4 sur 7**
+### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **5 sur 7**
 - [x] **Livré le 2026-10-04** — champs identito-vigilance (lieu de naissance, nom de la mère) et niveaux d'identité `PROVISOIRE` / `VERIFIEE`, avec le **verrou du tiers payant** (EF-01-04/10). La contrainte SQL `patients_identite_verifiee_fondee` interdit une identité vérifiée sans pièce nommée : l'invariant est structurel, pas déclaratif. L'écran d'accueil dit que cela **ne conditionne pas les soins** — un agent qui refuserait quelqu'un sans papiers commettrait une faute grave. Le numéro de pièce n'est jamais réaffiché en entier.
   > **Ce que cela réparait** : l'assurance livrée le 02/10 facturait des tiers sur des identités simplement déclarées. Le verrou par défaut était `VERIFIEE`, donc tout appelant qui l'oubliait passait — avec 1036 tests au vert. Le paramètre est désormais obligatoire.
 - [x] **Livré le 2026-10-04** — **détection de doublons** (EF-01-05). Proposition de candidats à un agent ; **aucune fusion n'est automatique**. Les poids viennent des données réelles : 9 patients sur 10 portaient le 1er janvier 2000, donc la date ne vaut presque rien et ce sont le nom de la mère et le lieu de naissance qui tranchent. Deux bornes structurelles : sans concordance de nom, et sur une simple variante d'orthographe, le score ne franchit jamais le seuil « probable » — deux frères partagent mère, ville, téléphone et parfois date, et atteignaient 115. Tolérance d'écriture (« Diallo » / « Dialo »), parce que c'est ainsi que naissent la plupart des doublons.
@@ -158,7 +158,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   > **Les consentements : le plus restrictif l'emporte.** `@@unique([idPatient, scope])` interdit de garder les deux lignes en cas de désaccord. Élargir un accès sans que le patient l'ait dit ne se rattrape pas ; un consentement retiré à tort se redonne en une phrase. La réponse rapporte les usages restreints, pour qu'un agent redemande.
   > **Trouvé en vérifiant l'écran** : l'`ADMIN_STRUCTURE` — le seul rôle autorisé à fusionner — était redirigé hors de l'écran des identités, qui n'était routé que pour l'accueil. La fonction aurait été livrée inatteignable.
 - [ ] Vérification du numéro d'ordre avant activation d'un compte pro (EF-01-08) ; 2FA imposée aux pros (EF-01-07).
-- [ ] Consentement versionné avec le texte présenté, granularité pro/document, retrait immédiat (EF-02-01/03/05/07).
+- [x] **Livré le 2026-10-04** — **consentement versionné, avec le texte présenté et le retrait immédiat** (EF-02-01/03/07). Un consentement ne vaut que pour ce qui a été expliqué : chaque accord pointe vers la version exacte du texte qui était à l'écran, et les textes évoluent sans réécrire ce à quoi les gens ont dit oui. L'historique est **en ajout seul** — deux déclencheurs PostgreSQL refusent `UPDATE`, `DELETE` et `TRUNCATE` — parce qu'avant, un retrait écrasait l'accord : on voyait le refus d'aujourd'hui, jamais l'accord d'hier.
+  > **Ce que les données ont montré** : sur les quatre consentements en base, **deux avaient été posés par le système** à la création du dossier, sans que personne ne voie rien. L'écran du patient l'affiche désormais en ces termes — « Accord présumé, jamais recueilli. Ce n'est pas un consentement » — et propose de confirmer. C'est tout l'objet du versionnage : distinguer un accord d'une case cochée à la place de quelqu'un.
+  > **La langue fait partie du texte** : seul le français existe, et un patient en pular voit le texte français avec la mention « Ce texte n'existe pas encore dans votre langue ». Le manque se voit au lieu de se cacher.
+  > **Un texte plus récent ne révoque pas l'accord donné** : révoquer d'office couperait l'accès au dossier de tous les patients le jour où l'on corrige une faute d'orthographe. On demande un renouvellement, on ne l'impose pas.
+- [ ] **Granularité par professionnel et par document** (EF-02-05). Le consentement est aujourd'hui global par usage.
+- [ ] **Raccorder le consentement au contrôle d'accès.** Trouvé en vérifiant l'écran : seul l'export FHIR consulte réellement les consentements. L'accès au dossier par un soignant est décidé par la relation de soin, sans regarder `DOSSIER_MEDICAL` — **le patient croit commander un accès qu'il ne commande pas**. Le raccorder demande le bris de glace (EF-02-06), sans quoi couper l'accès bloquerait des soins. L'écran ne l'affirme plus, en attendant.
 - [ ] Bris de glace motivé, tracé, notifié, contrôlé (EF-02-06).
 - [x] **Livré le 2026-10-03** — **journal des accès consultable par le patient** (EF-02-08). Il existait, mais sa requête manquait les scans de QR (30 accès invisibles pour la patiente de démonstration) et n'était servie par aucun index. Le patient concerné vit désormais dans une colonne indexée, les libellés sont rédigés pour lui, et un filtre sépare les accès de tiers des siens. Détaillé en P11.
 

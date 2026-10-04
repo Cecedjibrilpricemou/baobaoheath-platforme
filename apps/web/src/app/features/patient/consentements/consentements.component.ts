@@ -14,7 +14,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ToastrService } from 'ngx-toastr';
 import type {
-  AccesDossierView, ConsentScope, ConsentementView, DemandeRgpdView, TypeDemandeRgpd,
+  AccesDossierView, ConsentScope, ConsentementView, DemandeRgpdView,
+  EtatTexteConsentement, EvenementConsentementView, TexteConsentementView, TypeDemandeRgpd,
 } from '@baobaoheath/shared-types';
 import { PrivacyService } from '../../../core/services/privacy.service';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -27,6 +28,22 @@ interface ScopeItem {
   /** Date de la derniere decision, null tant que le patient n'a rien choisi. */
   modifieLe: string | Date | null;
   saving: boolean;
+
+  // ── Ce que le versionnage ajoute (EF-02-01) ────────────────────────
+  //
+  // **La difference entre un accord et une case cochee a sa place.** Un
+  // consentement pose par le systeme a la creation du dossier n'a jamais ete
+  // recueilli : personne n'a rien montre a personne. L'ecran doit le dire, pas
+  // l'afficher comme un accord ordinaire.
+  /** `false` : la question ne lui a jamais ete posee. */
+  repondu: boolean;
+  etat: EtatTexteConsentement;
+  /** Le texte qu'il a accepte, tel qu'il etait — pas celui d'aujourd'hui. */
+  texteAccepte: TexteConsentementView | null;
+  texteEnVigueur: TexteConsentementView | null;
+  /** `DEFAUT_SYSTEME` quand l'accord a ete pose sans geste du patient. */
+  source: string | null;
+  texteOuvert: boolean;
 }
 
 // Ordre d'affichage : du plus structurant (acces au dossier) au plus accessoire.
@@ -53,7 +70,14 @@ export class ConsentementsComponent implements OnInit {
   private i18n = inject(I18nService);
   private toastr = inject(ToastrService);
 
-  scopes = signal<ScopeItem[]>(SCOPES.map(s => ({ ...s, actif: false, modifieLe: null, saving: false })));
+  // Tant que l'API n'a pas repondu, aucune portee n'est « accordee » et aucune
+  // n'est « repondue » : afficher le contraire ferait croire au patient qu'il a
+  // consenti a quelque chose.
+  scopes = signal<ScopeItem[]>(SCOPES.map(s => ({
+    ...s, actif: false, modifieLe: null, saving: false,
+    repondu: false, etat: 'JAMAIS_RECUEILLI' as const,
+    texteAccepte: null, texteEnVigueur: null, source: null, texteOuvert: false,
+  })));
   acces = signal<AccesDossierView[]>([]);
   totalAcces = signal(0);
   isLoading = signal(true);
@@ -218,10 +242,57 @@ export class ConsentementsComponent implements OnInit {
     const parScope = new Map(consentements.map(c => [c.scope, c]));
     this.scopes.update(liste => liste.map(item => {
       const c = parScope.get(item.scope);
-      return c
-        ? { ...item, actif: c.actif, modifieLe: c.actif ? c.donneLe : c.retireLe }
-        : item;
+      if (!c) return item;
+      return {
+        ...item,
+        actif: c.actif,
+        modifieLe: c.actif ? c.donneLe : c.retireLe,
+        repondu: c.repondu,
+        etat: c.etat,
+        texteAccepte: c.texteAccepte,
+        texteEnVigueur: c.texteEnVigueur,
+        source: c.source,
+      };
     }));
+  }
+
+  // ── Le texte, et l'histoire ────────────────────────────────────────
+
+  basculerTexte(item: ScopeItem) {
+    this.patch(item.scope, { texteOuvert: !item.texteOuvert });
+  }
+
+  /**
+   * Le texte a montrer : celui qu'il a accepte s'il existe, sinon celui en
+   * vigueur. **Jamais l'inverse** — lui presenter le texte d'aujourd'hui comme
+   * s'il l'avait accepte serait lui faire dire ce qu'il n'a pas dit.
+   */
+  texteAMontrer(item: ScopeItem): TexteConsentementView | null {
+    return item.texteAccepte ?? item.texteEnVigueur;
+  }
+
+  /** Confirmer sur la version du jour, quand l'accord etait presume ou ancien. */
+  confirmer(item: ScopeItem) {
+    this.basculer(item, true);
+  }
+
+  historique = signal<EvenementConsentementView[]>([]);
+  historiqueOuvert = signal(false);
+  historiqueCharge = signal(false);
+
+  basculerHistorique() {
+    const ouvrir = !this.historiqueOuvert();
+    this.historiqueOuvert.set(ouvrir);
+    if (!ouvrir || this.historiqueCharge()) return;
+
+    this.privacyService.historiqueConsentements().subscribe({
+      next: (res) => {
+        this.historique.set(res.data ?? []);
+        this.historiqueCharge.set(true);
+      },
+      // Un echec ici ne doit pas vider la page.
+      error: () => this.historiqueCharge.set(true),
+    });
   }
 
   private patch(scope: ConsentScope, changes: Partial<ScopeItem>) {

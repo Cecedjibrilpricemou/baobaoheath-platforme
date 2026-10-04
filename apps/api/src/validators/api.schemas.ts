@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
+  ConsentScope, NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
 } from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
@@ -700,6 +700,27 @@ export const noterTraitsSchema = z.object({
 export const filtreIdentitesSchema = z.object({
   q: z.string().trim().min(1).max(100).optional(),
   niveau: z.nativeEnum(NiveauIdentite).optional(),
+}).strict();
+
+// --- Textes de consentement (EF-02-01) ------------------------------
+//
+// Les bornes sont les memes qu'en base (`textes_consentement_*`) : refuser
+// tot, avec un message utile, plutot que de laisser remonter une violation de
+// contrainte. Un texte qui n'explique rien ne recueille pas un consentement
+// eclaire — d'ou les 40 caracteres.
+export const publierTexteConsentementSchema = z.object({
+  scope: z.nativeEnum(ConsentScope),
+  langue: z.string().trim().regex(/^[a-z]{2}$/, {
+    message: 'La langue est un code de deux lettres minuscules : fr, en, pu, ml.',
+  }),
+  titre: z.string().trim().min(3).max(200),
+  corps: z.string().trim().min(40, {
+    message: "Le texte doit dire a quoi la personne s'engage : quarante caracteres au moins.",
+  }).max(20000),
+}).strict();
+
+export const filtreTextesConsentementSchema = z.object({
+  scope: z.nativeEnum(ConsentScope).optional(),
 }).strict();
 
 // --- Fusion de dossiers patients (EF-01-06) -------------------------

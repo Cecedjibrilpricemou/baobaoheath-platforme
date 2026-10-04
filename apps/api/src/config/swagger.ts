@@ -1058,13 +1058,15 @@ export const swaggerDocument = {
     '/api/v1/privacy/me/consents': {
       get: {
         tags: ['Confidentialite'],
-        summary: 'Lister mes consentements',
+        summary: 'Mes consentements, avec le texte que j ai vu (EF-02-01/03)',
+        description: "Les consentements du patient connecte, avec le texte qu'il avait sous les yeux (EF-02-01/03).\n\n**Toutes les portees sont rendues**, meme celles sur lesquelles il ne s'est jamais prononce : une portee absente de l'ecran est une question qu'on ne lui a jamais posee. `repondu: false` les distingue.\n\n`etat` vaut `A_JOUR`, `TEXTE_PLUS_RECENT` (le texte a change depuis ; l'accord reste valable et un renouvellement est propose), ou **`JAMAIS_RECUEILLI` — l'accord a ete enregistre sans que personne ne montre quoi que ce soit.** Pose par le systeme a la creation du dossier, ou anterieur au versionnage : ce n'est pas un consentement, et l'ecran du patient le dit en ces termes. Dans la base du 2026-10-04, deux des quatre consentements etaient dans ce cas.\n\n`texteAccepte` est le texte **tel qu'il etait**, pas celui d'aujourd'hui : montrer le texte du jour comme s'il l'avait accepte lui ferait dire ce qu'il n'a pas dit.",
         security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Consentements patient' } },
+        responses: { 200: { description: 'Les quatre portees, repondues ou non' } },
       },
       put: {
         tags: ['Confidentialite'],
-        summary: 'Donner ou retirer un consentement',
+        summary: 'Donner ou retirer un consentement (EF-02-03/07)',
+        description: "Accorder ou retirer un consentement (EF-02-03/07).\n\n**Deux ecritures, une transaction** : l'evenement, qui ne s'efface jamais, et l'etat courant, qui sert aux controles d'acces.\n\n**Accorder exige un texte publie** (409 sinon) : on ne consent pas a un texte qui n'existe pas. **Un retrait est toujours possible**, meme sans texte — le refuser faute de documentation reviendrait a retenir quelqu'un contre son gre.\n\n**Le retrait prend effet tout de suite** : aucun delai, aucune file d'attente. Il n'est pas rattache au texte du jour mais a celui qui avait ete accepte.\n\n**Limite a connaitre.** Aujourd'hui, seul l'export FHIR consulte reellement ces consentements. L'acces au dossier par un soignant est decide par la relation de soin (etre suivi dans l'etablissement, avoir un episode en cours), sans passer par `DOSSIER_MEDICAL`. L'ecran du patient le dit desormais au lieu d'affirmer le contraire ; le raccordement demande le bris de glace (EF-02-06), sans quoi couper l'acces bloquerait des soins.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -1505,6 +1507,62 @@ export const swaggerDocument = {
           200: { description: 'Rapport d import, ligne par ligne', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { type: { type: 'string' }, simulation: { type: 'boolean' }, total: { type: 'integer' }, creees: { type: 'integer' }, misesAJour: { type: 'integer' }, refusees: { type: 'integer' }, lignes: { type: 'array', items: { type: 'object', properties: { ligne: { type: 'integer', description: 'Le numero dans le fichier de l operateur : la ligne 1 est l en-tete' }, cle: { type: 'string' }, statut: { type: 'string', enum: ['CREEE', 'MISE_A_JOUR', 'REFUSEE'] }, motif: { type: 'string', nullable: true } } } } } } } }] } } } },
           400: { description: 'Fichier vide, colonne obligatoire absente, ou referentiel inconnu' },
           403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    // ── P4 Consentement versionne (EF-02-01/03/07) ────────────────────
+    '/api/v1/textes-consentement': {
+      get: {
+        tags: ['Consentement'],
+        summary: 'Les versions des textes de consentement (EF-02-01)',
+        description: "Les textes de consentement, versions anciennes et brouillons compris (EF-02-01).\n\n**Un consentement ne vaut que pour ce qui a ete explique.** Sans garder le texte exact qui etait a l'ecran, on ne peut ni prouver ce que la personne a accepte, ni le lui remontrer. Le texte evolue ; les accords deja donnes continuent de pointer vers la version qu'ils ont vue.\n\n**On ne modifie jamais un texte publie** : publier, c'est creer une version de plus. Sans cela on reecrirait apres coup ce a quoi les gens ont dit oui.\n\nLisible par tout compte authentifie : un soignant doit pouvoir lire le texte sur lequel repose l'acces qu'on lui accorde.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'scope', in: 'query', schema: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] } }],
+        responses: {
+          200: { description: 'Textes, les plus recents d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, langue: { type: 'string', example: 'fr' }, version: { type: 'integer' }, titre: { type: 'string' }, corps: { type: 'string' }, publieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : brouillon, montre a personne.' }, dansUneAutreLangue: { type: 'boolean', description: 'Le texte n est pas dans la langue du patient. Le taire ferait passer pour eclaire un consentement qui ne l est pas.' } } } } } }] } } } },
+          400: { description: 'Critere inconnu' },
+        },
+      },
+      post: {
+        tags: ['Consentement'],
+        summary: 'Publier une nouvelle version (EF-02-01)',
+        description: "Publier une nouvelle version d'un texte (EF-02-01).\n\n**Reserve a l'administration nationale.** Un texte de consentement vaut pour toute la plateforme : le laisser modifier par chaque structure ferait dire au consentement des choses differentes selon l'hopital.\n\nLa version est calculee, pas donnee : deux administrateurs qui publient en meme temps ne doivent pas se marcher dessus, et l'unicite `(scope, langue, version)` les departage.\n\n**Un texte plus recent ne revoque pas les accords deja donnes.** Revoquer d'office couperait l'acces au dossier de soins de tous les patients le jour ou l'on corrige une faute d'orthographe — et un acces coupe, en soins, ce n'est pas un desagrement. Les patients concernes lisent « le texte a change depuis votre accord » et peuvent renouveler. On demande, on n'impose pas. La limite est assumee : tant qu'ils n'ont pas repondu, c'est l'ancienne version qui fait foi.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['scope', 'langue', 'titre', 'corps'], properties: { scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, langue: { type: 'string', pattern: '^[a-z]{2}$', example: 'fr' }, titre: { type: 'string', minLength: 3, maxLength: 200 }, corps: { type: 'string', minLength: 40, maxLength: 20000, description: 'Le texte presente, tel quel. Quarante caracteres au moins : un texte qui n explique rien ne recueille pas un consentement eclaire.' } } } } } },
+        responses: {
+          201: { description: 'Version publiee' },
+          400: { description: 'Texte trop court, titre trop court, ou langue mal ecrite' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/textes-consentement/en-vigueur': {
+      get: {
+        tags: ['Consentement'],
+        summary: 'Le texte qu un patient verrait aujourd hui (EF-02-01)',
+        description: "Le texte qu'un patient verrait aujourd'hui, dans la langue demandee.\n\n**La version en vigueur est la plus recemment publiee**, et non la plus grande : un numero de version se saisit, une date de publication s'enregistre. Si les deux divergeaient, c'est la date qui dit ce qui a ete reellement mis a l'ecran.\n\n**La langue fait partie du texte.** Un texte en francais montre a quelqu'un qui lit le pular n'est pas un consentement eclaire. Faute de traduction, le francais est rendu et `dansUneAutreLangue` vaut `true` : le manque se voit au lieu de se cacher.\n\n**404 franc quand rien n'est publie**, plutot qu'un texte vide : tant qu'aucun texte n'existe, il n'y a rien a quoi consentir.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'scope', in: 'query', required: true, schema: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] } },
+          { name: 'langue', in: 'query', schema: { type: 'string', default: 'fr' } },
+        ],
+        responses: {
+          200: { description: 'Texte en vigueur', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { id: { type: 'string' }, scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, langue: { type: 'string', example: 'fr' }, version: { type: 'integer' }, titre: { type: 'string' }, corps: { type: 'string' }, publieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : brouillon, montre a personne.' }, dansUneAutreLangue: { type: 'boolean', description: 'Le texte n est pas dans la langue du patient. Le taire ferait passer pour eclaire un consentement qui ne l est pas.' } } } } }] } } } },
+          400: { description: 'Portee absente' },
+          404: { description: 'Aucun texte publie pour cette portee, ni dans la langue demandee ni en francais' },
+        },
+      },
+    },
+    '/api/v1/privacy/me/consents/historique': {
+      get: {
+        tags: ['Consentement'],
+        summary: 'L histoire de mes consentements (EF-02-07)',
+        description: "L'histoire des consentements du patient connecte (EF-02-07).\n\n**C'est elle qui donne un sens au mot « versionne ».** Avant, un retrait ecrasait l'accord : on voyait le refus d'aujourd'hui, jamais l'accord d'hier ni le nombre de changements d'avis.\n\n**En ajout seul.** Deux declencheurs PostgreSQL refusent UPDATE, DELETE et TRUNCATE, comme pour le journal d'audit (EF-12-04) : une table qui se laisse reecrire ne prouve rien le jour ou il faut s'en servir.\n\n`versionTexte` et `langueTexte` disent ce que la personne avait sous les yeux a ce moment-la. `null` signifie qu'aucun texte n'avait ete conserve — accord anterieur au versionnage, ou pose d'office par le systeme.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'scope', in: 'query', schema: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] } }],
+        responses: {
+          200: { description: 'Decisions, la plus recente d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, scope: { type: 'string' }, sens: { type: 'string', enum: ['ACCORDE', 'RETIRE'] }, source: { type: 'string', description: 'WEB, MOBILE, COMPTOIR, DEFAUT_SYSTEME...' }, commentaire: { type: 'string', nullable: true }, creeLe: { type: 'string', format: 'date-time' }, versionTexte: { type: 'integer', nullable: true }, langueTexte: { type: 'string', nullable: true }, titreTexte: { type: 'string', nullable: true }, parQui: { type: 'string' } } } } } }] } } } },
+          403: { description: 'Reserve au patient' },
         },
       },
     },

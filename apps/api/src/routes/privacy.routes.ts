@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import {
   getMyAuditLogsController,
+  getMyConsentHistoryController,
   getMyConsentsController,
   setConsentController,
 } from '../controllers/privacy.controller';
@@ -18,6 +19,15 @@ router.use(requireRole('PATIENT'));
 router.get('/me/consents', getMyConsentsController);
 router.put('/me/consents', validateBody(consentSchema), setConsentController);
 router.get('/me/audit-logs', getMyAuditLogsController);
+
+/**
+ * L'histoire de ses consentements (EF-02-07).
+ *
+ * **C'est elle qui donne un sens au mot « versionne »** : le patient y lit ses
+ * changements d'avis et le texte qui etait a l'ecran a chaque fois. En ajout
+ * seul : deux declencheurs PostgreSQL refusent UPDATE, DELETE et TRUNCATE.
+ */
+router.get('/me/consents/historique', getMyConsentHistoryController);
 
 /**
  * Les demandes d'exercice de droits du patient connecte (EF-12-09).

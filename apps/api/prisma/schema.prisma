@@ -250,6 +250,8 @@ model Utilisateur {
 
   /// Les identites de patients qu'il a verifiees (EF-01-04).
   identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
+  textesConsentementPublies TexteConsentement[] @relation("TextesConsentementPublies")
+  evenementsConsentement    EvenementConsentement[] @relation("EvenementsConsentement")
   fusionsProoncees FusionDossier[] @relation("FusionsProoncees")
   fusionsAnnulees  FusionDossier[] @relation("FusionsAnnulees")
 
@@ -736,6 +738,8 @@ model PatientProfile {
   fusionneDans   PatientProfile?  @relation("FusionDeDossier", fields: [idFusionneDans], references: [id], onDelete: Restrict)
   dossiersAbsorbes PatientProfile[] @relation("FusionDeDossier")
   fusionneLe     DateTime?
+
+  evenementsConsentement EvenementConsentement[]
 
   fusionsPrincipal FusionDossier[] @relation("FusionPrincipal")
   fusionsAbsorbe   FusionDossier[] @relation("FusionAbsorbe")
@@ -1398,6 +1402,91 @@ model Facture {
   @@map("factures")
 }
 
+/// Le texte d'un consentement, dans une version et une langue donnees
+/// (EF-02-01).
+///
+/// **Un consentement ne vaut que pour ce qui a ete explique.** Sans garder le
+/// texte exact qui etait a l'ecran, on ne peut ni prouver ce que la personne a
+/// accepte, ni lui montrer plus tard ce a quoi elle a dit oui. Le texte evolue ;
+/// les accords deja donnes continuent de pointer vers la version qu'ils ont vue.
+///
+/// **La langue fait partie du texte.** Un texte en francais montre a quelqu'un
+/// qui lit le pular n'est pas un consentement eclaire. On enregistre donc la
+/// langue reellement presentee, meme quand ce n'est pas celle du patient — la
+/// trace dit alors la verite, et le manque se voit.
+model TexteConsentement {
+  id String @id @default(cuid())
+
+  scope  ConsentScope
+  langue String
+
+  /// Numero de version, par portee et par langue. Commence a 1.
+  version Int
+
+  titre String
+  /// Le texte presente, tel quel.
+  corps String
+
+  /// Mis en vigueur le... `null` tant que c'est un brouillon. Un brouillon ne
+  /// peut etre montre a personne.
+  publieLe    DateTime?
+  idPubliePar String?
+  publiePar   Utilisateur? @relation("TextesConsentementPublies", fields: [idPubliePar], references: [id], onDelete: SetNull)
+
+  creeLe DateTime @default(now())
+
+  consentements ConsentementPatient[]
+  evenements    EvenementConsentement[]
+
+  @@unique([scope, langue, version])
+  @@index([scope, langue, publieLe])
+  @@map("textes_consentement")
+}
+
+/// Ce qui est arrive au consentement d'une personne, en ajout seul (EF-02-07).
+///
+/// **« Versionne » veut dire qu'on garde l'histoire, pas seulement l'etat.**
+/// Avant, un retrait ecrasait l'accord : on voyait que la personne refusait
+/// aujourd'hui, jamais qu'elle avait accepte hier, ni combien de fois elle
+/// avait change d'avis. Une table qui se laisse reecrire ne prouve rien le
+/// jour ou il faudrait s'en servir, exactement comme le journal d'audit
+/// (EF-12-04) : un declencheur PostgreSQL refuse ici aussi UPDATE, DELETE et
+/// TRUNCATE.
+model EvenementConsentement {
+  id String @id @default(cuid())
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  scope ConsentScope
+  sens  SensConsentement
+
+  /// Le texte exact qui etait a l'ecran. `null` pour les accords poses avant
+  /// EF-02-01, ou par le systeme : c'est precisement ce qu'il faut pouvoir
+  /// distinguer d'un consentement reellement recueilli.
+  idTexte String?
+  texte   TexteConsentement? @relation(fields: [idTexte], references: [id], onDelete: Restrict)
+
+  /// D'ou vient le geste : `WEB`, `MOBILE`, `COMPTOIR`, `DEFAUT_SYSTEME`...
+  source      String
+  commentaire String?
+
+  /// Qui a enregistre le geste. Le patient lui-meme, le plus souvent.
+  idAuteur String
+  auteur   Utilisateur @relation("EvenementsConsentement", fields: [idAuteur], references: [id], onDelete: Restrict)
+
+  creeLe DateTime @default(now())
+
+  @@index([idPatient, creeLe])
+  @@index([idPatient, scope, creeLe])
+  @@map("evenements_consentement")
+}
+
+enum SensConsentement {
+  ACCORDE
+  RETIRE
+}
+
 model ConsentementPatient {
   id          String       @id @default(cuid())
   scope       ConsentScope
@@ -1412,6 +1501,16 @@ model ConsentementPatient {
 
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  /// La version du texte que la personne avait sous les yeux (EF-02-01).
+  ///
+  /// `null` signifie **« accord presume, jamais recueilli »** : soit il a ete
+  /// pose par le systeme a la creation du dossier, soit il est anterieur au
+  /// versionnage. Ce n'est pas un detail d'implementation — c'est la
+  /// difference entre un consentement et une case cochee a la place de
+  /// quelqu'un, et l'ecran du patient le dit.
+  idTexte String?
+  texte   TexteConsentement? @relation(fields: [idTexte], references: [id], onDelete: Restrict)
 
   @@unique([idPatient, scope])
   @@index([scope, actif])

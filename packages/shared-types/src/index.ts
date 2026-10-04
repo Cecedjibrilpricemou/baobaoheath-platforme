@@ -1202,18 +1202,11 @@ export interface ReferencementATraiterView {
 
 // ─── Confidentialite patient ─────────────────────────────────────────────────
 
-/** GET/PUT /privacy/me/consents — ligne de la table consentements_patient. */
-export interface ConsentementView {
-  id: string;
-  scope: ConsentScope;
-  actif: boolean;
-  donneLe: HorodatageApi;
-  retireLe: HorodatageApi | null;
-  source: string;
-  commentaire: string | null;
-  idPatient: string;
-  idUtilisateur: string;
-}
+// `ConsentementView` vivait ici : c etait la ligne brute de la table. Elle est
+// remplacee par la vue versionnee plus bas (EF-02-01), qui porte en plus le
+// texte reellement presente et dit si l accord a seulement ete presume. Garder
+// les deux aurait fait coexister deux notions de « consentement », dont une
+// qui ne sait pas a quoi la personne a dit oui.
 
 /** PUT /privacy/me/consents */
 export interface SetConsentementDto {
@@ -2560,6 +2553,83 @@ export interface VerifierIdentiteDto {
 export interface NoterTraitsDto {
   lieuNaissance?: string;
   nomMere?: string;
+}
+
+// --- Consentement versionne (EF-02-01/03/07) -------------------------------
+
+/**
+ * Un texte de consentement, dans une version et une langue.
+ *
+ * **Un consentement ne vaut que pour ce qui a ete explique.** Garder le texte
+ * exact qui etait a l ecran est ce qui permet de prouver ce qui a ete accepte,
+ * et de le remontrer a l interesse.
+ */
+export interface TexteConsentementView {
+  id: string;
+  scope: ConsentScope;
+  langue: string;
+  version: number;
+  titre: string;
+  corps: string;
+  publieLe: HorodatageApi | null;
+  /**
+   * Le texte n existe pas dans la langue du patient et lui est montre dans
+   * une autre. **Le taire ferait passer pour eclaire un consentement qui ne
+   * l est pas.**
+   */
+  dansUneAutreLangue: boolean;
+}
+
+/**
+ * Ou en est le consentement par rapport au texte en vigueur.
+ *
+ * `JAMAIS_RECUEILLI` est le cas le plus important : l accord a ete pose sans
+ * que personne ne voie rien — par le systeme a la creation du dossier, ou
+ * avant le versionnage. Ce n est pas un consentement.
+ */
+export type EtatTexteConsentement = 'A_JOUR' | 'TEXTE_PLUS_RECENT' | 'JAMAIS_RECUEILLI';
+
+export interface ConsentementView {
+  scope: ConsentScope;
+  actif: boolean;
+  /** `false` : la question ne lui a jamais ete posee. */
+  repondu: boolean;
+  donneLe: HorodatageApi | null;
+  retireLe: HorodatageApi | null;
+  source: string | null;
+  /** Le texte accepte, tel qu il etait — pas celui d aujourd hui. */
+  texteAccepte: TexteConsentementView | null;
+  texteEnVigueur: TexteConsentementView | null;
+  etat: EtatTexteConsentement;
+}
+
+export type SensConsentement = 'ACCORDE' | 'RETIRE';
+
+/** Une ligne de l historique, qui ne s efface jamais. */
+export interface EvenementConsentementView {
+  id: string;
+  scope: ConsentScope;
+  sens: SensConsentement;
+  source: string;
+  commentaire: string | null;
+  creeLe: HorodatageApi;
+  versionTexte: number | null;
+  langueTexte: string | null;
+  titreTexte: string | null;
+  parQui: string;
+}
+
+export interface EnregistrerConsentementDto {
+  scope: ConsentScope;
+  accorde: boolean;
+  commentaire?: string;
+}
+
+export interface PublierTexteConsentementDto {
+  scope: ConsentScope;
+  langue: string;
+  titre: string;
+  corps: string;
 }
 
 // --- Fusion de dossiers patients (EF-01-06) --------------------------------

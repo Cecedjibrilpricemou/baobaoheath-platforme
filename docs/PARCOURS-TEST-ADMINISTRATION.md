@@ -326,11 +326,88 @@ humain, pièce en main, qui doit trancher.
 
 ---
 
+## 11. Le consentement versionné (EF-02-01/03/07)
+
+**Connectez-vous en patiente** (`620100010` / `Pricemou1234`) →
+**Mes consentements**.
+
+### Ce que le versionnage rend visible
+
+Chaque usage porte maintenant **le texte que vous avez accepté**. Cliquez
+« Lire le texte » : il s'ouvre, avec son numéro de version et sa date.
+
+Lisez-en un en entier. Chacun dit trois choses — ce qui est partagé, avec qui,
+**et ce qui se passe si vous refusez**. Cette dernière phrase est la plus
+importante : un consentement n'est libre que si refuser reste possible sans
+conséquence sur les soins.
+
+> Ces textes ne sont pas validés par un juriste. C'est une base de travail, et
+> c'est précisément à cela que sert le versionnage : la version 2 viendra de
+> cette relecture, sans effacer ce à quoi les gens ont déjà dit oui.
+
+### « Accord présumé, jamais recueilli »
+
+Sur cette patiente, deux usages portent un encadré orange :
+
+> *Cet accord a été enregistré sans que personne ne vous montre de texte — à la
+> création de votre dossier, ou avant que la plateforme ne conserve ce qui vous
+> est présenté. **Ce n'est pas un consentement.***
+
+C'est le cœur de ce bloc. Avant, ces deux lignes s'affichaient comme des
+accords ordinaires. Dans la base, **deux des quatre consentements avaient été
+posés par le système** à la création du dossier.
+
+Cliquez **« Je confirme mon accord »** : le texte vous est alors réellement
+opposé, et l'encadré disparaît.
+
+### L'historique
+
+En bas de la liste, **« Voir l'historique »**.
+
+Vous y lisez vos décisions dans l'ordre, chacune avec la version du texte que
+vous aviez sous les yeux. Et une phrase : *« Cette liste ne peut être ni
+modifiée ni effacée, pas même par un administrateur. »*
+
+> Ce n'est pas une formule. Deux déclencheurs PostgreSQL refusent `UPDATE`,
+> `DELETE` et `TRUNCATE` sur cette table, comme pour le journal d'audit. Avant,
+> un retrait écrasait l'accord : on voyait le refus d'aujourd'hui, jamais
+> l'accord d'hier.
+
+**Retirez un consentement, puis redonnez-le.** Les deux gestes apparaissent,
+horodatés. Rien ne disparaît.
+
+> Certaines lignes de l'historique portent la mention *« Vérification
+> automatique de la plateforme, pas un geste du patient »* : ce sont mes
+> propres appels de test du 2026-10-04. Elles ne peuvent pas être effacées —
+> c'est le prix de l'inaltérabilité, et il est juste.
+
+### La langue
+
+La plateforme accepte le français, le pular et le malinké. **Seuls les textes
+français existent.** Un patient dont le compte est en pular verra donc le texte
+français, et l'écran le lui dira : *« Ce texte n'existe pas encore dans votre
+langue. »*
+
+Le manque se voit au lieu de se cacher — un texte en français montré à
+quelqu'un qui lit le pular n'est pas un consentement éclairé.
+
+### Ce que l'écran ne promet plus
+
+La note en bas de la liste disait : *« Retirer un consentement prend effet
+immédiatement pour les nouvelles demandes d'accès. »*
+
+**C'était faux**, et c'est la trouvaille la plus sérieuse de ce bloc. Voir le
+tableau ci-dessous.
+
+---
+
 ## Ce que ce parcours ne couvre pas, et qu'il faut savoir
 
 | Point | État |
 |---|---|
 | **Aucun compte `ADMIN_NATIONAL`** | Tous les écrans d'administration sont ouverts à `ADMIN_NATIONAL` **et** `SUPER_ADMIN`. Avec zéro compte national, toute l'administration repose sur un seul compte. |
+| **Le consentement `DOSSIER_MEDICAL` ne commande rien** | **Le plus sérieux.** Seul l'export FHIR consulte réellement les consentements. L'accès au dossier par un soignant est décidé par la relation de soin — être suivi dans l'établissement, avoir un épisode en cours — sans jamais regarder cet interrupteur. Le patient croit commander un accès qu'il ne commande pas. L'écran ne l'affirme plus ; le raccorder demande le bris de glace (EF-02-06), sans quoi couper l'accès bloquerait des soins. |
+| **Les textes de consentement** | Rédigés par moi, non relus par un juriste. Version 1, français seulement. Le pular et le malinké manquent. |
 | **L'anonymisation RGPD** | Pas construite. Une demande d'effacement se traite à la main, et la réponse écrite dit ce qui a été fait. |
 | **Les 15 comptes à moitié purgés** | Téléphone remplacé le 2026-08-04, **noms restés lisibles**, aucune trace de qui l'a fait. À trancher. |
 | **La durée légale de conservation** d'un dossier de soins en Guinée | Inconnue de moi. Elle détermine ce qu'on peut répondre à une demande d'effacement. |
