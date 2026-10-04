@@ -25,7 +25,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
 | **P9** Notifications neutres | 1 | — | 1 | ⏳ **la neutralité est livrée le 02/10** — c'était un défaut en service, pas une case vide. Restent les préférences de canaux et le rejeu |
 | **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
-| **P11** Administration, audit, référentiels | 5 | 1 | — | ⏳ **référentiels, journal d'audit, suspension de compte et détection d'anomalies livrés le 03/10** (API, Swagger et écrans). La chaîne est complète : on détecte, on enquête, on suspend. Restent les conventions des partenaires (EF-12-02) et le RGPD (EF-12-09) |
+| **P11** Administration, audit, référentiels | 6 | 1 | — | ⏳ **référentiels, journal d'audit, suspension de compte, détection d'anomalies et demandes RGPD livrés** (API, Swagger et écrans). Reste **EF-12-02**, les conventions des partenaires |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
 | **Total** | **42** | **5** | **48** | sur 95 |
@@ -220,7 +220,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] **API livrée le 2026-10-02** — **exclusions par catégorie de produit**. Les deux préalables ont été levés le 2026-10-01 : le catalogue accepte des articles non médicamenteux, et `CategorieProduit` est une énumération fermée. Une catégorie exclue n'a pas de taux : porter les deux serait contradictoire, et une contrainte SQL le refuse.
 - [x] **API + front livrés le 2026-10-02** — **un taux de 100 % ne couvre pas tout**. Vérifié à l'écran : un assuré à 100 % chez qui le lait est exclu voit « Total 47 000 · Pris par l'assureur − 2 000 · À encaisser 45 000 », et la ligne de lait porte « Catégorie LAIT_INFANTILE exclue par l'assureur ». Le détail est montré **avant** paiement, avec les notes disant ce qui a raboté la part de l'assureur.
 
-### P11 — Administration, audit, référentiels · M · EF-12 · ⏳ **5 sur 5** (EF-12-02 et EF-12-09 restent)
+### P11 — Administration, audit, référentiels · M · EF-12 · ⏳ **6 livrés** — reste EF-12-02
 - [~] **API livrée le 03/10** — **journal non modifiable incluant les lectures** (EF-12-04). Trois constats en éprouvant la table :
   - l'**ajout seul existait déjà**, depuis la migration du 2026-06-19 : un déclencheur refuse `UPDATE` et `DELETE`. Cette case était comptée comme non commencée à tort ;
   - **mais `TRUNCATE` n'était pas couvert.** Ce déclencheur est `FOR EACH ROW`, et `TRUNCATE` ne déclenche jamais un déclencheur de ligne : `TRUNCATE journal_audit` vidait le journal entier sans obstacle. Fermé par un déclencheur d'instruction ;
@@ -246,7 +246,12 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les paires de DCI sont **normalisées et triées** avant écriture, parce que la détection d'interaction normalise et trie ses arguments : sans cela la règle serait en base et l'alerte ne sortirait jamais. Vérifié en rejouant la requête de la détection après un import réel.
   - **Le numéro de ligne rendu est celui du tableur de l'opérateur**, lignes vides et champs multilignes compris. La première version numérotait par position dans le tableau après filtrage : une seule ligne vide et l'opérateur était renvoyé à la ligne précédant la fautive, donc il corrigeait une ligne saine. Trouvé en interrogeant l'API réelle, pas par les 40 tests unitaires. Six sabotages verrouillent la correction.
   - **Reste à faire** : CIM-10, ATC, zones de livraison, tarifs par acte et par analyse — et un écran d'administration ; aujourd'hui l'import se fait par l'API.
-- [ ] Demandes RGPD : accès, rectification, effacement, portabilité (EF-12-09).
+- [x] **API, Swagger et deux écrans livrés le 04/10** — **demandes d'exercice de droits** (EF-12-09). Le patient dépose depuis sa page de confidentialité ; l'administration traite depuis `/admin/demandes-rgpd`, avec un délai de 30 jours et les retards annoncés en tête.
+  - **Rien n'est exécuté automatiquement.** Ni effacement, ni rectification d'un dossier de soins : ces actes ont des conséquences légales et se décident.
+  - **L'effacement d'un dossier de soins n'est pas une suppression.** Le patient le lit avant d'envoyer sa demande, et l'agent le relit au moment de répondre : la loi impose la conservation, la trace des accès doit subsister, et ce qui est possible est une anonymisation de l'identité. Promettre une suppression qui ne viendra pas serait pire que de ne rien proposer.
+  - **La réponse écrite est obligatoire** dès que la demande est close, au moins dix caractères — règle posée dans le schéma Zod, dans le service **et** dans une contrainte SQL. Un refus qu'on ne motive pas n'est pas contestable.
+  - **Ce que l'absence de ce cadre avait coûté** : 15 comptes de la base ont vu leur téléphone remplacé par « purged-<id> » le 2026-08-04, sans trace ni dans le journal ni dans le code, et à moitié seulement — nom et prénom sont restés lisibles.
+  - **Reste à construire** : l'anonymisation elle-même. Aujourd'hui une demande d'effacement se traite à la main et la réponse dit ce qui a été fait.
 - [x] **API, Swagger et écran livrés le 03/10** — **détection d'anomalies d'accès** (EF-12-06). `GET /journal/anomalies`, et un encart en tête de `/admin/journal` d'où chaque signal mène au détail.
   - **Ce sont des signaux à examiner, pas des verdicts.** Un soignant de garde consulte beaucoup de dossiers sans rien faire de mal ; un comptoir de pharmacie scanne des dizaines de codes par jour. Un détecteur qui trancherait ferait suspendre des gens à tort. L'écran le dit, en toutes lettres.
   - **Trois détecteurs** : refus répétés (**seuls 401 et 403** — un 400 est une requête mal formée, pas une porte forcée), dossiers **distincts** touchés, et adresses IP multiples. Ce dernier ne monte jamais en alerte : un soignant qui passe du wifi au téléphone le déclenche.
