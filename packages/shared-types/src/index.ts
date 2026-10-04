@@ -2500,3 +2500,64 @@ export interface RepondreDemandeRgpdDto {
   satisfaite: boolean;
   reponse: string;
 }
+
+// --- Identito-vigilance (EF-01-04/10) --------------------------------------
+
+export type NiveauIdentite = 'PROVISOIRE' | 'VERIFIEE';
+
+export type TypePieceIdentite =
+  | 'CARTE_NATIONALE'
+  | 'PASSEPORT'
+  | 'ACTE_NAISSANCE'
+  | 'CARTE_CONSULAIRE'
+  | 'PERMIS_CONDUIRE'
+  | 'AUTRE';
+
+/**
+ * L identite d un patient, telle qu un agent d accueil la voit.
+ *
+ * **Le niveau ne conditionne pas les soins.** Un patient provisoire est
+ * consulte, suivi et prescrit normalement. Il ne verrouille que ce qui engage
+ * un tiers : le tiers payant, et plus tard les produits reglementes.
+ */
+export interface IdentitePatientView {
+  id: string;
+  nomComplet: string;
+  telephone: string;
+  dateNaissance: HorodatageApi;
+  sexe: string;
+  prefecture: string;
+  /** Trait distinctif. Figure sur toutes les pieces. */
+  lieuNaissance: string | null;
+  /** Trait distinctif le plus discriminant quand les noms se repetent. */
+  nomMere: string | null;
+  niveauIdentite: NiveauIdentite;
+  typePiece: TypePieceIdentite | null;
+  /**
+   * Le numero de la piece, **masque** : il sert a prouver qu une piece a ete
+   * vue, pas a etre recopie. L afficher en entier sur un ecran de comptoir,
+   * devant la file d attente, serait une fuite gratuite.
+   */
+  numeroPieceMasque: string | null;
+  verifieeLe: HorodatageApi | null;
+  /** Null si l agent qui a verifie a depuis quitte la plateforme. */
+  verifieePar: string | null;
+  /** Les traits qui manquent encore, pour que l ecran sache quoi demander. */
+  traitsManquants: string[];
+}
+
+export interface VerifierIdentiteDto {
+  typePiece: TypePieceIdentite;
+  numeroPiece: string;
+  /** Exige : il figure sur la piece que l agent a en main. */
+  lieuNaissance: string;
+  /** Facultatif : absent d un passeport. */
+  nomMere?: string;
+  /** Confirmer le remplacement d une piece deja enregistree. */
+  remplacerPiece?: boolean;
+}
+
+export interface NoterTraitsDto {
+  lieuNaissance?: string;
+  nomMere?: string;
+}

@@ -1,0 +1,201 @@
+<div class="bb-identites">
+
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-id-card" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'HOPITAL.IDENTITES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'HOPITAL.IDENTITES.SUBTITLE' | translate }}</p>
+    </div>
+  </header>
+
+  <!-- La phrase qui évite une faute grave : un agent ne doit jamais croire
+       qu'il peut refuser quelqu'un sans papiers. -->
+  <div class="identites-avis" role="note">
+    <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+    <span>{{ 'HOPITAL.IDENTITES.NOTE' | translate }}</span>
+  </div>
+
+  <mat-card class="identites-filtres">
+    <div class="identites-filtres__grille">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'HOPITAL.IDENTITES.SEARCH' | translate }}</mat-label>
+        <input matInput [ngModel]="q()" (ngModelChange)="q.set($event)" (keyup.enter)="charger()"
+               placeholder="Nom, téléphone, code QR…" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'HOPITAL.IDENTITES.LEVEL' | translate }}</mat-label>
+        <mat-select [ngModel]="niveau()" (ngModelChange)="niveau.set($event); charger()">
+          <mat-option value="">{{ 'HOPITAL.IDENTITES.ALL_LEVELS' | translate }}</mat-option>
+          <mat-option value="PROVISOIRE">{{ 'HOPITAL.IDENTITES.PROVISOIRE' | translate }}</mat-option>
+          <mat-option value="VERIFIEE">{{ 'HOPITAL.IDENTITES.VERIFIEE' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <button mat-flat-button color="primary" (click)="charger()" [disabled]="chargement()">
+      <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
+      {{ 'HOPITAL.IDENTITES.SEARCH_BTN' | translate }}
+    </button>
+  </mat-card>
+
+  @if (succes()) {
+    <div class="identites-succes" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+  @if (erreur() && !cible()) {
+    <div class="identites-erreur" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  @if (chargement()) {
+    <div class="bb-empty" role="status">
+      <mat-spinner diameter="28"></mat-spinner>
+      <p>{{ 'COMMON.LOADING' | translate }}</p>
+    </div>
+  } @else if (patients().length === 0) {
+    <div class="bb-empty">
+      <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+      <p>{{ 'HOPITAL.IDENTITES.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    <div class="identites-table-wrap">
+      <table class="identites-table">
+        <thead>
+          <tr>
+            <th>{{ 'HOPITAL.IDENTITES.PATIENT' | translate }}</th>
+            <th>{{ 'HOPITAL.IDENTITES.TRAITS' | translate }}</th>
+            <th>{{ 'HOPITAL.IDENTITES.LEVEL' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of patients(); track p.id) {
+            <tr [class.identites-table__row--provisoire]="p.niveauIdentite === 'PROVISOIRE'">
+              <td>
+                <span class="identites-table__nom">{{ p.nomComplet }}</span>
+                <span class="identites-table__sous">
+                  {{ p.dateNaissance | date:'dd/MM/yyyy' }} · {{ p.sexe }} · {{ p.telephone }}
+                </span>
+              </td>
+              <td>
+                <!-- Les deux traits qui tranchent entre homonymes. Ce qui
+                     manque est dit, pour que l'agent sache quoi demander. -->
+                @if (p.lieuNaissance) {
+                  <span class="identites-table__trait">{{ 'HOPITAL.IDENTITES.BORN_IN' | translate:{ lieu: p.lieuNaissance } }}</span>
+                }
+                @if (p.nomMere) {
+                  <span class="identites-table__trait">{{ 'HOPITAL.IDENTITES.MOTHER' | translate:{ nom: p.nomMere } }}</span>
+                }
+                @if (p.traitsManquants.length > 0) {
+                  <span class="identites-table__manque">
+                    {{ 'HOPITAL.IDENTITES.MISSING' | translate:{ n: p.traitsManquants.length } }}
+                  </span>
+                }
+              </td>
+              <td>
+                @if (p.niveauIdentite === 'VERIFIEE') {
+                  <span class="identites-table__niveau identites-table__niveau--ok">
+                    {{ 'HOPITAL.IDENTITES.VERIFIEE' | translate }}
+                  </span>
+                  <!-- La pièce est nommée, son numéro masqué : il prouve
+                       qu'une pièce a été vue, il n'a pas à être recopié. -->
+                  <span class="identites-table__piece">
+                    {{ 'HOPITAL.IDENTITES.PIECE_' + p.typePiece | translate }} · {{ p.numeroPieceMasque }}
+                  </span>
+                  <span class="identites-table__par">
+                    {{ 'HOPITAL.IDENTITES.BY' | translate:{ qui: p.verifieePar ?? '—' } }}
+                    · {{ p.verifieeLe | date:'shortDate' }}
+                  </span>
+                } @else {
+                  <span class="identites-table__niveau identites-table__niveau--provisoire">
+                    {{ 'HOPITAL.IDENTITES.PROVISOIRE' | translate }}
+                  </span>
+                  <span class="identites-table__consequence">{{ 'HOPITAL.IDENTITES.NO_TP' | translate }}</span>
+                }
+              </td>
+              <td class="identites-table__actions">
+                <button mat-stroked-button (click)="ouvrir(p)" [disabled]="enCours()">
+                  {{ (p.niveauIdentite === 'VERIFIEE' ? 'HOPITAL.IDENTITES.REPLACE' : 'HOPITAL.IDENTITES.VERIFY')
+                     | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- La vérification. L'agent déclare avoir vu une pièce : ce n'est pas un
+       formulaire de plus, c'est un engagement. -->
+  @if (cible(); as p) {
+    <div class="identites-boite" role="dialog" aria-modal="true">
+      <mat-card class="identites-boite__carte">
+        <h2>{{ 'HOPITAL.IDENTITES.CONFIRM_TITLE' | translate:{ nom: p.nomComplet } }}</h2>
+        <p class="identites-boite__engagement">{{ 'HOPITAL.IDENTITES.ENGAGEMENT' | translate }}</p>
+
+        @if (dejaVerifiee()) {
+          <div class="identites-boite__deja" role="note">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ 'HOPITAL.IDENTITES.ALREADY' | translate }}</span>
+          </div>
+          <mat-checkbox [ngModel]="remplacerPiece()" (ngModelChange)="remplacerPiece.set($event)">
+            {{ 'HOPITAL.IDENTITES.CONFIRM_REPLACE' | translate }}
+          </mat-checkbox>
+        }
+
+        <div class="identites-boite__grille">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.PIECE' | translate }}</mat-label>
+            <mat-select [ngModel]="typePiece()" (ngModelChange)="typePiece.set($event)">
+              @for (t of pieces; track t) {
+                <mat-option [value]="t">{{ 'HOPITAL.IDENTITES.PIECE_' + t | translate }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.NUMBER' | translate }}</mat-label>
+            <input matInput [ngModel]="numeroPiece()" (ngModelChange)="numeroPiece.set($event)" />
+            <mat-hint>{{ 'HOPITAL.IDENTITES.NUMBER_WHY' | translate }}</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.BIRTHPLACE' | translate }}</mat-label>
+            <input matInput [ngModel]="lieuNaissance()" (ngModelChange)="lieuNaissance.set($event)" />
+            <mat-hint>{{ 'HOPITAL.IDENTITES.BIRTHPLACE_WHY' | translate }}</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.MOTHER_NAME' | translate }}</mat-label>
+            <input matInput [ngModel]="nomMere()" (ngModelChange)="nomMere.set($event)" />
+            <!-- Facultatif : absent d'un passeport. Mais c'est le trait le
+                 plus discriminant entre homonymes. -->
+            <mat-hint>{{ 'HOPITAL.IDENTITES.MOTHER_WHY' | translate }}</mat-hint>
+          </mat-form-field>
+        </div>
+
+        @if (erreur()) {
+          <div class="identites-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreur() }}</span>
+          </div>
+        }
+
+        <div class="identites-boite__actions">
+          <button mat-stroked-button (click)="annuler()" [disabled]="enCours()">
+            {{ 'HOPITAL.IDENTITES.CANCEL' | translate }}
+          </button>
+          <button mat-flat-button color="primary" (click)="confirmer()" [disabled]="!peutVerifier()">
+            {{ 'HOPITAL.IDENTITES.CONFIRM' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+</div>

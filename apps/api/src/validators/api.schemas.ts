@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { Role, StatutDemandeRgpd, TypeDemandeRgpd } from '../config/generated/client/client';
+import {
+  NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
+} from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
 const phone = z.string().trim().min(6).max(30);
@@ -675,6 +677,30 @@ const booleenDeRequete = z
   .enum(['true', 'false'])
   .transform((v) => v === 'true')
   .optional();
+
+// --- Identito-vigilance (EF-01-04/10) -------------------------------
+//
+// Le numero de piece et le lieu de naissance sont exiges : ce sont eux que la
+// contrainte SQL reclame pour une identite verifiee. Les redire ici permet de
+// refuser tot, avec un message utile, plutot que de laisser remonter une
+// violation de contrainte.
+export const verifierIdentiteSchema = z.object({
+  typePiece: z.nativeEnum(TypePieceIdentite),
+  numeroPiece: z.string().trim().min(3).max(60),
+  lieuNaissance: z.string().trim().min(2).max(120),
+  nomMere: z.string().trim().min(2).max(120).optional(),
+  remplacerPiece: z.boolean().optional(),
+}).strict();
+
+export const noterTraitsSchema = z.object({
+  lieuNaissance: z.string().trim().min(2).max(120).optional(),
+  nomMere: z.string().trim().min(2).max(120).optional(),
+}).strict();
+
+export const filtreIdentitesSchema = z.object({
+  q: z.string().trim().min(1).max(100).optional(),
+  niveau: z.nativeEnum(NiveauIdentite).optional(),
+}).strict();
 
 // --- Demandes d exercice de droits (EF-12-09) -----------------------
 //

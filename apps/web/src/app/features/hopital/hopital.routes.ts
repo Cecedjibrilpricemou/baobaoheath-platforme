@@ -20,6 +20,7 @@ export const HOPITAL_ROUTES: Routes = [
         loadComponent: () =>
           import('./presences/presences.component').then(m => m.PresencesComponent)
       },
+      { path: 'identites', loadComponent: () => import('./identites/identites.component').then(m => m.IdentitesComponent) },
       { path: 'episodes', loadComponent: () => import('./episodes/episodes.component').then(m => m.EpisodesComponent) },
       { path: 'episodes/:id', loadComponent: () => import('./episode-detail/episode-detail.component').then(m => m.EpisodeDetailComponent) },
       { path: 'alertes', loadComponent: () => import('./alertes/alertes.component').then(m => m.AlertesComponent) },

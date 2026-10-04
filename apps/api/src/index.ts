@@ -37,6 +37,7 @@ import referentielRoutes from './routes/referentiel.routes';
 import journalRoutes from './routes/journal.routes';
 import compteRoutes from './routes/compte.routes';
 import rgpdRoutes from './routes/rgpd.routes';
+import identiteRoutes from './routes/identite.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -212,6 +213,7 @@ app.use('/api/v1/referentiels', referentielRoutes);
 app.use('/api/v1/journal', journalRoutes);
 app.use('/api/v1/comptes', compteRoutes);
 app.use('/api/v1/demandes-rgpd', rgpdRoutes);
+app.use('/api/v1/identites', identiteRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

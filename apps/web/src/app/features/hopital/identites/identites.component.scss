@@ -1,0 +1,197 @@
+// Vérification d'identité au comptoir (EF-01-04/10).
+//
+// Jetons vérifiés un à un avant d'être écrits.
+
+// La phrase qui évite une faute grave : un agent ne doit jamais croire qu'il
+// peut refuser quelqu'un sans papiers.
+.identites-avis {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  border-radius: var(--bb-radius-sm);
+  border: 1px solid var(--bb-border-light);
+  background: var(--bb-surface-1);
+  color: var(--bb-text-secondary);
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; color: var(--bb-primary); }
+}
+
+.identites-filtres {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.9rem 1.15rem 0.9rem;
+
+  &__grille {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.4rem 0.8rem;
+  }
+
+  // `mat-card` est en flex colonne : sans `align-self`, le bouton s'étire.
+  > button { align-self: flex-start; }
+}
+
+.identites-succes,
+.identites-erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8125rem;
+  border-radius: var(--bb-radius-sm);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+.identites-succes {
+  background: var(--bb-success-bg);
+  border: 1px solid var(--bb-success-border);
+  color: var(--bb-primary);
+}
+
+.identites-erreur {
+  background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+  color: var(--bb-danger);
+}
+
+.identites-table-wrap { overflow-x: auto; margin-top: 1rem; }
+
+.identites-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--bb-border-light);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bb-text-muted);
+    white-space: nowrap;
+  }
+
+  &__nom { display: block; font-weight: 600; color: var(--bb-text-primary); }
+  &__sous { display: block; font-size: 11.5px; color: var(--bb-text-muted); }
+  &__trait { display: block; color: var(--bb-text-secondary); }
+  &__actions { text-align: right; white-space: nowrap; }
+
+  // Ce qui manque, pour que l'agent sache quoi demander au patient.
+  &__manque {
+    display: block;
+    margin-top: 2px;
+    font-size: 11.5px;
+    font-style: italic;
+    color: var(--bb-warning);
+  }
+
+  &__niveau {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+
+    &--ok { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--provisoire {
+      background: color-mix(in srgb, var(--bb-warning) 16%, transparent);
+      color: var(--bb-warning);
+    }
+  }
+
+  &__piece,
+  &__par,
+  &__consequence {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--bb-text-muted);
+  }
+
+  // Les provisoires ressortent : ce sont eux qu'un agent a à traiter.
+  &__row--provisoire { background: color-mix(in srgb, var(--bb-warning) 5%, transparent); }
+}
+
+// ── La vérification ─────────────────────────────────────────────────
+.identites-boite {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.45);
+
+  &__carte {
+    width: min(640px, 100%);
+    padding: 1.25rem 1.4rem 1.1rem;
+
+    h2 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+  }
+
+  // L'agent déclare avoir vu une pièce : ce n'est pas un formulaire de plus.
+  &__engagement {
+    margin: 0 0 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--bb-text-secondary);
+  }
+
+  &__deja {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    border-radius: var(--bb-radius-sm);
+    background: color-mix(in srgb, var(--bb-warning) 12%, transparent);
+    color: var(--bb-text-primary);
+
+    mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; color: var(--bb-warning); }
+  }
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.4rem 0.9rem;
+    margin-top: 0.9rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+  }
+}
+
+.bb-empty {
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: var(--bb-text-muted);
+
+  mat-icon { font-size: 26px; width: 26px; height: 26px; opacity: 0.45; }
+  p { font-size: 0.8125rem; margin: 0; }
+}

@@ -7,6 +7,9 @@ import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
   DemandeRendezVousView,
+  IdentitePatientView,
+  NiveauIdentite,
+  VerifierIdentiteDto,
   PresenceDuJourView,
   CreateDemandeAnalyseDto,
   CreateEpisodeDto,
@@ -119,5 +122,21 @@ export class HopitalService {
   // ── Patient ──────────────────────────────────────────────────────
   mesEpisodes(): Observable<ApiResponse<EpisodePatientView[]>> {
     return this.api.get<ApiResponse<EpisodePatientView[]>>('/patients/me/episodes');
+  }
+
+  // --- Identito-vigilance (EF-01-04/10) ---------------------------------
+  //
+  // Verifier une identite ouvre le tiers payant. Cela ne conditionne pas les
+  // soins : un patient a l'identite provisoire est recu et suivi normalement.
+
+  identites(filtres: { q?: string; niveau?: NiveauIdentite }): Observable<ApiResponse<IdentitePatientView[]>> {
+    const params: Record<string, string> = {};
+    if (filtres.q) params['q'] = filtres.q;
+    if (filtres.niveau) params['niveau'] = filtres.niveau;
+    return this.api.get<ApiResponse<IdentitePatientView[]>>('/identites', params);
+  }
+
+  verifierIdentite(id: string, dto: VerifierIdentiteDto): Observable<ApiResponse<IdentitePatientView>> {
+    return this.api.post<ApiResponse<IdentitePatientView>>(`/identites/${id}/verifier`, dto);
   }
 }

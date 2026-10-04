@@ -72,6 +72,7 @@ const journal = require('../src/routes/journal.routes').default as { stack: Couc
 const comptes = require('../src/routes/compte.routes').default as { stack: Couche[] };
 const rgpd = require('../src/routes/rgpd.routes').default as { stack: Couche[] };
 const privacy = require('../src/routes/privacy.routes').default as { stack: Couche[] };
+const identites = require('../src/routes/identite.routes').default as { stack: Couche[] };
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -372,5 +373,32 @@ describe('les demandes RGPD : deposer est un droit, traiter une responsabilite',
     expect(rolesPour(rgpd, 'get', '/')).not.toBeNull();
     expect(rolesPour(rgpd, 'post', '/:id/prendre-en-charge')).not.toBeNull();
     expect(rolesPour(rgpd, 'post', '/:id/repondre')).not.toBeNull();
+  });
+});
+
+
+// -- Verification d identite au comptoir (EF-01-04/10) ---------------
+describe('la verification d identite est le geste de celui qui recoit', () => {
+  it.each([
+    ['get', '/'],
+    ['post', '/:id/verifier'],
+    ['post', '/:id/traits'],
+  ])('%s %s est ouverte a l accueil et a l admin de structure', (methode, chemin) => {
+    expect(rolesPour(identites, methode, chemin)).toEqual(['AGENT_ACCUEIL', 'ADMIN_STRUCTURE']);
+  });
+
+  // Ce n est ni un acte medical ni un acte d administration nationale :
+  // c est celui qui recoit le patient et regarde sa piece.
+  it.each(['MEDECIN', 'PHARMACIEN', 'TECHNICIEN_LABO', 'PATIENT', 'ASC', 'ADMIN_NATIONAL'] as const)(
+    'ferme la verification a %s',
+    (role) => {
+      expect(rolesPour(identites, 'post', '/:id/verifier')).not.toContain(role);
+    }
+  );
+
+  it('les trois routes existent bien', () => {
+    expect(rolesPour(identites, 'get', '/')).not.toBeNull();
+    expect(rolesPour(identites, 'post', '/:id/verifier')).not.toBeNull();
+    expect(rolesPour(identites, 'post', '/:id/traits')).not.toBeNull();
   });
 });
