@@ -24,6 +24,11 @@ export const ADMIN_ROUTES: Routes = [
           import('./export/export.component').then(m => m.ExportComponent)
       },
       {
+        path: 'demandes-rgpd',
+        loadComponent: () =>
+          import('./demandes-rgpd/demandes-rgpd.component').then(m => m.DemandesRgpdComponent)
+      },
+      {
         path: 'comptes',
         loadComponent: () =>
           import('./comptes/comptes.component').then(m => m.ComptesComponent)

@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import type {
   AccesDossierView,
   ConsentementView,
+  DemandeRgpdView,
+  DeposerDemandeRgpdDto,
   PaginationMeta,
   SetConsentementDto,
 } from '@baobaoheath/shared-types';
@@ -33,5 +35,18 @@ export class PrivacyService {
       limit: limit.toString(),
       ...(parTiers ? { parTiers: 'true' } : {}),
     });
+  }
+
+  // --- Demandes d'exercice de droits (EF-12-09) -------------------------
+  //
+  // Deposer une demande est un droit. Rien n'est execute automatiquement :
+  // l'administration nationale traite, et une reponse ecrite est obligatoire.
+
+  mesDemandesRgpd(): Observable<ApiResponse<DemandeRgpdView[]>> {
+    return this.api.get<ApiResponse<DemandeRgpdView[]>>('/privacy/me/demandes-rgpd');
+  }
+
+  deposerDemandeRgpd(dto: DeposerDemandeRgpdDto): Observable<ApiResponse<DemandeRgpdView>> {
+    return this.api.post<ApiResponse<DemandeRgpdView>>('/privacy/me/demandes-rgpd', dto);
   }
 }

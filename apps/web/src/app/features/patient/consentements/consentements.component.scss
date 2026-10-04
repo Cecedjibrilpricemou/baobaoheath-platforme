@@ -235,3 +235,139 @@
   .consents-header { padding: 20px; }
   .consent-row { flex-wrap: wrap; }
 }
+
+// ── Mes droits (EF-12-09) ───────────────────────────────────────────
+//
+// Une demande RGPD n'est pas un réglage : elle part à quelqu'un, qui répond.
+// La carte doit donc se lire comme un courrier, pas comme un interrupteur.
+.droits {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem 1.15rem;
+
+  &__tete {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+
+    h2 { margin: 0; font-size: 1rem; }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--bb-primary); }
+  }
+
+  &__avis {
+    margin: 0 0 1rem;
+    font-size: 0.8125rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__formulaire {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+
+    mat-form-field { width: 100%; max-width: 420px; }
+    // `mat-card` est en flex colonne : sans `align-self`, le bouton s'étire
+    // sur toute la largeur. Déjà payé sur l'écran des comptes.
+    button { align-self: flex-start; margin-top: 0.35rem; }
+  }
+
+  &__precision { max-width: 100% !important; }
+
+  // Ce que la demande veut dire, avant de l'envoyer. Pour l'effacement
+  // surtout : un dossier de soins ne se supprime pas, il s'anonymise.
+  &__explication {
+    margin: 0 0 0.6rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+  }
+
+  &__succes,
+  &__erreur {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8125rem;
+    border-radius: var(--bb-radius-sm);
+
+    mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; }
+  }
+
+  &__succes {
+    background: var(--bb-success-bg);
+    border: 1px solid var(--bb-success-border);
+    color: var(--bb-primary);
+  }
+
+  &__erreur {
+    background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+    color: var(--bb-danger);
+  }
+
+  &__liste {
+    list-style: none;
+    margin: 1.1rem 0 0;
+    padding: 0;
+
+    li {
+      padding: 0.6rem 0;
+      border-top: 1px solid var(--bb-border-light);
+      font-size: 13px;
+    }
+  }
+
+  &__ligne {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  &__type { font-weight: 600; color: var(--bb-text-primary); }
+  &__date { margin-left: auto; color: var(--bb-text-muted); font-size: 11.5px; }
+
+  &__statut {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+
+    &--SATISFAITE { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--REFUSEE { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); color: var(--bb-danger); }
+  }
+
+  &__delai {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+
+    &--retard { color: var(--bb-warning); font-weight: 600; }
+  }
+
+  // La réponse écrite, en entier : c'est elle qui rend la décision
+  // contestable. La tronquer reviendrait à la masquer.
+  &__reponse {
+    margin: 0.5rem 0 0;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    border-left: 2px solid var(--bb-border-light);
+    color: var(--bb-text-secondary);
+  }
+
+  &__par {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--bb-text-muted);
+  }
+}

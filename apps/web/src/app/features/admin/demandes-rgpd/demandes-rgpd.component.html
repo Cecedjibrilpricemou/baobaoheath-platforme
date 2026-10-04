@@ -1,0 +1,175 @@
+<div class="bb-rgpd">
+
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-file-edit" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.RGPD.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.RGPD.SUBTITLE' | translate:{ jours: delaiJours() } }}</p>
+    </div>
+  </header>
+
+  <!-- Le retard d'abord : c'est l'engagement pris envers le patient qui n'est
+       pas tenu, et c'est ce qu'un responsable doit voir en arrivant. -->
+  @if (enRetard() > 0) {
+    <div class="rgpd-retard" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ 'ADMIN.RGPD.LATE_BANNER' | translate:{ n: enRetard() } }}</span>
+    </div>
+  }
+
+  <mat-card class="rgpd-filtres">
+    <div class="rgpd-filtres__grille">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.RGPD.STATE' | translate }}</mat-label>
+        <mat-select [ngModel]="statut()" (ngModelChange)="statut.set($event); charger()">
+          <mat-option value="">{{ 'ADMIN.RGPD.ALL_STATES' | translate }}</mat-option>
+          @for (s of statuts; track s) {
+            <mat-option [value]="s">{{ 'ADMIN.RGPD.STATUT_' + s | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.RGPD.TYPE' | translate }}</mat-label>
+        <mat-select [ngModel]="type()" (ngModelChange)="type.set($event); charger()">
+          <mat-option value="">{{ 'ADMIN.RGPD.ALL_TYPES' | translate }}</mat-option>
+          @for (t of types; track t) {
+            <mat-option [value]="t">{{ 'ADMIN.RGPD.TYPE_' + t | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <p class="rgpd-filtres__compte">
+      {{ 'ADMIN.RGPD.COUNT' | translate:{ ouvertes: ouvertes(), total: demandes().length } }}
+    </p>
+  </mat-card>
+
+  @if (succes()) {
+    <div class="rgpd-succes" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+  @if (erreur() && !cible()) {
+    <div class="rgpd-erreur" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  @if (chargement()) {
+    <div class="bb-empty" role="status">
+      <mat-spinner diameter="28"></mat-spinner>
+      <p>{{ 'COMMON.LOADING' | translate }}</p>
+    </div>
+  } @else if (demandes().length === 0) {
+    <div class="bb-empty">
+      <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+      <p>{{ 'ADMIN.RGPD.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    <div class="rgpd-liste">
+      @for (d of demandes(); track d.id) {
+        <mat-card class="rgpd-demande" [class.rgpd-demande--retard]="d.enRetard">
+          <div class="rgpd-demande__tete">
+            <span class="rgpd-demande__type">{{ 'ADMIN.RGPD.TYPE_' + d.type | translate }}</span>
+            <span class="rgpd-demande__statut" [class]="'rgpd-demande__statut--' + d.statut">
+              {{ 'ADMIN.RGPD.STATUT_' + d.statut | translate }}
+            </span>
+            <span class="rgpd-demande__qui">{{ d.demandeur }}</span>
+            <span class="rgpd-demande__date">{{ d.creeLe | date:'shortDate' }}</span>
+          </div>
+
+          @if (d.joursRestants !== null) {
+            <span class="rgpd-demande__delai" [class.rgpd-demande__delai--retard]="d.enRetard">
+              {{ (d.enRetard ? 'ADMIN.RGPD.LATE' : 'ADMIN.RGPD.DUE') | translate:{ jours: d.joursRestants } }}
+            </span>
+          }
+
+          <!-- Ce que le patient demande, dans ses mots. Sans cela on ne sait
+               pas quoi traiter — pour une rectification surtout. -->
+          @if (d.precision) {
+            <p class="rgpd-demande__precision">{{ d.precision }}</p>
+          }
+
+          @if (d.reponse) {
+            <p class="rgpd-demande__reponse">{{ d.reponse }}</p>
+            <span class="rgpd-demande__par">
+              {{ 'ADMIN.RGPD.ANSWERED_BY' | translate:{ qui: d.traitePar ?? '—' } }}
+              · {{ d.traiteLe | date:'short' }}
+            </span>
+          }
+
+          @if (d.statut === 'RECUE' || d.statut === 'EN_COURS') {
+            <div class="rgpd-demande__actions">
+              @if (d.statut === 'RECUE') {
+                <button mat-stroked-button (click)="prendreEnCharge(d)" [disabled]="enCours()">
+                  {{ 'ADMIN.RGPD.TAKE' | translate }}
+                </button>
+              }
+              <button mat-stroked-button (click)="ouvrirReponse(d, true)" [disabled]="enCours()">
+                {{ 'ADMIN.RGPD.GRANT' | translate }}
+              </button>
+              <button mat-stroked-button color="warn" (click)="ouvrirReponse(d, false)" [disabled]="enCours()">
+                {{ 'ADMIN.RGPD.REFUSE' | translate }}
+              </button>
+            </div>
+          }
+        </mat-card>
+      }
+    </div>
+  }
+
+  <!-- La réponse. On ne close pas une demande d'un clic : c'est elle qui
+       engage la plateforme vis-à-vis du patient. -->
+  @if (cible(); as d) {
+    <div class="rgpd-boite" role="dialog" aria-modal="true">
+      <mat-card class="rgpd-boite__carte">
+        <h2>
+          {{ (satisfaite() ? 'ADMIN.RGPD.CONFIRM_GRANT' : 'ADMIN.RGPD.CONFIRM_REFUSE')
+             | translate:{ type: ('ADMIN.RGPD.TYPE_' + d.type | translate), qui: d.demandeur } }}
+        </h2>
+
+        <!-- Un effacement n'est pas une suppression. Le rappel est ici parce
+             que c'est au moment de répondre qu'il sert. -->
+        @if (rappelEffacement()) {
+          <p class="rgpd-boite__rappel">
+            <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+            <span>{{ 'ADMIN.RGPD.ERASURE_NOTE' | translate }}</span>
+          </p>
+        }
+
+        @if (d.precision) {
+          <p class="rgpd-boite__demande">
+            <strong>{{ 'ADMIN.RGPD.PATIENT_SAYS' | translate }}</strong> {{ d.precision }}
+          </p>
+        }
+
+        <mat-form-field appearance="outline" class="rgpd-boite__reponse">
+          <mat-label>{{ 'ADMIN.RGPD.ANSWER' | translate }}</mat-label>
+          <textarea matInput rows="5" [ngModel]="reponse()" (ngModelChange)="reponse.set($event)"
+                    [placeholder]="'ADMIN.RGPD.ANSWER_PLACEHOLDER' | translate"></textarea>
+          <mat-hint>{{ 'ADMIN.RGPD.ANSWER_HINT' | translate:{ min: reponseMin } }}</mat-hint>
+        </mat-form-field>
+
+        @if (erreur()) {
+          <div class="rgpd-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreur() }}</span>
+          </div>
+        }
+
+        <div class="rgpd-boite__actions">
+          <button mat-stroked-button (click)="annuler()" [disabled]="enCours()">
+            {{ 'ADMIN.RGPD.CANCEL' | translate }}
+          </button>
+          <button mat-flat-button [color]="satisfaite() ? 'primary' : 'warn'"
+                  (click)="confirmerReponse()" [disabled]="!reponseValide() || enCours()">
+            {{ (satisfaite() ? 'ADMIN.RGPD.SEND_GRANT' : 'ADMIN.RGPD.SEND_REFUSE') | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+</div>

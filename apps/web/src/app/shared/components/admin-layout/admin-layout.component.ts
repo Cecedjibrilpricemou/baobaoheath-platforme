@@ -82,6 +82,7 @@ export class AdminLayoutComponent {
     { labelKey: 'ADMIN.NAV_STRUCTURES', icon: 'pi-building',  route: '/admin/structures' },
     { labelKey: 'ADMIN.NAV_EXPORT',     icon: 'pi-download',  route: '/admin/export'     },
     { labelKey: 'ADMIN.NAV_COMPTES',    icon: 'pi-users',     route: '/admin/comptes'    },
+    { labelKey: 'ADMIN.NAV_RGPD',       icon: 'pi-file-edit', route: '/admin/demandes-rgpd' },
     { labelKey: 'ADMIN.NAV_JOURNAL',    icon: 'pi-shield',    route: '/admin/journal'    },
     { labelKey: 'ADMIN.NAV_SETTINGS',   icon: 'pi-cog',       route: '/admin/settings'   }
   ];

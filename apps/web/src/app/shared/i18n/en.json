@@ -440,43 +440,8 @@
     },
     "NAV_CONSENTS": "My consents",
     "CONSENTS": {
-      "TITLE": "Privacy & consents",
-      "SUBTITLE": "Decide who can access your record and for what purpose, and see who opened it.",
-      "SECTION_TITLE": "My permissions",
-      "NOTE": "Withdrawing a consent takes effect immediately for new access requests. Your CHW and treating doctor keep the access needed for your care.",
-      "NOT_SET": "No choice recorded",
-      "GRANTED": "Consent granted",
-      "REVOKED": "Consent withdrawn",
-      "GRANTED_ON": "Granted on {{date}}",
-      "REVOKED_ON": "Withdrawn on {{date}}",
-      "ERR_LOAD": "Could not load your consents",
-      "ERR_SAVE": "Could not save your choice",
-      "ACCESS_TITLE": "Who accessed my record",
-      "ACCESS_EMPTY": "No access to your record has been recorded",
-      "ACCESS_WHEN": "When",
-      "ACCESS_WHO": "Who",
-      "ACCESS_WHAT": "Action",
-      "SCOPE": {
-        "DOSSIER_MEDICAL": {
-          "TITLE": "Access to my medical record",
-          "DESC": "Allows health professionals from other facilities to view your consultations, diagnoses and prescriptions."
-        },
-        "RAPPELS_SMS": {
-          "TITLE": "SMS reminders",
-          "DESC": "Receive appointment and vaccination reminders on your phone."
-        },
-        "FHIR_EXPORT": {
-          "TITLE": "Export of my record (FHIR)",
-          "DESC": "Allow your record to be exported in the FHIR standard format, e.g. for a transfer to another facility."
-        },
-        "RECHERCHE_ANONYMISEE": {
-          "TITLE": "Anonymised research",
-          "DESC": "Contribute, without any identifying data, to public health statistics and research."
-        }
-      },
-      "ACCESS_THIRD_PARTY_ONLY": "Show only accesses by someone else",
       "ACCESS_BY_ME": "You",
-      "ACCESS_REFUSED": "Access denied",
+      "ACCESS_EMPTY": "No access to your record has been recorded",
       "ACCESS_LABEL": {
         "CREATE": "Information was added to {{objet}}",
         "CREATE_BY_ME": "You added information to {{objet}}",
@@ -505,7 +470,71 @@
         "PHARMACY_VISIT": "your pharmacy visit",
         "PRIVACY_SETTINGS": "your privacy settings",
         "RECORD": "your record"
-      }
+      },
+      "ACCESS_REFUSED": "Access denied",
+      "ACCESS_THIRD_PARTY_ONLY": "Show only accesses by someone else",
+      "ACCESS_TITLE": "Who accessed my record",
+      "ACCESS_WHAT": "Action",
+      "ACCESS_WHEN": "When",
+      "ACCESS_WHO": "Who",
+      "ERR_LOAD": "Could not load your consents",
+      "ERR_SAVE": "Could not save your choice",
+      "GRANTED": "Consent granted",
+      "GRANTED_ON": "Granted on {{date}}",
+      "NOTE": "Withdrawing a consent takes effect immediately for new access requests. Your CHW and treating doctor keep the access needed for your care.",
+      "NOT_SET": "No choice recorded",
+      "REVOKED": "Consent withdrawn",
+      "REVOKED_ON": "Withdrawn on {{date}}",
+      "RGPD_BY": "Answered by {{qui}}",
+      "RGPD_DUE": "Answer expected within {{jours}} day(s)",
+      "RGPD_ERR": "Your request could not be sent.",
+      "RGPD_EXPLAIN_ACCES": "You will receive a list of what the platform holds about you. You can already see who accessed your record, further down this page.",
+      "RGPD_EXPLAIN_EFFACEMENT": "Before you send this: a care record cannot be deleted. The law requires it to be kept for a set period, and the record of who accessed it must remain — that is what protects you. What is possible is to anonymise your identity: your name disappears, the medical record stays but can no longer be linked to you. The administration will tell you what it can do in your case.",
+      "RGPD_EXPLAIN_LIMITATION": "The use in question is paused while your challenge is examined.",
+      "RGPD_EXPLAIN_OPPOSITION": "Say which use you object to. Some processing is necessary for your care and cannot be stopped; the administration will tell you.",
+      "RGPD_EXPLAIN_PORTABILITE": "You will receive your data in a reusable format that you can hand to another facility.",
+      "RGPD_EXPLAIN_RECTIFICATION": "Say precisely what is wrong and what should replace it. Clinical data is not corrected without the clinician who recorded it.",
+      "RGPD_LATE": "The answer is overdue",
+      "RGPD_NOTE": "You can ask to see, correct, retrieve or erase your data. Your request goes to the platform administration, which answers you in writing within 30 days. Nothing happens automatically.",
+      "RGPD_PRECISION": "Details (optional)",
+      "RGPD_PRECISION_HINT": "Write it in your own words. The person handling your request will read it.",
+      "RGPD_PRECISION_REQUIRED": "What needs correcting?",
+      "RGPD_PRECISION_WHY": "At least 10 characters: without this, we cannot tell what to correct.",
+      "RGPD_SEND": "Send my request",
+      "RGPD_SENT": "Request recorded. You will receive an answer by {{date}} at the latest.",
+      "RGPD_STATUT_EN_COURS": "In progress",
+      "RGPD_STATUT_RECUE": "Received",
+      "RGPD_STATUT_REFUSEE": "Refused",
+      "RGPD_STATUT_SATISFAITE": "Granted",
+      "RGPD_TITLE": "My rights over my data",
+      "RGPD_TYPE": "What would you like to request?",
+      "RGPD_TYPE_ACCES": "See what you hold about me",
+      "RGPD_TYPE_EFFACEMENT": "Erase my data",
+      "RGPD_TYPE_LIMITATION": "Pause a use while I challenge it",
+      "RGPD_TYPE_OPPOSITION": "Object to a use of my data",
+      "RGPD_TYPE_PORTABILITE": "Receive my data as a file",
+      "RGPD_TYPE_RECTIFICATION": "Correct inaccurate information",
+      "SCOPE": {
+        "DOSSIER_MEDICAL": {
+          "TITLE": "Access to my medical record",
+          "DESC": "Allows health professionals from other facilities to view your consultations, diagnoses and prescriptions."
+        },
+        "RAPPELS_SMS": {
+          "TITLE": "SMS reminders",
+          "DESC": "Receive appointment and vaccination reminders on your phone."
+        },
+        "FHIR_EXPORT": {
+          "TITLE": "Export of my record (FHIR)",
+          "DESC": "Allow your record to be exported in the FHIR standard format, e.g. for a transfer to another facility."
+        },
+        "RECHERCHE_ANONYMISEE": {
+          "TITLE": "Anonymised research",
+          "DESC": "Contribute, without any identifying data, to public health statistics and research."
+        }
+      },
+      "SECTION_TITLE": "My permissions",
+      "SUBTITLE": "Decide who can access your record and for what purpose, and see who opened it.",
+      "TITLE": "Privacy & consents"
     },
     "PARCOURS": {
       "NAV": "My care path",
@@ -1430,7 +1459,50 @@
       "SUSPENDU": "{{nom}}'s account closed. {{sessions}} session(s) and {{sockets}} live connection(s) cut.",
       "TITLE": "Accounts"
     },
-    "NAV_COMPTES": "Accounts"
+    "NAV_COMPTES": "Accounts",
+    "RGPD": {
+      "ALL_STATES": "All states",
+      "ALL_TYPES": "All types",
+      "ANSWER": "Your answer to the patient",
+      "ANSWERED_BY": "Answered by {{qui}}",
+      "ANSWER_HINT": "At least {{min}} characters — a refusal that is not explained cannot be challenged.",
+      "ANSWER_PLACEHOLDER": "The patient will read this answer as written. Say what was done, or why the request cannot be granted.",
+      "CANCEL": "Cancel",
+      "CONFIRM_GRANT": "Grant {{qui}}'s {{type}} request",
+      "CONFIRM_REFUSE": "Refuse {{qui}}'s {{type}} request",
+      "COUNT": "{{ouvertes}} open of {{total}} shown",
+      "DUE": "Answer within {{jours}} day(s)",
+      "EMPTY": "No request matches these filters.",
+      "ERASURE_NOTE": "A care record cannot be deleted: the law requires it to be kept, and the record of who accessed it must remain. What is possible is to anonymise the patient's identity. Tell them precisely what you are doing, and what you cannot do.",
+      "ERR_CHARGEMENT": "Requests could not be loaded.",
+      "ERR_PRISE": "Taking ownership failed.",
+      "ERR_REPONSE": "The answer could not be saved.",
+      "GRANT": "Grant",
+      "LATE": "{{jours}} day(s) overdue",
+      "LATE_BANNER": "{{n}} request(s) past their answer deadline.",
+      "PATIENT_SAYS": "The patient writes:",
+      "REFUSE": "Refuse",
+      "REFUSEE": "{{demandeur}}'s request refused, with its reason.",
+      "SATISFAITE": "{{demandeur}}'s request granted.",
+      "SEND_GRANT": "Save and close",
+      "SEND_REFUSE": "Refuse and close",
+      "STATE": "State",
+      "STATUT_EN_COURS": "In progress",
+      "STATUT_RECUE": "Received",
+      "STATUT_REFUSEE": "Refused",
+      "STATUT_SATISFAITE": "Granted",
+      "SUBTITLE": "Patients can ask to see, correct, retrieve or erase their data. Each request calls for a written answer within {{jours}} days.",
+      "TAKE": "Take ownership",
+      "TITLE": "Data rights requests",
+      "TYPE": "Type",
+      "TYPE_ACCES": "Data access",
+      "TYPE_EFFACEMENT": "Erasure",
+      "TYPE_LIMITATION": "Restriction",
+      "TYPE_OPPOSITION": "Objection",
+      "TYPE_PORTABILITE": "Portability",
+      "TYPE_RECTIFICATION": "Rectification"
+    },
+    "NAV_RGPD": "Data requests"
   },
   "PHARMACIEN": {
     "ROLE": "Pharmacist",

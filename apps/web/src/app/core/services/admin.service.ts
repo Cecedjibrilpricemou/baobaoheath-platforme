@@ -2,8 +2,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import type {
-  AnomalieView, CompteView, FiltreJournalDto, PageJournalView, Role,
-  SeuilsAnomalies, SuspensionView,
+  AnomalieView, CompteView, DemandeRgpdView, FileDemandesView, FiltreJournalDto,
+  PageJournalView, Role, SeuilsAnomalies, StatutDemandeRgpd, SuspensionView,
+  TypeDemandeRgpd,
 } from '@baobaoheath/shared-types';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
@@ -148,6 +149,25 @@ export class AdminService {
   }
 
   // --- Anomalies d acces (EF-12-06) -------------------------------------
+
+  // --- Demandes d exercice de droits (EF-12-09) -------------------------
+  //
+  // Rien ne s execute automatiquement : ces routes enregistrent une decision
+  // humaine, et la reponse ecrite est obligatoire des que la demande est close.
+
+  demandesRgpd(filtres: { statut?: StatutDemandeRgpd; type?: TypeDemandeRgpd }):
+    Observable<ApiResponse<FileDemandesView>> {
+    return this.api.get<ApiResponse<FileDemandesView>>('/demandes-rgpd', enParametres(filtres));
+  }
+
+  prendreEnChargeDemande(id: string): Observable<ApiResponse<DemandeRgpdView>> {
+    return this.api.post<ApiResponse<DemandeRgpdView>>(`/demandes-rgpd/${id}/prendre-en-charge`, {});
+  }
+
+  repondreDemande(id: string, satisfaite: boolean, reponse: string):
+    Observable<ApiResponse<DemandeRgpdView>> {
+    return this.api.post<ApiResponse<DemandeRgpdView>>(`/demandes-rgpd/${id}/repondre`, { satisfaite, reponse });
+  }
 
   anomalies(fenetreHeures?: number): Observable<
     ApiResponse<{ anomalies: AnomalieView[]; seuils: SeuilsAnomalies; depuis: string }>

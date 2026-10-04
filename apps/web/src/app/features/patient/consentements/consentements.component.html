@@ -56,6 +56,100 @@
     </mat-card>
 
     <!-- ── QUI A ACCÉDÉ À MON DOSSIER ────────────────────────────── -->
+    <!-- Mes droits (EF-12-09).
+         Rien ne s'exécute automatiquement : l'administration répond par écrit,
+         dans un délai annoncé. L'écran le dit, pour qu'un patient ne clique pas
+         « effacement » en croyant que son dossier disparaîtra dans la minute. -->
+    <mat-card class="droits">
+      <div class="droits__tete">
+        <mat-icon fontSet="pi" fontIcon="pi-file-edit" aria-hidden="true"></mat-icon>
+        <h2>{{ 'PATIENT.CONSENTS.RGPD_TITLE' | translate }}</h2>
+      </div>
+      <p class="droits__avis">{{ 'PATIENT.CONSENTS.RGPD_NOTE' | translate }}</p>
+
+      <div class="droits__formulaire">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'PATIENT.CONSENTS.RGPD_TYPE' | translate }}</mat-label>
+          <mat-select [ngModel]="typeChoisi()" (ngModelChange)="typeChoisi.set($event)">
+            @for (t of typesDemande; track t) {
+              <mat-option [value]="t">{{ 'PATIENT.CONSENTS.RGPD_TYPE_' + t | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (typeChoisi()) {
+          <!-- Ce que ce type de demande veut dire, avant de l'envoyer. Pour
+               l'effacement en particulier : un dossier de soins ne se supprime
+               pas, il s'anonymise. -->
+          <p class="droits__explication">
+            {{ 'PATIENT.CONSENTS.RGPD_EXPLAIN_' + typeChoisi() | translate }}
+          </p>
+
+          <mat-form-field appearance="outline" class="droits__precision">
+            <mat-label>
+              {{ (precisionRequise() ? 'PATIENT.CONSENTS.RGPD_PRECISION_REQUIRED'
+                                     : 'PATIENT.CONSENTS.RGPD_PRECISION') | translate }}
+            </mat-label>
+            <textarea matInput rows="3" [ngModel]="precision()" (ngModelChange)="precision.set($event)"
+                      [placeholder]="'PATIENT.CONSENTS.RGPD_PRECISION_HINT' | translate"></textarea>
+            @if (precisionRequise()) {
+              <mat-hint>{{ 'PATIENT.CONSENTS.RGPD_PRECISION_WHY' | translate }}</mat-hint>
+            }
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" (click)="envoyerDemande()" [disabled]="!peutEnvoyer()">
+            {{ 'PATIENT.CONSENTS.RGPD_SEND' | translate }}
+          </button>
+        }
+      </div>
+
+      @if (succesDemande()) {
+        <div class="droits__succes" role="status">
+          <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+          <span>{{ succesDemande() }}</span>
+        </div>
+      }
+      @if (erreurDemande()) {
+        <div class="droits__erreur" role="alert">
+          <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+          <span>{{ erreurDemande() }}</span>
+        </div>
+      }
+
+      @if (demandesChargees() && demandes().length > 0) {
+        <ul class="droits__liste">
+          @for (d of demandes(); track d.id) {
+            <li>
+              <div class="droits__ligne">
+                <span class="droits__type">{{ 'PATIENT.CONSENTS.RGPD_TYPE_' + d.type | translate }}</span>
+                <span class="droits__statut" [class]="'droits__statut--' + d.statut">
+                  {{ 'PATIENT.CONSENTS.RGPD_STATUT_' + d.statut | translate }}
+                </span>
+                <span class="droits__date">{{ d.creeLe | date:'shortDate' }}</span>
+              </div>
+              @if (d.joursRestants !== null) {
+                <span class="droits__delai" [class.droits__delai--retard]="d.enRetard">
+                  {{ (d.enRetard ? 'PATIENT.CONSENTS.RGPD_LATE' : 'PATIENT.CONSENTS.RGPD_DUE')
+                     | translate:{ jours: d.joursRestants } }}
+                </span>
+              }
+              <!-- La réponse écrite : c'est elle qui rend la décision
+                   contestable, donc elle s'affiche en entier. -->
+              @if (d.reponse) {
+                <p class="droits__reponse">{{ d.reponse }}</p>
+                @if (d.traitePar) {
+                  <span class="droits__par">
+                    {{ 'PATIENT.CONSENTS.RGPD_BY' | translate:{ qui: d.traitePar } }}
+                    · {{ d.traiteLe | date:'short' }}
+                  </span>
+                }
+              }
+            </li>
+          }
+        </ul>
+      }
+    </mat-card>
+
     <mat-card appearance="outlined" class="section-card">
       <div class="section-title">
         <mat-icon fontSet="pi" fontIcon="pi-eye" aria-hidden="true"></mat-icon>

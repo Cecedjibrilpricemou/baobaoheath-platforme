@@ -1,14 +1,21 @@
 // features/patient/consentements/consentements.component.ts
 // Le patient decide qui peut lire son dossier et a quelles fins (scopes de
 // ConsentementPatient), et voit qui y a accede (journal d'audit).
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ToastrService } from 'ngx-toastr';
-import type { AccesDossierView, ConsentScope, ConsentementView } from '@baobaoheath/shared-types';
+import type {
+  AccesDossierView, ConsentScope, ConsentementView, DemandeRgpdView, TypeDemandeRgpd,
+} from '@baobaoheath/shared-types';
 import { PrivacyService } from '../../../core/services/privacy.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -34,8 +41,9 @@ const SCOPES: { scope: ConsentScope; icon: string }[] = [
   selector: 'app-consentements',
   standalone: true,
   imports: [
-    CommonModule, TranslatePipe,
+    CommonModule, FormsModule, TranslatePipe,
     MatCardModule, MatIconModule, MatSlideToggleModule, MatProgressSpinnerModule,
+    MatFormFieldModule, MatSelectModule, MatInputModule, MatButtonModule,
   ],
   templateUrl: './consentements.component.html',
   styleUrl: './consentements.component.scss',
@@ -60,6 +68,32 @@ export class ConsentementsComponent implements OnInit {
    */
   parTiersSeulement = signal(false);
 
+  // ── Mes droits (EF-12-09) ──────────────────────────────────────────
+  //
+  // Deposer une demande est un droit. Rien ne s'execute automatiquement :
+  // l'administration repond par ecrit, dans un delai annonce. L'ecran le dit,
+  // pour qu'un patient ne clique pas « effacement » en croyant que son
+  // dossier disparaitra dans la minute.
+  demandes = signal<DemandeRgpdView[]>([]);
+  demandesChargees = signal(false);
+  typeChoisi = signal<TypeDemandeRgpd | ''>('');
+  precision = signal('');
+  envoiEnCours = signal(false);
+  erreurDemande = signal('');
+  succesDemande = signal('');
+
+  typesDemande: TypeDemandeRgpd[] = [
+    'ACCES', 'RECTIFICATION', 'PORTABILITE', 'OPPOSITION', 'LIMITATION', 'EFFACEMENT',
+  ];
+
+  /** La precision est obligatoire pour une rectification : sinon on ne sait pas quoi corriger. */
+  precisionRequise = computed(() => this.typeChoisi() === 'RECTIFICATION');
+
+  peutEnvoyer = computed(() => {
+    if (!this.typeChoisi() || this.envoiEnCours()) return false;
+    return !this.precisionRequise() || this.precision().trim().length >= 10;
+  });
+
   constructor(iconRegistry: MatIconRegistry) {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
@@ -77,6 +111,52 @@ export class ConsentementsComponent implements OnInit {
     });
 
     this.chargerAcces();
+    this.chargerDemandes();
+  }
+
+  private chargerDemandes() {
+    this.privacyService.mesDemandesRgpd().subscribe({
+      next: (res) => {
+        this.demandes.set(res.data ?? []);
+        this.demandesChargees.set(true);
+      },
+      // Un echec ici ne doit pas vider la page : les consentements et le
+      // journal d'acces restent consultables.
+      error: () => this.demandesChargees.set(true),
+    });
+  }
+
+  envoyerDemande() {
+    const type = this.typeChoisi();
+    if (!type || !this.peutEnvoyer()) return;
+
+    this.envoiEnCours.set(true);
+    this.erreurDemande.set('');
+    this.privacyService.deposerDemandeRgpd({
+      type,
+      precision: this.precision().trim() || undefined,
+    }).subscribe({
+      next: (res) => {
+        this.envoiEnCours.set(false);
+        this.typeChoisi.set('');
+        this.precision.set('');
+        // On annonce la date limite : c'est l'engagement pris envers le
+        // patient, et il doit pouvoir s'y referer.
+        const limite = res.data?.dateLimite;
+        this.succesDemande.set(this.i18n.t('PATIENT.CONSENTS.RGPD_SENT', {
+          date: limite ? new Date(limite).toLocaleDateString(this.i18n.lang() === 'en' ? 'en-GB' : 'fr-FR') : '',
+        }));
+        setTimeout(() => this.succesDemande.set(''), 10000);
+        this.chargerDemandes();
+      },
+      error: (err) => {
+        this.envoiEnCours.set(false);
+        const e = err as { error?: { error?: string; message?: string } };
+        this.erreurDemande.set(
+          e?.error?.error ?? e?.error?.message ?? this.i18n.t('PATIENT.CONSENTS.RGPD_ERR')
+        );
+      },
+    });
   }
 
   /**

@@ -440,43 +440,8 @@
     },
     "NAV_CONSENTS": "Mes consentements",
     "CONSENTS": {
-      "TITLE": "Confidentialité & consentements",
-      "SUBTITLE": "Décidez qui peut accéder à votre dossier et à quelles fins, et consultez qui l'a ouvert.",
-      "SECTION_TITLE": "Mes autorisations",
-      "NOTE": "Retirer un consentement prend effet immédiatement pour les nouvelles demandes d'accès. Votre ASC et votre médecin traitant conservent l'accès nécessaire à vos soins.",
-      "NOT_SET": "Aucun choix enregistré",
-      "GRANTED": "Consentement accordé",
-      "REVOKED": "Consentement retiré",
-      "GRANTED_ON": "Accordé le {{date}}",
-      "REVOKED_ON": "Retiré le {{date}}",
-      "ERR_LOAD": "Impossible de charger vos consentements",
-      "ERR_SAVE": "Impossible d'enregistrer votre choix",
-      "ACCESS_TITLE": "Qui a accédé à mon dossier",
-      "ACCESS_EMPTY": "Aucun accès enregistré à votre dossier",
-      "ACCESS_WHEN": "Quand",
-      "ACCESS_WHO": "Qui",
-      "ACCESS_WHAT": "Action",
-      "SCOPE": {
-        "DOSSIER_MEDICAL": {
-          "TITLE": "Accès à mon dossier médical",
-          "DESC": "Autorise les professionnels de santé d'autres structures à consulter vos consultations, diagnostics et ordonnances."
-        },
-        "RAPPELS_SMS": {
-          "TITLE": "Rappels par SMS",
-          "DESC": "Recevoir des rappels de rendez-vous et de vaccination sur votre téléphone."
-        },
-        "FHIR_EXPORT": {
-          "TITLE": "Export de mon dossier (FHIR)",
-          "DESC": "Permettre l'export de votre dossier au format standard FHIR, par exemple pour un transfert vers un autre établissement."
-        },
-        "RECHERCHE_ANONYMISEE": {
-          "TITLE": "Recherche anonymisée",
-          "DESC": "Contribuer, sans aucune donnée d'identité, aux statistiques de santé publique et à la recherche."
-        }
-      },
-      "ACCESS_THIRD_PARTY_ONLY": "Afficher seulement les acces par une autre personne",
       "ACCESS_BY_ME": "Vous",
-      "ACCESS_REFUSED": "Acces refuse",
+      "ACCESS_EMPTY": "Aucun accès enregistré à votre dossier",
       "ACCESS_LABEL": {
         "CREATE": "Une information a été ajoutée dans {{objet}}",
         "CREATE_BY_ME": "Vous avez ajouté une information dans {{objet}}",
@@ -505,7 +470,71 @@
         "PHARMACY_VISIT": "votre passage en pharmacie",
         "PRIVACY_SETTINGS": "vos préférences de confidentialité",
         "RECORD": "votre dossier"
-      }
+      },
+      "ACCESS_REFUSED": "Acces refuse",
+      "ACCESS_THIRD_PARTY_ONLY": "Afficher seulement les acces par une autre personne",
+      "ACCESS_TITLE": "Qui a accédé à mon dossier",
+      "ACCESS_WHAT": "Action",
+      "ACCESS_WHEN": "Quand",
+      "ACCESS_WHO": "Qui",
+      "ERR_LOAD": "Impossible de charger vos consentements",
+      "ERR_SAVE": "Impossible d'enregistrer votre choix",
+      "GRANTED": "Consentement accordé",
+      "GRANTED_ON": "Accordé le {{date}}",
+      "NOTE": "Retirer un consentement prend effet immédiatement pour les nouvelles demandes d'accès. Votre ASC et votre médecin traitant conservent l'accès nécessaire à vos soins.",
+      "NOT_SET": "Aucun choix enregistré",
+      "REVOKED": "Consentement retiré",
+      "REVOKED_ON": "Retiré le {{date}}",
+      "RGPD_BY": "Répondu par {{qui}}",
+      "RGPD_DUE": "Réponse attendue sous {{jours}} jour(s)",
+      "RGPD_ERR": "Votre demande n'a pas pu être envoyée.",
+      "RGPD_EXPLAIN_ACCES": "Vous recevrez la liste de ce que la plateforme détient sur vous. Vous pouvez déjà consulter qui a accédé à votre dossier, plus bas sur cette page.",
+      "RGPD_EXPLAIN_EFFACEMENT": "À savoir avant d'envoyer : un dossier de soins ne peut pas être supprimé. La loi impose de le conserver pendant une durée déterminée, et la trace des accès à votre dossier doit subsister — c'est ce qui vous protège. Ce qui est possible, c'est d'anonymiser votre identité : votre nom disparaît, le dossier médical reste sans pouvoir vous être rattaché. L'administration vous répondra ce qu'elle peut faire dans votre cas.",
+      "RGPD_EXPLAIN_LIMITATION": "L'usage visé est gelé le temps que votre contestation soit examinée.",
+      "RGPD_EXPLAIN_OPPOSITION": "Précisez à quel usage vous vous opposez. Certains traitements sont nécessaires à vos soins et ne peuvent pas être arrêtés ; l'administration vous le dira.",
+      "RGPD_EXPLAIN_PORTABILITE": "Vous recevrez vos données dans un format réutilisable, que vous pourrez remettre à un autre établissement.",
+      "RGPD_EXPLAIN_RECTIFICATION": "Dites précisément ce qui est inexact et ce qu'il faut inscrire à la place. Une donnée médicale n'est pas corrigée sans l'avis du soignant qui l'a inscrite.",
+      "RGPD_LATE": "Le délai de réponse est dépassé",
+      "RGPD_NOTE": "Vous pouvez demander à consulter, corriger, récupérer ou faire effacer vos données. Votre demande est transmise à l'administration de la plateforme, qui vous répond par écrit dans un délai de 30 jours. Rien n'est exécuté automatiquement.",
+      "RGPD_PRECISION": "Précisions (facultatif)",
+      "RGPD_PRECISION_HINT": "Écrivez-le dans vos mots. Cela sera lu par la personne qui traitera votre demande.",
+      "RGPD_PRECISION_REQUIRED": "Que faut-il corriger ?",
+      "RGPD_PRECISION_WHY": "Au moins 10 caractères : sans cela, on ne sait pas quoi corriger.",
+      "RGPD_SEND": "Envoyer ma demande",
+      "RGPD_SENT": "Demande enregistrée. Une réponse vous sera apportée au plus tard le {{date}}.",
+      "RGPD_STATUT_EN_COURS": "En cours",
+      "RGPD_STATUT_RECUE": "Reçue",
+      "RGPD_STATUT_REFUSEE": "Refusée",
+      "RGPD_STATUT_SATISFAITE": "Satisfaite",
+      "RGPD_TITLE": "Mes droits sur mes données",
+      "RGPD_TYPE": "Que souhaitez-vous demander ?",
+      "RGPD_TYPE_ACCES": "Consulter ce que vous détenez sur moi",
+      "RGPD_TYPE_EFFACEMENT": "Faire effacer mes données",
+      "RGPD_TYPE_LIMITATION": "Suspendre un usage le temps de le contester",
+      "RGPD_TYPE_OPPOSITION": "M'opposer à un usage de mes données",
+      "RGPD_TYPE_PORTABILITE": "Récupérer mes données dans un fichier",
+      "RGPD_TYPE_RECTIFICATION": "Corriger une information inexacte",
+      "SCOPE": {
+        "DOSSIER_MEDICAL": {
+          "TITLE": "Accès à mon dossier médical",
+          "DESC": "Autorise les professionnels de santé d'autres structures à consulter vos consultations, diagnostics et ordonnances."
+        },
+        "RAPPELS_SMS": {
+          "TITLE": "Rappels par SMS",
+          "DESC": "Recevoir des rappels de rendez-vous et de vaccination sur votre téléphone."
+        },
+        "FHIR_EXPORT": {
+          "TITLE": "Export de mon dossier (FHIR)",
+          "DESC": "Permettre l'export de votre dossier au format standard FHIR, par exemple pour un transfert vers un autre établissement."
+        },
+        "RECHERCHE_ANONYMISEE": {
+          "TITLE": "Recherche anonymisée",
+          "DESC": "Contribuer, sans aucune donnée d'identité, aux statistiques de santé publique et à la recherche."
+        }
+      },
+      "SECTION_TITLE": "Mes autorisations",
+      "SUBTITLE": "Décidez qui peut accéder à votre dossier et à quelles fins, et consultez qui l'a ouvert.",
+      "TITLE": "Confidentialité & consentements"
     },
     "PARCOURS": {
       "NAV": "Mon parcours",
@@ -1634,7 +1663,50 @@
       "SUSPENDU": "Compte de {{nom}} fermé. {{sessions}} session(s) et {{sockets}} connexion(s) temps réel coupées.",
       "TITLE": "Comptes"
     },
-    "NAV_COMPTES": "Comptes"
+    "NAV_COMPTES": "Comptes",
+    "RGPD": {
+      "ALL_STATES": "Tous les états",
+      "ALL_TYPES": "Tous les types",
+      "ANSWER": "Votre réponse au patient",
+      "ANSWERED_BY": "Répondu par {{qui}}",
+      "ANSWER_HINT": "Au moins {{min}} caractères — un refus qu'on ne motive pas n'est pas contestable.",
+      "ANSWER_PLACEHOLDER": "Cette réponse sera lue par le patient, telle quelle. Dites ce qui a été fait, ou pourquoi la demande ne peut pas être satisfaite.",
+      "CANCEL": "Annuler",
+      "CONFIRM_GRANT": "Satisfaire la demande de {{type}} de {{qui}}",
+      "CONFIRM_REFUSE": "Refuser la demande de {{type}} de {{qui}}",
+      "COUNT": "{{ouvertes}} ouverte(s) sur {{total}} affichée(s)",
+      "DUE": "À répondre sous {{jours}} jour(s)",
+      "EMPTY": "Aucune demande ne correspond à ces critères.",
+      "ERASURE_NOTE": "Un dossier de soins ne peut pas être supprimé : la loi impose de le conserver, et la trace des accès doit subsister. Ce qui est possible, c'est d'anonymiser l'identité du patient. Dites-lui précisément ce que vous faites, et ce que vous ne pouvez pas faire.",
+      "ERR_CHARGEMENT": "Les demandes n'ont pas pu être chargées.",
+      "ERR_PRISE": "La prise en charge a échoué.",
+      "ERR_REPONSE": "La réponse n'a pas pu être enregistrée.",
+      "GRANT": "Satisfaire",
+      "LATE": "En retard de {{jours}} jour(s)",
+      "LATE_BANNER": "{{n}} demande(s) dont le délai de réponse est dépassé.",
+      "PATIENT_SAYS": "Le patient écrit :",
+      "REFUSE": "Refuser",
+      "REFUSEE": "Demande de {{demandeur}} refusée, avec son motif.",
+      "SATISFAITE": "Demande de {{demandeur}} satisfaite.",
+      "SEND_GRANT": "Enregistrer et clore",
+      "SEND_REFUSE": "Refuser et clore",
+      "STATE": "État",
+      "STATUT_EN_COURS": "En cours",
+      "STATUT_RECUE": "Reçue",
+      "STATUT_REFUSEE": "Refusée",
+      "STATUT_SATISFAITE": "Satisfaite",
+      "SUBTITLE": "Les patients peuvent demander à consulter, corriger, récupérer ou faire effacer leurs données. Chaque demande appelle une réponse écrite sous {{jours}} jours.",
+      "TAKE": "Prendre en charge",
+      "TITLE": "Demandes d'exercice de droits",
+      "TYPE": "Type",
+      "TYPE_ACCES": "Accès aux données",
+      "TYPE_EFFACEMENT": "Effacement",
+      "TYPE_LIMITATION": "Limitation",
+      "TYPE_OPPOSITION": "Opposition",
+      "TYPE_PORTABILITE": "Portabilité",
+      "TYPE_RECTIFICATION": "Rectification"
+    },
+    "NAV_RGPD": "Demandes RGPD"
   },
   "ADMIN_STRUCTURE": {
     "ROLE": "Admin Structure",
