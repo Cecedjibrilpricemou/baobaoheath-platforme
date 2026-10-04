@@ -305,3 +305,92 @@
 
   mat-icon { font-size: 15px; width: 15px; height: 15px; }
 }
+
+// ── La fusion (EF-01-06) ─────────────────────────────────────────────
+.identites-fusion {
+  max-width: 720px;
+  max-height: min(86vh, 900px);
+  overflow-y: auto;
+
+  &__sens { margin: 0.3rem 0 0.7rem; font-size: 0.875rem; }
+
+  // `mat-card` est un `flex-direction: column` : ses enfants s'etirent. On
+  // regle donc l'alignement avec `align-self`, pas avec `width`.
+  &__inverser { align-self: flex-start; margin-bottom: 0.9rem; font-size: 12px; }
+
+  &__motif { width: 100%; margin-top: 0.9rem; }
+
+  // `mat-form-field` ne reserve pas la place de son `mat-hint` : la phrase
+  // qui suivait se superposait a l'aide du champ. Vu a l'oeil sur la capture,
+  // pas par une assertion.
+  &__motif { margin-bottom: 1.4rem; }
+
+  &__annulable {
+    margin: 0.6rem 0 0;
+    font-size: 12px;
+    color: var(--bb-text-muted);
+  }
+
+  // Ce qui a bouge, ligne par ligne. C'est cela qui rend la reversibilite
+  // credible : un agent ne croit pas une promesse, il lit une liste.
+  &__lignes {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+
+    li { padding: 0.1rem 0; }
+  }
+
+  &__restreints {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin: 0.6rem 0 0;
+    font-size: 12px;
+    color: var(--bb-warning);
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; flex: none; margin-top: 1px; }
+  }
+
+  &__historique {
+    list-style: none;
+    margin: 0.9rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    li {
+      border: 1px solid var(--bb-border);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+    }
+  }
+
+  // Une fusion annulee reste visible, en retrait : elle a eu lieu.
+  &__ancienne { opacity: 0.62; }
+
+  &__tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  &__motif-dit {
+    margin: 0.45rem 0 0;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--bb-text-secondary);
+  }
+}
+
+.identites-fusion-faite {
+  align-items: flex-start;
+
+  p { margin: 0; }
+}
+
+.identites-doublons__action { margin-top: 0.6rem; }

@@ -4,10 +4,14 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as identite from '../services/identite.service';
 import * as doublon from '../services/doublon.service';
+import * as fusion from '../services/fusion.service';
 import {
-  filtreIdentitesSchema, noterTraitsSchema, verifierIdentiteSchema,
+  annulerFusionSchema, filtreIdentitesSchema, fusionnerSchema, noterTraitsSchema,
+  verifierIdentiteSchema,
 } from '../validators/api.schemas';
-import type { IdentitePatientView, NiveauIdentite } from '@baobaoheath/shared-types';
+import type {
+  IdentitePatientView, MotifRefusFusion, NiveauIdentite,
+} from '@baobaoheath/shared-types';
 
 /**
  * Verification d'identite au comptoir (EF-01-04/10).
@@ -20,6 +24,31 @@ import type { IdentitePatientView, NiveauIdentite } from '@baobaoheath/shared-ty
  * de produits reglementes. **Pas les soins** — un patient a l'identite
  * provisoire est consulte, suivi et prescrit normalement.
  */
+/**
+ * Ce qu'un refus de fusion dit a l'agent.
+ *
+ * Un code d'erreur ne lui apprend rien. Chacune de ces phrases dit **ce qu'il
+ * peut faire** : c'est lui qui a les deux dossiers sous les yeux.
+ */
+const REFUS_FUSION: Record<MotifRefusFusion, { code: number; message: string }> = {
+  DOSSIER_INTROUVABLE: { code: 404, message: "L'un des deux dossiers n'existe pas." },
+  FUSION_INTROUVABLE: { code: 404, message: "Cette fusion n'existe pas." },
+  MEME_DOSSIER: { code: 400, message: 'Un dossier ne se fusionne pas avec lui-meme.' },
+  MOTIF_TROP_COURT: {
+    code: 400,
+    message: 'Dites en une phrase sur quoi vous vous fondez : c\'est ce qui permettra de contester la fusion plus tard.',
+  },
+  DEJA_FUSIONNE: {
+    code: 409,
+    message: "L'un des deux dossiers est deja fusionne. Fusionnez dans le dossier qui survit, pas dans celui qui a ete absorbe.",
+  },
+  DEUX_PIECES_DIFFERENTES: {
+    code: 409,
+    message: 'Les deux identites sont verifiees, sur deux pieces differentes. Ou bien ce sont deux personnes, ou bien une verification est fausse : reprenez la piece avant de fusionner.',
+  },
+  DEJA_ANNULEE: { code: 409, message: 'Cette fusion a deja ete annulee.' },
+};
+
 const router = Router();
 
 router.use(authenticate);
@@ -42,6 +71,77 @@ router.get('/:id/doublons', async (req: AuthRequest, res: Response) => {
     res.status(404).json({ success: false, error: 'Dossier patient introuvable' });
     return;
   }
+  res.json({ success: true, data });
+});
+
+/**
+ * Fusionner un dossier dans un autre (EF-01-06).
+ *
+ * **Reserve a `ADMIN_STRUCTURE`**, et non a l'accueil. Verifier une piece est
+ * le geste de celui qui recoit le patient ; melanger deux dossiers medicaux
+ * ne l'est pas. L'allergie notee d'un cote devient celle de l'autre, et
+ * personne ne s'en apercoit avant une prescription.
+ *
+ * `:id` est le dossier **qui survit**. C'est l'agent qui le choisit : lui seul
+ * sait lequel des deux porte l'histoire la plus complete.
+ */
+router.post(
+  '/:id/fusionner',
+  requireRole('ADMIN_STRUCTURE'),
+  validateBody(fusionnerSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { idAbsorbe, motif } = req.body as { idAbsorbe: string; motif: string };
+    const r = await fusion.fusionner(req.user!, req.params['id'] as string, idAbsorbe, motif);
+
+    if ('refus' in r) {
+      const { code, message } = REFUS_FUSION[r.refus];
+      res.status(code).json({ success: false, error: message, motif: r.refus });
+      return;
+    }
+
+    const bouge = r.fusion.lignes.reduce((n, l) => n + l.nombre, 0);
+    res.json({
+      success: true,
+      data: r.fusion,
+      message: `Dossier de ${r.fusion.absorbe.nomComplet} fusionne dans celui de `
+        + `${r.fusion.principal.nomComplet}. ${bouge} ligne(s) deplacee(s). `
+        + `Le dossier absorbe est conserve et la fusion peut etre annulee.`,
+    });
+  }
+);
+
+/**
+ * Defaire une fusion.
+ *
+ * **C'est ce qui rend la fusion acceptable.** On ne remet pas « ce qui devrait
+ * etre » : on relit la liste de ce qui a ete deplace et on le rend. Ce qui a
+ * ete ajoute au dossier survivant depuis la fusion lui reste.
+ */
+router.post(
+  '/fusions/:idFusion/annuler',
+  requireRole('ADMIN_STRUCTURE'),
+  validateBody(annulerFusionSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { motifAnnulation } = req.body as { motifAnnulation: string };
+    const r = await fusion.annuler(req.user!, req.params['idFusion'] as string, motifAnnulation);
+
+    if ('refus' in r) {
+      const { code, message } = REFUS_FUSION[r.refus];
+      res.status(code).json({ success: false, error: message, motif: r.refus });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: r.fusion,
+      message: `Fusion annulee. Le dossier de ${r.fusion.absorbe.nomComplet} a retrouve ce qui lui appartenait.`,
+    });
+  }
+);
+
+/** L'historique des fusions d'un dossier, annulations comprises. */
+router.get('/:id/fusions', async (req: AuthRequest, res: Response) => {
+  const data = await fusion.pourPatient(req.params['id'] as string);
   res.json({ success: true, data });
 });
 

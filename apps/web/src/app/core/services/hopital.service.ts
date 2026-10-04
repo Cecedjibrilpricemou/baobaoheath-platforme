@@ -7,7 +7,10 @@ import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
   DemandeRendezVousView,
+  AnnulerFusionDto,
   CandidatDoublonView,
+  FusionnerDto,
+  FusionView,
   IdentitePatientView,
   NiveauIdentite,
   VerifierIdentiteDto,
@@ -149,5 +152,24 @@ export class HopitalService {
    */
   doublons(id: string): Observable<ApiResponse<CandidatDoublonView[]>> {
     return this.api.get<ApiResponse<CandidatDoublonView[]>>(`/identites/${id}/doublons`);
+  }
+
+  // --- Fusion de dossiers (EF-01-06) ------------------------------------
+  //
+  // **Reservee a ADMIN_STRUCTURE** cote API. L'ecran ne montre le bouton qu'a
+  // ce role : proposer une action qu'on n'a pas le droit de faire est une
+  // facon de mentir a l'utilisateur.
+
+  /** `id` est le dossier **qui survit**. */
+  fusionner(id: string, dto: FusionnerDto): Observable<ApiResponse<FusionView>> {
+    return this.api.post<ApiResponse<FusionView>>(`/identites/${id}/fusionner`, dto);
+  }
+
+  annulerFusion(idFusion: string, dto: AnnulerFusionDto): Observable<ApiResponse<FusionView>> {
+    return this.api.post<ApiResponse<FusionView>>(`/identites/fusions/${idFusion}/annuler`, dto);
+  }
+
+  fusions(id: string): Observable<ApiResponse<FusionView[]>> {
+    return this.api.get<ApiResponse<FusionView[]>>(`/identites/${id}/fusions`);
   }
 }

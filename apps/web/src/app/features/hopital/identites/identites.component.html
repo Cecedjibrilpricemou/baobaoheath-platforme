@@ -2,7 +2,10 @@
 
   <header class="bb-page-head">
     <div class="bb-page-head__text">
-      <span class="bb-page-head__tag"><i class="pi pi-id-card" aria-hidden="true"></i> {{ 'HOPITAL.ROLE' | translate }}</span>
+      <!-- L'écran est partagé entre l'accueil et l'administration de
+           structure (EF-01-06). Le badge disait « Accueil hôpital » même
+           ouvert depuis l'administration : il annonçait le mauvais espace. -->
+      <span class="bb-page-head__tag"><i class="pi pi-id-card" aria-hidden="true"></i> {{ badgeEspace() | translate }}</span>
       <h1 class="bb-page-head__title">{{ 'HOPITAL.IDENTITES.TITLE' | translate }}</h1>
       <p class="bb-page-head__sub">{{ 'HOPITAL.IDENTITES.SUBTITLE' | translate }}</p>
     </div>
@@ -127,6 +130,10 @@
                 <button mat-button class="identites-table__doublons" (click)="voirDoublons(p)">
                   <mat-icon fontSet="pi" fontIcon="pi-users" aria-hidden="true"></mat-icon>
                   {{ 'HOPITAL.IDENTITES.DOUBLONS' | translate }}
+                </button>
+                <button mat-button class="identites-table__doublons" (click)="voirFusions(p)">
+                  <mat-icon fontSet="pi" fontIcon="pi-history" aria-hidden="true"></mat-icon>
+                  {{ 'HOPITAL.IDENTITES.FUSION_HISTORIQUE' | translate }}
                 </button>
               </td>
             </tr>
@@ -271,14 +278,31 @@
                     </span>
                   }
                 </div>
+
+                <!-- La fusion n'est offerte qu'à ADMIN_STRUCTURE, comme
+                     l'API l'impose : proposer une action qu'on n'a pas le
+                     droit de faire est une façon de mentir. -->
+                @if (peutFusionner()) {
+                  <div class="identites-doublons__action">
+                    <button mat-stroked-button (click)="ouvrirFusion(c)">
+                      <mat-icon fontSet="pi" fontIcon="pi-link" aria-hidden="true"></mat-icon>
+                      {{ 'HOPITAL.IDENTITES.FUSION' | translate }}
+                    </button>
+                  </div>
+                }
               </li>
             }
           </ul>
 
-          <p class="identites-doublons__pas-outille">
-            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
-            {{ 'HOPITAL.IDENTITES.DOUBLONS_PAS_OUTILLE' | translate }}
-          </p>
+          <!-- Depuis EF-01-06 la fusion existe, mais seule l'administration
+               de structure peut la faire. Un agent d'accueil doit savoir quoi
+               faire du doublon qu'il vient de trouver. -->
+          @if (!peutFusionner()) {
+            <p class="identites-doublons__pas-outille">
+              <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+              {{ 'HOPITAL.IDENTITES.DOUBLONS_PAS_OUTILLE' | translate }}
+            </p>
+          }
         }
 
         <div class="identites-boite__actions">
@@ -289,4 +313,192 @@
       </mat-card>
     </div>
   }
+
+<!-- Le message qui suit une fusion.
+
+     Il dit **ce qui a réellement bougé**, et non « opération réussie ». Et il
+     rappelle que la fusion est annulable : c'est ce qui rend l'acte
+     acceptable. -->
+@if (derniereFusion(); as f) {
+  <div class="identites-succes identites-fusion-faite" role="status">
+    <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+    <div>
+      <!-- « 0 ligne déplacée » se lit « il ne s'est rien passé ». Le lien est
+           pourtant posé, et la fusion annulable : l'écran le dit autrement. -->
+      <p>{{ (lignesBougees(f) > 0 ? 'HOPITAL.IDENTITES.FUSION_FAITE'
+                                  : 'HOPITAL.IDENTITES.FUSION_FAITE_VIDE') | translate:{
+            absorbe: f.absorbe.nomComplet, principal: f.principal.nomComplet,
+            n: lignesBougees(f) } }}</p>
+      <ul class="identites-fusion__lignes">
+        @for (l of f.lignes; track l.tableCible + l.operation) {
+          <li>{{ l.nombre }} · {{ l.tableCible }} ·
+            {{ 'HOPITAL.IDENTITES.FUSION_OP_' + l.operation | translate }}</li>
+        }
+      </ul>
+      <!-- Un consentement restreint se redemande au patient : l'agent doit le
+           savoir, sinon personne ne le saura. -->
+      @if (consentementsRestreints(f) > 0) {
+        <p class="identites-fusion__restreints">
+          <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+          {{ 'HOPITAL.IDENTITES.FUSION_RESTREINTS' | translate:{ n: consentementsRestreints(f) } }}
+        </p>
+      }
+    </div>
+  </div>
+}
+
+<!-- La fusion. Un formulaire de plus ? Non : l'acte le plus dangereux du
+     produit. L'écran dit ce qui va bouger, ce qui ne bougera pas, et ce qui
+     se passe en cas de désaccord sur un consentement. -->
+@if (sensFusion(); as sens) {
+  <div class="identites-boite" role="dialog" aria-modal="true">
+    <mat-card class="identites-boite__carte identites-fusion">
+      <h2>{{ 'HOPITAL.IDENTITES.FUSION_TITRE' | translate:{
+            absorbe: sens.absorbe.nom, principal: sens.principal.nom } }}</h2>
+
+      <p class="identites-fusion__sens">
+        {{ 'HOPITAL.IDENTITES.FUSION_SENS' | translate:{
+              absorbe: sens.absorbe.nom, principal: sens.principal.nom } }}
+      </p>
+
+      <!-- Le sens n'est pas évident : c'est l'agent qui sait lequel des deux
+           dossiers porte l'histoire la plus complète. -->
+      <button mat-stroked-button class="identites-fusion__inverser"
+              (click)="garderLeCandidat.set(!garderLeCandidat())">
+        <mat-icon fontSet="pi" fontIcon="pi-sync" aria-hidden="true"></mat-icon>
+        {{ 'HOPITAL.IDENTITES.FUSION_INVERSER' | translate:{ nom: sens.absorbe.nom } }}
+      </button>
+
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_AVIS' | translate }}</span>
+      </div>
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-shield" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_AUDIT' | translate }}</span>
+      </div>
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-lock" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_CONSENTEMENTS' | translate }}</span>
+      </div>
+
+      <mat-form-field appearance="outline" class="identites-fusion__motif">
+        <mat-label>{{ 'HOPITAL.IDENTITES.FUSION_MOTIF' | translate }}</mat-label>
+        <textarea matInput rows="2" [ngModel]="motifFusion()"
+                  (ngModelChange)="motifFusion.set($event)"></textarea>
+        <mat-hint>{{ 'HOPITAL.IDENTITES.FUSION_MOTIF_AIDE' | translate }}</mat-hint>
+      </mat-form-field>
+
+      @if (erreurDoublons()) {
+        <div class="identites-erreur" role="alert">
+          <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+          <span>{{ erreurDoublons() }}</span>
+        </div>
+      }
+
+      <p class="identites-fusion__annulable">{{ 'HOPITAL.IDENTITES.FUSION_ANNULABLE' | translate }}</p>
+
+      <div class="identites-boite__actions">
+        <button mat-stroked-button (click)="fermerFusion()" [disabled]="fusionEnCours()">
+          {{ 'HOPITAL.IDENTITES.FUSION_RETOUR' | translate }}
+        </button>
+        <button mat-flat-button color="primary" (click)="confirmerFusion()"
+                [disabled]="!peutConfirmerFusion()">
+          {{ 'HOPITAL.IDENTITES.FUSION_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  </div>
+}
+
+<!-- L'historique. C'est de là qu'on annule. -->
+@if (historique().length > 0) {
+  <div class="identites-boite" role="dialog" aria-modal="true">
+    <mat-card class="identites-boite__carte identites-fusion">
+      <h2>{{ 'HOPITAL.IDENTITES.FUSION_HISTORIQUE' | translate }}</h2>
+      <ul class="identites-fusion__historique">
+        @for (f of historique(); track f.id) {
+          <li [class.identites-fusion__ancienne]="f.statut === 'ANNULEE'">
+            <div class="identites-fusion__tete">
+              <span class="identites-doublons__nom">
+                {{ f.absorbe.nomComplet }} → {{ f.principal.nomComplet }}
+              </span>
+              <span class="identites-doublons__etat"
+                    [class.identites-doublons__etat--probable]="f.statut === 'ACTIVE'">
+                {{ 'HOPITAL.IDENTITES.FUSION_STATUT_' + f.statut | translate }}
+              </span>
+            </div>
+            <div class="identites-doublons__sous">
+              {{ 'HOPITAL.IDENTITES.FUSION_LE' | translate:{
+                    date: (f.fusionneLe | date:'dd/MM/yyyy HH:mm') ?? '', qui: f.fusionnePar } }}
+            </div>
+            <p class="identites-fusion__motif-dit">« {{ f.motif }} »</p>
+            <ul class="identites-fusion__lignes">
+              @for (l of f.lignes; track l.tableCible + l.operation) {
+                <li>{{ l.nombre }} · {{ l.tableCible }} ·
+                  {{ 'HOPITAL.IDENTITES.FUSION_OP_' + l.operation | translate }}</li>
+              }
+            </ul>
+            @if (f.statut === 'ANNULEE') {
+              <p class="identites-fusion__motif-dit">
+                {{ 'HOPITAL.IDENTITES.FUSION_STATUT_ANNULEE' | translate }} :
+                « {{ f.motifAnnulation }} » — {{ f.annuleePar }}
+              </p>
+            } @else if (peutFusionner()) {
+              <button mat-stroked-button (click)="ouvrirAnnulation(f)">
+                <mat-icon fontSet="pi" fontIcon="pi-undo" aria-hidden="true"></mat-icon>
+                {{ 'HOPITAL.IDENTITES.FUSION_ANNULER' | translate }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+      <div class="identites-boite__actions">
+        <button mat-flat-button color="primary" (click)="historique.set([])">
+          {{ 'HOPITAL.IDENTITES.FUSION_FERMER' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  </div>
+}
+
+<!-- L'annulation. Elle dit exactement ce qui sera rendu, et ce qui ne le sera
+     pas : ce qui a été ajouté au dossier survivant depuis la fusion y reste. -->
+@if (aAnnuler(); as f) {
+  <div class="identites-boite" role="dialog" aria-modal="true">
+    <mat-card class="identites-boite__carte identites-fusion">
+      <h2>{{ 'HOPITAL.IDENTITES.FUSION_ANNULER_TITRE' | translate:{
+            absorbe: f.absorbe.nomComplet } }}</h2>
+
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_ANNULER_AVIS' | translate:{
+              absorbe: f.absorbe.nomComplet, principal: f.principal.nomComplet } }}</span>
+      </div>
+
+      <ul class="identites-fusion__lignes">
+        @for (l of f.lignes; track l.tableCible + l.operation) {
+          <li>{{ l.nombre }} · {{ l.tableCible }} ·
+            {{ 'HOPITAL.IDENTITES.FUSION_OP_' + l.operation | translate }}</li>
+        }
+      </ul>
+
+      <mat-form-field appearance="outline" class="identites-fusion__motif">
+        <mat-label>{{ 'HOPITAL.IDENTITES.FUSION_ANNULER_MOTIF' | translate }}</mat-label>
+        <textarea matInput rows="2" [ngModel]="motifAnnulation()"
+                  (ngModelChange)="motifAnnulation.set($event)"></textarea>
+      </mat-form-field>
+
+      <div class="identites-boite__actions">
+        <button mat-stroked-button (click)="aAnnuler.set(null)" [disabled]="fusionEnCours()">
+          {{ 'HOPITAL.IDENTITES.FUSION_RETOUR' | translate }}
+        </button>
+        <button mat-flat-button color="primary" (click)="confirmerAnnulation()"
+                [disabled]="!peutConfirmerAnnulation()">
+          {{ 'HOPITAL.IDENTITES.FUSION_ANNULER_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  </div>
+}
 </div>

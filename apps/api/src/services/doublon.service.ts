@@ -309,6 +309,9 @@ export async function chercher(
   const candidats = await prisma.patientProfile.findMany({
     where: {
       ...(options.exclureId ? { id: { not: options.exclureId } } : {}),
+      // Un dossier deja fusionne n'est plus un doublon a traiter : le
+      // proposer indefiniment apprendrait a l'agent a ignorer la liste.
+      idFusionneDans: null,
       OR: [
         ...mots.map((m) => ({
           utilisateur: {

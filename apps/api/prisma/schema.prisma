@@ -250,6 +250,8 @@ model Utilisateur {
 
   /// Les identites de patients qu'il a verifiees (EF-01-04).
   identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
+  fusionsProoncees FusionDossier[] @relation("FusionsProoncees")
+  fusionsAnnulees  FusionDossier[] @relation("FusionsAnnulees")
 
   /// Les demandes RGPD qu'il a traitees (EF-12-09).
   demandesRgpdTraitees DemandeRgpd[] @relation("DemandesRgpdTraitees")
@@ -400,6 +402,96 @@ enum StatutDemandeRgpd {
 /// anonymisation de l'identite, le dossier de soins restant pour la duree
 /// legale. Une demande d'effacement est donc satisfaite *ainsi*, ou refusee
 /// avec son motif — jamais executee en silence.
+/// Une fusion de deux dossiers patients (EF-01-06).
+///
+/// **L'operation la plus dangereuse du produit.** Fusionner deux personnes
+/// distinctes melange leurs dossiers medicaux : l'allergie de l'une devient
+/// celle de l'autre, et personne ne s'en apercoit avant une prescription.
+/// C'est pourquoi rien n'est automatique, pourquoi un motif est exige, et
+/// pourquoi tout est reversible.
+///
+/// **La reversibilite n'est pas une promesse, c'est une liste.** Chaque ligne
+/// deplacee est enregistree dans `LigneFusion`. Annuler, c'est remettre
+/// exactement ce qui a ete bouge — et rien d'autre : ce qui a ete ajoute au
+/// dossier survivant apres la fusion lui reste.
+model FusionDossier {
+  id String @id @default(cuid())
+
+  /// Pourquoi cette fusion. Exige, comme pour une suspension de compte : un
+  /// acte irreversible-en-apparence sans motif n'est pas contestable.
+  motif  String
+  statut StatutFusion @default(ACTIVE)
+
+  /// Le dossier qui survit. **C'est l'agent qui le choisit**, pas le service :
+  /// lui seul sait lequel des deux porte l'histoire la plus complete.
+  idPrincipal String
+  principal   PatientProfile @relation("FusionPrincipal", fields: [idPrincipal], references: [id], onDelete: Restrict)
+
+  idAbsorbe String
+  absorbe   PatientProfile @relation("FusionAbsorbe", fields: [idAbsorbe], references: [id], onDelete: Restrict)
+
+  idFusionnePar String
+  fusionnePar   Utilisateur @relation("FusionsProoncees", fields: [idFusionnePar], references: [id], onDelete: Restrict)
+
+  fusionneLe DateTime @default(now())
+
+  motifAnnulation String?
+  idAnnuleePar    String?
+  annuleePar      Utilisateur? @relation("FusionsAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
+  annuleeLe       DateTime?
+
+  lignes LigneFusion[]
+
+  @@index([idPrincipal, fusionneLe])
+  @@index([idAbsorbe])
+  @@index([statut, fusionneLe])
+  @@map("fusions_dossier")
+}
+
+enum StatutFusion {
+  ACTIVE
+  ANNULEE
+}
+
+/// Ce qu'une fusion a deplace, ligne par ligne.
+///
+/// **Sans cette liste, « reversible » serait un mot.** On ne peut pas deviner
+/// apres coup quelles consultations venaient du dossier absorbe.
+model LigneFusion {
+  id String @id @default(cuid())
+
+  idFusion String
+  fusion   FusionDossier @relation(fields: [idFusion], references: [id], onDelete: Cascade)
+
+  /// Le nom de la table, tel qu'il est dans la base.
+  tableCible String
+  idLigne    String
+
+  operation TypeOperationFusion
+
+  /// Pour une restriction de consentement : ce que la ligne valait avant.
+  /// C'est ce qui permet de la remettre telle quelle.
+  valeurAvant Json?
+
+  @@index([idFusion])
+  @@map("lignes_fusion")
+}
+
+enum TypeOperationFusion {
+  /// La ligne a change de dossier. Annuler : la rendre au dossier absorbe.
+  DEPLACEMENT
+
+  /// **Un refus de consentement l'a emporte sur une autorisation.**
+  ///
+  /// Les deux dossiers ne pouvaient pas s'accorder sur le meme usage, et la
+  /// contrainte `@@unique([idPatient, scope])` interdit de garder les deux.
+  /// Le plus restrictif gagne, quelle que soit sa date : elargir un acces
+  /// sans que le patient l'ait dit montrerait des donnees qui ne devaient pas
+  /// l'etre, et cela ne se rattrape pas. Un consentement retire a tort se
+  /// redonne en une phrase.
+  RESTRICTION_CONSENTEMENT
+}
+
 model DemandeRgpd {
   id        String            @id @default(cuid())
   type      TypeDemandeRgpd
@@ -631,6 +723,22 @@ model PatientProfile {
   identiteVerifieeLe DateTime?
   idVerifiePar       String?
   verifiePar         Utilisateur? @relation("IdentitesVerifiees", fields: [idVerifiePar], references: [id], onDelete: SetNull)
+
+  /// Le dossier dans lequel celui-ci a ete fusionne (EF-01-06).
+  ///
+  /// **Le dossier absorbe n'est jamais supprime.** Il garde son identifiant,
+  /// son code QR et son compte : une personne qui presente son ancienne carte
+  /// doit etre retrouvee, et une fusion doit pouvoir etre defaite. Il est
+  /// simplement ecarte des recherches, et les lectures suivent ce lien.
+  ///
+  /// `Restrict` : on ne supprime pas un dossier qui en absorbe un autre.
+  idFusionneDans String?
+  fusionneDans   PatientProfile?  @relation("FusionDeDossier", fields: [idFusionneDans], references: [id], onDelete: Restrict)
+  dossiersAbsorbes PatientProfile[] @relation("FusionDeDossier")
+  fusionneLe     DateTime?
+
+  fusionsPrincipal FusionDossier[] @relation("FusionPrincipal")
+  fusionsAbsorbe   FusionDossier[] @relation("FusionAbsorbe")
   // Maille reelle du parcours commande/livraison : c'est dans son quartier que
   // le patient cherche une pharmacie, pas dans sa prefecture.
   commune            String?
@@ -676,6 +784,11 @@ model PatientProfile {
   @@index([prefecture])
   @@index([idStructurePreferee])
   @@index([idAscPrincipal])
+  /// Ces deux index existaient en SQL sans etre declares ici : chaque
+  /// `migrate diff` proposait donc de les supprimer. Les declarer evite qu'une
+  /// prochaine migration les emporte en silence.
+  @@index([dateNaissance, lieuNaissance], map: "patients_traits_distinctifs_idx")
+  @@index([niveauIdentite], map: "patients_niveau_identite_idx")
   @@map("patients")
 }
 

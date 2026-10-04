@@ -1558,6 +1558,53 @@ export const swaggerDocument = {
         },
       },
     },
+    '/api/v1/identites/{id}/fusionner': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Fusionner un dossier dans un autre (EF-01-06)',
+        description: "Fusionner un dossier dans un autre (EF-01-06).\n\n**L'operation la plus dangereuse du produit.** Fusionner deux personnes distinctes melange leurs dossiers medicaux : l'allergie de l'une devient celle de l'autre, et personne ne s'en apercoit avant une prescription. Reserve a `ADMIN_STRUCTURE` — verifier une piece est le geste de celui qui recoit le patient, melanger deux dossiers ne l'est pas.\n\n`{id}` est le dossier **qui survit**. C'est l'agent qui le choisit : lui seul sait lequel des deux porte l'histoire la plus complete.\n\n**Ce qui bouge.** Consultations, vaccinations, rendez-vous et demandes de rendez-vous, factures, episodes de soins, demandes d'analyse, ventes au comptoir, contrats d'assurance, controles d'eligibilite, demandes RGPD — et les consentements, un par un.\n\n**Ce qui ne bouge pas : le journal d'audit.** Un acces au dossier absorbe etait un acces au dossier absorbe. Le reattribuer ferait dire au journal que quelqu'un a ouvert un dossier qu'il n'a jamais ouvert — une falsification, que les declencheurs PostgreSQL d'EF-12-04 refusent de toute facon. Les lectures du journal suivent le lien de fusion au lieu de deplacer les lignes.\n\n**Les consentements : le plus restrictif l'emporte.** La contrainte `@@unique([idPatient, scope])` interdit de garder les deux lignes quand les dossiers ne s'accordent pas sur un usage. Elargir un acces sans que le patient l'ait dit montrerait des donnees qui ne devaient pas l'etre, et cela ne se rattrape pas ; un consentement retire a tort se redonne en une phrase. La reponse rapporte les usages restreints, pour que l'agent puisse redemander au patient.\n\n**Le dossier absorbe n'est jamais supprime.** Il garde son identifiant et son code QR : une personne qui presente son ancienne carte est amenee au dossier survivant. Il sort simplement des listes de travail et des propositions de doublon.\n\n**Pas de chaine de fusion** : un dossier deja fusionne ne peut etre ni principal ni absorbe. Trois doublons se traitent sans chaine — A absorbe B, puis A absorbe C. Un declencheur PostgreSQL le garantit.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Le dossier QUI SURVIT.' }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idAbsorbe', 'motif'], properties: { idAbsorbe: { type: 'string', description: 'Le dossier absorbe. Il est conserve, jamais supprime.' }, motif: { type: 'string', minLength: 10, maxLength: 2000, description: 'Sur quoi vous vous fondez. Exige : un acte de cette portee sans motif n est pas contestable.' } } } } } },
+        responses: {
+          200: { description: 'Fusion faite, et annulable', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string' }, statut: { type: 'string', enum: ['ACTIVE', 'ANNULEE'] }, fusionneLe: { type: 'string', format: 'date-time' }, fusionnePar: { type: 'string' }, motifAnnulation: { type: 'string', nullable: true }, annuleeLe: { type: 'string', format: 'date-time', nullable: true }, annuleePar: { type: 'string', nullable: true }, principal: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, absorbe: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, lignes: { type: 'array', description: 'Ce qui a bouge, resume par table. C est ce qui rend la reversibilite credible.', items: { type: 'object', properties: { tableCible: { type: 'string' }, operation: { type: 'string', enum: ['DEPLACEMENT', 'RESTRICTION_CONSENTEMENT'] }, nombre: { type: 'integer' } } } } } } } }] } } } },
+          400: { description: 'Meme dossier, ou motif trop court' },
+          403: { description: 'Reserve a ADMIN_STRUCTURE' },
+          404: { description: "L'un des deux dossiers n'existe pas" },
+          409: { description: 'Deja fusionne, ou deux identites verifiees sur deux pieces differentes. Le corps porte `motif` : DOSSIER_INTROUVABLE, MEME_DOSSIER, MOTIF_TROP_COURT, DEJA_FUSIONNE, DEUX_PIECES_DIFFERENTES, FUSION_INTROUVABLE, DEJA_ANNULEE' },
+        },
+      },
+    },
+    '/api/v1/identites/fusions/{idFusion}/annuler': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Defaire une fusion (EF-01-06)',
+        description: "Defaire une fusion (EF-01-06).\n\n**C'est ce qui rend la fusion acceptable.** On ne remet pas « ce qui devrait etre » : chaque ligne deplacee a ete enregistree, et l'annulation relit cette liste. La reversibilite n'est pas une promesse, c'est une liste.\n\n**Ce qui a ete ajoute au dossier survivant depuis la fusion lui reste** : il ne figure pas dans la liste, donc il ne bouge pas. C'est le comportement voulu — une consultation faite apres la fusion a bien eu lieu sur le dossier survivant.\n\nVerifie par comparaison contre une vraie base : `npx tsx scripts/prouver-fusion-reversible.mts` photographie les deux dossiers, fusionne, annule, et compare.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'idFusion', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motifAnnulation'], properties: { motifAnnulation: { type: 'string', minLength: 10, maxLength: 2000 } } } } } },
+        responses: {
+          200: { description: 'Fusion annulee, chaque ligne rendue' },
+          400: { description: 'Motif trop court' },
+          403: { description: 'Reserve a ADMIN_STRUCTURE' },
+          404: { description: 'Fusion introuvable' },
+          409: { description: 'Fusion deja annulee' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/fusions': {
+      get: {
+        tags: ['Identites'],
+        summary: 'L historique des fusions d un dossier (EF-01-06)',
+        description: "L'historique des fusions d'un dossier, annulations comprises.\n\nLe resume `lignes` dit **combien** de lignes ont bouge et dans quelles tables. C'est cela qui rend la reversibilite credible aux yeux d'un agent : il voit ce qui a ete deplace avant de decider d'annuler.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Fusions, la plus recente d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string' }, statut: { type: 'string', enum: ['ACTIVE', 'ANNULEE'] }, fusionneLe: { type: 'string', format: 'date-time' }, fusionnePar: { type: 'string' }, motifAnnulation: { type: 'string', nullable: true }, annuleeLe: { type: 'string', format: 'date-time', nullable: true }, annuleePar: { type: 'string', nullable: true }, principal: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, absorbe: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, lignes: { type: 'array', description: 'Ce qui a bouge, resume par table. C est ce qui rend la reversibilite credible.', items: { type: 'object', properties: { tableCible: { type: 'string' }, operation: { type: 'string', enum: ['DEPLACEMENT', 'RESTRICTION_CONSENTEMENT'] }, nombre: { type: 'integer' } } } } } } } } }] } } } },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+        },
+      },
+    },
     '/api/v1/identites/{id}/doublons': {
       get: {
         tags: ['Identites'],

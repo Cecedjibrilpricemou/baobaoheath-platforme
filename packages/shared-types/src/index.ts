@@ -2562,6 +2562,68 @@ export interface NoterTraitsDto {
   nomMere?: string;
 }
 
+// --- Fusion de dossiers patients (EF-01-06) --------------------------------
+
+/**
+ * Pourquoi une fusion a ete refusee.
+ *
+ * Chacun de ces refus protege d un melange de dossiers medicaux : c est la
+ * faute la plus grave que ce produit puisse commettre.
+ */
+export type MotifRefusFusion =
+  | 'DOSSIER_INTROUVABLE'
+  | 'MEME_DOSSIER'
+  | 'MOTIF_TROP_COURT'
+  /** L un des deux dossiers est deja fusionne : il n y a pas de chaine. */
+  | 'DEJA_FUSIONNE'
+  /**
+   * Les deux identites sont verifiees, sur **deux pieces differentes**. Ou
+   * bien ce sont deux personnes, ou bien l une des verifications est fausse.
+   * Une machine ne peut pas trancher : un agent doit reprendre la piece.
+   */
+  | 'DEUX_PIECES_DIFFERENTES'
+  | 'FUSION_INTROUVABLE'
+  | 'DEJA_ANNULEE';
+
+export type OperationFusion = 'DEPLACEMENT' | 'RESTRICTION_CONSENTEMENT';
+
+/** Ce qu une fusion a deplace, resume par table. */
+export interface LigneFusionView {
+  tableCible: string;
+  operation: OperationFusion;
+  nombre: number;
+}
+
+/**
+ * Une fusion de dossiers, telle qu un agent la lit.
+ *
+ * **Le dossier absorbe n est jamais supprime** : il garde son identifiant et
+ * son code QR, et la fusion peut etre defaite.
+ */
+export interface FusionView {
+  id: string;
+  motif: string;
+  statut: 'ACTIVE' | 'ANNULEE';
+  fusionneLe: HorodatageApi;
+  fusionnePar: string;
+  motifAnnulation: string | null;
+  annuleeLe: HorodatageApi | null;
+  annuleePar: string | null;
+  principal: { id: string; nomComplet: string };
+  absorbe: { id: string; nomComplet: string };
+  /** Resume de ce qui a bouge. C est cela qui rend la reversibilite credible. */
+  lignes: LigneFusionView[];
+}
+
+export interface FusionnerDto {
+  idAbsorbe: string;
+  motif: string;
+}
+
+export interface AnnulerFusionDto {
+  motifAnnulation: string;
+}
+
 // --- Detection de doublons (EF-01-05) --------------------------------------
 
 /** Ce qui a fait ressembler deux dossiers. */

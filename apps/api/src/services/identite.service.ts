@@ -94,6 +94,10 @@ export async function rechercher(
   filtres: { q?: string; niveau?: NiveauIdentite }
 ): Promise<IdentitePatientView[]> {
   const where: Record<string, unknown> = {};
+  // Les dossiers absorbes par une fusion sortent de la liste de travail
+  // (EF-01-06). Ils ne sont pas supprimes — on les retrouve par leur code QR,
+  // qui renvoie au dossier survivant — mais ils n'ont plus rien a y faire.
+  where['idFusionneDans'] = null;
   if (filtres.niveau) where['niveauIdentite'] = filtres.niveau;
 
   const terme = filtres.q?.trim();

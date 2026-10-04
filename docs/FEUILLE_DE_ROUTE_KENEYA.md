@@ -18,7 +18,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P1** Épisode de soins + demande d'analyse | 11 | — | 0 | ✅ **fini** (🔁 repris puis complété) |
 | **P2** Laboratoire | 11 | — | 1 | ⏳ reste la synchronisation hors connexion (EF-04-11) |
 | **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
-| **P4** Identité patient, consentement, accès | 3 | — | 4 | ⏳ journal des accès patient (03/10), **identito-vigilance et verrou tiers payant** (04/10), **détection de doublons** (04/10, la fusion reste à faire). Restent le consentement versionné, le bris de glace, le n° d'ordre pro. **Le plus sensible réglementairement** |
+| **P4** Identité patient, consentement, accès | 4 | — | 3 | ⏳ journal des accès patient (03/10), **identito-vigilance et verrou tiers payant**, **détection de doublons**, **fusion réversible** (04/10). Restent le consentement versionné, le bris de glace, le n° d'ordre pro. **Le plus sensible réglementairement** |
 | **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
 | **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
 | **P7** Paiement | 0 | — | 5 | ❌ non commencé |
@@ -28,7 +28,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P11** Administration, audit, référentiels | 6 | 1 | — | ⏳ **référentiels, journal d'audit, suspension de compte, détection d'anomalies et demandes RGPD livrés** (API, Swagger et écrans). Reste **EF-12-02**, les conventions des partenaires |
 | **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
 | **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
-| **Total** | **51** | **6** | **40** | **sur 97** |
+| **Total** | **52** | **6** | **39** | **sur 97** |
 
 > **La ligne de total était fausse** : elle annonçait 42 faites sur 95, alors
 > que la somme des blocs donne 51 sur 97. Recomptée le 2026-10-04 en
@@ -69,7 +69,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 
 | Module | État | Existant | Manquant principal |
 |---|---|---|---|
-| EF-01 Identité | 🟡 | compte, OTP e-mail, 2FA (champ), reset, QR ; *depuis le 04/10 : identito-vigilance, niveaux d'identité, détection de doublons* | OTP SMS, **fusion** de doublons, n° d'ordre pro, 2FA imposé |
+| EF-01 Identité | 🟡 | compte, OTP e-mail, 2FA (champ), reset, QR ; *depuis le 04/10 : identito-vigilance, niveaux d'identité, détection de doublons, fusion réversible* | OTP SMS, n° d'ordre pro, 2FA imposé |
 | EF-02 Consentement | 🟡 | 4 scopes, historique | versionnage du texte, granularité, bris de glace, journal des accès patient |
 | EF-03 Hôpital | 🟠 | structures, référencement | épisode de soins, demande d'analyse structurée, orientation avec RDV |
 | EF-04 Laboratoire | 🔴 | — | tout |
@@ -148,12 +148,15 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
-### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **3 sur 7**
+### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ⏳ **4 sur 7**
 - [x] **Livré le 2026-10-04** — champs identito-vigilance (lieu de naissance, nom de la mère) et niveaux d'identité `PROVISOIRE` / `VERIFIEE`, avec le **verrou du tiers payant** (EF-01-04/10). La contrainte SQL `patients_identite_verifiee_fondee` interdit une identité vérifiée sans pièce nommée : l'invariant est structurel, pas déclaratif. L'écran d'accueil dit que cela **ne conditionne pas les soins** — un agent qui refuserait quelqu'un sans papiers commettrait une faute grave. Le numéro de pièce n'est jamais réaffiché en entier.
   > **Ce que cela réparait** : l'assurance livrée le 02/10 facturait des tiers sur des identités simplement déclarées. Le verrou par défaut était `VERIFIEE`, donc tout appelant qui l'oubliait passait — avec 1036 tests au vert. Le paramètre est désormais obligatoire.
 - [x] **Livré le 2026-10-04** — **détection de doublons** (EF-01-05). Proposition de candidats à un agent ; **aucune fusion n'est automatique**. Les poids viennent des données réelles : 9 patients sur 10 portaient le 1er janvier 2000, donc la date ne vaut presque rien et ce sont le nom de la mère et le lieu de naissance qui tranchent. Deux bornes structurelles : sans concordance de nom, et sur une simple variante d'orthographe, le score ne franchit jamais le seuil « probable » — deux frères partagent mère, ville, téléphone et parfois date, et atteignaient 115. Tolérance d'écriture (« Diallo » / « Dialo »), parce que c'est ainsi que naissent la plupart des doublons.
   > **Trouvé en appelant la vraie API** : le pré-filtre SQL cherchait les mots du nom par sous-chaîne entière, donc « Dialo » ne retrouvait jamais « Diallo » et toute la tolérance d'orthographe était inatteignable — verte en test unitaire, muette en service. Et un dossier inexistant répondait 200 avec une liste vide, ce qui se lit « ce patient n'a pas de doublon ».
-- [ ] **Fusion** de deux dossiers par agent habilité, réversible (EF-01-06). L'écran dit qu'elle n'est pas outillée plutôt que d'offrir un bouton inerte.
+- [x] **Livré le 2026-10-04** — **fusion de deux dossiers, réversible** (EF-01-06). Réservée à `ADMIN_STRUCTURE` : vérifier une pièce est le geste de l'accueil, mélanger deux dossiers médicaux ne l'est pas. Onze tables suivent le patient ; **le journal d'audit ne bouge pas** — un accès au dossier absorbé reste un accès à ce dossier, et le réécrire serait une falsification que les déclencheurs d'EF-12-04 refusent de toute façon. Le dossier absorbé n'est jamais supprimé : il garde son code QR, et les lectures suivent le lien, donc une ancienne carte continue de fonctionner.
+  > **La réversibilité n'est pas une promesse, c'est une liste** : chaque ligne déplacée est enregistrée, et annuler, c'est la relire. Ce qui a été ajouté au dossier survivant depuis la fusion lui reste. Vérifié par comparaison contre une vraie base (`scripts/prouver-fusion-reversible.mts`), et les quinze sabotages du service ont tous été attrapés — huit par ce script seul.
+  > **Les consentements : le plus restrictif l'emporte.** `@@unique([idPatient, scope])` interdit de garder les deux lignes en cas de désaccord. Élargir un accès sans que le patient l'ait dit ne se rattrape pas ; un consentement retiré à tort se redonne en une phrase. La réponse rapporte les usages restreints, pour qu'un agent redemande.
+  > **Trouvé en vérifiant l'écran** : l'`ADMIN_STRUCTURE` — le seul rôle autorisé à fusionner — était redirigé hors de l'écran des identités, qui n'était routé que pour l'accueil. La fonction aurait été livrée inatteignable.
 - [ ] Vérification du numéro d'ordre avant activation d'un compte pro (EF-01-08) ; 2FA imposée aux pros (EF-01-07).
 - [ ] Consentement versionné avec le texte présenté, granularité pro/document, retrait immédiat (EF-02-01/03/05/07).
 - [ ] Bris de glace motivé, tracé, notifié, contrôlé (EF-02-06).

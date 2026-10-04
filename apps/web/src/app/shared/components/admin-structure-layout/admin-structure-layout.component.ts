@@ -78,6 +78,7 @@ export class AdminStructureLayoutComponent {
 
   navItems = [
     { labelKey: 'ADMIN_STRUCTURE.NAV_DASHBOARD', icon: 'pi-home',  route: '/admin-structure/dashboard' },
-    { labelKey: 'ADMIN_STRUCTURE.NAV_AGENTS',    icon: 'pi-users', route: '/admin-structure/agents'    }
+    { labelKey: 'ADMIN_STRUCTURE.NAV_AGENTS',    icon: 'pi-users', route: '/admin-structure/agents'    },
+    { labelKey: 'ADMIN_STRUCTURE.NAV_IDENTITES', icon: 'pi-id-card', route: '/admin-structure/identites' }
   ];
 }

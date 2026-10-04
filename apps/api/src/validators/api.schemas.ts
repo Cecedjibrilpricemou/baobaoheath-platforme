@@ -702,6 +702,31 @@ export const filtreIdentitesSchema = z.object({
   niveau: z.nativeEnum(NiveauIdentite).optional(),
 }).strict();
 
+// --- Fusion de dossiers patients (EF-01-06) -------------------------
+//
+// Le motif est exige et sa longueur minimale est la meme qu'en base
+// (`fusions_dossier_motif_dit_quelque_chose`) : le schema refuse tot, avec un
+// message utile, plutot que de laisser remonter une violation de contrainte.
+//
+// **Le message est en francais et dit quoi faire.** Sans lui, Zod repondait
+// « Too small: expected string to have >=10 characters » — l'agent lisait de
+// l'anglais technique, et la phrase ecrite pour lui dans le service n'etait
+// jamais atteinte, puisque la validation refuse avant. Vu en appelant la vraie
+// route le 2026-10-04.
+const MOTIF_FUSION =
+  "Dites en une phrase sur quoi vous vous fondez : c'est ce qui permettra de contester la fusion plus tard.";
+
+export const fusionnerSchema = z.object({
+  idAbsorbe: z.string().trim().min(1, { message: 'Indiquez le dossier a absorber.' }),
+  motif: z.string().trim().min(10, { message: MOTIF_FUSION }).max(2000),
+}).strict();
+
+export const annulerFusionSchema = z.object({
+  motifAnnulation: z.string().trim().min(10, {
+    message: "Dites en une phrase pourquoi cette fusion est annulee : c'est ce qui restera au dossier.",
+  }).max(2000),
+}).strict();
+
 // --- Demandes d exercice de droits (EF-12-09) -----------------------
 //
 // La precision est obligatoire pour une rectification : sans elle, on ne sait

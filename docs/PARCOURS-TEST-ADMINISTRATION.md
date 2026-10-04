@@ -23,7 +23,8 @@ Si le front affiche « identifiants incorrects » alors que le mot de passe est 
 | Rôle | Identifiant | Mot de passe | Ce qu'il sert à tester |
 |---|---|---|---|
 | **SUPER_ADMIN** | `cecedjibrilpricemou1er@gmail.com` | `baobao1234` | Journal d'audit, comptes, demandes RGPD, anomalies |
-| **AGENT_ACCUEIL** | `accueil.donka@demo.test` | `Pricemou1234` | Vérification d'identité |
+| **AGENT_ACCUEIL** | `accueil.donka@demo.test` | `Pricemou1234` | Vérification d'identité, doublons |
+| **ADMIN_STRUCTURE** | `admin.donka@demo.test` | `Pricemou1234` | **Fusion de dossiers** et son annulation |
 | **MEDECIN** | `david.medecin@demo.test` | `Pricemou1234` | Provoquer une anomalie, être suspendu |
 | **PATIENT** | `620100010` *(téléphone)* | `Pricemou1234` | Journal des accès, demandes RGPD |
 
@@ -190,7 +191,7 @@ testable**, parce qu'aucune ressemblance n'existait dans les données :
 | Dossier | Numéro | Ce qu'il sert à montrer |
 |---|---|---|
 | **Mamadou Diallo** | `619000001` | le dossier de départ |
-| **Mamadou Dialo** | `610000002` | le même nom transcrit à l'oreille — une lettre |
+| **Mamadou Dialo** | `610000002` | le même nom transcrit à l'oreille — une lettre. Porte **deux vaccinations**, pour que la fusion de l'étape 10 ait quelque chose à déplacer |
 | **Ousmane Diallo** | `610000003` | un frère : tout concorde **sauf** le prénom |
 
 Les trois portent la même mère (Kadiatou Barry), le même lieu (Mamou) et le
@@ -238,6 +239,93 @@ invisible.
 
 ---
 
+## 10. Fusionner deux dossiers, et défaire la fusion (EF-01-06)
+
+**C'est l'opération la plus dangereuse de la plateforme.** Fusionner deux
+personnes distinctes mélange leurs dossiers médicaux : l'allergie de l'une
+devient celle de l'autre, et personne ne s'en aperçoit avant une prescription.
+Tout ce que vous allez voir est construit autour de ce risque.
+
+### D'abord, ce que l'accueil ne peut pas faire
+
+Restez en **agent d'accueil** et rouvrez « Doublons possibles » sur Mamadou
+Diallo. Il n'y a **aucun bouton pour fusionner** : vérifier une pièce est le
+geste de celui qui reçoit le patient, mélanger deux dossiers ne l'est pas. On
+lui dit à la place de signaler le doublon à l'administration de sa structure.
+
+### Ensuite, la fusion
+
+**Connectez-vous en `admin.donka@demo.test`** → **Identités et doublons**
+(l'entrée est dans son propre menu).
+
+> L'écran est le même que celui de l'accueil, mais le badge en haut dit
+> « Admin Structure » : il annonce l'espace dans lequel vous êtes.
+
+Ouvrez **« Doublons possibles »** sur Mamadou Diallo, puis **« Fusionner »** sur
+Mamadou Dialo.
+
+La boîte doit dire quatre choses, et vous devez les lire :
+
+1. **ce qui va bouger** — consultations, vaccinations, rendez-vous, factures,
+   contrats ;
+2. **que le dossier absorbé n'est pas supprimé** : il garde son code QR, et une
+   ancienne carte continue de fonctionner ;
+3. **que le journal des accès n'est pas déplacé** — un accès au dossier absorbé
+   reste un accès à ce dossier, le réécrire serait falsifier une trace ;
+4. **comment se résout un désaccord de consentement** : le plus restrictif
+   l'emporte.
+
+**Essayez « Inverser »** : le sens de la fusion change. C'est voulu — vous seul
+savez lequel des deux dossiers porte l'histoire la plus complète. La machine ne
+le devine pas.
+
+Le bouton reste inactif tant que le motif fait moins de dix caractères, et le
+message vous dit quoi écrire. Validez.
+
+Le message qui suit ne dit pas « opération réussie » : il dit **combien de
+lignes ont bougé et dans quelle table** — « 2 · vaccinations · déplacées ». Un
+agent ne croit pas une promesse, il lit une liste.
+
+Mamadou Dialo **disparaît de la liste de travail**. Il n'est pas supprimé.
+
+### Enfin, défaire
+
+Sur la ligne de Mamadou Diallo, **« Fusions de ce dossier »**.
+
+Vous voyez la fusion « En vigueur », avec **le motif que vous avez écrit** et
+qui l'a faite. Cliquez **« Annuler cette fusion »**.
+
+L'écran dit ce qui sera rendu, et ce qui ne le sera pas : *ce qui a été ajouté
+au dossier conservé depuis la fusion y reste*. Un motif est exigé là aussi.
+
+Après annulation, Mamadou Dialo **revient dans la liste**, avec ses deux
+vaccinations.
+
+> **Pourquoi « réversible » n'est pas un mot.** Chaque ligne déplacée est
+> enregistrée dans une table dédiée. Annuler, c'est relire cette liste et
+> rendre exactement ce qui a été bougé. C'est vérifié par comparaison contre
+> une vraie base : `npx tsx scripts/prouver-fusion-reversible.mts` photographie
+> les deux dossiers, fusionne, annule, et compare au caractère près.
+
+### Les refus, qu'il faut essayer
+
+| Ce que vous tentez | Ce qui doit arriver |
+|---|---|
+| Fusionner un dossier **avec lui-même** | Refusé |
+| Un motif de moins de dix caractères | Refusé, avec une phrase qui dit quoi écrire |
+| Fusionner un dossier **déjà fusionné** | Refusé : il n'y a pas de chaîne de fusion |
+| Fusionner **deux identités vérifiées sur deux pièces différentes** | Refusé |
+
+Le dernier est le plus important. Deux agents ont chacun vu une pièce, et les
+numéros diffèrent : **ou bien ce sont deux personnes, ou bien une des deux
+vérifications est fausse.** Une machine ne peut pas dire laquelle. C'est un
+humain, pièce en main, qui doit trancher.
+
+> Les trois premiers refus sont aussi tenus par la base elle-même — contraintes
+> `CHECK` et déclencheur PostgreSQL — et pas seulement par le code qui appelle.
+
+---
+
 ## Ce que ce parcours ne couvre pas, et qu'il faut savoir
 
 | Point | État |
@@ -248,7 +336,8 @@ invisible.
 | **La durée légale de conservation** d'un dossier de soins en Guinée | Inconnue de moi. Elle détermine ce qu'on peut répondre à une demande d'effacement. |
 | **Les seuils de détection d'anomalies** | Non calibrés sur du trafic réel. Affichés à l'écran pour cette raison. |
 | **Import de référentiels** | API seulement, pas d'écran. |
-| **Fusion de deux doublons** (EF-01-06) | Pas construite. La détection propose, l'écran dit qu'il n'y a pas d'outil pour fusionner, et c'est tout ce qu'il promet. |
+| **Fusion de deux doublons** (EF-01-06) | Construite le 2026-10-04, réversible, réservée à `ADMIN_STRUCTURE`. Voir l'étape 10. |
+| **Le compte du dossier absorbé** | Il reste actif. La personne qui s'y connecte voit le dossier survivant — c'est la même personne — mais rien ne lui dit que ses deux dossiers ont été réunis. À trancher : faut-il le lui écrire ? |
 | **Les poids de la détection de doublons** | Non calibrés sur du trafic réel : ils disent un ordre d'importance. La comparaison entre familles de traits reste arbitraire — un même nom de mère sans aucun nom commun (45) passe devant une variante d'orthographe avec téléphone partagé (42), alors que la seconde est plus probablement un doublon. Rien n'en découle, puisque aucun des deux ne conclut. |
 | **Les dossiers « Diag Test », « roi dave », « ki ki », « de de »…** | 6 des 13 dossiers patients portent des noms de test. Ils faussent toute lecture des chiffres. À trancher avec le reste des données de démonstration. |
 

@@ -148,9 +148,27 @@ export async function getPatientById(user: JwtPayload, id: string) {
   return patient;
 }
 
+/**
+ * Retrouver un patient par son code QR.
+ *
+ * **Une ancienne carte doit continuer de fonctionner** (EF-01-06). Quand le
+ * dossier a ete fusionne dans un autre, on amene au dossier survivant : c'est
+ * lui qui porte l'histoire. Sans ce saut, la personne qui presente la carte
+ * qu'elle a dans la poche tomberait sur un dossier vide, et on lui dirait
+ * qu'elle n'a pas d'antecedents.
+ *
+ * Il n'y a jamais de chaine de fusion — un declencheur PostgreSQL l'interdit —
+ * donc un seul saut suffit.
+ */
 export async function getPatientByQrCode(user: JwtPayload, qrCode: string) {
-  const patient = await prisma.patientProfile.findUnique({
+  const trouve = await prisma.patientProfile.findUnique({
     where: { qrCode },
+    select: { id: true, idFusionneDans: true },
+  });
+  if (!trouve) throw new NotFoundError('Patient non trouve');
+
+  const patient = await prisma.patientProfile.findUnique({
+    where: { id: trouve.idFusionneDans ?? trouve.id },
     include: {
       utilisateur: {
         select: { id: true, telephone: true, email: true, prenom: true, nom: true, photoUrl: true },
@@ -163,9 +181,21 @@ export async function getPatientByQrCode(user: JwtPayload, qrCode: string) {
   return patient;
 }
 
+/**
+ * Le dossier du patient connecte.
+ *
+ * **Suit le lien de fusion** (EF-01-06) : quelqu'un dont le dossier a ete
+ * absorbe se connecte avec son ancien compte, et doit voir son dossier — pas
+ * une coquille vide. C'est la meme personne, c'est la premisse de la fusion.
+ */
 export async function getMyProfile(userId: string) {
-  const patient = await prisma.patientProfile.findUnique({
+  const sien = await prisma.patientProfile.findUnique({
     where: { idUtilisateur: userId },
+    select: { id: true, idFusionneDans: true },
+  });
+
+  const patient = await prisma.patientProfile.findUnique({
+    where: sien?.idFusionneDans ? { id: sien.idFusionneDans } : { idUtilisateur: userId },
     include: {
       utilisateur: {
         select: { id: true, telephone: true, email: true, prenom: true, nom: true, photoUrl: true, langue: true },

@@ -21,9 +21,11 @@ import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import type {
-  CandidatDoublonView, IdentitePatientView, NiveauIdentite, TypePieceIdentite,
+  CandidatDoublonView, FusionView, IdentitePatientView, NiveauIdentite,
+  TypePieceIdentite,
 } from '@baobaoheath/shared-types';
 import { HopitalService } from '../../../core/services/hopital.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
@@ -33,6 +35,15 @@ const PIECES: TypePieceIdentite[] = [
 
 /** Les mêmes longueurs que l'API et la contrainte SQL. */
 const NUMERO_MIN = 3;
+
+/**
+ * Le motif de fusion, en caracteres.
+ *
+ * La meme valeur que le schema de l'API et que la contrainte SQL
+ * `fusions_dossier_motif_dit_quelque_chose`. Un acte de cette portee sans
+ * motif n'est pas contestable.
+ */
+const MOTIF_MIN = 10;
 const LIEU_MIN = 2;
 
 @Component({
@@ -48,6 +59,7 @@ const LIEU_MIN = 2;
 })
 export class IdentitesComponent implements OnInit {
   private hopital = inject(HopitalService);
+  private auth = inject(AuthService);
   private i18n = inject(I18nService);
 
   pieces = PIECES;
@@ -127,6 +139,141 @@ export class IdentitesComponent implements OnInit {
   fermerDoublons() {
     this.patientDoublons.set(null);
     this.candidats.set([]);
+  }
+
+  // ── La fusion (EF-01-06) ───────────────────────────────────────────
+  //
+  // **Reservee a ADMIN_STRUCTURE.** L'API le fait respecter ; l'ecran ne
+  // montre le bouton qu'a ce role, parce que proposer une action qu'on n'a pas
+  // le droit de faire est une facon de mentir a l'utilisateur.
+  //
+  // Le dossier qui survit est **choisi par l'agent** : lui seul sait lequel
+  // des deux porte l'histoire la plus complete. L'ecran propose un sens et
+  // permet de l'inverser d'un clic.
+  peutFusionner = computed(() => this.auth.userRole() === 'ADMIN_STRUCTURE');
+
+  /** L'écran vit dans deux espaces : le badge doit dire lequel. */
+  badgeEspace = computed(() =>
+    this.auth.userRole() === 'ADMIN_STRUCTURE' ? 'ADMIN_STRUCTURE.ROLE' : 'HOPITAL.ROLE');
+
+  /** Le candidat qu'on s'apprete a fusionner, et dans quel sens. */
+  aFusionner = signal<CandidatDoublonView | null>(null);
+  garderLeCandidat = signal(false);
+  motifFusion = signal('');
+  fusionEnCours = signal(false);
+  derniereFusion = signal<FusionView | null>(null);
+
+  /** L'historique, et l'annulation. */
+  historique = signal<FusionView[]>([]);
+  aAnnuler = signal<FusionView | null>(null);
+  motifAnnulation = signal('');
+
+  /** Le meme minimum que l'API et que la contrainte SQL. */
+  motifMin = MOTIF_MIN;
+
+  peutConfirmerFusion = computed(
+    () => this.motifFusion().trim().length >= MOTIF_MIN && !this.fusionEnCours()
+  );
+  peutConfirmerAnnulation = computed(
+    () => this.motifAnnulation().trim().length >= MOTIF_MIN && !this.fusionEnCours()
+  );
+
+  /** Qui survit, qui est absorbe — dans le sens choisi. */
+  sensFusion = computed(() => {
+    const c = this.aFusionner();
+    const p = this.patientDoublons();
+    if (!c || !p) return null;
+    return this.garderLeCandidat()
+      ? { principal: { id: c.id, nom: c.nomComplet }, absorbe: { id: p.id, nom: p.nomComplet } }
+      : { principal: { id: p.id, nom: p.nomComplet }, absorbe: { id: c.id, nom: c.nomComplet } };
+  });
+
+  ouvrirFusion(c: CandidatDoublonView) {
+    this.aFusionner.set(c);
+    this.garderLeCandidat.set(false);
+    this.motifFusion.set('');
+    this.erreurDoublons.set('');
+    this.derniereFusion.set(null);
+  }
+
+  fermerFusion() {
+    this.aFusionner.set(null);
+    this.motifFusion.set('');
+  }
+
+  confirmerFusion() {
+    const sens = this.sensFusion();
+    if (!sens || !this.peutConfirmerFusion()) return;
+
+    this.fusionEnCours.set(true);
+    this.erreurDoublons.set('');
+    this.hopital.fusionner(sens.principal.id, {
+      idAbsorbe: sens.absorbe.id,
+      motif: this.motifFusion().trim(),
+    }).subscribe({
+      next: (res) => {
+        this.fusionEnCours.set(false);
+        this.aFusionner.set(null);
+        this.derniereFusion.set(res.data ?? null);
+        this.fermerDoublons();
+        this.charger();
+      },
+      error: (err) => {
+        this.fusionEnCours.set(false);
+        this.erreurDoublons.set(this.messageDe(err, 'HOPITAL.IDENTITES.FUSION_ERREUR'));
+      },
+    });
+  }
+
+  /** Combien de lignes ont bouge, toutes operations confondues. */
+  lignesBougees(f: FusionView): number {
+    return f.lignes.reduce((n, l) => n + l.nombre, 0);
+  }
+
+  consentementsRestreints(f: FusionView): number {
+    return f.lignes
+      .filter((l) => l.operation === 'RESTRICTION_CONSENTEMENT')
+      .reduce((n, l) => n + l.nombre, 0);
+  }
+
+  voirFusions(p: IdentitePatientView) {
+    this.patientDoublons.set(null);
+    this.historique.set([]);
+    this.hopital.fusions(p.id).subscribe({
+      next: (res) => this.historique.set(res.data ?? []),
+      error: (err) => this.erreur.set(this.messageDe(err, 'HOPITAL.IDENTITES.FUSION_ERREUR')),
+    });
+  }
+
+  ouvrirAnnulation(f: FusionView) {
+    this.aAnnuler.set(f);
+    this.motifAnnulation.set('');
+    this.erreur.set('');
+  }
+
+  confirmerAnnulation() {
+    const f = this.aAnnuler();
+    if (!f || !this.peutConfirmerAnnulation()) return;
+
+    this.fusionEnCours.set(true);
+    this.hopital.annulerFusion(f.id, {
+      motifAnnulation: this.motifAnnulation().trim(),
+    }).subscribe({
+      next: (res) => {
+        this.fusionEnCours.set(false);
+        this.aAnnuler.set(null);
+        this.historique.set([]);
+        this.succes.set(this.i18n.t('HOPITAL.IDENTITES.FUSION_ANNULEE_MSG', {
+          absorbe: res.data?.absorbe.nomComplet ?? '',
+        }));
+        setTimeout(() => this.succes.set(''), 10000);
+        this.charger();
+      },
+      error: (err) => {
+        this.fusionEnCours.set(false);
+        this.erreur.set(this.messageDe(err, 'HOPITAL.IDENTITES.FUSION_ERREUR'));
+      },
+    });
   }
 
   charger() {
