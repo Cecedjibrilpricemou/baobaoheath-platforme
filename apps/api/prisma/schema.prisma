@@ -250,6 +250,8 @@ model Utilisateur {
 
   /// Les identites de patients qu'il a verifiees (EF-01-04).
   identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
+  brisDeGlaceDeclares BrisDeGlace[] @relation("BrisDeGlaceDeclares")
+  brisDeGlaceRevus    BrisDeGlace[] @relation("BrisDeGlaceRevus")
   textesConsentementPublies TexteConsentement[] @relation("TextesConsentementPublies")
   evenementsConsentement    EvenementConsentement[] @relation("EvenementsConsentement")
   fusionsProoncees FusionDossier[] @relation("FusionsProoncees")
@@ -639,6 +641,8 @@ model StructureSante {
   telephone            String?
   photoUrl             String?
   estActive            Boolean               @default(true)
+  brisDeGlace BrisDeGlace[]
+
   creeLe               DateTime              @default(now())
 
   utilisateurs          Utilisateur[]
@@ -739,6 +743,7 @@ model PatientProfile {
   dossiersAbsorbes PatientProfile[] @relation("FusionDeDossier")
   fusionneLe     DateTime?
 
+  brisDeGlace BrisDeGlace[] @relation("BrisDeGlacePatient")
   evenementsConsentement EvenementConsentement[]
 
   fusionsPrincipal FusionDossier[] @relation("FusionPrincipal")
@@ -1485,6 +1490,101 @@ model EvenementConsentement {
 enum SensConsentement {
   ACCORDE
   RETIRE
+}
+
+/// Un acces en urgence a un dossier auquel on n'a normalement pas droit
+/// (EF-02-06).
+///
+/// **Pourquoi cela doit exister.** Un patient arrive inconscient dans un
+/// service qui ne le suit pas. Le soignant a besoin de ses allergies, tout de
+/// suite. Un controle d'acces qui n'aurait aucune porte de secours ferait
+/// prescrire a l'aveugle — et la regle serait contournee autrement, par un
+/// compte prete ou un mot de passe partage, sans laisser de trace.
+///
+/// **Pourquoi ce n'est pas un passe-partout.** Quatre choses le distinguent :
+///
+///   - **un motif est exige**, choisi dans une liste fermee *et* explique en
+///     toutes lettres. La liste permet de compter, le texte permet de juger ;
+///   - **l'acces expire.** Il ouvre quelques heures, pas pour toujours. Sans
+///     expiration, le premier bris de glace deviendrait la facon normale
+///     d'entrer ;
+///   - **le patient est prevenu.** C'est ce qui separe un acces d'urgence
+///     assume d'une porte derobee ;
+///   - **l'administration repasse derriere.** Un garde-fou que personne ne
+///     relit n'est pas un garde-fou.
+///
+/// **La declaration ne se modifie pas.** Un declencheur PostgreSQL refuse de
+/// toucher au motif, au patient, a l'auteur et aux dates une fois la ligne
+/// ecrite : quelqu'un qui pourrait reecrire son motif apres coup n'aurait rien
+/// declare du tout. Seule la revue, qui vient apres, s'ecrit.
+model BrisDeGlace {
+  id String @id @default(cuid())
+
+  motif      MotifBrisDeGlace
+  /// Ce que le soignant explique en toutes lettres. La liste fermee permet de
+  /// compter ; cette phrase permet de juger.
+  explication String
+
+  idPatient String
+  patient   PatientProfile @relation("BrisDeGlacePatient", fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idAuteur String
+  auteur   Utilisateur @relation("BrisDeGlaceDeclares", fields: [idAuteur], references: [id], onDelete: Restrict)
+
+  /// La structure depuis laquelle l'acces a ete pris. Elle situe le geste.
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
+
+  ouvertLe  DateTime @default(now())
+  /// Au-dela, l'acces se referme de lui-meme. Un bris de glace qui ne se
+  /// refermerait pas serait une cle, pas une vitre brisee.
+  expireLe  DateTime
+  /// Referme avant l'heure, par son auteur. Le geste honnete quand on n'a plus
+  /// besoin du dossier.
+  refermeLe DateTime?
+
+  // ── La revue, qui vient apres ───────────────────────────────────────
+  statutRevue  StatutRevueBrisDeGlace @default(A_REVOIR)
+  avisRevue    String?
+  idRevuPar    String?
+  revuPar      Utilisateur? @relation("BrisDeGlaceRevus", fields: [idRevuPar], references: [id], onDelete: SetNull)
+  revuLe       DateTime?
+
+  /// Le patient a-t-il ete prevenu ? `null` : la notification a echoue, et
+  /// cela se voit au lieu de se perdre.
+  notifieLe DateTime?
+
+  @@index([idPatient, ouvertLe])
+  @@index([idAuteur, ouvertLe])
+  @@index([statutRevue, ouvertLe])
+  @@index([expireLe])
+  @@map("bris_de_glace")
+}
+
+/// Pourquoi la vitre a ete brisee.
+///
+/// Liste **fermee** : on ne peut juger ni compter des motifs ecrits comme
+/// chacun veut. Le texte libre vient en plus, pas a la place.
+enum MotifBrisDeGlace {
+  /// Pronostic vital engage, decision immediate.
+  URGENCE_VITALE
+  /// Le patient ne peut pas consentir : inconscient, confus, trop jeune.
+  PATIENT_HORS_ETAT
+  /// Le patient est adresse par une autre structure et son dossier y vit.
+  CONTINUITE_DES_SOINS
+  /// Suspicion d'interaction ou d'allergie a verifier avant de prescrire.
+  VERIFICATION_AVANT_PRESCRIPTION
+  AUTRE
+}
+
+/// Ou en est la relecture.
+enum StatutRevueBrisDeGlace {
+  A_REVOIR
+  /// L'acces etait fonde. Dit explicitement, pas par defaut.
+  JUSTIFIE
+  /// L'acces n'etait pas fonde. Ce n'est pas une sanction : c'est un constat
+  /// ecrit, qui permet d'en tirer les consequences ailleurs.
+  INJUSTIFIE
 }
 
 model ConsentementPatient {

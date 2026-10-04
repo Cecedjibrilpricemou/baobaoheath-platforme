@@ -40,6 +40,11 @@ export const MEDECIN_ROUTES: Routes = [
           import('./agenda/agenda.component').then(m => m.AgendaComponent)
       },
       {
+        path: 'bris-de-glace',
+        loadComponent: () =>
+          import('./bris-de-glace/bris-de-glace.component').then(m => m.BrisDeGlaceComponent)
+      },
+      {
         path: 'orientations',
         loadComponent: () =>
           import('./orientations/orientations.component').then(m => m.OrientationsComponent)

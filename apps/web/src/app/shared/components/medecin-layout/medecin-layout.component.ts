@@ -81,6 +81,7 @@ export class MedecinLayoutComponent {
     { labelKey: 'MEDECIN.NAV_CONSULTATIONS', icon: 'pi-check-circle', route: '/medecin/consultations' },
     { labelKey: 'MEDECIN.NAV_DEMANDES',      icon: 'pi-inbox',        route: '/medecin/demandes'      },
     { labelKey: 'MEDECIN.NAV_AGENDA',        icon: 'pi-calendar',     route: '/medecin/agenda'        },
+    { labelKey: 'MEDECIN.NAV_BRIS',          icon: 'pi-unlock',       route: '/medecin/bris-de-glace' },
     { labelKey: 'MEDECIN.NAV_ORIENTATIONS',  icon: 'pi-directions',   route: '/medecin/orientations'  },
     { labelKey: 'MEDECIN.NAV_RESULTATS',    icon: 'pi-inbox',        route: '/medecin/resultats'     },
     { labelKey: 'MEDECIN.NAV_REFERENCEMENTS', icon: 'pi-send',        route: '/medecin/referencements' },

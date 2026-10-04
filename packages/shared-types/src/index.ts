@@ -2555,6 +2555,83 @@ export interface NoterTraitsDto {
   nomMere?: string;
 }
 
+// --- Bris de glace (EF-02-06) ----------------------------------------------
+
+/**
+ * Pourquoi la vitre a ete brisee.
+ *
+ * Liste **fermee** : on ne peut ni juger ni compter des motifs ecrits comme
+ * chacun veut. Le texte libre vient en plus, pas a la place.
+ */
+export type MotifBrisDeGlace =
+  /** Pronostic vital engage, decision immediate. */
+  | 'URGENCE_VITALE'
+  /** Le patient ne peut pas consentir : inconscient, confus, trop jeune. */
+  | 'PATIENT_HORS_ETAT'
+  /** Le patient est adresse par une autre structure et son dossier y vit. */
+  | 'CONTINUITE_DES_SOINS'
+  /** Suspicion d interaction ou d allergie a verifier avant de prescrire. */
+  | 'VERIFICATION_AVANT_PRESCRIPTION'
+  | 'AUTRE';
+
+export type StatutRevueBrisDeGlace = 'A_REVOIR' | 'JUSTIFIE' | 'INJUSTIFIE';
+
+export type MotifRefusBrisDeGlace =
+  | 'PATIENT_INTROUVABLE'
+  /** Seuls les roles qui donnent des soins peuvent briser la glace. */
+  | 'ROLE_NON_AUTORISE'
+  /** Son propre dossier est deja ouvert : le declarer serait une fausse urgence. */
+  | 'SON_PROPRE_DOSSIER'
+  | 'EXPLICATION_TROP_COURTE'
+  | 'BRIS_INTROUVABLE'
+  | 'PAS_VOTRE_ACCES'
+  | 'DEJA_REFERME'
+  /** Un garde-fou qu on s applique a soi-meme n en est pas un. */
+  | 'PAS_SON_PROPRE_ACCES'
+  | 'DEJA_REVU'
+  | 'AVIS_TROP_COURT';
+
+/**
+ * Un acces en urgence, tel qu il se lit.
+ *
+ * **Ce n est pas un passe-partout** : un motif est exige, l acces expire, le
+ * patient est prevenu, et l administration repasse derriere.
+ */
+export interface BrisDeGlaceView {
+  id: string;
+  motif: MotifBrisDeGlace;
+  /** Ce que le soignant a explique en toutes lettres. Ne se reecrit pas. */
+  explication: string;
+  ouvertLe: HorodatageApi;
+  expireLe: HorodatageApi;
+  refermeLe: HorodatageApi | null;
+  /** Encore ouvert : ni referme, ni expire. */
+  ouvert: boolean;
+  statutRevue: StatutRevueBrisDeGlace;
+  avisRevue: string | null;
+  revuLe: HorodatageApi | null;
+  revuPar: string | null;
+  /**
+   * `null` : **le patient n a pas pu etre prevenu.** La declaration tient
+   * quand meme — il y a un patient au bout — mais le manque se voit.
+   */
+  notifieLe: HorodatageApi | null;
+  patient: { id: string; nomComplet: string };
+  auteur: { id: string; nomComplet: string; role: string };
+  structure: string | null;
+}
+
+export interface DeclarerBrisDeGlaceDto {
+  idPatient: string;
+  motif: MotifBrisDeGlace;
+  explication: string;
+}
+
+export interface ReviserBrisDeGlaceDto {
+  statut: 'JUSTIFIE' | 'INJUSTIFIE';
+  avis: string;
+}
+
 // --- Consentement versionne (EF-02-01/03/07) -------------------------------
 
 /**

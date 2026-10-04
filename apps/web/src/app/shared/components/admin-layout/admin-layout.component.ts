@@ -84,6 +84,7 @@ export class AdminLayoutComponent {
     { labelKey: 'ADMIN.NAV_COMPTES',    icon: 'pi-users',     route: '/admin/comptes'    },
     { labelKey: 'ADMIN.NAV_RGPD',       icon: 'pi-file-edit', route: '/admin/demandes-rgpd' },
     { labelKey: 'ADMIN.NAV_JOURNAL',    icon: 'pi-shield',    route: '/admin/journal'    },
+    { labelKey: 'ADMIN.NAV_BRIS',       icon: 'pi-unlock',    route: '/admin/bris-de-glace' },
     { labelKey: 'ADMIN.NAV_SETTINGS',   icon: 'pi-cog',       route: '/admin/settings'   }
   ];
 }

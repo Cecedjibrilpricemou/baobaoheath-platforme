@@ -1510,6 +1510,68 @@ export const swaggerDocument = {
         },
       },
     },
+    // ── P4 Bris de glace (EF-02-06) ───────────────────────────────────
+    '/api/v1/bris-de-glace': {
+      post: {
+        tags: ['Bris de glace'],
+        summary: 'Declarer un acces en urgence (EF-02-06)',
+        description: "Declarer un acces en urgence a un dossier auquel on n'a pas droit (EF-02-06).\n\n**Pourquoi cette porte existe.** Un patient arrive inconscient dans un service qui ne le suit pas. Le soignant a besoin de ses allergies, tout de suite. Un controle d'acces sans porte de secours ferait prescrire a l'aveugle — et la regle serait contournee autrement, par un compte prete, sans laisser la moindre trace. Une porte declaree vaut mieux qu'une porte derobee.\n\n**Pourquoi ce n'est pas un passe-partout :**\n- un **motif** est exige, pris dans une liste fermee *et* explique en toutes lettres. La liste permet de compter, le texte permet de juger ;\n- l'acces **expire au bout de 4 heures**. Sans expiration, le premier bris de glace deviendrait la facon normale d'entrer. La duree est volontairement trop courte pour couvrir une garde : un soignant qui a encore besoin du dossier le lendemain doit redeclarer, et ce second geste se verra ;\n- le **patient est prevenu** dans la foulee ;\n- l'**administration repasse derriere**. Un garde-fou que personne ne relit n'est pas un garde-fou ;\n- la **declaration ne se reecrit pas** : un declencheur PostgreSQL refuse de toucher au motif, au patient, a l'auteur et aux dates.\n\n**Reserve aux roles qui donnent des soins** — medecin, ASC, superviseur d'ASC. Ni l'accueil, ni l'administration, ni le laboratoire : leur ouvrir cette porte ferait de l'exception la regle.\n\n**Si la notification du patient echoue, l'acces est quand meme ouvert** : il y a un patient inconscient au bout. Mais `notifieLe` reste nul, et la revue le signale — un bris de glace dont le patient n'a pas ete prevenu n'est qu'a moitie declare.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idPatient', 'motif', 'explication'], properties: { idPatient: { type: 'string' }, motif: { type: 'string', enum: ['URGENCE_VITALE', 'PATIENT_HORS_ETAT', 'CONTINUITE_DES_SOINS', 'VERIFICATION_AVANT_PRESCRIPTION', 'AUTRE'] }, explication: { type: 'string', minLength: 20, maxLength: 2000, description: 'La situation en une phrase. C est elle qui sera relue, et c est elle qui protege le soignant.' } } } } } },
+        responses: {
+          201: { description: 'Acces ouvert, patient prevenu', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string', enum: ['URGENCE_VITALE', 'PATIENT_HORS_ETAT', 'CONTINUITE_DES_SOINS', 'VERIFICATION_AVANT_PRESCRIPTION', 'AUTRE'] }, explication: { type: 'string', description: 'Ce que le soignant a explique. Ne se reecrit pas.' }, ouvertLe: { type: 'string', format: 'date-time' }, expireLe: { type: 'string', format: 'date-time' }, refermeLe: { type: 'string', format: 'date-time', nullable: true }, ouvert: { type: 'boolean', description: 'Ni referme, ni expire.' }, statutRevue: { type: 'string', enum: ['A_REVOIR', 'JUSTIFIE', 'INJUSTIFIE'] }, avisRevue: { type: 'string', nullable: true }, revuLe: { type: 'string', format: 'date-time', nullable: true }, revuPar: { type: 'string', nullable: true }, notifieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : le patient n a pas pu etre prevenu. La declaration tient, le manque se voit.' }, patient: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, auteur: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, role: { type: 'string' } } }, structure: { type: 'string', nullable: true } } } } }] } } } },
+          400: { description: 'Explication trop courte, ou son propre dossier' },
+          403: { description: 'Reserve aux roles qui donnent des soins : MEDECIN, ASC, ASC_SUPERVISOR' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+      get: {
+        tags: ['Bris de glace'],
+        summary: 'Les acces en urgence (EF-02-06)',
+        description: "Les acces en urgence.\n\n**Un soignant ne voit que les siens** : la liste complete est un outil de controle, pas un annuaire des urgences des autres. L'administration voit tout, parce que c'est elle qui relit.\n\n`aRevoirSeulement=true` ne garde que ceux qui attendent une relecture : c'est la file de travail de l'administration.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'idPatient', in: 'query', schema: { type: 'string' } },
+          { name: 'aRevoirSeulement', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'La file de travail de l administration.' },
+        ],
+        responses: {
+          200: { description: 'Acces, le plus recent d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string', enum: ['URGENCE_VITALE', 'PATIENT_HORS_ETAT', 'CONTINUITE_DES_SOINS', 'VERIFICATION_AVANT_PRESCRIPTION', 'AUTRE'] }, explication: { type: 'string', description: 'Ce que le soignant a explique. Ne se reecrit pas.' }, ouvertLe: { type: 'string', format: 'date-time' }, expireLe: { type: 'string', format: 'date-time' }, refermeLe: { type: 'string', format: 'date-time', nullable: true }, ouvert: { type: 'boolean', description: 'Ni referme, ni expire.' }, statutRevue: { type: 'string', enum: ['A_REVOIR', 'JUSTIFIE', 'INJUSTIFIE'] }, avisRevue: { type: 'string', nullable: true }, revuLe: { type: 'string', format: 'date-time', nullable: true }, revuPar: { type: 'string', nullable: true }, notifieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : le patient n a pas pu etre prevenu. La declaration tient, le manque se voit.' }, patient: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, auteur: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, role: { type: 'string' } } }, structure: { type: 'string', nullable: true } } } } } }] } } } },
+          400: { description: 'Critere inconnu' },
+        },
+      },
+    },
+    '/api/v1/bris-de-glace/{id}/refermer': {
+      post: {
+        tags: ['Bris de glace'],
+        summary: 'Refermer un acces avant son expiration (EF-02-06)',
+        description: "Refermer un acces avant son expiration.\n\nLe geste honnete quand on n'a plus besoin du dossier. **Seul celui qui a brise la vitre la referme** : un tiers qui refermerait l'acces d'un autre le laisserait devant un dossier qu'il consultait peut-etre encore.\n\nUn acces referme ne se rouvre pas — un declencheur PostgreSQL le refuse. Il faut declarer un nouveau bris de glace, et ce second geste se verra.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Acces referme' },
+          403: { description: 'Seul celui qui a ouvert l acces peut le refermer' },
+          404: { description: 'Acces introuvable' },
+          409: { description: 'Acces deja referme' },
+        },
+      },
+    },
+    '/api/v1/bris-de-glace/{id}/reviser': {
+      post: {
+        tags: ['Bris de glace'],
+        summary: 'Rendre une revue sur un acces en urgence (EF-02-06)',
+        description: "Rendre une revue sur un acces en urgence (EF-02-06).\n\n**Un avis ecrit est exige, meme pour dire que l'acces etait fonde.** Une case cochee sans phrase ne prouve pas que quelqu'un a regarde.\n\n**On ne relit pas son propre acces** : un garde-fou qu'on s'applique a soi-meme n'en est pas un.\n\nUne revue ne se refait pas : juger deux fois le meme acces reviendrait a pouvoir changer d'avis apres coup, ce qui viderait la relecture de son sens. Un `INJUSTIFIE` n'est pas une sanction — c'est un constat ecrit, et les suites se decident ailleurs.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['statut', 'avis'], properties: { statut: { type: 'string', enum: ['JUSTIFIE', 'INJUSTIFIE'] }, avis: { type: 'string', minLength: 20, maxLength: 2000 } } } } } },
+        responses: {
+          200: { description: 'Revue rendue' },
+          400: { description: 'Avis trop court' },
+          403: { description: 'Reserve a l administration, et jamais sur son propre acces' },
+          404: { description: 'Acces introuvable' },
+          409: { description: 'Acces deja relu' },
+        },
+      },
+    },
     // ── P4 Consentement versionne (EF-02-01/03/07) ────────────────────
     '/api/v1/textes-consentement': {
       get: {

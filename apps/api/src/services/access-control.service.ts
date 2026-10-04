@@ -39,6 +39,17 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
         { idAscPrincipal: utilisateur.ascProfile.id },
         { consultations: { some: { idAsc: utilisateur.ascProfile.id } } },
         ...(idStructure ? [{ idStructurePreferee: idStructure }] : []),
+        // Un ASC peut briser la glace : il est souvent le premier, et parfois
+        // le seul, devant le patient.
+        {
+          brisDeGlace: {
+            some: {
+              idAuteur: user.userId,
+              refermeLe: null,
+              expireLe: { gt: new Date() },
+            },
+          },
+        },
       ],
     };
   }
@@ -48,6 +59,27 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
   const parEpisode: PatientWhere[] = idStructure
     ? [{ episodes: { some: { idStructure, statut: { in: ['OUVERT', 'EN_COURS'] } } } }]
     : [];
+
+  // ── Le bris de glace (EF-02-06) ────────────────────────────────────
+  //
+  // **Un acces d'urgence declare ouvre reellement le dossier**, le temps qu'il
+  // dure. Sans cela le soignant remplirait un formulaire et se heurterait au
+  // meme refus : la porte serait decorative, et la regle serait contournee
+  // autrement — par un compte prete — sans laisser de trace.
+  //
+  // La condition est volontairement recopiee ici plutot qu'appelee : un `where`
+  // Prisma se compose, et ramener la liste des dossiers en memoire ferait une
+  // requete de plus a chaque lecture. L'index partiel
+  // `bris_de_glace_ouverts_idx` la sert.
+  const parBrisDeGlace: PatientWhere[] = [{
+    brisDeGlace: {
+      some: {
+        idAuteur: user.userId,
+        refermeLe: null,
+        expireLe: { gt: new Date() },
+      },
+    },
+  }];
 
   if (user.role === 'MEDECIN') {
     return {
@@ -65,6 +97,7 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
         },
         ...parEpisode,
         { episodes: { some: { idResponsable: user.userId } } },
+        ...parBrisDeGlace,
       ],
     };
   }

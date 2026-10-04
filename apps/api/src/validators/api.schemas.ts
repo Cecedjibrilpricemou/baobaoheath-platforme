@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  ConsentScope, NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
+  ConsentScope, MotifBrisDeGlace, NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
 } from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
@@ -700,6 +700,32 @@ export const noterTraitsSchema = z.object({
 export const filtreIdentitesSchema = z.object({
   q: z.string().trim().min(1).max(100).optional(),
   niveau: z.nativeEnum(NiveauIdentite).optional(),
+}).strict();
+
+// --- Bris de glace (EF-02-06) ---------------------------------------
+//
+// Les bornes sont celles de la base (`bris_de_glace_*`). Le message est en
+// francais et dit quoi faire : celui qui le lit a souvent un patient devant
+// lui.
+const EXPLICATION_BRIS =
+  "Expliquez la situation en une phrase : c'est elle qui sera relue, et c'est elle qui vous protège.";
+
+export const declarerBrisDeGlaceSchema = z.object({
+  idPatient: z.string().trim().min(1, { message: 'Indiquez le dossier concerne.' }),
+  motif: z.nativeEnum(MotifBrisDeGlace),
+  explication: z.string().trim().min(20, { message: EXPLICATION_BRIS }).max(2000),
+}).strict();
+
+export const reviserBrisDeGlaceSchema = z.object({
+  statut: z.enum(['JUSTIFIE', 'INJUSTIFIE']),
+  avis: z.string().trim().min(20, {
+    message: "Dites en une phrase pourquoi l'accès était fondé ou ne l'était pas.",
+  }).max(2000),
+}).strict();
+
+export const filtreBrisDeGlaceSchema = z.object({
+  idPatient: z.string().trim().min(1).optional(),
+  aRevoirSeulement: z.enum(['true', 'false']).optional(),
 }).strict();
 
 // --- Textes de consentement (EF-02-01) ------------------------------

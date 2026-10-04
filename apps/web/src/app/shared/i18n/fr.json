@@ -1132,7 +1132,8 @@
       "ERR_LOAD": "Impossible de charger les demandes.",
       "ERR_ACCEPTER": "L'acceptation a échoué.",
       "ERR_REFUSER": "Le refus a échoué."
-    }
+    },
+    "NAV_BRIS": "Accès d'urgence"
   },
   "PHARMACIEN": {
     "ROLE": "Pharmacien",
@@ -1727,7 +1728,8 @@
       "TYPE_PORTABILITE": "Portabilité",
       "TYPE_RECTIFICATION": "Rectification"
     },
-    "NAV_RGPD": "Demandes RGPD"
+    "NAV_RGPD": "Demandes RGPD",
+    "NAV_BRIS": "Accès d'urgence"
   },
   "ADMIN_STRUCTURE": {
     "ROLE": "Admin Structure",
@@ -2240,5 +2242,57 @@
       "ORANGE_MONEY": "Orange Money",
       "MTN_MOMO": "MTN MoMo"
     }
+  },
+  "BRIS_DE_GLACE": {
+    "TITRE": "Accès d'urgence au dossier",
+    "SOUS_TITRE": "Ouvrir le dossier d'un patient que vous ne suivez pas, quand sa prise en charge l'exige.",
+    "AVIS": "Cette porte existe parce qu'un contrôle d'accès sans issue de secours ferait prescrire à l'aveugle. Elle n'est pas un passe-partout : votre nom, le motif que vous écrivez et l'heure sont enregistrés, le patient en est prévenu, et l'accès est relu par l'administration.",
+    "AVIS_DUREE": "L'accès se referme automatiquement au bout de {{h}} heures. Au-delà, il faut le déclarer à nouveau.",
+    "PATIENT": "Dossier du patient",
+    "PATIENT_AIDE": "L'identifiant du dossier, ou le code QR de la carte du patient.",
+    "MOTIF": "Pourquoi cet accès",
+    "MOTIF_URGENCE_VITALE": "Urgence vitale",
+    "MOTIF_PATIENT_HORS_ETAT": "Le patient ne peut pas consentir (inconscient, confus)",
+    "MOTIF_CONTINUITE_DES_SOINS": "Continuité des soins — patient adressé par une autre structure",
+    "MOTIF_VERIFICATION_AVANT_PRESCRIPTION": "Vérification avant prescription (allergie, interaction)",
+    "MOTIF_AUTRE": "Autre",
+    "EXPLICATION": "Expliquez la situation",
+    "EXPLICATION_AIDE": "En une phrase. C'est elle qui sera relue, et c'est elle qui vous protège.",
+    "DECLARER": "Ouvrir le dossier en urgence",
+    "DECLARE_MSG": "Dossier ouvert jusqu'à {{heure}}. Le patient en a été informé.",
+    "DECLARE_MSG_SANS_NOTIF": "Dossier ouvert jusqu'à {{heure}}. Le patient n'a pas pu être informé — cela figure au dossier.",
+    "MES_ACCES": "Mes accès en urgence",
+    "AUCUN": "Vous n'avez ouvert aucun dossier en urgence.",
+    "OUVERT": "Ouvert",
+    "FERME": "Fermé",
+    "EXPIRE_A": "Jusqu'à {{heure}}",
+    "REFERME_LE": "Refermé le {{date}}",
+    "REFERMER": "Refermer maintenant",
+    "REFERME_MSG": "Accès refermé. Le dossier vous est à nouveau fermé.",
+    "NON_NOTIFIE": "Le patient n'a pas pu être prévenu",
+    "ERREUR": "L'accès n'a pas pu être ouvert.",
+    "REVUE_TITRE": "Accès d'urgence aux dossiers",
+    "REVUE_SOUS_TITRE": "Relire les bris de glace. Un garde-fou que personne ne relit n'en est pas un.",
+    "REVUE_AVIS": "Relire ne veut pas dire sanctionner. Un accès jugé non fondé est un constat écrit ; les suites se décident ailleurs. Et un accès fondé mérite d'être dit, sinon on ne saura pas que quelqu'un a regardé.",
+    "REVUE_A_REVOIR": "À relire",
+    "REVUE_JUSTIFIE": "Fondé",
+    "REVUE_INJUSTIFIE": "Non fondé",
+    "REVUE_FILTRE": "À relire seulement",
+    "REVUE_AUCUN": "Aucun accès d'urgence à relire.",
+    "REVUE_PAR": "Relu par {{qui}}, le {{date}}",
+    "REVUE_ACTION": "Relire",
+    "REVUE_BOITE": "Relire l'accès de {{qui}}",
+    "REVUE_AVIS_LABEL": "Votre avis",
+    "REVUE_AVIS_AIDE": "En une phrase, même pour dire que l'accès était fondé. Une case cochée ne prouve pas qu'on a regardé.",
+    "REVUE_JUGER_FONDE": "L'accès était fondé",
+    "REVUE_JUGER_NON_FONDE": "L'accès n'était pas fondé",
+    "REVUE_ENREGISTRER": "Enregistrer l'avis",
+    "REVUE_PROPRE_ACCES": "Vous ne pouvez pas relire votre propre accès.",
+    "PAR": "par {{qui}} ({{role}})",
+    "DANS": "à {{structure}}",
+    "FERMER": "Fermer",
+    "ANNULER": "Annuler",
+    "DUREE_DEPUIS": "Ouvert depuis {{duree}}",
+    "DUREE_TOTALE": "Resté ouvert {{duree}}"
   }
 }

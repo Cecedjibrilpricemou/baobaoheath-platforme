@@ -25,7 +25,7 @@ Si le front affiche « identifiants incorrects » alors que le mot de passe est 
 | **SUPER_ADMIN** | `cecedjibrilpricemou1er@gmail.com` | `baobao1234` | Journal d'audit, comptes, demandes RGPD, anomalies |
 | **AGENT_ACCUEIL** | `accueil.donka@demo.test` | `Pricemou1234` | Vérification d'identité, doublons |
 | **ADMIN_STRUCTURE** | `admin.donka@demo.test` | `Pricemou1234` | **Fusion de dossiers** et son annulation |
-| **MEDECIN** | `david.medecin@demo.test` | `Pricemou1234` | Provoquer une anomalie, être suspendu |
+| **MEDECIN** | `david.medecin@demo.test` | `Pricemou1234` | Provoquer une anomalie, être suspendu, **ouvrir un dossier en urgence** |
 | **PATIENT** | `620100010` *(téléphone)* | `Pricemou1234` | Journal des accès, demandes RGPD |
 
 > Les comptes à adresse e-mail passent par un code à usage unique affiché à l'écran en développement. La patiente, elle, entre directement.
@@ -401,11 +401,91 @@ tableau ci-dessous.
 
 ---
 
+## 12. Le bris de glace (EF-02-06)
+
+**Pourquoi cette porte existe.** Un patient arrive inconscient dans un service
+qui ne le suit pas. Le soignant a besoin de ses allergies, tout de suite. Un
+contrôle d'accès sans issue de secours ferait prescrire à l'aveugle — et la
+règle serait contournée autrement, par un compte prêté, sans laisser la moindre
+trace. **Une porte déclarée vaut mieux qu'une porte dérobée.**
+
+### Côté soignant
+
+**Connectez-vous en médecin** (`david.medecin@demo.test`) → **Accès
+d'urgence**.
+
+Lisez l'avis en tête. Il dit que ce n'est **pas un passe-partout** : votre nom,
+le motif que vous écrivez et l'heure sont enregistrés, le patient en est
+prévenu, l'accès est relu, et il se referme tout seul au bout de 4 heures.
+
+Il vous faut l'identifiant d'un dossier auquel vous n'avez pas accès. Prenez-en
+un dans la liste des identités (compte `admin.donka@demo.test`), ou laissez
+l'API vous le refuser d'abord pour vérifier qu'il est bien fermé.
+
+Le bouton reste inactif tant que :
+- le dossier n'est pas indiqué ;
+- le motif n'est pas choisi dans la liste ;
+- la situation n'est pas expliquée en **au moins vingt caractères**.
+
+> « Urgence » ne suffit pas, et c'est voulu : c'est cette phrase qui sera relue,
+> et c'est elle qui protège le soignant.
+
+**Déclarez.** Le message dit jusqu'à quelle heure le dossier est ouvert, **et si
+le patient a pu être prévenu**. Si la notification a échoué, l'accès est quand
+même ouvert — il y a un patient au bout — mais le manque est écrit, à l'écran et
+au dossier.
+
+**Allez ouvrir le dossier** : il vous est maintenant accessible. Refermez
+l'accès depuis la liste, et réessayez : il vous est à nouveau fermé.
+
+### Côté administration
+
+**En SUPER_ADMIN** → **Accès d'urgence**.
+
+Vous voyez l'accès « À relire », avec :
+- qui l'a ouvert, depuis quelle structure, et quand ;
+- **le motif déclaré, mot pour mot** ;
+- **depuis combien de temps** il est ouvert.
+
+Lisez l'avis : *« Relire ne veut pas dire sanctionner. Un accès jugé non fondé
+est un constat écrit ; les suites se décident ailleurs. »*
+
+**Cliquez « Relire ».** Le bouton reste inactif tant que vous n'avez pas écrit
+un avis — **même pour dire que l'accès était fondé**. Une case cochée ne prouve
+pas que quelqu'un a regardé.
+
+Essayez ensuite de relire une seconde fois le même accès : refusé. Juger deux
+fois reviendrait à pouvoir changer d'avis après coup.
+
+### Ce qu'on ne peut pas essayer depuis l'écran
+
+| Ce qui est interdit | Par quoi |
+|---|---|
+| Réécrire son motif après coup | Un déclencheur PostgreSQL |
+| Antidater l'ouverture, ou repousser l'expiration | Le même déclencheur |
+| Rouvrir un accès refermé | Le même déclencheur |
+| Effacer ou vider la table | Deux autres déclencheurs |
+| Relire son propre accès | Le service |
+
+> Vingt de ces garde-fous ont été vérifiés sur une base jetable avant que la
+> migration ne soit appliquée : chacun a été vu **refuser** ce qu'il doit
+> refuser.
+
+### Côté patient
+
+Le patient reçoit une notification intitulée *« Votre dossier a été ouvert en
+urgence »*, qui **cite le motif déclaré** et renvoie vers « Qui a accédé à mon
+dossier ». C'est ce qui sépare un accès d'urgence assumé d'une porte dérobée.
+
+---
+
 ## Ce que ce parcours ne couvre pas, et qu'il faut savoir
 
 | Point | État |
 |---|---|
 | **Aucun compte `ADMIN_NATIONAL`** | Tous les écrans d'administration sont ouverts à `ADMIN_NATIONAL` **et** `SUPER_ADMIN`. Avec zéro compte national, toute l'administration repose sur un seul compte. |
+| **Les messages de l'API sont écrits sans accents** | « Identite verifiee », « Acces refuse »… Ce n'est pas du français, c'est du français amputé. Corrigé pour le bris de glace ; le reste de l'API attend. |
+| **La durée d'un accès d'urgence (4 heures)** | Choisie, pas calibrée sur du terrain. Assez pour une prise en charge, trop court pour une garde — un soignant qui a encore besoin du dossier le lendemain doit redéclarer, et ce second geste se verra. À discuter. |
 | **Le consentement `DOSSIER_MEDICAL` ne commande rien** | **Le plus sérieux.** Seul l'export FHIR consulte réellement les consentements. L'accès au dossier par un soignant est décidé par la relation de soin — être suivi dans l'établissement, avoir un épisode en cours — sans jamais regarder cet interrupteur. Le patient croit commander un accès qu'il ne commande pas. L'écran ne l'affirme plus ; le raccorder demande le bris de glace (EF-02-06), sans quoi couper l'accès bloquerait des soins. |
 | **Les textes de consentement** | Rédigés par moi, non relus par un juriste. Version 1, français seulement. Le pular et le malinké manquent. |
 | **L'anonymisation RGPD** | Pas construite. Une demande d'effacement se traite à la main, et la réponse écrite dit ce qui a été fait. |

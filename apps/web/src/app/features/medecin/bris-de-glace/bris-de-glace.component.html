@@ -1,0 +1,132 @@
+<div class="bb-bris">
+
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag">
+        <i class="pi pi-unlock" aria-hidden="true"></i> {{ 'MEDECIN.ROLE' | translate }}
+      </span>
+      <h1 class="bb-page-head__title">{{ 'BRIS_DE_GLACE.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'BRIS_DE_GLACE.SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  <!-- Ce que le geste engage. Le taire ferait croire à une porte ordinaire. -->
+  <div class="bris-avis" role="note">
+    <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+    <div>
+      <p>{{ 'BRIS_DE_GLACE.AVIS' | translate }}</p>
+      <p>{{ 'BRIS_DE_GLACE.AVIS_DUREE' | translate:{ h: dureeHeures } }}</p>
+    </div>
+  </div>
+
+  <mat-card class="bris-form">
+    <div class="bris-form__grille">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'BRIS_DE_GLACE.PATIENT' | translate }}</mat-label>
+        <input matInput [ngModel]="idPatient()" (ngModelChange)="idPatient.set($event)" />
+        <mat-hint>{{ 'BRIS_DE_GLACE.PATIENT_AIDE' | translate }}</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'BRIS_DE_GLACE.MOTIF' | translate }}</mat-label>
+        <mat-select [ngModel]="motif()" (ngModelChange)="motif.set($event)">
+          @for (m of motifs; track m) {
+            <mat-option [value]="m">{{ 'BRIS_DE_GLACE.MOTIF_' + m | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="bris-form__explication">
+      <mat-label>{{ 'BRIS_DE_GLACE.EXPLICATION' | translate }}</mat-label>
+      <textarea matInput rows="2" [ngModel]="explication()"
+                (ngModelChange)="explication.set($event)"></textarea>
+      <!-- C'est cette phrase qui sera relue, et c'est elle qui protège le
+           soignant : l'écran le lui dit plutôt que de compter des caractères. -->
+      <mat-hint>{{ 'BRIS_DE_GLACE.EXPLICATION_AIDE' | translate }}</mat-hint>
+    </mat-form-field>
+
+    @if (erreur()) {
+      <div class="bris-erreur" role="alert">
+        <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+        <span>{{ erreur() }}</span>
+      </div>
+    }
+
+    <button mat-flat-button color="warn" class="bris-form__action"
+            (click)="declarer()" [disabled]="!peutDeclarer()">
+      <mat-icon fontSet="pi" fontIcon="pi-unlock" aria-hidden="true"></mat-icon>
+      {{ 'BRIS_DE_GLACE.DECLARER' | translate }}
+    </button>
+  </mat-card>
+
+  @if (succes()) {
+    <div class="bris-succes" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+
+  <h2 class="bris-titre">{{ 'BRIS_DE_GLACE.MES_ACCES' | translate }}</h2>
+
+  @if (chargement()) {
+    <div class="bb-empty" role="status">
+      <mat-spinner diameter="28"></mat-spinner>
+      <p>{{ 'COMMON.LOADING' | translate }}</p>
+    </div>
+  } @else if (acces().length === 0) {
+    <div class="bb-empty">
+      <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+      <p>{{ 'BRIS_DE_GLACE.AUCUN' | translate }}</p>
+    </div>
+  } @else {
+    <ul class="bris-liste">
+      @for (b of acces(); track b.id) {
+        <li class="bris-ligne" [class.bris-ligne--ouvert]="b.ouvert">
+          <div class="bris-ligne__tete">
+            <span class="bris-ligne__nom">{{ b.patient.nomComplet }}</span>
+            <span class="bris-ligne__etat" [class.bris-ligne__etat--ouvert]="b.ouvert">
+              {{ (b.ouvert ? 'BRIS_DE_GLACE.OUVERT' : 'BRIS_DE_GLACE.FERME') | translate }}
+            </span>
+            @if (b.ouvert) {
+              <span class="bris-ligne__heure">
+                {{ 'BRIS_DE_GLACE.EXPIRE_A' | translate:{ heure: heure(b.expireLe) } }}
+              </span>
+            }
+          </div>
+
+          <p class="bris-ligne__motif">
+            {{ 'BRIS_DE_GLACE.MOTIF_' + b.motif | translate }} — « {{ b.explication }} »
+          </p>
+
+          <!-- Un bris de glace dont le patient n'a pas été prévenu n'est
+               qu'à moitié déclaré : le soignant doit le savoir. -->
+          @if (!b.notifieLe) {
+            <p class="bris-ligne__alerte">
+              <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+              {{ 'BRIS_DE_GLACE.NON_NOTIFIE' | translate }}
+            </p>
+          }
+
+          <div class="bris-ligne__pied">
+            <span class="bris-ligne__meta">
+              {{ b.ouvertLe | date:'dd/MM/yyyy HH:mm' }}
+              @if (b.refermeLe) {
+                · {{ 'BRIS_DE_GLACE.REFERME_LE' | translate:{
+                      date: (b.refermeLe | date:'dd/MM HH:mm') ?? '' } }}
+              }
+              @if (b.statutRevue !== 'A_REVOIR') {
+                · {{ 'BRIS_DE_GLACE.REVUE_' + b.statutRevue | translate }}
+              }
+            </span>
+            @if (b.ouvert) {
+              <button mat-stroked-button (click)="refermer(b)">
+                {{ 'BRIS_DE_GLACE.REFERMER' | translate }}
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

@@ -39,6 +39,11 @@ export const ADMIN_ROUTES: Routes = [
           import('./journal/journal.component').then(m => m.JournalComponent)
       },
       {
+        path: 'bris-de-glace',
+        loadComponent: () =>
+          import('./bris-de-glace/bris-de-glace-revue.component').then(m => m.BrisDeGlaceRevueComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./settings/settings.component').then(m => m.SettingsComponent)

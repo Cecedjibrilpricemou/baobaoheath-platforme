@@ -1132,7 +1132,8 @@
       "ERR_LOAD": "Could not load the requests.",
       "ERR_ACCEPTER": "Accepting failed.",
       "ERR_REFUSER": "Declining failed."
-    }
+    },
+    "NAV_BRIS": "Emergency access"
   },
   "ADMIN": {
     "ROLE": "Administrator",
@@ -1523,7 +1524,8 @@
       "TYPE_PORTABILITE": "Portability",
       "TYPE_RECTIFICATION": "Rectification"
     },
-    "NAV_RGPD": "Data requests"
+    "NAV_RGPD": "Data requests",
+    "NAV_BRIS": "Emergency access"
   },
   "PHARMACIEN": {
     "ROLE": "Pharmacist",
@@ -2240,5 +2242,57 @@
       "ORANGE_MONEY": "Orange Money",
       "MTN_MOMO": "MTN MoMo"
     }
+  },
+  "BRIS_DE_GLACE": {
+    "TITRE": "Emergency access to a record",
+    "SOUS_TITRE": "Open the record of a patient you do not follow, when their care requires it.",
+    "AVIS": "This door exists because access control with no way out would mean prescribing blind. It is not a master key: your name, the reason you write and the time are recorded, the patient is told, and the access is reviewed by the administration.",
+    "AVIS_DUREE": "Access closes by itself after {{h}} hours. After that it must be declared again.",
+    "PATIENT": "Patient record",
+    "PATIENT_AIDE": "The record identifier, or the QR code on the patient's card.",
+    "MOTIF": "Why this access",
+    "MOTIF_URGENCE_VITALE": "Life-threatening emergency",
+    "MOTIF_PATIENT_HORS_ETAT": "The patient cannot consent (unconscious, confused)",
+    "MOTIF_CONTINUITE_DES_SOINS": "Continuity of care — referred by another facility",
+    "MOTIF_VERIFICATION_AVANT_PRESCRIPTION": "Check before prescribing (allergy, interaction)",
+    "MOTIF_AUTRE": "Other",
+    "EXPLICATION": "Explain the situation",
+    "EXPLICATION_AIDE": "In one sentence. It is what will be reviewed, and what protects you.",
+    "DECLARER": "Open the record in an emergency",
+    "DECLARE_MSG": "Record open until {{heure}}. The patient has been told.",
+    "DECLARE_MSG_SANS_NOTIF": "Record open until {{heure}}. The patient could not be told — this is on file.",
+    "MES_ACCES": "My emergency accesses",
+    "AUCUN": "You have not opened any record in an emergency.",
+    "OUVERT": "Open",
+    "FERME": "Closed",
+    "EXPIRE_A": "Until {{heure}}",
+    "REFERME_LE": "Closed on {{date}}",
+    "REFERMER": "Close now",
+    "REFERME_MSG": "Access closed. The record is shut to you again.",
+    "NON_NOTIFIE": "The patient could not be told",
+    "ERREUR": "Access could not be opened.",
+    "REVUE_TITRE": "Emergency accesses to records",
+    "REVUE_SOUS_TITRE": "Review break-glass accesses. A safeguard nobody reviews is not one.",
+    "REVUE_AVIS": "Reviewing is not sanctioning. An access judged unfounded is a written finding; what follows is decided elsewhere. And a founded access deserves to be said so, otherwise nobody knows anyone looked.",
+    "REVUE_A_REVOIR": "To review",
+    "REVUE_JUSTIFIE": "Founded",
+    "REVUE_INJUSTIFIE": "Unfounded",
+    "REVUE_FILTRE": "To review only",
+    "REVUE_AUCUN": "No emergency access to review.",
+    "REVUE_PAR": "Reviewed by {{qui}}, on {{date}}",
+    "REVUE_ACTION": "Review",
+    "REVUE_BOITE": "Review {{qui}}'s access",
+    "REVUE_AVIS_LABEL": "Your opinion",
+    "REVUE_AVIS_AIDE": "In one sentence, even to say the access was founded. A ticked box does not prove anyone looked.",
+    "REVUE_JUGER_FONDE": "The access was founded",
+    "REVUE_JUGER_NON_FONDE": "The access was not founded",
+    "REVUE_ENREGISTRER": "Record the opinion",
+    "REVUE_PROPRE_ACCES": "You cannot review your own access.",
+    "PAR": "by {{qui}} ({{role}})",
+    "DANS": "at {{structure}}",
+    "FERMER": "Close",
+    "ANNULER": "Cancel",
+    "DUREE_DEPUIS": "Open for {{duree}}",
+    "DUREE_TOTALE": "Was open {{duree}}"
   }
 }
