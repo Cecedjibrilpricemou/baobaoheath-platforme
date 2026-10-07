@@ -206,13 +206,73 @@ export async function suspendre(
   };
 }
 
+/**
+ * Les roles inscrits a un ordre professionnel (EF-01-08).
+ *
+ * Ni l'accueil ni l'administration n'y figurent : il n'existe pas d'ordre des
+ * agents d'accueil, et exiger un numero qu'on ne peut pas produire bloquerait
+ * des comptes legitimes.
+ */
+export const ROLES_A_ORDRE: Role[] = ['MEDECIN', 'PHARMACIEN', 'ASC', 'ASC_SUPERVISOR', 'TECHNICIEN_LABO'];
+
+/**
+ * Enregistrer qu'un numero d'ordre a ete confronte au registre (EF-01-08).
+ *
+ * **C'est une declaration d'administrateur, pas un appel a une API.** Il
+ * n'existe pas de registre national interrogeable ; un humain regarde, et son
+ * nom reste. Meme forme que la verification d'identite (EF-01-04).
+ */
+export async function verifierOrdre(
+  auteur: Auteur,
+  idCible: string,
+  numeroOrdre: string
+): Promise<{ id: string; nomComplet: string; numeroOrdre: string; verifieLe: string }> {
+  const cible = await prisma.utilisateur.findUnique({
+    where: { id: idCible },
+    select: { id: true, role: true, prenom: true, nom: true },
+  });
+  if (!cible) throw new NotFoundError('Compte introuvable');
+  if (!ROLES_A_ORDRE.includes(cible.role)) {
+    throw new ValidationError(`Le role ${cible.role} ne releve d'aucun ordre professionnel`);
+  }
+
+  const maj = await prisma.utilisateur.update({
+    where: { id: cible.id },
+    data: {
+      numeroOrdre: numeroOrdre.trim(),
+      ordreVerifieLe: new Date(),
+      idOrdreVerifiePar: auteur.userId,
+    },
+    select: { numeroOrdre: true, ordreVerifieLe: true },
+  });
+
+  logger.info('[ORDRE] numero verifie', { idCible: cible.id, parQui: auteur.userId });
+
+  return {
+    id: cible.id,
+    nomComplet: `${cible.prenom} ${cible.nom}`,
+    numeroOrdre: maj.numeroOrdre!,
+    verifieLe: maj.ordreVerifieLe!.toISOString(),
+  };
+}
+
 export async function reactiver(auteur: Auteur, idCible: string): Promise<SuspensionView> {
   const cible = await prisma.utilisateur.findUnique({
     where: { id: idCible },
-    select: { id: true, role: true, estActif: true, prenom: true, nom: true },
+    select: { id: true, role: true, estActif: true, prenom: true, nom: true, ordreVerifieLe: true },
   });
   if (!cible) throw new NotFoundError('Compte introuvable');
   if (cible.estActif) throw new ValidationError('Ce compte est deja actif');
+
+  // **Un soignant dont le numero d'ordre n'a pas ete verifie ne soigne pas**
+  // (EF-01-08). C'est le seul moment ou l'on peut encore l'exiger : apres,
+  // le compte est ouvert.
+  if (ROLES_A_ORDRE.includes(cible.role) && !cible.ordreVerifieLe) {
+    throw new ValidationError(
+      "Le numero d'ordre de ce compte n'a pas ete verifie. Verifiez-le avant de l'activer : "
+      + "un soignant dont l'inscription n'est pas confirmee ne doit pas acceder a des dossiers."
+    );
+  }
 
   if (cible.role === 'SUPER_ADMIN' && auteur.role !== 'SUPER_ADMIN') {
     throw new ForbiddenError('Seul un super administrateur peut reactiver un super administrateur');

@@ -702,6 +702,13 @@ export const filtreIdentitesSchema = z.object({
   niveau: z.nativeEnum(NiveauIdentite).optional(),
 }).strict();
 
+// --- Numero d'ordre professionnel (EF-01-08) ------------------------
+export const verifierOrdreSchema = z.object({
+  numeroOrdre: z.string().trim().min(3, {
+    message: "Saisissez le numero tel qu'il figure au registre de l'ordre.",
+  }).max(60),
+}).strict();
+
 // --- Bris de glace (EF-02-06) ---------------------------------------
 //
 // Les bornes sont celles de la base (`bris_de_glace_*`). Le message est en

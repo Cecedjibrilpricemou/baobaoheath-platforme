@@ -3,7 +3,9 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as comptes from '../services/compte.service';
-import { filtreComptesSchema, suspendreCompteSchema } from '../validators/api.schemas';
+import {
+  filtreComptesSchema, suspendreCompteSchema, verifierOrdreSchema,
+} from '../validators/api.schemas';
 import type { CompteView, Role, SuspensionView } from '@baobaoheath/shared-types';
 
 /**
@@ -67,6 +69,28 @@ router.post('/:id/reactiver', async (req: AuthRequest, res: Response) => {
     req.params['id'] as string
   );
   res.json({ success: true, data, message: 'Compte reactive.' });
+});
+
+/**
+ * Verifier le numero d'ordre d'un professionnel (EF-01-08).
+ *
+ * **Une declaration d'administrateur, pas un appel a une API** : il n'existe
+ * pas de registre national interrogeable. Un humain confronte le numero au
+ * registre de l'ordre, et son nom reste attache a cette verification.
+ *
+ * Tant qu'elle n'a pas eu lieu, le compte ne peut pas etre active.
+ */
+router.post('/:id/verifier-ordre', validateBody(verifierOrdreSchema), async (req: AuthRequest, res: Response) => {
+  const data = await comptes.verifierOrdre(
+    { userId: req.user!.userId, role: req.user!.role },
+    req.params['id'] as string,
+    (req.body as { numeroOrdre: string }).numeroOrdre
+  );
+  res.json({
+    success: true,
+    data,
+    message: `Numero d'ordre de ${data.nomComplet} verifie. Le compte peut etre active.`,
+  });
 });
 
 export default router;

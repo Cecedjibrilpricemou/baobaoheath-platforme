@@ -10,7 +10,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../src/utils/app
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
-    utilisateur: { findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn(), updateMany: jest.fn() },
+    utilisateur: { findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn(), updateMany: jest.fn(), update: jest.fn() },
     session: { deleteMany: jest.fn() },
   },
 }));
@@ -23,7 +23,7 @@ jest.mock('../src/realtime/socket.server', () => ({ deconnecterUtilisateur: jest
 type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
-    utilisateur: { findUnique: M; findMany: M; count: M; updateMany: M };
+    utilisateur: { findUnique: M; findMany: M; count: M; updateMany: M; update: M };
     session: { deleteMany: M };
   };
 };
@@ -31,7 +31,9 @@ const { deconnecterUtilisateur } = jest.requireMock('../src/realtime/socket.serv
   deconnecterUtilisateur: M;
 };
 
-import { motifDeRefus, reactiver, suspendre } from '../src/services/compte.service';
+import {
+  motifDeRefus, reactiver, ROLES_A_ORDRE, suspendre, verifierOrdre,
+} from '../src/services/compte.service';
 
 const ADMIN = { userId: 'admin-1', role: 'SUPER_ADMIN' as const };
 const NATIONAL = { userId: 'nat-1', role: 'ADMIN_NATIONAL' as const };
@@ -212,7 +214,9 @@ describe('suspendre : le compte vise', () => {
 // ── La reactivation ──────────────────────────────────────────────────
 
 describe('reactiver', () => {
-  const FERME = { ...CIBLE, estActif: false };
+  // Un médecin dont le numéro d'ordre est vérifié : c'est le cas normal, et
+  // les cas sans vérification sont testés plus bas, explicitement.
+  const FERME = { ...CIBLE, estActif: false, ordreVerifieLe: new Date() };
 
   it('rouvre le compte et efface la suspension de la fiche', async () => {
     prisma.utilisateur.findUnique.mockResolvedValue(FERME);
@@ -221,6 +225,43 @@ describe('reactiver', () => {
     expect(args.data).toEqual({
       estActif: true, suspenduLe: null, motifSuspension: null, idSuspenduPar: null,
     });
+  });
+
+  // ── Le numero d'ordre (EF-01-08) ───────────────────────────────────
+  //
+  // **Un soignant dont l'inscription n'est pas confirmee ne soigne pas.**
+  // L'activation est le dernier moment où on peut encore l'exiger : après, le
+  // compte est ouvert.
+  // Les rôles sont écrits en dur : itérer sur `ROLES_A_ORDRE` ferait un test
+  // qui rétrécit avec la liste qu'il est censé vérifier.
+  it('couvre exactement les rôles inscrits à un ordre', () => {
+    expect([...ROLES_A_ORDRE].sort()).toEqual(
+      ['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'TECHNICIEN_LABO']
+    );
+  });
+
+  it.each(['MEDECIN', 'PHARMACIEN', 'ASC', 'ASC_SUPERVISOR', 'TECHNICIEN_LABO'])(
+    'refuse d activer un %s sans numéro d ordre vérifié', async (role) => {
+    prisma.utilisateur.findUnique.mockResolvedValue({ ...FERME, role, ordreVerifieLe: null });
+    await expect(reactiver(ADMIN, 'u-1')).rejects.toThrow(/numero d'ordre/i);
+    expect(prisma.utilisateur.updateMany).not.toHaveBeenCalled();
+  }
+  );
+
+  it('active un soignant dont le numéro a été vérifié', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      ...FERME, role: 'MEDECIN', ordreVerifieLe: new Date(),
+    });
+    await reactiver(ADMIN, 'u-1');
+    expect(prisma.utilisateur.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  // Il n'existe pas d'ordre des agents d'accueil : leur en demander un
+  // bloquerait des comptes légitimes.
+  it.each(['AGENT_ACCUEIL', 'ADMIN_STRUCTURE'])('n exige rien d un %s', async (role) => {
+    prisma.utilisateur.findUnique.mockResolvedValue({ ...FERME, role, ordreVerifieLe: null });
+    await reactiver(ADMIN, 'u-1');
+    expect(prisma.utilisateur.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it('refuse un compte deja actif', async () => {
@@ -243,5 +284,31 @@ describe('reactiver', () => {
     await reactiver(ADMIN, 'u-1');
     const [args] = prisma.utilisateur.updateMany.mock.calls[0] as [{ where: Record<string, unknown> }];
     expect(args.where).toEqual({ id: 'u-1', estActif: false });
+  });
+});
+
+describe('verifierOrdre', () => {
+  it('enregistre le numéro, la date et qui a vérifié', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      id: 'u-1', role: 'MEDECIN', prenom: 'David', nom: 'Camara',
+    });
+    prisma.utilisateur.update.mockResolvedValue({
+      numeroOrdre: 'CNOM-GN-4412', ordreVerifieLe: new Date('2026-10-07T10:00:00Z'),
+    });
+
+    const r = await verifierOrdre(ADMIN, 'u-1', '  CNOM-GN-4412  ');
+    const [args] = prisma.utilisateur.update.mock.calls[0] as [{ data: Record<string, unknown> }];
+    expect(args.data['numeroOrdre']).toBe('CNOM-GN-4412');
+    expect(args.data['idOrdreVerifiePar']).toBe(ADMIN.userId);
+    expect(args.data['ordreVerifieLe']).toBeInstanceOf(Date);
+    expect(r.numeroOrdre).toBe('CNOM-GN-4412');
+  });
+
+  it('refuse un rôle qui ne relève d aucun ordre', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      id: 'u-1', role: 'AGENT_ACCUEIL', prenom: 'Fatoumata', nom: 'Keita',
+    });
+    await expect(verifierOrdre(ADMIN, 'u-1', 'X-1234')).rejects.toThrow(/aucun ordre/i);
+    expect(prisma.utilisateur.update).not.toHaveBeenCalled();
   });
 });

@@ -252,6 +252,23 @@ model Utilisateur {
   identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
   brisDeGlaceDeclares BrisDeGlace[] @relation("BrisDeGlaceDeclares")
   brisDeGlaceRevus    BrisDeGlace[] @relation("BrisDeGlaceRevus")
+  /// Numero d'inscription a l'ordre professionnel (EF-01-08).
+  ///
+  /// **Sur l'utilisateur, pas sur chaque profil.** Le numero vivait sur
+  /// `MedecinProfile.numeroCom` et `AscProfile.numeroCertification`, et nulle
+  /// part pour les pharmaciens et les techniciens. Trois champs disperses,
+  /// deux absents : c'est pourquoi rien ne le verifiait.
+  ///
+  /// `ordreVerifieLe` dit qu'un administrateur **declare** avoir confronte ce
+  /// numero au registre de l'ordre. Il n'y a pas d'API nationale a interroger ;
+  /// c'est donc un acte humain, trace comme la verification d'identite
+  /// (EF-01-04).
+  numeroOrdre       String?
+  ordreVerifieLe    DateTime?
+  idOrdreVerifiePar String?
+  ordreVerifiePar   Utilisateur?  @relation("OrdresVerifies", fields: [idOrdreVerifiePar], references: [id], onDelete: SetNull)
+  ordresVerifies    Utilisateur[] @relation("OrdresVerifies")
+
   textesConsentementPublies TexteConsentement[] @relation("TextesConsentementPublies")
   evenementsConsentement    EvenementConsentement[] @relation("EvenementsConsentement")
   fusionsProoncees FusionDossier[] @relation("FusionsProoncees")
