@@ -29,12 +29,12 @@
       <!-- On reste dans l'espace de l'accueil : la page publique d'inscription
            est faite pour quelqu'un qui s'inscrit seul chez lui, et l'agent y
            perdait l'admission en cours. -->
-      <p class="bb-adm-cta">
+      <div class="bb-adm-cta">
         <button matButton="filled" type="button" (click)="ouvrirCreation()">
           <i class="pi pi-user-plus" aria-hidden="true"></i>
           {{ 'HOPITAL.ADMISSION.NEW_OPEN' | translate }}
         </button>
-      </p>
+      </div>
     </div>
   } @else if (resultats().length > 0) {
     <div class="bb-hop-list">
@@ -120,17 +120,17 @@
 
       <div class="bb-adm-neuf__grille">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PRENOM' | translate }}</mat-label>
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PRENOM' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
           <input matInput [(ngModel)]="nouveau.prenom" name="prenom" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NOM' | translate }}</mat-label>
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NOM' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
           <input matInput [(ngModel)]="nouveau.nom" name="nom" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_TEL' | translate }}</mat-label>
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_TEL' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
           <input matInput [(ngModel)]="nouveau.telephone" name="telephone" inputmode="tel" autocomplete="off" />
           <mat-hint>{{ 'HOPITAL.ADMISSION.NEW_TEL_HINT' | translate }}</mat-hint>
         </mat-form-field>
@@ -142,7 +142,7 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NAISSANCE' | translate }}</mat-label>
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NAISSANCE' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
           <input matInput [(ngModel)]="nouveau.dateNaissance" name="dateNaissance" type="date" />
         </mat-form-field>
 
@@ -155,7 +155,7 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PREFECTURE' | translate }}</mat-label>
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PREFECTURE' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
           <input matInput [(ngModel)]="nouveau.prefecture" name="prefecture" autocomplete="off" />
         </mat-form-field>
 

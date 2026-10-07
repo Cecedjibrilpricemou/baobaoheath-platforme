@@ -102,7 +102,11 @@
 .bb-empty, .bb-hop-empty {
   text-align: center; padding: 2.5rem 1rem; color: var(--bb-text-muted);
   border: 1px dashed var(--bb-border); border-radius: 20px; background: var(--bb-surface-card);
-  i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
+  // `> i` et non `i` : la regle visait **toutes** les icones descendantes, y
+  // compris celle d'un bouton place dans l'etat vide — 28px, en bloc, elle
+  // poussait le libelle hors du bouton. Vu a l'oeil sur une capture ; la
+  // boite du bouton, elle, tenait dans la carte.
+  > i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
   p { margin: 0 0 4px; font-family: var(--bb-font-display); font-weight: 700; color: var(--bb-text-primary); }
   span { font-size: 13px; }
 }
@@ -301,7 +305,14 @@
 // Le design suit l'espace de l'accueil — mêmes cartes, même grille — et non la
 // page publique d'inscription, qui s'adresse à quelqu'un seul chez lui.
 
-.bb-adm-cta { margin-top: 14px; }
+.bb-adm-cta {
+  // Un `div`, pas un `p` : `.bb-hop-empty p` impose une marge et une graisse
+  // qui ecrasaient le bouton contre le texte.
+  margin-top: 18px;
+}
+
+// Ce qui est exige se voit, comme sur le formulaire public.
+.bb-req { color: var(--bb-danger); font-weight: 700; }
 
 .bb-adm-voile {
   position: fixed;
