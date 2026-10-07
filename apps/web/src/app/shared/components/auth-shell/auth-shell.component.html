@@ -25,31 +25,29 @@
     </div>
   </div>
 
-  <!-- ── VISUEL ─────────────────────────────────────────────────── -->
+  <!-- ── VISUEL ─────────────────────────────────────────────────────
+       Photo plein cadre, message posé dessus. Le dégradé n'est pas
+       décoratif : il porte le contraste du texte blanc, et il recouvre le
+       filigrane du bas de la photo. -->
   <aside class="bb-auth__visual" aria-hidden="true">
-    <div class="bb-auth__visual-card">
-      <div class="bb-auth__visual-photo">
-        <img src="assets/images/loginimage.jpeg" alt="" width="1024" height="1024" />
-      </div>
-      <span class="bb-auth__visual-chip bb-auth__visual-chip--top">
-        <i class="pi pi-shield"></i> {{ 'LANDING.TRUST_SECURE' | translate }}
-      </span>
-      <span class="bb-auth__visual-chip bb-auth__visual-chip--bottom">
-        <i class="pi pi-wifi"></i> {{ 'LANDING.TRUST_OFFLINE' | translate }}
-      </span>
-    </div>
+    <img class="bb-auth__visual-img" src="assets/images/loginimage.jpeg" alt=""
+         width="736" height="1104" fetchpriority="high" />
+    <div class="bb-auth__visual-veil"></div>
 
-    <div class="bb-auth__visual-quote">
+    <div class="bb-auth__visual-body">
+      <span class="bb-auth__visual-eyebrow">{{ 'LANDING.TRUST_MADE' | translate }}</span>
       <p class="bb-auth__visual-title">{{ titleKey() | translate }}</p>
       <p class="bb-auth__visual-text">{{ textKey() | translate }}</p>
+
       <ul class="bb-auth__visual-points">
-        @for (p of points; track p) {
-          <li><i class="pi pi-check-circle"></i> {{ p | translate }}</li>
+        @for (p of points; track p; let i = $index) {
+          <li>
+            <span class="bb-auth__visual-tile"><i [class]="icones[i]"></i></span>
+            {{ p | translate }}
+          </li>
         }
       </ul>
     </div>
-
-    <p class="bb-auth__visual-foot">{{ 'LANDING.TRUST_MADE' | translate }}</p>
   </aside>
 
 </div>
