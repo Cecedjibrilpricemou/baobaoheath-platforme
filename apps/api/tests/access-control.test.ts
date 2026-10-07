@@ -176,41 +176,38 @@ describe('buildPatientWhereForUser — cross-structure isolation', () => {
     });
 
     const where = await buildPatientWhereForUser(makeUser('MEDECIN', 'doc-1'));
-    // Must scope to validated consultations and episodes they are responsible
-    // for — no structure-wide wildcard (P1 : episodes de soins).
-    //
-    // Depuis EF-02-06, une troisieme porte s'ajoute : le bris de glace. Elle
-    // est **toujours presente** dans la clause, et c'est la condition qui la
-    // referme — `refermeLe: null` et `expireLe` dans le futur. Si elle
-    // s'elargissait, ce test le dirait.
-    const or = (where as { OR: unknown[] }).OR;
-    expect(or).toHaveLength(3);
-    expect(or[0]).toEqual({ consultations: { some: { OR: [{ idMedecinValideur: 'doc-1' }] } } });
-    expect(or[1]).toEqual({ episodes: { some: { idResponsable: 'doc-1' } } });
 
-    const bris = or[2] as { brisDeGlace: { some: Record<string, unknown> } };
-    expect(bris.brisDeGlace.some['idAuteur']).toBe('doc-1');
-    // Ni referme, ni expire : oublier l'une des deux conditions laisserait la
-    // porte ouverte pour toujours.
-    expect(bris.brisDeGlace.some['refermeLe']).toBeNull();
-    expect((bris.brisDeGlace.some['expireLe'] as { gt: Date }).gt).toBeInstanceOf(Date);
+    // La clause a deux branches : la relation de soin filtree par le
+    // consentement, et le bris de glace qui passe outre (EF-02-06).
+    const [parSoin, parUrgence] = (where as { OR: any[] }).OR;
+
+    expect(parSoin.AND[0].OR).toEqual([
+      { consultations: { some: { OR: [{ idMedecinValideur: 'doc-1' }] } } },
+      { episodes: { some: { idResponsable: 'doc-1' } } },
+    ]);
+
+    // **Defaut permissif** : seul un refus explicite coupe. Pas de ligne de
+    // consentement = acces autorise.
+    expect(parSoin.AND[1]).toEqual({
+      NOT: { consentements: { some: { scope: 'DOSSIER_MEDICAL', actif: false } } },
+    });
+
+    // Ni referme, ni expire, et le sien.
+    expect(parUrgence.brisDeGlace.some.idAuteur).toBe('doc-1');
+    expect(parUrgence.brisDeGlace.some.refermeLe).toBeNull();
+    expect(parUrgence.brisDeGlace.some.expireLe.gt).toBeInstanceOf(Date);
   });
 
-  // **Un role qui n'a pas le droit de briser la glace ne doit pas porter
-  // cette porte dans sa clause d'acces** : la lui donner ferait de l'exception
-  // la regle.
-  it.each(['AGENT_ACCUEIL', 'ADMIN_STRUCTURE'])(
-    'un %s ne gagne rien par bris de glace',
-    async (role) => {
-      prisma.utilisateur.findUnique.mockResolvedValue({
-        role, idStructure: 'struct-1',
-        patientProfile: null, ascProfile: null,
-        medecinProfile: null, pharmacienProfile: null,
-      });
-      const where = await buildPatientWhereForUser(makeUser(role, 'u-1'));
-      expect(JSON.stringify(where)).not.toContain('brisDeGlace');
-    }
-  );
+  // Un patient voit son propre dossier quoi qu'il arrive : ni consentement ni
+  // relation de soin ne s'appliquent a soi-meme.
+  it('un patient voit son dossier sans passer par le consentement', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      role: 'PATIENT', idStructure: null,
+      patientProfile: { id: 'pat-1' }, ascProfile: null,
+      medecinProfile: null, pharmacienProfile: null,
+    });
+    expect(await buildPatientWhereForUser(makeUser('PATIENT', 'u-1'))).toEqual({ id: 'pat-1' });
+  });
 
   it('admins get unrestricted access', async () => {
     for (const role of ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']) {

@@ -8,6 +8,21 @@ type ConsultationWhere = Prisma.ConsultationWhereInput;
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
+/**
+ * Un refus explicite de partager le dossier (EF-02-03).
+ *
+ * **Defaut permissif, et c'est un choix de deploiement.** Pas de ligne de
+ * consentement = acces autorise ; seul un `actif: false` coupe. Exiger un
+ * accord positif aujourd'hui rendrait 11 dossiers sur 13 invisibles a tous les
+ * soignants — mesure le 2026-10-07 — et treize bris de glace par jour ne sont
+ * pas une issue de secours, c'est la porte principale.
+ *
+ * Ce qui change quand meme : **un retrait coupe reellement**, tout de suite.
+ */
+const REFUS_DE_PARTAGE: PatientWhere = {
+  consentements: { some: { scope: 'DOSSIER_MEDICAL', actif: false } },
+};
+
 export async function buildPatientWhereForUser(user: JwtPayload): Promise<PatientWhere> {
   if (ADMIN_ROLES.has(user.role)) return {};
 
@@ -25,8 +40,45 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
 
   if (!utilisateur) return { id: '__forbidden__' };
 
+  // Son propre dossier, toujours. Un patient ne se refuse pas a lui-meme.
   if (utilisateur.patientProfile) return { id: utilisateur.patientProfile.id };
 
+  const parSoin = await relationDeSoin(user, utilisateur);
+  if (!parSoin) return { id: '__forbidden__' };
+
+  // **Le consentement et le bris de glace, au seul endroit ou tous les roles
+  // passent.** Les mettre dans chaque branche laisserait un role dehors tot ou
+  // tard — et un role dehors, ici, c'est un dossier lu sans droit.
+  return {
+    OR: [
+      { AND: [parSoin, { NOT: REFUS_DE_PARTAGE }] },
+      // L'acces d'urgence passe outre le refus : c'est sa raison d'etre
+      // (EF-02-06). Il est declare, date, notifie au patient et relu.
+      {
+        brisDeGlace: {
+          some: { idAuteur: user.userId, refermeLe: null, expireLe: { gt: new Date() } },
+        },
+      },
+    ],
+  };
+}
+
+type Profils = NonNullable<Awaited<ReturnType<typeof chargerProfils>>>;
+async function chargerProfils(id: string) {
+  return prisma.utilisateur.findUnique({
+    where: { id },
+    select: {
+      role: true, idStructure: true,
+      patientProfile: { select: { id: true } },
+      ascProfile: { select: { id: true, idStructure: true } },
+      medecinProfile: { select: { idStructure: true } },
+      pharmacienProfile: { select: { idStructure: true } },
+    },
+  });
+}
+
+/** La relation de soin seule. `null` : aucun lien, donc aucun acces. */
+async function relationDeSoin(user: JwtPayload, utilisateur: Profils): Promise<PatientWhere | null> {
   const idStructure =
     utilisateur.idStructure ??
     utilisateur.ascProfile?.idStructure ??
@@ -39,17 +91,6 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
         { idAscPrincipal: utilisateur.ascProfile.id },
         { consultations: { some: { idAsc: utilisateur.ascProfile.id } } },
         ...(idStructure ? [{ idStructurePreferee: idStructure }] : []),
-        // Un ASC peut briser la glace : il est souvent le premier, et parfois
-        // le seul, devant le patient.
-        {
-          brisDeGlace: {
-            some: {
-              idAuteur: user.userId,
-              refermeLe: null,
-              expireLe: { gt: new Date() },
-            },
-          },
-        },
       ],
     };
   }
@@ -59,27 +100,6 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
   const parEpisode: PatientWhere[] = idStructure
     ? [{ episodes: { some: { idStructure, statut: { in: ['OUVERT', 'EN_COURS'] } } } }]
     : [];
-
-  // ── Le bris de glace (EF-02-06) ────────────────────────────────────
-  //
-  // **Un acces d'urgence declare ouvre reellement le dossier**, le temps qu'il
-  // dure. Sans cela le soignant remplirait un formulaire et se heurterait au
-  // meme refus : la porte serait decorative, et la regle serait contournee
-  // autrement — par un compte prete — sans laisser de trace.
-  //
-  // La condition est volontairement recopiee ici plutot qu'appelee : un `where`
-  // Prisma se compose, et ramener la liste des dossiers en memoire ferait une
-  // requete de plus a chaque lecture. L'index partiel
-  // `bris_de_glace_ouverts_idx` la sert.
-  const parBrisDeGlace: PatientWhere[] = [{
-    brisDeGlace: {
-      some: {
-        idAuteur: user.userId,
-        refermeLe: null,
-        expireLe: { gt: new Date() },
-      },
-    },
-  }];
 
   if (user.role === 'MEDECIN') {
     return {
@@ -97,7 +117,6 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
         },
         ...parEpisode,
         { episodes: { some: { idResponsable: user.userId } } },
-        ...parBrisDeGlace,
       ],
     };
   }
@@ -132,7 +151,7 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
     };
   }
 
-  return { id: '__forbidden__' };
+  return null;
 }
 
 export async function buildConsultationWhereForUser(user: JwtPayload): Promise<ConsultationWhere> {

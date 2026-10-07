@@ -481,7 +481,7 @@
       "ERR_SAVE": "Impossible d'enregistrer votre choix",
       "GRANTED": "Consentement accordé",
       "GRANTED_ON": "Accordé le {{date}}",
-      "NOTE": "Votre décision est enregistrée immédiatement et ne peut plus être effacée. Pour l’export de votre dossier vers un autre système, un retrait bloque aussitôt toute nouvelle demande. Pour la consultation de votre dossier par un soignant, l’accès dépend aujourd’hui de la relation de soin — être suivi dans l’établissement, avoir un épisode en cours — et non de cet interrupteur : le raccorder est en cours de construction.",
+      "NOTE": "Votre décision est enregistrée immédiatement et ne peut plus être effacée. Retirer votre accord ferme votre dossier aux soignants dès la demande suivante. Un soignant peut encore l'ouvrir en urgence : c'est alors déclaré, motivé, limité dans le temps, et vous en êtes prévenu.",
       "NOT_SET": "Aucun choix enregistré",
       "REVOKED": "Consentement retiré",
       "REVOKED_ON": "Retiré le {{date}}",

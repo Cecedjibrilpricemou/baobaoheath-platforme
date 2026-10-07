@@ -481,7 +481,7 @@
       "ERR_SAVE": "Could not save your choice",
       "GRANTED": "Consent granted",
       "GRANTED_ON": "Granted on {{date}}",
-      "NOTE": "Your decision is recorded immediately and can no longer be erased. For exporting your record to another system, a withdrawal blocks any new request at once. For a caregiver reading your record, access currently depends on the care relationship — being followed in the facility, having an open episode — and not on this switch: wiring it is being built.",
+      "NOTE": "Your decision is recorded immediately and can no longer be erased. Withdrawing your consent closes your record to caregivers from the next request on. A caregiver can still open it in an emergency: that is declared, justified, time-limited, and you are told.",
       "NOT_SET": "No choice recorded",
       "REVOKED": "Consent withdrawn",
       "REVOKED_ON": "Withdrawn on {{date}}",
