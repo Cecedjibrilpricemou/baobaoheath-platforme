@@ -12,6 +12,10 @@ import { messagePatientInformation } from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
+import { randomBytes } from 'node:crypto';
+import { logger } from '../config/logger';
+import { hashPassword } from '../utils/password.utils';
+import { initialiserConsentementsParDefaut } from './privacy.service';
 import { envoyerSmsSimule, notifierSansBloquer } from './notification.service';
 import { getIdentitePlateforme } from './parametres.service';
 import type {
@@ -746,4 +750,96 @@ export async function pointerPresence(user: JwtPayload, idRendezVous: string): P
 
   const maj = await prisma.rendezVous.findUniqueOrThrow({ where: { id: idRendezVous }, include: PRESENCE_INCLUDE });
   return versPresence(maj);
+}
+
+/**
+ * Creer le dossier d'un patient depuis le comptoir (EF-03-01).
+ *
+ * **L'accueil ne quitte plus son espace pour la page publique d'inscription.**
+ * Il y etait renvoye dans un nouvel onglet, avec un formulaire concu pour
+ * quelqu'un qui s'inscrit seul chez lui — et il perdait le fil de l'admission
+ * en cours.
+ *
+ * **Le mot de passe est genere, pas invente par l'agent.** Un agent qui
+ * choisirait le mot de passe du patient le connaitrait ; il est affiche une
+ * seule fois pour etre remis, et le patient doit le changer a sa premiere
+ * connexion (`doitChangerMotDePasse`), comme pour un agent de structure.
+ *
+ * Les antecedents (allergies, maladies chroniques, groupe sanguin) ne sont pas
+ * demandes ici : au comptoir, on enregistre une identite. Le reste se recueille
+ * en consultation, par quelqu'un dont c'est le metier.
+ */
+export async function creerPatientAuComptoir(
+  user: JwtPayload,
+  dto: {
+    telephone: string; prenom: string; nom: string;
+    dateNaissance: string; sexe: string; prefecture: string;
+    sousPrefecture?: string; email?: string;
+  },
+): Promise<{ patient: { id: string; prenom: string; nom: string }; motDePasseTemporaire: string }> {
+  const existant = await prisma.utilisateur.findUnique({
+    where: { telephone: dto.telephone },
+    select: { id: true, prenom: true, nom: true, role: true },
+  });
+  if (existant) {
+    // On nomme la personne : l'agent saura s'il s'agit du bon dossier, au lieu
+    // de recommencer sa recherche a l'aveugle.
+    throw new ConflictError(
+      `Ce numero appartient deja a ${existant.prenom} ${existant.nom}. Cherchez-le dans la liste.`,
+    );
+  }
+
+  const motDePasseTemporaire = genererMotDePasseTemp();
+  const motDePasseHash = await hashPassword(motDePasseTemporaire);
+
+  const patient = await prisma.$transaction(async (tx) => {
+    const u = await tx.utilisateur.create({
+      data: {
+        telephone: dto.telephone,
+        email: dto.email?.trim() || null,
+        motDePasseHash,
+        prenom: dto.prenom.trim(),
+        nom: dto.nom.trim(),
+        role: 'PATIENT',
+        doitChangerMotDePasse: true,
+      },
+      select: { id: true, prenom: true, nom: true },
+    });
+
+    const p = await tx.patientProfile.create({
+      data: {
+        idUtilisateur: u.id,
+        dateNaissance: new Date(dto.dateNaissance),
+        sexe: dto.sexe,
+        prefecture: dto.prefecture.trim(),
+        sousPrefecture: dto.sousPrefecture?.trim() || null,
+        // Le patient est rattache a la structure qui l'enregistre : c'est la
+        // qu'il sera suivi, et c'est ce qui ouvre l'episode de soins.
+        idStructurePreferee: await structureDe(user),
+      },
+      select: { id: true },
+    });
+
+    await initialiserConsentementsParDefaut(tx, p.id, u.id);
+    return { id: p.id, prenom: u.prenom, nom: u.nom };
+  });
+
+  logger.info('[ADMISSION] dossier patient cree au comptoir', {
+    idPatient: patient.id, parQui: user.userId,
+  });
+
+  return { patient, motDePasseTemporaire };
+}
+
+/**
+ * Un mot de passe temporaire lisible a voix haute.
+ *
+ * Sans O/0 ni I/l : il est dicte au comptoir, parfois dans le bruit.
+ */
+function genererMotDePasseTemp(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const bytes = randomBytes(5);
+  let pwd = 'BaoBao@';
+  for (let i = 0; i < 5; i++) pwd += chars[bytes[i]! % chars.length];
+  return pwd;
 }

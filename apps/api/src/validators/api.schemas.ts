@@ -194,6 +194,22 @@ export const createAgentStructureSchema = z.object({
   bureau: z.string().trim().min(1).max(120).optional(),
 }).strict();
 
+// --- Creation d'un patient au comptoir (EF-03-01) -------------------
+//
+// Pas de mot de passe : il est genere et remis au patient. Pas d'antecedents
+// non plus — au comptoir on enregistre une identite, le reste se recueille en
+// consultation.
+export const creerPatientComptoirSchema = z.object({
+  telephone: phone,
+  prenom: z.string().trim().min(1).max(80),
+  nom: z.string().trim().min(1).max(80),
+  dateNaissance: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide'),
+  sexe: z.enum(['M', 'F']),
+  prefecture: z.string().trim().min(1).max(80),
+  sousPrefecture: z.string().trim().max(80).optional(),
+  email: optionalEmail,
+}).strict();
+
 /** Un bureau change : un medecin demenage, un service est redecoupe. */
 export const definirBureauSchema = z.object({
   bureau: z.string().trim().min(1).max(120).nullable(),

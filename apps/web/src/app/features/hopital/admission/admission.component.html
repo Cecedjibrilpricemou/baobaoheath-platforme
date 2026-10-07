@@ -26,7 +26,15 @@
       <i class="pi pi-user"></i>
       <p>{{ 'HOPITAL.ADMISSION.NO_RESULT' | translate }}</p>
       <span>{{ 'HOPITAL.ADMISSION.NO_RESULT_HINT' | translate }}</span>
-      <p style="margin-top:12px"><a matButton="outlined" routerLink="/auth/register" target="_blank"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'HOPITAL.ADMISSION.REGISTER_LINK' | translate }}</a></p>
+      <!-- On reste dans l'espace de l'accueil : la page publique d'inscription
+           est faite pour quelqu'un qui s'inscrit seul chez lui, et l'agent y
+           perdait l'admission en cours. -->
+      <p class="bb-adm-cta">
+        <button matButton="filled" type="button" (click)="ouvrirCreation()">
+          <i class="pi pi-user-plus" aria-hidden="true"></i>
+          {{ 'HOPITAL.ADMISSION.NEW_OPEN' | translate }}
+        </button>
+      </p>
     </div>
   } @else if (resultats().length > 0) {
     <div class="bb-hop-list">
@@ -99,4 +107,97 @@
       </div>
     </section>
   }
+}
+
+<!-- ── Creer le dossier au comptoir (EF-03-01) ──────────────────────────
+     Le design suit l'espace de l'accueil, pas la page publique : mêmes
+     cartes, même grille, même vocabulaire. -->
+@if (creation()) {
+  <div class="bb-adm-voile" role="dialog" aria-modal="true">
+    <section class="bb-hop-card bb-adm-neuf">
+      <h2 class="bb-adm-neuf__titre">{{ 'HOPITAL.ADMISSION.NEW_TITLE' | translate }}</h2>
+      <p class="bb-adm-neuf__sub">{{ 'HOPITAL.ADMISSION.NEW_SUB' | translate }}</p>
+
+      <div class="bb-adm-neuf__grille">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PRENOM' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.prenom" name="prenom" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NOM' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.nom" name="nom" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_TEL' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.telephone" name="telephone" inputmode="tel" autocomplete="off" />
+          <mat-hint>{{ 'HOPITAL.ADMISSION.NEW_TEL_HINT' | translate }}</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_EMAIL' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.email" name="email" type="email" autocomplete="off" />
+          <mat-hint>{{ 'HOPITAL.ADMISSION.NEW_EMAIL_HINT' | translate }}</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NAISSANCE' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.dateNaissance" name="dateNaissance" type="date" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_SEXE' | translate }}</mat-label>
+          <mat-select [(ngModel)]="nouveau.sexe" name="sexe">
+            <mat-option value="M">{{ 'HOPITAL.ADMISSION.NEW_SEXE_M' | translate }}</mat-option>
+            <mat-option value="F">{{ 'HOPITAL.ADMISSION.NEW_SEXE_F' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PREFECTURE' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.prefecture" name="prefecture" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HOPITAL.ADMISSION.NEW_SOUS_PREFECTURE' | translate }}</mat-label>
+          <input matInput [(ngModel)]="nouveau.sousPrefecture" name="sousPrefecture" autocomplete="off" />
+        </mat-form-field>
+      </div>
+
+      <div class="bb-adm-neuf__actions">
+        <button matButton type="button" (click)="annulerCreation()" [disabled]="isCreating()">
+          {{ 'HOPITAL.ADMISSION.NEW_CANCEL' | translate }}
+        </button>
+        <button matButton="filled" type="button" (click)="creerDossier()" [disabled]="!peutCreer()">
+          <i class="pi pi-check" aria-hidden="true"></i>
+          {{ 'HOPITAL.ADMISSION.NEW_SUBMIT' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+<!-- Le mot de passe n'est rendu qu'une fois : l'agent doit le noter avant de
+     fermer, sinon le patient ne pourra pas se connecter. -->
+@if (motDePasseRemis(); as remis) {
+  <div class="bb-adm-voile" role="dialog" aria-modal="true">
+    <section class="bb-hop-card bb-adm-mdp">
+      <h2 class="bb-adm-neuf__titre">{{ 'HOPITAL.ADMISSION.NEW_MDP_TITRE' | translate }}</h2>
+      <p class="bb-adm-neuf__sub">{{ remis.nom }}</p>
+
+      <p class="bb-adm-mdp__code">{{ remis.motDePasse }}</p>
+
+      <p class="bb-adm-mdp__dit">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'HOPITAL.ADMISSION.NEW_MDP_DIT' | translate }}
+      </p>
+
+      <div class="bb-adm-neuf__actions">
+        <button matButton="filled" type="button" (click)="fermerMotDePasse()">
+          {{ 'HOPITAL.ADMISSION.NEW_MDP_COMPRIS' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
 }

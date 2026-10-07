@@ -128,6 +128,29 @@ export class HopitalService {
     return this.api.get<ApiResponse<EpisodePatientView[]>>('/patients/me/episodes');
   }
 
+  /**
+   * Creer le dossier d'un patient au comptoir (EF-03-01).
+   *
+   * **L'accueil ne part plus sur la page publique d'inscription** : elle est
+   * faite pour quelqu'un qui s'inscrit seul chez lui, et l'agent y perdait
+   * l'admission en cours.
+   *
+   * Le mot de passe temporaire n'est rendu qu'une fois, pour etre remis.
+   */
+  creerPatientAuComptoir(dto: {
+    telephone: string; prenom: string; nom: string;
+    dateNaissance: string; sexe: 'M' | 'F';
+    prefecture: string; sousPrefecture?: string; email?: string;
+  }): Observable<ApiResponse<{
+    patient: { id: string; prenom: string; nom: string };
+    motDePasseTemporaire: string;
+  }>> {
+    return this.api.post<ApiResponse<{
+      patient: { id: string; prenom: string; nom: string };
+      motDePasseTemporaire: string;
+    }>>('/hopital/patients', dto);
+  }
+
   // --- Identito-vigilance (EF-01-04/10) ---------------------------------
   //
   // Verifier une identite ouvre le tiers payant. Cela ne conditionne pas les

@@ -38,6 +38,98 @@ export class AdmissionComponent implements OnInit {
 
   formulaire = { motif: '', service: '', idResponsable: '', notes: '' };
 
+  // ── Creer le dossier sur place (EF-03-01) ──────────────────────────
+  //
+  // **L'accueil ne part plus sur la page publique d'inscription.** Elle est
+  // faite pour quelqu'un qui s'inscrit seul chez lui, elle s'ouvrait dans un
+  // nouvel onglet, et l'agent y perdait l'admission en cours.
+  creation = signal(false);
+  isCreating = signal(false);
+  /** Rendu une seule fois, pour etre remis au patient. */
+  motDePasseRemis = signal<{ nom: string; motDePasse: string } | null>(null);
+
+  nouveau = {
+    prenom: '', nom: '', telephone: '', email: '',
+    dateNaissance: '', sexe: 'M' as 'M' | 'F',
+    prefecture: '', sousPrefecture: '',
+  };
+
+  /** Le minimum pour qu'un dossier soit retrouvable plus tard. */
+  peutCreer(): boolean {
+    const n = this.nouveau;
+    return !this.isCreating()
+      && n.prenom.trim().length > 0
+      && n.nom.trim().length > 0
+      && n.telephone.trim().length >= 6
+      && n.dateNaissance.length > 0
+      && n.prefecture.trim().length > 0;
+  }
+
+  ouvrirCreation() {
+    // Ce que l'agent vient de taper est souvent le nom ou le numero : on le
+    // reprend plutot que de le lui faire resaisir.
+    const q = this.recherche.trim();
+    if (/^[0-9+\s-]{6,}$/.test(q)) this.nouveau.telephone = q;
+    else if (q) this.nouveau.nom = q;
+    this.creation.set(true);
+  }
+
+  annulerCreation() {
+    this.creation.set(false);
+  }
+
+  creerDossier() {
+    if (!this.peutCreer()) return;
+    this.isCreating.set(true);
+
+    const n = this.nouveau;
+    this.hopital.creerPatientAuComptoir({
+      telephone: n.telephone.trim(),
+      prenom: n.prenom.trim(),
+      nom: n.nom.trim(),
+      dateNaissance: n.dateNaissance,
+      sexe: n.sexe,
+      prefecture: n.prefecture.trim(),
+      sousPrefecture: n.sousPrefecture.trim() || undefined,
+      email: n.email.trim() || undefined,
+    }).subscribe({
+      next: (res) => {
+        this.isCreating.set(false);
+        const d = res.data;
+        if (!d) return;
+        this.creation.set(false);
+        // Le mot de passe s'affiche jusqu'a ce que l'agent dise l'avoir note :
+        // il ne sera plus jamais montre.
+        this.motDePasseRemis.set({
+          nom: `${d.patient.prenom} ${d.patient.nom}`,
+          motDePasse: d.motDePasseTemporaire,
+        });
+        this.toastr.success(this.i18n.t('HOPITAL.ADMISSION.NEW_FAIT', {
+          nom: `${d.patient.prenom} ${d.patient.nom}`,
+        }));
+      },
+      error: (err) => {
+        this.isCreating.set(false);
+        const e = err as { error?: { error?: string } };
+        this.toastr.error(e?.error?.error ?? this.i18n.t('COMMON.ERROR_GENERIC'));
+      },
+    });
+  }
+
+  /** L'agent a note le mot de passe : on relance la recherche sur ce patient. */
+  fermerMotDePasse() {
+    const remis = this.motDePasseRemis();
+    this.motDePasseRemis.set(null);
+    if (remis) {
+      this.recherche = this.nouveau.telephone.trim();
+      this.onRecherche(this.recherche);
+    }
+    this.nouveau = {
+      prenom: '', nom: '', telephone: '', email: '',
+      dateNaissance: '', sexe: 'M', prefecture: '', sousPrefecture: '',
+    };
+  }
+
   private terme$ = new Subject<string>();
 
   ngOnInit() {

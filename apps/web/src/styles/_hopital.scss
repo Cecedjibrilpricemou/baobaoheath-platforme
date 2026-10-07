@@ -295,3 +295,90 @@
 
 // En sombre, --bb-info (#1E40AF) sur #0A0F2D serait illisible.
 [data-theme='dark'] .bb-hop-note i { color: #60A5FA; }
+
+// ── Creer le dossier au comptoir (EF-03-01) ──────────────────────────
+//
+// Le design suit l'espace de l'accueil — mêmes cartes, même grille — et non la
+// page publique d'inscription, qui s'adresse à quelqu'un seul chez lui.
+
+.bb-adm-cta { margin-top: 14px; }
+
+.bb-adm-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, .45);
+}
+
+.bb-adm-neuf {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  overflow-y: auto;
+
+  &__titre {
+    margin: 0 0 .3rem;
+    font-family: var(--bb-font-display);
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -.4px;
+  }
+
+  &__sub {
+    margin: 0 0 1.2rem;
+    font-size: .8125rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: .9rem;
+
+    @media (max-width: 560px) { grid-template-columns: 1fr; }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .6rem;
+    margin-top: 1.4rem;
+  }
+}
+
+.bb-adm-mdp {
+  width: min(460px, 100%);
+  text-align: center;
+
+  // Lu à voix haute au comptoir, parfois dans le bruit : gros, espacé, et en
+  // chasse fixe pour qu'un 1 ne se confonde pas avec un l.
+  &__code {
+    margin: 1.1rem 0;
+    padding: .9rem 1rem;
+    border-radius: var(--bb-radius);
+    border: 1px dashed var(--bb-border);
+    background: var(--bb-surface-1);
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    user-select: all;
+  }
+
+  &__dit {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    margin: 0;
+    text-align: left;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--bb-warning);
+
+    i { font-size: 15px; flex: none; margin-top: 1px; }
+  }
+}

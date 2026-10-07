@@ -15,6 +15,7 @@ import {
   orientationSchema,
   orienterDemandeRendezVousSchema,
   updateEpisodeSchema,
+  creerPatientComptoirSchema,
 } from '../validators/api.schemas';
 import type {
   DemandeRendezVousView,
@@ -61,6 +62,26 @@ router.post('/demandes/:id/orienter', validateBody(orienterDemandeRendezVousSche
 // ── Pointage de présence (addendum du 2026-09-28, point 2) ───────────
 // Le seul geste de l'accueil sur un rendez-vous : il ne le crée pas et n'en
 // change pas l'heure.
+/**
+ * Creer le dossier d'un patient au comptoir (EF-03-01).
+ *
+ * **L'accueil reste chez lui.** Il etait renvoye vers la page publique
+ * d'inscription, dans un nouvel onglet, et perdait l'admission en cours.
+ *
+ * Le mot de passe temporaire est rendu **une seule fois**, pour etre remis au
+ * patient : il n'est stocke nulle part en clair, et le patient doit le changer
+ * a sa premiere connexion.
+ */
+router.post('/patients', validateBody(creerPatientComptoirSchema), async (req: AuthRequest, res: Response) => {
+  const data = await hopital.creerPatientAuComptoir(req.user!, req.body);
+  res.status(201).json({
+    success: true,
+    data,
+    message: `Dossier de ${data.patient.prenom} ${data.patient.nom} cree. `
+      + `Remettez-lui son mot de passe : il devra le changer a sa premiere connexion.`,
+  });
+});
+
 router.get('/presences', async (req: AuthRequest, res: Response) => {
   const data: PresenceDuJourView[] = await hopital.presencesDuJour(
     req.user!,
