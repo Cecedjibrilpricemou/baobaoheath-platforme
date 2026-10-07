@@ -832,14 +832,23 @@ export async function creerPatientAuComptoir(
 }
 
 /**
- * Un mot de passe temporaire lisible a voix haute.
+ * Un mot de passe temporaire dicte au comptoir.
  *
- * Sans O/0 ni I/l : il est dicte au comptoir, parfois dans le bruit.
+ * **Minuscules et chiffres seulement.** Il est lu a voix haute, parfois dans
+ * le bruit, et retape sur un clavier de telephone : une majuscule ou un
+ * caractere special y coute trois gestes et une faute de frappe. La securite
+ * ne vient pas d'ici — elle vient du fait qu'il est temporaire et que le
+ * patient doit le changer a sa premiere connexion.
+ *
+ * Sans `l`, `o`, `1` ni `0` : ces quatre-la se confondent a l'oral comme a
+ * l'ecrit.
  */
-function genererMotDePasseTemp(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  const bytes = randomBytes(5);
-  let pwd = 'BaoBao@';
-  for (let i = 0; i < 5; i++) pwd += chars[bytes[i]! % chars.length];
+export function genererMotDePasseTemp(): string {
+  const lettres = 'abcdefghjkmnpqrstuvwxyz';
+  const chiffres = '23456789';
+  const bytes = randomBytes(8);
+  let pwd = '';
+  for (let i = 0; i < 4; i++) pwd += lettres[bytes[i]! % lettres.length];
+  for (let i = 4; i < 8; i++) pwd += chiffres[bytes[i]! % chiffres.length];
   return pwd;
 }

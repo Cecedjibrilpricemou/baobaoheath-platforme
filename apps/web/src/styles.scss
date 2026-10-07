@@ -100,7 +100,11 @@
   --bb-font-size: 14px;
 
   // Layout
-  --bb-sidebar-width: 260px;
+  // La largeur reelle de la barre. Elle valait 260px sans effet : Material
+  // impose `--mat-sidenav-container-width` (360px par defaut), qui vient
+  // plus tard dans la cascade et gagnait. `.bb-nav` lui transmet desormais
+  // cette valeur, donc celle-ci fait foi.
+  --bb-sidebar-width: 360px;
   --bb-topbar-height: 64px;
 
   // Transitions

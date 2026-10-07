@@ -57,6 +57,9 @@
   border: none;
   // Bord droit franc : le panneau Material arrondit ses coins par defaut.
   --mat-sidenav-container-shape: 0;
+  // Sans cela, `.mat-drawer { width: var(--mat-sidenav-container-width, 360px) }`
+  // l'emporte sur la ligne ci-dessous et `--bb-sidebar-width` ne pilote rien.
+  --mat-sidenav-container-width: var(--bb-sidebar-width);
   border-radius: 0;
   background: var(--nav-bg);
   color: var(--nav-ink);
@@ -177,7 +180,10 @@
   // Classe doublee : les styles de mat-icon-button sont injectes apres la
   // feuille globale et gagnent a specificite egale. Meme raison que pour
   // app-avatar plus bas.
-  &__burger#{&}__burger { display: none; }
+  // Visible partout depuis que la barre se replie : sur mobile il l'ouvre,
+  // sur grand ecran il la reduit a ses icones. Il etait cache ici parce qu'il
+  // n'avait rien a faire sur grand ecran.
+  &__burger#{&}__burger { display: inline-flex; }
 
   &__user { margin-left: 0.25rem; }
 
@@ -382,5 +388,59 @@
   .bb-net {
     background: rgba(62, 187, 112, 0.14);
     color: var(--bb-bright);
+  }
+}
+
+// ── BARRE REPLIÉE : LES ICÔNES SEULES ──────────────────────────────
+//
+// Deux états, un seul bouton : dépliée elle porte les libellés, repliée elle
+// ne garde que les icônes. La classe est posée sur `<html>` par
+// `LayoutService` — les huit espaces de rôle partagent la même barre, et la
+// styler ici évite de passer un drapeau à huit gabarits.
+//
+// Sous 768px la barre se superpose au contenu : la replier n'a pas de sens,
+// la règle ne s'applique donc qu'au-dessus.
+@media (min-width: 769px) {
+  html.bb-nav-repliee {
+    // La largeur est une variable : le voile des modales et la grille de la
+    // coquille s'y adossent déjà, tout suit sans rien d'autre à changer.
+    --bb-sidebar-width: 76px;
+  }
+
+  html.bb-nav-repliee .bb-nav {
+    padding-left: .5rem;
+    padding-right: .5rem;
+
+    // Les libellés disparaissent, pas les icônes. `display: none` plutôt
+    // qu'une largeur nulle : un texte réduit à zéro reste lu par les
+    // lecteurs d'écran au milieu d'une liste d'icônes, et les annonce deux
+    // fois.
+    .bb-nav__brand-name,
+    .bb-nav__section,
+    [matListItemTitle] { display: none; }
+
+    .bb-nav__brand {
+      justify-content: center;
+      padding: .25rem 0 1rem;
+      margin-bottom: .75rem;
+    }
+
+    // L'entrée devient un carré : l'icône est centrée, et la pilule active
+    // reste lisible.
+    .bb-nav__item {
+      --mat-list-list-item-leading-icon-start-space: 0;
+      --mat-list-list-item-leading-icon-end-space: 0;
+
+      .mdc-list-item__content { display: none; }
+
+      .mat-mdc-list-item-icon {
+        margin: 0 auto;
+        font-size: 19px;
+        width: 19px;
+        height: 19px;
+      }
+    }
+
+    .bb-nav__footer { padding-top: .75rem; }
   }
 }

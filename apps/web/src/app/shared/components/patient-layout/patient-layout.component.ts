@@ -52,7 +52,15 @@ export class PatientLayoutComponent {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
-  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  /**
+   * Sur mobile la barre s'ouvre par-dessus ; sur grand écran elle est ancrée,
+   * et le même bouton la replie sur ses icônes. Un seul bouton, deux gestes
+   * selon la place disponible.
+   */
+  toggleSidebar() {
+    if (this.layout.estMobile()) this.sidebarOpen.update(v => !v);
+    else this.layout.basculerRepli();
+  }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
