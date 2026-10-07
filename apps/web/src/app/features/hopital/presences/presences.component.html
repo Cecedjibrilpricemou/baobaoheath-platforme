@@ -32,6 +32,16 @@
                 {{ 'HOPITAL.PRESENCES.SANS_MEDECIN' | translate }}
               }
             </span>
+            <!-- Où envoyer le patient, une fois pointé. Souvent absent : tous
+                 les hôpitaux ne numérotent pas leurs bureaux, et l'agent
+                 accompagne à pied. Dans ce cas on n'affiche rien plutôt qu'un
+                 tiret. -->
+            @if (p.medecin?.bureau) {
+              <span class="bb-pres__bureau">
+                <i class="pi pi-map-marker" aria-hidden="true"></i>
+                {{ p.medecin!.bureau }}
+              </span>
+            }
           </div>
 
           <button matButton="filled" type="button"
@@ -58,6 +68,13 @@
                 {{ 'HOPITAL.PRESENCES.AVEC' | translate }} Dr {{ p.medecin.prenom }} {{ p.medecin.nom }}
               }
             </span>
+            <!-- Le patient est arrivé : c'est maintenant qu'on lui dit où aller. -->
+            @if (p.medecin?.bureau) {
+              <span class="bb-pres__bureau">
+                <i class="pi pi-map-marker" aria-hidden="true"></i>
+                {{ p.medecin!.bureau }}
+              </span>
+            }
           </div>
 
           <span class="bb-pres__statut" [attr.data-statut]="p.statut">{{ libelleStatut(p.statut) }}</span>

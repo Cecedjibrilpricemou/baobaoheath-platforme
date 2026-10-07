@@ -36,7 +36,13 @@ const DEMANDE_INCLUDE = {
     },
   },
   structure: { select: { id: true, nom: true, prefecture: true } },
-  medecin: { select: { id: true, prenom: true, nom: true } },
+  // `bureau` : ou le patient devra se rendre. Souvent nul.
+  medecin: {
+    select: {
+      id: true, prenom: true, nom: true,
+      medecinProfile: { select: { bureau: true } },
+    },
+  },
   episode: { select: { id: true, numero: true } },
 } satisfies Prisma.DemandeRendezVousInclude;
 
@@ -59,7 +65,14 @@ function versVue(d: DemandeRow): DemandeRendezVousView {
       telephone: d.patient.utilisateur.telephone,
     },
     structure: d.structure,
-    medecin: d.medecin,
+    medecin: d.medecin
+      ? {
+          id: d.medecin.id,
+          prenom: d.medecin.prenom,
+          nom: d.medecin.nom,
+          bureau: d.medecin.medecinProfile?.bureau ?? null,
+        }
+      : null,
     idEpisode: d.episode?.id ?? null,
     numeroEpisode: d.episode?.numero ?? null,
   };

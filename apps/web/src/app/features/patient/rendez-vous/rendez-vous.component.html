@@ -22,6 +22,13 @@
         <p class="bb-rdvp__meta">
           {{ d.structure.nom }}
           @if (d.medecin) { · Dr {{ d.medecin.prenom }} {{ d.medecin.nom }} }
+          <!-- Le patient sait où aller avant de venir, pas une fois sur
+               place. Absent quand l'hôpital ne numérote pas ses bureaux. -->
+          @if (d.medecin?.bureau) {
+            <span class="rdv-bureau">
+              <i class="pi pi-map-marker" aria-hidden="true"></i> {{ d.medecin!.bureau }}
+            </span>
+          }
         </p>
         <p class="bb-rdvp__attente">{{ 'PATIENT.RDV.EN_COURS_AIDE' | translate }}</p>
         <button matButton type="button" [disabled]="enCours()" (click)="annuler(d)">

@@ -188,6 +188,15 @@ export const createAgentStructureSchema = z.object({
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
   role: roleAgentStructureSchema,
+  // Ou le patient devra se rendre. **Facultatif** : beaucoup d'hopitaux ne
+  // numerotent pas leurs bureaux, et l'agent accompagne a pied. Ignore pour
+  // les roles autres que MEDECIN.
+  bureau: z.string().trim().min(1).max(120).optional(),
+}).strict();
+
+/** Un bureau change : un medecin demenage, un service est redecoupe. */
+export const definirBureauSchema = z.object({
+  bureau: z.string().trim().min(1).max(120).nullable(),
 }).strict();
 
 export const createStructureSchema = z.object({

@@ -1140,6 +1140,18 @@ export interface AgentStructureView {
   role: Role;
   creeLe: HorodatageApi;
   derniereConnexion?: HorodatageApi | null;
+  /**
+   * Ou le patient doit se rendre, pour un medecin : « Batiment B, bureau 12 ».
+   *
+   * **Facultatif** : beaucoup d hopitaux ne numerotent pas leurs bureaux et
+   * l agent accompagne le patient a pied. `null` ne s affiche pas.
+   */
+  bureau?: string | null;
+}
+
+/** PUT /admin-structure/agents/:id/bureau — un bureau change, un medecin demenage. */
+export interface DefinirBureauDto {
+  bureau: string | null;
 }
 
 /**
@@ -1621,7 +1633,12 @@ export interface DemandeRendezVousView {
     telephone: string;
   };
   structure: { id: string; nom: string; prefecture: string };
-  medecin?: { id: string; prenom: string; nom: string } | null;
+  /**
+   * `bureau` : ou le patient devra se rendre le jour du rendez-vous. Souvent
+   * `null` — tous les hopitaux ne numerotent pas leurs bureaux, et l agent
+   * d accueil accompagne a pied.
+   */
+  medecin?: { id: string; prenom: string; nom: string; bureau?: string | null } | null;
   /** Rempli a l'acceptation : la demande est devenue une visite. */
   idEpisode?: string | null;
   numeroEpisode?: string | null;
@@ -1669,7 +1686,12 @@ export interface PresenceDuJourView {
   statut: StatutRendezVous;
   arriveeLe?: HorodatageApi | null;
   patient: { id: string; prenom: string; nom: string; telephone: string };
-  medecin?: { id: string; prenom: string; nom: string } | null;
+  /**
+   * `bureau` est ce que l agent lit au patient apres l avoir pointe. Souvent
+   * `null` : beaucoup d hopitaux ne numerotent pas leurs bureaux, et l agent
+   * accompagne a pied. Dans ce cas l ecran n affiche rien.
+   */
+  medecin?: { id: string; prenom: string; nom: string; bureau?: string | null } | null;
   idEpisode?: string | null;
 }
 

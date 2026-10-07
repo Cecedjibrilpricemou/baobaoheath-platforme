@@ -5,7 +5,8 @@ import { hashPassword } from '../utils/password.utils';
 import { Role, TypeStructure } from '../config/generated/client/client';
 import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
 import { logger } from '../config/logger';
-import { ConflictError, ForbiddenError, ValidationError } from '../utils/app-error';
+import type { JwtPayload } from '../types/auth.types';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 
 const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO];
 
@@ -252,17 +253,29 @@ export async function getAgentsStructure(adminId: string) {
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
 
-    return prisma.utilisateur.findMany({
+    const agents = await prisma.utilisateur.findMany({
         where: { idStructure: admin.idStructure, role: { in: ROLES_AUTORISES }, estActif: true },
-        select: { id: true, telephone: true, email: true, prenom: true, nom: true, role: true, creeLe: true, derniereConnexion: true },
+        select: {
+            id: true, telephone: true, email: true, prenom: true, nom: true, role: true,
+            creeLe: true, derniereConnexion: true,
+            // Le bureau n'existe que pour un medecin, et il est souvent nul.
+            medecinProfile: { select: { bureau: true } },
+        },
         orderBy: { creeLe: 'desc' }
     });
+
+    return agents.map(({ medecinProfile, ...a }) => ({
+        ...a,
+        bureau: medecinProfile?.bureau ?? null,
+    }));
 }
 
 // ── ADMIN_STRUCTURE : créer un agent avec MDP temporaire ─────────
 export async function creerAgent(adminId: string, dto: {
     telephone: string; email?: string; motDePasse?: string;
     prenom: string; nom: string; role: Role;
+    /** Facultatif, et seulement pour un medecin. */
+    bureau?: string;
 }) {
     const admin = await prisma.utilisateur.findUnique({
         where: { id: adminId },
@@ -300,7 +313,14 @@ export async function creerAgent(adminId: string, dto: {
             await tx.ascProfile.create({ data: { idUtilisateur: u.id, idStructure: admin.idStructure } });
         }
         if (dto.role === Role.MEDECIN) {
-            await tx.medecinProfile.create({ data: { idUtilisateur: u.id, idStructure: admin.idStructure } });
+            await tx.medecinProfile.create({
+                data: {
+                    idUtilisateur: u.id,
+                    idStructure: admin.idStructure,
+                    // Facultatif : sans numerotation de bureaux, l'agent accompagne.
+                    bureau: dto.bureau?.trim() || null,
+                },
+            });
         }
         if (dto.role === Role.PHARMACIEN) {
             await tx.pharmacienProfile.create({ data: { idUtilisateur: u.id, idStructure: admin.idStructure } });
@@ -361,4 +381,45 @@ export async function getStatsStructure(adminId: string) {
     ]);
 
     return { structure, totalAgents, totalConsultations, totalPatients };
+}
+
+/**
+ * Definir — ou effacer — le bureau d'un medecin (EF-03).
+ *
+ * **Un bureau change** : un medecin demenage, un service est redecoupe.
+ * Figer la valeur a la creation du compte aurait rendu le champ faux au bout
+ * de quelques mois, et un bureau faux est pire que pas de bureau : le patient
+ * y va.
+ *
+ * `null` efface : c'est le cas de l'hopital qui ne numerote pas ses bureaux et
+ * ou l'agent accompagne le patient a pied.
+ */
+export async function definirBureau(
+    auteur: JwtPayload,
+    idAgent: string,
+    bureau: string | null,
+): Promise<{ id: string; nomComplet: string; bureau: string | null }> {
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: auteur.userId },
+        select: { idStructure: true },
+    });
+    if (!admin?.idStructure) throw new ForbiddenError('Aucune structure rattachee a ce compte');
+
+    const profil = await prisma.medecinProfile.findUnique({
+        where: { idUtilisateur: idAgent },
+        select: { id: true, idStructure: true, utilisateur: { select: { prenom: true, nom: true } } },
+    });
+    // Un administrateur ne touche qu'aux medecins de sa structure.
+    if (!profil || profil.idStructure !== admin.idStructure) {
+        throw new NotFoundError('Medecin introuvable dans cette structure');
+    }
+
+    const valeur = bureau?.trim() || null;
+    await prisma.medecinProfile.update({ where: { id: profil.id }, data: { bureau: valeur } });
+
+    return {
+        id: idAgent,
+        nomComplet: `${profil.utilisateur.prenom} ${profil.utilisateur.nom}`,
+        bureau: valeur,
+    };
 }

@@ -847,6 +847,16 @@ model MedecinProfile {
   id         String   @id @default(cuid())
   numeroCom  String?
   specialite String?
+
+  /// Ou le patient doit se rendre : « Batiment B, bureau 12 ».
+  ///
+  /// **Facultatif, et il le restera.** Beaucoup d'hopitaux ne numerotent pas
+  /// leurs bureaux : l'agent d'accueil accompagne le patient a pied. Exiger
+  /// une valeur obligerait a inventer un numero qui n'existe pas.
+  ///
+  /// Du texte libre, pas un plan ni une reservation de salles : les bureaux
+  /// changent, et une table de salles a tenir a jour serait abandonnee.
+  bureau String?
   photoUrl   String?
   creeLe     DateTime @default(now())
 

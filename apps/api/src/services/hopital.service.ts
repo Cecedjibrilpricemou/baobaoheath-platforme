@@ -652,7 +652,13 @@ export async function documentDemandePourPatient(userId: string, idDemande: stri
 
 const PRESENCE_INCLUDE = {
   patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true, telephone: true } } } },
-  medecin: { select: { id: true, prenom: true, nom: true } },
+  // `bureau` : ce que l'agent lit au patient juste apres l'avoir pointe.
+  medecin: {
+    select: {
+      id: true, prenom: true, nom: true,
+      medecinProfile: { select: { bureau: true } },
+    },
+  },
   episode: { select: { id: true } },
 } satisfies Prisma.RendezVousInclude;
 
@@ -670,7 +676,15 @@ function versPresence(r: PresenceRow): PresenceDuJourView {
       nom: r.patient.utilisateur.nom,
       telephone: r.patient.utilisateur.telephone,
     },
-    medecin: r.medecin,
+    medecin: r.medecin
+      ? {
+          id: r.medecin.id,
+          prenom: r.medecin.prenom,
+          nom: r.medecin.nom,
+          // Souvent nul : l'ecran n'affiche alors rien plutot qu'un tiret.
+          bureau: r.medecin.medecinProfile?.bureau ?? null,
+        }
+      : null,
     idEpisode: r.episode?.id ?? null,
   };
 }

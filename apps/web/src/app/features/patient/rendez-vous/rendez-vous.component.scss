@@ -130,3 +130,19 @@
   }
   &__refus strong { color: #F87171; }
 }
+
+// Le bureau, visible avant de venir : un grand hôpital, on ne sait pas où aller.
+.rdv-bureau {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  padding: 2px 9px;
+  border-radius: var(--bb-radius-pill);
+  background: color-mix(in srgb, var(--bb-primary) 12%, transparent);
+  color: var(--bb-primary);
+  font-size: 11.5px;
+  font-weight: 700;
+
+  i { font-size: 11px; }
+}
