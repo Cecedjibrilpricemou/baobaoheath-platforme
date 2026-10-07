@@ -65,7 +65,11 @@
     </div>
   </section>
 
-  <!-- ── CHIFFRES ────────────────────────────────────────────────── -->
+  <!-- ── CHIFFRES ──────────────────────────────────────────────────
+       Masqué tant qu'il n'y a pas de chiffres : une bande de tirets donne
+       l'air cassé, et c'est ce que voyait un visiteur arrivant pendant une
+       coupure de l'API. -->
+  @if (chiffresDisponibles()) {
   <section class="stats-band" aria-label="Chiffres de la plateforme">
     @for (stat of stats(); track stat.labelKey) {
       <div class="stats-band__item">
@@ -77,6 +81,7 @@
       </div>
     }
   </section>
+  }
 
   <!-- ── COMMENT ÇA FONCTIONNE ───────────────────────────────────── -->
   <app-how-it-works></app-how-it-works>

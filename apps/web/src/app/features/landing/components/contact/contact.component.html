@@ -9,28 +9,38 @@
     </div>
 
     <div class="contact-container">
+      <!-- Chaque carte disparaît si elle n'a rien à dire. Trois tirets sur une
+           page de contact publique donnent l'air cassé — et c'est ce qu'on
+           voyait quand l'API ne répondait pas, ou quand l'administrateur
+           n'avait pas rempli le champ. -->
       <div class="contact-info">
-        <div class="info-card">
-          <span class="info-card__icon info-card__icon--green" aria-hidden="true"><i class="pi pi-map-marker"></i></span>
-          <div>
-            <h3>{{ 'LANDING.CONTACT_ADDRESS_LABEL' | translate }}</h3>
-            <p>{{ plateforme.adresseComplete() || '—' }}</p>
+        @if (plateforme.adresseComplete()) {
+          <div class="info-card">
+            <span class="info-card__icon info-card__icon--green" aria-hidden="true"><i class="pi pi-map-marker"></i></span>
+            <div>
+              <h3>{{ 'LANDING.CONTACT_ADDRESS_LABEL' | translate }}</h3>
+              <p>{{ plateforme.adresseComplete() }}</p>
+            </div>
           </div>
-        </div>
-        <div class="info-card">
-          <span class="info-card__icon info-card__icon--purple" aria-hidden="true"><i class="pi pi-envelope"></i></span>
-          <div>
-            <h3>{{ 'LANDING.CONTACT_EMAIL_LABEL' | translate }}</h3>
-            <p>@if (plateforme.emailContact()) { <a [href]="'mailto:' + plateforme.emailContact()">{{ plateforme.emailContact() }}</a> } @else { — }</p>
+        }
+        @if (plateforme.emailContact()) {
+          <div class="info-card">
+            <span class="info-card__icon info-card__icon--purple" aria-hidden="true"><i class="pi pi-envelope"></i></span>
+            <div>
+              <h3>{{ 'LANDING.CONTACT_EMAIL_LABEL' | translate }}</h3>
+              <p><a [href]="'mailto:' + plateforme.emailContact()">{{ plateforme.emailContact() }}</a></p>
+            </div>
           </div>
-        </div>
-        <div class="info-card">
-          <span class="info-card__icon info-card__icon--orange" aria-hidden="true"><i class="pi pi-phone"></i></span>
-          <div>
-            <h3>{{ 'LANDING.CONTACT_PHONE_LABEL' | translate }}</h3>
-            <p>{{ plateforme.telephone() || '—' }}</p>
+        }
+        @if (plateforme.telephone()) {
+          <div class="info-card">
+            <span class="info-card__icon info-card__icon--orange" aria-hidden="true"><i class="pi pi-phone"></i></span>
+            <div>
+              <h3>{{ 'LANDING.CONTACT_PHONE_LABEL' | translate }}</h3>
+              <p>{{ plateforme.telephone() }}</p>
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <div class="contact-form">

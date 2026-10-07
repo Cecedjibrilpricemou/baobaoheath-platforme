@@ -48,13 +48,24 @@ export class LandingComponent implements OnInit {
   // ── Chiffres de la plateforme (GET /stats/public) ───────────────────
   private platformStats = signal<PublicStats | null>(null);
 
+  /**
+   * **Le bandeau disparait tant qu'il n'a pas de chiffres.**
+   *
+   * Il affichait quatre tirets quand l'API ne repondait pas — et c'est ce que
+   * voyait un visiteur arrivant pendant une coupure, ou sur un reseau trop
+   * lent pour que l'appel aboutisse. Une bande verte de tirets donne l'air
+   * casse ; la page se lit tres bien sans elle.
+   */
+  readonly chiffresDisponibles = computed(() => this.platformStats() !== null);
+
   readonly stats = computed(() => {
     const s = this.platformStats();
+    if (!s) return [];
     return [
-      { icon: 'pi-users',      value: s ? this.formatCount(s.patients) : '—',      labelKey: 'LANDING.STAT_PATIENTS' },
-      { icon: 'pi-heart-fill', value: s ? this.formatCount(s.consultations) : '—', labelKey: 'LANDING.STAT_CONSULTATIONS' },
-      { icon: 'pi-id-card',    value: s ? this.formatCount(s.asc) : '—',           labelKey: 'LANDING.STAT_ASC' },
-      { icon: 'pi-building',   value: s ? s.structures.toString() : '—',          labelKey: 'LANDING.STAT_STRUCTURES' },
+      { icon: 'pi-users',      value: this.formatCount(s.patients),      labelKey: 'LANDING.STAT_PATIENTS' },
+      { icon: 'pi-heart-fill', value: this.formatCount(s.consultations), labelKey: 'LANDING.STAT_CONSULTATIONS' },
+      { icon: 'pi-id-card',    value: this.formatCount(s.asc),           labelKey: 'LANDING.STAT_ASC' },
+      { icon: 'pi-building',   value: s.structures.toString(),           labelKey: 'LANDING.STAT_STRUCTURES' },
     ];
   });
 
