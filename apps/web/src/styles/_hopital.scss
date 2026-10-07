@@ -317,66 +317,163 @@
 .bb-adm-voile {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 1200;
+
+  // **Le modal se centre dans la zone de travail, pas dans la fenêtre.**
+  //
+  // La barre latérale est un panneau Material : elle vit dans son propre
+  // contexte d'empilement et peint par-dessus quoi qu'on mette ici — un
+  // `z-index` plus haut n'y change rien, essayé. Plutôt que de déplacer le
+  // modal dans le `body` (CDK Overlay, du câblage pour un formulaire), on
+  // décale le voile de la largeur de la barre : elle reste visible, l'agent
+  // garde ses repères, et la boîte est entière.
+  //
+  // Sous 768px la barre se superpose au lieu d'être ancrée : le décalage
+  // disparaît avec elle.
+  @media (min-width: 769px) { left: var(--bb-sidebar-width); }
   display: flex;
-  align-items: center;
+  // **`flex-start`, pas `center`.** Centrer dans un conteneur qui défile rogne
+  // le haut dès que la boîte dépasse la hauteur de l'écran : le titre passait
+  // sous le bord. `margin: auto` sur l'enfant centre quand ça tient, et ne
+  // coupe rien quand ça ne tient pas.
+  align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.25rem;
   overflow-y: auto;
-  background: rgba(0, 0, 0, .45);
+  background: rgba(8, 24, 16, .55);
+  backdrop-filter: blur(3px);
+  animation: bb-adm-voile-entre .18s ease-out;
 }
 
+@keyframes bb-adm-voile-entre { from { opacity: 0 } to { opacity: 1 } }
+
 .bb-adm-neuf {
-  width: min(720px, 100%);
-  max-height: min(88vh, 900px);
-  overflow-y: auto;
+  width: min(760px, 100%);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  animation: bb-adm-boite-entre .22s cubic-bezier(.2, .8, .3, 1);
+
+  // ── L'en-tête, séparé du formulaire ───────────────────────────────
+  &__tete {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 1.35rem 1.5rem 1.15rem;
+    border-bottom: 1px solid var(--bb-border);
+    background: var(--bb-surface-1);
+  }
+
+  &__icone {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    i { font-size: 19px; }
+  }
 
   &__titre {
-    margin: 0 0 .3rem;
+    margin: 0 0 .2rem;
     font-family: var(--bb-font-display);
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 800;
     letter-spacing: -.4px;
+    color: var(--bb-text-primary);
   }
 
   &__sub {
-    margin: 0 0 1.2rem;
+    margin: 0;
     font-size: .8125rem;
+    line-height: 1.5;
     color: var(--bb-text-muted);
   }
 
-  &__grille {
+  &__fermer {
+    margin-left: auto;
+    flex: none;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: .9rem;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--bb-text-muted);
+    cursor: pointer;
+    transition: background var(--bb-transition), color var(--bb-transition);
 
-    @media (max-width: 560px) { grid-template-columns: 1fr; }
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
   }
 
+  &__corps { padding: 1.35rem 1.5rem; }
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: .75rem 1rem;
+
+    @media (max-width: 620px) { grid-template-columns: 1fr; }
+  }
+
+  // Le pied se détache : on sait où est l'action, même après avoir fait
+  // défiler un formulaire de huit champs.
   &__actions {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
-    gap: .6rem;
-    margin-top: 1.4rem;
+    gap: .7rem;
+    padding: 1rem 1.5rem 1.15rem;
+    border-top: 1px solid var(--bb-border);
+    background: var(--bb-surface-1);
   }
 }
 
+@keyframes bb-adm-boite-entre {
+  from { opacity: 0; transform: translateY(10px) scale(.985) }
+  to   { opacity: 1; transform: none }
+}
+
+// Ce qui est exigé se voit, comme sur le formulaire public.
+.bb-req { color: var(--bb-danger); font-weight: 700; }
+
 .bb-adm-mdp {
-  width: min(460px, 100%);
+  width: min(440px, 100%);
+  margin: auto;
+  padding: 1.6rem 1.6rem 1.35rem;
   text-align: center;
+  animation: bb-adm-boite-entre .22s cubic-bezier(.2, .8, .3, 1);
+
+  &__icone {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto .9rem;
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    i { font-size: 22px; }
+  }
 
   // Lu à voix haute au comptoir, parfois dans le bruit : gros, espacé, et en
   // chasse fixe pour qu'un 1 ne se confonde pas avec un l.
   &__code {
     margin: 1.1rem 0;
-    padding: .9rem 1rem;
+    padding: .95rem 1rem;
     border-radius: var(--bb-radius);
-    border: 1px dashed var(--bb-border);
+    border: 1px dashed color-mix(in srgb, var(--bb-primary) 45%, var(--bb-border));
     background: var(--bb-surface-1);
     font-family: ui-monospace, 'Courier New', monospace;
-    font-size: 1.45rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    letter-spacing: .12em;
+    letter-spacing: .14em;
+    color: var(--bb-text-primary);
     user-select: all;
   }
 
@@ -384,7 +481,7 @@
     display: flex;
     align-items: flex-start;
     gap: .45rem;
-    margin: 0;
+    margin: 0 0 1.2rem;
     text-align: left;
     font-size: 12.5px;
     line-height: 1.55;
@@ -393,3 +490,4 @@
     i { font-size: 15px; flex: none; margin-top: 1px; }
   }
 }
+

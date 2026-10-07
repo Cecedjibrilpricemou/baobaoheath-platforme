@@ -115,34 +115,49 @@
 @if (creation()) {
   <div class="bb-adm-voile" role="dialog" aria-modal="true">
     <section class="bb-hop-card bb-adm-neuf">
-      <h2 class="bb-adm-neuf__titre">{{ 'HOPITAL.ADMISSION.NEW_TITLE' | translate }}</h2>
-      <p class="bb-adm-neuf__sub">{{ 'HOPITAL.ADMISSION.NEW_SUB' | translate }}</p>
+      <header class="bb-adm-neuf__tete">
+        <span class="bb-adm-neuf__icone" aria-hidden="true"><i class="pi pi-user-plus"></i></span>
+        <div>
+          <h2 class="bb-adm-neuf__titre">{{ 'HOPITAL.ADMISSION.NEW_TITLE' | translate }}</h2>
+          <p class="bb-adm-neuf__sub">{{ 'HOPITAL.ADMISSION.NEW_SUB' | translate }}</p>
+        </div>
+        <button type="button" class="bb-adm-neuf__fermer" (click)="annulerCreation()"
+                [attr.aria-label]="'HOPITAL.ADMISSION.NEW_CANCEL' | translate">
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      </header>
 
+      <div class="bb-adm-neuf__corps">
       <div class="bb-adm-neuf__grille">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PRENOM' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
+          <i matPrefix class="pi pi-user" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.prenom" name="prenom" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NOM' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
+          <i matPrefix class="pi pi-user" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.nom" name="nom" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_TEL' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
+          <i matPrefix class="pi pi-phone" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.telephone" name="telephone" inputmode="tel" autocomplete="off" />
           <mat-hint>{{ 'HOPITAL.ADMISSION.NEW_TEL_HINT' | translate }}</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_EMAIL' | translate }}</mat-label>
+          <i matPrefix class="pi pi-envelope" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.email" name="email" type="email" autocomplete="off" />
           <mat-hint>{{ 'HOPITAL.ADMISSION.NEW_EMAIL_HINT' | translate }}</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_NAISSANCE' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
+          <i matPrefix class="pi pi-calendar" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.dateNaissance" name="dateNaissance" type="date" />
         </mat-form-field>
 
@@ -156,13 +171,17 @@
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_PREFECTURE' | translate }} <span class="bb-req" aria-hidden="true">*</span></mat-label>
+          <i matPrefix class="pi pi-map-marker" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.prefecture" name="prefecture" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'HOPITAL.ADMISSION.NEW_SOUS_PREFECTURE' | translate }}</mat-label>
+          <i matPrefix class="pi pi-map" aria-hidden="true"></i>
           <input matInput [(ngModel)]="nouveau.sousPrefecture" name="sousPrefecture" autocomplete="off" />
         </mat-form-field>
+      </div>
+
       </div>
 
       <div class="bb-adm-neuf__actions">
@@ -183,6 +202,7 @@
 @if (motDePasseRemis(); as remis) {
   <div class="bb-adm-voile" role="dialog" aria-modal="true">
     <section class="bb-hop-card bb-adm-mdp">
+      <span class="bb-adm-mdp__icone" aria-hidden="true"><i class="pi pi-key"></i></span>
       <h2 class="bb-adm-neuf__titre">{{ 'HOPITAL.ADMISSION.NEW_MDP_TITRE' | translate }}</h2>
       <p class="bb-adm-neuf__sub">{{ remis.nom }}</p>
 
