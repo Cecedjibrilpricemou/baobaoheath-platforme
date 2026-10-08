@@ -18,6 +18,13 @@ enum Role {
   AGENT_ACCUEIL // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
   TECHNICIEN_LABO // Laborantin : reception, prelevement, saisie ET validation (EF-04)
   LIVREUR // Taxi-moto : courses de livraison de medicaments (EF-10)
+  /// Agent d'un assureur. Il se connecte lui-meme, depuis la structure de type
+  /// ASSURANCE rattachee a son `Assureur` (addendum 2026-09-28, point 5.2).
+  ///
+  /// **Il ne lit aucun dossier medical.** Il voit qui est assure chez lui, ce
+  /// que sa compagnie a pris en charge, et dans quelles pharmacies. Un
+  /// assureur qui lirait un diagnostic pourrait refuser un contrat dessus.
+  ASSUREUR
   ADMIN_STRUCTURE
   ADMIN_REGIONAL
   ADMIN_NATIONAL
@@ -310,6 +317,7 @@ model Utilisateur {
   approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
   ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
   ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
+  reglementsAssureurSaisis ReglementAssureur[]      @relation("ReglementsAssureur")
   controlesEligibilite     ControleEligibilite[]    @relation("ControlesEligibilite")
   syncEvents               SyncEvent[]
   syncMutations            SyncMutation[]
@@ -652,6 +660,7 @@ model StructureSante {
   reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
   ventesComptoir       VenteComptoir[]
   assureur             Assureur?
+  reglementsRecus      ReglementAssureur[]
   controlesEligibilite ControleEligibilite[]
   latitude             Float?
   longitude            Float?
@@ -2156,13 +2165,59 @@ model Assureur {
   idStructure String?         @unique
   structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
 
-  contrats ContratAssurance[]
-  regles   RegleCouverture[]
+  contrats   ContratAssurance[]
+  regles     RegleCouverture[]
+  reglements ReglementAssureur[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
   @@map("assureurs")
+}
+
+/// Ce qu'un assureur a effectivement verse a une pharmacie (addendum, point 5.2).
+///
+/// **Sans cette table, « ce qui est paye » et « ce qui reste du » ne sont pas
+/// calculables.** On sait ce que l'assureur doit — c'est la somme des parts
+/// assureur des ventes — mais rien ne dit ce qu'il a regle. L'ecart entre les
+/// deux est precisement ce que l'addendum demande de montrer.
+///
+/// Le versement couvre une periode et non des ventes nommees : c'est ainsi
+/// qu'une compagnie regle une officine, par bordereau mensuel. Rattacher
+/// chaque virement a des lignes de vente supposerait un rapprochement que
+/// personne ne fait a la main.
+model ReglementAssureur {
+  id String @id @default(cuid())
+
+  idAssureur String
+  assureur   Assureur @relation(fields: [idAssureur], references: [id], onDelete: Cascade)
+
+  /// La pharmacie reglee. `Restrict` : un versement est une trace comptable,
+  /// il ne disparait pas avec la fiche de l'officine.
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  /// En francs guineens, toujours positif. Un remboursement en sens inverse
+  /// serait un autre geste, avec son propre motif.
+  montantGnf Int
+
+  /// La periode couverte. Le debut est inclus, la fin incluse : c'est ainsi
+  /// qu'un bordereau se lit, « du 1er au 30 septembre ».
+  periodeDebut DateTime @db.Date
+  periodeFin   DateTime @db.Date
+
+  /// Reference du virement ou du bordereau, telle que la compagnie la connait.
+  reference String?
+
+  /// Qui a saisi, pour que le chiffre ait un auteur.
+  idSaisiPar String
+  saisiPar   Utilisateur @relation("ReglementsAssureur", fields: [idSaisiPar], references: [id], onDelete: Restrict)
+
+  creeLe DateTime @default(now())
+
+  @@index([idAssureur, idStructure])
+  @@index([idAssureur, periodeFin])
+  @@map("reglements_assureur")
 }
 
 /// Le contrat d'un patient chez un assureur.

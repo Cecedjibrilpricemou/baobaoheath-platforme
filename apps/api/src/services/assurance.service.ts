@@ -16,11 +16,20 @@
 import { CategorieProduit, ModeEchangeAssureur, NiveauIdentite, Prisma, StatutContrat, TypeStructure } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { filtreRecherchePatient } from './hopital.service';
+import { genererMotDePasseTemp } from './admin-structure.service';
+import { hashPassword } from '../utils/password.utils';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { logger } from '../config/logger';
 import type {
+  AgentAssureurCreeView,
+  AssureView,
   AssureurView,
+  CreerReglementDto,
+  MonAssureurView,
   PatientContratRechercheView,
+  ReglementView,
+  SituationPharmacieView,
   ContratAssuranceView,
   ControleEligibiliteView,
   CouvertureLigneView,
@@ -705,4 +714,347 @@ export async function rechercherPatientsPourContrat(q: string): Promise<PatientC
     prefecture: p.prefecture,
     telephoneMasque: p.utilisateur.telephone.replace(/.(?=.{3})/g, String.fromCharCode(8226)),
   }));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// L'espace de l'assureur (addendum du 2026-09-28, point 5.2)
+//
+// **Rien de medical ne sort d'ici.** L'assureur voit qui est assure chez lui,
+// ce que sa compagnie a pris en charge et dans quelles pharmacies — jamais un
+// produit delivre, une ordonnance ni un diagnostic. Un assureur qui lirait ce
+// qu'on soigne pourrait refuser un contrat dessus.
+//
+// Tout est donc agrege : des montants et des comptes, pas des lignes de
+// vente. Le decompte detaille, s'il devient necessaire, releve de l'echange
+// conventionne avec la compagnie (EF-09-02).
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * La compagnie de l'agent connecte.
+ *
+ * **Elle se deduit de sa structure, jamais d'un identifiant qu'il enverrait.**
+ * Accepter un `idAssureur` en parametre laisserait un agent de la SONAG
+ * demander la situation d'un concurrent en changeant un chiffre dans l'URL.
+ */
+export async function assureurDe(user: JwtPayload): Promise<{ id: string }> {
+  const agent = await prisma.utilisateur.findUnique({
+    where: { id: user.userId },
+    select: { idStructure: true },
+  });
+  if (!agent?.idStructure) {
+    throw new ForbiddenError('Aucune compagnie rattachee a ce compte');
+  }
+
+  const assureur = await prisma.assureur.findUnique({
+    where: { idStructure: agent.idStructure },
+    select: { id: true },
+  });
+  if (!assureur) {
+    // Le compte existe, sa structure aussi, mais aucune compagnie n'y est
+    // rattachee : c'est une erreur de configuration, et le dire evite de
+    // chercher du cote des droits.
+    throw new ForbiddenError(
+      "Cette structure n'est rattachee a aucune compagnie d'assurance",
+    );
+  }
+  return assureur;
+}
+
+export async function monAssureur(user: JwtPayload): Promise<MonAssureurView> {
+  const { id } = await assureurDe(user);
+  const a = await prisma.assureur.findUniqueOrThrow({
+    where: { id },
+    select: {
+      id: true, nom: true, code: true, estActif: true, modeEchange: true,
+      regles: {
+        select: { id: true, categorie: true, exclu: true, tauxPourcent: true, plafondLigneGnf: true, dateEffet: true },
+        orderBy: [{ categorie: 'asc' }, { dateEffet: 'desc' }],
+      },
+      _count: { select: { contrats: true } },
+    },
+  });
+
+  return {
+    id: a.id,
+    nom: a.nom,
+    code: a.code,
+    estActif: a.estActif,
+    modeEchange: a.modeEchange,
+    regles: a.regles,
+    nombreContrats: a._count.contrats,
+    nombreContratsActifs: await prisma.contratAssurance.count({
+      where: { idAssureur: id, statut: StatutContrat.ACTIF },
+    }),
+  };
+}
+
+/**
+ * Les assures de la compagnie, et ce qu'elle a pris en charge cette annee.
+ *
+ * Le nom du patient y figure : c'est la personne que la compagnie assure, elle
+ * la connait deja par son contrat. Son telephone, son adresse et sa date de
+ * naissance, non — ils ne servent a rien ici.
+ */
+export async function mesAssures(user: JwtPayload): Promise<AssureView[]> {
+  const { id } = await assureurDe(user);
+  const debutAnnee = new Date(new Date().getFullYear(), 0, 1);
+
+  const contrats = await prisma.contratAssurance.findMany({
+    where: { idAssureur: id },
+    select: {
+      id: true, numeroPolice: true, statut: true, tauxBasePourcent: true,
+      plafondAnnuelGnf: true, franchiseGnf: true, dateEffet: true, dateFin: true,
+      patient: { select: { utilisateur: { select: { prenom: true, nom: true } } } },
+    },
+    orderBy: [{ statut: 'asc' }, { dateEffet: 'desc' }],
+  });
+  if (contrats.length === 0) return [];
+
+  // Une seule agregation groupee plutot qu'une requete par contrat : une
+  // compagnie peut avoir des milliers d'assures.
+  const consommations = await prisma.venteComptoir.groupBy({
+    by: ['idContratAssurance'],
+    where: {
+      idContratAssurance: { in: contrats.map((c) => c.id) },
+      statut: 'PAYEE',
+      creeLe: { gte: debutAnnee },
+    },
+    _sum: { montantAssureGnf: true },
+    _count: { _all: true },
+  });
+  const parContrat = new Map(consommations.map((c) => [c.idContratAssurance, c]));
+
+  return contrats.map((c) => {
+    const conso = parContrat.get(c.id);
+    return {
+      idContrat: c.id,
+      numeroPolice: c.numeroPolice,
+      statut: c.statut,
+      tauxBasePourcent: c.tauxBasePourcent,
+      plafondAnnuelGnf: c.plafondAnnuelGnf,
+      franchiseGnf: c.franchiseGnf,
+      dateEffet: c.dateEffet,
+      dateFin: c.dateFin,
+      patient: { prenom: c.patient.utilisateur.prenom, nom: c.patient.utilisateur.nom },
+      consommeAnneeGnf: conso?._sum.montantAssureGnf ?? 0,
+      nombrePassages: conso?._count._all ?? 0,
+    };
+  });
+}
+
+/**
+ * La situation par officine (point 5.2) : « ce qui a ete delivre, ce qui lui
+ * est facture, ce qui est paye, ce qui reste du, et les ecarts ».
+ *
+ * Les ventes annulees ne comptent nulle part : une erreur de caisse corrigee
+ * ne doit ni gonfler ce que la compagnie doit, ni entamer le plafond d'un
+ * assure.
+ */
+export async function mesPharmacies(user: JwtPayload): Promise<SituationPharmacieView[]> {
+  const { id } = await assureurDe(user);
+
+  const ventes = await prisma.venteComptoir.groupBy({
+    by: ['idStructure'],
+    where: { contratAssurance: { idAssureur: id }, statut: 'PAYEE' },
+    _sum: { montantAssureGnf: true, montantNetGnf: true },
+    _count: { _all: true },
+  });
+
+  const reglements = await prisma.reglementAssureur.groupBy({
+    by: ['idStructure'],
+    where: { idAssureur: id },
+    _sum: { montantGnf: true },
+    _max: { creeLe: true },
+  });
+
+  // Une officine peut avoir ete reglee sans vente sur la periode retenue, ou
+  // avoir vendu sans avoir encore ete reglee : les deux cotes comptent.
+  const idsStructures = [...new Set([
+    ...ventes.map((v) => v.idStructure),
+    ...reglements.map((r) => r.idStructure),
+  ])];
+  if (idsStructures.length === 0) return [];
+
+  const structures = await prisma.structureSante.findMany({
+    where: { id: { in: idsStructures } },
+    select: { id: true, nom: true, prefecture: true },
+  });
+  const parVente = new Map(ventes.map((v) => [v.idStructure, v]));
+  const parReglement = new Map(reglements.map((r) => [r.idStructure, r]));
+
+  return structures
+    .map((s) => {
+      const v = parVente.get(s.id);
+      const r = parReglement.get(s.id);
+      const facture = v?._sum.montantAssureGnf ?? 0;
+      const paye = r?._sum.montantGnf ?? 0;
+      return {
+        idStructure: s.id,
+        nom: s.nom,
+        prefecture: s.prefecture,
+        nombreVentes: v?._count._all ?? 0,
+        montantDelivreGnf: v?._sum.montantNetGnf ?? 0,
+        montantFactureGnf: facture,
+        montantPayeGnf: paye,
+        resteDuGnf: facture - paye,
+        dernierReglementLe: r?._max.creeLe ?? null,
+      };
+    })
+    // Le plus gros reste du en tete : c'est ce qu'on vient regarder.
+    .sort((a, b) => b.resteDuGnf - a.resteDuGnf);
+}
+
+/**
+ * Enregistrer un versement a une officine.
+ *
+ * Le versement couvre une periode et non des ventes nommees : c'est ainsi
+ * qu'une compagnie regle une pharmacie, par bordereau. Rattacher chaque
+ * virement a des lignes supposerait un rapprochement que personne ne fait.
+ */
+export async function enregistrerReglement(
+  user: JwtPayload,
+  dto: CreerReglementDto,
+): Promise<ReglementView> {
+  const { id: idAssureur } = await assureurDe(user);
+
+  const structure = await prisma.structureSante.findUnique({
+    where: { id: dto.idStructure },
+    select: { id: true, nom: true, type: true },
+  });
+  // On regle une officine, pas un hopital : l'erreur de destinataire est
+  // silencieuse autrement, et fausse la situation des deux cotes.
+  if (!structure || structure.type !== TypeStructure.PHARMACIE) {
+    throw new NotFoundError('Pharmacie introuvable');
+  }
+
+  const debut = new Date(dto.periodeDebut);
+  const fin = new Date(dto.periodeFin);
+  if (fin < debut) {
+    throw new ValidationError('La fin de periode precede son debut');
+  }
+  if (dto.montantGnf <= 0) {
+    throw new ValidationError('Le montant verse doit etre positif');
+  }
+
+  const r = await prisma.reglementAssureur.create({
+    data: {
+      idAssureur,
+      idStructure: structure.id,
+      montantGnf: dto.montantGnf,
+      periodeDebut: debut,
+      periodeFin: fin,
+      reference: dto.reference?.trim() || null,
+      idSaisiPar: user.userId,
+    },
+    select: {
+      id: true, montantGnf: true, periodeDebut: true, periodeFin: true,
+      reference: true, creeLe: true,
+      structure: { select: { id: true, nom: true } },
+      saisiPar: { select: { prenom: true, nom: true } },
+    },
+  });
+
+  logger.info('[ASSURANCE] reglement enregistre', {
+    idAssureur, idStructure: structure.id, montantGnf: dto.montantGnf, parQui: user.userId,
+  });
+  return r;
+}
+
+/** Les versements de la compagnie, le plus recent en tete. */
+export async function mesReglements(user: JwtPayload): Promise<ReglementView[]> {
+  const { id } = await assureurDe(user);
+  return prisma.reglementAssureur.findMany({
+    where: { idAssureur: id },
+    select: {
+      id: true, montantGnf: true, periodeDebut: true, periodeFin: true,
+      reference: true, creeLe: true,
+      structure: { select: { id: true, nom: true } },
+      saisiPar: { select: { prenom: true, nom: true } },
+    },
+    orderBy: { creeLe: 'desc' },
+    take: 100,
+  });
+}
+
+/**
+ * Creer le compte par lequel un assureur se connecte (addendum, point 5.2).
+ *
+ * **L'assureur n'appartient a aucun hopital.** Ses agents se connectent depuis
+ * une structure de type ASSURANCE qui lui est propre — sans elle, ils
+ * heriteraient des droits d'une pharmacie ou d'un etablissement de soins, et
+ * donc d'un acces aux dossiers.
+ *
+ * La structure est creee a la volee si la compagnie n'en a pas : demander a
+ * l'administration de declarer d'abord un « etablissement de sante » pour une
+ * compagnie d'assurance n'aurait aucun sens a l'ecran, alors que le modele,
+ * lui, en a besoin.
+ *
+ * Le mot de passe n'est rendu qu'une fois, et devra etre change.
+ */
+export async function creerAgentAssureur(
+  auteur: JwtPayload,
+  idAssureur: string,
+  dto: { prenom: string; nom: string; telephone: string; email?: string; prefecture?: string },
+): Promise<AgentAssureurCreeView> {
+  const assureur = await prisma.assureur.findUnique({
+    where: { id: idAssureur },
+    select: { id: true, nom: true, code: true, idStructure: true },
+  });
+  if (!assureur) throw new NotFoundError('Assureur introuvable');
+
+  const existant = await prisma.utilisateur.findUnique({
+    where: { telephone: dto.telephone },
+    select: { prenom: true, nom: true },
+  });
+  if (existant) {
+    throw new ConflictError(
+      `Ce numero appartient deja a ${existant.prenom} ${existant.nom}.`,
+    );
+  }
+
+  const motDePasseTemporaire = genererMotDePasseTemp();
+  const motDePasseHash = await hashPassword(motDePasseTemporaire);
+
+  const agent = await prisma.$transaction(async (tx) => {
+    let idStructure = assureur.idStructure;
+    if (!idStructure) {
+      const s = await tx.structureSante.create({
+        data: {
+          nom: assureur.nom,
+          type: TypeStructure.ASSURANCE,
+          // Faute de mieux : une compagnie n'a pas de prefecture au modele, et
+          // la colonne est obligatoire. Conakry est le siege par defaut.
+          prefecture: dto.prefecture?.trim() || 'Conakry',
+        },
+        select: { id: true },
+      });
+      idStructure = s.id;
+      await tx.assureur.update({ where: { id: assureur.id }, data: { idStructure } });
+    }
+
+    return tx.utilisateur.create({
+      data: {
+        telephone: dto.telephone.trim(),
+        email: dto.email?.trim() || null,
+        motDePasseHash,
+        prenom: dto.prenom.trim(),
+        nom: dto.nom.trim(),
+        role: 'ASSUREUR',
+        idStructure,
+        estActif: true,
+        doitChangerMotDePasse: true,
+      },
+      select: { id: true, prenom: true, nom: true, telephone: true },
+    });
+  });
+
+  logger.info('[ASSURANCE] compte agent assureur cree', {
+    idAssureur: assureur.id, idAgent: agent.id, parQui: auteur.userId,
+  });
+
+  return {
+    agent,
+    assureur: { id: assureur.id, nom: assureur.nom, code: assureur.code },
+    motDePasseTemporaire,
+  };
 }

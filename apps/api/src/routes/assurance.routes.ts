@@ -4,15 +4,22 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as assurance from '../services/assurance.service';
 import {
+  creerAgentAssureurSchema,
   creerAssureurSchema,
+  creerReglementSchema,
   creerContratAssuranceSchema,
   creerRegleCouvertureSchema,
   simulerPriseEnChargeSchema,
   verifierEligibiliteSchema,
 } from '../validators/api.schemas';
 import type {
+  AgentAssureurCreeView,
+  AssureView,
   AssureurView,
+  MonAssureurView,
   PatientContratRechercheView,
+  ReglementView,
+  SituationPharmacieView,
   ContratAssuranceView,
   ControleEligibiliteView,
   PriseEnChargeView,
@@ -150,6 +157,79 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const data: ContratAssuranceView = await assurance.creerContrat(req.body);
     res.status(201).json({ success: true, data, message: `Police ${data.numeroPolice} enregistree` });
+  }
+);
+
+/**
+ * Creer le compte par lequel un assureur se connecte.
+ *
+ * Sa structure de type ASSURANCE est creee a la volee si la compagnie n'en a
+ * pas : sans elle, ses agents heriteraient des droits d'une pharmacie ou d'un
+ * etablissement de soins, et donc d'un acces aux dossiers.
+ */
+router.post(
+  '/assureurs/:id/agents',
+  requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN'),
+  validateBody(creerAgentAssureurSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: AgentAssureurCreeView = await assurance.creerAgentAssureur(
+      req.user!, req.params['id'] as string, req.body,
+    );
+    res.status(201).json({
+      success: true,
+      data,
+      message: `Compte de ${data.agent.prenom} ${data.agent.nom} cree pour ${data.assureur.nom}. `
+        + `Remettez-lui son mot de passe : il devra le changer a sa premiere connexion.`,
+    });
+  }
+);
+
+// ── L'espace de l'assureur (addendum, point 5.2) ─────────────────────
+//
+// **Aucune de ces routes ne prend d'identifiant de compagnie.** Elle se deduit
+// de la structure de l'agent connecte : l'accepter en parametre laisserait un
+// agent de la SONAG lire la situation d'un concurrent en changeant un chiffre
+// dans l'URL.
+//
+// **Rien de medical n'en sort.** Des montants, des comptes et des noms
+// d'assures — jamais un produit delivre ni une ordonnance. Un assureur qui
+// lirait ce qu'on soigne pourrait refuser un contrat dessus.
+
+router.get('/moi', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const data: MonAssureurView = await assurance.monAssureur(req.user!);
+  res.json({ success: true, data });
+});
+
+router.get('/moi/assures', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const data: AssureView[] = await assurance.mesAssures(req.user!);
+  res.json({ success: true, data });
+});
+
+/**
+ * La situation par officine : ce qui a ete delivre, ce qui est facture, ce qui
+ * est paye, ce qui reste du.
+ */
+router.get('/moi/pharmacies', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const data: SituationPharmacieView[] = await assurance.mesPharmacies(req.user!);
+  res.json({ success: true, data });
+});
+
+router.get('/moi/reglements', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const data: ReglementView[] = await assurance.mesReglements(req.user!);
+  res.json({ success: true, data });
+});
+
+router.post(
+  '/moi/reglements',
+  requireRole('ASSUREUR'),
+  validateBody(creerReglementSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: ReglementView = await assurance.enregistrerReglement(req.user!, req.body);
+    res.status(201).json({
+      success: true,
+      data,
+      message: `Versement de ${data.montantGnf.toLocaleString('fr-FR')} GNF enregistre pour ${data.structure.nom}.`,
+    });
   }
 );
 

@@ -210,6 +210,30 @@ export const creerPatientComptoirSchema = z.object({
   email: optionalEmail,
 }).strict();
 
+// --- Le compte par lequel un assureur se connecte (addendum, point 5.2) ---
+export const creerAgentAssureurSchema = z.object({
+  prenom: z.string().trim().min(1).max(80),
+  nom: z.string().trim().min(1).max(80),
+  telephone: phone,
+  email: optionalEmail,
+  prefecture: z.string().trim().max(80).optional(),
+}).strict();
+
+// --- Un versement de la compagnie a une officine (addendum, point 5.2) ---
+//
+// Pas d'`idAssureur` : il se deduit de la structure de l'agent connecte.
+// L'accepter en entree laisserait un agent regler au nom d'un concurrent.
+export const creerReglementSchema = z.object({
+  idStructure: z.string().min(1, 'Choisissez une pharmacie'),
+  montantGnf: z.number().int().positive('Le montant verse doit etre positif'),
+  periodeDebut: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide'),
+  periodeFin: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide'),
+  reference: z.string().trim().max(120).optional(),
+}).strict().refine((d) => new Date(d.periodeFin) >= new Date(d.periodeDebut), {
+  message: 'La fin de periode precede son debut',
+  path: ['periodeFin'],
+});
+
 /** Un bureau change : un medecin demenage, un service est redecoupe. */
 export const definirBureauSchema = z.object({
   bureau: z.string().trim().min(1).max(120).nullable(),

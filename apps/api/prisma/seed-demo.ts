@@ -49,6 +49,11 @@ export const DEMO = {
   // sans lui, l'ecran /admin/assurance n'etait ouvrable par personne, et le
   // tiers payant ne se configurait qu'en ligne de commande.
   adminNational: { telephone: '620100007', email: 'admin.national@demo.test', prenom: 'Sory',      nom: 'Toure' },
+  // **L'assureur se connecte lui-meme** (addendum, point 5.2). Son compte vit
+  // dans une structure de type ASSURANCE qui lui est propre : sans elle, il
+  // heriterait des droits d'un hopital ou d'une pharmacie, et donc d'un acces
+  // aux dossiers medicaux.
+  agentAssureur: { telephone: '620100008', email: 'agent.pfa@demo.test', prenom: 'Hadja', nom: 'Bangoura' },
 
   // Le patient se connecte avec son telephone, sans OTP.
   patient: {
@@ -179,7 +184,8 @@ async function main() {
     create: { idUtilisateur: medecin.id, specialite: 'Medecine generale', idStructure: hopital.id },
   });
   console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien,');
-  console.log(`   admin de structure, et admin national (${DEMO.adminNational.telephone})`);
+  console.log(`   admin de structure, admin national (${DEMO.adminNational.telephone})`);
+  console.log(`   et l agent de l assureur (${DEMO.agentAssureur.telephone})`);
 
   // ── 3. Le patient ───────────────────────────────────────────────
   const utilisateurPatient = await upsertUtilisateur(DEMO.patient, Role.PATIENT, motDePasseHash, null);
@@ -286,6 +292,24 @@ async function main() {
       data: { categorie, exclu: true, idAssureur: assureur.id, dateEffet: new Date('2026-01-01') },
     });
   }
+
+  // La structure de la compagnie, et l'agent qui s'y connecte.
+  const structureAssureur = await prisma.structureSante.upsert({
+    where: { id: `str-${DEMO.assureur.code.toLowerCase()}` },
+    update: { nom: DEMO.assureur.nom },
+    create: {
+      id: `str-${DEMO.assureur.code.toLowerCase()}`,
+      nom: DEMO.assureur.nom,
+      type: TypeStructure.ASSURANCE,
+      prefecture: PREFECTURE,
+    },
+    select: { id: true },
+  });
+  await prisma.assureur.update({
+    where: { id: assureur.id },
+    data: { idStructure: structureAssureur.id },
+  });
+  await upsertUtilisateur(DEMO.agentAssureur, Role.ASSUREUR, motDePasseHash, structureAssureur.id);
 
   const contratExistant = await prisma.contratAssurance.findFirst({
     where: { idAssureur: assureur.id, numeroPolice: DEMO.assureur.numeroPolice },

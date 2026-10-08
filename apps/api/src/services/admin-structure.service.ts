@@ -11,7 +11,14 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO];
 
 // ── Générer un mot de passe temporaire ───────────────────────────
-function genererMotDePasseTemp(): string {
+/**
+ * Mot de passe temporaire d'un compte professionnel.
+ *
+ * **Different de celui remis au comptoir a un patient** : celui-la est dicte a
+ * voix haute dans un hall bruyant, celui-ci se lit sur un ecran ou dans un
+ * courriel. Sans O/0 ni I/l malgre tout : ils se confondent a l'ecrit aussi.
+ */
+export function genererMotDePasseTemp(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     const bytes = randomBytes(5);
     let pwd = 'BaoBao@';

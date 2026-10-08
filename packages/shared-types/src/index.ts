@@ -32,6 +32,8 @@ export type Role =
   | 'AGENT_ACCUEIL'
   | 'TECHNICIEN_LABO'
   | 'LIVREUR'
+  /** Agent d'un assureur : il se connecte lui-meme, et ne lit aucun dossier medical. */
+  | 'ASSUREUR'
   | 'ADMIN_STRUCTURE'
   | 'ADMIN_REGIONAL'
   | 'ADMIN_NATIONAL'
@@ -2268,6 +2270,117 @@ export interface ContratAssuranceView {
   consommeAnneeGnf: number;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// EF-09 — L'espace de l'assureur (addendum du 2026-09-28, point 5.2)
+//
+// **Rien de medical ne traverse cette frontiere.** L'assureur voit qui est
+// assure chez lui, ce que sa compagnie a pris en charge et dans quelles
+// pharmacies — jamais un produit delivre, une ordonnance ni un diagnostic. Un
+// assureur qui lirait ce qu'on soigne pourrait refuser un contrat dessus.
+//
+// C'est pourquoi tout est agrege : des montants et des comptes, pas des
+// lignes de vente. Le decompte detaille, s'il devient necessaire, releve de
+// l'echange conventionne avec la compagnie (EF-09-02), pas de cet ecran.
+// ═══════════════════════════════════════════════════════════════════
+
+/** POST /assurance/assureurs/{id}/agents — le compte par lequel l'assureur se connecte. */
+export interface CreerAgentAssureurDto {
+  prenom: string;
+  nom: string;
+  telephone: string;
+  email?: string;
+  /** Siege de la compagnie, si sa structure reste a creer. */
+  prefecture?: string;
+}
+
+export interface AgentAssureurCreeView {
+  agent: { id: string; prenom: string; nom: string; telephone: string };
+  assureur: { id: string; nom: string; code: string };
+  /** Rendu une seule fois, a remettre. Le compte devra le changer. */
+  motDePasseTemporaire: string;
+}
+
+/** GET /assurance/moi — l'assureur de l'agent connecte. */
+export interface MonAssureurView {
+  id: string;
+  nom: string;
+  code: string;
+  estActif: boolean;
+  modeEchange: ModeEchangeAssureur;
+  regles: RegleCouvertureView[];
+  /** Nombre de polices, tous statuts confondus. */
+  nombreContrats: number;
+  nombreContratsActifs: number;
+}
+
+/**
+ * GET /assurance/moi/assures — un assure de la compagnie.
+ *
+ * L'identite et le contrat, rien de plus : l'assureur sait deja qui il
+ * assure, il a besoin de retrouver la personne et de suivre son plafond.
+ */
+export interface AssureView {
+  idContrat: string;
+  numeroPolice: string;
+  statut: StatutContrat;
+  tauxBasePourcent: number;
+  plafondAnnuelGnf: number;
+  franchiseGnf: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  patient: { prenom: string; nom: string };
+  /** Ce que la compagnie a pris en charge cette annee sur cette police. */
+  consommeAnneeGnf: number;
+  /** Nombre de passages en pharmacie ayant donne lieu a prise en charge. */
+  nombrePassages: number;
+}
+
+/**
+ * GET /assurance/moi/pharmacies — la situation par officine (point 5.2).
+ *
+ * « Ce qui a ete delivre, ce qui lui est facture, ce qui est paye, ce qui
+ * reste du, et les ecarts. »
+ */
+export interface SituationPharmacieView {
+  idStructure: string;
+  nom: string;
+  prefecture: string;
+  /** Nombre de ventes prises en charge, et leur montant total encaisse. */
+  nombreVentes: number;
+  montantDelivreGnf: number;
+  /** La part de la compagnie : ce qu'elle doit a cette officine. */
+  montantFactureGnf: number;
+  /** Ce qu'elle a verse, d'apres les reglements saisis. */
+  montantPayeGnf: number;
+  /**
+   * `facture - paye`. Negatif quand la compagnie a verse plus que du : c'est
+   * un ecart aussi, et le masquer le rendrait introuvable.
+   */
+  resteDuGnf: number;
+  /** Le dernier versement connu, pour savoir si le suivi est a jour. */
+  dernierReglementLe?: HorodatageApi | null;
+}
+
+/** POST /assurance/moi/reglements — un versement a une officine. */
+export interface CreerReglementDto {
+  idStructure: string;
+  montantGnf: number;
+  periodeDebut: HorodatageApi;
+  periodeFin: HorodatageApi;
+  reference?: string;
+}
+
+export interface ReglementView {
+  id: string;
+  montantGnf: number;
+  periodeDebut: HorodatageApi;
+  periodeFin: HorodatageApi;
+  reference?: string | null;
+  structure: { id: string; nom: string };
+  saisiPar: { prenom: string; nom: string };
+  creeLe: HorodatageApi;
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // P11 — Referentiels importables (EF-12-03)
