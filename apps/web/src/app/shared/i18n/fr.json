@@ -1858,7 +1858,12 @@
       "ERR_CREATE": "Erreur lors de la création.",
       "SUCCESS_DEACTIVATED": "Agent désactivé.",
       "ROLE_AGENT_ACCUEIL": "Agent d'accueil",
-      "ROLE_TECHNICIEN_LABO": "Technicien de laboratoire"
+      "ROLE_TECHNICIEN_LABO": "Technicien de laboratoire",
+      "BUREAU_LABEL": "Bureau",
+      "BUREAU_PH": "Bâtiment B, bureau 12",
+      "BUREAU_HINT": "Facultatif. Laissez vide si l'hôpital ne numérote pas ses bureaux : l'accueil accompagnera le patient.",
+      "BUREAU_AUCUN": "Indiquer son bureau",
+      "BUREAU_OK": "Bureau enregistré."
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Agents actifs",

@@ -39,7 +39,62 @@ export class AgentsComponent implements OnInit {
 
   mdpAffiche = signal<MotDePasseAffiche | null>(null);
 
+  /**
+   * Affiche un message, et **annule celui d'avant**.
+   *
+   * Chaque annonce programmait son propre effacement sans toucher au
+   * precedent : deux gestes a moins de quatre secondes d'intervalle, et la
+   * minuterie du premier effacait la confirmation du second — l'agent voyait
+   * son message disparaitre aussitot et doutait d'avoir reussi.
+   */
+  private minuterie?: ReturnType<typeof setTimeout>;
+
+  private annoncer(message: string, type: 'succes' | 'erreur' = 'succes', duree = 4000) {
+    clearTimeout(this.minuterie);
+    if (type === 'succes') { this.successMsg.set(message); this.errorMsg.set(''); }
+    else { this.errorMsg.set(message); this.successMsg.set(''); }
+    this.minuterie = setTimeout(() => { this.successMsg.set(''); this.errorMsg.set(''); }, duree);
+  }
+
   newAgent = { telephone: '', email: '', prenom: '', nom: '', role: 'ASC' };
+
+  // ── Le bureau du medecin (addendum, point 2) ───────────────────────
+  //
+  // **Il ne se saisit pas a la creation du compte.** Un medecin demenage, un
+  // service est redecoupe : la valeur serait fausse en quelques mois, et un
+  // bureau faux est pire que pas de bureau — le patient y va.
+  //
+  // Facultatif : beaucoup d'hopitaux ne numerotent pas leurs bureaux, et
+  // l'agent d'accueil accompagne le patient a pied. Vider le champ efface.
+  bureauEnEdition = signal<string | null>(null);
+  bureauSaisi = '';
+
+  ouvrirBureau(agent: AgentStructureView) {
+    this.bureauEnEdition.set(agent.id);
+    this.bureauSaisi = agent.bureau ?? '';
+  }
+
+  annulerBureau() {
+    this.bureauEnEdition.set(null);
+    this.bureauSaisi = '';
+  }
+
+  enregistrerBureau(id: string) {
+    const saisi = this.bureauSaisi.trim();
+    this.api.put<{ success: boolean; message?: string }>(
+      `/admin-structure/agents/${id}/bureau`,
+      { bureau: saisi.length > 0 ? saisi : null },
+    ).subscribe({
+      next: (r) => {
+        this.annulerBureau();
+        this.annoncer(r?.message ?? this.i18n.t('ADMIN_STRUCTURE.AGENTS.BUREAU_OK'));
+        this.loadAgents();
+      },
+      error: (err) => {
+        this.annoncer(err?.error?.error ?? this.i18n.t('ADMIN_STRUCTURE.AGENTS.ERR_CREATE'), 'erreur');
+      },
+    });
+  }
 
   get rolesOptions() {
     return [
@@ -93,8 +148,7 @@ export class AgentsComponent implements OnInit {
             emailEnvoye: payload.email
           });
         } else {
-          this.successMsg.set(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
-          setTimeout(() => this.successMsg.set(''), 3000);
+          this.annoncer(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
         }
         this.loadAgents();
       },
@@ -104,13 +158,12 @@ export class AgentsComponent implements OnInit {
 
   fermerMdp() {
     this.mdpAffiche.set(null);
-    this.successMsg.set(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
-    setTimeout(() => this.successMsg.set(''), 3000);
+    this.annoncer(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
   }
 
   desactiver(id: string) {
     this.api.put<{ success: boolean }>(`/admin-structure/agents/${id}/desactiver`, {}).subscribe({
-      next: () => { this.successMsg.set(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_DEACTIVATED')); this.loadAgents(); },
+      next: () => { this.annoncer(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_DEACTIVATED')); this.loadAgents(); },
       error: () => { }
     });
   }

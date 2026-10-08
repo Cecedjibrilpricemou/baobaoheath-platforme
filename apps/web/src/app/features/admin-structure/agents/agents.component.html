@@ -131,6 +131,39 @@
             <p class="bb-agents__name">{{ agent.prenom }} {{ agent.nom }}</p>
             <p class="bb-agents__contact">{{ agent.telephone }}@if (agent.email) { · {{ agent.email }} }</p>
             <p class="bb-agents__meta">{{ 'ADMIN_STRUCTURE.AGENTS.ADDED_ON' | translate: { date: formatDate(agent.creeLe) } }}</p>
+
+            <!-- Le bureau ne concerne que le medecin : c'est chez lui que
+                 l'accueil envoie le patient. -->
+            @if (agent.role === 'MEDECIN') {
+              @if (bureauEnEdition() === agent.id) {
+                <div class="bb-agents__bureau-edit">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>{{ 'ADMIN_STRUCTURE.AGENTS.BUREAU_LABEL' | translate }}</mat-label>
+                    <input matInput [(ngModel)]="bureauSaisi" name="bureau"
+                           [placeholder]="'ADMIN_STRUCTURE.AGENTS.BUREAU_PH' | translate"
+                           (keyup.enter)="enregistrerBureau(agent.id)" autocomplete="off" />
+                    <mat-hint>{{ 'ADMIN_STRUCTURE.AGENTS.BUREAU_HINT' | translate }}</mat-hint>
+                  </mat-form-field>
+                  <div class="bb-agents__bureau-actions">
+                    <button class="bb-agents__cancel-btn" type="button" (click)="annulerBureau()">
+                      {{ 'COMMON.CANCEL' | translate }}
+                    </button>
+                    <button class="bb-agents__save-btn" type="button" (click)="enregistrerBureau(agent.id)">
+                      {{ 'COMMON.SAVE' | translate }}
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <button class="bb-agents__bureau" type="button" (click)="ouvrirBureau(agent)">
+                  <i class="pi pi-map-marker" aria-hidden="true"></i>
+                  @if (agent.bureau) {
+                    {{ agent.bureau }}
+                  } @else {
+                    {{ 'ADMIN_STRUCTURE.AGENTS.BUREAU_AUCUN' | translate }}
+                  }
+                </button>
+              }
+            }
           </div>
           <div class="bb-agents__actions">
             <span class="bb-badge bb-badge--info">{{ getRoleLabel(agent.role) }}</span>

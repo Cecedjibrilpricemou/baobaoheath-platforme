@@ -127,3 +127,29 @@
     span { font-size: 13px; color: var(--bb-text-muted); }
   }
 }
+
+// ── Le bureau du medecin (addendum, point 2) ─────────────────────
+//
+// Discret par defaut : la plupart des hopitaux ne numerotent pas leurs
+// bureaux, et la ligne ne doit pas crier une information absente.
+.bb-agents {
+  &__bureau {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 4px; padding: 3px 8px;
+    background: transparent; border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-sm);
+    color: var(--bb-text-muted); font-size: 12px; font-weight: 600;
+    font-family: var(--bb-font-display); cursor: pointer;
+    transition: all var(--bb-transition);
+    &:hover { border-color: var(--bb-primary); color: var(--bb-primary); }
+    i { font-size: 11px; }
+  }
+
+  &__bureau-edit {
+    margin-top: 8px; max-width: 340px;
+    // `mat-form-field` ne reserve pas la place de son `mat-hint`.
+    mat-form-field { width: 100%; margin-bottom: 10px; }
+  }
+
+  &__bureau-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+}

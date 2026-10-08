@@ -172,8 +172,11 @@ async function main() {
   // Le profil medecin est requis pour que l'espace medecin s'ouvre.
   await prisma.medecinProfile.upsert({
     where: { idUtilisateur: medecin.id },
-    update: {},
-    create: { idUtilisateur: medecin.id, specialite: 'Medecine generale' },
+    update: { idStructure: hopital.id },
+    // `idStructure` ici aussi : le profil le porte comme le compte, et un
+    // profil detache rendait le medecin introuvable pour tout ce qui filtre
+    // sur cette colonne.
+    create: { idUtilisateur: medecin.id, specialite: 'Medecine generale', idStructure: hopital.id },
   });
   console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien,');
   console.log(`   admin de structure, et admin national (${DEMO.adminNational.telephone})`);

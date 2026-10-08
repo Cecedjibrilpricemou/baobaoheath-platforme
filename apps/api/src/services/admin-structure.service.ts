@@ -405,21 +405,33 @@ export async function definirBureau(
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure rattachee a ce compte');
 
-    const profil = await prisma.medecinProfile.findUnique({
-        where: { idUtilisateur: idAgent },
-        select: { id: true, idStructure: true, utilisateur: { select: { prenom: true, nom: true } } },
-    });
     // Un administrateur ne touche qu'aux medecins de sa structure.
-    if (!profil || profil.idStructure !== admin.idStructure) {
-        throw new NotFoundError('Medecin introuvable dans cette structure');
-    }
+    //
+    // **L'appartenance se lit sur le compte, pas sur le profil.** Les deux
+    // portent un `idStructure`, et ils divergent : `creerAgent` renseigne les
+    // deux, mais tout ce qui cree un medecin autrement — le jeu de
+    // demonstration, les jeux de test — ne remplit que le compte. La liste des
+    // agents, l'orientation et `structureDe()` lisent tous le compte ; se
+    // fonder sur le profil faisait echouer le garde sur des medecins
+    // parfaitement legitimes.
+    const medecin = await prisma.utilisateur.findFirst({
+        where: { id: idAgent, role: Role.MEDECIN, idStructure: admin.idStructure },
+        select: { prenom: true, nom: true, medecinProfile: { select: { id: true } } },
+    });
+    if (!medecin) throw new NotFoundError('Medecin introuvable dans cette structure');
+
+    // Un medecin sans profil n'a nulle part ou poser son bureau. Le cas
+    // n'arrive que sur des comptes anciens, et le signaler vaut mieux que de
+    // laisser l'agent cliquer sans effet.
+    const profil = medecin.medecinProfile;
+    if (!profil) throw new NotFoundError('Ce compte medecin n a pas de profil ou enregistrer un bureau');
 
     const valeur = bureau?.trim() || null;
     await prisma.medecinProfile.update({ where: { id: profil.id }, data: { bureau: valeur } });
 
     return {
         id: idAgent,
-        nomComplet: `${profil.utilisateur.prenom} ${profil.utilisateur.nom}`,
+        nomComplet: `${medecin.prenom} ${medecin.nom}`,
         bureau: valeur,
     };
 }

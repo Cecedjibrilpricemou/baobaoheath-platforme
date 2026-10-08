@@ -1858,7 +1858,12 @@
       "ERR_CREATE": "Error while creating.",
       "SUCCESS_DEACTIVATED": "Agent deactivated.",
       "ROLE_AGENT_ACCUEIL": "Front desk agent",
-      "ROLE_TECHNICIEN_LABO": "Laboratory technician"
+      "ROLE_TECHNICIEN_LABO": "Laboratory technician",
+      "BUREAU_LABEL": "Office",
+      "BUREAU_PH": "Building B, office 12",
+      "BUREAU_HINT": "Optional. Leave empty if the hospital does not number its offices: reception will walk the patient there.",
+      "BUREAU_AUCUN": "Set their office",
+      "BUREAU_OK": "Office saved."
     },
     "DASHBOARD": {
       "ACTIVE_AGENTS": "Active agents",
