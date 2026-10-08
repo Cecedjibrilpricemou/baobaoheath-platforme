@@ -1,0 +1,159 @@
+<div class="bb-pay">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-wallet" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.PAIEMENTS.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.PAIEMENTS.SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-pay__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (factures().length === 0) {
+    <div class="bb-pay__vide">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <p class="bb-pay__vide-titre">{{ 'PATIENT.PAIEMENTS.AUCUNE' | translate }}</p>
+      <p class="bb-pay__vide-aide">{{ 'PATIENT.PAIEMENTS.AUCUNE_AIDE' | translate }}</p>
+    </div>
+  } @else {
+
+    @if (aRegler().length > 0) {
+      <section class="bb-pay__sec">
+        <h2 class="bb-pay__sec-titre">
+          {{ 'PATIENT.PAIEMENTS.A_REGLER' | translate }}
+          <span class="bb-pay__total">{{ montant(totalDu()) }} GNF</span>
+        </h2>
+
+        @for (f of aRegler(); track f.id) {
+          <article class="bb-pay__carte" [class.bb-pay__carte--alerte]="aEchoue(f)">
+            <div class="bb-pay__ligne">
+              <div>
+                <p class="bb-pay__motif">
+                  {{ f.consultation?.motifPrincipal || ('PATIENT.PAIEMENTS.SANS_MOTIF' | translate) }}
+                </p>
+                <p class="bb-pay__date">
+                  {{ f.creeLe | date:'dd/MM/yyyy' }} · {{ libelleEtat(f) }}
+                </p>
+              </div>
+              <span class="bb-pay__somme">{{ montant(f.montantGnf) }} GNF</span>
+            </div>
+
+            <!-- En dessous du minimum de la passerelle, le paiement mobile est
+                 impossible : le dire ici évite un refus incompréhensible. -->
+            @if (tropPetit(f)) {
+              <p class="bb-pay__note bb-pay__note--info">
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                {{ 'PATIENT.PAIEMENTS.TROP_PETIT' | translate: { minimum: montant(3000) } }}
+              </p>
+            } @else {
+              <div class="bb-pay__actions">
+                @if (f.urlPaiement) {
+                  <!-- Un lien déjà ouvert se reprend : recréer une opération à
+                       chaque clic en laisserait traîner autant d'inachevées. -->
+                  <button class="bb-pay__btn" type="button" (click)="ouvrirPage(f.urlPaiement!)">
+                    <i class="pi pi-external-link" aria-hidden="true"></i>
+                    {{ 'PATIENT.PAIEMENTS.REPRENDRE' | translate }}
+                  </button>
+                } @else {
+                  <button class="bb-pay__btn" type="button"
+                          (click)="ouvrirChoix(f)" [disabled]="!f.idConsultation">
+                    <i class="pi pi-credit-card" aria-hidden="true"></i>
+                    {{ 'PATIENT.PAIEMENTS.PAYER' | translate }}
+                  </button>
+                }
+
+                <button class="bb-pay__btn bb-pay__btn--plat" type="button"
+                        (click)="actualiser(f)" [disabled]="enCours() === f.id">
+                  <i class="pi pi-refresh" aria-hidden="true"></i>
+                  {{ (enCours() === f.id ? 'PATIENT.PAIEMENTS.VERIFICATION' : 'PATIENT.PAIEMENTS.ACTUALISER') | translate }}
+                </button>
+              </div>
+
+              @if (f.urlPaiement) {
+                <p class="bb-pay__note">{{ 'PATIENT.PAIEMENTS.APRES_PAIEMENT' | translate }}</p>
+              }
+            }
+          </article>
+        }
+      </section>
+    }
+
+    @if (reglees().length > 0) {
+      <section class="bb-pay__sec">
+        <h2 class="bb-pay__sec-titre">{{ 'PATIENT.PAIEMENTS.REGLEES' | translate }}</h2>
+
+        @for (f of reglees(); track f.id) {
+          <article class="bb-pay__carte bb-pay__carte--reglee">
+            <div class="bb-pay__ligne">
+              <div>
+                <p class="bb-pay__motif">
+                  {{ f.consultation?.motifPrincipal || ('PATIENT.PAIEMENTS.SANS_MOTIF' | translate) }}
+                </p>
+                <p class="bb-pay__date">
+                  {{ 'PATIENT.PAIEMENTS.PAYEE_LE' | translate: { date: ((f.payeeLe | date:'dd/MM/yyyy') || '') } }}
+                  @if (f.modePaiement) { · {{ libelleMode(f.modePaiement) }} }
+                </p>
+              </div>
+              <span class="bb-pay__somme bb-pay__somme--reglee">{{ montant(f.montantGnf) }} GNF</span>
+            </div>
+
+            <!-- La référence de l'opérateur : c'est elle qui prouve le
+                 paiement si quelqu'un le conteste. -->
+            @if (f.referenceOperateur) {
+              <p class="bb-pay__preuve">
+                <i class="pi pi-verified" aria-hidden="true"></i>
+                {{ 'PATIENT.PAIEMENTS.REFERENCE' | translate }}
+                <code>{{ f.referenceOperateur }}</code>
+              </p>
+            }
+          </article>
+        }
+      </section>
+    }
+  }
+</div>
+
+<!-- Le choix du moyen de paiement. -->
+@if (choix(); as f) {
+  <div class="bb-pay__voile" role="dialog" aria-modal="true">
+    <section class="bb-pay__modale">
+      <h2 class="bb-pay__modale-titre">
+        {{ 'PATIENT.PAIEMENTS.CHOIX_TITRE' | translate: { montant: montant(f.montantGnf) } }}
+      </h2>
+      <p class="bb-pay__note">{{ 'PATIENT.PAIEMENTS.CHOIX_AIDE' | translate }}</p>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-pay__champ">
+        <mat-label>{{ 'PATIENT.PAIEMENTS.MOYEN' | translate }}</mat-label>
+        <mat-select [(ngModel)]="modePaiement" name="mode">
+          <mat-option value="ORANGE_MONEY">{{ 'PATIENT.PAIEMENTS.MODE_ORANGE_MONEY' | translate }}</mat-option>
+          <mat-option value="MTN_MOMO">{{ 'PATIENT.PAIEMENTS.MODE_MTN_MOMO' | translate }}</mat-option>
+          <mat-option value="ESPECES">{{ 'PATIENT.PAIEMENTS.MODE_ESPECES' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      @if (modePaiement !== 'ESPECES') {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-pay__champ">
+          <mat-label>{{ 'PATIENT.PAIEMENTS.NUMERO' | translate }}</mat-label>
+          <input matInput [(ngModel)]="numeroOperateur" name="numero" inputmode="tel" autocomplete="tel" />
+          <mat-hint>{{ 'PATIENT.PAIEMENTS.NUMERO_AIDE' | translate }}</mat-hint>
+        </mat-form-field>
+      } @else {
+        <p class="bb-pay__note bb-pay__note--info">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          {{ 'PATIENT.PAIEMENTS.ESPECES_AIDE' | translate }}
+        </p>
+      }
+
+      <div class="bb-pay__modale-actions">
+        <button class="bb-pay__btn bb-pay__btn--plat" type="button"
+                (click)="fermerChoix()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-pay__btn" type="button" (click)="payer()" [disabled]="!peutPayer()">
+          <i class="pi pi-check" aria-hidden="true"></i>
+          {{ 'PATIENT.PAIEMENTS.CONTINUER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

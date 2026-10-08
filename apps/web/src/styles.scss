@@ -11,6 +11,7 @@
 @use './styles/auth';
 @use './styles/hopital';
 @use './styles/assureur';
+@use './styles/paiement';
 @use './styles/utilities';
 // primeicons est conservé : jeu d'icônes local et léger, utilisé via
 // mat-icon fontSet="pi" dans toute l'application.

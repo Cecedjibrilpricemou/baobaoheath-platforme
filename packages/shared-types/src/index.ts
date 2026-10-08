@@ -339,6 +339,50 @@ export interface ConfirmerPaiementDto {
   referenceOperateur: string;
 }
 
+/**
+ * Une facture telle que le patient la voit (EF-08).
+ *
+ * **Le front la typait jusqu'ici avec `montant`, `devise` et `methode`, qui
+ * n'existent nulle part cote API** : il lisait des champs absents et affichait
+ * du vide. Cette vue est le contrat, et elle porte les noms reels.
+ */
+export interface FactureView {
+  id: string;
+  /** La consultation reglee : c'est par elle qu'on rouvre un paiement. */
+  idConsultation?: string | null;
+  montantGnf: number;
+  statut: InvoiceStatus;
+  modePaiement?: ModePaiement | null;
+  numeroOperateur?: string | null;
+  /** La reference rendue par la passerelle : c'est la preuve du paiement. */
+  referenceOperateur?: string | null;
+  /**
+   * Le lien de paiement de la passerelle. Present tant que la facture n'est
+   * pas reglee : le patient peut y revenir sans qu'on recree une operation.
+   */
+  urlPaiement?: string | null;
+  /**
+   * Le dernier etat connu cote passerelle : `new`, `pending`, `success`,
+   * `canceled`, `failed`, `error`, `expired`.
+   *
+   * Il existe pour que l'ecran dise ce qui s'est passe — « votre dernier
+   * paiement a echoue » — sans rappeler la passerelle a chaque affichage.
+   */
+  statutOperateur?: string | null;
+  payeeLe?: HorodatageApi | null;
+  creeLe: HorodatageApi;
+  consultation?: {
+    motifPrincipal?: string | null;
+    consulteeLE?: HorodatageApi | null;
+  } | null;
+}
+
+/** GET /paiements/historique */
+export interface PageFacturesView {
+  data: FactureView[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
 export interface PaiementFilters {
   statut?: InvoiceStatus;
   modePaiement?: ModePaiement;

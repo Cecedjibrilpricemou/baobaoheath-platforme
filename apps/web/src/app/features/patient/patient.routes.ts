@@ -21,6 +21,11 @@ export const PATIENT_ROUTES: Routes = [
           import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
+        path: 'paiements',
+        loadComponent: () =>
+          import('./paiements/paiements.component').then(m => m.PatientPaiementsComponent)
+      },
+      {
         path: 'profil',
         loadComponent: () =>
           import('./profil/profil.component').then(m => m.ProfilComponent)

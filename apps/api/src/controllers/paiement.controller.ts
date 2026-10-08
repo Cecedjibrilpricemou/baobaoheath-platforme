@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { Request as ExpressRequest } from 'express';
 import * as paiementService from '../services/paiement.service';
+import { versFactureView } from '../services/paiement.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { InvoiceStatus, ModePaiement } from '@baobaoheath/shared-types';
 
@@ -15,7 +16,7 @@ export async function initierPaiementController(
             req.user!.userId,
             req.body
         );
-        res.status(201).json({ success: true, data: facture });
+        res.status(201).json({ success: true, data: versFactureView(facture) });
 }
 
 // ─── Vérifier le statut d'un paiement ────────────────────
@@ -27,7 +28,7 @@ export async function verifierStatutPaiementController(
             req.user!.userId,
             req.params.id
         );
-        res.status(200).json({ success: true, data: facture });
+        res.status(200).json({ success: true, data: versFactureView(facture) });
 }
 
 // ─── Confirmer un paiement ────────────────────────────────
@@ -40,7 +41,7 @@ export async function confirmerPaiementController(
             req.params.id,
             req.body
         );
-        res.status(200).json({ success: true, data: facture });
+        res.status(200).json({ success: true, data: versFactureView(facture) });
 }
 
 // ─── Historique des paiements ─────────────────────────────
@@ -58,7 +59,11 @@ export async function getHistoriquePaiementsController(
             req.user!.userId,
             filters
         );
-        res.status(200).json({ success: true, ...result });
+        res.status(200).json({
+            success: true,
+            data: result.data.map(versFactureView),
+            meta: result.meta,
+        });
 }
 
 // ─── Annuler un paiement ──────────────────────────────────
@@ -70,5 +75,5 @@ export async function annulerPaiementController(
             req.user!.userId,
             req.params.id
         );
-        res.status(200).json({ success: true, data: facture });
+        res.status(200).json({ success: true, data: versFactureView(facture) });
 }

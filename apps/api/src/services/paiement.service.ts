@@ -10,8 +10,50 @@ import { getValeursParametres } from './parametres.service';
 import { JwtPayload } from '../types/auth.types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { logger } from '../config/logger';
+import type { FactureView } from '@baobaoheath/shared-types';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
+
+/**
+ * Ce qu'une facture montre au patient.
+ *
+ * **Une vue explicite plutot que l'objet Prisma tel quel.** Le front la typait
+ * avec `montant`, `devise` et `methode` — trois champs qui n'ont jamais
+ * existe cote API : il lisait du vide sans que rien ne le signale. Un
+ * convertisseur nomme rend le contrat verifiable par le compilateur des deux
+ * cotes.
+ */
+type FactureComplete = {
+  id: string; idConsultation?: string | null; montantGnf: number; statut: string;
+  modePaiement: string | null; numeroOperateur: string | null;
+  referenceOperateur: string | null; urlPaiement: string | null;
+  statutOperateur: string | null; payeeLe: Date | null; creeLe: Date;
+  consultation?: { motifPrincipal?: string | null; consulteeLE?: Date | null } | null;
+};
+
+export function versFactureView(f: FactureComplete): FactureView {
+  return {
+    id: f.id,
+    idConsultation: f.idConsultation ?? null,
+    montantGnf: f.montantGnf,
+    statut: f.statut as FactureView['statut'],
+    modePaiement: (f.modePaiement as FactureView['modePaiement']) ?? null,
+    numeroOperateur: f.numeroOperateur,
+    referenceOperateur: f.referenceOperateur,
+    // Le lien ne sert plus une fois la facture reglee : le rendre inviterait
+    // a repayer.
+    urlPaiement: f.statut === 'PAYEE' ? null : f.urlPaiement,
+    statutOperateur: f.statutOperateur,
+    payeeLe: f.payeeLe,
+    creeLe: f.creeLe,
+    consultation: f.consultation
+      ? {
+          motifPrincipal: f.consultation.motifPrincipal ?? null,
+          consulteeLE: f.consultation.consulteeLE ?? null,
+        }
+      : null,
+  };
+}
 
 const MAX_MONTANT_GNF = 10_000_000;
 
