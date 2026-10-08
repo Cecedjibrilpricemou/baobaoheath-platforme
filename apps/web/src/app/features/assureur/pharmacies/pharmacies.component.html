@@ -1,0 +1,148 @@
+<div class="bb-asr">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-building" aria-hidden="true"></i> {{ 'ASSUREUR.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ASSUREUR.PHARMACIES_TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ASSUREUR.PHARMACIES_SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-asr__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (pharmacies().length === 0) {
+    <div class="bb-asr__vide">
+      <i class="pi pi-building" aria-hidden="true"></i>
+      <p class="bb-asr__vide-titre">{{ 'ASSUREUR.AUCUNE_PHARMACIE' | translate }}</p>
+      <p class="bb-asr__vide-aide">{{ 'ASSUREUR.AUCUNE_PHARMACIE_AIDE' | translate }}</p>
+    </div>
+  } @else {
+    <div class="bb-asr__table-enveloppe">
+      <table class="bb-asr__table">
+        <thead>
+          <tr>
+            <th>{{ 'ASSUREUR.COL_PHARMACIE' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_VENTES' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_DELIVRE' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_FACTURE' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_PAYE' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_RESTE' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pharmacies(); track p.idStructure) {
+            <tr>
+              <td class="bb-asr__cellule-principale">
+                <strong>{{ p.nom }}</strong>
+                <span>
+                  {{ p.prefecture }} ·
+                  @if (p.dernierReglementLe) {
+                    {{ 'ASSUREUR.DERNIER_VERSEMENT' | translate: { date: ((p.dernierReglementLe | date:'dd/MM/yyyy') || '') } }}
+                  } @else {
+                    {{ 'ASSUREUR.JAMAIS_VERSE' | translate }}
+                  }
+                </span>
+              </td>
+              <td class="bb-asr__nombre">{{ p.nombreVentes }}</td>
+              <td class="bb-asr__nombre">{{ montant(p.montantDelivreGnf) }}</td>
+              <td class="bb-asr__nombre">{{ montant(p.montantFactureGnf) }}</td>
+              <td class="bb-asr__nombre">{{ montant(p.montantPayeGnf) }}</td>
+
+              <!-- Un trop-versé est un écart aussi : il se lit, il ne se cache
+                   pas derrière un zéro. -->
+              <td class="bb-asr__nombre">
+                <span class="bb-asr__du"
+                      [class.bb-asr__du--avance]="p.resteDuGnf < 0"
+                      [class.bb-asr__du--solde]="p.resteDuGnf === 0">
+                  {{ montant(p.resteDuGnf) }}
+                </span>
+                @if (p.resteDuGnf < 0) {
+                  <span class="bb-asr__note">
+                    {{ 'ASSUREUR.AVANCE' | translate: { montant: montant(-p.resteDuGnf) } }}
+                  </span>
+                }
+              </td>
+              <td>
+                <button class="bb-asr__btn bb-asr__btn--plat" type="button" (click)="ouvrirVersement(p)">
+                  <i class="pi pi-plus" aria-hidden="true"></i>
+                  {{ 'ASSUREUR.VERSER' | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <section class="bb-asr__carte" style="margin-top:24px">
+      <h3 class="bb-asr__carte-titre">{{ 'ASSUREUR.HISTORIQUE' | translate }}</h3>
+      @if (reglements().length === 0) {
+        <p class="bb-asr__vide-ligne">{{ 'ASSUREUR.AUCUN_VERSEMENT' | translate }}</p>
+      } @else {
+        <ul class="bb-asr__regles">
+          @for (r of reglements(); track r.id) {
+            <li class="bb-asr__regle">
+              <span class="bb-asr__regle-cat">{{ r.structure.nom }}</span>
+              <span class="bb-asr__pastille">{{ montant(r.montantGnf) }} GNF</span>
+              <span class="bb-asr__note">
+                {{ 'ASSUREUR.PERIODE_DU_AU' | translate: {
+                     debut: ((r.periodeDebut | date:'dd/MM/yyyy') || ''),
+                     fin: ((r.periodeFin | date:'dd/MM/yyyy') || '') } }}
+                @if (r.reference) { · {{ r.reference }} }
+              </span>
+              <span class="bb-asr__note bb-asr__note--fin">
+                {{ 'ASSUREUR.SAISI_PAR' | translate: { nom: r.saisiPar.prenom + ' ' + r.saisiPar.nom } }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>
+
+<!-- La saisie d'un versement, pré-remplie du mois écoulé et du reste dû :
+     c'est le geste courant, et les deux restent modifiables. -->
+@if (cible(); as p) {
+  <div class="bb-asr__voile" role="dialog" aria-modal="true">
+    <section class="bb-asr__modale">
+      <h2 class="bb-asr__modale-titre">
+        {{ 'ASSUREUR.VERSEMENT_TITRE' | translate: { nom: p.nom } }}
+      </h2>
+      <p class="bb-asr__carte-aide">{{ 'ASSUREUR.VERSEMENT_AIDE' | translate }}</p>
+
+      <div class="bb-asr__grille">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASSUREUR.MONTANT' | translate }}</mat-label>
+          <input matInput type="number" min="1" [(ngModel)]="versement.montantGnf" name="montant" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASSUREUR.PERIODE_DEBUT' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="versement.periodeDebut" name="debut" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASSUREUR.PERIODE_FIN' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="versement.periodeFin" name="fin" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASSUREUR.REFERENCE' | translate }}</mat-label>
+          <input matInput [(ngModel)]="versement.reference" name="reference" autocomplete="off" />
+          <mat-hint>{{ 'ASSUREUR.REFERENCE_AIDE' | translate }}</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <div class="bb-asr__actions">
+        <button class="bb-asr__btn bb-asr__btn--plat" type="button" (click)="fermer()" [disabled]="enregistre()">
+          {{ 'ASSUREUR.ANNULER' | translate }}
+        </button>
+        <button class="bb-asr__btn" type="button" (click)="enregistrer()" [disabled]="!peutEnregistrer()">
+          <i class="pi pi-check" aria-hidden="true"></i>
+          {{ 'ASSUREUR.ENREGISTRER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

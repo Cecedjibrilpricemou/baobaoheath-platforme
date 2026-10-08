@@ -1,0 +1,82 @@
+<div class="bb-asr">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-users" aria-hidden="true"></i> {{ 'ASSUREUR.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ASSUREUR.ASSURES_TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ASSUREUR.ASSURES_SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  <!-- Dire ce qu'on ne montre pas, et pourquoi : sinon l'absence passe pour un
+       oubli, et se réclame. -->
+  <div class="bb-asr__alerte bb-asr__alerte--info">
+    <i class="pi pi-lock" aria-hidden="true"></i>
+    {{ 'ASSUREUR.ASSURES_CONFIDENTIALITE' | translate }}
+  </div>
+
+  @if (chargement()) {
+    <p class="bb-asr__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (assures().length === 0) {
+    <div class="bb-asr__vide">
+      <i class="pi pi-users" aria-hidden="true"></i>
+      <p class="bb-asr__vide-titre">{{ 'ASSUREUR.AUCUN_ASSURE' | translate }}</p>
+      <p class="bb-asr__vide-aide">{{ 'ASSUREUR.AUCUN_ASSURE_AIDE' | translate }}</p>
+    </div>
+  } @else {
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-asr__recherche">
+      <mat-label>{{ 'ASSUREUR.RECHERCHE' | translate }}</mat-label>
+      <input matInput id="asr-recherche" [ngModel]="recherche()"
+             (ngModelChange)="recherche.set($event)" name="q" autocomplete="off" />
+    </mat-form-field>
+
+    <div class="bb-asr__table-enveloppe">
+      <table class="bb-asr__table">
+        <thead>
+          <tr>
+            <th>{{ 'ASSUREUR.COL_ASSURE' | translate }}</th>
+            <th>{{ 'ASSUREUR.COL_POLICE' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_TAUX' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_CONSOMME' | translate }}</th>
+            <th class="bb-asr__nombre">{{ 'ASSUREUR.COL_PASSAGES' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of visibles(); track a.idContrat) {
+            <tr>
+              <td class="bb-asr__cellule-principale">
+                <strong>{{ a.patient.prenom }} {{ a.patient.nom }}</strong>
+                <span>
+                  {{ 'ASSUREUR.VALIDITE' | translate: { debut: ((a.dateEffet | date:'dd/MM/yyyy') || '') } }}
+                  @if (a.dateFin) {
+                    {{ 'ASSUREUR.VALIDITE_AU' | translate: { fin: ((a.dateFin | date:'dd/MM/yyyy') || '') } }}
+                  }
+                  @if (a.franchiseGnf > 0) {
+                    · {{ 'ASSUREUR.FRANCHISE' | translate: { montant: montant(a.franchiseGnf) } }}
+                  }
+                </span>
+              </td>
+              <td>
+                {{ a.numeroPolice }}
+                <span class="bb-asr__etat" [class.bb-asr__etat--off]="a.statut !== 'ACTIF'">
+                  {{ libelleStatut(a.statut) }}
+                </span>
+              </td>
+              <td class="bb-asr__nombre">{{ a.tauxBasePourcent }} %</td>
+              <td class="bb-asr__nombre">
+                {{ montant(a.consommeAnneeGnf) }}
+                <span class="bb-asr__note">
+                  @if (a.plafondAnnuelGnf > 0) {
+                    {{ 'ASSUREUR.PLAFOND_SUR' | translate: { montant: montant(a.plafondAnnuelGnf) } }}
+                  } @else {
+                    {{ 'ASSUREUR.SANS_PLAFOND' | translate }}
+                  }
+                </span>
+              </td>
+              <td class="bb-asr__nombre">{{ a.nombrePassages }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -171,6 +171,7 @@ export class ProfilModalComponent implements OnInit {
       'PHARMACIEN': this.i18n.t('PHARMACIEN.ROLE'),
       'ADMIN_STRUCTURE': this.i18n.t('ADMIN_STRUCTURE.ROLE'),
       'ADMIN_REGIONAL': this.i18n.t('PROFIL_MODAL.ROLE_ADMIN_REGIONAL'),
+      'ASSUREUR': this.i18n.t('PROFIL_MODAL.ROLE_ASSUREUR'),
       'ADMIN_NATIONAL': this.i18n.t('PROFIL_MODAL.ROLE_ADMIN_NATIONAL'),
       'SUPER_ADMIN': this.i18n.t('PROFIL_MODAL.ROLE_SUPER_ADMIN')
     };

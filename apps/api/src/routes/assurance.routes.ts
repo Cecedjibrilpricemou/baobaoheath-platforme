@@ -178,8 +178,8 @@ router.post(
     res.status(201).json({
       success: true,
       data,
-      message: `Compte de ${data.agent.prenom} ${data.agent.nom} cree pour ${data.assureur.nom}. `
-        + `Remettez-lui son mot de passe : il devra le changer a sa premiere connexion.`,
+      message: `Compte de ${data.agent.prenom} ${data.agent.nom} créé pour ${data.assureur.nom}. `
+        + `Remettez-lui son mot de passe : il devra le changer à sa première connexion.`,
     });
   }
 );
@@ -228,7 +228,7 @@ router.post(
     res.status(201).json({
       success: true,
       data,
-      message: `Versement de ${data.montantGnf.toLocaleString('fr-FR')} GNF enregistre pour ${data.structure.nom}.`,
+      message: `Versement de ${data.montantGnf.toLocaleString('fr-FR')} GNF enregistré pour ${data.structure.nom}.`,
     });
   }
 );

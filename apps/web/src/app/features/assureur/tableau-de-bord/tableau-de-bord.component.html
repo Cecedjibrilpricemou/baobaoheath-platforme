@@ -1,0 +1,105 @@
+<div class="bb-asr">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-id-card" aria-hidden="true"></i> {{ 'ASSUREUR.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ASSUREUR.TABLEAU_TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ASSUREUR.TABLEAU_SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  @if (erreur()) {
+    <div class="bb-asr__alerte bb-asr__alerte--erreur" role="alert">
+      <i class="pi pi-times-circle" aria-hidden="true"></i> {{ erreur() }}
+    </div>
+  } @else if (chargement()) {
+    <p class="bb-asr__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (compagnie(); as c) {
+
+    <section class="bb-asr__entete">
+      <span class="bb-asr__code">{{ c.code }}</span>
+      <h2 class="bb-asr__nom">{{ c.nom }}</h2>
+      <span class="bb-asr__mode">{{ 'ASSUREUR.MODE_ECHANGE' | translate }} : {{ libelleMode(c.modeEchange) }}</span>
+    </section>
+
+    <!-- Une compagnie desactivee ne peut plus rien couvrir : le dire ici evite
+         qu'elle l'apprenne par un refus au comptoir. -->
+    @if (!c.estActif) {
+      <div class="bb-asr__alerte bb-asr__alerte--erreur" role="alert">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'ASSUREUR.COMPAGNIE_INACTIVE' | translate }}
+      </div>
+    }
+
+    <div class="bb-asr__chiffres">
+      <div class="bb-asr__chiffre">
+        <span class="bb-asr__chiffre-valeur">{{ c.nombreContrats }}</span>
+        <span class="bb-asr__chiffre-libelle">{{ 'ASSUREUR.STAT_ASSURES' | translate }}</span>
+        <span class="bb-asr__chiffre-note">
+          {{ 'ASSUREUR.STAT_ASSURES_ACTIFS' | translate: { n: c.nombreContratsActifs } }}
+        </span>
+      </div>
+
+      <div class="bb-asr__chiffre">
+        <span class="bb-asr__chiffre-valeur">{{ montant(totaux().facture) }}</span>
+        <span class="bb-asr__chiffre-libelle">{{ 'ASSUREUR.STAT_FACTURE' | translate }}</span>
+        <span class="bb-asr__chiffre-note">{{ 'ASSUREUR.STAT_FACTURE_AIDE' | translate }}</span>
+      </div>
+
+      <div class="bb-asr__chiffre">
+        <span class="bb-asr__chiffre-valeur">{{ montant(totaux().paye) }}</span>
+        <span class="bb-asr__chiffre-libelle">{{ 'ASSUREUR.STAT_PAYE' | translate }}</span>
+      </div>
+
+      <!-- Le chiffre qu'on vient chercher : il se detache. -->
+      <div class="bb-asr__chiffre bb-asr__chiffre--saillant"
+           [class.bb-asr__chiffre--avance]="totaux().reste < 0">
+        <span class="bb-asr__chiffre-valeur">{{ montant(totaux().reste) }}</span>
+        <span class="bb-asr__chiffre-libelle">{{ 'ASSUREUR.STAT_RESTE' | translate }}</span>
+        @if (totaux().reste < 0) {
+          <span class="bb-asr__chiffre-note">{{ 'ASSUREUR.STAT_RESTE_AVANCE' | translate }}</span>
+        } @else {
+          <span class="bb-asr__chiffre-note">
+            {{ totaux().officines }}
+            {{ (totaux().officines > 1 ? 'ASSUREUR.STAT_PHARMACIES' : 'ASSUREUR.STAT_PHARMACIE_UNE') | translate }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <section class="bb-asr__carte">
+      <h3 class="bb-asr__carte-titre">{{ 'ASSUREUR.REGLES_TITRE' | translate }}</h3>
+      <p class="bb-asr__carte-aide">{{ 'ASSUREUR.REGLES_AIDE' | translate }}</p>
+
+      @if (c.regles.length === 0) {
+        <p class="bb-asr__vide-ligne">{{ 'ASSUREUR.AUCUNE_REGLE' | translate }}</p>
+      } @else {
+        <ul class="bb-asr__regles">
+          @for (r of c.regles; track r.id) {
+            <li class="bb-asr__regle">
+              <span class="bb-asr__regle-cat">{{ libelleCategorie(r.categorie) }}</span>
+              @if (r.exclu) {
+                <span class="bb-asr__pastille bb-asr__pastille--exclu">
+                  {{ 'ASSUREUR.REGLE_EXCLUE' | translate }}
+                </span>
+              } @else {
+                <span class="bb-asr__pastille">
+                  {{ r.tauxPourcent !== null && r.tauxPourcent !== undefined
+                      ? r.tauxPourcent + ' %'
+                      : ('ASSUREUR.REGLE_TAUX_BASE' | translate) }}
+                </span>
+              }
+              @if (r.plafondLigneGnf > 0) {
+                <span class="bb-asr__note">
+                  {{ 'ASSUREUR.REGLE_PLAFOND' | translate: { montant: montant(r.plafondLigneGnf) } }}
+                </span>
+              }
+              <span class="bb-asr__note bb-asr__note--fin">
+                {{ 'ASSUREUR.REGLE_DEPUIS' | translate: { date: ((r.dateEffet | date:'dd/MM/yyyy') || '') } }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>

@@ -84,6 +84,16 @@ export const routes: Routes = [
 
   // ── Module Admin ────────────────────────────────────────────────────
   {
+    // La compagnie d'assurance se connecte elle-meme (addendum, point 5.2).
+    // Elle ne partage son espace avec personne : ni l'administration, qui
+    // saisit les assureurs, ni le comptoir, qui chiffre les prises en charge.
+    path: 'assureur',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ASSUREUR'] },
+    loadChildren: () =>
+      import('./features/assureur/assureur.routes').then(m => m.ASSUREUR_ROUTES)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
