@@ -1723,6 +1723,17 @@ export interface PatientRechercheView {
   episodeOuvert: { id: string; numero: string } | null;
 }
 
+/**
+ * GET /assurance/patients/recherche — trouver la personne a qui rattacher une
+ * police.
+ *
+ * **L'episode de soins n'a pas de sens ici** : l'administration nationale
+ * n'appartient a aucune structure, et une police se rattache a une personne,
+ * pas a un passage. Le reste de l'identite est le meme, numero masque
+ * compris : il faut distinguer deux Camara, pas appeler le patient.
+ */
+export type PatientContratRechercheView = Omit<PatientRechercheView, 'episodeOuvert'>;
+
 export interface PersonneRefView {
   id: string;
   prenom: string;

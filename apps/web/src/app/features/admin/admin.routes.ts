@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/role.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -32,6 +33,16 @@ export const ADMIN_ROUTES: Routes = [
         path: 'comptes',
         loadComponent: () =>
           import('./comptes/comptes.component').then(m => m.ComptesComponent)
+      },
+      {
+        // L'espace /admin accueille aussi l'admin regional et l'admin de
+        // structure ; l'API d'assurance ne repond qu'a l'administration
+        // nationale. Cacher l'entree de menu ne suffit pas : l'URL se tape.
+        path: 'assurance',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+        loadComponent: () =>
+          import('./assurance/assurance.component').then(m => m.AssuranceComponent)
       },
       {
         path: 'journal',

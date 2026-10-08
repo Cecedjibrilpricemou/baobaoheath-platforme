@@ -1,0 +1,209 @@
+// features/admin/assurance/assurance.component.scss
+//
+// Deux sections de meme poids visuel : l'une declare qui assure, l'autre qui
+// est assure. Les regles et les polices se lisent en une ligne chacune —
+// categorie, taux, plafond, date — parce qu'on les compare entre elles bien
+// plus souvent qu'on en lit une seule.
+.bb-assu {
+
+  &__sec {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  &__sec-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 16px;
+  }
+
+  &__sec-titre {
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 4px; letter-spacing: -0.2px;
+  }
+
+  &__sous-titre {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 20px 0 10px;
+  }
+
+  &__sec-aide,
+  &__attente { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+
+  // ── Boutons ───────────────────────────────────────────────────
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+    i { font-size: 12px; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+  }
+
+  &__lien {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: none; padding: 4px 0;
+    color: var(--bb-primary); font-size: 12.5px; font-weight: 700;
+    font-family: var(--bb-font-display); cursor: pointer;
+    &:hover { text-decoration: underline; }
+    i { font-size: 11px; }
+  }
+
+  // ── Formulaires ───────────────────────────────────────────────
+  &__form {
+    background: var(--bb-surface-2);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius);
+    padding: 18px; margin-bottom: 18px;
+
+    &--imbrique { margin-top: 14px; margin-bottom: 0; background: var(--bb-surface-1); }
+  }
+
+  &__grille {
+    display: grid; gap: 16px 14px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    // `mat-form-field` ne reserve pas la place de son `mat-hint` : sans cette
+    // marge, l'aide chevauche la ligne suivante.
+    mat-form-field { width: 100%; margin-bottom: 6px; }
+  }
+
+  &__case { margin-top: 8px; }
+  &__case-aide { font-size: 12px; color: var(--bb-text-muted); margin: 2px 0 0 32px; }
+
+  &__actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 16px; flex-wrap: wrap;
+  }
+
+  &__recherche { width: 100%; max-width: 420px; margin-bottom: 14px; display: block; }
+
+  // ── Listes ────────────────────────────────────────────────────
+  &__liste { list-style: none; margin: 16px 0 0; padding: 0; }
+
+  &__item {
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius);
+    padding: 14px 16px; margin-bottom: 10px;
+    background: var(--bb-surface-1);
+
+    &--patient {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+  }
+
+  &__item-head {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+
+  &__item-id { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+  &__item-meta {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    font-size: 12.5px; color: var(--bb-text-muted);
+  }
+
+  // Le code est ce qui figure sur les justificatifs de caisse : il se lit en
+  // monospace, comme un identifiant, pas comme un nom.
+  &__code {
+    font-family: var(--bb-font-mono); font-size: 12px; font-weight: 700;
+    padding: 3px 8px; border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-2); color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border-light);
+  }
+
+  &__nom {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary);
+  }
+
+  &__etat {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-success-bg); color: var(--bb-success);
+    border: 1px solid var(--bb-success-border);
+
+    &--off {
+      background: var(--bb-danger-bg); color: var(--bb-danger);
+      border-color: var(--bb-danger-border);
+    }
+  }
+
+  // ── Regles de couverture ──────────────────────────────────────
+  &__regles {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed var(--bb-border);
+  }
+
+  &__regles-vide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+  &__regles-liste { list-style: none; margin: 0 0 10px; padding: 0; }
+
+  &__regle {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+    padding: 8px 0; font-size: 13px;
+    border-bottom: 1px solid var(--bb-border-light);
+    &:last-child { border-bottom: none; }
+  }
+
+  &__regle-cat { font-weight: 700; color: var(--bb-text-primary); min-width: 150px; }
+  &__regle-note,
+  &__regle-date { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__regle-date { margin-left: auto; }
+
+  &__pastille {
+    font-family: var(--bb-font-mono); font-size: 12px; font-weight: 700;
+    padding: 2px 8px; border-radius: var(--bb-radius-sm);
+    background: var(--bb-info-bg); color: var(--bb-info);
+    border: 1px solid var(--bb-info-border);
+
+    // Une exclusion n'est pas un taux : elle se voit sans etre lue.
+    &--exclu {
+      background: var(--bb-danger-bg); color: var(--bb-danger);
+      border-color: var(--bb-danger-border);
+    }
+  }
+
+  // ── Le patient retenu ─────────────────────────────────────────
+  &__patient {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    background: var(--bb-surface-2);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius);
+    padding: 14px 16px;
+  }
+
+  // ── Etat vide ─────────────────────────────────────────────────
+  &__vide {
+    text-align: center; padding: 32px 20px;
+    border: 1px dashed var(--bb-border); border-radius: var(--bb-radius);
+    margin-top: 16px;
+
+    // `> i` et non `i` : une regle sur tous les icones descendants grossirait
+    // aussi ceux des boutons a l'interieur.
+    > i { font-size: 28px; color: var(--bb-text-muted); display: block; margin-bottom: 10px; }
+  }
+
+  &__vide-titre {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__vide-aide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+
+  @media (max-width: 640px) {
+    &__sec { padding: 16px; }
+    &__regle-cat { min-width: 0; }
+    &__regle-date { margin-left: 0; }
+  }
+}

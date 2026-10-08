@@ -188,21 +188,33 @@ async function episodeDeLaStructure(user: JwtPayload, idEpisode: string) {
 }
 
 // ── EF-03-01 : recherche avant toute creation de dossier ─────────────
+/**
+ * Comment on reconnait un patient a partir de ce que l'agent a tape.
+ *
+ * **Extrait pour etre partage.** L'assurance cherche le meme patient avec les
+ * memes mots (`/assurance/patients/recherche`) : deux predicats voudraient
+ * dire qu'un patient trouvable au comptoir ne l'est pas quand on lui
+ * rattache une police, et qu'une correction n'en reparerait qu'un.
+ */
+export function filtreRecherchePatient(terme: string): Prisma.PatientProfileWhereInput {
+  const mots = terme.split(/\s+/).filter(Boolean);
+  return {
+    OR: [
+      { qrCode: terme },
+      { utilisateur: { telephone: { contains: terme.replace(/\s/g, '') } } },
+      // Chaque mot doit apparaitre dans le nom ou le prenom (« Diallo Ma » -> Mamadou Diallo).
+      { AND: mots.map((m) => ({ utilisateur: { OR: [{ nom: { contains: m, mode: 'insensitive' as const } }, { prenom: { contains: m, mode: 'insensitive' as const } }] } })) },
+    ],
+  };
+}
+
 export async function rechercherPatients(user: JwtPayload, q: string): Promise<PatientRechercheView[]> {
   const idStructure = await structureDe(user);
   const terme = q.trim();
   if (terme.length < 3) throw new ValidationError('Saisissez au moins 3 caracteres');
 
-  const mots = terme.split(/\s+/).filter(Boolean);
   const patients = await prisma.patientProfile.findMany({
-    where: {
-      OR: [
-        { qrCode: terme },
-        { utilisateur: { telephone: { contains: terme.replace(/\s/g, '') } } },
-        // Chaque mot doit apparaitre dans le nom ou le prenom (« Diallo Ma » -> Mamadou Diallo).
-        { AND: mots.map((m) => ({ utilisateur: { OR: [{ nom: { contains: m, mode: 'insensitive' } }, { prenom: { contains: m, mode: 'insensitive' } }] } })) },
-      ],
-    },
+    where: filtreRecherchePatient(terme),
     select: {
       id: true, sexe: true, dateNaissance: true, prefecture: true,
       utilisateur: { select: { prenom: true, nom: true, telephone: true } },

@@ -12,6 +12,7 @@ import {
 } from '../validators/api.schemas';
 import type {
   AssureurView,
+  PatientContratRechercheView,
   ContratAssuranceView,
   ControleEligibiliteView,
   PriseEnChargeView,
@@ -122,6 +123,23 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const data: AssureurView = await assurance.ajouterRegle(req.params['id'] as string, req.body);
     res.status(201).json({ success: true, data, message: 'Regle de couverture ajoutee' });
+  }
+);
+
+/**
+ * Trouver le patient a qui rattacher une police.
+ *
+ * **Reserve a l'administration** : le comptoir reconnait le patient par son
+ * QR, il est devant lui. Ici l'assureur envoie une liste de noms, et il faut
+ * chercher a l'echelle du pays — donc hors de toute structure.
+ */
+router.get(
+  '/patients/recherche',
+  requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN'),
+  async (req: AuthRequest, res: Response) => {
+    const q = typeof req.query['q'] === 'string' ? req.query['q'] : '';
+    const data: PatientContratRechercheView[] = await assurance.rechercherPatientsPourContrat(q);
+    res.json({ success: true, data });
   }
 );
 

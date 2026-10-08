@@ -44,6 +44,11 @@ export const DEMO = {
   laborantin2: { telephone: '620100004', email: 'bio.cece@demo.test',      prenom: 'Aminata',   nom: 'Cece' },
   pharmacien: { telephone: '620100005', email: 'pharma.pricemou@demo.test', prenom: 'Ousmane',   nom: 'Pricemou' },
   adminHopital: { telephone: '620100006', email: 'admin.donka@demo.test',   prenom: 'Mariama',   nom: 'Sow' },
+  // **L'administration nationale n'avait aucun compte.** Les assureurs, leurs
+  // regles de couverture et les polices ne se saisissent que depuis ce role :
+  // sans lui, l'ecran /admin/assurance n'etait ouvrable par personne, et le
+  // tiers payant ne se configurait qu'en ligne de commande.
+  adminNational: { telephone: '620100007', email: 'admin.national@demo.test', prenom: 'Sory',      nom: 'Toure' },
 
   // Le patient se connecte avec son telephone, sans OTP.
   patient: {
@@ -157,6 +162,7 @@ async function main() {
 
   // ── 2. Les professionnels ───────────────────────────────────────
   await upsertUtilisateur(DEMO.adminHopital, Role.ADMIN_STRUCTURE, motDePasseHash, hopital.id);
+  await upsertUtilisateur(DEMO.adminNational, Role.ADMIN_NATIONAL, motDePasseHash, null);
   await upsertUtilisateur(DEMO.accueil, Role.AGENT_ACCUEIL, motDePasseHash, hopital.id);
   const medecin = await upsertUtilisateur(DEMO.medecin, Role.MEDECIN, motDePasseHash, hopital.id);
   await upsertUtilisateur(DEMO.technicien, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
@@ -169,7 +175,8 @@ async function main() {
     update: {},
     create: { idUtilisateur: medecin.id, specialite: 'Medecine generale' },
   });
-  console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien, admin');
+  console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien,');
+  console.log(`   admin de structure, et admin national (${DEMO.adminNational.telephone})`);
 
   // ── 3. Le patient ───────────────────────────────────────────────
   const utilisateurPatient = await upsertUtilisateur(DEMO.patient, Role.PATIENT, motDePasseHash, null);

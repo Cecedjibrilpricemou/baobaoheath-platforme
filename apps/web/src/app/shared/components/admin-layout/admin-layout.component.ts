@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -85,14 +85,31 @@ export class AdminLayoutComponent {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  navItems = [
+  /**
+   * Le menu de l'espace administration.
+   *
+   * `roles` restreint une entree. **Sans lui, l'ecran d'assurance apparaitrait
+   * a l'admin regional, qui se ferait refuser a chaque appel** : l'API ne
+   * repond qu'a l'administration nationale. Un menu qui mene a un mur est pire
+   * qu'un menu plus court.
+   */
+  private readonly tousLesItems = [
     { labelKey: 'ADMIN.NAV_ANALYTICS',  icon: 'pi-chart-bar', route: '/admin/analytics'  },
     { labelKey: 'ADMIN.NAV_STRUCTURES', icon: 'pi-building',  route: '/admin/structures' },
     { labelKey: 'ADMIN.NAV_EXPORT',     icon: 'pi-download',  route: '/admin/export'     },
     { labelKey: 'ADMIN.NAV_COMPTES',    icon: 'pi-users',     route: '/admin/comptes'    },
+    { labelKey: 'ADMIN.NAV_ASSURANCE',  icon: 'pi-id-card',   route: '/admin/assurance',
+      roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
     { labelKey: 'ADMIN.NAV_RGPD',       icon: 'pi-file-edit', route: '/admin/demandes-rgpd' },
     { labelKey: 'ADMIN.NAV_JOURNAL',    icon: 'pi-shield',    route: '/admin/journal'    },
     { labelKey: 'ADMIN.NAV_BRIS',       icon: 'pi-unlock',    route: '/admin/bris-de-glace' },
     { labelKey: 'ADMIN.NAV_SETTINGS',   icon: 'pi-cog',       route: '/admin/settings'   }
-  ];
+  ] satisfies { labelKey: string; icon: string; route: string; roles?: string[] }[];
+
+  readonly navItems = computed(() => {
+    const role = this.currentUser()?.role;
+    return this.tousLesItems.filter(
+      (i) => !('roles' in i) || (role ? i.roles!.includes(role) : false)
+    );
+  });
 }

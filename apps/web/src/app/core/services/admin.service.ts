@@ -10,7 +10,13 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
 import type {
+  AssureurView,
+  ContratAssuranceView,
+  CreerAssureurDto,
+  CreerContratDto,
+  CreerRegleCouvertureDto,
   CreationStructureView,
+  PatientContratRechercheView,
   IdentitePlateformeView,
   ParametresSystemeView,
   StructureAdminView,
@@ -66,6 +72,42 @@ export class AdminService {
   }
 
   // Parametres globaux (SUPER_ADMIN)
+  // --- Assurance et tiers payant (EF-09, addendum point 5) --------------
+  //
+  // Tant que les echanges automatiques avec les assureurs ne sont pas
+  // conventionnes (EF-09-02), c'est l'administration nationale qui saisit les
+  // assureurs, leurs regles et les polices.
+
+  getAssureurs(): Observable<ApiResponse<AssureurView[]>> {
+    return this.api.get<ApiResponse<AssureurView[]>>('/assurance/assureurs');
+  }
+
+  creerAssureur(payload: CreerAssureurDto): Observable<ApiResponse<AssureurView>> {
+    return this.api.post<ApiResponse<AssureurView>>('/assurance/assureurs', payload);
+  }
+
+  /**
+   * Une regle ne remplace pas la precedente : sa date d'effet decide, et le
+   * calcul retient celle en vigueur a la date de la vente (EF-09-03).
+   */
+  ajouterRegleCouverture(idAssureur: string, payload: CreerRegleCouvertureDto): Observable<ApiResponse<AssureurView>> {
+    return this.api.post<ApiResponse<AssureurView>>(`/assurance/assureurs/${idAssureur}/regles`, payload);
+  }
+
+  /** L'assureur envoie une liste de noms : c'est par le nom qu'on retombe. */
+  rechercherPatientsPourPolice(q: string): Observable<ApiResponse<PatientContratRechercheView[]>> {
+    return this.api.get<ApiResponse<PatientContratRechercheView[]>>(
+      `/assurance/patients/recherche?q=${encodeURIComponent(q)}`);
+  }
+
+  contratsDuPatient(idPatient: string): Observable<ApiResponse<ContratAssuranceView[]>> {
+    return this.api.get<ApiResponse<ContratAssuranceView[]>>(`/assurance/patients/${idPatient}/contrats`);
+  }
+
+  creerContrat(payload: CreerContratDto): Observable<ApiResponse<ContratAssuranceView>> {
+    return this.api.post<ApiResponse<ContratAssuranceView>>('/assurance/contrats', payload);
+  }
+
   getParametres(): Observable<ApiResponse<ParametresSystemeView>> {
     return this.api.get<ApiResponse<ParametresSystemeView>>('/admin-structure/parametres');
   }

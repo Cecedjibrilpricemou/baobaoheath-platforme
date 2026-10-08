@@ -15,10 +15,12 @@
 // testee pour elle-meme.
 import { CategorieProduit, ModeEchangeAssureur, NiveauIdentite, Prisma, StatutContrat, TypeStructure } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { filtreRecherchePatient } from './hopital.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import type {
   AssureurView,
+  PatientContratRechercheView,
   ContratAssuranceView,
   ControleEligibiliteView,
   CouvertureLigneView,
@@ -663,5 +665,44 @@ export async function contratsDuPatient(
       patient: { id: c.patient.id, prenom: c.patient.utilisateur.prenom, nom: c.patient.utilisateur.nom },
       consommeAnneeGnf: consomme._sum.montantAssureGnf ?? 0,
     };
+  }));
+}
+
+/**
+ * Trouver la personne a qui rattacher une police (point 5.2).
+ *
+ * **L'administration nationale n'a pas le QR du patient sous les yeux.** Au
+ * comptoir le patient est la et scanne ; ici l'assureur envoie une liste de
+ * noms et de numeros de police, et c'est sur ces noms qu'il faut retomber.
+ *
+ * Le predicat est celui du comptoir (`filtreRecherchePatient`) : un patient
+ * trouvable a l'admission doit l'etre ici, sinon sa police reste en suspens.
+ *
+ * **Rien de medical ne sort d'ici** : l'identite, et le numero masque comme
+ * partout ailleurs. Il sert a distinguer deux Camara, pas a appeler qui que
+ * ce soit.
+ */
+export async function rechercherPatientsPourContrat(q: string): Promise<PatientContratRechercheView[]> {
+  const terme = q.trim();
+  if (terme.length < 3) throw new ValidationError('Saisissez au moins 3 caracteres');
+
+  const patients = await prisma.patientProfile.findMany({
+    where: filtreRecherchePatient(terme),
+    select: {
+      id: true, sexe: true, dateNaissance: true, prefecture: true,
+      utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+    },
+    orderBy: [{ utilisateur: { nom: 'asc' } }, { utilisateur: { prenom: 'asc' } }],
+    take: 20,
+  });
+
+  return patients.map((p) => ({
+    id: p.id,
+    prenom: p.utilisateur.prenom,
+    nom: p.utilisateur.nom,
+    sexe: p.sexe,
+    dateNaissance: p.dateNaissance,
+    prefecture: p.prefecture,
+    telephoneMasque: p.utilisateur.telephone.replace(/.(?=.{3})/g, String.fromCharCode(8226)),
   }));
 }
