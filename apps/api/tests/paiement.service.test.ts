@@ -147,10 +147,32 @@ describe('initierPaiement', () => {
     ).rejects.toThrow('Consultation non trouvee');
   });
 
-  it('rejects when a facture already exists', async () => {
+  // **Ce comportement a change le 2026-10-08, et c'etait un defaut.**
+  // Refuser des qu'une facture existait bloquait toute reprise : une
+  // passerelle injoignable laissait le patient avec une facture qu'il ne
+  // pouvait plus payer. Une facture encore en attente sert donc de nouveau.
+  it('reutilise une facture encore en attente au lieu de refuser', async () => {
     prisma.consultation.findUnique.mockResolvedValue({
       ...baseConsultation,
-      facture: { id: 'existing-facture' },
+      facture: { id: 'facture-existante', statut: 'EN_ATTENTE' },
+    });
+    prisma.facture.update.mockResolvedValue({ id: 'facture-existante', montantGnf: 5000 });
+
+    await initierPaiement('user-1', {
+      idConsultation: 'consult-1',
+      montantGnf: 5000,
+      modePaiement: 'ORANGE_MONEY',
+    });
+
+    expect(prisma.facture.create).not.toHaveBeenCalled();
+    expect(prisma.facture.update.mock.calls[0][0].where).toEqual({ id: 'facture-existante' });
+  });
+
+  // En revanche, une facture acquittee ne se repaie pas.
+  it('refuse une consultation deja payee', async () => {
+    prisma.consultation.findUnique.mockResolvedValue({
+      ...baseConsultation,
+      facture: { id: 'facture-payee', statut: 'PAYEE' },
     });
 
     await expect(
@@ -159,7 +181,9 @@ describe('initierPaiement', () => {
         montantGnf: 5000,
         modePaiement: 'ORANGE_MONEY',
       })
-    ).rejects.toThrow('Une facture existe deja');
+    ).rejects.toThrow(/deja ete payee/i);
+    expect(prisma.facture.create).not.toHaveBeenCalled();
+    expect(prisma.facture.update).not.toHaveBeenCalled();
   });
 });
 

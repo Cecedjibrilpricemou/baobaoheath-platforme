@@ -16,6 +16,7 @@ import medicamentRoutes from './routes/medicament.routes';
 import ascRoutes from './routes/asc.routes';
 import medecinRoutes from './routes/medecin.routes';
 import paiementRoutes from './routes/paiement.routes';
+import webhookChapChapRoutes from './routes/webhook-chapchap.routes';
 import vaccinationRoutes from './routes/vaccination.routes';
 import notificationRoutes from './routes/notification.routes';
 import analyticsRoutes from './routes/analytics.routes';
@@ -119,6 +120,14 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(requestContextMiddleware);
 app.use(cookieParser());
+
+// Les rappels de la passerelle de paiement, **avant l'analyseur JSON global**.
+// Leur signature porte sur les octets exacts du corps : laisser `express.json()`
+// le remplacer par un objet rendrait la verification impossible, puisque
+// re-serialiser produit d'autres octets. Cette route lit le corps brut
+// elle-meme.
+app.use('/api/v1/webhooks', webhookChapChapRoutes);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 

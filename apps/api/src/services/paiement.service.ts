@@ -4,14 +4,26 @@ import {
   InitierPaiementDto,
   PaiementFilters,
 } from '../types/paiement.types';
+import * as chapchap from './chapchap.service';
 import { initierPaiementSimule } from './payment-provider.service';
 import { getValeursParametres } from './parametres.service';
 import { JwtPayload } from '../types/auth.types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { logger } from '../config/logger';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
 const MAX_MONTANT_GNF = 10_000_000;
+
+/**
+ * Chap Chap Pay refuse en dessous de 3 000 GNF (verifie contre leur bac a
+ * sable : 2 999 est refuse, 3 000 passe).
+ *
+ * Le dire ici plutot que de laisser remonter leur message : le patient lirait
+ * « Le montant doit etre superieur ou egal a 3 000 GNF » sans savoir que cela
+ * vient de la passerelle et non de sa consultation.
+ */
+const MIN_MONTANT_PASSERELLE_GNF = 3_000;
 
 // Le super-admin peut desactiver un mode de paiement depuis la page
 // Parametres (onglet Facturation) : on le refuse ici, pas seulement dans l'UI.
@@ -27,6 +39,17 @@ async function assertModePaiementActif(modePaiement: InitierPaiementDto['modePai
   }
 }
 
+/**
+ * Ouvrir le paiement d'une consultation.
+ *
+ * **La facture est creee avant d'appeler la passerelle, et reutilisee ensuite.**
+ * L'inverse — refuser quand une facture existe deja — bloquait toute reprise :
+ * une passerelle injoignable laissait le patient avec une facture qu'il ne
+ * pouvait plus payer. Ici, une facture encore en attente sert de nouveau, avec
+ * une nouvelle operation.
+ *
+ * En especes, aucune passerelle n'intervient : l'agent encaisse et confirme.
+ */
 export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
   const consultation = await prisma.consultation.findUnique({
     where: { id: dto.idConsultation },
@@ -34,46 +57,136 @@ export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
   });
 
   if (!consultation) throw new NotFoundError('Consultation non trouvee');
-  if (consultation.facture) throw new ValidationError('Une facture existe deja pour cette consultation');
-
   if (consultation.patient.idUtilisateur !== userId) {
     throw new ForbiddenError("Acces refuse - ce n'est pas votre consultation");
+  }
+  if (consultation.facture?.statut === 'PAYEE') {
+    throw new ValidationError('Cette consultation a deja ete payee');
   }
 
   await assertModePaiementActif(dto.modePaiement);
 
-  // Use server-side tariff when set; otherwise cap client-provided amount
+  // Le tarif du serveur prime ; a defaut, le montant propose est plafonne.
   const montantGnf = consultation.tarifGnf != null && consultation.tarifGnf > 0
     ? consultation.tarifGnf
     : Math.min(dto.montantGnf, MAX_MONTANT_GNF);
 
-  const providerResult = await initierPaiementSimule({
-    modePaiement: dto.modePaiement,
+  const inclusions = {
+    patient: { include: { utilisateur: { select: { prenom: true, nom: true, telephone: true } } } },
+    consultation: true,
+  };
+
+  // La facture existe des maintenant : une consultation facturee l'est, que le
+  // paiement aboutisse ou non.
+  const facture = consultation.facture
+    ? await prisma.facture.update({
+        where: { id: consultation.facture.id },
+        data: { montantGnf, modePaiement: dto.modePaiement, numeroOperateur: dto.numeroOperateur },
+        include: inclusions,
+      })
+    : await prisma.facture.create({
+        data: {
+          idPatient: consultation.patient.id,
+          idConsultation: dto.idConsultation,
+          montantGnf,
+          modePaiement: dto.modePaiement,
+          numeroOperateur: dto.numeroOperateur,
+          statut: 'EN_ATTENTE',
+        },
+        include: inclusions,
+      });
+
+  // Les especes ne passent par aucune passerelle : l'agent encaisse au
+  // guichet et confirme la facture.
+  if (dto.modePaiement === 'ESPECES' || !chapchap.chapchapEstConfigure()) {
+    if (dto.modePaiement !== 'ESPECES') {
+      logger.warn('[PAIEMENT] passerelle non configuree : repli sur la simulation');
+    }
+    const simule = await initierPaiementSimule({
+      modePaiement: dto.modePaiement,
+      montantGnf,
+      numeroOperateur: dto.numeroOperateur,
+    });
+    return prisma.facture.update({
+      where: { id: facture.id },
+      data: { referenceOperateur: simule.referenceOperateur ?? null },
+      include: inclusions,
+    });
+  }
+
+  if (montantGnf < MIN_MONTANT_PASSERELLE_GNF) {
+    throw new ValidationError(
+      `Le paiement mobile demande au moins ${MIN_MONTANT_PASSERELLE_GNF.toLocaleString('fr-FR')} GNF. `
+      + `Reglez ce montant en especes au guichet.`,
+    );
+  }
+
+  const operation = await chapchap.creerOperation({
     montantGnf,
-    numeroOperateur: dto.numeroOperateur,
+    // Notre identifiant de facture : c'est par lui qu'un rappel la retrouve.
+    orderId: facture.id,
+    description: `Consultation du ${consultation.creeLe.toLocaleDateString('fr-FR')}`,
   });
 
-  return prisma.facture.create({
+  return prisma.facture.update({
+    where: { id: facture.id },
     data: {
-      idPatient: consultation.patient.id,
-      idConsultation: dto.idConsultation,
-      montantGnf,
-      modePaiement: dto.modePaiement,
-      numeroOperateur: dto.numeroOperateur,
-      referenceOperateur: providerResult.referenceOperateur,
-      statut: providerResult.statut,
+      referenceOperateur: operation.operationId,
+      urlPaiement: operation.urlPaiement,
+      statutOperateur: 'new',
     },
-    include: {
-      patient: {
-        include: {
-          utilisateur: {
-            select: { prenom: true, nom: true, telephone: true },
-          },
-        },
-      },
-      consultation: true,
+    include: inclusions,
+  });
+}
+
+/**
+ * Appliquer un statut de passerelle a une facture.
+ *
+ * **Point unique.** Le rappel et la relecture de statut arrivent tous deux
+ * ici : deux chemins qui decideraient separement finiraient par diverger, et
+ * c'est de l'argent.
+ *
+ * **Un paiement acquis ne redescend jamais.** La documentation de ChapChap
+ * donne l'exemple d'un `canceled` suivi d'un `success` ; l'inverse est tout
+ * aussi possible si un rappel tardif arrive apres coup. `success` est
+ * definitif.
+ */
+export async function appliquerStatutPasserelle(
+  idFacture: string,
+  statut: string,
+  details?: { referenceTransaction?: string | null; moyenPaiement?: string | null },
+): Promise<{ changee: boolean; dejaPayee: boolean }> {
+  const facture = await prisma.facture.findUnique({
+    where: { id: idFacture },
+    select: { id: true, statut: true, statutOperateur: true },
+  });
+  if (!facture) throw new NotFoundError('Facture non trouvee');
+
+  if (facture.statut === 'PAYEE') {
+    // Rien a faire, et surtout rien a defaire : c'est le cas normal d'un
+    // rappel rejoue ou d'une relecture apres coup.
+    return { changee: false, dejaPayee: true };
+  }
+
+  if (!chapchap.estPaye(statut)) {
+    // On garde la trace de l'echec sans toucher au statut de la facture :
+    // elle reste payable, le patient recommence.
+    if (facture.statutOperateur === statut) return { changee: false, dejaPayee: false };
+    await prisma.facture.update({ where: { id: idFacture }, data: { statutOperateur: statut } });
+    return { changee: true, dejaPayee: false };
+  }
+
+  await prisma.facture.update({
+    where: { id: idFacture },
+    data: {
+      statut: 'PAYEE',
+      statutOperateur: statut,
+      payeeLe: new Date(),
+      ...(details?.referenceTransaction ? { referenceOperateur: details.referenceTransaction } : {}),
     },
   });
+  logger.info('[PAIEMENT] facture payee par la passerelle', { idFacture, statut });
+  return { changee: true, dejaPayee: false };
 }
 
 export async function verifierStatutPaiement(userId: string, idFacture: string) {
@@ -93,6 +206,36 @@ export async function verifierStatutPaiement(userId: string, idFacture: string) 
 
   if (!facture) throw new NotFoundError('Facture non trouvee');
   if (facture.patient.idUtilisateur !== userId) throw new ForbiddenError('Acces refuse');
+
+  // **La relecture tranche, le rappel accelere.** Un webhook peut ne jamais
+  // arriver : URL injoignable, serveur redemarre, ou simplement developpement
+  // en local ou aucune adresse publique n'existe. Interroger la passerelle
+  // quand l'issue n'est pas encore connue ferme ce trou — sans quoi un patient
+  // qui a paye resterait debiteur.
+  if (facture.statut !== 'PAYEE' && facture.referenceOperateur && chapchap.chapchapEstConfigure()) {
+    try {
+      const operation = await chapchap.lireOperation(facture.referenceOperateur);
+      if (operation.statut && operation.statut !== facture.statutOperateur) {
+        await appliquerStatutPasserelle(facture.id, operation.statut, {
+          referenceTransaction: operation.referenceTransaction,
+          moyenPaiement: operation.moyenPaiement,
+        });
+        return prisma.facture.findUniqueOrThrow({
+          where: { id: idFacture },
+          include: {
+            patient: { include: { utilisateur: { select: { prenom: true, nom: true } } } },
+            consultation: true,
+          },
+        });
+      }
+    } catch (e) {
+      // Une passerelle injoignable ne doit pas empecher de lire sa facture :
+      // on rend ce qu'on sait, et l'ecran le dira.
+      logger.warn('[PAIEMENT] relecture du statut impossible', {
+        idFacture, erreur: (e as Error).message,
+      });
+    }
+  }
 
   return facture;
 }

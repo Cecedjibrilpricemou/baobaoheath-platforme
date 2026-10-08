@@ -1428,6 +1428,21 @@ model Facture {
   referenceOperateur String?       @unique
   numeroOperateur    String?
   urlRecu            String?
+
+  /// Le lien de paiement de la passerelle, pour que le patient puisse y
+  /// revenir sans qu'on recree une operation a chaque fois.
+  urlPaiement String?
+
+  /// Le dernier statut connu cote passerelle (`new`, `pending`, `success`,
+  /// `canceled`, `failed`, `error`, `expired`).
+  ///
+  /// **Seul `success` fait passer la facture a PAYEE.** Un paiement annule,
+  /// echoue ou expire laisse la facture payable : le patient recommence. La
+  /// marquer annulee l'obligerait a repasser au guichet pour un code mal
+  /// saisi. Ce champ existe pour que l'ecran puisse dire ce qui s'est passe
+  /// sans rappeler la passerelle a chaque affichage.
+  statutOperateur String?
+
   payeeLe            DateTime?
   creeLe             DateTime      @default(now())
   modifieLe          DateTime      @updatedAt
