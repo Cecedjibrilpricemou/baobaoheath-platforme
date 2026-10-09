@@ -24,7 +24,12 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        # Le miroir public d'AWS plutot que Docker Hub : ce dernier limite les
+        # telechargements anonymes par adresse IP, et les coureurs GitHub la
+        # partagent. Le 2026-10-09 la CI a echoue deux fois de suite sur
+        # « toomanyrequests » sans qu'aucun test n'ait pu demarrer. Meme image,
+        # meme version, sans quota.
+        image: public.ecr.aws/docker/library/postgres:16-alpine
         env:
           POSTGRES_USER: baobaoheath
           POSTGRES_PASSWORD: baobaoheath
@@ -150,7 +155,12 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        # Le miroir public d'AWS plutot que Docker Hub : ce dernier limite les
+        # telechargements anonymes par adresse IP, et les coureurs GitHub la
+        # partagent. Le 2026-10-09 la CI a echoue deux fois de suite sur
+        # « toomanyrequests » sans qu'aucun test n'ait pu demarrer. Meme image,
+        # meme version, sans quota.
+        image: public.ecr.aws/docker/library/postgres:16-alpine
         env:
           POSTGRES_USER: baobaoheath
           POSTGRES_PASSWORD: baobaoheath
