@@ -9,7 +9,7 @@
 
   @if (chargement()) {
     <p class="bb-pay__attente">{{ 'COMMON.LOADING' | translate }}</p>
-  } @else if (factures().length === 0) {
+  } @else if (dus().length === 0 && reglees().length === 0) {
     <div class="bb-pay__vide">
       <i class="pi pi-check-circle" aria-hidden="true"></i>
       <p class="bb-pay__vide-titre">{{ 'PATIENT.PAIEMENTS.AUCUNE' | translate }}</p>
@@ -17,59 +17,63 @@
     </div>
   } @else {
 
-    @if (aRegler().length > 0) {
+    @if (dus().length > 0) {
       <section class="bb-pay__sec">
         <h2 class="bb-pay__sec-titre">
           {{ 'PATIENT.PAIEMENTS.A_REGLER' | translate }}
           <span class="bb-pay__total">{{ montant(totalDu()) }} GNF</span>
         </h2>
 
-        @for (f of aRegler(); track f.id) {
-          <article class="bb-pay__carte" [class.bb-pay__carte--alerte]="aEchoue(f)">
+        @for (d of dus(); track d.idConsultation) {
+          <article class="bb-pay__carte" [class.bb-pay__carte--alerte]="aEchoue(d)">
             <div class="bb-pay__ligne">
               <div>
                 <p class="bb-pay__motif">
-                  {{ f.consultation?.motifPrincipal || ('PATIENT.PAIEMENTS.SANS_MOTIF' | translate) }}
+                  {{ d.motif || ('PATIENT.PAIEMENTS.SANS_MOTIF' | translate) }}
                 </p>
                 <p class="bb-pay__date">
-                  {{ f.creeLe | date:'dd/MM/yyyy' }} · {{ libelleEtat(f) }}
+                  @if (d.consulteeLE) { {{ d.consulteeLE | date:'dd/MM/yyyy' }} · }
+                  {{ libelleEtat(d) }}
                 </p>
               </div>
-              <span class="bb-pay__somme">{{ montant(f.montantGnf) }} GNF</span>
+              <span class="bb-pay__somme">{{ montant(d.montantGnf) }} GNF</span>
             </div>
 
             <!-- En dessous du minimum de la passerelle, le paiement mobile est
                  impossible : le dire ici évite un refus incompréhensible. -->
-            @if (tropPetit(f)) {
+            @if (tropPetit(d)) {
               <p class="bb-pay__note bb-pay__note--info">
                 <i class="pi pi-info-circle" aria-hidden="true"></i>
                 {{ 'PATIENT.PAIEMENTS.TROP_PETIT' | translate: { minimum: montant(3000) } }}
               </p>
             } @else {
               <div class="bb-pay__actions">
-                @if (f.urlPaiement) {
+                @if (d.facture?.urlPaiement; as lien) {
                   <!-- Un lien déjà ouvert se reprend : recréer une opération à
-                       chaque clic en laisserait traîner autant d'inachevées. -->
-                  <button class="bb-pay__btn" type="button" (click)="ouvrirPage(f.urlPaiement!)">
+                       chaque clic en laisserait autant d'inachevées. -->
+                  <button class="bb-pay__btn" type="button" (click)="ouvrirPage(lien)">
                     <i class="pi pi-external-link" aria-hidden="true"></i>
                     {{ 'PATIENT.PAIEMENTS.REPRENDRE' | translate }}
                   </button>
                 } @else {
-                  <button class="bb-pay__btn" type="button"
-                          (click)="ouvrirChoix(f)" [disabled]="!f.idConsultation">
+                  <button class="bb-pay__btn" type="button" (click)="ouvrirChoix(d)">
                     <i class="pi pi-credit-card" aria-hidden="true"></i>
                     {{ 'PATIENT.PAIEMENTS.PAYER' | translate }}
                   </button>
                 }
 
-                <button class="bb-pay__btn bb-pay__btn--plat" type="button"
-                        (click)="actualiser(f)" [disabled]="enCours() === f.id">
-                  <i class="pi pi-refresh" aria-hidden="true"></i>
-                  {{ (enCours() === f.id ? 'PATIENT.PAIEMENTS.VERIFICATION' : 'PATIENT.PAIEMENTS.ACTUALISER') | translate }}
-                </button>
+                @if (d.facture) {
+                  <button class="bb-pay__btn bb-pay__btn--plat" type="button"
+                          (click)="actualiser(d)" [disabled]="enCours() === d.idConsultation">
+                    <i class="pi pi-refresh" aria-hidden="true"></i>
+                    {{ (enCours() === d.idConsultation
+                         ? 'PATIENT.PAIEMENTS.VERIFICATION'
+                         : 'PATIENT.PAIEMENTS.ACTUALISER') | translate }}
+                  </button>
+                }
               </div>
 
-              @if (f.urlPaiement) {
+              @if (d.facture?.urlPaiement) {
                 <p class="bb-pay__note">{{ 'PATIENT.PAIEMENTS.APRES_PAIEMENT' | translate }}</p>
               }
             }
@@ -114,11 +118,11 @@
 </div>
 
 <!-- Le choix du moyen de paiement. -->
-@if (choix(); as f) {
+@if (choix(); as d) {
   <div class="bb-pay__voile" role="dialog" aria-modal="true">
     <section class="bb-pay__modale">
       <h2 class="bb-pay__modale-titre">
-        {{ 'PATIENT.PAIEMENTS.CHOIX_TITRE' | translate: { montant: montant(f.montantGnf) } }}
+        {{ 'PATIENT.PAIEMENTS.CHOIX_TITRE' | translate: { montant: montant(d.montantGnf) } }}
       </h2>
       <p class="bb-pay__note">{{ 'PATIENT.PAIEMENTS.CHOIX_AIDE' | translate }}</p>
 

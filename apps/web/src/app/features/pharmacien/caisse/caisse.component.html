@@ -214,7 +214,8 @@
     <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.AUCUNE' | translate }}</p>
   } @else {
     @for (v of ventes(); track v.id) {
-      <article class="bb-caisse__vente" [class.bb-caisse__vente--annulee]="v.statut === 'ANNULEE'">
+      <article class="bb-caisse__vente" [class.bb-caisse__vente--annulee]="v.statut === 'ANNULEE'"
+               [class.bb-caisse__vente--attente]="v.statut === 'EN_ATTENTE'">
         <div class="bb-caisse__vente-head">
           <div>
             <span class="bb-caisse__numero">{{ v.numero }}</span>
@@ -231,6 +232,11 @@
               <span class="bb-caisse__badge-assure">
                 {{ 'PHARMACIEN.CAISSE.ASSURE_BADGE' | translate: { montant: (v.montantAssureGnf | number) ?? '', assureur: v.assureur?.code ?? '' } }}
               </span>
+            }
+            <!-- Une vente en attente ressemblait a une vente reglee : meme
+                 montant, meme bouton. Le pharmacien pouvait la croire payee. -->
+            @if (v.statut === 'EN_ATTENTE') {
+              <span class="bb-caisse__badge-attente">{{ 'PHARMACIEN.CAISSE.ATTENTE_BADGE' | translate }}</span>
             }
             @if (v.statut === 'ANNULEE') {
               <span class="bb-caisse__badge-annulee">{{ 'PHARMACIEN.CAISSE.ANNULEE_BADGE' | translate }}</span>
@@ -261,3 +267,43 @@
     }
   }
 </div>
+
+<!-- ── En attente du paiement mobile ─────────────────────────────────────
+     La vente existe, les lots sont sortis, mais rien n'est encaisse : les
+     medicaments ne se remettent qu'une fois le paiement confirme. -->
+@if (attente(); as v) {
+  <div class="bb-caisse__voile" role="dialog" aria-modal="true">
+    <section class="bb-caisse__attente">
+      <h2 class="bb-caisse__attente-titre">{{ 'PHARMACIEN.CAISSE.ATTENTE_TITRE' | translate }}</h2>
+      <p class="bb-caisse__attente-somme">{{ montantAPayer() | number:'1.0-0' }} GNF</p>
+      <p class="bb-caisse__attente-aide">{{ 'PHARMACIEN.CAISSE.ATTENTE_AIDE' | translate }}</p>
+
+      @if (qrImage()) {
+        <img class="bb-caisse__qr" [src]="qrImage()" alt="" />
+      }
+
+      <!-- Le lien en clair aussi : un ecran sale, un telephone sans camera,
+           et le QR ne sert plus a rien. -->
+      <p class="bb-caisse__attente-lien">
+        {{ 'PHARMACIEN.CAISSE.ATTENTE_LIEN' | translate }}
+        <code>{{ v.urlPaiement }}</code>
+      </p>
+
+      <p class="bb-caisse__attente-rappel">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.CAISSE.ATTENTE_RAPPEL' | translate }}
+      </p>
+
+      <div class="bb-caisse__attente-actions">
+        <button class="bb-caisse__btn bb-caisse__btn--plat" type="button" (click)="abandonnerAttente()">
+          {{ 'PHARMACIEN.CAISSE.ABANDONNER' | translate }}
+        </button>
+        <button class="bb-caisse__btn" type="button"
+                (click)="verifierPaiement()" [disabled]="verifieEnCours()">
+          <i class="pi pi-refresh" aria-hidden="true"></i>
+          {{ (verifieEnCours() ? 'PHARMACIEN.CAISSE.VERIFICATION' : 'PHARMACIEN.CAISSE.VERIFIER') | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

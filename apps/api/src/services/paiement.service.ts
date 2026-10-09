@@ -10,7 +10,7 @@ import { getValeursParametres } from './parametres.service';
 import { JwtPayload } from '../types/auth.types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { logger } from '../config/logger';
-import type { FactureView } from '@baobaoheath/shared-types';
+import type { ADeReglerView, FactureView } from '@baobaoheath/shared-types';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
@@ -386,4 +386,51 @@ export async function annulerPaiement(userId: string, idFacture: string) {
     where: { id: idFacture },
     data: { statut: 'ANNULEE' },
   });
+}
+
+/**
+ * Ce que le patient doit encore.
+ *
+ * **Les consultations, pas les factures.** Rien ne facture automatiquement :
+ * la facture naît quand le paiement s'ouvre. Partir des factures laisserait
+ * invisible tout ce qui n'a jamais ete paye — ce qu'on vient justement
+ * regarder.
+ *
+ * Une consultation sans tarif n'est pas due : gratuite, prise en charge, ou
+ * simplement pas encore chiffree. On ne reclame pas un montant qu'on ignore.
+ */
+export async function aRegler(userId: string): Promise<ADeReglerView[]> {
+  const patient = await prisma.patientProfile.findUnique({
+    where: { idUtilisateur: userId },
+    select: { id: true },
+  });
+  if (!patient) throw new NotFoundError('Profil patient non trouve');
+
+  const consultations = await prisma.consultation.findMany({
+    where: {
+      idPatient: patient.id,
+      tarifGnf: { gt: 0 },
+      // Une facture acquittee sort de la liste : elle n'est plus due.
+      OR: [{ facture: null }, { facture: { statut: { not: 'PAYEE' } } }],
+    },
+    select: {
+      id: true, motifPrincipal: true, consulteeLE: true, tarifGnf: true,
+      facture: {
+        select: {
+          id: true, idConsultation: true, montantGnf: true, statut: true,
+          modePaiement: true, numeroOperateur: true, referenceOperateur: true,
+          urlPaiement: true, statutOperateur: true, payeeLe: true, creeLe: true,
+        },
+      },
+    },
+    orderBy: { creeLe: 'desc' },
+  });
+
+  return consultations.map((c) => ({
+    idConsultation: c.id,
+    motif: c.motifPrincipal,
+    consulteeLE: c.consulteeLE,
+    montantGnf: c.tarifGnf ?? 0,
+    facture: c.facture ? versFactureView({ ...c.facture, consultation: null }) : null,
+  }));
 }

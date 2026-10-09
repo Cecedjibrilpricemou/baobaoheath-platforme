@@ -162,3 +162,99 @@
 
   &__vide-aide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
 }
+
+// L'attente de paiement au comptoir (EF-08).
+//
+// Le pharmacien tourne l'ecran vers le client : le QR doit etre grand, et le
+// montant lisible a un metre.
+.bb-caisse {
+
+  &__voile {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgb(0 0 0 / 60%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+
+    // La barre laterale peint au-dessus du contenu quel que soit le z-index :
+    // on decale le voile de sa largeur plutot que de lutter.
+    @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  }
+
+  &__attente {
+    margin: auto; width: 100%; max-width: 480px; text-align: center;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+    box-shadow: var(--bb-shadow-lg);
+    padding: 28px 24px;
+  }
+
+  &__attente-titre {
+    font-family: var(--bb-font-display); font-size: 17px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  // Lisible a un metre : c'est le chiffre que le client verifie.
+  &__attente-somme {
+    font-family: var(--bb-font-mono); font-size: 30px; font-weight: 800;
+    color: var(--bb-primary); margin: 0 0 10px; letter-spacing: -0.5px;
+  }
+
+  &__attente-aide { font-size: 13.5px; color: var(--bb-text-muted); margin: 0 0 18px; }
+
+  // Fond blanc impose : un QR sur fond sombre ne se scanne pas.
+  &__qr {
+    width: 240px; height: 240px; display: block; margin: 0 auto 16px;
+    background: #fff; padding: 10px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border-light);
+  }
+
+  &__attente-lien {
+    font-size: 12px; color: var(--bb-text-muted); margin: 0 0 16px;
+    code {
+      display: block; margin-top: 4px; word-break: break-all;
+      font-family: var(--bb-font-mono); font-size: 11.5px;
+      color: var(--bb-text-primary);
+    }
+  }
+
+  &__attente-rappel {
+    display: flex; align-items: flex-start; gap: 8px; text-align: left;
+    padding: 11px 13px; border-radius: var(--bb-radius);
+    background: var(--bb-danger-bg); color: var(--bb-danger);
+    border: 1px solid var(--bb-danger-border);
+    font-size: 13px; margin: 0 0 18px;
+    i { flex-shrink: 0; margin-top: 2px; }
+  }
+
+  &__attente-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+  }
+}
+
+// Une vente en attente de paiement ne doit pas ressembler a une vente reglee :
+// meme montant, meme bouton, et le pharmacien la croit payee.
+.bb-caisse {
+  &__vente--attente { border-left-color: var(--bb-warning, #b7791f); }
+
+  &__badge-attente {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-danger-bg); color: var(--bb-danger);
+    border: 1px solid var(--bb-danger-border); white-space: nowrap;
+  }
+}

@@ -17,6 +17,7 @@ import { Component, OnInit, WritableSignal, computed, inject, signal } from '@an
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import QRCode from 'qrcode';
 import { ToastrService } from 'ngx-toastr';
 import type {
   ControleEligibiliteView,
@@ -58,6 +59,17 @@ export class CaisseComponent implements OnInit {
   enCours = signal(false);
 
   lignes = signal<LignePanier[]>([this.ligneVide()]);
+  /**
+   * La vente qui attend son paiement, et le QR a montrer au client.
+   *
+   * **Le client scanne avec son propre telephone.** La caisse ne manipule pas
+   * son compte : elle affiche un lien, il tape son code chez lui. C'est aussi
+   * ce qui evite que le pharmacien connaisse son numero de compte.
+   */
+  attente = signal<VenteComptoirView | null>(null);
+  qrImage = signal<string>('');
+  verifieEnCours = signal(false);
+
   modePaiement = signal<ModePaiement>('ESPECES');
   numeroOperateur = signal('');
   remiseGnf = signal<number | null>(null);
@@ -280,10 +292,19 @@ export class CaisseComponent implements OnInit {
     this.pharma.enregistrerVente(dto).subscribe({
       next: (r) => {
         this.enCours.set(false);
-        this.toastr.success(
-          this.i18n.t('PHARMACIEN.CAISSE.OK', { numero: r.data?.numero ?? '' }),
-          this.i18n.t('COMMON.SUCCESS')
-        );
+        const vente = r.data;
+
+        // **Une vente mobile n'est pas payee parce qu'elle est enregistree.**
+        // Elle attend que le client paie : on montre le QR au lieu d'annoncer
+        // un succes qui n'a pas eu lieu.
+        if (vente?.statut === 'EN_ATTENTE' && vente.urlPaiement) {
+          this.ouvrirAttente(vente);
+        } else {
+          this.toastr.success(
+            this.i18n.t('PHARMACIEN.CAISSE.OK', { numero: vente?.numero ?? '' }),
+            this.i18n.t('COMMON.SUCCESS')
+          );
+        }
         this.reinitialiser();
         this.charger();
         // Le stock a baisse : le relire evite d'autoriser une seconde vente
@@ -292,6 +313,85 @@ export class CaisseComponent implements OnInit {
       },
       error: (err) => this.signaler(err, 'PHARMACIEN.CAISSE.ERR_ENCAISSER'),
     });
+  }
+
+  /** Affiche le QR du lien de paiement, a tourner vers le client. */
+  private async ouvrirAttente(vente: VenteComptoirView): Promise<void> {
+    this.attente.set(vente);
+    this.qrImage.set('');
+    if (!vente.urlPaiement) return;
+    try {
+      // Marge et contraste eleves : le code est scanne a bout de bras, sur un
+      // ecran de caisse souvent mal oriente.
+      this.qrImage.set(await QRCode.toDataURL(vente.urlPaiement, {
+        width: 280, margin: 2, errorCorrectionLevel: 'M',
+      }));
+    } catch {
+      // Sans image, le lien reste affiche en clair : le client peut le taper.
+      this.qrImage.set('');
+    }
+  }
+
+  /**
+   * Relit l'etat du paiement.
+   *
+   * C'est le geste du pharmacien qui attend, pas une tache de fond : il
+   * appuie quand le client lui dit avoir paye.
+   */
+  verifierPaiement(): void {
+    const vente = this.attente();
+    if (!vente || this.verifieEnCours()) return;
+    this.verifieEnCours.set(true);
+
+    this.pharma.rafraichirPaiement(vente.id).subscribe({
+      next: (r) => {
+        this.verifieEnCours.set(false);
+        const maj = r.data;
+        if (!maj) return;
+        if (maj.statut === 'PAYEE') {
+          this.attente.set(null);
+          this.toastr.success(
+            this.i18n.t('PHARMACIEN.CAISSE.PAIEMENT_CONFIRME', { numero: maj.numero }),
+            this.i18n.t('COMMON.SUCCESS')
+          );
+          this.charger();
+        } else {
+          this.attente.set(maj);
+          this.toastr.info(this.i18n.t('PHARMACIEN.CAISSE.PAS_ENCORE'));
+        }
+      },
+      error: (err) => {
+        this.verifieEnCours.set(false);
+        this.signaler(err, 'PHARMACIEN.CAISSE.ERR_VERIFIER');
+      },
+    });
+  }
+
+  /**
+   * Le client s'en va sans payer : la vente est annulee et les boites
+   * repartent en stock.
+   *
+   * Sans ce geste, elles resteraient sorties sans que rien ne les y ramene.
+   */
+  abandonnerAttente(): void {
+    const vente = this.attente();
+    if (!vente) return;
+    this.pharma.annulerVente(vente.id, {
+      motif: this.i18n.t('PHARMACIEN.CAISSE.MOTIF_ABANDON'),
+    }).subscribe({
+      next: () => {
+        this.attente.set(null);
+        this.toastr.info(this.i18n.t('PHARMACIEN.CAISSE.ABANDONNEE'));
+        this.charger();
+        this.pharma.getStocks().subscribe({ next: (s) => this.stocks.set(s.data ?? []) });
+      },
+      error: (err) => this.signaler(err, 'PHARMACIEN.CAISSE.ERR_ANNULER'),
+    });
+  }
+
+  /** Le montant que le client doit payer : la part de l'assureur est deduite. */
+  montantAPayer(): number {
+    return this.attente()?.montantPatientGnf ?? 0;
   }
 
   annuler(vente: VenteComptoirView) {

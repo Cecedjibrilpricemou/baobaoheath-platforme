@@ -2,7 +2,7 @@ import express, { Request, Response, Router } from 'express';
 import { logger } from '../config/logger';
 import * as chapchap from '../services/chapchap.service';
 import { appliquerStatutPasserelle } from '../services/paiement.service';
-import { appliquerPaiementVente } from '../services/vente.service';
+import { appliquerPaiementParOperation } from '../services/vente.service';
 
 /**
  * Le rappel de Chap Chap Pay (EF-08).
@@ -75,9 +75,18 @@ router.post(
     const vente = commande.startsWith('VNT-');
     const idCible = commande.replace(/^(VNT|FAC)-/, '');
 
+    // Une vente se retrouve par son **operation**, pas par la commande :
+    // l'operation est ouverte avant que la vente n'existe, et le `order_id`
+    // ne peut donc pas porter son identifiant.
+    if (vente && !charge.operation_id) {
+      logger.warn('[CHAPCHAP] rappel de vente sans operation', { commande });
+      res.status(200).json({ success: true, message: 'Rappel sans operation, acquitte' });
+      return;
+    }
+
     try {
       const issue = vente
-        ? await appliquerPaiementVente(idCible, statut, {
+        ? await appliquerPaiementParOperation(charge.operation_id!, statut, {
             referenceTransaction: charge.transaction?.payment_reference ?? null,
           })
         : await appliquerStatutPasserelle(idCible, statut, {

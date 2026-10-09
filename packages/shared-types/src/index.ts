@@ -377,6 +377,23 @@ export interface FactureView {
   } | null;
 }
 
+/**
+ * GET /paiements/a-regler — ce que le patient doit encore.
+ *
+ * **Une consultation tarifee n'a pas forcement de facture.** Rien ne facture
+ * automatiquement : la facture naît au moment ou le paiement s'ouvre. Une
+ * liste batie sur les seules factures laisserait donc invisible tout ce qui
+ * n'a jamais ete paye — c'est-a-dire precisement ce qu'on vient regarder.
+ */
+export interface ADeReglerView {
+  idConsultation: string;
+  motif?: string | null;
+  consulteeLE?: HorodatageApi | null;
+  montantGnf: number;
+  /** Absente tant que le paiement n'a jamais ete ouvert. */
+  facture?: FactureView | null;
+}
+
 /** GET /paiements/historique */
 export interface PageFacturesView {
   data: FactureView[];

@@ -11,6 +11,7 @@
 //
 // La sortie de stock passe par `consommerLots` : au plus proche de la
 // peremption, lot perime refuse. Ce service ne la reecrit pas.
+import { randomUUID } from 'crypto';
 import { Prisma, StatutVente, TypeStructure } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import * as chapchap from './chapchap.service';
@@ -278,6 +279,40 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
     (prise?.lignes ?? []).map((l) => [l.idMedicament, l])
   );
 
+  /**
+   * L'operation de paiement, **avant** d'ecrire quoi que ce soit.
+   *
+   * Deux raisons de la placer ici plutot qu'apres la transaction :
+   *
+   *   - une vente inseree `EN_ATTENTE` sans operation viole l'invariant —
+   *     rien ne la ferait jamais aboutir et elle bloquerait ses lots. Une
+   *     contrainte SQL le refuse, et elle a eu raison du premier essai ;
+   *   - un appel reseau **dans** une transaction Postgres la tiendrait
+   *     ouverte le temps d'un aller-retour vers un operateur mobile, en
+   *     verrouillant les lignes de stock pendant ce temps.
+   *
+   * Si la passerelle refuse, rien n'a ete ecrit : aucun lot a rendre. Une
+   * operation ouverte sans vente expire d'elle-meme au bout de 72 heures,
+   * sans qu'un franc ait bouge.
+   */
+  const montantPatientGnf = montantNetGnf - (prise?.montantAssureGnf ?? 0);
+  let operation: Awaited<ReturnType<typeof chapchap.creerOperation>> | null = null;
+  if (passeParLaPasserelle) {
+    if (montantPatientGnf < MIN_PASSERELLE_GNF) {
+      throw new ValidationError(
+        `Le paiement mobile demande au moins ${MIN_PASSERELLE_GNF.toLocaleString('fr-FR')} GNF. `
+        + `Encaissez ce montant en especes.`,
+      );
+    }
+    operation = await chapchap.creerOperation({
+      // Ce que le client paie vraiment : la part de l'assureur ne passe pas
+      // par son telephone.
+      montantGnf: montantPatientGnf,
+      orderId: `VNT-${randomUUID()}`,
+      description: 'Pharmacie — achat au comptoir',
+    });
+  }
+
   const cree = await prisma.$transaction(async (tx) => {
     const numero = await prochainNumero('VE', tx);
 
@@ -298,7 +333,10 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         // maintenant — on ne vend pas deux fois la derniere boite pendant que
         // le client tape son code — mais les medicaments ne se remettent
         // qu'au « success ».
-        statut: passeParLaPasserelle ? 'EN_ATTENTE' : 'PAYEE',
+        statut: operation ? 'EN_ATTENTE' : 'PAYEE',
+        idOperation: operation?.operationId ?? null,
+        urlPaiement: operation?.urlPaiement ?? null,
+        statutOperateur: operation ? 'new' : null,
         idPatient: dto.idPatient ?? null,
         idOrdonnance: dto.idOrdonnance ?? null,
         idStructure,
@@ -335,43 +373,6 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
     return vente.id;
   });
 
-  if (passeParLaPasserelle) {
-    // L'operation s'ouvre **apres** la transaction : un appel reseau dans une
-    // transaction Postgres la tiendrait ouverte le temps d'un aller-retour
-    // vers un operateur mobile, et verrouillerait les lignes de stock pendant
-    // ce temps.
-    const aPayer = await prisma.venteComptoir.findUniqueOrThrow({
-      where: { id: cree }, select: { montantPatientGnf: true, numero: true },
-    });
-    try {
-      if (aPayer.montantPatientGnf < MIN_PASSERELLE_GNF) {
-        throw new ValidationError(
-          `Le paiement mobile demande au moins ${MIN_PASSERELLE_GNF.toLocaleString('fr-FR')} GNF. `
-          + `Encaissez ce montant en especes.`,
-        );
-      }
-      const operation = await chapchap.creerOperation({
-        // Ce que le patient paie vraiment : la part de l'assureur ne passe
-        // pas par son telephone.
-        montantGnf: aPayer.montantPatientGnf,
-        orderId: `VNT-${cree}`,
-        description: `Pharmacie — vente ${aPayer.numero}`,
-      });
-      await prisma.venteComptoir.update({
-        where: { id: cree },
-        data: {
-          idOperation: operation.operationId,
-          urlPaiement: operation.urlPaiement,
-          statutOperateur: 'new',
-        },
-      });
-    } catch (e) {
-      // La passerelle a refuse : la vente ne doit pas rester en attente sans
-      // moyen d'aboutir, et les lots doivent repartir en stock.
-      await rendreLesLots(cree, `Paiement impossible : ${(e as Error).message}`, user.userId);
-      throw e;
-    }
-  }
 
   const vente = await prisma.venteComptoir.findUniqueOrThrow({ where: { id: cree }, include: VENTE_INCLUDE });
   return versVue(vente);
@@ -628,6 +629,28 @@ export async function appliquerPaiementVente(
     data: { statut: StatutVente.PAYEE, statutOperateur: statut, referenceTransaction: reference },
   });
   return { changee: prise.count > 0, dejaPayee: prise.count === 0 };
+}
+
+/**
+ * Applique un statut a la vente portant cette operation.
+ *
+ * **Le rappel ne connait pas notre identifiant de vente.** L'operation est
+ * ouverte avant que la vente n'existe — il le faut, sinon la vente naîtrait
+ * en attente sans operation et violerait son invariant. Le `order_id` envoye
+ * a la passerelle ne peut donc pas porter l'identifiant de la vente :
+ * `idOperation`, unique, est la cle qui les relie.
+ */
+export async function appliquerPaiementParOperation(
+  idOperation: string,
+  statut: string,
+  details?: { referenceTransaction?: string | null },
+): Promise<{ changee: boolean; dejaPayee: boolean }> {
+  const vente = await prisma.venteComptoir.findUnique({
+    where: { idOperation },
+    select: { id: true },
+  });
+  if (!vente) throw new NotFoundError('Vente non trouvee');
+  return appliquerPaiementVente(vente.id, statut, details);
 }
 
 /**

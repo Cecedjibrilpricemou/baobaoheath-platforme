@@ -18,7 +18,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ToastrService } from 'ngx-toastr';
-import type { FactureView, ModePaiement } from '@baobaoheath/shared-types';
+import type { ADeReglerView, FactureView, ModePaiement } from '@baobaoheath/shared-types';
 import { PaiementService } from '../../../core/services/paiement.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -40,21 +40,29 @@ export class PatientPaiementsComponent implements OnInit {
   private toastr = inject(ToastrService);
   private i18n = inject(I18nService);
 
+  /**
+   * Ce qui reste du, **bati sur les consultations et non sur les factures**.
+   *
+   * Rien ne facture automatiquement : la facture naît quand le paiement
+   * s'ouvre. Une liste faite des seules factures laisserait invisible tout ce
+   * qui n'a jamais ete paye — c'est-a-dire ce qu'on vient regarder.
+   */
+  dus = signal<ADeReglerView[]>([]);
+  /** L'historique, pour la partie « deja reglees ». */
   factures = signal<FactureView[]>([]);
   chargement = signal(true);
-  /** L'identifiant de la facture dont on attend une reponse. */
+  /** L'element dont on attend une reponse : identifiant de consultation. */
   enCours = signal<string | null>(null);
 
-  /** La facture qu'on s'apprete a payer, quand on choisit le moyen. */
-  choix = signal<FactureView | null>(null);
+  /** Ce qu'on s'apprete a payer, quand on choisit le moyen. */
+  choix = signal<ADeReglerView | null>(null);
   modePaiement: ModePaiement = 'ORANGE_MONEY';
   numeroOperateur = '';
 
-  readonly aRegler = computed(() => this.factures().filter((f) => f.statut !== 'PAYEE'));
   readonly reglees = computed(() => this.factures().filter((f) => f.statut === 'PAYEE'));
 
   readonly totalDu = computed(() =>
-    this.aRegler().reduce((s, f) => s + f.montantGnf, 0));
+    this.dus().reduce((s, d) => s + d.montantGnf, 0));
 
   ngOnInit(): void {
     this.charger();
@@ -62,9 +70,9 @@ export class PatientPaiementsComponent implements OnInit {
 
   private charger(): void {
     this.chargement.set(true);
-    this.service.getHistorique().subscribe({
+    this.service.aRegler().subscribe({
       next: (r) => {
-        this.factures.set(r.data ?? []);
+        this.dus.set(r.data ?? []);
         this.chargement.set(false);
       },
       error: () => {
@@ -72,16 +80,21 @@ export class PatientPaiementsComponent implements OnInit {
         this.toastr.error(this.i18n.t('COMMON.ERROR_GENERIC'));
       },
     });
+    this.service.getHistorique().subscribe({
+      next: (r) => this.factures.set(r.data ?? []),
+      // L'historique est secondaire : son absence n'empeche pas de payer.
+      error: () => { /* le bandeau d'erreur de la liste due suffit */ },
+    });
   }
 
   // ── Payer ──────────────────────────────────────────────────────────
   /** Trop petit pour la passerelle : a regler au guichet. */
-  tropPetit(f: FactureView): boolean {
-    return f.montantGnf < MIN_PASSERELLE_GNF;
+  tropPetit(d: ADeReglerView): boolean {
+    return d.montantGnf < MIN_PASSERELLE_GNF;
   }
 
-  ouvrirChoix(f: FactureView): void {
-    this.choix.set(f);
+  ouvrirChoix(d: ADeReglerView): void {
+    this.choix.set(d);
     this.modePaiement = 'ORANGE_MONEY';
     this.numeroOperateur = '';
   }
@@ -91,20 +104,19 @@ export class PatientPaiementsComponent implements OnInit {
   }
 
   peutPayer(): boolean {
-    const f = this.choix();
-    if (!f || !f.idConsultation || this.enCours()) return false;
+    if (!this.choix() || this.enCours()) return false;
     // L'operateur a besoin du numero pour envoyer la demande au telephone.
     return this.modePaiement === 'ESPECES' || this.numeroOperateur.trim().length >= 6;
   }
 
   payer(): void {
-    const f = this.choix();
-    if (!f?.idConsultation || !this.peutPayer()) return;
-    this.enCours.set(f.id);
+    const d = this.choix();
+    if (!d || !this.peutPayer()) return;
+    this.enCours.set(d.idConsultation);
 
     this.service.ouvrirPaiement({
-      idConsultation: f.idConsultation,
-      montantGnf: f.montantGnf,
+      idConsultation: d.idConsultation,
+      montantGnf: d.montantGnf,
       modePaiement: this.modePaiement,
       ...(this.numeroOperateur.trim() ? { numeroOperateur: this.numeroOperateur.trim() } : {}),
     }).subscribe({
@@ -135,17 +147,23 @@ export class PatientPaiementsComponent implements OnInit {
   }
 
   /** Relire l'etat : le serveur interroge la passerelle au passage. */
-  actualiser(f: FactureView): void {
-    this.enCours.set(f.id);
-    this.service.getStatut(f.id).subscribe({
+  actualiser(d: ADeReglerView): void {
+    if (!d.facture) return;
+    this.enCours.set(d.idConsultation);
+    this.service.getStatut(d.facture.id).subscribe({
       next: (r) => {
         this.enCours.set(null);
         const maj = r.data;
         if (!maj) return;
-        this.factures.update((liste) => liste.map((x) => (x.id === maj.id ? maj : x)));
         if (maj.statut === 'PAYEE') {
           this.toastr.success(this.i18n.t('PATIENT.PAIEMENTS.CONFIRME'));
+          // Elle sort de ce qui est du : on relit plutot que de la bricoler
+          // sur place, sinon les deux listes divergent.
+          this.charger();
+          return;
         }
+        this.dus.update((liste) =>
+          liste.map((x) => (x.idConsultation === d.idConsultation ? { ...x, facture: maj } : x)));
       },
       error: () => {
         this.enCours.set(null);
@@ -165,9 +183,8 @@ export class PatientPaiementsComponent implements OnInit {
    * Dire « échoué » sans dire quoi faire laisse le patient devant un mur : les
    * libellés disent tous la suite.
    */
-  libelleEtat(f: FactureView): string {
-    if (f.statut === 'PAYEE') return this.i18n.t('PATIENT.PAIEMENTS.ETAT_PAYEE');
-    switch (f.statutOperateur) {
+  libelleEtat(d: ADeReglerView): string {
+    switch (d.facture?.statutOperateur) {
       case 'pending': return this.i18n.t('PATIENT.PAIEMENTS.ETAT_EN_COURS');
       case 'canceled': return this.i18n.t('PATIENT.PAIEMENTS.ETAT_ANNULE');
       case 'failed':
@@ -178,9 +195,8 @@ export class PatientPaiementsComponent implements OnInit {
   }
 
   /** Un essai qui a mal tourné se signale, sans alarmer sur une attente. */
-  aEchoue(f: FactureView): boolean {
-    return f.statut !== 'PAYEE'
-      && ['canceled', 'failed', 'error', 'expired'].includes(f.statutOperateur ?? '');
+  aEchoue(d: ADeReglerView): boolean {
+    return ['canceled', 'failed', 'error', 'expired'].includes(d.facture?.statutOperateur ?? '');
   }
 
   libelleMode(m: string | null | undefined): string {

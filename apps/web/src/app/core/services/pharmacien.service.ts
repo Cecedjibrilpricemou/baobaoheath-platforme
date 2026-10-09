@@ -103,6 +103,16 @@ export class PharmacienService {
     return this.api.post<ApiResponse<VenteComptoirView>>('/pharmacien/ventes', dto);
   }
 
+  /**
+   * Où en est le paiement du client ?
+   *
+   * Le serveur interroge la passerelle au passage : le pharmacien a le client
+   * devant lui et ne peut pas attendre un rappel qui peut ne jamais arriver.
+   */
+  rafraichirPaiement(idVente: string): Observable<ApiResponse<VenteComptoirView>> {
+    return this.api.get<ApiResponse<VenteComptoirView>>(`/pharmacien/ventes/${idVente}/paiement`);
+  }
+
   getVentes(limite?: number): Observable<ApiResponse<VenteComptoirView[]>> {
     return this.api.get<ApiResponse<VenteComptoirView[]>>(
       '/pharmacien/ventes', limite ? { limite: String(limite) } : undefined);

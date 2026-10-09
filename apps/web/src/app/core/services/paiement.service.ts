@@ -6,7 +6,7 @@
 // l'API rend vraiment.
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import type { FactureView, ModePaiement } from '@baobaoheath/shared-types';
+import type { ADeReglerView, FactureView, ModePaiement } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 
@@ -35,6 +35,18 @@ export class PaiementService {
     numeroOperateur?: string;
   }): Observable<ApiResponse<FactureView>> {
     return this.api.post<ApiResponse<FactureView>>('/paiements', payload);
+  }
+
+  /**
+   * Ce qui reste dû.
+   *
+   * **Part des consultations, pas des factures.** Rien ne facture
+   * automatiquement : la facture naît quand le paiement s'ouvre. Une liste
+   * bâtie sur les seules factures laisserait invisible tout ce qui n'a jamais
+   * été payé.
+   */
+  aRegler(): Observable<ApiResponse<ADeReglerView[]>> {
+    return this.api.get<ApiResponse<ADeReglerView[]>>('/paiements/a-regler');
   }
 
   getHistorique(): Observable<PageFactures> {

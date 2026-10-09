@@ -76,6 +76,13 @@ export const DEMO = {
     { libelle: 'Morphine Pricemou 10mg', dci: 'Morphine',     nomCommercial: 'Morphine Pricemou',  forme: 'ampoule',  dosage: '10mg',  prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
   ],
 
+  // De quoi essayer le paiement mobile : au-dessus des 3 000 GNF que la
+  // passerelle exige, et assez gros pour que le montant se lise.
+  consultationAPayer: {
+    motif: 'Consultation generale',
+    tarifGnf: 25000,
+  },
+
   // L'assureur de la demonstration (EF-09, addendum point 5).
   //
   // Un contrat a **100 %** avec le lait et les cosmetiques exclus : c'est la
@@ -269,6 +276,27 @@ async function main() {
   console.log(
     `4. Catalogue : ${DEMO.medicaments.length} medicaments (dont un allergene et un reglemente) ` +
       `et ${DEMO.articles.length} articles non medicamenteux, en stock par lots`
+  );
+
+  // ── 4 bis. Une consultation a payer ─────────────────────────────
+  //
+  // Sans elle, l'ecran « Mes paiements » du patient n'a rien a montrer : rien
+  // ne facture automatiquement, et la facture naît quand le paiement s'ouvre.
+  const consultationAPayer = await prisma.consultation.findFirst({
+    where: { idPatient: patientProfile.id, motifPrincipal: DEMO.consultationAPayer.motif },
+    select: { id: true },
+  });
+  if (!consultationAPayer) {
+    await prisma.consultation.create({
+      data: {
+        idPatient: patientProfile.id,
+        motifPrincipal: DEMO.consultationAPayer.motif,
+        tarifGnf: DEMO.consultationAPayer.tarifGnf,
+      },
+    });
+  }
+  console.log(
+    `4 bis. Une consultation a payer : ${DEMO.consultationAPayer.tarifGnf} GNF`
   );
 
   // ── 5. L'assurance ──────────────────────────────────────────────

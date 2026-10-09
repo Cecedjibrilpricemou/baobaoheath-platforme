@@ -66,6 +66,15 @@ export async function getHistoriquePaiementsController(
         });
 }
 
+// ─── Ce qui reste a regler ────────────────────────────────
+export async function aReglerController(
+    req: AuthRequest,
+    res: Response
+): Promise<void> {
+    const data = await paiementService.aRegler(req.user!.userId);
+    res.status(200).json({ success: true, data });
+}
+
 // ─── Annuler un paiement ──────────────────────────────────
 export async function annulerPaiementController(
     req: AuthRequest & { params: { id: string } },
