@@ -165,8 +165,9 @@ export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
 
   const operation = await chapchap.creerOperation({
     montantGnf,
-    // Notre identifiant de facture : c'est par lui qu'un rappel la retrouve.
-    orderId: facture.id,
+    // Notre identifiant de facture, prefixe : le rappel sert aussi les ventes
+    // de pharmacie, et c'est ce prefixe qui dit laquelle des deux il vise.
+    orderId: `FAC-${facture.id}`,
     description: `Consultation du ${consultation.creeLe.toLocaleDateString('fr-FR')}`,
   });
 

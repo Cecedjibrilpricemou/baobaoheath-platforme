@@ -13,6 +13,8 @@
 // peremption, lot perime refuse. Ce service ne la reecrit pas.
 import { Prisma, StatutVente, TypeStructure } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import * as chapchap from './chapchap.service';
+import { logger } from '../config/logger';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { consommerLots, peremptionLaPlusProche } from './approvisionnement.service';
@@ -72,6 +74,11 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
       : null,
     modePaiement: v.modePaiement,
     numeroOperateur: v.numeroOperateur,
+    // Le lien ne sert plus une fois la vente reglee : le rendre inviterait a
+    // repayer.
+    urlPaiement: v.statut === StatutVente.EN_ATTENTE ? v.urlPaiement : null,
+    statutOperateur: v.statutOperateur,
+    referenceTransaction: v.referenceTransaction,
     creeLe: v.creeLe.toISOString(),
     annuleeLe: v.annuleeLe ? v.annuleeLe.toISOString() : null,
     motifAnnulation: v.motifAnnulation,
@@ -154,6 +161,15 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
   if (dto.modePaiement !== 'ESPECES' && !dto.numeroOperateur?.trim()) {
     throw new ValidationError('Un paiement mobile exige le numero de l abonne');
   }
+
+  /**
+   * Les especes n'ont pas de passerelle : l'agent encaisse devant lui, et la
+   * vente est payee a l'instant ou elle est saisie. Sans passerelle
+   * configuree non plus — on retombe alors sur l'ancien comportement, qui
+   * vaut mieux qu'une caisse bloquee.
+   */
+  const passeParLaPasserelle =
+    dto.modePaiement !== 'ESPECES' && chapchap.chapchapEstConfigure();
 
   // Le stock de cette officine pour chaque produit du panier. Un produit
   // absent du stock n'est pas vendable ici, meme s'il existe au catalogue.
@@ -276,6 +292,13 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         idContratAssurance: prise?.idContrat ?? null,
         modePaiement: dto.modePaiement,
         numeroOperateur: dto.numeroOperateur?.trim() || null,
+        // **Une vente mobile naît en attente.** Jusqu'au 2026-10-09 elle
+        // naissait payee : le pharmacien cochait « Orange Money » et rien ne
+        // verifiait qu'un franc ait bouge. Les lots sont bien consommes des
+        // maintenant — on ne vend pas deux fois la derniere boite pendant que
+        // le client tape son code — mais les medicaments ne se remettent
+        // qu'au « success ».
+        statut: passeParLaPasserelle ? 'EN_ATTENTE' : 'PAYEE',
         idPatient: dto.idPatient ?? null,
         idOrdonnance: dto.idOrdonnance ?? null,
         idStructure,
@@ -312,9 +335,50 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
     return vente.id;
   });
 
+  if (passeParLaPasserelle) {
+    // L'operation s'ouvre **apres** la transaction : un appel reseau dans une
+    // transaction Postgres la tiendrait ouverte le temps d'un aller-retour
+    // vers un operateur mobile, et verrouillerait les lignes de stock pendant
+    // ce temps.
+    const aPayer = await prisma.venteComptoir.findUniqueOrThrow({
+      where: { id: cree }, select: { montantPatientGnf: true, numero: true },
+    });
+    try {
+      if (aPayer.montantPatientGnf < MIN_PASSERELLE_GNF) {
+        throw new ValidationError(
+          `Le paiement mobile demande au moins ${MIN_PASSERELLE_GNF.toLocaleString('fr-FR')} GNF. `
+          + `Encaissez ce montant en especes.`,
+        );
+      }
+      const operation = await chapchap.creerOperation({
+        // Ce que le patient paie vraiment : la part de l'assureur ne passe
+        // pas par son telephone.
+        montantGnf: aPayer.montantPatientGnf,
+        orderId: `VNT-${cree}`,
+        description: `Pharmacie — vente ${aPayer.numero}`,
+      });
+      await prisma.venteComptoir.update({
+        where: { id: cree },
+        data: {
+          idOperation: operation.operationId,
+          urlPaiement: operation.urlPaiement,
+          statutOperateur: 'new',
+        },
+      });
+    } catch (e) {
+      // La passerelle a refuse : la vente ne doit pas rester en attente sans
+      // moyen d'aboutir, et les lots doivent repartir en stock.
+      await rendreLesLots(cree, `Paiement impossible : ${(e as Error).message}`, user.userId);
+      throw e;
+    }
+  }
+
   const vente = await prisma.venteComptoir.findUniqueOrThrow({ where: { id: cree }, include: VENTE_INCLUDE });
   return versVue(vente);
 }
+
+/** En dessous, la passerelle refuse (verifie contre son bac a sable). */
+const MIN_PASSERELLE_GNF = 3_000;
 
 /**
  * Annule une vente et remet en stock exactement les lots qui en etaient
@@ -336,22 +400,49 @@ export async function annulerVente(
 
   const vente = await prisma.venteComptoir.findUnique({
     where: { id: idVente },
-    include: { lignes: { select: { id: true, quantite: true, idMedicament: true, lotsConsommes: true } } },
+    select: { idStructure: true, statut: true },
   });
   if (!vente) throw new NotFoundError('Vente non trouvee');
   if (vente.idStructure !== idStructure) throw new ForbiddenError("Cette vente n'est pas celle de votre officine");
   if (vente.statut === StatutVente.ANNULEE) throw new ConflictError('Cette vente est deja annulee');
 
+  await rendreLesLots(idVente, motif, user.userId);
+
+  const apres = await prisma.venteComptoir.findUniqueOrThrow({ where: { id: idVente }, include: VENTE_INCLUDE });
+  return versVue(apres);
+}
+
+/**
+ * Annule une vente et remet exactement les lots qui en etaient sortis.
+ *
+ * **Extrait pour etre partage.** Deux chemins y menent : l'agent qui corrige
+ * une erreur de saisie, et un paiement mobile qui n'aboutit pas. Deux copies
+ * de cette logique voudraient dire qu'une correction n'en repare qu'une, et
+ * le stock deriverait par l'autre.
+ *
+ * `EN_ATTENTE` compte autant que `PAYEE` dans la prise atomique : une vente
+ * dont le client est parti sans payer doit rendre ses boites, sinon elles
+ * resteraient sorties du stock sans que rien ne les y ramene.
+ */
+async function rendreLesLots(idVente: string, motif: string, idAuteur: string): Promise<void> {
+  const vente = await prisma.venteComptoir.findUniqueOrThrow({
+    where: { id: idVente },
+    select: {
+      idStructure: true,
+      lignes: { select: { quantite: true, idMedicament: true, lotsConsommes: true } },
+    },
+  });
+
   await prisma.$transaction(async (tx) => {
     // Prise atomique : deux annulations simultanees donnent une gagnante et
     // une perdante, jamais deux remises en stock.
     const prise = await tx.venteComptoir.updateMany({
-      where: { id: idVente, statut: StatutVente.PAYEE },
+      where: { id: idVente, statut: { in: [StatutVente.PAYEE, StatutVente.EN_ATTENTE] } },
       data: {
         statut: StatutVente.ANNULEE,
         annuleeLe: new Date(),
         motifAnnulation: motif,
-        idAnnuleePar: user.userId,
+        idAnnuleePar: idAuteur,
       },
     });
     if (prise.count === 0) throw new ConflictError('Cette vente vient d etre annulee par quelqu un d autre');
@@ -368,15 +459,12 @@ export async function annulerVente(
       const remis = lots.reduce((t, l) => t + l.quantite, 0);
       if (remis > 0) {
         await tx.stock.updateMany({
-          where: { idStructure, idMedicament: ligne.idMedicament },
+          where: { idStructure: vente.idStructure, idMedicament: ligne.idMedicament },
           data: { quantite: { increment: remis } },
         });
       }
     }
   });
-
-  const apres = await prisma.venteComptoir.findUniqueOrThrow({ where: { id: idVente }, include: VENTE_INCLUDE });
-  return versVue(apres);
 }
 
 /** Les ventes de l'officine, de la plus recente a la plus ancienne. */
@@ -498,3 +586,89 @@ export async function tableauDeBord(user: JwtPayload, maintenant = new Date()): 
 // `peremptionLaPlusProche` est reexporte pour que l'ecran de caisse puisse
 // afficher la date du lot qui sortira, sans dupliquer le calcul.
 export { peremptionLaPlusProche };
+
+/**
+ * Relit le paiement d'une vente en attente, et la regle s'il a abouti.
+ *
+ * **C'est la relecture qui tranche, pas le rappel.** Un webhook peut ne
+ * jamais arriver — URL injoignable, serveur redemarre, developpement en
+ * local. Au comptoir, le pharmacien a le client devant lui : il appuie sur
+ * « verifier » et doit obtenir une reponse immediate.
+ *
+ * Point unique avec le rappel : deux chemins qui decideraient separement
+ * finiraient par diverger, et c'est de l'argent.
+ */
+export async function appliquerPaiementVente(
+  idVente: string,
+  statut: string,
+  details?: { referenceTransaction?: string | null },
+): Promise<{ changee: boolean; dejaPayee: boolean }> {
+  const vente = await prisma.venteComptoir.findUnique({
+    where: { id: idVente },
+    select: { id: true, statut: true, statutOperateur: true, idOperation: true },
+  });
+  if (!vente) throw new NotFoundError('Vente non trouvee');
+
+  // Un paiement acquis ne redescend jamais : plusieurs rappels portent la
+  // meme operation, et dans n'importe quel ordre.
+  if (vente.statut === StatutVente.PAYEE) return { changee: false, dejaPayee: true };
+  if (vente.statut === StatutVente.ANNULEE) return { changee: false, dejaPayee: false };
+
+  if (!chapchap.estPaye(statut)) {
+    if (vente.statutOperateur === statut) return { changee: false, dejaPayee: false };
+    await prisma.venteComptoir.update({ where: { id: idVente }, data: { statutOperateur: statut } });
+    return { changee: true, dejaPayee: false };
+  }
+
+  // La contrainte SQL refuse une vente payee par operation sans reference :
+  // a defaut, on garde l'identifiant de l'operation, qui reste opposable.
+  const reference = details?.referenceTransaction?.trim() || vente.idOperation;
+  const prise = await prisma.venteComptoir.updateMany({
+    where: { id: idVente, statut: StatutVente.EN_ATTENTE },
+    data: { statut: StatutVente.PAYEE, statutOperateur: statut, referenceTransaction: reference },
+  });
+  return { changee: prise.count > 0, dejaPayee: prise.count === 0 };
+}
+
+/**
+ * Ce que la caisse appelle pour savoir ou en est le client.
+ *
+ * Elle interroge la passerelle quand l'issue n'est pas connue : c'est le
+ * geste du pharmacien qui attend, pas une tache de fond.
+ */
+export async function rafraichirPaiementVente(
+  user: JwtPayload,
+  idVente: string,
+): Promise<VenteComptoirView> {
+  const idStructure = await officineDe(user.userId);
+  const vente = await prisma.venteComptoir.findUnique({
+    where: { id: idVente },
+    select: { id: true, idStructure: true, statut: true, idOperation: true },
+  });
+  if (!vente) throw new NotFoundError('Vente non trouvee');
+  if (vente.idStructure !== idStructure) {
+    throw new ForbiddenError("Cette vente n'est pas celle de votre officine");
+  }
+
+  if (vente.statut === StatutVente.EN_ATTENTE && vente.idOperation) {
+    try {
+      const operation = await chapchap.lireOperation(vente.idOperation);
+      if (operation.statut) {
+        await appliquerPaiementVente(idVente, operation.statut, {
+          referenceTransaction: operation.referenceTransaction,
+        });
+      }
+    } catch (e) {
+      // Une passerelle injoignable ne doit pas empecher de lire la vente :
+      // on rend ce qu'on sait, et l'ecran le dira.
+      logger.warn('[VENTE] relecture du paiement impossible', {
+        idVente, erreur: (e as Error).message,
+      });
+    }
+  }
+
+  const apres = await prisma.venteComptoir.findUniqueOrThrow({
+    where: { id: idVente }, include: VENTE_INCLUDE,
+  });
+  return versVue(apres);
+}

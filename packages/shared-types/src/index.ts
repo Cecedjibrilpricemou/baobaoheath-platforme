@@ -2074,7 +2074,14 @@ export interface ExamenSuiviView {
  * attente ». `ANNULEE` ne sert pas a un retour client — EF-07-11 l'interdit —
  * mais a corriger une erreur de saisie, et elle remet les lots consommes.
  */
-export type StatutVente = 'PAYEE' | 'ANNULEE';
+/**
+ * `EN_ATTENTE` : la vente existe, les lots sont reserves, le paiement mobile
+ * n'a pas encore abouti. Les medicaments ne se remettent pas avant.
+ *
+ * Tout ce qui compte de l'argent filtre sur `PAYEE` et ignore donc une vente
+ * en attente : consommation de l'assureur, chiffre d'affaires du jour.
+ */
+export type StatutVente = 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE';
 
 export interface LigneVenteView {
   id: string;
@@ -2111,6 +2118,24 @@ export interface VenteComptoirView {
   patient?: { id: string; prenom: string; nom: string } | null;
   /** Renseigne quand la vente sert une ordonnance. */
   numeroOrdonnance?: string | null;
+
+  /**
+   * Le lien de paiement de la passerelle, affiche en QR au comptoir.
+   *
+   * Le client le scanne avec son propre telephone : la caisse n'a pas a
+   * manipuler son compte, et il tape son code chez lui.
+   */
+  urlPaiement?: string | null;
+
+  /** Le dernier etat connu cote passerelle (`new`, `pending`, `success`...). */
+  statutOperateur?: string | null;
+
+  /**
+   * **La preuve.** La reference rendue par l'operateur une fois le paiement
+   * abouti. Sans elle, « paye en Orange Money » n'est qu'une case cochee.
+   */
+  referenceTransaction?: string | null;
+
   lignes: LigneVenteView[];
 }
 

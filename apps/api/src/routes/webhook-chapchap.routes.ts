@@ -2,6 +2,7 @@ import express, { Request, Response, Router } from 'express';
 import { logger } from '../config/logger';
 import * as chapchap from '../services/chapchap.service';
 import { appliquerStatutPasserelle } from '../services/paiement.service';
+import { appliquerPaiementVente } from '../services/vente.service';
 
 /**
  * Le rappel de Chap Chap Pay (EF-08).
@@ -55,28 +56,39 @@ router.post(
       return;
     }
 
-    const idFacture = charge.order_id;
+    const commande = charge.order_id;
     const statut = charge.status?.code;
     logger.info('[CHAPCHAP] rappel recu', {
-      idFacture, operationId: charge.operation_id, statut,
+      commande, operationId: charge.operation_id, statut,
     });
 
-    if (!idFacture || !statut) {
+    if (!commande || !statut) {
       // Signe, donc authentique, mais inexploitable : rien a rejouer.
-      res.status(200).json({ success: true, message: 'Rappel sans facture ni statut' });
+      res.status(200).json({ success: true, message: 'Rappel sans commande ni statut' });
       return;
     }
 
+    // **Le prefixe dit ce que le rappel vise.** `VNT-` une vente de
+    // pharmacie, `FAC-` la facture d'une consultation. Chercher dans les deux
+    // tables a l'aveugle marcherait tant que les identifiants ne se croisent
+    // pas — ce qu'aucune contrainte ne garantit.
+    const vente = commande.startsWith('VNT-');
+    const idCible = commande.replace(/^(VNT|FAC)-/, '');
+
     try {
-      const issue = await appliquerStatutPasserelle(idFacture, statut, {
-        referenceTransaction: charge.transaction?.payment_reference ?? null,
-        moyenPaiement: charge.transaction?.payment_method ?? null,
-      });
+      const issue = vente
+        ? await appliquerPaiementVente(idCible, statut, {
+            referenceTransaction: charge.transaction?.payment_reference ?? null,
+          })
+        : await appliquerStatutPasserelle(idCible, statut, {
+            referenceTransaction: charge.transaction?.payment_reference ?? null,
+            moyenPaiement: charge.transaction?.payment_method ?? null,
+          });
       // Un rappel rejoue sur une facture deja payee est le cas normal, pas une
       // erreur : plusieurs notifications peuvent porter la meme operation.
       res.status(200).json({
         success: true,
-        message: issue.dejaPayee ? 'Facture deja payee' : 'Statut applique',
+        message: issue.dejaPayee ? 'Deja reglee' : 'Statut applique',
       });
     } catch (e) {
       // Une facture inconnue n'est pas une panne : un rappel peut viser une
@@ -84,11 +96,11 @@ router.post(
       // le meme compte marchand). On l'acquitte pour ne pas le faire rejouer.
       const message = (e as Error).message;
       if (/non trouvee/i.test(message)) {
-        logger.warn('[CHAPCHAP] rappel pour une facture inconnue', { idFacture });
-        res.status(200).json({ success: true, message: 'Facture inconnue, rappel acquitte' });
+        logger.warn('[CHAPCHAP] rappel pour une operation inconnue', { commande });
+        res.status(200).json({ success: true, message: 'Operation inconnue, rappel acquitte' });
         return;
       }
-      logger.error('[CHAPCHAP] rappel non traite', { idFacture, statut, erreur: message });
+      logger.error('[CHAPCHAP] rappel non traite', { commande, statut, erreur: message });
       res.status(500).json({ success: false, error: 'Traitement impossible' });
     }
   }

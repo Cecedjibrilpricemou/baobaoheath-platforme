@@ -364,6 +364,11 @@ describe('annulerVente', () => {
 
   beforeEach(() => {
     prisma.venteComptoir.findUnique.mockResolvedValue(vendue);
+    // `rendreLesLots` relit la vente pour ses lignes, puis `annulerVente`
+    // relit la vue a rendre : deux lectures, deux formes.
+    prisma.venteComptoir.findUniqueOrThrow
+      .mockResolvedValueOnce(vendue)
+      .mockResolvedValue(venteRow);
     prisma.venteComptoir.updateMany.mockResolvedValue({ count: 1 });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
   });
@@ -410,8 +415,11 @@ describe('annulerVente', () => {
   it('trace qui a annule, quand et pourquoi', async () => {
     await annulerVente(pharmacien, 've-1', { motif: 'erreur de saisie au comptoir' });
 
+    // **`EN_ATTENTE` a rejoint `PAYEE` le 2026-10-09.** Une vente dont le
+    // client est parti sans payer doit rendre ses boites : sans cela elles
+    // resteraient sorties du stock sans que rien ne les y ramene.
     expect(prisma.venteComptoir.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 've-1', statut: 'PAYEE' },
+      where: { id: 've-1', statut: { in: ['PAYEE', 'EN_ATTENTE'] } },
       data: expect.objectContaining({
         statut: 'ANNULEE',
         motifAnnulation: 'erreur de saisie au comptoir',

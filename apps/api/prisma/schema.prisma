@@ -133,10 +133,22 @@ enum StatutContrat {
   RESILIE
 }
 
-/// Une vente au comptoir est payee sur place : il n'y a pas d'etat « en
-/// attente ». ANNULEE ne sert pas a un retour client — EF-07-11 l'interdit —
-/// mais a corriger une erreur de saisie, et elle remet les lots consommes.
+/// ANNULEE ne sert pas a un retour client — EF-07-11 l'interdit — mais a
+/// corriger une erreur de saisie, et elle remet les lots consommes.
+///
+/// **`EN_ATTENTE` est arrive le 2026-10-09, et contredit ce que ce
+/// commentaire affirmait** : « une vente au comptoir est payee sur place, il
+/// n'y a pas d'etat en attente ». C'etait vrai tant qu'aucune passerelle
+/// n'intervenait — le pharmacien cochait « Orange Money » et la vente naissait
+/// payee, sans qu'un seul franc ait bouge. Un paiement mobile prend quelques
+/// secondes pendant lesquelles la vente existe sans etre reglee, et les
+/// medicaments ne se remettent pas avant.
+///
+/// Tout ce qui compte de l'argent filtre deja sur PAYEE — la consommation de
+/// l'assureur, le chiffre d'affaires du jour — et ignore donc correctement une
+/// vente en attente.
 enum StatutVente {
+  EN_ATTENTE
   PAYEE
   ANNULEE
 }
@@ -2106,6 +2118,27 @@ model VenteComptoir {
   /// ni les taux ni les exclusions n'ont change depuis.
   montantAssureGnf  Int @default(0)
   montantPatientGnf Int @default(0)
+
+  /// L'operation de la passerelle de paiement, quand la vente passe par elle.
+  ///
+  /// **C'est la cle stable.** On relit le statut par elle, jamais par le
+  /// numero de commande : un meme numero peut porter plusieurs operations, et
+  /// la passerelle rend alors la plus recente — ce qui masquerait un paiement
+  /// deja reussi si le client recommence.
+  idOperation String? @unique
+
+  /// Le lien de paiement, affiche en QR au comptoir pour que le client le
+  /// scanne avec son propre telephone.
+  urlPaiement String?
+
+  /// Le dernier etat connu cote passerelle (`new`, `pending`, `success`,
+  /// `canceled`, `failed`, `error`, `expired`).
+  statutOperateur String?
+
+  /// **La preuve.** La reference rendue par l'operateur une fois le paiement
+  /// abouti : c'est elle qu'on oppose si quelqu'un conteste. Sans elle, un
+  /// « paye en Orange Money » n'est qu'une case cochee par un agent.
+  referenceTransaction String?
 
   annuleeLe       DateTime?
   motifAnnulation String?

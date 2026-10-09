@@ -89,6 +89,20 @@ router.get('/ventes/:id', async (req: AuthRequest, res: Response) => {
 
 // Correction d'une erreur de saisie, pas un retour client (EF-07-11) : les
 // lots consommes sont remis exactement.
+/**
+ * Ou en est le paiement du client ?
+ *
+ * Le pharmacien a le client devant lui : la route interroge la passerelle et
+ * repond tout de suite, au lieu d'attendre un rappel qui peut ne jamais
+ * arriver.
+ */
+router.get('/ventes/:id/paiement', async (req: AuthRequest, res: Response) => {
+  const data: VenteComptoirView = await vente.rafraichirPaiementVente(
+    req.user!, req.params['id'] as string,
+  );
+  res.json({ success: true, data });
+});
+
 router.post('/ventes/:id/annuler', validateBody(annulerVenteSchema), async (req: AuthRequest, res: Response) => {
   const data: VenteComptoirView = await vente.annulerVente(req.user!, req.params['id'] as string, req.body);
   res.json({ success: true, data, message: 'Vente annulee, stock remis' });
