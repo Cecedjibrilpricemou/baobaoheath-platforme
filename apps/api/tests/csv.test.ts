@@ -51,6 +51,43 @@ describe('champCsv', () => {
     expect(champCsv('a,b', ',')).toBe('"a,b"');
     expect(champCsv('a;b', ',')).toBe('a;b');
   });
+
+  // ── Ce qu'Excel prend pour une formule ────────────────────────────
+  //
+  // Trouve sur l'export reel des structures : `+224620000300` arrivait dans
+  // le tableur comme `224620000300`. Excel evalue la cellule, l'indicatif
+  // disparait, et rien ne le signale.
+
+  it('protege un numero de telephone guineen, qui commence par +224', () => {
+    expect(champCsv('+224620000300')).toBe("'+224620000300");
+  });
+
+  it.each(['=1+1', '=HYPERLINK("http://ailleurs";"cliquez")', '-2+3', '@SUM(A1)', '\tfuite'])(
+    'neutralise une tete de formule (%j)',
+    (valeur) => {
+      expect(champCsv(valeur).replace(/^"/, '').startsWith("'")).toBe(true);
+    }
+  );
+
+  // Le cas qui donne son interet a la regle : un nom de produit saisi au
+  // comptoir, et un administrateur qui exporte la liste. Sans neutralisation,
+  // la formule s'executerait chez lui, avec ses droits.
+  it('ne laisse pas une formule saisie au comptoir arriver vivante dans le fichier', () => {
+    const csv = enCsv(['produit'], [['=cmd|\' /c calc\'!A1']]);
+    expect(csv).not.toContain(';=');
+    expect(csv).toContain("'=cmd");
+  });
+
+  // **Un vrai nombre reste un nombre.** L'apostrophe en ferait du texte, et
+  // une colonne de montants ne se sommerait plus dans le tableur.
+  it.each([-5000, 42, 0])('laisse un nombre sommable (%s)', (valeur) => {
+    expect(champCsv(valeur)).toBe(String(valeur));
+  });
+
+  it('ne touche pas une tete inoffensive', () => {
+    expect(champCsv('Pharmacie Pricemou')).toBe('Pharmacie Pricemou');
+    expect(champCsv('2026-10-03T14:30:00.000Z')).toBe('2026-10-03T14:30:00.000Z');
+  });
 });
 
 describe('enCsv', () => {
@@ -95,6 +132,19 @@ describe('ce qui est ecrit se relit a l identique', () => {
     expect(relu.lignes[0]?.champs['motif']).toBe('Fievre; toux');
     expect(relu.lignes[0]?.champs['note']).toBe('dit "Alpha" ici');
     expect(relu.lignes[1]?.champs['motif']).toBe('deux\nlignes');
+  });
+
+  // **Le prix de la neutralisation, dit explicitement.** Une valeur a tete de
+  // formule ne revient pas identique : elle revient avec son apostrophe. On
+  // l'assume — la valeur reste entiere et lisible, alors qu'un indicatif
+  // mange par Excel est perdu sans trace. Un import qui relirait nos propres
+  // exports doit retirer cette apostrophe de tete.
+  it('rend une tete de formule avec son apostrophe, et rien de perdu', () => {
+    const csv = enCsv(['tel'], [['+224620000300']]);
+    const relu = analyserCsv(csv);
+    const lu = relu.lignes[0]?.champs['tel'];
+    expect(lu).toBe("'+224620000300");
+    expect(lu?.slice(1)).toBe('+224620000300');
   });
 
   // Le defaut exact de l'export d'analytics, nomme : « Fievre, toux » joint

