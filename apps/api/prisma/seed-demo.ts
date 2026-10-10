@@ -346,6 +346,23 @@ async function main() {
     await lancerRecherchePharmacie(ordonnance.id);
   } else if (!ordonnanceExistante.commande) {
     await lancerRecherchePharmacie(ordonnanceExistante.id);
+  } else {
+    // **Le seed ramene la demonstration a son point de depart.** Sans cela,
+    // une commande deja prise lors d'un parcours precedent laisse l'ecran du
+    // pharmacien vide : il n'a plus rien a prendre, et le parcours ne se
+    // rejoue pas.
+    await prisma.reponsePharmacie.deleteMany({
+      where: { idCommande: ordonnanceExistante.commande.id },
+    });
+    await prisma.commande.update({
+      where: { id: ordonnanceExistante.commande.id },
+      data: {
+        statut: 'RECHERCHE_PHARMACIE',
+        idPharmacie: null,
+        priseEnChargeLe: null,
+        modeRemise: null,
+      },
+    });
   }
   console.log("4 ter. Une ordonnance signee, appelee aux pharmacies du quartier");
 

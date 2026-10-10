@@ -8,7 +8,7 @@
 >
 > ⚠️ Tout ce qui est coché ci-dessous est sur **`develop`**. La branche `main` s'arrête au **2026-09-26** et ne contient aucun bloc de l'addendum.
 
-## Où nous en sommes — recompté le 2026-10-09
+## Où nous en sommes — recompté le 2026-10-10
 
 Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc livré en partie.
 
@@ -196,7 +196,13 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 >
 > **Aucune pharmacie n'avait jamais été prévenue d'un appel.** `idUtilisateur` recevait l'identifiant de la **structure** : la clé étrangère refusait, l'erreur était avalée, et le défaut ne se voyait pas parce que l'écran finit par montrer l'appel — encore faut-il penser à le regarder. Corrigé le 09/10, et tenu par deux tests.
 >
-> **Restent les écrans du médecin** (lancer l'appel depuis l'ordonnance) **et du patient** (choisir retrait ou livraison).
+> **L'appel part à la signature de l'ordonnance** depuis le 2026-10-10 : c'est le geste décrit par l'addendum (« dès l'ordonnance prête »), et plus rien n'exige d'appeler l'API à la main. Il part hors transaction et sans bloquer — une recherche qui échoue ne défait jamais une signature, et l'ordonnance reste servable au comptoir.
+>
+> **L'écran du patient** (`/patient/commandes`) : il voit l'officine qui a pris sa commande, ses produits, et choisit **retrait ou livraison**. Les deux options ont le même poids visuel et aucune n'est présélectionnée — le test vérifie qu'elles ont la même largeur, pas seulement qu'elles existent.
+>
+> ⚠️ **`GET /commandes/:id` n'avait aucun contrôle** — ni rôle, ni propriété : tout compte connecté lisait la commande d'un inconnu, avec son nom et ses médicaments. Défaut présent depuis la mise en place de la route le 26/09, corrigé le 10/10. Quatre lectures sont légitimes : le patient, la pharmacie concernée, le prescripteur, l'administration.
+>
+> **Reste la machine à états au-delà de la prise en charge** : préparation, prêt pour retrait, et côté livraison les frais de transport proposés puis acceptés.
 >
 > L'attribution repose sur un `updateMany` conditionnel : deux pharmacies simultanées donnent un gagnant et un perdant, jamais deux gagnants. Vérifié par sabotage.
 
