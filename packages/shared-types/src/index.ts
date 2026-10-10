@@ -125,6 +125,64 @@ export type TypeNotification =
   | 'COMMANDE_SANS_PHARMACIE';
 
 /** Statut d'une commande pharmacie (EF-07). */
+// ═══════════════════════════════════════════════════════════════════
+// P6 / EF-07 — La commande en pharmacie
+//
+// **Ce que la pharmacie voit du patient : son nom, et les produits.** Elle va
+// les lui delivrer, elle a besoin des deux. Rien d'autre du dossier ne sort :
+// ni diagnostic, ni motif de consultation, ni antecedent. Un pharmacien n'a
+// pas a savoir pourquoi on soigne quelqu'un pour lui remettre une boite.
+//
+// L'API rendait jusqu'ici l'objet Prisma complet — ordonnance, consultation,
+// patient imbriques. Cette vue est le contrat, et elle dit ou s'arrete le
+// partage.
+// ═══════════════════════════════════════════════════════════════════
+
+export interface LigneCommandeView {
+  id: string;
+  libelle: string;
+  dosage?: string | null;
+  forme?: string | null;
+  quantite: number;
+  /** Ce que le medecin a ecrit sur la facon de prendre le produit. */
+  posologie?: string | null;
+}
+
+/** Ce qu'une pharmacie sollicitee a repondu. */
+export interface ReponsePharmacieView {
+  idStructure: string;
+  nom: string;
+  aTousLesProduits: boolean;
+  repondueLe: HorodatageApi;
+}
+
+export interface CommandeView {
+  id: string;
+  statut: StatutCommande;
+  /** Le quartier ou l'appel a ete lance. */
+  quartierRecherche?: string | null;
+  modeRemise?: ModeRemise | null;
+  creeLe: HorodatageApi;
+
+  numeroOrdonnance: string;
+  patient: { id: string; prenom: string; nom: string };
+  lignes: LigneCommandeView[];
+
+  /** La pharmacie qui a pris la commande, le cas echeant. */
+  pharmacie?: { id: string; nom: string; quartier?: string | null } | null;
+
+  /**
+   * Les reponses deja recues.
+   *
+   * Utile au comptoir : savoir que trois officines ont dit « non » avant soi
+   * change la facon dont on regarde sa propre disponibilite.
+   */
+  reponses: ReponsePharmacieView[];
+
+  /** Vrai quand **cette** pharmacie l'a prise : l'API le calcule pour elle. */
+  estLaMienne?: boolean;
+}
+
 export type StatutCommande =
   | 'RECHERCHE_PHARMACIE'
   | 'PRISE_EN_CHARGE'

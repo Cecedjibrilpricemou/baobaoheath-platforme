@@ -8,7 +8,7 @@
 >
 > ⚠️ Tout ce qui est coché ci-dessous est sur **`develop`**. La branche `main` s'arrête au **2026-09-26** et ne contient aucun bloc de l'addendum.
 
-## Où nous en sommes — recompté le 2026-10-02
+## Où nous en sommes — recompté le 2026-10-09
 
 Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc livré en partie.
 
@@ -21,7 +21,7 @@ Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc 
 | **P4** Identité patient, consentement, accès | 7 | — | 0 | ✅ **fini** — journal des accès, identito-vigilance, doublons, fusion réversible, consentement versionné et branché, bris de glace, n° d'ordre pro. **Le bloc le plus sensible réglementairement** |
 | **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
 | **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
-| **P7** Paiement | 0 | — | 5 | ❌ non commencé |
+| **P7** Paiement | 3 | — | 2 | ⏳ passerelle réelle livrée |
 | **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
 | **P9** Notifications neutres | 1 | — | 1 | ⏳ **la neutralité est livrée le 02/10** — c'était un défaut en service, pas une case vide. Restent les préférences de canaux et le rejeu |
 | **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
@@ -190,7 +190,13 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 >
 > De même, la **vente au comptoir n'existe pas**. `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Sans lignes, il n'y a rien à totaliser dans un tableau de bord.
 
-> **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**. Le front reste à faire.
+> **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**.
+>
+> **L'écran du comptoir est livré le 2026-10-09** (`/pharmacien/commandes`) : la file des appels du quartier, la liste exacte des produits, « j'ai tout » / « je n'ai pas tout », et rendre une commande prise par erreur. Un 409 n'y est pas une panne — une autre officine a été plus rapide, et l'écran le dit ainsi.
+>
+> **Aucune pharmacie n'avait jamais été prévenue d'un appel.** `idUtilisateur` recevait l'identifiant de la **structure** : la clé étrangère refusait, l'erreur était avalée, et le défaut ne se voyait pas parce que l'écran finit par montrer l'appel — encore faut-il penser à le regarder. Corrigé le 09/10, et tenu par deux tests.
+>
+> **Restent les écrans du médecin** (lancer l'appel depuis l'ordonnance) **et du patient** (choisir retrait ou livraison).
 >
 > L'attribution repose sur un `updateMany` conditionnel : deux pharmacies simultanées donnent un gagnant et un perdant, jamais deux gagnants. Vérifié par sabotage.
 
@@ -212,12 +218,21 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [~] **Approvisionnement par facture** — **premier temps livré le 2026-09-30 (API + front)** : saisie assistée, une ligne par lot avec sa propre péremption, facture attachée en justificatif, total recalculé à la frappe. **Reste l'extraction automatique**, qui devra **toujours** être relue avant enregistrement : une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
 - [x] **API + front livrés le 2026-09-30** — **Alerte de péremption proche**, seuil paramétrable (`STOCK_PEREMPTION_ALERTE_JOURS`, 90 par défaut) et horizon choisi à l'écran (30/60/90/180). Les lots déjà périmés sont présentés à part : ils sont à retirer, pas à surveiller.
 
-### P7 — Paiement fiable (fournisseur simulé) · M · EF-08 · ❌ **0 sur 5**
-- [ ] `TentativePaiement` avec référence unique → idempotence (EF-08-03).
-- [ ] Statuts en attente et job de vérification répétée (EF-08-04).
-- [ ] Détail du calcul avant paiement (EF-08-01) ; reçu et facture téléchargeables (EF-08-06).
+### P7 — Paiement · M · EF-08 · ⏳ **3 sur 5** — passerelle **réelle** livrée les 8 et 9/10
+
+> Le titre disait « fournisseur simulé ». Il l'était : `payment-provider.service.ts` fabriquait une référence et n'appelait personne, et une facture ne passait à `PAYEE` que si un humain la confirmait. **Chap Chap Pay** est désormais branché pour de vrai.
+>
+> Trois faits découverts en sondant leur bac à sable, que leur documentation ne dit pas ou dit faux : le guide annonce `POST /api/ecommerce/operation`, **qui n'existe pas** (c'est `/ecommerce/create`) ; le **minimum est de 3 000 GNF** exactement ; et un même `order_id` peut porter plusieurs opérations, la lecture rendant **la plus récente** — d'où la lecture par `operation_id`, stable.
+>
+> **La relecture du statut fait foi, le rappel accélère.** Toute réponse HTTP de notre part met fin aux reprises de ChapChap, 500 compris : dépendre du rappel, c'est faire payer deux fois un patient qui a payé.
+
+- [x] **Idempotence (EF-08-03)** — portée par la facture et la vente, pas par une table de tentatives : `success` est définitif et n'est jamais défait par un rappel tardif, et la prise est conditionnelle (un seul gagnant).
+- [x] **Statuts en attente et vérification (EF-08-04)** — `statutOperateur` sur la facture et sur la vente ; la relecture interroge la passerelle à la demande. **Pas de tâche de fond** : au comptoir, le pharmacien appuie quand le client dit avoir payé.
+- [x] **Aucune donnée de carte stockée (EF-08-05)** — la plateforme n'en voit jamais : le paiement se fait sur la page de l'opérateur.
+- [ ] Détail du calcul avant paiement (EF-08-01) : fait à la caisse pour l'assurance, **reste le reçu et la facture téléchargeables** (EF-08-06).
 - [ ] Remboursements totaux/partiels motivés (EF-08-07) ; rapprochement quotidien avec signalement des écarts (EF-08-08).
-- [ ] Aucune donnée de carte stockée (EF-08-05).
+
+> **La pharmacie avait un trou** : le pharmacien cochait « Orange Money » et la vente naissait `PAYEE` sans qu'un franc ait bougé. Une vente mobile naît maintenant `EN_ATTENTE`, affiche un QR que le client scanne avec son propre téléphone, et ne devient `PAYEE` qu'en portant `referenceTransaction` — deux contraintes SQL l'imposent.
 
 ### P8 — Livraison + carte + annuaire · L · EF-10 · ❌ **0 sur 9**
 - [ ] Rôle `LIVREUR` ; `OrdreLivraison` créé après paiement et préparation (EF-10-01).
@@ -234,7 +249,11 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] **API livrée le 2026-10-02** — **aucun contenu médical dans un message sortant** (EF-11-02). Ce n'était pas une case vide mais un **défaut en service** : le code envoyait « des analyses vous attendent », « prélèvement prévu », « vos résultats d'analyses sont disponibles », « RESULTAT CRITIQUE », « votre vaccination BCG est due ». Le contrôle vit au **point de sortie** des SMS, donc un site d'appel oublié ne peut pas fuir ; des constructeurs nommés produisent les messages. Hors production le refus **lève** ; en production il remplace par un message neutre et journalise. Un message tapé par un administrateur est refusé en **400** avec le mot fautif. SMS en repli (EF-11-03) : reste à faire.
 - [ ] Préférences de canaux et de langue (EF-11-04) ; rejeu des non délivrées (EF-11-05).
 
-### P10 — Assurance et tiers payant · L · EF-09 · ⏳ **3 faites + 4 partielles sur 9** — livré le 2026-10-02 (API + caisse) ; restent la vue assureur et l'administration des assureurs à l'écran
+### P10 — Assurance et tiers payant · L · EF-09 · ⏳ **5 faites + 4 partielles sur 9** — complété les 8 et 9/10
+
+> **L'écran d'administration** (`/admin/assurance`) : déclarer un assureur, ses règles de couverture, et rattacher une police à un assuré. L'API existait depuis le 02/10 et ne se joignait qu'en ligne de commande.
+>
+> **L'espace de l'assureur** (`/assureur`, neuvième rôle) : la compagnie se connecte elle-même. Elle voit ses assurés, ce qu'elle a pris en charge, et la situation par officine — délivré, facturé, versé, reste dû (point 5.2). **Rien de médical n'en sort** : un assureur qui lirait ce qu'on soigne pourrait refuser un contrat dessus. `ReglementAssureur` rend « payé » et « reste dû » calculables.
 - [~] **API livrée le 2026-10-02** — `Assureur` (code, mode d'échange, structure de type `ASSURANCE`) et `ContratAssurance` (police, taux de base, plafond annuel, franchise, date d'effet, date de fin, carence). **Reste les bénéficiaires** : un contrat couvre aujourd'hui un seul patient, pas ses ayants droit.
 - [~] **API livrée le 2026-10-02** — taux **par catégorie de produit** avec date d'effet, plafond par ligne, plafond annuel, franchise, carence. `RegleCouverture` ne remplace jamais la précédente : sa date d'effet décide, et le calcul retient celle en vigueur à la date de la vente. **Reste les taux par acte et par analyse**, qui supposent un référentiel d'actes (P11).
 - [x] **API + front livrés le 2026-10-02** — calcul du reste à charge **ligne par ligne**, fonction pure et testée pour elle-même. Le détail s'additionne exactement à la part de l'assureur, franchise et plafonds compris : sinon l'écran afficherait une somme qui ne tombe pas juste. La caisse l'affiche **avant** l'encaissement.

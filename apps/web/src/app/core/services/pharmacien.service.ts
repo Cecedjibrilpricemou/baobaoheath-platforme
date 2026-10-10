@@ -5,6 +5,7 @@ import { ApiService } from './api.service';
 import { PharmacieStock, MedicamentInfo, OrdonnanceDelivrance, DelivrancePayload } from '../models/pharmacien.model';
 import { ApiResponse } from '../models/api.model';
 import type {
+  CommandeView,
   AnnulerVenteDto,
   CategorieProduit,
   ControleEligibiliteView,
@@ -124,6 +125,30 @@ export class PharmacienService {
    */
   annulerVente(idVente: string, dto: AnnulerVenteDto): Observable<ApiResponse<VenteComptoirView>> {
     return this.api.post<ApiResponse<VenteComptoirView>>(`/pharmacien/ventes/${idVente}/annuler`, dto);
+  }
+
+  // --- P6 / EF-07 : l'appel aux pharmacies du quartier ------------------
+
+  /** La file du comptoir : les appels du quartier, et ce qu'on a pris. */
+  commandesDeLaPharmacie(): Observable<ApiResponse<CommandeView[]>> {
+    return this.api.get<ApiResponse<CommandeView[]>>('/commandes/pharmacie');
+  }
+
+  /**
+   * Répondre à un appel.
+   *
+   * `true` tente de prendre la commande : l'attribution est atomique côté
+   * serveur, un seul gagnant. Un 409 veut dire qu'une autre officine a été
+   * plus rapide — ce n'est pas une panne.
+   */
+  repondreDisponibilite(idCommande: string, aTousLesProduits: boolean): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(
+      `/commandes/${idCommande}/disponibilite`, { aTousLesProduits });
+  }
+
+  /** Rendre une commande prise par erreur : le verrou se rouvre. */
+  retirerPriseEnCharge(idCommande: string, motif: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/retirer`, { motif });
   }
 
   getTableauDeBord(): Observable<ApiResponse<TableauDeBordOfficineView>> {

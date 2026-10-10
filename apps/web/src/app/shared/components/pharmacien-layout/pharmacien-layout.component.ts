@@ -87,6 +87,7 @@ export class PharmacienLayoutComponent {
   navItems = [
     { labelKey: 'PHARMACIEN.NAV_TABLEAU_DE_BORD', icon: 'pi-chart-bar', route: '/pharmacien/tableau-de-bord' },
     { labelKey: 'PHARMACIEN.NAV_CAISSE',       icon: 'pi-shopping-cart', route: '/pharmacien/caisse' },
+    { labelKey: 'PHARMACIEN.NAV_COMMANDES',    icon: 'pi-inbox',   route: '/pharmacien/commandes'    },
     { labelKey: 'PHARMACIEN.NAV_ORDONNANCES',  icon: 'pi-file',    route: '/pharmacien/ordonnances'  },
     { labelKey: 'PHARMACIEN.NAV_STOCKS',       icon: 'pi-box',     route: '/pharmacien/stocks'       },
     { labelKey: 'PHARMACIEN.NAV_APPROVISIONNEMENTS', icon: 'pi-truck', route: '/pharmacien/approvisionnements' },

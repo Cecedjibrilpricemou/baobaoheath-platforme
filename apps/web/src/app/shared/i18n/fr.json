@@ -1387,7 +1387,37 @@
       "AUCUNE_RUPTURE": "Aucun produit au seuil d’alerte.",
       "APPROVISIONNER": "Saisir une facture",
       "ERR_LOAD": "Impossible de charger le tableau de bord."
-    }
+    },
+    "COMMANDES": {
+      "TITRE": "Commandes du quartier",
+      "SOUS_TITRE": "Les ordonnances que les patients de votre quartier cherchent à faire servir.",
+      "ACTUALISER": "Actualiser",
+      "APPELS": "Appels en cours",
+      "APPELS_AIDE": "Toutes les pharmacies partenaires du quartier reçoivent le même appel. La première qui déclare tout avoir prend la commande.",
+      "AUCUN_APPEL": "Aucun appel en cours",
+      "AUCUN_APPEL_AIDE": "Les nouvelles ordonnances de votre quartier apparaîtront ici.",
+      "MIENNES": "Vos commandes",
+      "AUCUNE_MIENNE": "Vous n'avez pris aucune commande pour le moment.",
+      "BOITES": "{{n}} boîte(s)",
+      "DEJA_REFUSE": "{{n}} officine(s) ont déjà répondu ne pas tout avoir.",
+      "ATTEND_MODE": "Le patient n'a pas encore choisi entre retrait et livraison.",
+      "JAI_TOUT": "J'ai tout",
+      "PAS_TOUT": "Je n'ai pas tout",
+      "ENVOI": "Envoi…",
+      "PRISE_OK": "Commande prise. Préparez-la.",
+      "TROP_TARD": "Une autre pharmacie a été plus rapide.",
+      "REFUS_OK": "Réponse enregistrée. Cet appel ne vous sera plus proposé.",
+      "REFUS_TITRE": "Vous n'avez pas tous les produits ?",
+      "REFUS_TEXTE": "L'appel pour {{patient}} quittera votre file et ne vous sera plus reproposé. Les autres pharmacies du quartier restent sollicitées.",
+      "REFUS_CONFIRMER": "Confirmer",
+      "RENDRE": "Rendre la commande",
+      "RENDUE": "Commande rendue. Les autres pharmacies retrouvent la main.",
+      "MOTIF_PROMPT": "Pourquoi rendez-vous cette commande ? (5 caractères minimum)",
+      "MOTIF_COURT": "Le motif doit comporter au moins 5 caractères.",
+      "MODE_RETRAIT_PHARMACIE": "retrait sur place",
+      "MODE_LIVRAISON": "livraison"
+    },
+    "NAV_COMMANDES": "Commandes"
   },
   "ADMIN": {
     "ROLE": "Administrateur",

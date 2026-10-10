@@ -258,3 +258,145 @@
     border: 1px solid var(--bb-danger-border); white-space: nowrap;
   }
 }
+
+// La file des commandes du quartier (P6 / EF-07).
+//
+// Un appel en cours et une commande deja prise ne se lisent pas de la meme
+// facon : l'un demande une decision tout de suite, l'autre une preparation.
+.bb-cmd {
+
+  &__sec { margin-bottom: 28px; }
+
+  &__sec-titre {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__compteur {
+    font-family: var(--bb-font-mono); font-size: 12px; font-weight: 700;
+    min-width: 22px; padding: 2px 8px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-primary); color: #fff; text-align: center;
+  }
+
+  &__sec-aide,
+  &__attente { font-size: 13px; color: var(--bb-text-muted); margin: 0 0 14px; }
+
+  &__carte {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-left: 3px solid var(--bb-border);
+    border-radius: var(--bb-radius-lg);
+    padding: 16px 18px; margin-bottom: 12px;
+
+    // Un appel demande une reponse maintenant : il se voit.
+    &--appel { border-left-color: var(--bb-primary); }
+    // Une commande prise est un travail a faire, pas une decision a prendre.
+    &--mienne { border-left-color: var(--bb-success); background: var(--bb-surface-1); }
+  }
+
+  &__entete {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+
+  &__patient {
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 2px;
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); margin: 0; }
+
+  &__boites {
+    font-family: var(--bb-font-mono); font-size: 12.5px; font-weight: 700;
+    padding: 4px 10px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-surface-2); color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border-light); white-space: nowrap;
+  }
+
+  // La liste exacte : c'est sur elle que l'officine s'engage.
+  &__lignes { list-style: none; margin: 0; padding: 0; }
+
+  &__ligne {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; padding: 7px 0; font-size: 13.5px;
+    border-bottom: 1px solid var(--bb-border-light);
+    &:last-child { border-bottom: none; }
+  }
+
+  &__produit { color: var(--bb-text-primary); }
+  &__dosage { color: var(--bb-text-muted); font-size: 12.5px; margin-left: 5px; }
+  &__qte { font-family: var(--bb-font-mono); font-weight: 700; white-space: nowrap; }
+
+  &__note {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-size: 12.5px; color: var(--bb-text-muted); margin: 12px 0 0;
+    i { flex-shrink: 0; margin-top: 2px; }
+  }
+
+  &__actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 14px; flex-wrap: wrap;
+  }
+
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+    i { font-size: 12px; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+
+    &--danger {
+      background: var(--bb-danger);
+      &:hover:not(:disabled) { background: var(--bb-danger); filter: brightness(.92); }
+    }
+  }
+
+  &__vide {
+    text-align: center; padding: 32px 20px;
+    border: 1px dashed var(--bb-border); border-radius: var(--bb-radius-lg);
+    > i { font-size: 28px; color: var(--bb-text-muted); display: block; margin-bottom: 10px; }
+  }
+
+  &__vide-titre {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__vide-aide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+
+  // Centrée dans un conteneur qui défile, la boîte se fait couper en haut ;
+  // la barre latérale peint au-dessus quel que soit le z-index.
+  &__voile {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgb(0 0 0 / 55%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+    @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  }
+
+  &__modale {
+    margin: auto; width: 100%; max-width: 460px;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+    box-shadow: var(--bb-shadow-lg);
+    padding: 24px;
+  }
+
+  &__modale-titre {
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 8px;
+  }
+
+  &__modale-texte { font-size: 13.5px; color: var(--bb-text-muted); margin: 0; }
+}

@@ -1863,7 +1863,37 @@
       "AUCUNE_RUPTURE": "No product at its alert threshold.",
       "APPROVISIONNER": "Record an invoice",
       "ERR_LOAD": "Could not load the dashboard."
-    }
+    },
+    "COMMANDES": {
+      "TITRE": "Neighbourhood orders",
+      "SOUS_TITRE": "Prescriptions that patients in your neighbourhood are trying to fill.",
+      "ACTUALISER": "Refresh",
+      "APPELS": "Open calls",
+      "APPELS_AIDE": "Every partner pharmacy in the neighbourhood gets the same call. The first to declare they have everything takes the order.",
+      "AUCUN_APPEL": "No open call",
+      "AUCUN_APPEL_AIDE": "New prescriptions from your neighbourhood will appear here.",
+      "MIENNES": "Your orders",
+      "AUCUNE_MIENNE": "You have not taken any order yet.",
+      "BOITES": "{{n}} box(es)",
+      "DEJA_REFUSE": "{{n}} pharmacy(ies) have already answered they do not have everything.",
+      "ATTEND_MODE": "The patient has not yet chosen between pickup and delivery.",
+      "JAI_TOUT": "I have everything",
+      "PAS_TOUT": "I do not have everything",
+      "ENVOI": "Sending…",
+      "PRISE_OK": "Order taken. Prepare it.",
+      "TROP_TARD": "Another pharmacy was faster.",
+      "REFUS_OK": "Answer recorded. This call will not be offered to you again.",
+      "REFUS_TITRE": "You do not have all the products?",
+      "REFUS_TEXTE": "The call for {{patient}} will leave your queue and will not be offered again. The other pharmacies in the neighbourhood are still being asked.",
+      "REFUS_CONFIRMER": "Confirm",
+      "RENDRE": "Give the order back",
+      "RENDUE": "Order returned. The other pharmacies get another chance.",
+      "MOTIF_PROMPT": "Why are you giving this order back? (5 characters minimum)",
+      "MOTIF_COURT": "The reason must be at least 5 characters.",
+      "MODE_RETRAIT_PHARMACIE": "pickup",
+      "MODE_LIVRAISON": "delivery"
+    },
+    "NAV_COMMANDES": "Orders"
   },
   "ADMIN_STRUCTURE": {
     "ROLE": "Facility Admin",

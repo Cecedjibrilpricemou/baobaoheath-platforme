@@ -11,7 +11,10 @@ import 'dotenv/config';
 import { PrismaClient, Role, TypeStructure } from '../src/config/generated/client/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { randomBytes } from 'crypto';
 import { hashPassword } from '../src/utils/password.utils.js';
+import { lancerRecherchePharmacie } from '../src/services/commande.service.js';
+import { prochainNumero } from '../src/services/numero.service.js';
 import { seedExamens } from './seed-examens.js';
 
 const MOT_DE_PASSE = 'Pricemou1234';
@@ -298,6 +301,53 @@ async function main() {
   console.log(
     `4 bis. Une consultation a payer : ${DEMO.consultationAPayer.tarifGnf} GNF`
   );
+
+  // ── 4 ter. Une ordonnance a servir ──────────────────────────────
+  //
+  // Sans elle, l'ecran « Commandes » du pharmacien n'a rien a montrer :
+  // l'appel au quartier part d'une ordonnance signee, et rien n'en cree.
+  const ordonnanceExistante = await prisma.ordonnance.findFirst({
+    where: { consultation: { idPatient: patientProfile.id } },
+    select: { id: true, commande: { select: { id: true } } },
+  });
+
+  if (!ordonnanceExistante) {
+    const consultation = await prisma.consultation.findFirstOrThrow({
+      where: { idPatient: patientProfile.id }, select: { id: true },
+    });
+    const produit = await prisma.medicament.findFirstOrThrow({
+      where: { libelle: DEMO.medicaments[0].libelle }, select: { id: true },
+    });
+    const dansTroisMois = new Date();
+    dansTroisMois.setMonth(dansTroisMois.getMonth() + 3);
+
+    // `signeLe` fait foi : le statut reste EN_ATTENTE tant qu'elle n'est pas
+    // servie — il n'y a pas de valeur « SIGNEE » dans l'enumeration.
+    const ordonnance = await prisma.ordonnance.create({
+      data: {
+        numero: await prochainNumero('OR'),
+        codeVerification: randomBytes(6).toString('hex').toUpperCase(),
+        valideJusquau: dansTroisMois,
+        idConsultation: consultation.id,
+        signePar: medecin.id,
+        signeLe: new Date(),
+        lignes: {
+          create: [{
+            idMedicament: produit.id,
+            posologie: '1 comprime matin et soir',
+            frequence: '2 fois par jour',
+            dureeJours: 5,
+            quantite: 2,
+          }],
+        },
+      },
+      select: { id: true },
+    });
+    await lancerRecherchePharmacie(ordonnance.id);
+  } else if (!ordonnanceExistante.commande) {
+    await lancerRecherchePharmacie(ordonnanceExistante.id);
+  }
+  console.log("4 ter. Une ordonnance signee, appelee aux pharmacies du quartier");
 
   // ── 5. L'assurance ──────────────────────────────────────────────
   const assureur = await prisma.assureur.upsert({

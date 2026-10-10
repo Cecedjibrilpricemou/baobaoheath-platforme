@@ -18,7 +18,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
-    utilisateur: { findUnique: jest.fn() },
+    utilisateur: { findUnique: jest.fn(), findMany: jest.fn() },
     structureSante: { findMany: jest.fn() },
     ordonnance: { findUnique: jest.fn() },
     commande: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
@@ -31,7 +31,7 @@ jest.mock('../src/services/notification.service', () => ({ notifierSansBloquer: 
 
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
-    utilisateur: { findUnique: jest.Mock };
+    utilisateur: { findUnique: jest.Mock; findMany: jest.Mock };
     structureSante: { findMany: jest.Mock };
     ordonnance: { findUnique: jest.Mock };
     commande: { findUnique: jest.Mock; findMany: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
@@ -69,11 +69,36 @@ function ordonnanceSignee(etat: Record<string, unknown> = {}) {
 }
 
 /** La commande telle que `getCommande` la relira en fin d'appel. */
+/**
+ * Une commande telle que Prisma la rend avec `COMMANDE_INCLUDE`.
+ *
+ * **Enrichie le 2026-10-09** : les sorties passent desormais par
+ * `versCommandeView`, qui lit la date, les lignes et l'identite du patient.
+ * Une fixture partielle faisait echouer sept tests sur un `toISOString` —
+ * pour la bonne raison, mais au mauvais endroit : c'est le decor qui manquait,
+ * pas le code qui etait faux.
+ */
 function commandeRelue(etat: Record<string, unknown> = {}) {
   return {
     id: 'cmd-1', numero: 'CM-2026-000001', statut: 'RECHERCHE_PHARMACIE',
-    quartierRecherche: 'Kipé', idPharmacie: null, reponses: [],
-    ordonnance: { numero: 'OR-2026-000001', signePar: 'u-med', consultation: { idMedecinValideur: 'u-med', patient: { idUtilisateur: 'u-pat' } } },
+    quartierRecherche: 'Kipé', idPharmacie: null, modeRemise: null,
+    creeLe: new Date('2026-10-09T08:00:00Z'),
+    reponses: [],
+    pharmacie: null,
+    ordonnance: {
+      numero: 'OR-2026-000001', signePar: 'u-med',
+      lignes: [{
+        id: 'lo-1', quantite: 2, posologie: '1 comprime matin et soir',
+        medicament: { libelle: 'Doliprane 500mg', dosage: '500mg', forme: 'comprime' },
+      }],
+      consultation: {
+        idMedecinValideur: 'u-med',
+        patient: {
+          idUtilisateur: 'u-pat',
+          utilisateur: { id: 'u-pat', prenom: 'Maomou', nom: 'Conde' },
+        },
+      },
+    },
     ...etat,
   };
 }
@@ -83,6 +108,8 @@ beforeEach(() => {
   notifierSansBloquer.mockResolvedValue(undefined);
   prisma.commande.create.mockResolvedValue({ id: 'cmd-1', numero: 'CM-2026-000001' });
   prisma.commande.findUnique.mockResolvedValue(commandeRelue());
+  // Les destinataires d'un appel : vide par defaut, chaque test precise.
+  prisma.utilisateur.findMany.mockResolvedValue([]);
 });
 afterEach(() => jest.resetAllMocks());
 
@@ -108,7 +135,7 @@ describe('pharmaciesDuQuartier', () => {
 
 // ── Lancement ────────────────────────────────────────────────────────
 describe('lancerRecherchePharmacie', () => {
-  it('notifie chaque pharmacie partenaire du quartier', async () => {
+  it('ouvre l appel sur le quartier du patient', async () => {
     ordonnanceSignee();
     prisma.structureSante.findMany.mockResolvedValue([NOUNIE, { id: 'ph-2', nom: 'Pharmacie 2' }]);
 
@@ -117,8 +144,6 @@ describe('lancerRecherchePharmacie', () => {
     expect(prisma.commande.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ statut: 'RECHERCHE_PHARMACIE', quartierRecherche: 'Kipé' }),
     }));
-    const destinataires = notifierSansBloquer.mock.calls.map((c) => c[0].idUtilisateur);
-    expect(destinataires).toEqual(expect.arrayContaining(['ph-nounie', 'ph-2']));
   });
 
   // Une ordonnance non signee n'est pas opposable : elle n'a rien a faire en
@@ -207,7 +232,8 @@ describe('repondreDisponibilite', () => {
   // Quand toutes les sollicitees ont refuse, il n'y a plus rien a attendre.
   it('conclut sans pharmacie quand toutes ont refuse', async () => {
     prisma.commande.findUnique.mockResolvedValue(
-      commandeRelue({ reponses: [{ aTousLesProduits: false }] })
+      commandeRelue({ reponses: [{ idStructure: 'ph-1', aTousLesProduits: false,
+        repondueLe: new Date('2026-10-09T09:00:00Z'), structure: { nom: 'Pharmacie Nounie' } }] })
     );
 
     await repondreDisponibilite(PHARMACIEN, 'cmd-1', false);
@@ -220,7 +246,8 @@ describe('repondreDisponibilite', () => {
   it('attend encore si une sollicitee n a pas repondu', async () => {
     prisma.structureSante.findMany.mockResolvedValue([NOUNIE, { id: 'ph-2', nom: 'Pharmacie 2' }]);
     prisma.commande.findUnique.mockResolvedValue(
-      commandeRelue({ reponses: [{ aTousLesProduits: false }] })
+      commandeRelue({ reponses: [{ idStructure: 'ph-1', aTousLesProduits: false,
+        repondueLe: new Date('2026-10-09T09:00:00Z'), structure: { nom: 'Pharmacie Nounie' } }] })
     );
 
     await repondreDisponibilite(PHARMACIEN, 'cmd-1', false);
@@ -284,7 +311,15 @@ describe('choisirModeRemise', () => {
   it('laisse le patient choisir le retrait', async () => {
     prisma.commande.findUnique.mockResolvedValue({
       ...commandeRelue({ statut: 'PRISE_EN_CHARGE' }),
-      ordonnance: { consultation: { patient: { idUtilisateur: 'u-pat' } } },
+      ordonnance: {
+        numero: 'OR-2026-000001', lignes: [],
+        consultation: {
+          patient: {
+            idUtilisateur: 'u-pat',
+            utilisateur: { id: 'u-pat', prenom: 'Maomou', nom: 'Conde' },
+          },
+        },
+      },
     });
 
     await choisirModeRemise(PATIENT, 'cmd-1', 'RETRAIT_PHARMACIE' as never);
@@ -308,7 +343,15 @@ describe('choisirModeRemise', () => {
   it('refuse tant qu aucune pharmacie n a pris la commande', async () => {
     prisma.commande.findUnique.mockResolvedValue({
       ...commandeRelue({ statut: 'RECHERCHE_PHARMACIE' }),
-      ordonnance: { consultation: { patient: { idUtilisateur: 'u-pat' } } },
+      ordonnance: {
+        numero: 'OR-2026-000001', lignes: [],
+        consultation: {
+          patient: {
+            idUtilisateur: 'u-pat',
+            utilisateur: { id: 'u-pat', prenom: 'Maomou', nom: 'Conde' },
+          },
+        },
+      },
     });
 
     await expect(choisirModeRemise(PATIENT, 'cmd-1', 'LIVRAISON' as never)).rejects.toBeInstanceOf(ValidationError);
@@ -331,5 +374,47 @@ describe('commandesDeLaPharmacie', () => {
       reponses: { none: { idStructure: 'ph-nounie', aTousLesProduits: false } },
     }));
     expect(where.OR[1]).toEqual({ idPharmacie: 'ph-nounie' });
+  });
+});
+
+// ── Qui est prevenu d'un appel ───────────────────────────────────────
+//
+// **Ce bloc protege un defaut en service.** `idUtilisateur` recevait
+// l'identifiant de la **structure** : la cle etrangere refusait,
+// `notifierSansBloquer` avalait l'erreur, et aucune officine n'a jamais ete
+// prevenue. Rien ne le signalait, parce que l'ecran du comptoir finit par
+// montrer l'appel — encore faut-il que quelqu'un pense a le regarder.
+describe('notification de l appel', () => {
+  it('previent les pharmaciens, pas les pharmacies', async () => {
+    ordonnanceSignee();
+    prisma.structureSante.findMany.mockResolvedValue([NOUNIE]);
+    prisma.utilisateur.findMany.mockResolvedValue([{ id: 'u-pharma-1' }, { id: 'u-pharma-2' }]);
+
+    await lancerRecherchePharmacie('ord-1');
+
+    // Les destinataires cherches sont bien des comptes de pharmaciens de ces
+    // structures, et non les structures elles-memes.
+    const ou = prisma.utilisateur.findMany.mock.calls[0]![0].where;
+    expect(ou).toMatchObject({ role: 'PHARMACIEN', estActif: true });
+    expect(ou.idStructure.in).toEqual([NOUNIE.id]);
+
+    const destinataires = notifierSansBloquer.mock.calls
+      .filter((c) => c[0].type === 'COMMANDE_A_SERVIR')
+      .map((c) => c[0].idUtilisateur);
+    expect(destinataires).toEqual(['u-pharma-1', 'u-pharma-2']);
+    // Le piege exact : l'identifiant de la structure ne doit jamais s'y
+    // trouver.
+    expect(destinataires).not.toContain(NOUNIE.id);
+  });
+
+  it('ne previent personne quand aucune officine n a de pharmacien actif', async () => {
+    ordonnanceSignee();
+    prisma.structureSante.findMany.mockResolvedValue([NOUNIE]);
+    prisma.utilisateur.findMany.mockResolvedValue([]);
+
+    await lancerRecherchePharmacie('ord-1');
+
+    const appels = notifierSansBloquer.mock.calls.filter((c) => c[0].type === 'COMMANDE_A_SERVIR');
+    expect(appels).toHaveLength(0);
   });
 });

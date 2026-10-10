@@ -14,15 +14,67 @@
 // obtiennent 0 et l'apprennent immédiatement.
 import {
   ModeRemise,
+  Prisma,
+  Role,
   StatutCommande,
   StatutOrdonnance,
   TypeStructure,
 } from '../config/generated/client/client';
+import type { CommandeView } from '@baobaoheath/shared-types';
 import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
 import { notifierSansBloquer } from './notification.service';
+
+/**
+ * Ce qu'une commande montre, et ou s'arrete le partage.
+ *
+ * **La pharmacie voit le nom du patient et les produits.** Elle va les lui
+ * delivrer : elle a besoin des deux. Rien d'autre du dossier ne sort — ni
+ * diagnostic, ni motif de consultation, ni antecedent. Un pharmacien n'a pas
+ * a savoir pourquoi on soigne quelqu'un pour lui remettre une boite.
+ *
+ * Jusqu'ici l'API rendait l'objet Prisma complet : ordonnance, consultation
+ * et patient imbriques, avec tout ce qu'ils portent.
+ */
+export function versCommandeView(
+  c: CommandeAvecInclude,
+  idPharmacieLectrice?: string,
+): CommandeView {
+  const patient = c.ordonnance.consultation?.patient;
+  return {
+    id: c.id,
+    statut: c.statut,
+    quartierRecherche: c.quartierRecherche,
+    modeRemise: c.modeRemise,
+    creeLe: c.creeLe.toISOString(),
+    numeroOrdonnance: c.ordonnance.numero,
+    patient: {
+      id: patient?.utilisateur.id ?? '',
+      prenom: patient?.utilisateur.prenom ?? '',
+      nom: patient?.utilisateur.nom ?? '',
+    },
+    lignes: c.ordonnance.lignes.map((l) => ({
+      id: l.id,
+      libelle: l.medicament.libelle,
+      dosage: l.medicament.dosage,
+      forme: l.medicament.forme,
+      quantite: l.quantite,
+      posologie: l.posologie,
+    })),
+    pharmacie: c.pharmacie
+      ? { id: c.pharmacie.id, nom: c.pharmacie.nom, quartier: c.pharmacie.quartier }
+      : null,
+    reponses: c.reponses.map((r) => ({
+      idStructure: r.idStructure,
+      nom: r.structure.nom,
+      aTousLesProduits: r.aTousLesProduits,
+      repondueLe: r.repondueLe.toISOString(),
+    })),
+    ...(idPharmacieLectrice ? { estLaMienne: c.idPharmacie === idPharmacieLectrice } : {}),
+  };
+}
 
 const COMMANDE_INCLUDE = {
   ordonnance: {
@@ -41,6 +93,8 @@ const COMMANDE_INCLUDE = {
     orderBy: { repondueLe: 'asc' },
   },
 } as const;
+
+type CommandeAvecInclude = Prisma.CommandeGetPayload<{ include: typeof COMMANDE_INCLUDE }>;
 
 /**
  * Les pharmacies partenaires du quartier du patient.
@@ -112,10 +166,26 @@ export async function lancerRecherchePharmacie(idOrdonnance: string) {
     return getCommande(commande.id);
   }
 
+  // **On notifie les pharmaciens, pas les pharmacies.**
+  //
+  // `idUtilisateur` recevait jusqu'ici l'identifiant de la **structure** : la
+  // cle etrangere refusait, `notifierSansBloquer` avalait l'erreur, et aucune
+  // officine n'a jamais ete prevenue d'un appel. Le defaut ne se voyait pas
+  // parce que l'ecran du comptoir finit par montrer l'appel de toute facon —
+  // encore faut-il que quelqu'un pense a le regarder.
+  const pharmaciens = await prisma.utilisateur.findMany({
+    where: {
+      role: Role.PHARMACIEN,
+      estActif: true,
+      idStructure: { in: pharmacies.map((p) => p.id) },
+    },
+    select: { id: true },
+  });
+
   await Promise.all(
-    pharmacies.map((p) =>
+    pharmaciens.map((u) =>
       notifierSansBloquer({
-        idUtilisateur: p.id,
+        idUtilisateur: u.id,
         type: 'COMMANDE_A_SERVIR',
         titre: 'Nouvelle ordonnance a servir',
         contenu: `Ordonnance ${ordonnance.numero} — disposez-vous de tous les produits ?`,
@@ -168,7 +238,7 @@ export async function repondreDisponibilite(
 
   if (!aTousLesProduits) {
     await verifierEpuisementDesReponses(idCommande);
-    return getCommande(idCommande);
+    return getCommande(idCommande, pharmacie.id);
   }
 
   // ── Prise atomique ────────────────────────────────────────────────
@@ -185,7 +255,7 @@ export async function repondreDisponibilite(
   }
 
   await notifierPriseEnCharge(idCommande, pharmacie.nom);
-  return getCommande(idCommande);
+  return getCommande(idCommande, pharmacie.id);
 }
 
 /**
@@ -224,7 +294,7 @@ export async function retirerPriseEnCharge(user: JwtPayload, idCommande: string,
 
   await journaliserRetractation(idCommande, pharmacie.nom, motif);
   await verifierEpuisementDesReponses(idCommande);
-  return getCommande(idCommande);
+  return getCommande(idCommande, pharmacie.id);
 }
 
 /** Le patient choisit comment il récupère ses produits. */
@@ -245,19 +315,29 @@ export async function choisirModeRemise(user: JwtPayload, idCommande: string, mo
   return getCommande(idCommande);
 }
 
-export async function getCommande(idCommande: string) {
+/**
+ * Toutes les ecritures repassent par ici : convertir une seule fois suffit a
+ * ce que les quatre routes rendent la meme forme.
+ *
+ * `idPharmacieLectrice` permet de dire a une officine si la commande est la
+ * sienne, sans qu'elle ait a le deduire.
+ */
+export async function getCommande(
+  idCommande: string,
+  idPharmacieLectrice?: string,
+): Promise<CommandeView> {
   const commande = await prisma.commande.findUnique({
     where: { id: idCommande },
     include: COMMANDE_INCLUDE,
   });
   if (!commande) throw new NotFoundError('Commande non trouvee');
-  return commande;
+  return versCommandeView(commande, idPharmacieLectrice);
 }
 
 /** La file du comptoir : ce que cette pharmacie doit traiter ou a pris. */
-export async function commandesDeLaPharmacie(user: JwtPayload) {
+export async function commandesDeLaPharmacie(user: JwtPayload): Promise<CommandeView[]> {
   const pharmacie = await pharmacieDuPharmacien(user.userId);
-  return prisma.commande.findMany({
+  const commandes = await prisma.commande.findMany({
     where: {
       OR: [
         // Les appels en cours de son quartier, qu'elle n'a pas encore refuses.
@@ -274,6 +354,7 @@ export async function commandesDeLaPharmacie(user: JwtPayload) {
     orderBy: { creeLe: 'desc' },
     take: 50,
   });
+  return commandes.map((c) => versCommandeView(c, pharmacie.id));
 }
 
 // ── Interne ─────────────────────────────────────────────────────────

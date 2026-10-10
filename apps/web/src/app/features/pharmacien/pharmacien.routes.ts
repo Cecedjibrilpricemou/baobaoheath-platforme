@@ -10,6 +10,11 @@ export const PHARMACIEN_ROUTES: Routes = [
     children: [
       { path: '', redirectTo: 'ordonnances', pathMatch: 'full' },
       {
+        path: 'commandes',
+        loadComponent: () =>
+          import('./commandes/commandes.component').then(m => m.PharmacienCommandesComponent)
+      },
+      {
         path: 'ordonnances',
         loadComponent: () =>
           import('./ordonnances/ordonnances.component').then(m => m.OrdonnancesComponent)

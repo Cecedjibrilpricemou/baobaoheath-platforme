@@ -1,0 +1,173 @@
+<div class="bb-cmd">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-inbox" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.COMMANDES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.COMMANDES.SOUS_TITRE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-cmd__btn bb-cmd__btn--plat" type="button" (click)="charger()" [disabled]="chargement()">
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.COMMANDES.ACTUALISER' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-cmd__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else {
+
+    <!-- ── Les appels du quartier ──────────────────────────────────── -->
+    <section class="bb-cmd__sec">
+      <h2 class="bb-cmd__sec-titre">
+        {{ 'PHARMACIEN.COMMANDES.APPELS' | translate }}
+        @if (appels().length > 0) { <span class="bb-cmd__compteur">{{ appels().length }}</span> }
+      </h2>
+      <p class="bb-cmd__sec-aide">{{ 'PHARMACIEN.COMMANDES.APPELS_AIDE' | translate }}</p>
+
+      @if (appels().length === 0) {
+        <div class="bb-cmd__vide">
+          <i class="pi pi-inbox" aria-hidden="true"></i>
+          <p class="bb-cmd__vide-titre">{{ 'PHARMACIEN.COMMANDES.AUCUN_APPEL' | translate }}</p>
+          <p class="bb-cmd__vide-aide">{{ 'PHARMACIEN.COMMANDES.AUCUN_APPEL_AIDE' | translate }}</p>
+        </div>
+      } @else {
+        @for (c of appels(); track c.id) {
+          <article class="bb-cmd__carte bb-cmd__carte--appel">
+            <div class="bb-cmd__entete">
+              <div>
+                <p class="bb-cmd__patient">{{ c.patient.prenom }} {{ c.patient.nom }}</p>
+                <p class="bb-cmd__meta">
+                  {{ c.numeroOrdonnance }} · {{ c.creeLe | date:'dd/MM/yyyy HH:mm' }}
+                  @if (c.quartierRecherche) { · {{ c.quartierRecherche }} }
+                </p>
+              </div>
+              <span class="bb-cmd__boites">
+                {{ 'PHARMACIEN.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+              </span>
+            </div>
+
+            <!-- La liste exacte : c'est sur elle qu'on s'engage. -->
+            <ul class="bb-cmd__lignes">
+              @for (l of c.lignes; track l.id) {
+                <li class="bb-cmd__ligne">
+                  <span class="bb-cmd__produit">
+                    {{ l.libelle }}
+                    @if (dosageUtile(l.libelle, l.dosage); as d) {
+                      <span class="bb-cmd__dosage">{{ d }}</span>
+                    }
+                  </span>
+                  <span class="bb-cmd__qte">× {{ l.quantite }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- Savoir que d'autres ont déjà dit non change la façon dont on
+                 regarde sa propre disponibilité. -->
+            @if (refusAvant(c) > 0) {
+              <p class="bb-cmd__note">
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                {{ 'PHARMACIEN.COMMANDES.DEJA_REFUSE' | translate: { n: refusAvant(c) } }}
+              </p>
+            }
+
+            <div class="bb-cmd__actions">
+              <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                      (click)="demanderRefus(c)" [disabled]="enCours() === c.id">
+                {{ 'PHARMACIEN.COMMANDES.PAS_TOUT' | translate }}
+              </button>
+              <button class="bb-cmd__btn" type="button"
+                      (click)="jePrends(c)" [disabled]="enCours() === c.id">
+                <i class="pi pi-check" aria-hidden="true"></i>
+                {{ (enCours() === c.id ? 'PHARMACIEN.COMMANDES.ENVOI' : 'PHARMACIEN.COMMANDES.JAI_TOUT') | translate }}
+              </button>
+            </div>
+          </article>
+        }
+      }
+    </section>
+
+    <!-- ── Ce que l'officine a pris ────────────────────────────────── -->
+    <section class="bb-cmd__sec">
+      <h2 class="bb-cmd__sec-titre">
+        {{ 'PHARMACIEN.COMMANDES.MIENNES' | translate }}
+        @if (miennes().length > 0) { <span class="bb-cmd__compteur">{{ miennes().length }}</span> }
+      </h2>
+
+      @if (miennes().length === 0) {
+        <p class="bb-cmd__attente">{{ 'PHARMACIEN.COMMANDES.AUCUNE_MIENNE' | translate }}</p>
+      } @else {
+        @for (c of miennes(); track c.id) {
+          <article class="bb-cmd__carte bb-cmd__carte--mienne">
+            <div class="bb-cmd__entete">
+              <div>
+                <p class="bb-cmd__patient">{{ c.patient.prenom }} {{ c.patient.nom }}</p>
+                <p class="bb-cmd__meta">
+                  {{ c.numeroOrdonnance }} · {{ c.creeLe | date:'dd/MM/yyyy HH:mm' }}
+                  @if (c.modeRemise) { · {{ libelleMode(c.modeRemise) }} }
+                </p>
+              </div>
+              <span class="bb-cmd__boites">
+                {{ 'PHARMACIEN.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+              </span>
+            </div>
+
+            <ul class="bb-cmd__lignes">
+              @for (l of c.lignes; track l.id) {
+                <li class="bb-cmd__ligne">
+                  <span class="bb-cmd__produit">
+                    {{ l.libelle }}
+                    @if (dosageUtile(l.libelle, l.dosage); as d) {
+                      <span class="bb-cmd__dosage">{{ d }}</span>
+                    }
+                  </span>
+                  <span class="bb-cmd__qte">× {{ l.quantite }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- Le patient n'a pas encore dit comment il veut être servi : le
+                 retrait n'est pas un repli, la livraison n'est pas imposée. -->
+            @if (!c.modeRemise) {
+              <p class="bb-cmd__note">
+                <i class="pi pi-clock" aria-hidden="true"></i>
+                {{ 'PHARMACIEN.COMMANDES.ATTEND_MODE' | translate }}
+              </p>
+            }
+
+            <div class="bb-cmd__actions">
+              <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                      (click)="rendre(c)" [disabled]="enCours() === c.id">
+                <i class="pi pi-undo" aria-hidden="true"></i>
+                {{ 'PHARMACIEN.COMMANDES.RENDRE' | translate }}
+              </button>
+            </div>
+          </article>
+        }
+      }
+    </section>
+  }
+</div>
+
+<!-- Répondre « je n'ai pas tout » retire l'appel de sa file pour de bon :
+     on le dit avant, pas après. -->
+@if (confirmeRefus(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PHARMACIEN.COMMANDES.REFUS_TITRE' | translate }}</h2>
+      <p class="bb-cmd__modale-texte">
+        {{ 'PHARMACIEN.COMMANDES.REFUS_TEXTE' | translate: { patient: c.patient.prenom + ' ' + c.patient.nom } }}
+      </p>
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerRefus()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn bb-cmd__btn--danger" type="button"
+                (click)="confirmerRefus()" [disabled]="!!enCours()">
+          {{ 'PHARMACIEN.COMMANDES.REFUS_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
