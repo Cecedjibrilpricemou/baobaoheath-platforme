@@ -9,13 +9,14 @@ import { ToastrService } from 'ngx-toastr';
 import type { PeremptionProcheView } from '@baobaoheath/shared-types';
 
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-pharmacien-peremptions',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './peremptions.component.html',
   styleUrl: './peremptions.component.scss',
 })
@@ -33,6 +34,25 @@ export class PeremptionsComponent implements OnInit {
 
   readonly perimes = computed(() => this.lots().filter((l) => l.perime));
   readonly proches = computed(() => this.lots().filter((l) => !l.perime));
+
+  /**
+   * Les colonnes du document imprimé et du fichier.
+   *
+   * **Les mêmes pour les deux** : c'est ce qui garantit qu'une feuille posée
+   * sur un bureau et le tableur ouvert à côté disent la même chose.
+   *
+   * Les jours restants partent en nombre, pas en texte : dans Excel, on veut
+   * pouvoir trier dessus.
+   */
+  readonly colonnes: ColonneExport<PeremptionProcheView>[] = [
+    { titre: 'Produit', valeur: (l) => l.medicament.libelle },
+    { titre: 'Lot', valeur: (l) => l.numeroLot },
+    { titre: 'Quantité', valeur: (l) => l.quantite, nombre: true },
+    { titre: 'Unité', valeur: (l) => l.unite },
+    { titre: 'Péremption', valeur: (l) => new Date(l.datePeremption) },
+    { titre: 'Jours restants', valeur: (l) => l.joursRestants, nombre: true },
+    { titre: 'État', valeur: (l) => (l.perime ? 'Périmé' : 'À surveiller') },
+  ];
 
   ngOnInit() {
     this.charger();

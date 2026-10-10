@@ -7,6 +7,16 @@
     </div>
   </header>
 
+  <!-- Ce qui s'imprime est ce qui s'affiche : l'horizon choisi fait partie
+       du document, sinon une feuille « 30 jours » et une feuille « 180 »
+       seraient indistinguables une fois posées côte à côte. -->
+  <app-export-liste
+    [titre]="'Produits à péremption proche'"
+    [sousTitre]="'Horizon : ' + jours() + ' jours'"
+    [colonnes]="colonnes"
+    [lignes]="lots()"
+    [nomFichier]="'peremptions'" />
+
   <div class="bb-per__horizon">
     <span class="bb-per__horizon-label">{{ 'PHARMACIEN.PEREMPTIONS.SEUIL' | translate }}</span>
     <div class="bb-pills" role="tablist">

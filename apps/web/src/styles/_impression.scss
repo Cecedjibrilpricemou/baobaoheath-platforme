@@ -1,0 +1,122 @@
+// L'impression des listes.
+//
+// **Ce qui s'imprime n'est pas ce qui s'affiche.** Un écran de la plateforme
+// est fait de cartes, de pastilles et de boutons : sur le papier, tout cela
+// coûte de l'encre et gêne la lecture. On masque la page entière et on ne
+// laisse que le document fabriqué par `<app-export-liste>` — même en-tête,
+// même tableau, quel que soit l'écran d'où il sort.
+//
+// Les couleurs de thème ne sont pas utilisées ici : en mode sombre, elles
+// imprimeraient du texte clair sur du papier blanc. Noir sur blanc, point.
+@media print {
+
+  // ── Ce qui disparaît ──────────────────────────────────────────
+  //
+  // **Tout, sauf le document.** Une première version masquait une liste
+  // nommée d'éléments — barre latérale, barre du haut, boutons — et laissait
+  // passer le reste : le titre de l'écran, les filtres et les cartes
+  // s'imprimaient encore sous le document. Énumérer ce qui doit disparaître
+  // oblige à n'en oublier aucun, sur chacun des neuf espaces.
+  //
+  // On inverse : tout devient invisible, et seul le document redevient
+  // visible. `visibility` et non `display` — un parent en `display: none`
+  // emporte ses enfants, alors qu'un parent `visibility: hidden` laisse un
+  // enfant se remontrer. C'est ce qui permet au document d'être niché aussi
+  // profond qu'il veut dans l'écran.
+  body * { visibility: hidden !important; }
+
+  app-export-liste .bb-exp__doc,
+  app-export-liste .bb-exp__doc * { visibility: visible !important; }
+
+  // Invisible mais toujours en place, le reste de la page garderait sa
+  // hauteur et pousserait le document vers le bas, voire en page 2.
+  app-export-liste .bb-exp__doc {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+
+  // Les surcouches vivent hors du `body` visible : elles se masquent à part.
+  #toast-container,
+  .toast-container,
+  .cdk-overlay-container {
+    display: none !important;
+  }
+
+  // Le gabarit étire ses conteneurs sur la hauteur de l'écran et gère son
+  // propre défilement : sur le papier, cela coupe le tableau à la première
+  // page.
+  html, body,
+  .mat-drawer-container,
+  .mat-drawer-content,
+  .bb-shell,
+  .bb-shell__page {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  // ── Le document ───────────────────────────────────────────────
+  app-export-liste .bb-exp__doc {
+    display: block !important;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #000;
+  }
+
+  .bb-exp__doc-entete {
+    border-bottom: 2px solid #000;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+
+  .bb-exp__doc-titre {
+    font-size: 17pt; font-weight: 700; margin: 0 0 3px; color: #000;
+  }
+
+  .bb-exp__doc-sous { font-size: 11pt; margin: 0 0 3px; color: #000; }
+
+  // Date, auteur, nombre de lignes : sans eux, une feuille retrouvée trois
+  // jours plus tard ne s'explique pas.
+  .bb-exp__doc-meta { font-size: 9pt; margin: 0; color: #333; }
+
+  .bb-exp__doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+
+    th, td {
+      border: 1px solid #999;
+      padding: 5px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eee !important;
+      font-weight: 700;
+      // L'impression retire les fonds par défaut : sans cela les en-têtes ne
+      // se distinguent plus des lignes.
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    // Les montants et les quantités se comparent de droite à gauche.
+    .bb-exp__nombre { text-align: right; font-variant-numeric: tabular-nums; }
+
+    // Une ligne coupée en deux entre deux pages se relit mal.
+    tr { page-break-inside: avoid; }
+  }
+
+  // Les en-têtes se répètent en haut de chaque page : une liste de deux cents
+  // patients sans en-tête page 2 n'est plus lisible.
+  .bb-exp__doc-table thead { display: table-header-group; }
+  .bb-exp__doc-table tbody { display: table-row-group; }
+
+  @page {
+    margin: 14mm 12mm;
+  }
+}

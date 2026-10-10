@@ -2592,5 +2592,12 @@
     "PERIODE_DU_AU": "du {{debut}} au {{fin}}",
     "SAISI_PAR": "saisi par {{nom}}",
     "STAT_PHARMACIE_UNE": "officine"
+  },
+  "EXPORT": {
+    "IMPRIMER": "Imprimer",
+    "CSV": "Excel (CSV)",
+    "LIGNES": "{{n}} ligne(s)",
+    "EDITE_LE": "Édité le {{date}}",
+    "EDITE_PAR": "par {{nom}}"
   }
 }

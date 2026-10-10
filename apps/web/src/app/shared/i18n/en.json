@@ -2592,5 +2592,12 @@
     "PERIODE_DU_AU": "from {{debut}} to {{fin}}",
     "SAISI_PAR": "entered by {{nom}}",
     "STAT_PHARMACIE_UNE": "pharmacy"
+  },
+  "EXPORT": {
+    "IMPRIMER": "Print",
+    "CSV": "Excel (CSV)",
+    "LIGNES": "{{n}} row(s)",
+    "EDITE_LE": "Issued on {{date}}",
+    "EDITE_PAR": "by {{nom}}"
   }
 }

@@ -1,0 +1,53 @@
+<!-- À l'écran : deux boutons discrets. À l'impression : le document. -->
+<div class="bb-exp__actions">
+  <span class="bb-exp__compte">{{ libelleCompte() }}</span>
+  <button class="bb-exp__btn" type="button" (click)="imprimer()"
+          [disabled]="lignes().length === 0">
+    <i class="pi pi-print" aria-hidden="true"></i>
+    {{ 'EXPORT.IMPRIMER' | translate }}
+  </button>
+  <button class="bb-exp__btn" type="button" (click)="telecharger()"
+          [disabled]="lignes().length === 0">
+    <i class="pi pi-download" aria-hidden="true"></i>
+    {{ 'EXPORT.CSV' | translate }}
+  </button>
+</div>
+
+<!-- Invisible à l'écran, seul visible sur le papier. Le reste de la page est
+     masqué par la feuille d'impression. -->
+<section class="bb-exp__doc" aria-hidden="true">
+  <header class="bb-exp__doc-entete">
+    <h1 class="bb-exp__doc-titre">{{ titre() }}</h1>
+    @if (sousTitre()) {
+      <p class="bb-exp__doc-sous">{{ sousTitre() }}</p>
+    }
+    <!-- Une feuille sans date ni auteur ne s'explique pas trois jours plus
+         tard : on ne sait plus de quand elle date ni qui l'a sortie. -->
+    <p class="bb-exp__doc-meta">
+      {{ 'EXPORT.EDITE_LE' | translate: { date: (editeLe() | date:'dd/MM/yyyy HH:mm') || '' } }}
+      @if (editePar()) {
+        · {{ 'EXPORT.EDITE_PAR' | translate: { nom: editePar() } }}
+      }
+      · {{ libelleCompte() }}
+    </p>
+  </header>
+
+  <table class="bb-exp__doc-table">
+    <thead>
+      <tr>
+        @for (c of colonnes(); track c.titre) {
+          <th [class.bb-exp__nombre]="c.nombre">{{ c.titre }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (l of lignes(); track $index) {
+        <tr>
+          @for (c of colonnes(); track c.titre) {
+            <td [class.bb-exp__nombre]="c.nombre">{{ cellule(l, c) }}</td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
