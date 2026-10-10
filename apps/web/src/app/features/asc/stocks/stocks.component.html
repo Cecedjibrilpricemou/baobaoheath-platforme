@@ -116,12 +116,19 @@
     </div>
 
     <!-- Loading -->
+    <app-export-liste
+      [titre]="'Ma dotation'"
+      [sousTitre]="searchQuery() ? (&#39;Recherche : &#39; + searchQuery()) : &#39;&#39;"
+      [colonnes]="colonnes"
+      [lignes]="stocksFiltres()"
+      [nomFichier]="'ma-dotation'" />
+
     @if (isLoading()) {
     <div class="loading-state">
       <i class="pi pi-spin pi-spinner"></i>
       <span>{{ 'ASC.STOCKS.LOADING' | translate }}</span>
     </div>
-    } @else if (stocksFiltres.length === 0) {
+    } @else if (stocksFiltres().length === 0) {
     <div class="empty-state">
       <div class="empty-state__icon">📦</div>
       <h3 class="empty-state__title">{{ 'ASC.STOCKS.EMPTY_TITLE' | translate }}</h3>
@@ -142,7 +149,7 @@
     } @else {
 
     <div class="stocks-grid">
-      @for (stock of stocksFiltres; track stock.id) {
+      @for (stock of stocksFiltres(); track stock.id) {
       <div class="stock-card" [class.stock-card--critique]="getNiveauStock(stock) === 'critique'"
         [class.stock-card--faible]="getNiveauStock(stock) === 'faible'">
 

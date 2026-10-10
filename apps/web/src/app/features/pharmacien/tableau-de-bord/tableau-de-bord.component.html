@@ -103,6 +103,13 @@
       {{ 'PHARMACIEN.TDB.RUPTURES_TITRE' | translate }}
     </h2>
 
+    <app-export-liste
+      [titre]="'Produits à commander'"
+      [sousTitre]="'Officine · stock au ' + (tb()!.jour | date: 'dd/MM/yyyy')"
+      [colonnes]="colonnes"
+      [lignes]="ruptures()"
+      [nomFichier]="'produits-a-commander'" />
+
     @if (tb()!.ruptures.length === 0) {
       <p class="bb-tdb__muted">{{ 'PHARMACIEN.TDB.AUCUNE_RUPTURE' | translate }}</p>
     } @else {

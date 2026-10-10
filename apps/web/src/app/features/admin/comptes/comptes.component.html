@@ -7,6 +7,13 @@
       <p class="bb-page-head__sub">{{ 'ADMIN.COMPTES.SUBTITLE' | translate }}</p>
     </div>
   </header>
+  <app-export-liste
+    [titre]="'Comptes de la plateforme'"
+    [sousTitre]="(role() ? &#39;Rôle : &#39; + role() + &#39; · &#39; : &#39;&#39;) + &#39;État : &#39; + etat() + &#39; · &#39; + comptes().length + &#39; sur &#39; + total()"
+    [colonnes]="colonnes"
+    [lignes]="comptes()"
+    [nomFichier]="'comptes'" />
+
 
   <mat-card class="comptes-filtres">
     <div class="comptes-filtres__grille">

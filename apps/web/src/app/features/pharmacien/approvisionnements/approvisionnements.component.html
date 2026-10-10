@@ -102,6 +102,12 @@
   <!-- ── Historique ────────────────────────────────────────────────── -->
   <h2 class="bb-appro__section">{{ 'PHARMACIEN.APPRO.HISTORIQUE' | translate }}</h2>
 
+  <app-export-liste
+    [titre]="'Approvisionnements'"
+    [colonnes]="colonnes"
+    [lignes]="historique()"
+    [nomFichier]="'approvisionnements'" />
+
   @if (isLoading()) {
     <p class="bb-appro__muted">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (historique().length === 0) {

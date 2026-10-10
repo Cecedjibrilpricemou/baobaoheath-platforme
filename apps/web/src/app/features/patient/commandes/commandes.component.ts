@@ -15,13 +15,14 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import type { CommandeView, ModeRemise } from '@baobaoheath/shared-types';
 import { PatientService } from '../../../core/services/patient.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-patient-commandes',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './commandes.component.html',
 })
 export class PatientCommandesComponent implements OnInit {
@@ -30,6 +31,16 @@ export class PatientCommandesComponent implements OnInit {
   private i18n = inject(I18nService);
 
   commandes = signal<CommandeView[]>([]);
+
+  readonly colonnes: ColonneExport<CommandeView>[] = [
+    { titre: 'Ordonnance', valeur: (c) => c.numeroOrdonnance },
+    { titre: 'Pharmacie', valeur: (c) => c.pharmacie?.nom },
+    { titre: 'Quartier', valeur: (c) => c.pharmacie?.quartier ?? c.quartierRecherche },
+    { titre: 'Lignes', valeur: (c) => c.lignes.length, nombre: true },
+    { titre: 'Remise', valeur: (c) => c.modeRemise },
+    { titre: 'Statut', valeur: (c) => c.statut },
+    { titre: 'Demandée le', valeur: (c) => new Date(c.creeLe) },
+  ];
   chargement = signal(true);
   enCours = signal<string | null>(null);
 

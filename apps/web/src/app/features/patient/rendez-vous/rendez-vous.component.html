@@ -6,6 +6,12 @@
       <p class="bb-page-head__sub">{{ 'PATIENT.RDV.SUB' | translate }}</p>
     </div>
   </header>
+  <app-export-liste
+    [titre]="'Mes rendez-vous'"
+    [colonnes]="colonnes"
+    [lignes]="demandes()"
+    [nomFichier]="'mes-rendez-vous'" />
+
 
   @if (isLoading()) {
     <p class="bb-rdvp__muted">{{ 'COMMON.LOADING' | translate }}</p>

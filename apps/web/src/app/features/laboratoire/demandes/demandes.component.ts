@@ -11,6 +11,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import type { DemandeAnalyseView, ScanLaboratoireView, StatutDemandeAnalyse } from '@baobaoheath/shared-types';
 import { LaboratoireService } from '../../../core/services/laboratoire.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { statutDemandeClasse, urgenceClasse } from '../../hopital/hopital.utils';
@@ -22,7 +23,7 @@ type Filtre = 'TOUS' | StatutDemandeAnalyse;
 @Component({
   selector: 'app-labo-demandes',
   standalone: true,
-  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, QrScannerComponent],
+  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, QrScannerComponent, ExportListeComponent],
   templateUrl: './demandes.component.html',
 })
 export class LaboDemandesComponent implements OnInit {
@@ -42,6 +43,27 @@ export class LaboDemandesComponent implements OnInit {
   limit     = 20;
   total     = signal(0);
   items     = signal<DemandeAnalyseView[]>([]);
+
+  /**
+   * La file du laboratoire, sur une feuille de paillasse.
+   *
+   * **Les resultats n'y sont pas, seulement les examens demandes.** Une
+   * feuille de paillasse sert a savoir quoi prelever et pour qui ; les
+   * valeurs appartiennent au compte rendu, pas a la file.
+   */
+  readonly colonnes: ColonneExport<DemandeAnalyseView>[] = [
+    { titre: 'Numéro', valeur: (d) => d.numero },
+    { titre: 'Patient', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
+    { titre: 'Urgence', valeur: (d) => d.urgence },
+    { titre: 'Statut', valeur: (d) => d.statut },
+    { titre: 'Examens', valeur: (d) => d.lignes.length, nombre: true },
+    { titre: 'Prescripteur', valeur: (d) => d.prescripteur.prenom + ' ' + d.prescripteur.nom },
+    { titre: 'Épisode', valeur: (d) => d.numeroEpisode },
+    { titre: 'Prélèvement', valeur: (d) => d.lieuPrelevement },
+    { titre: 'Créneau', valeur: (d) => (d.creneauPrelevement ? new Date(d.creneauPrelevement) : null) },
+    { titre: 'Transmise le', valeur: (d) => (d.transmiseLe ? new Date(d.transmiseLe) : null) },
+    { titre: 'Validée le', valeur: (d) => (d.valideeLe ? new Date(d.valideeLe) : null) },
+  ];
   isLoading = signal(true);
 
   /**

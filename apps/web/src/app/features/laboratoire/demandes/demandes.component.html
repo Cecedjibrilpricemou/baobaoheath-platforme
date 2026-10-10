@@ -10,6 +10,13 @@
     </button>
   </div>
 </header>
+  <app-export-liste
+    [titre]="'Demandes d’analyse'"
+    [sousTitre]="&#39;Filtre : &#39; + filtre() + &#39; · page &#39; + page()"
+    [colonnes]="colonnes"
+    [lignes]="items()"
+    [nomFichier]="'demandes-analyse'" />
+
 
 <!-- Le patient arrive au comptoir : on scanne son code plutôt que de le
      chercher dans la file ou de lui demander son nom. -->

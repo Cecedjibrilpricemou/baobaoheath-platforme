@@ -208,6 +208,12 @@
   <!-- ── Les ventes du jour ────────────────────────────────────────── -->
   <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.DERNIERES' | translate }}</h2>
 
+  <app-export-liste
+    [titre]="'Ventes du comptoir'"
+    [colonnes]="colonnes"
+    [lignes]="ventes()"
+    [nomFichier]="'ventes-comptoir'" />
+
   @if (isLoading()) {
     <p class="bb-caisse__muted">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (ventes().length === 0) {

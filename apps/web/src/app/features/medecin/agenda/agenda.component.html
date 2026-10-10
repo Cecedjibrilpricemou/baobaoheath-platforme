@@ -7,6 +7,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Mon agenda'"
+    [colonnes]="colonnes"
+    [lignes]="rdvs()"
+    [nomFichier]="'agenda'" />
+
+
   @if (isLoading()) {
     <p class="bb-agenda__muted">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (rdvs().length === 0) {

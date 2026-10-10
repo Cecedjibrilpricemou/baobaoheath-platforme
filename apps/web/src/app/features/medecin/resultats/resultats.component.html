@@ -7,6 +7,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Résultats à libérer'"
+    [colonnes]="colonnes"
+    [lignes]="resultats()"
+    [nomFichier]="'resultats-a-liberer'" />
+
+
   @if (isLoading()) {
     <p class="bb-liber__empty">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (resultats().length === 0) {

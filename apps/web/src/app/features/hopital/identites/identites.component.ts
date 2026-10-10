@@ -27,6 +27,7 @@ import type {
 import { HopitalService } from '../../../core/services/hopital.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 const PIECES: TypePieceIdentite[] = [
@@ -53,6 +54,7 @@ const LIEU_MIN = 2;
     CommonModule, FormsModule, TranslatePipe,
     MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatCheckboxModule, MatProgressSpinnerModule,
+  ExportListeComponent,
   ],
   templateUrl: './identites.component.html',
   styleUrl: './identites.component.scss',
@@ -71,6 +73,25 @@ export class IdentitesComponent implements OnInit {
 
   // ── L'état ─────────────────────────────────────────────────────────
   patients = signal<IdentitePatientView[]>([]);
+
+  /**
+   * **Le numero de piece reste masque, meme imprime.** Il est masque a
+   * l'ecran parce qu'il ne doit pas etre recopie ; une feuille qui le porte
+   * en entier contournerait exactement cette regle, et une feuille circule
+   * plus loin qu'un ecran de comptoir.
+   */
+  readonly colonnes: ColonneExport<IdentitePatientView>[] = [
+    { titre: 'Patient', valeur: (p) => p.nomComplet },
+    { titre: 'Téléphone', valeur: (p) => p.telephone },
+    { titre: 'Naissance', valeur: (p) => new Date(p.dateNaissance) },
+    { titre: 'Sexe', valeur: (p) => p.sexe },
+    { titre: 'Préfecture', valeur: (p) => p.prefecture },
+    { titre: 'Niveau', valeur: (p) => p.niveauIdentite },
+    { titre: 'Pièce', valeur: (p) => p.typePiece },
+    { titre: 'N° (masqué)', valeur: (p) => p.numeroPieceMasque },
+    { titre: 'Vérifiée le', valeur: (p) => (p.verifieeLe ? new Date(p.verifieeLe) : null) },
+    { titre: 'Traits manquants', valeur: (p) => p.traitsManquants.join(', ') },
+  ];
   chargement = signal(true);
   erreur = signal('');
   succes = signal('');

@@ -94,6 +94,12 @@
         @if (miennes().length > 0) { <span class="bb-cmd__compteur">{{ miennes().length }}</span> }
       </h2>
 
+      <app-export-liste
+        [titre]="'Commandes prises en charge'"
+        [colonnes]="colonnes"
+        [lignes]="miennes()"
+        [nomFichier]="'commandes-prises'" />
+
       @if (miennes().length === 0) {
         <p class="bb-cmd__attente">{{ 'PHARMACIEN.COMMANDES.AUCUNE_MIENNE' | translate }}</p>
       } @else {

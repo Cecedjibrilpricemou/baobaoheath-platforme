@@ -6,6 +6,12 @@
   </div>
 </header>
 
+<app-export-liste
+  [titre]="'Mes examens suivis'"
+  [colonnes]="colonnes"
+  [lignes]="examens()"
+  [nomFichier]="'mes-examens'" />
+
 @if (isLoading()) {
   <div class="bb-skeleton" style="height:320px;border-radius:20px"></div>
 } @else if (examens().length === 0) {

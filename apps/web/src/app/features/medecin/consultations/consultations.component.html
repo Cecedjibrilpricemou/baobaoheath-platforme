@@ -10,6 +10,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Consultations à valider'"
+    [colonnes]="colonnes"
+    [lignes]="consultations()"
+    [nomFichier]="'consultations-a-valider'" />
+
+
   <!-- Messages -->
   @if (successMessage()) {
     <div class="bb-med-cons__alert bb-med-cons__alert--success" role="status" aria-live="polite">

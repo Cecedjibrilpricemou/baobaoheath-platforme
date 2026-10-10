@@ -9,6 +9,13 @@
       <p class="bb-page-head__sub">{{ 'ADMIN.JOURNAL.SUBTITLE' | translate }}</p>
     </div>
   </header>
+  <app-export-liste
+    [titre]="'Journal d’audit'"
+    [sousTitre]="&#39;Page &#39; + page() + &#39; sur &#39; + totalPages() + &#39; · &#39; + total() + &#39; entrées au total&#39;"
+    [colonnes]="colonnes"
+    [lignes]="lignes()"
+    [nomFichier]="'journal-audit'" />
+
 
   <!-- On le dit a l'operateur plutot que de le lui cacher : consulter ce
        journal laisse une trace, au meme titre que les acces qu'il montre. -->

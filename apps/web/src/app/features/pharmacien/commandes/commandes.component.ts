@@ -16,13 +16,14 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import type { CommandeView } from '@baobaoheath/shared-types';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-pharmacien-commandes',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './commandes.component.html',
 })
 export class PharmacienCommandesComponent implements OnInit {
@@ -31,6 +32,23 @@ export class PharmacienCommandesComponent implements OnInit {
   private i18n = inject(I18nService);
 
   commandes = signal<CommandeView[]>([]);
+
+  /**
+   * Les commandes prises en charge, sur une feuille de preparation.
+   *
+   * Le nombre de lignes et non les produits : le detail est a l'ecran, et une
+   * feuille qui enumere les traitements de chaque patient circule mal au
+   * comptoir. Ce qu'on vient chercher ici, c'est qui attend quoi et depuis
+   * quand.
+   */
+  readonly colonnes: ColonneExport<CommandeView>[] = [
+    { titre: 'Ordonnance', valeur: (c) => c.numeroOrdonnance },
+    { titre: 'Patient', valeur: (c) => `${c.patient.prenom} ${c.patient.nom}` },
+    { titre: 'Lignes', valeur: (c) => c.lignes.length, nombre: true },
+    { titre: 'Statut', valeur: (c) => c.statut },
+    { titre: 'Remise', valeur: (c) => this.libelleMode(c.modeRemise) },
+    { titre: 'Reçue le', valeur: (c) => new Date(c.creeLe) },
+  ];
   chargement = signal(true);
   /** La commande sur laquelle une réponse est en cours. */
   enCours = signal<string | null>(null);

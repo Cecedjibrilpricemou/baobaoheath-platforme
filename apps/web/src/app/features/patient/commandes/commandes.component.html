@@ -12,6 +12,12 @@
       </button>
     </div>
   </header>
+  <app-export-liste
+    [titre]="'Mes commandes'"
+    [colonnes]="colonnes"
+    [lignes]="commandes()"
+    [nomFichier]="'mes-commandes'" />
+
 
   @if (chargement()) {
     <p class="bb-cmd__attente">{{ 'COMMON.LOADING' | translate }}</p>

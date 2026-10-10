@@ -20,6 +20,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { ToastrService } from 'ngx-toastr';
 import type { ADeReglerView, FactureView, ModePaiement } from '@baobaoheath/shared-types';
 import { PaiementService } from '../../../core/services/paiement.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
@@ -32,6 +33,7 @@ const MIN_PASSERELLE_GNF = 3_000;
   imports: [
     CommonModule, FormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, TranslatePipe,
+  ExportListeComponent,
   ],
   templateUrl: './paiements.component.html',
 })
@@ -48,6 +50,16 @@ export class PatientPaiementsComponent implements OnInit {
    * qui n'a jamais ete paye — c'est-a-dire ce qu'on vient regarder.
    */
   dus = signal<ADeReglerView[]>([]);
+
+  /** Ce qu'on emporte au guichet : ce qui reste a payer, et pour quoi. */
+  readonly colonnes: ColonneExport<ADeReglerView>[] = [
+    { titre: 'Consultation', valeur: (d) => d.motif },
+    { titre: 'Consultée le', valeur: (d) => (d.consulteeLE ? new Date(d.consulteeLE) : null) },
+    { titre: 'Montant (GNF)', valeur: (d) => d.montantGnf, nombre: true },
+    // La reference rendue par la passerelle : c'est la preuve du paiement.
+    { titre: 'Référence', valeur: (d) => d.facture?.referenceOperateur },
+    { titre: 'Statut', valeur: (d) => d.facture?.statut },
+  ];
   /** L'historique, pour la partie « deja reglees ». */
   factures = signal<FactureView[]>([]);
   chargement = signal(true);

@@ -28,6 +28,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import type { AnomalieView, FiltreJournalDto, LigneJournalView, Role, SeuilsAnomalies } from '@baobaoheath/shared-types';
 import { AdminService } from '../../../core/services/admin.service';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 /** Les roles proposes au filtre, dans l'ordre du parcours de soins. */
@@ -44,6 +45,7 @@ const ROLES: Role[] = [
     CommonModule, FormsModule, TranslatePipe,
     MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatCheckboxModule, MatProgressSpinnerModule,
+  ExportListeComponent,
   ],
   templateUrl: './journal.component.html',
   styleUrl: './journal.component.scss',
@@ -67,6 +69,25 @@ export class JournalComponent implements OnInit {
 
   // ── L'etat ─────────────────────────────────────────────────────────
   lignes = signal<LigneJournalView[]>([]);
+
+  /**
+   * La page du journal qu'on a sous les yeux.
+   *
+   * **Elle ne remplace pas l'export du journal complet**, qui passe par l'API
+   * et refuse au-dela d'un volume : ce qui s'imprime ici, c'est la page
+   * affichee, et le sous-titre dit laquelle. Une feuille qui se ferait passer
+   * pour le journal entier serait pire qu'inutile devant un controle.
+   */
+  readonly colonnes: ColonneExport<LigneJournalView>[] = [
+    { titre: 'Horodatage', valeur: (l) => new Date(l.creeLe) },
+    { titre: 'Acteur', valeur: (l) => l.acteur.prenom + ' ' + l.acteur.nom },
+    { titre: 'Rôle', valeur: (l) => l.acteur.role },
+    { titre: 'Action', valeur: (l) => l.action },
+    { titre: 'Ressource', valeur: (l) => l.ressource },
+    { titre: 'Patient concerné', valeur: (l) => l.patientConcerne },
+    { titre: 'HTTP', valeur: (l) => l.statutHttp, nombre: true },
+    { titre: 'Adresse IP', valeur: (l) => l.ipAdresse },
+  ];
   total = signal(0);
   totalPages = signal(0);
   maxExport = signal(0);

@@ -12,6 +12,7 @@ import { ToastrService } from 'ngx-toastr';
 import type { RendezVousMedecinView, StatutRendezVous } from '@baobaoheath/shared-types';
 
 import { MedecinService } from '../../../core/services/medecin.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
@@ -20,7 +21,7 @@ type Groupe = { cle: string; libelle: string; rdvs: RendezVousMedecinView[] };
 @Component({
   selector: 'app-medecin-agenda',
   standalone: true,
-  imports: [DatePipe, RouterLink, MatButtonModule, TranslatePipe],
+  imports: [DatePipe, RouterLink, MatButtonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './agenda.component.html',
   styleUrl: './agenda.component.scss',
 })
@@ -30,6 +31,22 @@ export class AgendaComponent implements OnInit {
   private i18n = inject(I18nService);
 
   rdvs = signal<RendezVousMedecinView[]>([]);
+
+  /**
+   * La feuille de la journee. Le telephone y est : rappeler un patient qui
+   * n'est pas venu est le geste qui suit, et chercher son numero dans
+   * l'application alors qu'on a la feuille en main ne sert personne.
+   */
+  readonly colonnes: ColonneExport<RendezVousMedecinView>[] = [
+    { titre: 'Prévu le', valeur: (r) => new Date(r.prevuLe) },
+    { titre: 'Heure', valeur: (r) => new Date(r.prevuLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
+    { titre: 'Patient', valeur: (r) => `${r.patient.prenom} ${r.patient.nom}` },
+    { titre: 'Téléphone', valeur: (r) => r.patient.telephone },
+    { titre: 'Motif', valeur: (r) => r.motif },
+    { titre: 'Statut', valeur: (r) => r.statut },
+    { titre: 'Arrivée', valeur: (r) => (r.arriveeLe ? new Date(r.arriveeLe) : null) },
+    { titre: 'Épisode', valeur: (r) => r.numeroEpisode },
+  ];
   isLoading = signal(true);
   enCours = signal<string | null>(null);
 

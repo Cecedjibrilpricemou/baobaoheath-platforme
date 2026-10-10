@@ -10,6 +10,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import type { EpisodeSoinsResumeView, StatutEpisode } from '@baobaoheath/shared-types';
 import { HopitalService } from '../../../core/services/hopital.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { statutEpisodeClasse } from '../hopital.utils';
@@ -19,7 +20,7 @@ type Filtre = 'TOUS' | StatutEpisode;
 @Component({
   selector: 'app-hopital-episodes',
   standalone: true,
-  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, ExportListeComponent],
   templateUrl: './episodes.component.html',
 })
 export class EpisodesComponent implements OnInit {
@@ -36,6 +37,20 @@ export class EpisodesComponent implements OnInit {
   limit     = 20;
   total     = signal(0);
   items     = signal<EpisodeSoinsResumeView[]>([]);
+
+  readonly colonnes: ColonneExport<EpisodeSoinsResumeView>[] = [
+    { titre: 'Numéro', valeur: (e) => e.numero },
+    { titre: 'Patient', valeur: (e) => e.patient.prenom + ' ' + e.patient.nom },
+    { titre: 'Téléphone', valeur: (e) => e.patient.telephone },
+    { titre: 'Motif', valeur: (e) => e.motif },
+    { titre: 'Service', valeur: (e) => e.service },
+    { titre: 'Statut', valeur: (e) => e.statut },
+    { titre: 'Ouvert le', valeur: (e) => new Date(e.ouvertLe) },
+    { titre: 'Clos le', valeur: (e) => (e.closLe ? new Date(e.closLe) : null) },
+    { titre: 'Responsable', valeur: (e) => (e.responsable ? e.responsable.prenom + ' ' + e.responsable.nom : '') },
+    { titre: 'Consultations', valeur: (e) => e.nbConsultations, nombre: true },
+    { titre: 'Analyses', valeur: (e) => e.nbDemandesAnalyse, nombre: true },
+  ];
   isLoading = signal(true);
 
   private terme$ = new Subject<string>();

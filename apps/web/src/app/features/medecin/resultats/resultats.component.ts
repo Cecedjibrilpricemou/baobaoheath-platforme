@@ -13,13 +13,14 @@ import { ToastrService } from 'ngx-toastr';
 import type { ResultatALibererView } from '@baobaoheath/shared-types';
 
 import { MedecinService } from '../../../core/services/medecin.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-medecin-resultats',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslatePipe],
+  imports: [DatePipe, FormsModule, RouterLink, TranslatePipe, ExportListeComponent],
   templateUrl: './resultats.component.html',
   styleUrl: './resultats.component.scss',
 })
@@ -29,6 +30,22 @@ export class ResultatsComponent implements OnInit {
   private i18n = inject(I18nService);
 
   resultats = signal<ResultatALibererView[]>([]);
+
+  /**
+   * **Les valeurs n'y sont pas, seulement l'attente.** Ce qu'on vient
+   * chercher ici, c'est qui attend depuis quand et ce qui est critique ;
+   * imprimer les resultats eux-memes ferait circuler des analyses sur une
+   * feuille de travail.
+   */
+  readonly colonnes: ColonneExport<ResultatALibererView>[] = [
+    { titre: 'Demande', valeur: (r) => r.numero },
+    { titre: 'Patient', valeur: (r) => `${r.patient.prenom} ${r.patient.nom}` },
+    { titre: 'Laboratoire', valeur: (r) => r.laboratoire.nom },
+    { titre: 'Examens', valeur: (r) => r.nbExamens, nombre: true },
+    { titre: 'Critique', valeur: (r) => (r.contientCritique ? 'Oui' : '') },
+    { titre: 'Anormal', valeur: (r) => (r.contientAnormal ? 'Oui' : '') },
+    { titre: 'Validée le', valeur: (r) => new Date(r.valideeLe) },
+  ];
   isLoading = signal(true);
 
   /** La demande dont le médecin est en train de rédiger l'explication. */

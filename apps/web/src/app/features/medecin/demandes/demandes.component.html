@@ -7,6 +7,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Demandes de rendez-vous'"
+    [colonnes]="colonnes"
+    [lignes]="demandes()"
+    [nomFichier]="'demandes-rendez-vous'" />
+
+
   @if (isLoading()) {
     <p class="bb-dem__muted">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (demandes().length === 0) {

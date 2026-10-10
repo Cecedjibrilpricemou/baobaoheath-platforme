@@ -58,6 +58,12 @@ export const DEMO = {
   // aux dossiers medicaux.
   agentAssureur: { telephone: '620100008', email: 'agent.pfa@demo.test', prenom: 'Hadja', nom: 'Bangoura' },
 
+  // **L'agent de sante communautaire n'avait aucun compte de demonstration.**
+  // Son espace porte deux listes — ses consultations de terrain et sa
+  // dotation — et aucune ne pouvait etre ouverte : le role existait, le
+  // compte non.
+  asc: { telephone: '620100011', email: 'asc.donka@demo.test', prenom: 'Mamadou', nom: 'Diallo' },
+
   // Le patient se connecte avec son telephone, sans OTP.
   patient: {
     telephone: '620100010',
@@ -202,7 +208,15 @@ async function main() {
     // sur cette colonne.
     create: { idUtilisateur: medecin.id, specialite: 'Medecine generale', idStructure: hopital.id },
   });
-  console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien,');
+  // Le profil ASC est requis pour que son espace s'ouvre, comme pour le medecin.
+  const agentSante = await upsertUtilisateur(DEMO.asc, Role.ASC, motDePasseHash, hopital.id);
+  await prisma.ascProfile.upsert({
+    where: { idUtilisateur: agentSante.id },
+    update: { idStructure: hopital.id },
+    create: { idUtilisateur: agentSante.id, numeroCertification: 'ASC-DEMO-0001', idStructure: hopital.id },
+  });
+
+  console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien, agent de sante,');
   console.log(`   admin de structure, admin national (${DEMO.adminNational.telephone})`);
   console.log(`   et l agent de l assureur (${DEMO.agentAssureur.telephone})`);
 

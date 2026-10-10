@@ -8,6 +8,13 @@
     <a matButton="filled" routerLink="/hopital/admission"><i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'HOPITAL.DASH.NEW_ADMISSION' | translate }}</a>
   </div>
 </header>
+  <app-export-liste
+    [titre]="'Épisodes de soins'"
+    [sousTitre]="&#39;Filtre : &#39; + filtre() + &#39; · page &#39; + page()"
+    [colonnes]="colonnes"
+    [lignes]="items()"
+    [nomFichier]="'episodes'" />
+
 
 <div class="bb-hop-toolbar">
   <div class="bb-hop-pills" role="tablist" style="margin:0">

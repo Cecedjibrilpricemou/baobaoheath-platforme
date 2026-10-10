@@ -10,6 +10,12 @@
       <p class="bb-page-head__sub">{{ 'HOPITAL.IDENTITES.SUBTITLE' | translate }}</p>
     </div>
   </header>
+  <app-export-liste
+    [titre]="'Identités des patients'"
+    [colonnes]="colonnes"
+    [lignes]="patients()"
+    [nomFichier]="'identites-patients'" />
+
 
   <!-- La phrase qui évite une faute grave : un agent ne doit jamais croire
        qu'il peut refuser quelqu'un sans papiers. -->

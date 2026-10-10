@@ -8,9 +8,10 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { ToastrService } from 'ngx-toastr';
-import type { TableauDeBordOfficineView } from '@baobaoheath/shared-types';
+import type { RuptureStockView, TableauDeBordOfficineView } from '@baobaoheath/shared-types';
 
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -18,7 +19,7 @@ import { I18nService } from '../../../shared/services/i18n.service';
 @Component({
   selector: 'app-pharmacien-tableau-de-bord',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, RouterLink, MatButtonModule, CategorieProduitPipe, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, RouterLink, MatButtonModule, CategorieProduitPipe, TranslatePipe, ExportListeComponent],
   templateUrl: './tableau-de-bord.component.html',
   styleUrl: './tableau-de-bord.component.scss',
 })
@@ -28,6 +29,20 @@ export class TableauDeBordComponent implements OnInit {
   private i18n = inject(I18nService);
 
   tb = signal<TableauDeBordOfficineView | null>(null);
+
+  /** Ce qu'on emporte chez le grossiste : les produits en manque, et de
+   * combien. Le manque est la difference au seuil — c'est le nombre qu'on
+   * commande, et le calculer de tete devant le fournisseur se rate. */
+  readonly ruptures = computed<RuptureStockView[]>(() => this.tb()?.ruptures ?? []);
+
+  readonly colonnes: ColonneExport<RuptureStockView>[] = [
+    { titre: 'Produit', valeur: (r) => r.medicament.libelle },
+    { titre: 'Catégorie', valeur: (r) => r.medicament.categorie },
+    { titre: 'En stock', valeur: (r) => r.quantite, nombre: true },
+    { titre: 'Seuil', valeur: (r) => r.seuilAlerte, nombre: true },
+    { titre: 'Unité', valeur: (r) => r.unite },
+    { titre: 'Manque', valeur: (r) => Math.max(0, r.seuilAlerte - r.quantite), nombre: true },
+  ];
   isLoading = signal(true);
 
   /** La part de chaque moyen de paiement, pour la barre de repartition. */

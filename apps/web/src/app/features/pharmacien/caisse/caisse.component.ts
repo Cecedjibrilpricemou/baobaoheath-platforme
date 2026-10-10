@@ -31,6 +31,7 @@ import type {
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { PharmacieStock } from '../../../core/models/pharmacien.model';
 import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
@@ -43,7 +44,7 @@ type LignePanier = {
 @Component({
   selector: 'app-pharmacien-caisse',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, CategorieProduitPipe, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, CategorieProduitPipe, TranslatePipe, ExportListeComponent],
   templateUrl: './caisse.component.html',
   styleUrl: './caisse.component.scss',
 })
@@ -55,6 +56,31 @@ export class CaisseComponent implements OnInit {
   /** Le stock de l'officine : il contient aussi des articles non medicamenteux. */
   stocks = signal<PharmacieStock[]>([]);
   ventes = signal<VenteComptoirView[]>([]);
+
+  /**
+   * Le journal de caisse, tel qu'on le rend en fin de journee.
+   *
+   * **Les produits n'y sont pas.** Une feuille de caisse circule, et ce qu'un
+   * patient a achete ne la regarde pas : les montants et le moyen de paiement
+   * suffisent a justifier le tiroir. Le detail reste a l'ecran, sur la vente.
+   *
+   * Une vente annulee figure quand meme, avec son statut : un tiroir qui ne
+   * montre pas ses annulations ne se rapproche pas.
+   */
+  readonly colonnes: ColonneExport<VenteComptoirView>[] = [
+    { titre: 'Numéro', valeur: (v) => v.numero },
+    { titre: 'Heure', valeur: (v) => new Date(v.creeLe) },
+    { titre: 'Client', valeur: (v) => (v.patient ? `${v.patient.prenom} ${v.patient.nom}` : 'Passage') },
+    { titre: 'Ordonnance', valeur: (v) => v.numeroOrdonnance },
+    { titre: 'Paiement', valeur: (v) => v.modePaiement },
+    { titre: 'Brut (GNF)', valeur: (v) => v.montantBrutGnf, nombre: true },
+    { titre: 'Remise (GNF)', valeur: (v) => v.remiseGnf, nombre: true },
+    { titre: 'Net (GNF)', valeur: (v) => v.montantNetGnf, nombre: true },
+    { titre: 'Part assureur (GNF)', valeur: (v) => v.montantAssureGnf, nombre: true },
+    { titre: 'Part patient (GNF)', valeur: (v) => v.montantPatientGnf, nombre: true },
+    { titre: 'Statut', valeur: (v) => v.statut },
+    { titre: 'Vendeur', valeur: (v) => `${v.vendeur.prenom} ${v.vendeur.nom}` },
+  ];
   isLoading = signal(true);
   enCours = signal(false);
 

@@ -12,13 +12,14 @@ import type { DemandeRendezVousView, StatutDemandeRendezVous, StructurePubliqueV
 import { AdminService } from '../../../core/services/admin.service';
 
 import { PatientService } from '../../../core/services/patient.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-patient-rendez-vous',
   standalone: true,
-  imports: [DatePipe, FormsModule, MatButtonModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, MatButtonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './rendez-vous.component.html',
   styleUrl: './rendez-vous.component.scss',
 })
@@ -29,6 +30,18 @@ export class RendezVousComponent implements OnInit {
   private i18n = inject(I18nService);
 
   demandes = signal<DemandeRendezVousView[]>([]);
+
+  /** De quoi se presenter a l'accueil : l'etablissement, le medecin, le bureau. */
+  readonly colonnes: ColonneExport<DemandeRendezVousView>[] = [
+    { titre: 'Établissement', valeur: (d) => d.structure.nom },
+    { titre: 'Préfecture', valeur: (d) => d.structure.prefecture },
+    { titre: 'Médecin', valeur: (d) => (d.medecin ? d.medecin.prenom + ' ' + d.medecin.nom : '') },
+    { titre: 'Bureau', valeur: (d) => d.medecin?.bureau },
+    { titre: 'Motif', valeur: (d) => d.motif },
+    { titre: 'Statut', valeur: (d) => d.statut },
+    { titre: 'Demandée le', valeur: (d) => new Date(d.creeLe) },
+    { titre: 'Épisode', valeur: (d) => d.numeroEpisode },
+  ];
   isLoading = signal(true);
   enCours = signal(false);
 

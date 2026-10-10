@@ -13,13 +13,14 @@ import { ToastrService } from 'ngx-toastr';
 import type { DemandeRendezVousView } from '@baobaoheath/shared-types';
 
 import { HopitalService, MedecinRefView } from '../../../core/services/hopital.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-hopital-demandes',
   standalone: true,
-  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatSelectModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatSelectModule, TranslatePipe, ExportListeComponent],
   templateUrl: './demandes.component.html',
   styleUrl: './demandes.component.scss',
 })
@@ -29,6 +30,16 @@ export class DemandesComponent implements OnInit {
   private i18n = inject(I18nService);
 
   demandes = signal<DemandeRendezVousView[]>([]);
+
+  readonly colonnes: ColonneExport<DemandeRendezVousView>[] = [
+    { titre: 'Patient', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
+    { titre: 'Téléphone', valeur: (d) => d.patient.telephone },
+    { titre: 'Motif', valeur: (d) => d.motif },
+    { titre: 'Médecin', valeur: (d) => (d.medecin ? d.medecin.prenom + ' ' + d.medecin.nom : '') },
+    { titre: 'Bureau', valeur: (d) => d.medecin?.bureau },
+    { titre: 'Statut', valeur: (d) => d.statut },
+    { titre: 'Demandée le', valeur: (d) => new Date(d.creeLe) },
+  ];
   medecins = signal<MedecinRefView[]>([]);
   isLoading = signal(true);
   enCours = signal<string | null>(null);

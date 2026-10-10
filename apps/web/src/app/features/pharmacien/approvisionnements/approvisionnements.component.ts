@@ -16,6 +16,7 @@ import type { ApprovisionnementView, LigneApprovisionnementDto } from '@baobaohe
 
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { MedicamentInfo } from '../../../core/models/pharmacien.model';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
@@ -38,7 +39,7 @@ type LigneSaisie = {
 @Component({
   selector: 'app-pharmacien-approvisionnements',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './approvisionnements.component.html',
   styleUrl: './approvisionnements.component.scss',
 })
@@ -48,6 +49,18 @@ export class ApprovisionnementsComponent implements OnInit {
   private i18n = inject(I18nService);
 
   historique = signal<ApprovisionnementView[]>([]);
+
+  /** Ce qu'on rapproche des factures du fournisseur, ligne par ligne. */
+  readonly colonnes: ColonneExport<ApprovisionnementView>[] = [
+    { titre: 'Numéro', valeur: (a) => a.numero },
+    { titre: 'Date de facture', valeur: (a) => new Date(a.dateFacture) },
+    { titre: 'Fournisseur', valeur: (a) => a.fournisseur },
+    { titre: 'N° de facture', valeur: (a) => a.numeroFacture },
+    { titre: 'Lots', valeur: (a) => a.lots.length, nombre: true },
+    { titre: 'Montant (GNF)', valeur: (a) => a.montantTotalGnf, nombre: true },
+    { titre: 'Saisi par', valeur: (a) => `${a.saisiPar.prenom} ${a.saisiPar.nom}` },
+    { titre: 'Saisi le', valeur: (a) => new Date(a.creeLe) },
+  ];
   /** Le catalogue, a plat : l'API rend des medicaments, pas des lignes de stock. */
   medicaments = signal<MedicamentInfo[]>([]);
   isLoading = signal(true);

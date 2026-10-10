@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MedecinService } from '../../../core/services/medecin.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { ConsultationAValiderView, HorodatageApi } from '@baobaoheath/shared-types';
@@ -12,7 +13,7 @@ import type { ConsultationAValiderView, HorodatageApi } from '@baobaoheath/share
 @Component({
   selector: 'app-medecin-consultations',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, TranslatePipe, ExportListeComponent],
   templateUrl: './consultations.component.html',
   styleUrl: './consultations.component.scss'
 })
@@ -21,6 +22,28 @@ export class MedecinConsultationsComponent implements OnInit {
   private i18n = inject(I18nService);
 
   consultations   = signal<ConsultationAValiderView[]>([]);
+
+  /**
+   * Ce que le medecin a sous les yeux, sur une feuille.
+   *
+   * Le motif y figure : c'est ce qui rend la liste utilisable pour trier sa
+   * journee, et le medecin traitant le voit deja a l'ecran. Les diagnostics
+   * et les ordonnances n'y sont pas — une liste n'est pas un dossier, et une
+   * feuille de tri qui circule n'a pas a porter les traitements.
+   */
+  readonly colonnes: ColonneExport<ConsultationAValiderView>[] = [
+    { titre: 'Patient', valeur: (c) => {
+        const u = c.patient?.utilisateur;
+        return u ? `${u.prenom} ${u.nom}` : '';
+      } },
+    { titre: 'Téléphone', valeur: (c) => c.patient?.utilisateur?.telephone },
+    { titre: 'Motif', valeur: (c) => c.motifPrincipal },
+    { titre: 'Consultée le', valeur: (c) => new Date(c.consulteeLE) },
+    { titre: 'Agent', valeur: (c) => (c.asc ? `${c.asc.utilisateur.prenom} ${c.asc.utilisateur.nom}` : '') },
+    { titre: 'Diagnostics', valeur: (c) => c.diagnostics.length, nombre: true },
+    { titre: 'Ordonnances', valeur: (c) => c.ordonnances.length, nombre: true },
+    { titre: 'Statut', valeur: (c) => c.statut },
+  ];
   selected        = signal<ConsultationAValiderView | null>(null);
   isLoading       = signal(true);
   isValidating    = signal(false);

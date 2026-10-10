@@ -26,6 +26,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import type { CompteView, Role } from '@baobaoheath/shared-types';
 import { AdminService } from '../../../core/services/admin.service';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 const ROLES: Role[] = [
@@ -44,6 +45,7 @@ const MOTIF_MIN = 10;
     CommonModule, FormsModule, TranslatePipe,
     MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+  ExportListeComponent,
   ],
   templateUrl: './comptes.component.html',
   styleUrl: './comptes.component.scss',
@@ -62,6 +64,19 @@ export class ComptesComponent implements OnInit {
 
   // ── L'etat ─────────────────────────────────────────────────────────
   comptes = signal<CompteView[]>([]);
+
+  /** **Aucun mot de passe, evidemment.** Ni rien qui permette de se connecter. */
+  readonly colonnes: ColonneExport<CompteView>[] = [
+    { titre: 'Prénom', valeur: (c) => c.prenom },
+    { titre: 'Nom', valeur: (c) => c.nom },
+    { titre: 'Rôle', valeur: (c) => c.role },
+    { titre: 'Email', valeur: (c) => c.email },
+    { titre: 'Téléphone', valeur: (c) => c.telephone },
+    { titre: 'Structure', valeur: (c) => c.structure },
+    { titre: 'État', valeur: (c) => (c.estActif ? 'Actif' : 'Fermé') },
+    { titre: 'Motif de fermeture', valeur: (c) => c.suspension?.motif },
+    { titre: 'Dernière connexion', valeur: (c) => (c.derniereConnexion ? new Date(c.derniereConnexion) : null) },
+  ];
   total = signal(0);
   chargement = signal(true);
   erreur = signal('');

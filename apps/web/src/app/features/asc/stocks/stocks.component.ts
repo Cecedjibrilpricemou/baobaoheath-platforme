@@ -1,5 +1,5 @@
 // features/asc/stocks/stocks.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { AscService } from '../../../core/services/asc.service';
 import { OfflineQueueService } from '../../../core/services/offline-queue.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { CreateStockDto, HorodatageApi, MedicamentView, StockAscView } from '@baobaoheath/shared-types';
@@ -19,8 +20,8 @@ import type { CreateStockDto, HorodatageApi, MedicamentView, StockAscView } from
   imports: [
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    TranslatePipe
-  ],
+    TranslatePipe,
+  ExportListeComponent],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })
@@ -31,6 +32,17 @@ export class StocksComponent implements OnInit {
   protected Math = Math;
 
   stocks           = signal<StockAscView[]>([]);
+
+  /** Ce qu'on emporte en tournee, et ce qu'il faut demander avant de partir. */
+  readonly colonnes: ColonneExport<StockAscView>[] = [
+    { titre: 'Produit', valeur: (s) => s.medicament?.libelle },
+    { titre: 'Quantité', valeur: (s) => s.quantite, nombre: true },
+    { titre: 'Unité', valeur: (s) => s.unite },
+    { titre: 'Seuil', valeur: (s) => s.seuilAlerte, nombre: true },
+    { titre: 'État', valeur: (s) => (s.enAlerte ? 'À demander' : 'Suffisant') },
+    { titre: 'Péremption la plus proche',
+      valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
+  ];
   isLoading        = signal(true);
   isSaving         = signal(false);
   successMessage   = signal('');
@@ -142,7 +154,14 @@ export class StocksComponent implements OnInit {
       : m.libelle;
   }
 
-  get stocksFiltres(): StockAscView[] {
+  /**
+   * La liste telle qu'elle est affichee, filtre applique.
+   *
+   * `computed` et non un accesseur : l'accesseur refabriquait le tableau a
+   * chaque cycle de detection, donc l'entree de `<app-export-liste>`
+   * changeait d'identite sans arret.
+   */
+  readonly stocksFiltres = computed<StockAscView[]>(() => {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s => {
@@ -154,7 +173,7 @@ export class StocksComponent implements OnInit {
         m?.classeTherapeutique?.toLowerCase().includes(q)
       );
     });
-  }
+  });
 
   getNiveauStock(s: StockAscView): 'critique' | 'faible' | 'normal' {
     if (s.quantite <= s.seuilAlerte) return 'critique';

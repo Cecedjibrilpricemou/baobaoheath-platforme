@@ -6,6 +6,12 @@
       <p class="bb-page-head__sub">{{ 'HOPITAL.DEMANDES.SUB' | translate }}</p>
     </div>
   </header>
+  <app-export-liste
+    [titre]="'Demandes de rendez-vous'"
+    [colonnes]="colonnes"
+    [lignes]="demandes()"
+    [nomFichier]="'demandes-rendez-vous'" />
+
 
   @if (isLoading()) {
     <p class="bb-hdem__muted">{{ 'COMMON.LOADING' | translate }}</p>
