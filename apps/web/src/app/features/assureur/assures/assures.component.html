@@ -7,6 +7,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Mes assurés'"
+    [colonnes]="colonnes"
+    [lignes]="visibles()"
+    [nomFichier]="'assures'" />
+
+
   <!-- Dire ce qu'on ne montre pas, et pourquoi : sinon l'absence passe pour un
        oubli, et se réclame. -->
   <div class="bb-asr__alerte bb-asr__alerte--info">

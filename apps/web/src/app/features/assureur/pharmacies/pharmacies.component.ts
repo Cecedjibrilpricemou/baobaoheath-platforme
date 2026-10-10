@@ -13,13 +13,14 @@ import { MatInputModule } from '@angular/material/input';
 import { ToastrService } from 'ngx-toastr';
 import type { ReglementView, SituationPharmacieView } from '@baobaoheath/shared-types';
 import { AssureurService } from '../../../core/services/assureur.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-assureur-pharmacies',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, TranslatePipe, ExportListeComponent],
   templateUrl: './pharmacies.component.html',
 })
 export class AssureurPharmaciesComponent implements OnInit {
@@ -41,6 +42,19 @@ export class AssureurPharmaciesComponent implements OnInit {
     periodeFin: '',
     reference: '',
   };
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<SituationPharmacieView>[] = [
+    { titre: 'Officine', valeur: (p) => p.nom },
+    { titre: 'Préfecture', valeur: (p) => p.prefecture },
+    { titre: 'Ventes', valeur: (p) => p.nombreVentes, nombre: true },
+    { titre: 'Délivré (GNF)', valeur: (p) => p.montantDelivreGnf, nombre: true },
+    { titre: 'Facturé (GNF)', valeur: (p) => p.montantFactureGnf, nombre: true },
+    { titre: 'Versé (GNF)', valeur: (p) => p.montantPayeGnf, nombre: true },
+    // Negatif quand la compagnie a trop verse : un ecart aussi.
+    { titre: 'Reste dû (GNF)', valeur: (p) => p.resteDuGnf, nombre: true },
+  ];
 
   ngOnInit(): void {
     this.charger();

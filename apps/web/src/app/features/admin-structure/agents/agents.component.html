@@ -12,6 +12,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Agents de la structure'"
+    [colonnes]="colonnes"
+    [lignes]="agents()"
+    [nomFichier]="'agents'" />
+
+
   @if (successMsg()) {
     <div class="bb-agents__alert bb-agents__alert--success" role="status" aria-live="polite"><i class="pi pi-check-circle" aria-hidden="true"></i> {{ successMsg() }}</div>
   }

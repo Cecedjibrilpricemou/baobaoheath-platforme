@@ -146,7 +146,16 @@ async function upsertUtilisateur(
 ) {
   return prisma.utilisateur.upsert({
     where: { telephone: u.telephone },
-    update: { estActif: true, idStructure, motDePasseHash, role, doitChangerMotDePasse: false },
+    // **Le nom et l'adresse reviennent aussi.** Ils ne l'etaient pas, et un
+    // compte renomme depuis l'application cessait d'exister sous l'adresse que
+    // la documentation annonce : trois essais perdus a chercher pourquoi
+    // `accueil.donka@demo.test` ne repondait plus. Un seed de demonstration
+    // qui ne ramene pas les comptes documentes ne fait pas son travail.
+    update: {
+      estActif: true, idStructure, motDePasseHash, role,
+      doitChangerMotDePasse: false,
+      prenom: u.prenom, nom: u.nom, email: u.email ?? null,
+    },
     create: {
       telephone: u.telephone,
       email: u.email ?? null,

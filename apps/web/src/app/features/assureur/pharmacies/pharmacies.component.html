@@ -7,6 +7,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Situation par officine'"
+    [colonnes]="colonnes"
+    [lignes]="pharmacies()"
+    [nomFichier]="'situation-officines'" />
+
+
   @if (chargement()) {
     <p class="bb-asr__attente">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (pharmacies().length === 0) {

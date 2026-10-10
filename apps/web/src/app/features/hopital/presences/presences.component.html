@@ -7,6 +7,14 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'Présences du jour'"
+    [sousTitre]="leJour"
+    [colonnes]="colonnes"
+    [lignes]="presences()"
+    [nomFichier]="'presences'" />
+
+
   @if (isLoading()) {
     <p class="bb-pres__muted">{{ 'COMMON.LOADING' | translate }}</p>
   } @else if (presences().length === 0) {

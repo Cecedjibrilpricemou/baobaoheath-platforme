@@ -12,13 +12,14 @@ import { ToastrService } from 'ngx-toastr';
 import type { PresenceDuJourView } from '@baobaoheath/shared-types';
 
 import { HopitalService } from '../../../core/services/hopital.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-hopital-presences',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, TranslatePipe],
+  imports: [DatePipe, MatButtonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './presences.component.html',
   styleUrl: './presences.component.scss',
 })
@@ -38,6 +39,22 @@ export class PresencesComponent implements OnInit {
   readonly arrives = computed(() =>
     this.presences().filter((p) => p.statut !== 'PLANIFIE')
   );
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  /** La date du jour, pour situer le document : un gabarit ne sait pas
+   * construire une date. */
+  readonly leJour = new Date().toLocaleDateString('fr-FR');
+
+  readonly colonnes: ColonneExport<PresenceDuJourView>[] = [
+    { titre: 'Patient', valeur: (p) => `${p.patient.prenom} ${p.patient.nom}` },
+    { titre: 'Téléphone', valeur: (p) => p.patient.telephone },
+    { titre: 'Heure prévue', valeur: (p) => new Date(p.prevuLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
+    { titre: 'Médecin', valeur: (p) => (p.medecin ? `${p.medecin.prenom} ${p.medecin.nom}` : null) },
+    // Le bureau est facultatif : beaucoup d'hopitaux ne les numerotent pas.
+    { titre: 'Bureau', valeur: (p) => p.medecin?.bureau },
+    { titre: 'Statut', valeur: (p) => p.statut },
+  ];
 
   ngOnInit() {
     this.charger();

@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@baobaoheath/shared-types';
@@ -17,7 +18,7 @@ import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@b
   standalone: true,
   imports: [
     CategorieProduitPipe, SeveriteVariantePipe,
-    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })
@@ -45,6 +46,18 @@ export class PharmacienStocksComponent implements OnInit {
     datePeremption: '',
     margeGnf: null as number | null
   };
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<StockPharmacieView>[] = [
+    { titre: 'Produit', valeur: (s) => s.medicament.libelle },
+    { titre: 'Quantité', valeur: (s) => s.quantite, nombre: true },
+    { titre: 'Unité', valeur: (s) => s.unite },
+    { titre: 'Seuil d\'alerte', valeur: (s) => s.seuilAlerte, nombre: true },
+    // Ce qu'on vient chercher quand on imprime : ce qu'il faut commander.
+    { titre: 'État', valeur: (s) => (s.quantite === 0 ? 'Rupture' : s.quantite <= s.seuilAlerte ? 'À commander' : 'Suffisant') },
+    { titre: 'Péremption la plus proche', valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
+  ];
 
   ngOnInit() { this.loadStocks(); this.loadMedicaments(); }
 

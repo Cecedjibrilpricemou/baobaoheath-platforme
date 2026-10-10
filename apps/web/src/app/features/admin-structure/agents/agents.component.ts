@@ -5,6 +5,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { AgentStructureView, CreationAgentView, HorodatageApi } from '@baobaoheath/shared-types';
@@ -22,7 +23,7 @@ interface MotDePasseAffiche {
   selector: 'app-agents',
   standalone: true,
   imports: [
-    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './agents.component.html',
   styleUrl: './agents.component.scss'
 })
@@ -105,6 +106,17 @@ export class AgentsComponent implements OnInit {
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'), value: 'TECHNICIEN_LABO' }
     ];
   }
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<AgentStructureView>[] = [
+    { titre: 'Nom', valeur: (a) => `${a.prenom} ${a.nom}` },
+    { titre: 'Rôle', valeur: (a) => this.getRoleLabel(a.role) },
+    { titre: 'Téléphone', valeur: (a) => a.telephone },
+    { titre: 'Courriel', valeur: (a) => a.email },
+    { titre: 'Bureau', valeur: (a) => a.bureau },
+    { titre: 'Ajouté le', valeur: (a) => new Date(a.creeLe) },
+  ];
 
   ngOnInit() { this.loadAgents(); }
 

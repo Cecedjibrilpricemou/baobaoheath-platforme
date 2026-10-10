@@ -12,13 +12,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import type { AssureView } from '@baobaoheath/shared-types';
 import { AssureurService } from '../../../core/services/assureur.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-assureur-assures',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, TranslatePipe, ExportListeComponent],
   templateUrl: './assures.component.html',
 })
 export class AssureurAssuresComponent implements OnInit {
@@ -40,6 +41,18 @@ export class AssureurAssuresComponent implements OnInit {
     return this.assures().filter((a) =>
       `${a.patient.prenom} ${a.patient.nom} ${a.numeroPolice}`.toLowerCase().includes(q));
   });
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<AssureView>[] = [
+    { titre: 'Assuré', valeur: (a) => `${a.patient.prenom} ${a.patient.nom}` },
+    { titre: 'Police', valeur: (a) => a.numeroPolice },
+    { titre: 'Statut', valeur: (a) => a.statut },
+    { titre: 'Taux (%)', valeur: (a) => a.tauxBasePourcent, nombre: true },
+    { titre: 'Consommé cette année (GNF)', valeur: (a) => a.consommeAnneeGnf, nombre: true },
+    { titre: 'Plafond annuel (GNF)', valeur: (a) => a.plafondAnnuelGnf, nombre: true },
+    { titre: 'Passages', valeur: (a) => a.nombrePassages, nombre: true },
+  ];
 
   ngOnInit(): void {
     this.service.mesAssures().subscribe({
