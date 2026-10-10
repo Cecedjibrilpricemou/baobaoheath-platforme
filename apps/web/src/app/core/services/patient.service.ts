@@ -1,7 +1,9 @@
 // core/services/patient.service.ts
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import type { CreerDemandeRendezVousDto, DemandeRendezVousView } from '@baobaoheath/shared-types';
+import type {
+  CommandeView,
+  ModeRemise, CreerDemandeRendezVousDto, DemandeRendezVousView } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
 import { Patient, PatientCreatePayload, PatientUpdatePayload, Consultation } from '../models/patient.model';
 import { ApiResponse, PaginatedData } from '../models/api.model';
@@ -65,5 +67,22 @@ export class PatientService {
 
   getPatientById(id: string): Observable<ApiResponse<Patient>> {
     return this.api.get<ApiResponse<Patient>>(`/patients/${id}`);
+  }
+
+  // --- P6 / EF-07 : la commande en pharmacie ---------------------------
+
+  /**
+   * Les commandes du patient.
+   *
+   * Il n'avait aucun moyen de les voir : l'appel partait, une pharmacie
+   * prenait, et c'est pourtant à lui de dire comment être servi.
+   */
+  mesCommandes(): Observable<ApiResponse<CommandeView[]>> {
+    return this.api.get<ApiResponse<CommandeView[]>>('/commandes/mes-commandes');
+  }
+
+  /** Retrait ou livraison. **Le retrait n'est pas un repli.** */
+  choisirModeRemise(idCommande: string, mode: ModeRemise): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/mode-remise`, { mode });
   }
 }

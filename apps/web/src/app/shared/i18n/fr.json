@@ -692,7 +692,32 @@
       "ESPECES_AIDE": "Présentez-vous au guichet avec le montant. L'agent confirmera le règlement.",
       "ESPECES_GUICHET": "Réglez au guichet : l'agent confirmera votre paiement."
     },
-    "NAV_PAIEMENTS": "Mes paiements"
+    "NAV_PAIEMENTS": "Mes paiements",
+    "COMMANDES": {
+      "TITRE": "Mes commandes",
+      "SOUS_TITRE": "Vos ordonnances prises en charge par une pharmacie.",
+      "ACTUALISER": "Actualiser",
+      "AUCUNE": "Aucune commande",
+      "AUCUNE_AIDE": "Quand votre médecin signera une ordonnance, les pharmacies de votre quartier seront appelées.",
+      "BOITES": "{{n}} boîte(s)",
+      "UNE_PHARMACIE": "Une pharmacie",
+      "A_VOS_PRODUITS": "a vos produits",
+      "QUESTION": "Comment voulez-vous être servi ?",
+      "RETRAIT": "Je passe la chercher",
+      "RETRAIT_AIDE": "Vous retirez vos produits à la pharmacie, quand vous voulez.",
+      "LIVRAISON": "Me faire livrer",
+      "LIVRAISON_AIDE": "Un livreur vous les apporte. Les frais vous seront proposés avant.",
+      "CHOISI_RETRAIT_PHARMACIE": "Retrait choisi. La pharmacie prépare votre commande.",
+      "CHOISI_LIVRAISON": "Livraison choisie. Les frais de transport vous seront proposés.",
+      "MODE_CHOISI": "Vous avez choisi : {{mode}}.",
+      "MODE_RETRAIT_PHARMACIE": "le retrait à la pharmacie",
+      "MODE_LIVRAISON": "la livraison",
+      "RECHERCHE": "Recherche d’une pharmacie",
+      "RECHERCHE_AIDE": "Les pharmacies de votre quartier ont été appelées. La première qui a tous vos produits prendra la commande.",
+      "SANS_PHARMACIE": "Aucune pharmacie du quartier n'avait tout",
+      "SANS_PHARMACIE_AIDE": "Votre ordonnance reste valide : présentez-la au comptoir de la pharmacie de votre choix."
+    },
+    "NAV_COMMANDES": "Mes commandes"
   },
   "ASC": {
     "ROLE": "Agent de Santé",

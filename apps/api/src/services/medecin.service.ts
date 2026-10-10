@@ -16,6 +16,8 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { withCache, cacheDel } from '../utils/cache';
 import { emitToUser } from '../realtime/socket.server';
 import { envoyerSmsSimule, notifierSansBloquer } from './notification.service';
+import { lancerRecherchePharmacie } from './commande.service';
+import { logger } from '../config/logger';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
@@ -169,6 +171,24 @@ export async function validerConsultation(
             lienAction: '/patient/qr-code',
             metadonnees: { idConsultation, idOrdonnances: idOrdonnancesSignees },
         });
+
+        // **L'appel aux pharmacies part dès l'ordonnance prête** (addendum du
+        // 2026-09-28, point 1). C'est le geste décrit : le patient n'a pas à
+        // courir les officines pour savoir laquelle a tout.
+        //
+        // Hors transaction, et sans bloquer : une pharmacie injoignable, un
+        // patient sans quartier renseigné, ou une recherche déjà lancée ne
+        // doivent pas défaire une signature. L'ordonnance reste valide et
+        // servable au comptoir dans tous les cas.
+        for (const idOrdonnance of idOrdonnancesSignees) {
+            try {
+                await lancerRecherchePharmacie(idOrdonnance);
+            } catch (e) {
+                logger.warn('[ORDONNANCE] appel aux pharmacies impossible', {
+                    idOrdonnance, erreur: (e as Error).message,
+                });
+            }
+        }
     }
 
     return updated;

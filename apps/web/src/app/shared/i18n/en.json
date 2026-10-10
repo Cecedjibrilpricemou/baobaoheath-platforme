@@ -692,7 +692,32 @@
       "ESPECES_AIDE": "Come to the desk with the amount. The agent will confirm the payment.",
       "ESPECES_GUICHET": "Pay at the desk: the agent will confirm your payment."
     },
-    "NAV_PAIEMENTS": "My payments"
+    "NAV_PAIEMENTS": "My payments",
+    "COMMANDES": {
+      "TITRE": "My orders",
+      "SOUS_TITRE": "Your prescriptions taken on by a pharmacy.",
+      "ACTUALISER": "Refresh",
+      "AUCUNE": "No order",
+      "AUCUNE_AIDE": "When your doctor signs a prescription, the pharmacies in your neighbourhood will be called.",
+      "BOITES": "{{n}} box(es)",
+      "UNE_PHARMACIE": "A pharmacy",
+      "A_VOS_PRODUITS": "has your products",
+      "QUESTION": "How would you like to be served?",
+      "RETRAIT": "I will pick it up",
+      "RETRAIT_AIDE": "You collect your products at the pharmacy, whenever you want.",
+      "LIVRAISON": "Have it delivered",
+      "LIVRAISON_AIDE": "A courier brings them to you. The fee will be offered to you first.",
+      "CHOISI_RETRAIT_PHARMACIE": "Pickup chosen. The pharmacy is preparing your order.",
+      "CHOISI_LIVRAISON": "Delivery chosen. The transport fee will be offered to you.",
+      "MODE_CHOISI": "You chose: {{mode}}.",
+      "MODE_RETRAIT_PHARMACIE": "pickup at the pharmacy",
+      "MODE_LIVRAISON": "delivery",
+      "RECHERCHE": "Looking for a pharmacy",
+      "RECHERCHE_AIDE": "The pharmacies in your neighbourhood have been called. The first with all your products will take the order.",
+      "SANS_PHARMACIE": "No pharmacy in the neighbourhood had everything",
+      "SANS_PHARMACIE_AIDE": "Your prescription remains valid: bring it to the counter of the pharmacy of your choice."
+    },
+    "NAV_COMMANDES": "My orders"
   },
   "ASC": {
     "ROLE": "Health Worker",

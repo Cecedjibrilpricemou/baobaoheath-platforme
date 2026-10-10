@@ -79,8 +79,24 @@ router.post(
   }
 );
 
+/** Les commandes du patient connecte : c'est lui qui choisit son mode de remise. */
+router.get('/mes-commandes', requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const data = await commande.mesCommandes(req.user!);
+  res.json({ success: true, data });
+});
+
+/**
+ * Lire une commande.
+ *
+ * **Cette route n'avait aucun controle** : n'importe quel compte connecte
+ * pouvait lire la commande d'un inconnu, avec son nom et ses medicaments.
+ * Quatre lectures sont legitimes — le patient, la pharmacie concernee, le
+ * prescripteur, l'administration.
+ */
 router.get('/:id', async (req: AuthRequest, res: Response) => {
-  const data = await commande.getCommande(String(req.params.id));
+  const id = String(req.params.id);
+  await commande.assertPeutLireCommande(req.user!, id);
+  const data = await commande.getCommande(id);
   res.json({ success: true, data });
 });
 

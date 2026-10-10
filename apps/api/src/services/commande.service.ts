@@ -76,6 +76,9 @@ export function versCommandeView(
   };
 }
 
+/** Qui voit tout : la surveillance de la plateforme, pas le soin. */
+const ROLES_ADMIN = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
+
 const COMMANDE_INCLUDE = {
   ordonnance: {
     include: {
@@ -482,6 +485,82 @@ async function journaliserRetractation(idCommande: string, nomPharmacie: string,
 }
 
 /** Réexporté pour les écrans : le statut d'une ordonnance côté commande. */
+/**
+ * Les commandes du patient connecte.
+ *
+ * Il n'avait aucun moyen de les voir : l'appel partait, une pharmacie
+ * prenait, et rien ne le lui disait — alors que c'est **lui** qui doit
+ * choisir entre retrait et livraison.
+ */
+export async function mesCommandes(user: JwtPayload): Promise<CommandeView[]> {
+  const commandes = await prisma.commande.findMany({
+    where: {
+      ordonnance: { consultation: { patient: { idUtilisateur: user.userId } } },
+      statut: { not: StatutCommande.ANNULEE },
+    },
+    include: COMMANDE_INCLUDE,
+    orderBy: { creeLe: 'desc' },
+    take: 20,
+  });
+  return commandes.map((c) => versCommandeView(c));
+}
+
+/**
+ * Qui peut lire une commande.
+ *
+ * **`GET /commandes/:id` n'avait aucun controle** — ni role, ni propriete :
+ * n'importe quel compte connecte pouvait lire la commande d'un inconnu, avec
+ * son nom et ses medicaments. Le defaut datait de la mise en place de la
+ * route, le 2026-09-26.
+ *
+ * Quatre lectures sont legitimes : le patient concerne, la pharmacie qui l'a
+ * prise ou qui est sollicitee dans son quartier, le prescripteur, et
+ * l'administration.
+ */
+export async function assertPeutLireCommande(user: JwtPayload, idCommande: string): Promise<void> {
+  if (ROLES_ADMIN.has(user.role)) return;
+
+  const commande = await prisma.commande.findUnique({
+    where: { id: idCommande },
+    select: {
+      idPharmacie: true,
+      quartierRecherche: true,
+      statut: true,
+      ordonnance: {
+        select: {
+          signePar: true,
+          consultation: {
+            select: { idMedecinValideur: true, patient: { select: { idUtilisateur: true } } },
+          },
+        },
+      },
+    },
+  });
+  if (!commande) throw new NotFoundError('Commande non trouvee');
+
+  const o = commande.ordonnance;
+  if (o.consultation.patient.idUtilisateur === user.userId) return;
+  if (o.signePar === user.userId || o.consultation.idMedecinValideur === user.userId) return;
+
+  const utilisateur = await prisma.utilisateur.findUnique({
+    where: { id: user.userId },
+    select: { idStructure: true, structure: { select: { type: true, quartier: true, estPartenaire: true } } },
+  });
+  const structure = utilisateur?.structure;
+  if (structure?.type === TypeStructure.PHARMACIE) {
+    // Celle qui l'a prise, ou une partenaire du quartier encore sollicitee :
+    // elle doit pouvoir lire ce qu'on lui demande de servir.
+    if (utilisateur?.idStructure === commande.idPharmacie) return;
+    if (
+      structure.estPartenaire
+      && commande.statut === StatutCommande.RECHERCHE_PHARMACIE
+      && structure.quartier === commande.quartierRecherche
+    ) return;
+  }
+
+  throw new ForbiddenError("Cette commande ne vous concerne pas");
+}
+
 export async function commandeDeLOrdonnance(idOrdonnance: string) {
   return prisma.commande.findUnique({
     where: { idOrdonnance },

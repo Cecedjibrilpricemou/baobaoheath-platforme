@@ -400,3 +400,44 @@
 
   &__modale-texte { font-size: 13.5px; color: var(--bb-text-muted); margin: 0; }
 }
+
+// Le choix du mode de remise, cote patient (P6 / EF-07).
+//
+// **Le retrait n'est pas un repli** : les deux options ont exactement le meme
+// poids visuel, et aucune n'est preselectionnee.
+.bb-cmd {
+  &__question {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 16px 0 10px;
+  }
+
+  &__choix {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  &__option {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+    padding: 16px; text-align: left;
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-lg);
+    cursor: pointer; transition: all var(--bb-transition);
+
+    &:hover:not(:disabled) {
+      border-color: var(--bb-primary);
+      background: var(--bb-surface-2);
+      transform: translateY(-1px);
+    }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+
+    i { font-size: 20px; color: var(--bb-primary); margin-bottom: 4px; }
+  }
+
+  &__option-titre {
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700;
+    color: var(--bb-text-primary);
+  }
+
+  &__option-aide { font-size: 12.5px; color: var(--bb-text-muted); }
+}

@@ -1,0 +1,125 @@
+<div class="bb-cmd">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shopping-bag" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.COMMANDES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.COMMANDES.SOUS_TITRE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-cmd__btn bb-cmd__btn--plat" type="button" (click)="charger()" [disabled]="chargement()">
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        {{ 'PATIENT.COMMANDES.ACTUALISER' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-cmd__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (commandes().length === 0) {
+    <div class="bb-cmd__vide">
+      <i class="pi pi-shopping-bag" aria-hidden="true"></i>
+      <p class="bb-cmd__vide-titre">{{ 'PATIENT.COMMANDES.AUCUNE' | translate }}</p>
+      <p class="bb-cmd__vide-aide">{{ 'PATIENT.COMMANDES.AUCUNE_AIDE' | translate }}</p>
+    </div>
+  } @else {
+
+    <!-- ── Une pharmacie a pris : c'est ici qu'on choisit ──────────── -->
+    @for (c of prises(); track c.id) {
+      <article class="bb-cmd__carte bb-cmd__carte--mienne">
+        <div class="bb-cmd__entete">
+          <div>
+            <p class="bb-cmd__patient">
+              {{ c.pharmacie?.nom || ('PATIENT.COMMANDES.UNE_PHARMACIE' | translate) }}
+            </p>
+            <p class="bb-cmd__meta">
+              {{ 'PATIENT.COMMANDES.A_VOS_PRODUITS' | translate }}
+              · {{ c.numeroOrdonnance }}
+            </p>
+          </div>
+          <span class="bb-cmd__boites">
+            {{ 'PATIENT.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+          </span>
+        </div>
+
+        <ul class="bb-cmd__lignes">
+          @for (l of c.lignes; track l.id) {
+            <li class="bb-cmd__ligne">
+              <span class="bb-cmd__produit">
+                {{ l.libelle }}
+                @if (dosageUtile(l.libelle, l.dosage); as d) {
+                  <span class="bb-cmd__dosage">{{ d }}</span>
+                }
+                @if (l.posologie) { <span class="bb-cmd__dosage">— {{ l.posologie }}</span> }
+              </span>
+              <span class="bb-cmd__qte">× {{ l.quantite }}</span>
+            </li>
+          }
+        </ul>
+
+        @if (c.modeRemise) {
+          <p class="bb-cmd__note">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            {{ 'PATIENT.COMMANDES.MODE_CHOISI' | translate: { mode: libelleMode(c.modeRemise) } }}
+          </p>
+        } @else {
+          <!-- Les deux à égalité, aucun présélectionné : beaucoup de patients
+               habitent à côté d'une pharmacie et iront chercher eux-mêmes. -->
+          <p class="bb-cmd__question">{{ 'PATIENT.COMMANDES.QUESTION' | translate }}</p>
+          <div class="bb-cmd__choix">
+            <button class="bb-cmd__option" type="button"
+                    (click)="choisir(c, 'RETRAIT_PHARMACIE')" [disabled]="enCours() === c.id">
+              <i class="pi pi-shop" aria-hidden="true"></i>
+              <span class="bb-cmd__option-titre">{{ 'PATIENT.COMMANDES.RETRAIT' | translate }}</span>
+              <span class="bb-cmd__option-aide">{{ 'PATIENT.COMMANDES.RETRAIT_AIDE' | translate }}</span>
+            </button>
+            <button class="bb-cmd__option" type="button"
+                    (click)="choisir(c, 'LIVRAISON')" [disabled]="enCours() === c.id">
+              <i class="pi pi-send" aria-hidden="true"></i>
+              <span class="bb-cmd__option-titre">{{ 'PATIENT.COMMANDES.LIVRAISON' | translate }}</span>
+              <span class="bb-cmd__option-aide">{{ 'PATIENT.COMMANDES.LIVRAISON_AIDE' | translate }}</span>
+            </button>
+          </div>
+        }
+      </article>
+    }
+
+    <!-- ── On cherche encore ───────────────────────────────────────── -->
+    @for (c of enRecherche(); track c.id) {
+      <article class="bb-cmd__carte bb-cmd__carte--appel">
+        <div class="bb-cmd__entete">
+          <div>
+            <p class="bb-cmd__patient">{{ 'PATIENT.COMMANDES.RECHERCHE' | translate }}</p>
+            <p class="bb-cmd__meta">
+              {{ c.numeroOrdonnance }}
+              @if (c.quartierRecherche) { · {{ c.quartierRecherche }} }
+            </p>
+          </div>
+          <span class="bb-cmd__boites">
+            {{ 'PATIENT.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+          </span>
+        </div>
+        <p class="bb-cmd__note">
+          <i class="pi pi-clock" aria-hidden="true"></i>
+          {{ 'PATIENT.COMMANDES.RECHERCHE_AIDE' | translate }}
+        </p>
+      </article>
+    }
+
+    <!-- ── Aucune officine du quartier ─────────────────────────────── -->
+    @for (c of sansPharmacie(); track c.id) {
+      <article class="bb-cmd__carte">
+        <div class="bb-cmd__entete">
+          <div>
+            <p class="bb-cmd__patient">{{ 'PATIENT.COMMANDES.SANS_PHARMACIE' | translate }}</p>
+            <p class="bb-cmd__meta">{{ c.numeroOrdonnance }}</p>
+          </div>
+        </div>
+        <!-- L'ordonnance reste valide : elle se présente au comptoir. -->
+        <p class="bb-cmd__note">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          {{ 'PATIENT.COMMANDES.SANS_PHARMACIE_AIDE' | translate }}
+        </p>
+      </article>
+    }
+  }
+</div>

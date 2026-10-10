@@ -21,6 +21,11 @@ export const PATIENT_ROUTES: Routes = [
           import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
+        path: 'commandes',
+        loadComponent: () =>
+          import('./commandes/commandes.component').then(m => m.PatientCommandesComponent)
+      },
+      {
         path: 'paiements',
         loadComponent: () =>
           import('./paiements/paiements.component').then(m => m.PatientPaiementsComponent)

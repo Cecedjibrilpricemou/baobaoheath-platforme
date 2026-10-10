@@ -90,6 +90,7 @@ export class PatientLayoutComponent {
     { labelKey: 'PATIENT.NAV_RENDEZ_VOUS', icon: 'pi-calendar-plus', route: '/patient/rendez-vous' },
     { labelKey: 'PATIENT.NAV_ORDONNANCES', icon: 'pi-file-edit', route: '/patient/ordonnances' },
     { labelKey: 'PATIENT.NAV_RESULTATS', icon: 'pi-chart-line', route: '/patient/resultats' },
+    { labelKey: 'PATIENT.NAV_COMMANDES', icon: 'pi-shopping-bag', route: '/patient/commandes' },
     { labelKey: 'PATIENT.NAV_PAIEMENTS', icon: 'pi-wallet', route: '/patient/paiements' },
     { labelKey: 'PATIENT.NAV_PROFIL',    icon: 'pi-user',   route: '/patient/profil'    },
     { labelKey: 'PATIENT.NAV_QR_CODE',   icon: 'pi-qrcode', route: '/patient/qr-code'   },
