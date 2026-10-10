@@ -1,5 +1,5 @@
 // features/pharmacien/stocks/stocks.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
 import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -93,7 +93,14 @@ export class PharmacienStocksComponent implements OnInit {
     return this.medicaments().map(m => ({ label: m.libelle, value: m.id }));
   }
 
-  get stocksFiltres(): StockPharmacieView[] {
+  /**
+   * Le stock tel qu'il est affiche, recherche appliquee.
+   *
+   * `computed` et non un accesseur : l'accesseur refabriquait le tableau a
+   * chaque cycle de detection, donc l'entree de `<app-export-liste>`
+   * changeait d'identite sans arret.
+   */
+  readonly stocksFiltres = computed<StockPharmacieView[]>(() => {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s =>
@@ -102,7 +109,7 @@ export class PharmacienStocksComponent implements OnInit {
       s.medicament.nomCommercial?.toLowerCase().includes(q) ||
       s.medicament.classeTherapeutique?.toLowerCase().includes(q)
     );
-  }
+  });
 
   reapprovisionner() {
     if (!this.formReappro.idMedicament || !this.formReappro.quantiteAjoutee) {

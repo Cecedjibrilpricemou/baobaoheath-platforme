@@ -16,8 +16,9 @@
 
   <app-export-liste
     [titre]="'État du stock'"
+    [sousTitre]="searchQuery() ? ('Recherche : ' + searchQuery()) : ''"
     [colonnes]="colonnes"
-    [lignes]="stocks()"
+    [lignes]="stocksFiltres()"
     [nomFichier]="'stock'" />
 
 
@@ -126,7 +127,7 @@
         <div class="bb-skeleton" style="height:160px;border-radius:16px"></div>
       }
     </div>
-  } @else if (stocksFiltres.length === 0) {
+  } @else if (stocksFiltres().length === 0) {
     <div class="bb-ph-stocks__empty">
       <i class="pi pi-inbox"></i>
       <p>{{ 'PHARMACIEN.STOCKS.EMPTY_TITLE' | translate }}</p>
@@ -139,7 +140,7 @@
     </div>
   } @else {
     <div class="bb-ph-stocks__list">
-      @for (s of stocksFiltres; track s.id) {
+      @for (s of stocksFiltres(); track s.id) {
         <div class="bb-ph-stocks__card" [class.bb-ph-stocks__card--critique]="s.quantite <= s.seuilAlerte">
           
           <div class="bb-ph-stocks__card-header">
