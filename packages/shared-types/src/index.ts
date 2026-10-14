@@ -124,7 +124,12 @@ export type TypeNotification =
   | 'ESCALADE_CRITIQUE'
   | 'COMMANDE_A_SERVIR'
   | 'COMMANDE_PRISE_EN_CHARGE'
-  | 'COMMANDE_SANS_PHARMACIE';
+  | 'COMMANDE_SANS_PHARMACIE'
+  | 'COMMANDE_A_PAYER'
+  | 'COMMANDE_PAYEE'
+  | 'COMMANDE_PRETE'
+  | 'COMMANDE_REMISE'
+  | 'COMMANDE_ANNULEE';
 
 /** Statut d'une commande pharmacie (EF-07). */
 // ═══════════════════════════════════════════════════════════════════
@@ -148,6 +153,18 @@ export interface LigneCommandeView {
   quantite: number;
   /** Ce que le medecin a ecrit sur la facon de prendre le produit. */
   posologie?: string | null;
+
+  /**
+   * Le prix de cette officine, **fige au chiffrage**.
+   *
+   * Absent tant que la commande n'est pas chiffree : avant, il n'y a qu'une
+   * prescription, et annoncer un prix tire du catalogue national serait
+   * annoncer un prix que personne ne tiendra. Prix de reference plus la
+   * marge de l'officine, exactement la regle du comptoir.
+   */
+  prixUnitaireGnf?: number | null;
+  /** `quantite * prixUnitaireGnf`, figee elle aussi. */
+  montantGnf?: number | null;
 }
 
 /** Ce qu'une pharmacie sollicitee a repondu. */
@@ -183,11 +200,43 @@ export interface CommandeView {
 
   /** Vrai quand **cette** pharmacie l'a prise : l'API le calcule pour elle. */
   estLaMienne?: boolean;
+
+  /**
+   * Le total du panier, nul tant qu'il n'est pas chiffre.
+   *
+   * Redondant avec la somme des lignes, et garde par un declencheur
+   * differe cote base : l'ecran n'a pas a recalculer un total pour
+   * l'afficher, et les deux ne peuvent pas se contredire.
+   */
+  montantTotalGnf?: number | null;
+  chiffreeLe?: HorodatageApi | null;
+  preteLe?: HorodatageApi | null;
+  remiseLe?: HorodatageApi | null;
+  clotureeLe?: HorodatageApi | null;
+  motifAnnulation?: string | null;
 }
 
+/**
+ * Ou en est une commande.
+ *
+ * Le tronc commun va de l'appel au quartier jusqu'a la preparation, puis
+ * deux sorties selon le mode de remise choisi par le patient.
+ *
+ * `PRETE_POUR_LIVRAISON` est le **point de jonction avec P8** : la course,
+ * l'enchere des motards et le suivi commencent la. Les etats propres a la
+ * livraison n'existent pas encore — un etat qu'aucun code ne pose ne se
+ * verifie pas.
+ */
 export type StatutCommande =
   | 'RECHERCHE_PHARMACIE'
   | 'PRISE_EN_CHARGE'
+  | 'A_PAYER'
+  | 'PAYEE'
+  | 'EN_PREPARATION'
+  | 'PRETE_POUR_RETRAIT'
+  | 'PRETE_POUR_LIVRAISON'
+  | 'RETIREE'
+  | 'CLOTUREE'
   | 'SANS_PHARMACIE'
   | 'ANNULEE';
 
@@ -391,6 +440,20 @@ export interface VaccinationFilters {
 export interface InitierPaiementDto {
   idConsultation: string;
   montantGnf: number;
+  modePaiement: ModePaiement;
+  numeroOperateur?: string;
+}
+
+/**
+ * Payer le panier d'une commande de pharmacie.
+ *
+ * **Aucun montant.** Il est fige en base au chiffrage par l'officine, et le
+ * client n'a pas a le proposer : un montant qui vient du navigateur est un
+ * montant qu'on peut baisser. Le paiement d'une consultation, lui, accepte
+ * encore un montant propose — plafonne — pour les cas ou aucun tarif n'est
+ * enregistre.
+ */
+export interface PayerCommandeDto {
   modePaiement: ModePaiement;
   numeroOperateur?: string;
 }

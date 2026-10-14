@@ -328,6 +328,27 @@ export const choisirModeRemiseSchema = z.object({
   mode: z.enum(['RETRAIT_PHARMACIE', 'LIVRAISON']),
 }).strict();
 
+export const annulerCommandeSchema = z.object({
+  // Le meme minimum que la retractation : le patient attend une explication,
+  // et la base l'exige aussi.
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+/**
+ * Payer le panier d'une commande.
+ *
+ * **Aucun montant.** Il est fige en base au chiffrage ; un montant qui vient
+ * du navigateur est un montant qu'on peut baisser.
+ */
+export const payerCommandeSchema = z.object({
+  // Les memes trois valeurs que `initierPaiementSchema`, parce que c'est
+  // l'enum `ModePaiement` de la base. Une premiere version en inventait
+  // sept — carte, virement, deux operateurs qui n'existent pas ici — et le
+  // schema aurait accepte des valeurs que Prisma aurait refusees.
+  modePaiement: z.enum(['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES']),
+  numeroOperateur: z.string().trim().min(6).max(30).optional(),
+}).strict();
+
 export const createConsultationSchema = z.object({
   idPatient: id,
   motifPrincipal: z.string().trim().min(2).max(500),

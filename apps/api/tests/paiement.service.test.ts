@@ -22,6 +22,24 @@ jest.mock('../src/services/payment-provider.service', () => ({
 
 // initierPaiement consulte les parametres systeme (modes de paiement actifs).
 // Les defauts activent Orange Money et especes ; un test ci-dessous couvre le refus.
+/**
+ * **La passerelle est declaree absente, explicitement.**
+ *
+ * Ces tests portent sur le tarif et son plafonnement, pas sur le paiement
+ * mobile : ils doivent emprunter le repli par simulation. Ils le faisaient
+ * deja — mais par accident, parce que `config/env` n'etait pas dans le graphe
+ * de modules de ce fichier, donc `.env` n'etait pas charge et les cles
+ * ChapChap etaient absentes. Le jour ou un service importe `config/env`
+ * quelque part en amont, la passerelle devenait « configuree » et trois
+ * tests tombaient — pour une raison qui n'avait rien a voir avec eux.
+ */
+jest.mock('../src/services/chapchap.service', () => ({
+  chapchapEstConfigure: () => false,
+  creerOperation: jest.fn(),
+  lireOperation: jest.fn(),
+  estPaye: (statut: string) => statut === 'success',
+}));
+
 jest.mock('../src/services/parametres.service', () => ({
   getValeursParametres: jest.fn(),
 }));

@@ -218,6 +218,11 @@ enum TypeNotification {
   COMMANDE_A_SERVIR // P6 : appel aux pharmacies du quartier
   COMMANDE_PRISE_EN_CHARGE // P6 : une pharmacie a tout, elle sert
   COMMANDE_SANS_PHARMACIE // P6 : aucune n'a la totalite
+  COMMANDE_A_PAYER // P6 : le panier est chiffre, le patient sait quoi payer
+  COMMANDE_PAYEE // P6 : les medicaments sont regles
+  COMMANDE_PRETE // P6 : le sachet attend, au comptoir ou pour le motard
+  COMMANDE_REMISE // P6 : remis au patient, ou au motard
+  COMMANDE_ANNULEE // P6 : avec son motif
 }
 
 enum UssdSessionStatus {
@@ -1039,6 +1044,7 @@ model Medicament {
   contreIndications String[]
 
   lignesOrdonnance LigneOrdonnance[]
+  lignesCommande   LigneCommande[]
   stocks           Stock[]
   lignesVente      LigneVente[]
 
@@ -1464,6 +1470,13 @@ model Facture {
 
   idConsultation String?       @unique
   consultation   Consultation? @relation(fields: [idConsultation], references: [id])
+
+  /// La commande reglee. **Une facture porte l'un ou l'autre, jamais les
+  /// deux** : une contrainte le verifie. Sans ce lien, payer un panier de
+  /// pharmacie aurait exige un second circuit de paiement a cote de celui
+  /// qui marche deja.
+  idCommande String?   @unique
+  commande   Commande? @relation(fields: [idCommande], references: [id])
 
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([statut])
@@ -1999,6 +2012,23 @@ enum StatutCommande {
   RECHERCHE_PHARMACIE
   /// Une pharmacie a declare detenir la totalite : elle a la commande.
   PRISE_EN_CHARGE
+  /// Le panier est chiffre, ligne par ligne, aux prix de cette officine.
+  /// Le patient sait ce qu'il va payer avant de payer.
+  A_PAYER
+  /// Les medicaments sont regles. Le transport, lui, se reglera au motard
+  /// a l'arrivee : il ne passe pas par la plateforme.
+  PAYEE
+  /// L'officine prepare le sachet.
+  EN_PREPARATION
+  /// Pret, et le patient vient le chercher.
+  PRETE_POUR_RETRAIT
+  /// Pret, et il part en livraison. **C'est le point de jonction avec P8** :
+  /// la course, l'enchere des motards et le suivi commencent ici.
+  PRETE_POUR_LIVRAISON
+  /// Remis au patient, ou au motard pour une livraison.
+  RETIREE
+  /// Dossier clos. Etat terminal.
+  CLOTUREE
   /// Aucune pharmacie du quartier ne detient la totalite, ou aucune n'est
   /// partenaire. Le patient repart avec son ordonnance.
   SANS_PHARMACIE
@@ -2037,6 +2067,23 @@ model Commande {
   pharmacie       StructureSante? @relation("PharmacieCommande", fields: [idPharmacie], references: [id])
   priseEnChargeLe DateTime?
 
+  /// La somme des lignes, figee au chiffrage. Elle est redondante avec
+  /// `lignes`, et c'est voulu : une contrainte verifie qu'elles s'accordent,
+  /// et l'ecran n'a pas a recalculer un total pour l'afficher.
+  montantTotalGnf Int?
+
+  chiffreeLe DateTime?
+  preteLe    DateTime?
+  remiseLe   DateTime?
+  clotureeLe DateTime?
+
+  /// Pourquoi la commande a ete annulee. Exige par contrainte des que le
+  /// statut est ANNULEE : une annulation sans motif ne s'explique pas trois
+  /// semaines plus tard, et c'est toujours a ce moment qu'on la cherche.
+  motifAnnulation String?
+
+  lignes   LigneCommande[]
+  facture  Facture?
   reponses ReponsePharmacie[]
 
   @@index([statut])
@@ -2047,6 +2094,40 @@ model Commande {
 /// Ce que chaque pharmacie sollicitee a repondu. On garde la trace meme des
 /// reponses negatives : c'est ce qui permet de dire au patient Â« trois
 /// pharmacies ont ete interrogees, aucune n'avait tout Â».
+/// Une ligne du panier, au prix de l'officine qui a pris la commande.
+///
+/// **Les libelles et les prix sont figes ici, pas lus du catalogue.** Le
+/// catalogue national evolue, les marges d'une officine aussi ; ce que le
+/// patient a accepte de payer ce jour-la ne doit pas bouger derriere lui.
+/// C'est la meme raison qui fait figer `alertes` sur une ligne d'ordonnance.
+///
+/// Le prix suit exactement la regle du comptoir : prix national de reference
+/// plus la marge de l'officine. Deux regles de prix divergeraient en silence.
+model LigneCommande {
+  id String @id @default(cuid())
+
+  /// Le libelle tel qu'il a ete montre au patient.
+  libelle         String
+  quantite        Int
+  prixUnitaireGnf Int
+  /// `quantite * prixUnitaireGnf`, figee. Une contrainte le verifie.
+  montantGnf      Int
+
+  creeLe DateTime @default(now())
+
+  idCommande String
+  commande   Commande @relation(fields: [idCommande], references: [id], onDelete: Cascade)
+
+  /// La ligne d'ordonnance servie, pour remonter a la prescription.
+  idLigneOrdonnance String
+  idMedicament      String
+  medicament        Medicament @relation(fields: [idMedicament], references: [id])
+
+  @@unique([idCommande, idLigneOrdonnance])
+  @@index([idCommande])
+  @@map("lignes_commande")
+}
+
 model ReponsePharmacie {
   id               String    @id @default(cuid())
   aTousLesProduits Boolean

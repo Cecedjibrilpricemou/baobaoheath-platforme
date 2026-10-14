@@ -7,9 +7,12 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as commande from '../services/commande.service';
+import * as paiement from '../services/paiement.service';
 import {
+  annulerCommandeSchema,
   choisirModeRemiseSchema,
   lancerRechercheSchema,
+  payerCommandeSchema,
   repondreDisponibiliteSchema,
   retirerPriseEnChargeSchema,
 } from '../validators/api.schemas';
@@ -75,6 +78,73 @@ router.post(
   validateBody(choisirModeRemiseSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.choisirModeRemise(req.user!, String(req.params.id), req.body.mode);
+    res.json({ success: true, data });
+  }
+);
+
+// ── La machine a etats : qui fait avancer quoi ───────────────────────
+//
+// **Chaque geste a son acteur, et un seul.** L'officine chiffre, prepare et
+// remet ; le patient paie et peut renoncer. Les gardes de role le disent au
+// niveau de la route, et le service verifie en plus que la commande est bien
+// celle de cette officine — une garde de role dit « un pharmacien », pas
+// « ce pharmacien-la ».
+
+/** L'officine chiffre le panier aux prix de son comptoir (EF-07-02). */
+router.post('/:id/chiffrer', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+  const data = await commande.chiffrerCommande(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/**
+ * Le patient paie son panier.
+ *
+ * Le montant n'est pas dans le corps : il est fige en base au chiffrage.
+ * C'est la facture qui est rendue, avec son lien de paiement — et c'est le
+ * rappel de la passerelle qui fera avancer la commande, pas cet appel.
+ */
+router.post(
+  '/:id/payer',
+  requireRole('PATIENT'),
+  validateBody(payerCommandeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data = await paiement.initierPaiementCommande(
+      req.user!.userId, String(req.params.id), req.body,
+    );
+    res.json({ success: true, data });
+  }
+);
+
+/** L'officine commence a preparer. */
+router.post('/:id/preparer', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+  const data = await commande.marquerEnPreparation(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/** Le sachet est pret. C'est le mode de remise choisi qui decide de la suite. */
+router.post('/:id/prete', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+  const data = await commande.marquerPrete(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/** L'officine remet les produits — au patient, ou au motard. */
+router.post('/:id/remettre', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+  const data = await commande.confirmerRemise(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/**
+ * Annuler, avec un motif.
+ *
+ * Ouvert aux deux : le patient renonce, l'officine decouvre une rupture. Le
+ * service verifie que l'appelant a bien affaire a cette commande.
+ */
+router.post(
+  '/:id/annuler',
+  requireRole('PATIENT', 'PHARMACIEN'),
+  validateBody(annulerCommandeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data = await commande.annulerCommande(req.user!, String(req.params.id), req.body.motif);
     res.json({ success: true, data });
   }
 );

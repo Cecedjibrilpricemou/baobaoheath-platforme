@@ -2,6 +2,7 @@ import { prisma } from '../config/prisma';
 import {
   ConfirmerPaiementDto,
   InitierPaiementDto,
+  PayerCommandeDto,
   PaiementFilters,
 } from '../types/paiement.types';
 import * as chapchap from './chapchap.service';
@@ -11,6 +12,7 @@ import { JwtPayload } from '../types/auth.types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { logger } from '../config/logger';
 import type { ADeReglerView, FactureView } from '@baobaoheath/shared-types';
+import { avancerApresPaiement } from './commande.service';
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
@@ -194,6 +196,120 @@ export async function initierPaiement(userId: string, dto: InitierPaiementDto) {
  * aussi possible si un rappel tardif arrive apres coup. `success` est
  * definitif.
  */
+/**
+ * Payer le panier d'une commande de pharmacie.
+ *
+ * **Le montant vient de la base, jamais du client.** Il a ete fige au
+ * chiffrage par l'officine ; un montant propose par le navigateur est un
+ * montant qu'on peut baisser.
+ *
+ * Tout le reste est le circuit existant : une `Facture` portee par la
+ * commande, une operation ChapChap prefixee `FAC-`, et
+ * `appliquerStatutPasserelle` comme point unique de decision. Ouvrir un
+ * second circuit de paiement a cote de celui qui marche aurait double les
+ * endroits ou de l'argent peut se perdre.
+ */
+export async function initierPaiementCommande(
+  userId: string,
+  idCommande: string,
+  dto: PayerCommandeDto,
+) {
+  const commande = await prisma.commande.findUnique({
+    where: { id: idCommande },
+    select: {
+      id: true, statut: true, montantTotalGnf: true, numero: true,
+      facture: { select: { id: true, statut: true } },
+      ordonnance: {
+        select: {
+          numero: true,
+          consultation: { select: { patient: { select: { id: true, idUtilisateur: true } } } },
+        },
+      },
+    },
+  });
+  if (!commande) throw new NotFoundError('Commande non trouvee');
+
+  const patient = commande.ordonnance.consultation.patient;
+  if (patient.idUtilisateur !== userId) {
+    throw new ForbiddenError("Acces refuse - ce n'est pas votre commande");
+  }
+  if (commande.facture?.statut === 'PAYEE') {
+    throw new ValidationError('Cette commande a deja ete payee');
+  }
+  if (commande.statut !== 'A_PAYER' || commande.montantTotalGnf == null) {
+    throw new ValidationError(
+      "Cette commande n'est pas encore chiffree : la pharmacie doit d'abord en fixer le montant.",
+    );
+  }
+
+  await assertModePaiementActif(dto.modePaiement);
+  const montantGnf = commande.montantTotalGnf;
+
+  const inclusions = {
+    patient: { include: { utilisateur: { select: { prenom: true, nom: true, telephone: true } } } },
+    consultation: true,
+  };
+
+  const facture = commande.facture
+    ? await prisma.facture.update({
+        where: { id: commande.facture.id },
+        data: { montantGnf, modePaiement: dto.modePaiement, numeroOperateur: dto.numeroOperateur },
+        include: inclusions,
+      })
+    : await prisma.facture.create({
+        data: {
+          idPatient: patient.id,
+          idCommande: commande.id,
+          montantGnf,
+          modePaiement: dto.modePaiement,
+          numeroOperateur: dto.numeroOperateur,
+          statut: 'EN_ATTENTE',
+        },
+        include: inclusions,
+      });
+
+  // Les especes ne passent par aucune passerelle : le pharmacien encaisse au
+  // comptoir et confirme la facture.
+  if (dto.modePaiement === 'ESPECES' || !chapchap.chapchapEstConfigure()) {
+    if (dto.modePaiement !== 'ESPECES') {
+      logger.warn('[PAIEMENT] passerelle non configuree : repli sur la simulation');
+    }
+    const simule = await initierPaiementSimule({
+      modePaiement: dto.modePaiement,
+      montantGnf,
+      numeroOperateur: dto.numeroOperateur,
+    });
+    return prisma.facture.update({
+      where: { id: facture.id },
+      data: { referenceOperateur: simule.referenceOperateur ?? null },
+      include: inclusions,
+    });
+  }
+
+  if (montantGnf < MIN_MONTANT_PASSERELLE_GNF) {
+    throw new ValidationError(
+      `Le paiement mobile demande au moins ${MIN_MONTANT_PASSERELLE_GNF.toLocaleString('fr-FR')} GNF. `
+      + `Reglez ce montant en especes a la pharmacie.`,
+    );
+  }
+
+  const operation = await chapchap.creerOperation({
+    montantGnf,
+    orderId: `FAC-${facture.id}`,
+    description: `Pharmacie — ordonnance ${commande.ordonnance.numero}`,
+  });
+
+  return prisma.facture.update({
+    where: { id: facture.id },
+    data: {
+      referenceOperateur: operation.operationId,
+      urlPaiement: operation.urlPaiement,
+      statutOperateur: 'new',
+    },
+    include: inclusions,
+  });
+}
+
 export async function appliquerStatutPasserelle(
   idFacture: string,
   statut: string,
@@ -201,7 +317,7 @@ export async function appliquerStatutPasserelle(
 ): Promise<{ changee: boolean; dejaPayee: boolean }> {
   const facture = await prisma.facture.findUnique({
     where: { id: idFacture },
-    select: { id: true, statut: true, statutOperateur: true },
+    select: { id: true, statut: true, statutOperateur: true, idCommande: true },
   });
   if (!facture) throw new NotFoundError('Facture non trouvee');
 
@@ -229,6 +345,22 @@ export async function appliquerStatutPasserelle(
     },
   });
   logger.info('[PAIEMENT] facture payee par la passerelle', { idFacture, statut });
+
+  // **Une commande de pharmacie avance ici, et nulle part ailleurs.** C'est
+  // le point unique ou un paiement est acquis ; faire avancer la commande
+  // depuis l'ecran ou depuis le rappel, separement, finirait par donner deux
+  // verites. L'appel ne bloque pas : un rappel qui echouerait ici serait
+  // rejoue indefiniment alors que l'argent, lui, est bien arrive.
+  if (facture.idCommande) {
+    try {
+      await avancerApresPaiement(facture.idCommande);
+    } catch (e) {
+      logger.error('[PAIEMENT] commande payee mais non avancee', {
+        idFacture, idCommande: facture.idCommande, erreur: (e as Error).message,
+      });
+    }
+  }
+
   return { changee: true, dejaPayee: false };
 }
 

@@ -85,6 +85,12 @@ function commandeRelue(etat: Record<string, unknown> = {}) {
     creeLe: new Date('2026-10-09T08:00:00Z'),
     reponses: [],
     pharmacie: null,
+    // Le panier chiffre : vide tant que l'officine n'a pas fixe ses prix.
+    // `versCommandeView` montre alors la prescription, sans montant.
+    lignes: [],
+    montantTotalGnf: null,
+    chiffreeLe: null, preteLe: null, remiseLe: null, clotureeLe: null,
+    motifAnnulation: null,
     ordonnance: {
       numero: 'OR-2026-000001', signePar: 'u-med',
       lignes: [{
