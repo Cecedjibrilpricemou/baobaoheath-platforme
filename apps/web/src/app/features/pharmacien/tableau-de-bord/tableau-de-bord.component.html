@@ -104,8 +104,8 @@
     </h2>
 
     <app-export-liste
-      [titre]="'Produits à commander'"
-      [sousTitre]="'Officine · stock au ' + (tb()!.jour | date: 'dd/MM/yyyy')"
+      [titre]="'EXPORT.DOC.PRODUITS_A_COMMANDER'"
+      [sousTitre]="'EXPORT.SOUS.OFFICINE_AU' | translate: { date: ((tb()!.jour | date: 'dd/MM/yyyy') || '') }"
       [colonnes]="colonnes"
       [lignes]="ruptures()"
       [nomFichier]="'produits-a-commander'" />

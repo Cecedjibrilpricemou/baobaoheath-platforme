@@ -38,15 +38,15 @@ export class ConsultationsComponent implements OnInit {
 
   /** Ce que l'agent a fait sur le terrain, et chez qui. */
   readonly colonnes: ColonneExport<Consultation>[] = [
-    { titre: 'Patient', valeur: (c) => {
+    { titre: 'EXPORT.COL.PATIENT', valeur: (c) => {
         const p = c.patient;
         if (!p) return '';
         return p.utilisateur ? p.utilisateur.prenom + ' ' + p.utilisateur.nom
                              : ((p.prenom ?? '') + ' ' + (p.nom ?? '')).trim();
       } },
-    { titre: 'Motif', valeur: (c) => c.motif },
-    { titre: 'Statut', valeur: (c) => c.statut },
-    { titre: 'Médecin', valeur: (c) => (c.medecin?.utilisateur
+    { titre: 'EXPORT.COL.MOTIF', valeur: (c) => c.motif },
+    { titre: 'EXPORT.COL.STATUT', valeur: (c) => c.statut },
+    { titre: 'EXPORT.COL.MEDECIN', valeur: (c) => (c.medecin?.utilisateur
         ? c.medecin.utilisateur.prenom + ' ' + c.medecin.utilisateur.nom : '') },
   ];
   patients = signal<Patient[]>([]);

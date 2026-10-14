@@ -36,12 +36,12 @@ export class TableauDeBordComponent implements OnInit {
   readonly ruptures = computed<RuptureStockView[]>(() => this.tb()?.ruptures ?? []);
 
   readonly colonnes: ColonneExport<RuptureStockView>[] = [
-    { titre: 'Produit', valeur: (r) => r.medicament.libelle },
-    { titre: 'Catégorie', valeur: (r) => r.medicament.categorie },
-    { titre: 'En stock', valeur: (r) => r.quantite, nombre: true },
-    { titre: 'Seuil', valeur: (r) => r.seuilAlerte, nombre: true },
-    { titre: 'Unité', valeur: (r) => r.unite },
-    { titre: 'Manque', valeur: (r) => Math.max(0, r.seuilAlerte - r.quantite), nombre: true },
+    { titre: 'EXPORT.COL.PRODUIT', valeur: (r) => r.medicament.libelle },
+    { titre: 'EXPORT.COL.CATEGORIE', valeur: (r) => r.medicament.categorie },
+    { titre: 'EXPORT.COL.EN_STOCK', valeur: (r) => r.quantite, nombre: true },
+    { titre: 'EXPORT.COL.SEUIL', valeur: (r) => r.seuilAlerte, nombre: true },
+    { titre: 'EXPORT.COL.UNITE', valeur: (r) => r.unite },
+    { titre: 'EXPORT.COL.MANQUE', valeur: (r) => Math.max(0, r.seuilAlerte - r.quantite), nombre: true },
   ];
   isLoading = signal(true);
 

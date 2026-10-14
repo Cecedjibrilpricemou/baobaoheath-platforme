@@ -53,12 +53,12 @@ export class PatientPaiementsComponent implements OnInit {
 
   /** Ce qu'on emporte au guichet : ce qui reste a payer, et pour quoi. */
   readonly colonnes: ColonneExport<ADeReglerView>[] = [
-    { titre: 'Consultation', valeur: (d) => d.motif },
-    { titre: 'Consultée le', valeur: (d) => (d.consulteeLE ? new Date(d.consulteeLE) : null) },
-    { titre: 'Montant (GNF)', valeur: (d) => d.montantGnf, nombre: true },
+    { titre: 'EXPORT.COL.CONSULTATION', valeur: (d) => d.motif },
+    { titre: 'EXPORT.COL.CONSULTEE_LE', valeur: (d) => (d.consulteeLE ? new Date(d.consulteeLE) : null) },
+    { titre: 'EXPORT.COL.MONTANT_GNF', valeur: (d) => d.montantGnf, nombre: true },
     // La reference rendue par la passerelle : c'est la preuve du paiement.
-    { titre: 'Référence', valeur: (d) => d.facture?.referenceOperateur },
-    { titre: 'Statut', valeur: (d) => d.facture?.statut },
+    { titre: 'EXPORT.COL.REFERENCE', valeur: (d) => d.facture?.referenceOperateur },
+    { titre: 'EXPORT.COL.STATUT', valeur: (d) => d.facture?.statut },
   ];
   /** L'historique, pour la partie « deja reglees ». */
   factures = signal<FactureView[]>([]);

@@ -67,15 +67,15 @@ export class ComptesComponent implements OnInit {
 
   /** **Aucun mot de passe, evidemment.** Ni rien qui permette de se connecter. */
   readonly colonnes: ColonneExport<CompteView>[] = [
-    { titre: 'Prénom', valeur: (c) => c.prenom },
-    { titre: 'Nom', valeur: (c) => c.nom },
-    { titre: 'Rôle', valeur: (c) => c.role },
-    { titre: 'Email', valeur: (c) => c.email },
-    { titre: 'Téléphone', valeur: (c) => c.telephone },
-    { titre: 'Structure', valeur: (c) => c.structure },
-    { titre: 'État', valeur: (c) => (c.estActif ? 'Actif' : 'Fermé') },
-    { titre: 'Motif de fermeture', valeur: (c) => c.suspension?.motif },
-    { titre: 'Dernière connexion', valeur: (c) => (c.derniereConnexion ? new Date(c.derniereConnexion) : null) },
+    { titre: 'EXPORT.COL.PRENOM', valeur: (c) => c.prenom },
+    { titre: 'EXPORT.COL.NOM', valeur: (c) => c.nom },
+    { titre: 'EXPORT.COL.ROLE', valeur: (c) => c.role },
+    { titre: 'EXPORT.COL.EMAIL', valeur: (c) => c.email },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (c) => c.telephone },
+    { titre: 'EXPORT.COL.STRUCTURE', valeur: (c) => c.structure },
+    { titre: 'EXPORT.COL.ETAT', valeur: (c) => (c.estActif ? 'Actif' : 'Fermé') },
+    { titre: 'EXPORT.COL.MOTIF_FERMETURE', valeur: (c) => c.suspension?.motif },
+    { titre: 'EXPORT.COL.DERNIERE_CONNEXION', valeur: (c) => (c.derniereConnexion ? new Date(c.derniereConnexion) : null) },
   ];
   total = signal(0);
   chargement = signal(true);

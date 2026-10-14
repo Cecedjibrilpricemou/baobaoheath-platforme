@@ -38,14 +38,14 @@ export class AgendaComponent implements OnInit {
    * l'application alors qu'on a la feuille en main ne sert personne.
    */
   readonly colonnes: ColonneExport<RendezVousMedecinView>[] = [
-    { titre: 'Prévu le', valeur: (r) => new Date(r.prevuLe) },
-    { titre: 'Heure', valeur: (r) => new Date(r.prevuLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
-    { titre: 'Patient', valeur: (r) => `${r.patient.prenom} ${r.patient.nom}` },
-    { titre: 'Téléphone', valeur: (r) => r.patient.telephone },
-    { titre: 'Motif', valeur: (r) => r.motif },
-    { titre: 'Statut', valeur: (r) => r.statut },
-    { titre: 'Arrivée', valeur: (r) => (r.arriveeLe ? new Date(r.arriveeLe) : null) },
-    { titre: 'Épisode', valeur: (r) => r.numeroEpisode },
+    { titre: 'EXPORT.COL.PREVU_LE', valeur: (r) => new Date(r.prevuLe) },
+    { titre: 'EXPORT.COL.HEURE', valeur: (r) => new Date(r.prevuLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (r) => `${r.patient.prenom} ${r.patient.nom}` },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (r) => r.patient.telephone },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (r) => r.motif },
+    { titre: 'EXPORT.COL.STATUT', valeur: (r) => r.statut },
+    { titre: 'EXPORT.COL.ARRIVEE', valeur: (r) => (r.arriveeLe ? new Date(r.arriveeLe) : null) },
+    { titre: 'EXPORT.COL.EPISODE', valeur: (r) => r.numeroEpisode },
   ];
   isLoading = signal(true);
   enCours = signal<string | null>(null);

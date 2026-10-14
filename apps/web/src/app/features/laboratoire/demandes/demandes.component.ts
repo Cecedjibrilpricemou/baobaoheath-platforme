@@ -52,17 +52,17 @@ export class LaboDemandesComponent implements OnInit {
    * valeurs appartiennent au compte rendu, pas a la file.
    */
   readonly colonnes: ColonneExport<DemandeAnalyseView>[] = [
-    { titre: 'Numéro', valeur: (d) => d.numero },
-    { titre: 'Patient', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
-    { titre: 'Urgence', valeur: (d) => d.urgence },
-    { titre: 'Statut', valeur: (d) => d.statut },
-    { titre: 'Examens', valeur: (d) => d.lignes.length, nombre: true },
-    { titre: 'Prescripteur', valeur: (d) => d.prescripteur.prenom + ' ' + d.prescripteur.nom },
-    { titre: 'Épisode', valeur: (d) => d.numeroEpisode },
-    { titre: 'Prélèvement', valeur: (d) => d.lieuPrelevement },
-    { titre: 'Créneau', valeur: (d) => (d.creneauPrelevement ? new Date(d.creneauPrelevement) : null) },
-    { titre: 'Transmise le', valeur: (d) => (d.transmiseLe ? new Date(d.transmiseLe) : null) },
-    { titre: 'Validée le', valeur: (d) => (d.valideeLe ? new Date(d.valideeLe) : null) },
+    { titre: 'EXPORT.COL.NUMERO', valeur: (d) => d.numero },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
+    { titre: 'EXPORT.COL.URGENCE', valeur: (d) => d.urgence },
+    { titre: 'EXPORT.COL.STATUT', valeur: (d) => d.statut },
+    { titre: 'EXPORT.COL.EXAMENS', valeur: (d) => d.lignes.length, nombre: true },
+    { titre: 'EXPORT.COL.PRESCRIPTEUR', valeur: (d) => d.prescripteur.prenom + ' ' + d.prescripteur.nom },
+    { titre: 'EXPORT.COL.EPISODE', valeur: (d) => d.numeroEpisode },
+    { titre: 'EXPORT.COL.PRELEVEMENT', valeur: (d) => d.lieuPrelevement },
+    { titre: 'EXPORT.COL.CRENEAU', valeur: (d) => (d.creneauPrelevement ? new Date(d.creneauPrelevement) : null) },
+    { titre: 'EXPORT.COL.TRANSMISE_LE', valeur: (d) => (d.transmiseLe ? new Date(d.transmiseLe) : null) },
+    { titre: 'EXPORT.COL.VALIDEE_LE', valeur: (d) => (d.valideeLe ? new Date(d.valideeLe) : null) },
   ];
   isLoading = signal(true);
 

@@ -81,16 +81,16 @@ export class IdentitesComponent implements OnInit {
    * plus loin qu'un ecran de comptoir.
    */
   readonly colonnes: ColonneExport<IdentitePatientView>[] = [
-    { titre: 'Patient', valeur: (p) => p.nomComplet },
-    { titre: 'Téléphone', valeur: (p) => p.telephone },
-    { titre: 'Naissance', valeur: (p) => new Date(p.dateNaissance) },
-    { titre: 'Sexe', valeur: (p) => p.sexe },
-    { titre: 'Préfecture', valeur: (p) => p.prefecture },
-    { titre: 'Niveau', valeur: (p) => p.niveauIdentite },
-    { titre: 'Pièce', valeur: (p) => p.typePiece },
-    { titre: 'N° (masqué)', valeur: (p) => p.numeroPieceMasque },
-    { titre: 'Vérifiée le', valeur: (p) => (p.verifieeLe ? new Date(p.verifieeLe) : null) },
-    { titre: 'Traits manquants', valeur: (p) => p.traitsManquants.join(', ') },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (p) => p.nomComplet },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (p) => p.telephone },
+    { titre: 'EXPORT.COL.NAISSANCE', valeur: (p) => new Date(p.dateNaissance) },
+    { titre: 'EXPORT.COL.SEXE', valeur: (p) => p.sexe },
+    { titre: 'EXPORT.COL.PREFECTURE', valeur: (p) => p.prefecture },
+    { titre: 'EXPORT.COL.NIVEAU', valeur: (p) => p.niveauIdentite },
+    { titre: 'EXPORT.COL.PIECE', valeur: (p) => p.typePiece },
+    { titre: 'EXPORT.COL.NUMERO_PIECE_MASQUE', valeur: (p) => p.numeroPieceMasque },
+    { titre: 'EXPORT.COL.VERIFIEE_LE', valeur: (p) => (p.verifieeLe ? new Date(p.verifieeLe) : null) },
+    { titre: 'EXPORT.COL.TRAITS_MANQUANTS', valeur: (p) => p.traitsManquants.join(', ') },
   ];
   chargement = signal(true);
   erreur = signal('');

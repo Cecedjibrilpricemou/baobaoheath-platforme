@@ -68,13 +68,13 @@ export class StructuresComponent implements OnInit {
   /** Les colonnes du document imprime **et** du fichier : les memes.
    * C'est ce qui empeche la feuille et le tableur de se contredire. */
   readonly colonnes: ColonneExport<StructureAdminView>[] = [
-    { titre: 'Nom', valeur: (s) => s.nom },
-    { titre: 'Type', valeur: (s) => s.type },
-    { titre: 'Préfecture', valeur: (s) => s.prefecture },
-    { titre: 'Téléphone', valeur: (s) => s.telephone },
-    { titre: 'Comptes', valeur: (s) => s._count?.utilisateurs ?? 0, nombre: true },
-    { titre: 'État', valeur: (s) => (s.estActive ? 'Active' : 'Inactive') },
-    { titre: 'Créée le', valeur: (s) => new Date(s.creeLe) },
+    { titre: 'EXPORT.COL.NOM', valeur: (s) => s.nom },
+    { titre: 'EXPORT.COL.TYPE', valeur: (s) => s.type },
+    { titre: 'EXPORT.COL.PREFECTURE', valeur: (s) => s.prefecture },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (s) => s.telephone },
+    { titre: 'EXPORT.COL.COMPTES', valeur: (s) => s._count?.utilisateurs ?? 0, nombre: true },
+    { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.estActive ? 'Active' : 'Inactive') },
+    { titre: 'EXPORT.COL.CREEE_LE', valeur: (s) => new Date(s.creeLe) },
   ];
 
   ngOnInit() { this.loadStructures(); }

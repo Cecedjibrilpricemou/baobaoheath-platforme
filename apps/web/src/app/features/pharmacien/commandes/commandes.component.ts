@@ -42,12 +42,12 @@ export class PharmacienCommandesComponent implements OnInit {
    * quand.
    */
   readonly colonnes: ColonneExport<CommandeView>[] = [
-    { titre: 'Ordonnance', valeur: (c) => c.numeroOrdonnance },
-    { titre: 'Patient', valeur: (c) => `${c.patient.prenom} ${c.patient.nom}` },
-    { titre: 'Lignes', valeur: (c) => c.lignes.length, nombre: true },
-    { titre: 'Statut', valeur: (c) => c.statut },
-    { titre: 'Remise', valeur: (c) => this.libelleMode(c.modeRemise) },
-    { titre: 'Reçue le', valeur: (c) => new Date(c.creeLe) },
+    { titre: 'EXPORT.COL.ORDONNANCE', valeur: (c) => c.numeroOrdonnance },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (c) => `${c.patient.prenom} ${c.patient.nom}` },
+    { titre: 'EXPORT.COL.LIGNES', valeur: (c) => c.lignes.length, nombre: true },
+    { titre: 'EXPORT.COL.STATUT', valeur: (c) => c.statut },
+    { titre: 'EXPORT.COL.REMISE', valeur: (c) => this.libelleMode(c.modeRemise) },
+    { titre: 'EXPORT.COL.RECUE_LE', valeur: (c) => new Date(c.creeLe) },
   ];
   chargement = signal(true);
   /** La commande sur laquelle une réponse est en cours. */

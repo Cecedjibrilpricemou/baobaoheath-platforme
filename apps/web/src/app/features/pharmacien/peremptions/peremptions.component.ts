@@ -45,13 +45,13 @@ export class PeremptionsComponent implements OnInit {
    * pouvoir trier dessus.
    */
   readonly colonnes: ColonneExport<PeremptionProcheView>[] = [
-    { titre: 'Produit', valeur: (l) => l.medicament.libelle },
-    { titre: 'Lot', valeur: (l) => l.numeroLot },
-    { titre: 'Quantité', valeur: (l) => l.quantite, nombre: true },
-    { titre: 'Unité', valeur: (l) => l.unite },
-    { titre: 'Péremption', valeur: (l) => new Date(l.datePeremption) },
-    { titre: 'Jours restants', valeur: (l) => l.joursRestants, nombre: true },
-    { titre: 'État', valeur: (l) => (l.perime ? 'Périmé' : 'À surveiller') },
+    { titre: 'EXPORT.COL.PRODUIT', valeur: (l) => l.medicament.libelle },
+    { titre: 'EXPORT.COL.LOT', valeur: (l) => l.numeroLot },
+    { titre: 'EXPORT.COL.QUANTITE', valeur: (l) => l.quantite, nombre: true },
+    { titre: 'EXPORT.COL.UNITE', valeur: (l) => l.unite },
+    { titre: 'EXPORT.COL.PEREMPTION', valeur: (l) => new Date(l.datePeremption) },
+    { titre: 'EXPORT.COL.JOURS_RESTANTS', valeur: (l) => l.joursRestants, nombre: true },
+    { titre: 'EXPORT.COL.ETAT', valeur: (l) => (l.perime ? 'Périmé' : 'À surveiller') },
   ];
 
   ngOnInit() {

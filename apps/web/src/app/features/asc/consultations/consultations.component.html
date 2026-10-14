@@ -128,8 +128,8 @@
 
     <!-- Liste -->
     <app-export-liste
-      [titre]="'Mes consultations'"
-      [sousTitre]="&#39;Filtre : &#39; + filtreStatut()"
+      [titre]="'EXPORT.DOC.MES_CONSULTATIONS'"
+      [sousTitre]="'EXPORT.SOUS.FILTRE' | translate: { filtre: filtreStatut() }"
       [colonnes]="colonnes"
       [lignes]="consultationsFiltrees()"
       [nomFichier]="'mes-consultations'" />

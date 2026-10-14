@@ -35,12 +35,12 @@ export class StocksComponent implements OnInit {
 
   /** Ce qu'on emporte en tournee, et ce qu'il faut demander avant de partir. */
   readonly colonnes: ColonneExport<StockAscView>[] = [
-    { titre: 'Produit', valeur: (s) => s.medicament?.libelle },
-    { titre: 'Quantité', valeur: (s) => s.quantite, nombre: true },
-    { titre: 'Unité', valeur: (s) => s.unite },
-    { titre: 'Seuil', valeur: (s) => s.seuilAlerte, nombre: true },
-    { titre: 'État', valeur: (s) => (s.enAlerte ? 'À demander' : 'Suffisant') },
-    { titre: 'Péremption la plus proche',
+    { titre: 'EXPORT.COL.PRODUIT', valeur: (s) => s.medicament?.libelle },
+    { titre: 'EXPORT.COL.QUANTITE', valeur: (s) => s.quantite, nombre: true },
+    { titre: 'EXPORT.COL.UNITE', valeur: (s) => s.unite },
+    { titre: 'EXPORT.COL.SEUIL', valeur: (s) => s.seuilAlerte, nombre: true },
+    { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.enAlerte ? 'À demander' : 'Suffisant') },
+    { titre: 'EXPORT.COL.PEREMPTION_PROCHE',
       valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
   ];
   isLoading        = signal(true);

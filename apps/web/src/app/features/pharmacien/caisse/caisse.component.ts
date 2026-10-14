@@ -68,18 +68,18 @@ export class CaisseComponent implements OnInit {
    * montre pas ses annulations ne se rapproche pas.
    */
   readonly colonnes: ColonneExport<VenteComptoirView>[] = [
-    { titre: 'Numéro', valeur: (v) => v.numero },
-    { titre: 'Heure', valeur: (v) => new Date(v.creeLe) },
-    { titre: 'Client', valeur: (v) => (v.patient ? `${v.patient.prenom} ${v.patient.nom}` : 'Passage') },
-    { titre: 'Ordonnance', valeur: (v) => v.numeroOrdonnance },
-    { titre: 'Paiement', valeur: (v) => v.modePaiement },
-    { titre: 'Brut (GNF)', valeur: (v) => v.montantBrutGnf, nombre: true },
-    { titre: 'Remise (GNF)', valeur: (v) => v.remiseGnf, nombre: true },
-    { titre: 'Net (GNF)', valeur: (v) => v.montantNetGnf, nombre: true },
-    { titre: 'Part assureur (GNF)', valeur: (v) => v.montantAssureGnf, nombre: true },
-    { titre: 'Part patient (GNF)', valeur: (v) => v.montantPatientGnf, nombre: true },
-    { titre: 'Statut', valeur: (v) => v.statut },
-    { titre: 'Vendeur', valeur: (v) => `${v.vendeur.prenom} ${v.vendeur.nom}` },
+    { titre: 'EXPORT.COL.NUMERO', valeur: (v) => v.numero },
+    { titre: 'EXPORT.COL.HEURE', valeur: (v) => new Date(v.creeLe) },
+    { titre: 'EXPORT.COL.CLIENT', valeur: (v) => (v.patient ? `${v.patient.prenom} ${v.patient.nom}` : 'Passage') },
+    { titre: 'EXPORT.COL.ORDONNANCE', valeur: (v) => v.numeroOrdonnance },
+    { titre: 'EXPORT.COL.PAIEMENT', valeur: (v) => v.modePaiement },
+    { titre: 'EXPORT.COL.BRUT_GNF', valeur: (v) => v.montantBrutGnf, nombre: true },
+    { titre: 'EXPORT.COL.REMISE_GNF', valeur: (v) => v.remiseGnf, nombre: true },
+    { titre: 'EXPORT.COL.NET_GNF', valeur: (v) => v.montantNetGnf, nombre: true },
+    { titre: 'EXPORT.COL.PART_ASSUREUR_GNF', valeur: (v) => v.montantAssureGnf, nombre: true },
+    { titre: 'EXPORT.COL.PART_PATIENT_GNF', valeur: (v) => v.montantPatientGnf, nombre: true },
+    { titre: 'EXPORT.COL.STATUT', valeur: (v) => v.statut },
+    { titre: 'EXPORT.COL.VENDEUR', valeur: (v) => `${v.vendeur.prenom} ${v.vendeur.nom}` },
   ];
   isLoading = signal(true);
   enCours = signal(false);

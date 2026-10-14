@@ -79,14 +79,14 @@ export class JournalComponent implements OnInit {
    * pour le journal entier serait pire qu'inutile devant un controle.
    */
   readonly colonnes: ColonneExport<LigneJournalView>[] = [
-    { titre: 'Horodatage', valeur: (l) => new Date(l.creeLe) },
-    { titre: 'Acteur', valeur: (l) => l.acteur.prenom + ' ' + l.acteur.nom },
-    { titre: 'Rôle', valeur: (l) => l.acteur.role },
-    { titre: 'Action', valeur: (l) => l.action },
-    { titre: 'Ressource', valeur: (l) => l.ressource },
-    { titre: 'Patient concerné', valeur: (l) => l.patientConcerne },
-    { titre: 'HTTP', valeur: (l) => l.statutHttp, nombre: true },
-    { titre: 'Adresse IP', valeur: (l) => l.ipAdresse },
+    { titre: 'EXPORT.COL.HORODATAGE', valeur: (l) => new Date(l.creeLe) },
+    { titre: 'EXPORT.COL.ACTEUR', valeur: (l) => l.acteur.prenom + ' ' + l.acteur.nom },
+    { titre: 'EXPORT.COL.ROLE', valeur: (l) => l.acteur.role },
+    { titre: 'EXPORT.COL.ACTION', valeur: (l) => l.action },
+    { titre: 'EXPORT.COL.RESSOURCE', valeur: (l) => l.ressource },
+    { titre: 'EXPORT.COL.PATIENT_CONCERNE', valeur: (l) => l.patientConcerne },
+    { titre: 'EXPORT.COL.HTTP', valeur: (l) => l.statutHttp, nombre: true },
+    { titre: 'EXPORT.COL.ADRESSE_IP', valeur: (l) => l.ipAdresse },
   ];
   total = signal(0);
   totalPages = signal(0);

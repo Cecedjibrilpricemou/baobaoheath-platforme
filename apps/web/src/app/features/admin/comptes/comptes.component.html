@@ -8,8 +8,8 @@
     </div>
   </header>
   <app-export-liste
-    [titre]="'Comptes de la plateforme'"
-    [sousTitre]="(role() ? &#39;Rôle : &#39; + role() + &#39; · &#39; : &#39;&#39;) + &#39;État : &#39; + etat() + &#39; · &#39; + comptes().length + &#39; sur &#39; + total()"
+    [titre]="'EXPORT.DOC.COMPTES'"
+    [sousTitre]="(role() ? ('EXPORT.SOUS.COMPTES_FILTRE_ROLE' | translate: { role: role(), etat: etat(), affiches: comptes().length, total: total() }) : ('EXPORT.SOUS.COMPTES_FILTRE' | translate: { etat: etat(), affiches: comptes().length, total: total() }))"
     [colonnes]="colonnes"
     [lignes]="comptes()"
     [nomFichier]="'comptes'" />

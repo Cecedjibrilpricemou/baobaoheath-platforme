@@ -11,8 +11,8 @@
        du document, sinon une feuille « 30 jours » et une feuille « 180 »
        seraient indistinguables une fois posées côte à côte. -->
   <app-export-liste
-    [titre]="'Produits à péremption proche'"
-    [sousTitre]="'Horizon : ' + jours() + ' jours'"
+    [titre]="'EXPORT.DOC.PEREMPTIONS'"
+    [sousTitre]="'EXPORT.SOUS.HORIZON_JOURS' | translate: { jours: jours() }"
     [colonnes]="colonnes"
     [lignes]="lots()"
     [nomFichier]="'peremptions'" />

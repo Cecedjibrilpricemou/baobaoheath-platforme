@@ -8,8 +8,8 @@
   </header>
 
   <app-export-liste
-    [titre]="'Présences du jour'"
-    [sousTitre]="leJour"
+    [titre]="'EXPORT.DOC.PRESENCES'"
+    [sousTitre]="leJour()"
     [colonnes]="colonnes"
     [lignes]="presences()"
     [nomFichier]="'presences'" />

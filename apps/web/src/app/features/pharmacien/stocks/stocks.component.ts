@@ -50,13 +50,13 @@ export class PharmacienStocksComponent implements OnInit {
   /** Les colonnes du document imprime **et** du fichier : les memes.
    * C'est ce qui empeche la feuille et le tableur de se contredire. */
   readonly colonnes: ColonneExport<StockPharmacieView>[] = [
-    { titre: 'Produit', valeur: (s) => s.medicament.libelle },
-    { titre: 'Quantité', valeur: (s) => s.quantite, nombre: true },
-    { titre: 'Unité', valeur: (s) => s.unite },
-    { titre: 'Seuil d\'alerte', valeur: (s) => s.seuilAlerte, nombre: true },
+    { titre: 'EXPORT.COL.PRODUIT', valeur: (s) => s.medicament.libelle },
+    { titre: 'EXPORT.COL.QUANTITE', valeur: (s) => s.quantite, nombre: true },
+    { titre: 'EXPORT.COL.UNITE', valeur: (s) => s.unite },
+    { titre: 'EXPORT.COL.SEUIL_ALERTE', valeur: (s) => s.seuilAlerte, nombre: true },
     // Ce qu'on vient chercher quand on imprime : ce qu'il faut commander.
-    { titre: 'État', valeur: (s) => (s.quantite === 0 ? 'Rupture' : s.quantite <= s.seuilAlerte ? 'À commander' : 'Suffisant') },
-    { titre: 'Péremption la plus proche', valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
+    { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.quantite === 0 ? 'Rupture' : s.quantite <= s.seuilAlerte ? 'À commander' : 'Suffisant') },
+    { titre: 'EXPORT.COL.PEREMPTION_PROCHE', valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
   ];
 
   ngOnInit() { this.loadStocks(); this.loadMedicaments(); }

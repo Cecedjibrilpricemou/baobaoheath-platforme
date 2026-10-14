@@ -9,8 +9,8 @@
   </div>
 </header>
   <app-export-liste
-    [titre]="'Épisodes de soins'"
-    [sousTitre]="&#39;Filtre : &#39; + filtre() + &#39; · page &#39; + page()"
+    [titre]="'EXPORT.DOC.EPISODES'"
+    [sousTitre]="'EXPORT.SOUS.FILTRE_PAGE' | translate: { filtre: filtre(), page: page() }"
     [colonnes]="colonnes"
     [lignes]="items()"
     [nomFichier]="'episodes'" />

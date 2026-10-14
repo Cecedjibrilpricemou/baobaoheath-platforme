@@ -17,7 +17,7 @@
      masqué par la feuille d'impression. -->
 <section class="bb-exp__doc" aria-hidden="true">
   <header class="bb-exp__doc-entete">
-    <h1 class="bb-exp__doc-titre">{{ titre() }}</h1>
+    <h1 class="bb-exp__doc-titre">{{ titreTraduit() }}</h1>
     @if (sousTitre()) {
       <p class="bb-exp__doc-sous">{{ sousTitre() }}</p>
     }
@@ -36,7 +36,7 @@
     <thead>
       <tr>
         @for (c of colonnes(); track c.titre) {
-          <th [class.bb-exp__nombre]="c.nombre">{{ c.titre }}</th>
+          <th [class.bb-exp__nombre]="c.nombre">{{ entete(c) }}</th>
         }
       </tr>
     </thead>

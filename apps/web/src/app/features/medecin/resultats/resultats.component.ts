@@ -38,13 +38,13 @@ export class ResultatsComponent implements OnInit {
    * feuille de travail.
    */
   readonly colonnes: ColonneExport<ResultatALibererView>[] = [
-    { titre: 'Demande', valeur: (r) => r.numero },
-    { titre: 'Patient', valeur: (r) => `${r.patient.prenom} ${r.patient.nom}` },
-    { titre: 'Laboratoire', valeur: (r) => r.laboratoire.nom },
-    { titre: 'Examens', valeur: (r) => r.nbExamens, nombre: true },
-    { titre: 'Critique', valeur: (r) => (r.contientCritique ? 'Oui' : '') },
-    { titre: 'Anormal', valeur: (r) => (r.contientAnormal ? 'Oui' : '') },
-    { titre: 'Validée le', valeur: (r) => new Date(r.valideeLe) },
+    { titre: 'EXPORT.COL.DEMANDE', valeur: (r) => r.numero },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (r) => `${r.patient.prenom} ${r.patient.nom}` },
+    { titre: 'EXPORT.COL.LABORATOIRE', valeur: (r) => r.laboratoire.nom },
+    { titre: 'EXPORT.COL.EXAMENS', valeur: (r) => r.nbExamens, nombre: true },
+    { titre: 'EXPORT.COL.CRITIQUE', valeur: (r) => (r.contientCritique ? 'Oui' : '') },
+    { titre: 'EXPORT.COL.ANORMAL', valeur: (r) => (r.contientAnormal ? 'Oui' : '') },
+    { titre: 'EXPORT.COL.VALIDEE_LE', valeur: (r) => new Date(r.valideeLe) },
   ];
   isLoading = signal(true);
 

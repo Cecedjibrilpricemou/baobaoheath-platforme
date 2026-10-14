@@ -52,14 +52,14 @@ export class ApprovisionnementsComponent implements OnInit {
 
   /** Ce qu'on rapproche des factures du fournisseur, ligne par ligne. */
   readonly colonnes: ColonneExport<ApprovisionnementView>[] = [
-    { titre: 'Numéro', valeur: (a) => a.numero },
-    { titre: 'Date de facture', valeur: (a) => new Date(a.dateFacture) },
-    { titre: 'Fournisseur', valeur: (a) => a.fournisseur },
-    { titre: 'N° de facture', valeur: (a) => a.numeroFacture },
-    { titre: 'Lots', valeur: (a) => a.lots.length, nombre: true },
-    { titre: 'Montant (GNF)', valeur: (a) => a.montantTotalGnf, nombre: true },
-    { titre: 'Saisi par', valeur: (a) => `${a.saisiPar.prenom} ${a.saisiPar.nom}` },
-    { titre: 'Saisi le', valeur: (a) => new Date(a.creeLe) },
+    { titre: 'EXPORT.COL.NUMERO', valeur: (a) => a.numero },
+    { titre: 'EXPORT.COL.DATE_FACTURE', valeur: (a) => new Date(a.dateFacture) },
+    { titre: 'EXPORT.COL.FOURNISSEUR', valeur: (a) => a.fournisseur },
+    { titre: 'EXPORT.COL.NUMERO_FACTURE', valeur: (a) => a.numeroFacture },
+    { titre: 'EXPORT.COL.LOTS', valeur: (a) => a.lots.length, nombre: true },
+    { titre: 'EXPORT.COL.MONTANT_GNF', valeur: (a) => a.montantTotalGnf, nombre: true },
+    { titre: 'EXPORT.COL.SAISI_PAR', valeur: (a) => `${a.saisiPar.prenom} ${a.saisiPar.nom}` },
+    { titre: 'EXPORT.COL.SAISI_LE', valeur: (a) => new Date(a.creeLe) },
   ];
   /** Le catalogue, a plat : l'API rend des medicaments, pas des lignes de stock. */
   medicaments = signal<MedicamentInfo[]>([]);

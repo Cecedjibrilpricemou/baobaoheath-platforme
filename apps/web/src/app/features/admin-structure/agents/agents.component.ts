@@ -110,12 +110,12 @@ export class AgentsComponent implements OnInit {
   /** Les colonnes du document imprime **et** du fichier : les memes.
    * C'est ce qui empeche la feuille et le tableur de se contredire. */
   readonly colonnes: ColonneExport<AgentStructureView>[] = [
-    { titre: 'Nom', valeur: (a) => `${a.prenom} ${a.nom}` },
-    { titre: 'Rôle', valeur: (a) => this.getRoleLabel(a.role) },
-    { titre: 'Téléphone', valeur: (a) => a.telephone },
-    { titre: 'Courriel', valeur: (a) => a.email },
-    { titre: 'Bureau', valeur: (a) => a.bureau },
-    { titre: 'Ajouté le', valeur: (a) => new Date(a.creeLe) },
+    { titre: 'EXPORT.COL.NOM', valeur: (a) => `${a.prenom} ${a.nom}` },
+    { titre: 'EXPORT.COL.ROLE', valeur: (a) => this.getRoleLabel(a.role) },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (a) => a.telephone },
+    { titre: 'EXPORT.COL.COURRIEL', valeur: (a) => a.email },
+    { titre: 'EXPORT.COL.BUREAU', valeur: (a) => a.bureau },
+    { titre: 'EXPORT.COL.AJOUTE_LE', valeur: (a) => new Date(a.creeLe) },
   ];
 
   ngOnInit() { this.loadAgents(); }

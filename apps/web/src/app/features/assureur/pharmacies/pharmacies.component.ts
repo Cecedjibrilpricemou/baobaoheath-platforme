@@ -46,14 +46,14 @@ export class AssureurPharmaciesComponent implements OnInit {
   /** Les colonnes du document imprime **et** du fichier : les memes.
    * C'est ce qui empeche la feuille et le tableur de se contredire. */
   readonly colonnes: ColonneExport<SituationPharmacieView>[] = [
-    { titre: 'Officine', valeur: (p) => p.nom },
-    { titre: 'Préfecture', valeur: (p) => p.prefecture },
-    { titre: 'Ventes', valeur: (p) => p.nombreVentes, nombre: true },
-    { titre: 'Délivré (GNF)', valeur: (p) => p.montantDelivreGnf, nombre: true },
-    { titre: 'Facturé (GNF)', valeur: (p) => p.montantFactureGnf, nombre: true },
-    { titre: 'Versé (GNF)', valeur: (p) => p.montantPayeGnf, nombre: true },
+    { titre: 'EXPORT.COL.OFFICINE', valeur: (p) => p.nom },
+    { titre: 'EXPORT.COL.PREFECTURE', valeur: (p) => p.prefecture },
+    { titre: 'EXPORT.COL.VENTES', valeur: (p) => p.nombreVentes, nombre: true },
+    { titre: 'EXPORT.COL.DELIVRE_GNF', valeur: (p) => p.montantDelivreGnf, nombre: true },
+    { titre: 'EXPORT.COL.FACTURE_GNF', valeur: (p) => p.montantFactureGnf, nombre: true },
+    { titre: 'EXPORT.COL.VERSE_GNF', valeur: (p) => p.montantPayeGnf, nombre: true },
     // Negatif quand la compagnie a trop verse : un ecart aussi.
-    { titre: 'Reste dû (GNF)', valeur: (p) => p.resteDuGnf, nombre: true },
+    { titre: 'EXPORT.COL.RESTE_DU_GNF', valeur: (p) => p.resteDuGnf, nombre: true },
   ];
 
   ngOnInit(): void {

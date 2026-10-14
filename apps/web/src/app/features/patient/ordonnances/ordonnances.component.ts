@@ -39,10 +39,10 @@ export class OrdonnancesComponent implements OnInit {
    * feuille se perd.
    */
   readonly colonnes: ColonneExport<OrdonnanceView>[] = [
-    { titre: 'Numéro', valeur: (o) => o.numero },
-    { titre: 'Prescrite le', valeur: (o) => new Date(o.creeLe) },
-    { titre: 'Lignes', valeur: (o) => o.lignes.length, nombre: true },
-    { titre: 'Statut', valeur: (o) => o.statut },
+    { titre: 'EXPORT.COL.NUMERO', valeur: (o) => o.numero },
+    { titre: 'EXPORT.COL.PRESCRITE_LE', valeur: (o) => new Date(o.creeLe) },
+    { titre: 'EXPORT.COL.LIGNES', valeur: (o) => o.lignes.length, nombre: true },
+    { titre: 'EXPORT.COL.STATUT', valeur: (o) => o.statut },
   ];
   isLoading = signal(true);
   /** Identifiants des ordonnances dont le code est momentanement visible. */

@@ -11,8 +11,8 @@
   </div>
 </header>
   <app-export-liste
-    [titre]="'Demandes d’analyse'"
-    [sousTitre]="&#39;Filtre : &#39; + filtre() + &#39; · page &#39; + page()"
+    [titre]="'EXPORT.DOC.DEMANDES_ANALYSE'"
+    [sousTitre]="'EXPORT.SOUS.FILTRE_PAGE' | translate: { filtre: filtre(), page: page() }"
     [colonnes]="colonnes"
     [lignes]="items()"
     [nomFichier]="'demandes-analyse'" />

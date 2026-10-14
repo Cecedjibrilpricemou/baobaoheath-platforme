@@ -40,10 +40,10 @@ export class ResultatsComponent implements OnInit {
    * peut demander.
    */
   readonly colonnes: ColonneExport<ExamenSuiviView>[] = [
-    { titre: 'Examen', valeur: (e) => e.libelle },
-    { titre: 'Code LOINC', valeur: (e) => e.codeLoinc },
-    { titre: 'Unité', valeur: (e) => e.unite },
-    { titre: 'Mesures', valeur: (e) => e.nbPoints, nombre: true },
+    { titre: 'EXPORT.COL.EXAMEN', valeur: (e) => e.libelle },
+    { titre: 'EXPORT.COL.CODE_LOINC', valeur: (e) => e.codeLoinc },
+    { titre: 'EXPORT.COL.UNITE', valeur: (e) => e.unite },
+    { titre: 'EXPORT.COL.MESURES', valeur: (e) => e.nbPoints, nombre: true },
   ];
   choisi     = signal<string | null>(null);
   evolution  = signal<EvolutionResultatView | null>(null);

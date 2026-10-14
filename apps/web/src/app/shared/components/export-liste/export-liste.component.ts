@@ -24,6 +24,13 @@ import { I18nService } from '../../services/i18n.service';
 
 /** Une colonne du document : son titre, et comment la lire sur une ligne. */
 export interface ColonneExport<T> {
+  /**
+   * Une clef de traduction, pas du texte.
+   *
+   * Chaque gabarit de la plateforme porte une bascule fr/en et `en.json` est
+   * maintenu a parite : un titre en dur sortait le document en francais quelle
+   * que soit la langue choisie. Les clefs vivent sous `EXPORT.COL.*`.
+   */
   titre: string;
   /** La valeur brute. Une date part en ISO dans le CSV, formatée à l'écran. */
   valeur: (ligne: T) => string | number | Date | null | undefined;
@@ -42,14 +49,30 @@ export class ExportListeComponent<T> {
   private auth = inject(AuthService);
   private i18n = inject(I18nService);
 
-  /** Le titre du document : « Produits en rupture », « Mes assurés »… */
+  /** La clef du titre du document : `EXPORT.DOC.PRODUITS_A_COMMANDER`… */
   titre = input.required<string>();
-  /** La structure, la période, le filtre en cours : ce qui situe le document. */
+  /**
+   * La structure, la période, le filtre en cours : ce qui situe le document.
+   *
+   * Deja traduit par l'ecran, qui seul connait ses parametres. Une liste
+   * filtree ou paginee doit le dire : une feuille partielle qui se tait se
+   * fait passer pour l'ensemble.
+   */
   sousTitre = input<string>('');
   colonnes = input.required<ColonneExport<T>[]>();
   lignes = input.required<readonly T[]>();
   /** Le nom du fichier, sans extension. À défaut, le titre suffit. */
   nomFichier = input<string>('');
+
+  /** Le titre, dans la langue choisie. */
+  titreTraduit(): string {
+    return this.i18n.t(this.titre());
+  }
+
+  /** L'intitule d'une colonne, dans la langue choisie. */
+  entete(colonne: ColonneExport<T>): string {
+    return this.i18n.t(colonne.titre);
+  }
 
   /** Qui a sorti ce document : une feuille anonyme ne s'explique pas. */
   editePar(): string {
@@ -87,11 +110,11 @@ export class ExportListeComponent<T> {
   telecharger(): void {
     const cols = this.colonnes();
     const contenu = enCsv(
-      cols.map((c) => c.titre),
+      cols.map((c) => this.entete(c)),
       this.lignes().map((l) => cols.map((c) => c.valeur(l))),
     );
 
-    const nom = (this.nomFichier() || this.titre())
+    const nom = (this.nomFichier() || this.titreTraduit())
       .toLowerCase()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9]+/g, '-')

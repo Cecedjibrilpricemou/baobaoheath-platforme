@@ -45,13 +45,13 @@ export class AssureurAssuresComponent implements OnInit {
   /** Les colonnes du document imprime **et** du fichier : les memes.
    * C'est ce qui empeche la feuille et le tableur de se contredire. */
   readonly colonnes: ColonneExport<AssureView>[] = [
-    { titre: 'Assuré', valeur: (a) => `${a.patient.prenom} ${a.patient.nom}` },
-    { titre: 'Police', valeur: (a) => a.numeroPolice },
-    { titre: 'Statut', valeur: (a) => a.statut },
-    { titre: 'Taux (%)', valeur: (a) => a.tauxBasePourcent, nombre: true },
-    { titre: 'Consommé cette année (GNF)', valeur: (a) => a.consommeAnneeGnf, nombre: true },
-    { titre: 'Plafond annuel (GNF)', valeur: (a) => a.plafondAnnuelGnf, nombre: true },
-    { titre: 'Passages', valeur: (a) => a.nombrePassages, nombre: true },
+    { titre: 'EXPORT.COL.ASSURE', valeur: (a) => `${a.patient.prenom} ${a.patient.nom}` },
+    { titre: 'EXPORT.COL.POLICE', valeur: (a) => a.numeroPolice },
+    { titre: 'EXPORT.COL.STATUT', valeur: (a) => a.statut },
+    { titre: 'EXPORT.COL.TAUX_POURCENT', valeur: (a) => a.tauxBasePourcent, nombre: true },
+    { titre: 'EXPORT.COL.CONSOMME_ANNEE_GNF', valeur: (a) => a.consommeAnneeGnf, nombre: true },
+    { titre: 'EXPORT.COL.PLAFOND_ANNUEL_GNF', valeur: (a) => a.plafondAnnuelGnf, nombre: true },
+    { titre: 'EXPORT.COL.PASSAGES', valeur: (a) => a.nombrePassages, nombre: true },
   ];
 
   ngOnInit(): void {

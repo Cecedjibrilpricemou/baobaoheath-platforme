@@ -39,17 +39,17 @@ export class EpisodesComponent implements OnInit {
   items     = signal<EpisodeSoinsResumeView[]>([]);
 
   readonly colonnes: ColonneExport<EpisodeSoinsResumeView>[] = [
-    { titre: 'Numéro', valeur: (e) => e.numero },
-    { titre: 'Patient', valeur: (e) => e.patient.prenom + ' ' + e.patient.nom },
-    { titre: 'Téléphone', valeur: (e) => e.patient.telephone },
-    { titre: 'Motif', valeur: (e) => e.motif },
-    { titre: 'Service', valeur: (e) => e.service },
-    { titre: 'Statut', valeur: (e) => e.statut },
-    { titre: 'Ouvert le', valeur: (e) => new Date(e.ouvertLe) },
-    { titre: 'Clos le', valeur: (e) => (e.closLe ? new Date(e.closLe) : null) },
-    { titre: 'Responsable', valeur: (e) => (e.responsable ? e.responsable.prenom + ' ' + e.responsable.nom : '') },
-    { titre: 'Consultations', valeur: (e) => e.nbConsultations, nombre: true },
-    { titre: 'Analyses', valeur: (e) => e.nbDemandesAnalyse, nombre: true },
+    { titre: 'EXPORT.COL.NUMERO', valeur: (e) => e.numero },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (e) => e.patient.prenom + ' ' + e.patient.nom },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (e) => e.patient.telephone },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (e) => e.motif },
+    { titre: 'EXPORT.COL.SERVICE', valeur: (e) => e.service },
+    { titre: 'EXPORT.COL.STATUT', valeur: (e) => e.statut },
+    { titre: 'EXPORT.COL.OUVERT_LE', valeur: (e) => new Date(e.ouvertLe) },
+    { titre: 'EXPORT.COL.CLOS_LE', valeur: (e) => (e.closLe ? new Date(e.closLe) : null) },
+    { titre: 'EXPORT.COL.RESPONSABLE', valeur: (e) => (e.responsable ? e.responsable.prenom + ' ' + e.responsable.nom : '') },
+    { titre: 'EXPORT.COL.CONSULTATIONS', valeur: (e) => e.nbConsultations, nombre: true },
+    { titre: 'EXPORT.COL.ANALYSES', valeur: (e) => e.nbDemandesAnalyse, nombre: true },
   ];
   isLoading = signal(true);
 

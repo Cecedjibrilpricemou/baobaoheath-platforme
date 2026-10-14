@@ -44,16 +44,19 @@ export class PresencesComponent implements OnInit {
    * C'est ce qui empeche la feuille et le tableur de se contredire. */
   /** La date du jour, pour situer le document : un gabarit ne sait pas
    * construire une date. */
-  readonly leJour = new Date().toLocaleDateString('fr-FR');
+  /** La date du jour, dans la langue choisie : le document la porte. */
+  leJour(): string {
+    return new Date().toLocaleDateString(this.i18n.lang() === 'en' ? 'en-GB' : 'fr-FR');
+  }
 
   readonly colonnes: ColonneExport<PresenceDuJourView>[] = [
-    { titre: 'Patient', valeur: (p) => `${p.patient.prenom} ${p.patient.nom}` },
-    { titre: 'Téléphone', valeur: (p) => p.patient.telephone },
-    { titre: 'Heure prévue', valeur: (p) => new Date(p.prevuLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
-    { titre: 'Médecin', valeur: (p) => (p.medecin ? `${p.medecin.prenom} ${p.medecin.nom}` : null) },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (p) => `${p.patient.prenom} ${p.patient.nom}` },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (p) => p.patient.telephone },
+    { titre: 'EXPORT.COL.HEURE_PREVUE', valeur: (p) => new Date(p.prevuLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
+    { titre: 'EXPORT.COL.MEDECIN', valeur: (p) => (p.medecin ? `${p.medecin.prenom} ${p.medecin.nom}` : null) },
     // Le bureau est facultatif : beaucoup d'hopitaux ne les numerotent pas.
-    { titre: 'Bureau', valeur: (p) => p.medecin?.bureau },
-    { titre: 'Statut', valeur: (p) => p.statut },
+    { titre: 'EXPORT.COL.BUREAU', valeur: (p) => p.medecin?.bureau },
+    { titre: 'EXPORT.COL.STATUT', valeur: (p) => p.statut },
   ];
 
   ngOnInit() {

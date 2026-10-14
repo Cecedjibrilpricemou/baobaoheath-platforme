@@ -33,13 +33,13 @@ export class PatientCommandesComponent implements OnInit {
   commandes = signal<CommandeView[]>([]);
 
   readonly colonnes: ColonneExport<CommandeView>[] = [
-    { titre: 'Ordonnance', valeur: (c) => c.numeroOrdonnance },
-    { titre: 'Pharmacie', valeur: (c) => c.pharmacie?.nom },
-    { titre: 'Quartier', valeur: (c) => c.pharmacie?.quartier ?? c.quartierRecherche },
-    { titre: 'Lignes', valeur: (c) => c.lignes.length, nombre: true },
-    { titre: 'Remise', valeur: (c) => c.modeRemise },
-    { titre: 'Statut', valeur: (c) => c.statut },
-    { titre: 'Demandée le', valeur: (c) => new Date(c.creeLe) },
+    { titre: 'EXPORT.COL.ORDONNANCE', valeur: (c) => c.numeroOrdonnance },
+    { titre: 'EXPORT.COL.PHARMACIE', valeur: (c) => c.pharmacie?.nom },
+    { titre: 'EXPORT.COL.QUARTIER', valeur: (c) => c.pharmacie?.quartier ?? c.quartierRecherche },
+    { titre: 'EXPORT.COL.LIGNES', valeur: (c) => c.lignes.length, nombre: true },
+    { titre: 'EXPORT.COL.REMISE', valeur: (c) => c.modeRemise },
+    { titre: 'EXPORT.COL.STATUT', valeur: (c) => c.statut },
+    { titre: 'EXPORT.COL.DEMANDEE_LE', valeur: (c) => new Date(c.creeLe) },
   ];
   chargement = signal(true);
   enCours = signal<string | null>(null);

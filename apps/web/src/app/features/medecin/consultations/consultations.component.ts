@@ -32,17 +32,17 @@ export class MedecinConsultationsComponent implements OnInit {
    * feuille de tri qui circule n'a pas a porter les traitements.
    */
   readonly colonnes: ColonneExport<ConsultationAValiderView>[] = [
-    { titre: 'Patient', valeur: (c) => {
+    { titre: 'EXPORT.COL.PATIENT', valeur: (c) => {
         const u = c.patient?.utilisateur;
         return u ? `${u.prenom} ${u.nom}` : '';
       } },
-    { titre: 'Téléphone', valeur: (c) => c.patient?.utilisateur?.telephone },
-    { titre: 'Motif', valeur: (c) => c.motifPrincipal },
-    { titre: 'Consultée le', valeur: (c) => new Date(c.consulteeLE) },
-    { titre: 'Agent', valeur: (c) => (c.asc ? `${c.asc.utilisateur.prenom} ${c.asc.utilisateur.nom}` : '') },
-    { titre: 'Diagnostics', valeur: (c) => c.diagnostics.length, nombre: true },
-    { titre: 'Ordonnances', valeur: (c) => c.ordonnances.length, nombre: true },
-    { titre: 'Statut', valeur: (c) => c.statut },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (c) => c.patient?.utilisateur?.telephone },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (c) => c.motifPrincipal },
+    { titre: 'EXPORT.COL.CONSULTEE_LE', valeur: (c) => new Date(c.consulteeLE) },
+    { titre: 'EXPORT.COL.AGENT', valeur: (c) => (c.asc ? `${c.asc.utilisateur.prenom} ${c.asc.utilisateur.nom}` : '') },
+    { titre: 'EXPORT.COL.DIAGNOSTICS', valeur: (c) => c.diagnostics.length, nombre: true },
+    { titre: 'EXPORT.COL.ORDONNANCES', valeur: (c) => c.ordonnances.length, nombre: true },
+    { titre: 'EXPORT.COL.STATUT', valeur: (c) => c.statut },
   ];
   selected        = signal<ConsultationAValiderView | null>(null);
   isLoading       = signal(true);

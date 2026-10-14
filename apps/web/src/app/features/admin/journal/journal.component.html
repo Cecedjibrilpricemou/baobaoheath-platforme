@@ -10,8 +10,8 @@
     </div>
   </header>
   <app-export-liste
-    [titre]="'Journal d’audit'"
-    [sousTitre]="&#39;Page &#39; + page() + &#39; sur &#39; + totalPages() + &#39; · &#39; + total() + &#39; entrées au total&#39;"
+    [titre]="'EXPORT.DOC.JOURNAL_AUDIT'"
+    [sousTitre]="'EXPORT.SOUS.PAGE_SUR' | translate: { page: page(), pages: totalPages(), total: total() }"
     [colonnes]="colonnes"
     [lignes]="lignes()"
     [nomFichier]="'journal-audit'" />

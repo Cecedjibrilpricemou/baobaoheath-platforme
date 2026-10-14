@@ -15,8 +15,8 @@
   </header>
 
   <app-export-liste
-    [titre]="'État du stock'"
-    [sousTitre]="searchQuery() ? ('Recherche : ' + searchQuery()) : ''"
+    [titre]="'EXPORT.DOC.ETAT_STOCK'"
+    [sousTitre]="searchQuery() ? ('EXPORT.SOUS.RECHERCHE' | translate: { q: searchQuery() }) : ''"
     [colonnes]="colonnes"
     [lignes]="stocksFiltres()"
     [nomFichier]="'stock'" />

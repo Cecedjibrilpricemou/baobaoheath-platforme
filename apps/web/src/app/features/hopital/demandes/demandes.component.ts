@@ -32,13 +32,13 @@ export class DemandesComponent implements OnInit {
   demandes = signal<DemandeRendezVousView[]>([]);
 
   readonly colonnes: ColonneExport<DemandeRendezVousView>[] = [
-    { titre: 'Patient', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
-    { titre: 'Téléphone', valeur: (d) => d.patient.telephone },
-    { titre: 'Motif', valeur: (d) => d.motif },
-    { titre: 'Médecin', valeur: (d) => (d.medecin ? d.medecin.prenom + ' ' + d.medecin.nom : '') },
-    { titre: 'Bureau', valeur: (d) => d.medecin?.bureau },
-    { titre: 'Statut', valeur: (d) => d.statut },
-    { titre: 'Demandée le', valeur: (d) => new Date(d.creeLe) },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (d) => d.patient.telephone },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (d) => d.motif },
+    { titre: 'EXPORT.COL.MEDECIN', valeur: (d) => (d.medecin ? d.medecin.prenom + ' ' + d.medecin.nom : '') },
+    { titre: 'EXPORT.COL.BUREAU', valeur: (d) => d.medecin?.bureau },
+    { titre: 'EXPORT.COL.STATUT', valeur: (d) => d.statut },
+    { titre: 'EXPORT.COL.DEMANDEE_LE', valeur: (d) => new Date(d.creeLe) },
   ];
   medecins = signal<MedecinRefView[]>([]);
   isLoading = signal(true);

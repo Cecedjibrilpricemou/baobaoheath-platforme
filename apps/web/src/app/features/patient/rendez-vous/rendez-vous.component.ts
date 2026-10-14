@@ -33,14 +33,14 @@ export class RendezVousComponent implements OnInit {
 
   /** De quoi se presenter a l'accueil : l'etablissement, le medecin, le bureau. */
   readonly colonnes: ColonneExport<DemandeRendezVousView>[] = [
-    { titre: 'Établissement', valeur: (d) => d.structure.nom },
-    { titre: 'Préfecture', valeur: (d) => d.structure.prefecture },
-    { titre: 'Médecin', valeur: (d) => (d.medecin ? d.medecin.prenom + ' ' + d.medecin.nom : '') },
-    { titre: 'Bureau', valeur: (d) => d.medecin?.bureau },
-    { titre: 'Motif', valeur: (d) => d.motif },
-    { titre: 'Statut', valeur: (d) => d.statut },
-    { titre: 'Demandée le', valeur: (d) => new Date(d.creeLe) },
-    { titre: 'Épisode', valeur: (d) => d.numeroEpisode },
+    { titre: 'EXPORT.COL.ETABLISSEMENT', valeur: (d) => d.structure.nom },
+    { titre: 'EXPORT.COL.PREFECTURE', valeur: (d) => d.structure.prefecture },
+    { titre: 'EXPORT.COL.MEDECIN', valeur: (d) => (d.medecin ? d.medecin.prenom + ' ' + d.medecin.nom : '') },
+    { titre: 'EXPORT.COL.BUREAU', valeur: (d) => d.medecin?.bureau },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (d) => d.motif },
+    { titre: 'EXPORT.COL.STATUT', valeur: (d) => d.statut },
+    { titre: 'EXPORT.COL.DEMANDEE_LE', valeur: (d) => new Date(d.creeLe) },
+    { titre: 'EXPORT.COL.EPISODE', valeur: (d) => d.numeroEpisode },
   ];
   isLoading = signal(true);
   enCours = signal(false);

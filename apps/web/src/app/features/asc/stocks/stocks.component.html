@@ -117,8 +117,8 @@
 
     <!-- Loading -->
     <app-export-liste
-      [titre]="'Ma dotation'"
-      [sousTitre]="searchQuery() ? (&#39;Recherche : &#39; + searchQuery()) : &#39;&#39;"
+      [titre]="'EXPORT.DOC.DOTATION_ASC'"
+      [sousTitre]="searchQuery() ? ('EXPORT.SOUS.RECHERCHE' | translate: { q: searchQuery() }) : ''"
       [colonnes]="colonnes"
       [lignes]="stocksFiltres()"
       [nomFichier]="'ma-dotation'" />

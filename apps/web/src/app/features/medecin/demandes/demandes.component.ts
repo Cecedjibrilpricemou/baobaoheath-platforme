@@ -32,14 +32,14 @@ export class DemandesComponent implements OnInit {
   demandes = signal<DemandeRendezVousView[]>([]);
 
   readonly colonnes: ColonneExport<DemandeRendezVousView>[] = [
-    { titre: 'Patient', valeur: (d) => `${d.patient.prenom} ${d.patient.nom}` },
-    { titre: 'Téléphone', valeur: (d) => d.patient.telephone },
-    { titre: 'Motif', valeur: (d) => d.motif },
-    { titre: 'Statut', valeur: (d) => d.statut },
-    { titre: 'Demandée le', valeur: (d) => new Date(d.creeLe) },
-    { titre: 'Traitée le', valeur: (d) => (d.traiteeLe ? new Date(d.traiteeLe) : null) },
-    { titre: 'Motif du refus', valeur: (d) => d.motifRefus },
-    { titre: 'Épisode', valeur: (d) => d.numeroEpisode },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (d) => `${d.patient.prenom} ${d.patient.nom}` },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (d) => d.patient.telephone },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (d) => d.motif },
+    { titre: 'EXPORT.COL.STATUT', valeur: (d) => d.statut },
+    { titre: 'EXPORT.COL.DEMANDEE_LE', valeur: (d) => new Date(d.creeLe) },
+    { titre: 'EXPORT.COL.TRAITEE_LE', valeur: (d) => (d.traiteeLe ? new Date(d.traiteeLe) : null) },
+    { titre: 'EXPORT.COL.MOTIF_REFUS', valeur: (d) => d.motifRefus },
+    { titre: 'EXPORT.COL.EPISODE', valeur: (d) => d.numeroEpisode },
   ];
   isLoading = signal(true);
   enCours = signal<string | null>(null);
