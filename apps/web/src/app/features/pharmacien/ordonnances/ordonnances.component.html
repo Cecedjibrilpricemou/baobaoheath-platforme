@@ -322,16 +322,81 @@
           <div class="bb-ordo__form-med">
             <strong>{{ selected()!.ligne.medicament.libelle }}</strong>
             <span>{{ selected()!.ligne.medicament.dosage }} — {{ selected()!.ligne.medicament.forme }}</span>
+            <!-- Une ligne a pu être entamée dans une autre officine : la
+                 quantité prescrite ne dit pas ce qu'il reste à servir. -->
+            @if (selected()!.ligne.quantiteServie > 0) {
+              <span class="bb-ordo__deja-servi">
+                {{ 'PHARMACIEN.ORDONNANCES.DEJA_SERVI' | translate: {
+                     servi: selected()!.ligne.quantiteServie, total: selected()!.ligne.quantite } }}
+                · {{ 'PHARMACIEN.ORDONNANCES.RESTE_A_SERVIR' | translate: { reste: resteAServir(selected()!.ligne) } }}
+              </span>
+            }
           </div>
 
-          <!-- Quantité -->
+          <!-- **Trois gestes, un seul panneau.** Remettre ce qui est prescrit,
+               remettre autre chose, ou ne rien remettre. Les deux derniers
+               exigent un motif : c'est le prescripteur et le patient qui le
+               liront. -->
+          <div class="bb-ordo__form-field mt-4">
+            <span class="form-label">{{ 'PHARMACIEN.ORDONNANCES.GESTE' | translate }}</span>
+            <div class="bb-ordo__gestes">
+              <button type="button" class="bb-ordo__geste"
+                      [class.bb-ordo__geste--actif]="geste() === 'DELIVRER'"
+                      (click)="choisirGeste('DELIVRER')">
+                {{ 'PHARMACIEN.ORDONNANCES.GESTE_DELIVRER' | translate }}
+              </button>
+              <button type="button" class="bb-ordo__geste"
+                      [class.bb-ordo__geste--actif]="geste() === 'SUBSTITUER'"
+                      (click)="choisirGeste('SUBSTITUER')">
+                {{ 'PHARMACIEN.ORDONNANCES.GESTE_SUBSTITUER' | translate }}
+              </button>
+              <button type="button" class="bb-ordo__geste"
+                      [class.bb-ordo__geste--actif]="geste() === 'REFUSER'"
+                      (click)="choisirGeste('REFUSER')">
+                {{ 'PHARMACIEN.ORDONNANCES.GESTE_REFUSER' | translate }}
+              </button>
+            </div>
+          </div>
+
+          @if (geste() === 'SUBSTITUER') {
+            <div class="bb-ordo__form-field mt-4">
+              <label class="form-label" for="ordo-substitut">
+                {{ 'PHARMACIEN.ORDONNANCES.SUBSTITUT' | translate }}
+              </label>
+              <select id="ordo-substitut" class="bb-ordo__select"
+                      [value]="idSubstitut()"
+                      (change)="idSubstitut.set($any($event.target).value)">
+                <option value="">—</option>
+                @for (m of medicaments(); track m.id) {
+                  @if (m.id !== selected()!.ligne.medicament.id) {
+                    <option [value]="m.id">{{ m.libelle }}</option>
+                  }
+                }
+              </select>
+            </div>
+          }
+
+          @if (geste() !== 'DELIVRER') {
+            <div class="bb-ordo__form-field mt-4">
+              <label class="form-label" for="ordo-motif">
+                {{ 'PHARMACIEN.ORDONNANCES.MOTIF' | translate }}
+              </label>
+              <textarea id="ordo-motif" class="bb-ordo__motif" rows="3"
+                        [value]="motif()"
+                        (input)="motif.set($any($event.target).value)"></textarea>
+              <span class="bb-ordo__aide">{{ 'PHARMACIEN.ORDONNANCES.MOTIF_AIDE' | translate }}</span>
+            </div>
+          }
+
+          <!-- Quantité. Un refus ne remet rien : ni quantité, ni paiement. -->
+          @if (geste() !== 'REFUSER') {
           <div class="bb-ordo__form-field mt-4">
             <label id="ordo-qty-label" for="ordo-qty">{{ 'PHARMACIEN.ORDONNANCES.QTY_TO_DELIVER' | translate: { qty: selected()!.ligne.quantite } }}</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
   <input matInput type="number"
     id="ordo-qty"
     [min]="1"
-    [max]="selected()!.ligne.quantite"
+    [max]="resteAServir(selected()!.ligne)"
     step="1"
     [(ngModel)]="quantiteDelivree"
   />
@@ -363,14 +428,15 @@
               {{ formatMontant(getMontantAvecQuantite(selected()!.ligne)) }}
             </span>
           </div>
+          }
 
           <!-- Boutons -->
           <div class="bb-ordo__form-actions mt-4">
             <button class="bb-ordo__cancel-btn" (click)="annuler()">{{ 'COMMON.CANCEL' | translate }}</button>
             <button
               class="bb-ordo__deliver-btn"
-              (click)="delivrer()"
-              [disabled]="isDelivering() || selected()!.ligne.alerteAllergie"
+              (click)="valider()"
+              [disabled]="!peutValider()"
             >
               <i [class]="isDelivering() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
               {{ (isDelivering() ? 'PHARMACIEN.ORDONNANCES.PROCESSING' : 'PHARMACIEN.ORDONNANCES.CONFIRM_PAYMENT') | translate }}

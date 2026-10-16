@@ -1134,7 +1134,24 @@ export interface LigneDelivranceView {
   medicament: MedicamentTarifeView;
   /** EF-05-12 : circuit reglemente, signale ligne par ligne au comptoir. */
   estReglemente: boolean;
-  /** Calcule par l'API : quantite x prix unitaire. */
+
+  /**
+   * Ce qui a deja ete remis sur cette ligne, substitutions comprises (P6-b).
+   *
+   * Une ligne peut avoir ete entamee dans une autre officine : la quantite
+   * prescrite ne dit pas ce qu'il reste a servir.
+   */
+  quantiteServie: number;
+  /** `quantite - quantiteServie`, jamais negatif. */
+  resteAServir: number;
+
+  /**
+   * Calcule par l'API : **ce qui reste a servir** x prix unitaire.
+   *
+   * Et non la quantite prescrite : une ligne entamee ailleurs se facturait en
+   * entier, et le comptoir annoncait le prix des dix boites alors que trois
+   * etaient deja parties.
+   */
   prixTotalGnf: number;
   /** Calcule par l'API : le principe actif figure dans les allergies du patient. */
   alerteAllergie: boolean;

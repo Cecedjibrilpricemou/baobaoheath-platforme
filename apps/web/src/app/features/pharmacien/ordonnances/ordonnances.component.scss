@@ -427,3 +427,56 @@
     i { font-size: 18px; }
   }
 }
+
+// ── Les trois gestes du comptoir (P6-b, EF-07-03/04/05) ─────────────
+//
+// **Les trois ont le même poids.** Remettre ce qui est prescrit est le geste
+// courant, mais ce n'est pas le seul légitime : une officine qui n'a pas le
+// produit doit pouvoir le dire aussi facilement qu'elle le remettrait.
+.bb-ordo {
+  &__gestes {
+    display: grid; gap: 8px; margin-top: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  &__geste {
+    padding: 11px 14px; text-align: left;
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius);
+    color: var(--bb-text-primary);
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+
+    &:hover { border-color: var(--bb-primary); background: var(--bb-surface-2); }
+
+    &--actif {
+      border-color: var(--bb-primary);
+      background: var(--bb-primary); color: #fff;
+    }
+  }
+
+  &__select,
+  &__motif {
+    width: 100%; box-sizing: border-box; margin-top: 6px;
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-primary); font-family: inherit; font-size: 13.5px;
+    &:focus { outline: 2px solid var(--bb-primary); outline-offset: 1px; }
+  }
+
+  &__motif { resize: vertical; }
+
+  &__aide {
+    display: block; margin-top: 5px;
+    font-size: 12px; color: var(--bb-text-muted);
+  }
+
+  // Ce qui a déjà été remis ailleurs : la quantité prescrite ne dit pas ce
+  // qu'il reste à servir.
+  &__deja-servi {
+    display: block; margin-top: 4px;
+    font-family: var(--bb-font-mono); font-size: 12px;
+    color: var(--bb-warning, #b7791f);
+  }
+}

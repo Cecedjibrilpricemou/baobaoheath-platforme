@@ -44,6 +44,25 @@ export class PharmacienService {
     return this.api.post<ApiResponse<VerificationOrdonnanceView>>('/pharmacien/ordonnances/verifier', dto);
   }
 
+  /**
+   * Substituer un produit (EF-07-04).
+   *
+   * Le motif part avec : c'est le prescripteur qui le lira, et une
+   * substitution muette est une modification de traitement decidee par
+   * quelqu'un qui n'a pas vu le patient.
+   */
+  substituerLigne(
+    idLigne: string,
+    payload: { idMedicamentDelivre: string; quantiteDelivree?: number; motif: string },
+  ): Observable<ApiResponse<unknown>> {
+    return this.api.post<ApiResponse<unknown>>(`/pharmacien/ordonnances/${idLigne}/substituer`, payload);
+  }
+
+  /** Refuser une ligne (EF-07-05). Rien ne sort du stock, et on dit pourquoi. */
+  refuserLigne(idLigne: string, motif: string): Observable<ApiResponse<unknown>> {
+    return this.api.post<ApiResponse<unknown>>(`/pharmacien/ordonnances/${idLigne}/refuser`, { motif });
+  }
+
   delivrerOrdonnance(idOrdonnance: string, payload: DelivrancePayload): Observable<ApiResponse<OrdonnanceDelivrance>> {
     return this.api.post<ApiResponse<OrdonnanceDelivrance>>(`/pharmacien/ordonnances/${idOrdonnance}/delivrer`, payload);
   }

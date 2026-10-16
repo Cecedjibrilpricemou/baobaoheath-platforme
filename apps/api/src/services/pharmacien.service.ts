@@ -75,6 +75,8 @@ type OrdonnanceAvecLignes = {
     statut: StatutOrdonnance;
     instructions: string | null;
     medicament: ProduitResumeView & { prixUnitaireGnf: number; estReglemente: boolean };
+    /// Les actes de comptoir deja poses sur cette ligne (P6-b).
+    actes?: { quantite: number }[];
   }[];
 };
 
@@ -92,6 +94,9 @@ function vueDelivrance(
   const lignes = o.lignes.map((l) => {
     const noms = [l.medicament.dci, l.medicament.nomCommercial].filter((n): n is string => !!n);
     const alerteAllergie = allergies.some((a) => noms.some((n) => a.toLowerCase() === n.toLowerCase()));
+    // Substitutions comprises : une substitution sert bien la ligne.
+    const quantiteServie = (l.actes ?? []).reduce((t, acte) => t + acte.quantite, 0);
+    const resteAServir = Math.max(0, l.quantite - quantiteServie);
     return {
       id: l.id,
       posologie: l.posologie,
@@ -102,7 +107,12 @@ function vueDelivrance(
       instructions: l.instructions,
       medicament: l.medicament,
       estReglemente: l.medicament.estReglemente,
-      prixTotalGnf: l.quantite * l.medicament.prixUnitaireGnf,
+      quantiteServie,
+      resteAServir,
+      // **Le reste, pas le prescrit.** Une ligne entamee ailleurs se
+      // facturait en entier : trois boites sur dix deja remises, et le
+      // comptoir annoncait le prix des dix.
+      prixTotalGnf: resteAServir * l.medicament.prixUnitaireGnf,
       alerteAllergie,
     };
   });
@@ -145,7 +155,9 @@ export async function scanPatient(qrCode: string, pharmacienId: string) {
               },
             },
             include: {
-              lignes: { include: { medicament: true } },
+              // P6-b : les actes disent ce qui a deja ete servi, donc ce
+              // qu'il reste a remettre et ce qu'il reste a payer.
+              lignes: { include: { medicament: true, actes: { select: { quantite: true } } } },
               signataire: { select: { prenom: true, nom: true } },
             },
           },
@@ -581,7 +593,7 @@ export async function verifierOrdonnance(
   const ordonnance = await prisma.ordonnance.findUnique({
     where: { numero: dto.numero.trim().toUpperCase() },
     include: {
-      lignes: { include: { medicament: true } },
+      lignes: { include: { medicament: true, actes: { select: { quantite: true } } } },
       signataire: { select: { prenom: true, nom: true } },
       consultation: {
         include: {

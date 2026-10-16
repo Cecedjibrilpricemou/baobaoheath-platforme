@@ -331,7 +331,7 @@ async function main() {
   // l'appel au quartier part d'une ordonnance signee, et rien n'en cree.
   const ordonnanceExistante = await prisma.ordonnance.findFirst({
     where: { consultation: { idPatient: patientProfile.id } },
-    select: { id: true, commande: { select: { id: true } } },
+    select: { id: true, idConsultation: true, commande: { select: { id: true } } },
   });
 
   if (!ordonnanceExistante) {
@@ -364,10 +364,24 @@ async function main() {
           }],
         },
       },
-      select: { id: true },
+      select: { id: true, idConsultation: true },
+    });
+    // **Une ordonnance signee suppose une consultation terminee.** Le seed la
+    // laissait EN_COURS, et le scan du comptoir n'accepte que les
+    // consultations terminees : l'ecran « Ordonnances » du pharmacien
+    // annoncait donc « toutes les ordonnances ont ete delivrees » sur un
+    // patient qui en avait une a servir. Le parcours de delivrance n'avait
+    // jamais rien a montrer.
+    await prisma.consultation.update({
+      where: { id: ordonnance.idConsultation },
+      data: { statut: 'TERMINEE' },
     });
     await lancerRecherchePharmacie(ordonnance.id);
   } else if (!ordonnanceExistante.commande) {
+    await prisma.consultation.update({
+      where: { id: ordonnanceExistante.idConsultation },
+      data: { statut: 'TERMINEE' },
+    });
     await lancerRecherchePharmacie(ordonnanceExistante.id);
   } else {
     // **Le seed ramene la demonstration a son point de depart.** Sans cela,
@@ -389,6 +403,28 @@ async function main() {
     // avec la somme des lignes. Supprimer les lignes puis remettre le total a
     // zero en deux appels laisse un ecart entre les deux, et la garde refuse
     // — elle a refuse ce seed-ci, ce qui est exactement son travail.
+    await prisma.consultation.update({
+      where: { id: ordonnanceExistante.idConsultation },
+      data: { statut: 'TERMINEE' },
+    });
+
+    // **La delivrance repart a zero, elle aussi.** Les actes de comptoir d'un
+    // parcours precedent restaient en base : la ligne se presentait entamee,
+    // avec une seule unite a servir sur deux, et le parcours de delivrance
+    // partielle ne pouvait plus etre rejoue. Le meme oubli que pour le panier
+    // de la commande, trouve de la meme facon — en relancant le parcours.
+    await prisma.acteDelivrance.deleteMany({
+      where: { ligne: { idOrdonnance: ordonnanceExistante.id } },
+    });
+    await prisma.ligneOrdonnance.updateMany({
+      where: { idOrdonnance: ordonnanceExistante.id },
+      data: { statut: 'EN_ATTENTE' },
+    });
+    await prisma.ordonnance.update({
+      where: { id: ordonnanceExistante.id },
+      data: { statut: 'EN_ATTENTE' },
+    });
+
     const idCommandeDemo = ordonnanceExistante.commande.id;
     await prisma.$transaction([
       prisma.ligneCommande.deleteMany({ where: { idCommande: idCommandeDemo } }),

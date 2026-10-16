@@ -1758,7 +1758,18 @@
       "AGE": "{{age}} y/o",
       "SEXE_F": "Female",
       "SEXE_M": "Male",
-      "NO_ALLERGY": "No known allergy"
+      "NO_ALLERGY": "No known allergy",
+      "GESTE": "What are you doing with this line?",
+      "GESTE_DELIVRER": "Hand over the prescribed product",
+      "GESTE_SUBSTITUER": "Hand over an equivalent",
+      "GESTE_REFUSER": "Hand over nothing",
+      "SUBSTITUT": "Product handed over instead",
+      "MOTIF": "Why? (5 characters minimum)",
+      "MOTIF_AIDE": "The prescriber and the patient will read it.",
+      "SUBSTITUE_OK": "Substitution recorded. The doctor and the patient have been notified.",
+      "REFUSE_OK": "Refusal recorded. The prescription remains valid elsewhere.",
+      "DEJA_SERVI": "{{servi}} already served out of {{total}}",
+      "RESTE_A_SERVIR": "Left to serve: {{reste}}"
     },
     "STOCKS": {
       "TITLE": "Pharmacy stock",

@@ -1282,7 +1282,18 @@
       "AGE": "{{age}} ans",
       "SEXE_F": "Femme",
       "SEXE_M": "Homme",
-      "NO_ALLERGY": "Aucune allergie connue"
+      "NO_ALLERGY": "Aucune allergie connue",
+      "GESTE": "Que faites-vous de cette ligne ?",
+      "GESTE_DELIVRER": "Remettre le produit prescrit",
+      "GESTE_SUBSTITUER": "Remettre un équivalent",
+      "GESTE_REFUSER": "Ne rien remettre",
+      "SUBSTITUT": "Produit remis à la place",
+      "MOTIF": "Pourquoi ? (5 caractères minimum)",
+      "MOTIF_AIDE": "Le prescripteur et le patient le liront.",
+      "SUBSTITUE_OK": "Substitution enregistrée. Le médecin et le patient sont prévenus.",
+      "REFUSE_OK": "Refus enregistré. L’ordonnance reste valable ailleurs.",
+      "DEJA_SERVI": "{{servi}} déjà servie(s) sur {{total}}",
+      "RESTE_A_SERVIR": "Reste à servir : {{reste}}"
     },
     "STOCKS": {
       "TITLE": "Stocks de la pharmacie",
