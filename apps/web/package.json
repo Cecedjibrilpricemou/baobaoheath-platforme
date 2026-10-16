@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "start:lan": "ng serve --host 0.0.0.0"
   },
   "prettier": {
     "printWidth": 100,
