@@ -298,6 +298,24 @@ export const delivrerOrdonnanceSchema = z.object({
   quantiteDelivree: z.coerce.number().int().positive().optional(),
 }).strict();
 
+/**
+ * Substituer un produit (EF-07-04).
+ *
+ * Le motif n'est pas facultatif : c'est le prescripteur qui le lira, et une
+ * substitution muette est une modification de traitement decidee par
+ * quelqu'un qui n'a pas vu le patient.
+ */
+export const substituerLigneSchema = z.object({
+  idMedicamentDelivre: id,
+  quantiteDelivree: z.coerce.number().int().positive().optional(),
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+/** Refuser une ligne (EF-07-05). Rien ne sort du stock, et on dit pourquoi. */
+export const refuserLigneSchema = z.object({
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
 // EF-07-01. Le service compare en majuscules : la casse saisie au comptoir ne
 // doit pas faire echouer un controle legitime.
 export const verifierOrdonnanceSchema = z.object({

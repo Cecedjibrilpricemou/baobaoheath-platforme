@@ -18,6 +18,8 @@ import {
   createAgentPharmacieSchema,
   creerVenteSchema,
   delivrerOrdonnanceSchema,
+  refuserLigneSchema,
+  substituerLigneSchema,
   reapprovisionnerStockSchema,
   verifierOrdonnanceSchema,
 } from '../validators/api.schemas';
@@ -37,6 +39,11 @@ router.post('/ordonnances/verifier', validateBody(verifierOrdonnanceSchema), ctr
 router.post('/ordonnances/:id/renouveler', ctrl.renouvelerOrdonnanceController);
 // `:id` designe une ligne : la delivrance se fait medicament par medicament.
 router.post('/ordonnances/:id/delivrer', validateBody(delivrerOrdonnanceSchema), ctrl.delivrerOrdonnanceController);
+// EF-07-04 / EF-07-05. Trois gestes distincts et nommes plutot qu'un seul
+// avec des drapeaux : une substitution n'est pas une delivrance avec une
+// option, et un refus n'est pas une delivrance de zero.
+router.post('/ordonnances/:id/substituer', validateBody(substituerLigneSchema), ctrl.substituerLigneController);
+router.post('/ordonnances/:id/refuser', validateBody(refuserLigneSchema), ctrl.refuserLigneController);
 // ── Approvisionnement et peremptions (addendum, points 1.3 et 1.4) ───
 // Saisie assistee : la facture est attachee en justificatif. L'extraction
 // automatique viendra ensuite, et devra toujours etre relue avant

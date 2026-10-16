@@ -20,6 +20,22 @@ export async function delivrerOrdonnanceController(req: AuthRequest, res: Respon
     res.json({ success: true, data });
 }
 
+/** Substituer un produit, avec son motif (EF-07-04). */
+export async function substituerLigneController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.substituerLigneOrdonnance(
+    String(req.params.id), req.user!.userId, req.body,
+  );
+  res.json({ success: true, data });
+}
+
+/** Refuser une ligne, avec son motif (EF-07-05). */
+export async function refuserLigneController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.refuserLigneOrdonnance(
+    String(req.params.id), req.user!.userId, req.body,
+  );
+  res.json({ success: true, data });
+}
+
 /** EF-07-01 : controle d'une ordonnance par son numero et son code. */
 export async function verifierOrdonnanceController(req: AuthRequest, res: Response): Promise<void> {
   const data: VerificationOrdonnanceView = await pharmacienService.verifierOrdonnance(

@@ -109,6 +109,19 @@ enum TypeStructure {
 // SERVIE, calcules a partir de ses lignes. DELIVREE reste dans le type pour les
 // lignes : PostgreSQL ne permet pas de retirer une valeur d'enum sans recreer
 // le type.
+/// Ce qu'une officine a fait d'une ligne d'ordonnance (EF-07-03/04/05).
+enum TypeActeDelivrance {
+  /// Le produit prescrit, en tout ou en partie.
+  DELIVRE
+  /// Un autre produit, avec son motif. Le prescripteur et le patient sont
+  /// prevenus : une substitution muette est une modification de traitement
+  /// decidee par quelqu'un qui n'a pas vu le patient.
+  SUBSTITUE
+  /// Rien n'a ete remis, et on dit pourquoi. Un refus muet laisse le patient
+  /// repartir sans savoir s'il doit revenir ou aller ailleurs.
+  REFUSE
+}
+
 enum StatutOrdonnance {
   EN_ATTENTE
   DELIVREE
@@ -223,6 +236,8 @@ enum TypeNotification {
   COMMANDE_PRETE // P6 : le sachet attend, au comptoir ou pour le motard
   COMMANDE_REMISE // P6 : remis au patient, ou au motard
   COMMANDE_ANNULEE // P6 : avec son motif
+  ORDONNANCE_SUBSTITUTION // P6-b : un produit a ete remplace, avec son motif
+  ORDONNANCE_LIGNE_REFUSEE // P6-b : une officine n'a pas pu servir une ligne
 }
 
 enum UssdSessionStatus {
@@ -306,6 +321,7 @@ model Utilisateur {
 
   patientProfile           PatientProfile?
   ascProfile               AscProfile?
+  actesDelivrance          ActeDelivrance[] @relation("ActeDelivrancePharmacien")
   medecinProfile           MedecinProfile?
   pharmacienProfile        PharmacienProfile?
   sessions                 Session[]
@@ -690,6 +706,7 @@ model StructureSante {
 
   utilisateurs          Utilisateur[]
   ascProfiles           AscProfile[]
+  actesDelivrance       ActeDelivrance[]
   medecinProfiles       MedecinProfile[]
   pharmacienProfiles    PharmacienProfile[]
   stocks                Stock[]
@@ -1045,6 +1062,7 @@ model Medicament {
 
   lignesOrdonnance LigneOrdonnance[]
   lignesCommande   LigneCommande[]
+  actesDelivrance  ActeDelivrance[] @relation("ActeDelivranceMedicament")
   stocks           Stock[]
   lignesVente      LigneVente[]
 
@@ -1159,10 +1177,60 @@ model LigneOrdonnance {
 
   idMedicament String
   medicament   Medicament @relation(fields: [idMedicament], references: [id])
+  actes        ActeDelivrance[]
 
   @@index([idOrdonnance])
   @@index([statut])
   @@map("lignes_ordonnance")
+}
+
+/// Un geste de comptoir sur une ligne d'ordonnance.
+///
+/// **Une ligne peut recevoir plusieurs actes.** Une officine n'a que trois
+/// boites sur dix : elle en remet trois, et le reste se sert ailleurs ou plus
+/// tard (delivrance partielle, EF-07-07). Jusqu'ici la quantite remise etait
+/// **acceptee puis jetee** — `delivrerLigneOrdonnance` recevait
+/// `quantiteDelivree`, le renvoyait a l'appelant et ne l'ecrivait nulle part.
+/// La ligne passait a DELIVREE quelle que soit la quantite, donc le reste ne
+/// pouvait plus jamais etre servi, et l'ordonnance s'annoncait servie.
+///
+/// **L'auteur est nominatif** (EF-07-03). Savoir quelle officine a delivre ne
+/// suffit pas : c'est une personne qui engage sa responsabilite en remettant
+/// un medicament, et c'est elle qu'on cherche quand quelque chose a mal
+/// tourne.
+model ActeDelivrance {
+  id   String             @id @default(cuid())
+  type TypeActeDelivrance
+
+  /// Zero pour un refus. Une contrainte le verifie.
+  quantite Int
+  /// Prix de l'officine, fige a l'acte — meme regle que partout ailleurs :
+  /// prix national de reference plus la marge de l'officine.
+  prixUnitaireGnf Int @default(0)
+  montantGnf      Int @default(0)
+
+  /// Exige pour une substitution et pour un refus.
+  motif String?
+
+  acteLe DateTime @default(now())
+
+  idLigneOrdonnance String
+  ligne             LigneOrdonnance @relation(fields: [idLigneOrdonnance], references: [id], onDelete: Cascade)
+
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  /// **Qui a remis.** Pas l'officine : la personne.
+  idPharmacien String
+  pharmacien   Utilisateur @relation("ActeDelivrancePharmacien", fields: [idPharmacien], references: [id], onDelete: Restrict)
+
+  /// Le produit reellement remis. Egal au prescrit, sauf substitution.
+  idMedicamentDelivre String
+  medicamentDelivre   Medicament @relation("ActeDelivranceMedicament", fields: [idMedicamentDelivre], references: [id], onDelete: Restrict)
+
+  @@index([idLigneOrdonnance])
+  @@index([idStructure, acteLe])
+  @@map("actes_delivrance")
 }
 
 model Vaccination {

@@ -129,7 +129,9 @@ export type TypeNotification =
   | 'COMMANDE_PAYEE'
   | 'COMMANDE_PRETE'
   | 'COMMANDE_REMISE'
-  | 'COMMANDE_ANNULEE';
+  | 'COMMANDE_ANNULEE'
+  | 'ORDONNANCE_SUBSTITUTION'
+  | 'ORDONNANCE_LIGNE_REFUSEE';
 
 /** Statut d'une commande pharmacie (EF-07). */
 // ═══════════════════════════════════════════════════════════════════
