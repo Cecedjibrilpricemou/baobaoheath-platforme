@@ -3,7 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import type {
   CommandeView,
-  ModeRemise, CreerDemandeRendezVousDto, DemandeRendezVousView } from '@baobaoheath/shared-types';
+  FactureView,
+  ModeRemise,
+  PayerCommandeDto,
+  CreerDemandeRendezVousDto, DemandeRendezVousView } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
 import { Patient, PatientCreatePayload, PatientUpdatePayload, Consultation } from '../models/patient.model';
 import { ApiResponse, PaginatedData } from '../models/api.model';
@@ -84,5 +87,23 @@ export class PatientService {
   /** Retrait ou livraison. **Le retrait n'est pas un repli.** */
   choisirModeRemise(idCommande: string, mode: ModeRemise): Observable<ApiResponse<CommandeView>> {
     return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/mode-remise`, { mode });
+  }
+
+  /**
+   * Payer le panier de la commande.
+   *
+   * **Aucun montant n'est envoyé.** Il est figé en base au chiffrage par
+   * l'officine ; un montant qui part du navigateur est un montant qu'on peut
+   * baisser. Ce qui revient est la facture, avec son lien de paiement — et
+   * c'est le rappel de la passerelle qui fera avancer la commande, pas cet
+   * appel.
+   */
+  payerCommande(idCommande: string, dto: PayerCommandeDto): Observable<ApiResponse<FactureView>> {
+    return this.api.post<ApiResponse<FactureView>>(`/commandes/${idCommande}/payer`, dto);
+  }
+
+  /** Renoncer, avec un motif. */
+  annulerCommande(idCommande: string, motif: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/annuler`, { motif });
   }
 }

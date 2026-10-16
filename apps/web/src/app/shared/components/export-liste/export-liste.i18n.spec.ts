@@ -97,3 +97,40 @@ describe('les clefs des documents imprimés', () => {
     }
   });
 });
+
+// ── Les clefs construites a l'execution ──────────────────────────────
+//
+// **Un scan des sources ne les voit pas.** Les libelles d'etat d'une commande
+// sont bâtis par interpolation — `PHARMACIEN.COMMANDES.ETAT_${statut}` — donc
+// aucune analyse statique ne peut les enumerer. Il a suffi d'ajouter deux
+// etats a la machine sans leurs libelles pour que l'ecran du pharmacien
+// affiche `PHARMACIEN.COMMANDES.ETAT_CLOTUREE` en clair, dans la liste des
+// commandes servies. Trouve au navigateur, pas par un test.
+//
+// Ici on part de la liste des etats, qui est connue, et on exige le libelle
+// des deux cotes et dans les deux langues.
+describe('les libelles d’etat d’une commande', () => {
+  const ETATS = [
+    'RECHERCHE_PHARMACIE', 'PRISE_EN_CHARGE', 'A_PAYER', 'PAYEE', 'EN_PREPARATION',
+    'PRETE_POUR_RETRAIT', 'PRETE_POUR_LIVRAISON', 'RETIREE', 'CLOTUREE',
+    'SANS_PHARMACIE', 'ANNULEE',
+  ];
+
+  const tables = Object.fromEntries(
+    LANGUES.map((l) => [l, JSON.parse(readFileSync(join(I18N, `${l}.json`), 'utf8'))]),
+  ) as Record<string, Record<string, unknown>>;
+
+  // L'officine ne voit pas les memes etats du meme oeil que le patient : deux
+  // series de libelles, pas une seule partagee.
+  for (const espace of ['PHARMACIEN', 'PATIENT']) {
+    for (const langue of LANGUES) {
+      it(`${espace} les porte tous en « ${langue} »`, () => {
+        const manquants = ETATS.filter((e) => {
+          const v = valeur(tables[langue]!, `${espace}.COMMANDES.ETAT_${e}`);
+          return typeof v !== 'string' || v.trim() === '';
+        });
+        expect(manquants).toEqual([]);
+      });
+    }
+  }
+});

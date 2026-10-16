@@ -151,6 +151,54 @@ export class PharmacienService {
     return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/retirer`, { motif });
   }
 
+  // --- P6 / EF-07-02 : du panier chiffré à la remise ---------------------
+  //
+  // Chaque geste a son appel, et un seul. Le serveur refuse tout passage
+  // qu'il n'attend pas — c'est un 409, pas une panne : quelqu'un est passé
+  // avant, ou l'écran a une version périmée de la commande.
+
+  /**
+   * Chiffrer le panier aux prix de l'officine.
+   *
+   * Aucun montant n'est envoyé : les prix sont lus du stock côté serveur,
+   * à la règle du comptoir (référence + marge). Un prix qui vient du
+   * navigateur est un prix qu'on peut changer.
+   */
+  chiffrerCommande(idCommande: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/chiffrer`, {});
+  }
+
+  /** L'officine commence à préparer le sachet. */
+  preparerCommande(idCommande: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/preparer`, {});
+  }
+
+  /** Le sachet est prêt. C'est le mode choisi par le patient qui décide de la suite. */
+  commandePrete(idCommande: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/prete`, {});
+  }
+
+  /** Remettre les produits — au patient, ou au livreur. */
+  remettreCommande(idCommande: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/remettre`, {});
+  }
+
+  /**
+   * Encaisser le panier au comptoir.
+   *
+   * Les especes ne passent par aucune passerelle. La reference est le numero
+   * de recu, ce qui permet de rapprocher la caisse plus tard.
+   */
+  encaisserCommande(idCommande: string, referenceOperateur: string): Observable<ApiResponse<unknown>> {
+    return this.api.post<ApiResponse<unknown>>(
+      `/commandes/${idCommande}/encaisser`, { referenceOperateur });
+  }
+
+  /** Annuler, avec un motif. Le remboursement, lui, se fait au comptoir. */
+  annulerCommande(idCommande: string, motif: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/annuler`, { motif });
+  }
+
   getTableauDeBord(): Observable<ApiResponse<TableauDeBordOfficineView>> {
     return this.api.get<ApiResponse<TableauDeBordOfficineView>>('/pharmacien/tableau-de-bord');
   }

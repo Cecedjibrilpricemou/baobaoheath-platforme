@@ -377,15 +377,38 @@ async function main() {
     await prisma.reponsePharmacie.deleteMany({
       where: { idCommande: ordonnanceExistante.commande.id },
     });
-    await prisma.commande.update({
-      where: { id: ordonnanceExistante.commande.id },
-      data: {
-        statut: 'RECHERCHE_PHARMACIE',
-        idPharmacie: null,
-        priseEnChargeLe: null,
-        modeRemise: null,
-      },
-    });
+    // **Tout ce que la chaine a pose doit repartir avec elle.** Le premier
+    // jet ne remettait que le statut, la pharmacie et le mode : la commande
+    // revenait « en recherche de pharmacie » en portant encore son panier
+    // chiffre, sa date de cloture et une facture payee. Rejouer la
+    // demonstration partait alors d'un etat qui n'existe nulle part dans la
+    // vraie vie, et le premier ecran s'en trouvait incomprehensible.
+    //
+    // **Dans une seule transaction**, et ce n'est pas un detail : le
+    // declencheur differe de la base verifie au commit que le total s'accorde
+    // avec la somme des lignes. Supprimer les lignes puis remettre le total a
+    // zero en deux appels laisse un ecart entre les deux, et la garde refuse
+    // — elle a refuse ce seed-ci, ce qui est exactement son travail.
+    const idCommandeDemo = ordonnanceExistante.commande.id;
+    await prisma.$transaction([
+      prisma.ligneCommande.deleteMany({ where: { idCommande: idCommandeDemo } }),
+      prisma.facture.deleteMany({ where: { idCommande: idCommandeDemo } }),
+      prisma.commande.update({
+        where: { id: idCommandeDemo },
+        data: {
+          statut: 'RECHERCHE_PHARMACIE',
+          idPharmacie: null,
+          priseEnChargeLe: null,
+          modeRemise: null,
+          montantTotalGnf: null,
+          chiffreeLe: null,
+          preteLe: null,
+          remiseLe: null,
+          clotureeLe: null,
+          motifAnnulation: null,
+        },
+      }),
+    ]);
   }
   console.log("4 ter. Une ordonnance signee, appelee aux pharmacies du quartier");
 

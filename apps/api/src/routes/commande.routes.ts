@@ -11,6 +11,7 @@ import * as paiement from '../services/paiement.service';
 import {
   annulerCommandeSchema,
   choisirModeRemiseSchema,
+  encaisserCommandeSchema,
   lancerRechercheSchema,
   payerCommandeSchema,
   repondreDisponibiliteSchema,
@@ -110,6 +111,25 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const data = await paiement.initierPaiementCommande(
       req.user!.userId, String(req.params.id), req.body,
+    );
+    res.json({ success: true, data });
+  }
+);
+
+/**
+ * L'officine encaisse le panier au comptoir.
+ *
+ * Les especes ne passent par aucune passerelle : le pharmacien recoit
+ * l'argent et le declare. La reference est son numero de recu — ce qui
+ * permet de rapprocher la caisse plus tard.
+ */
+router.post(
+  '/:id/encaisser',
+  requireRole('PHARMACIEN'),
+  validateBody(encaisserCommandeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data = await paiement.encaisserCommandeAuComptoir(
+      req.user!, String(req.params.id), req.body.referenceOperateur,
     );
     res.json({ success: true, data });
   }

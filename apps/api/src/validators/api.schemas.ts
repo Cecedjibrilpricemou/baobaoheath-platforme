@@ -340,6 +340,11 @@ export const annulerCommandeSchema = z.object({
  * **Aucun montant.** Il est fige en base au chiffrage ; un montant qui vient
  * du navigateur est un montant qu'on peut baisser.
  */
+/** Le numero de recu du comptoir : ce qui permet de rapprocher la caisse. */
+export const encaisserCommandeSchema = z.object({
+  referenceOperateur: z.string().trim().min(3).max(120),
+}).strict();
+
 export const payerCommandeSchema = z.object({
   // Les memes trois valeurs que `initierPaiementSchema`, parce que c'est
   // l'enum `ModePaiement` de la base. Une premiere version en inventait

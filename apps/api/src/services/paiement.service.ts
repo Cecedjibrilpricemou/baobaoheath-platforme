@@ -310,6 +310,31 @@ export async function initierPaiementCommande(
   });
 }
 
+/**
+ * Ce qui suit une facture qui vient d'etre payee.
+ *
+ * **Deux chemins menent a une facture payee**, et c'est ce qui a failli
+ * coincer : la passerelle par `appliquerStatutPasserelle`, et le guichet par
+ * `confirmerPaiement`, qui ecrivait `PAYEE` directement. La consequence
+ * n'etait branchee que sur le premier — une commande reglee en especes serait
+ * restee bloquee a « a payer » pour toujours, alors que l'argent etait dans
+ * le tiroir. En Guinee les especes sont le moyen dominant : ce n'etait pas un
+ * cas de bord.
+ *
+ * L'appel ne leve pas. Un rappel de passerelle qui echouerait ici serait
+ * rejoue indefiniment alors que l'argent, lui, est bien arrive.
+ */
+async function apresFacturePayee(idFacture: string, idCommande: string | null): Promise<void> {
+  if (!idCommande) return;
+  try {
+    await avancerApresPaiement(idCommande);
+  } catch (e) {
+    logger.error('[PAIEMENT] commande payee mais non avancee', {
+      idFacture, idCommande, erreur: (e as Error).message,
+    });
+  }
+}
+
 export async function appliquerStatutPasserelle(
   idFacture: string,
   statut: string,
@@ -345,22 +370,7 @@ export async function appliquerStatutPasserelle(
     },
   });
   logger.info('[PAIEMENT] facture payee par la passerelle', { idFacture, statut });
-
-  // **Une commande de pharmacie avance ici, et nulle part ailleurs.** C'est
-  // le point unique ou un paiement est acquis ; faire avancer la commande
-  // depuis l'ecran ou depuis le rappel, separement, finirait par donner deux
-  // verites. L'appel ne bloque pas : un rappel qui echouerait ici serait
-  // rejoue indefiniment alors que l'argent, lui, est bien arrive.
-  if (facture.idCommande) {
-    try {
-      await avancerApresPaiement(facture.idCommande);
-    } catch (e) {
-      logger.error('[PAIEMENT] commande payee mais non avancee', {
-        idFacture, idCommande: facture.idCommande, erreur: (e as Error).message,
-      });
-    }
-  }
-
+  await apresFacturePayee(idFacture, facture.idCommande);
   return { changee: true, dejaPayee: false };
 }
 
@@ -422,6 +432,7 @@ export async function confirmerPaiement(user: JwtPayload, idFacture: string, dto
       consultation: {
         include: { asc: { select: { idStructure: true } } },
       },
+      commande: { select: { idPharmacie: true } },
     },
   });
 
@@ -433,13 +444,20 @@ export async function confirmerPaiement(user: JwtPayload, idFacture: string, dto
       where: { id: user.userId },
       select: { idStructure: true },
     });
-    const consultationStructure = facture.consultation?.asc?.idStructure;
-    if (!utilisateur?.idStructure || utilisateur.idStructure !== consultationStructure) {
+    // **Une facture de commande n'a pas de consultation.** Le controle ne
+    // regardait que `consultation.asc.idStructure` : pour une commande il
+    // valait `undefined`, donc la comparaison echouait toujours et personne
+    // hors administration ne pouvait encaisser au comptoir. C'est la
+    // pharmacie qui tient la commande qui le peut.
+    const structureAttendue = facture.commande
+      ? facture.commande.idPharmacie
+      : facture.consultation?.asc?.idStructure;
+    if (!structureAttendue || utilisateur?.idStructure !== structureAttendue) {
       throw new ForbiddenError('Vous ne pouvez confirmer que les paiements de votre structure');
     }
   }
 
-  return prisma.facture.update({
+  const payee = await prisma.facture.update({
     where: { id: idFacture },
     data: {
       statut: 'PAYEE',
@@ -456,6 +474,51 @@ export async function confirmerPaiement(user: JwtPayload, idFacture: string, dto
       },
     },
   });
+
+  // Le meme endroit que la passerelle : une commande reglee au comptoir
+  // avance comme une commande reglee par mobile money.
+  await apresFacturePayee(idFacture, facture.idCommande);
+  return payee;
+}
+
+/**
+ * Encaisser au comptoir le panier d'une commande.
+ *
+ * **Sans ceci, la demonstration s'arretait a « a payer ».** Les especes sont
+ * le moyen dominant, et le rappel de la passerelle exige une adresse HTTPS
+ * publique qui n'existe pas encore : il fallait un chemin qui ne depende de
+ * rien d'autre que du tiroir-caisse.
+ *
+ * L'officine n'a pas a connaitre l'identifiant de la facture : elle a la
+ * commande sous les yeux, et c'est le serveur qui retrouve l'une par l'autre.
+ * Le controle de propriete est celui de la commande — c'est la pharmacie qui
+ * la tient qui encaisse.
+ */
+export async function encaisserCommandeAuComptoir(
+  user: JwtPayload,
+  idCommande: string,
+  reference: string,
+) {
+  const commande = await prisma.commande.findUnique({
+    where: { id: idCommande },
+    select: { id: true, idPharmacie: true, facture: { select: { id: true, statut: true } } },
+  });
+  if (!commande) throw new NotFoundError('Commande non trouvee');
+
+  const utilisateur = await prisma.utilisateur.findUnique({
+    where: { id: user.userId },
+    select: { idStructure: true },
+  });
+  if (!commande.idPharmacie || utilisateur?.idStructure !== commande.idPharmacie) {
+    throw new ForbiddenError("Cette commande n'est pas la votre");
+  }
+  if (!commande.facture) {
+    throw new ValidationError(
+      "Le patient n'a pas encore ouvert son paiement : il n'y a aucune facture a encaisser.",
+    );
+  }
+
+  return confirmerPaiement(user, commande.facture.id, { referenceOperateur: reference });
 }
 
 export async function getHistoriquePaiements(userId: string, filters: PaiementFilters) {
