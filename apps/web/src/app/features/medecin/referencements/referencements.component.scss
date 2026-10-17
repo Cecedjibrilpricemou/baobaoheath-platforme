@@ -1,37 +1,48 @@
 // Complements a consultations.component.scss (classes bb-med-cons partagees).
 .bb-med-ref {
+  // ✦ Refonte UI : filtres en segment (meme composant visuel que les
+  // pilules .bb-pills des autres espaces).
   &__filtres {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 1rem;
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 1.25rem;
     flex-wrap: wrap;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-pill);
+    box-shadow: var(--bb-shadow-xs);
   }
 
   &__filtre {
-    padding: 6px 14px;
-    border: 1px solid var(--bb-border);
+    padding: 7px 16px;
+    border: 0;
     border-radius: var(--bb-radius-pill);
-    background: var(--bb-surface-card);
+    background: transparent;
     color: var(--bb-text-secondary);
     font-family: var(--bb-font-display);
-    font-size: 12.5px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
-    transition: background var(--bb-transition), color var(--bb-transition), border-color var(--bb-transition);
+    transition: background var(--bb-transition), color var(--bb-transition), box-shadow var(--bb-transition), transform var(--bb-transition);
 
-    &:hover { background: var(--bb-surface-1); }
+    &:hover { color: var(--cons-accent); background: var(--bb-surface-1); }
+    &:active { transform: scale(0.97); }
 
-    &--active {
+    &--active,
+    &--active:hover {
       background: var(--bb-primary);
-      border-color: var(--bb-primary);
       color: var(--bb-text-inverse);
+      box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent);
     }
   }
 
   &__age {
     margin-left: 8px;
+    font-family: var(--bb-font-body);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0;
     color: var(--bb-text-muted);
   }
 
@@ -39,32 +50,72 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-top: 8px;
+    margin-top: 10px;
   }
 
   &__actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
     margin-top: 1.25rem;
     flex-wrap: wrap;
 
     // Le bouton "Accepter" reprend le style du bouton Valider ; il ne doit
     // pas prendre toute la largeur quand il partage la ligne avec Refuser.
     .bb-med-cons__valider-btn { width: auto; margin-top: 0; }
+
+    // ✦ Refonte UI : sur mobile, actions empilees pleine largeur, l'action
+    // principale en bas (sous le pouce).
+    @media (max-width: 480px) {
+      flex-direction: column-reverse; align-items: stretch;
+      > * { width: 100%; justify-content: center; }
+      .bb-med-cons__valider-btn { width: 100%; }
+    }
   }
 
-  &__btn-refuser { color: var(--bb-danger); }
+  // ✦ Refonte UI : « Refuser » garde sa couleur de danger jusque dans le
+  // contour (jetons Material v21 ; l'ancien prefixe --mdc-* est ignore).
+  &__btn-refuser {
+    --mat-button-outlined-label-text-color: var(--bb-danger);
+    --mat-button-outlined-outline-color: var(--bb-danger-border);
+    --mat-button-outlined-state-layer-color: var(--bb-danger);
+    color: var(--bb-danger);
 
+    &:hover:not(:disabled) { border-color: var(--bb-danger); background-color: var(--bb-danger-bg); }
+  }
+
+  // ✦ Refonte UI : le bouton de confirmation n'etait pas rouge — il ciblait
+  // les jetons --mdc-filled-button-*, que Material 21 ne lit plus.
   &__btn-confirmer-refus {
-    --mdc-filled-button-container-color: var(--bb-danger);
-    --mdc-filled-button-label-text-color: #fff;
+    --mat-button-filled-container-color: var(--bb-danger);
+    --mat-button-filled-label-text-color: #fff;
+    --mat-button-filled-state-layer-color: #fff;
+
+    &:hover:not(:disabled) { box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--bb-danger) 60%, transparent); }
   }
 
-  &__refus { border-color: var(--bb-danger-border); }
+  &__refus {
+    border-color: var(--bb-danger-border);
+    background: color-mix(in srgb, var(--bb-danger-bg) 60%, var(--bb-surface-1));
+    box-shadow: inset 4px 0 0 var(--bb-danger);
+
+    .bb-med-cons__block-title i { color: var(--bb-danger); background: color-mix(in srgb, var(--bb-danger) 12%, transparent); }
+  }
+
+  // ✦ Refonte UI : les allergies connues etaient en gris attenue ; c'est
+  // une information de securite — meme traitement que l'alerte allergie de
+  // l'ecran pharmacien (fond danger, texte franc).
+  .bb-med-cons__block-note:has(> .pi-exclamation-triangle) {
+    display: inline-flex; margin-top: 12px; padding: 7px 12px;
+    border-radius: var(--bb-radius); border: 1px solid var(--bb-danger-border);
+    background: var(--bb-danger-bg); color: var(--bb-danger); font-weight: 700;
+  }
 
   // Le badge d'urgence dans la liste suit le nom du patient sur la meme ligne.
-  .bb-med-cons__item-patient { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .bb-med-cons__detail-header { align-items: center; }
-  .bb-med-cons__detail-header > .bb-badge { margin-left: auto; }
+  .bb-med-cons__item-patient { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; white-space: normal; }
+
+  // ✦ Refonte UI : le badge d'urgence se place a droite du nom (la regle
+  // `align-items: center` sur une colonne centrait « Retour » et le nom).
+  .bb-med-cons__detail-header > .bb-badge { margin-left: auto; align-self: flex-start; }
 }
