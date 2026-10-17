@@ -1,89 +1,128 @@
 // features/pharmacien/caisse — le comptoir.
-.bb-caisse {
-  padding: 1.75rem;
-  max-width: 1040px;
-  margin: 0 auto;
 
-  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+// ✦ Refonte UI : accent de l'espace pharmacien (vert vif en sombre, ou
+// --bb-primary tombe sous 4,5:1 sur les cartes).
+:host {
+  display: block;
+  --cai-accent: var(--bb-primary);
+  --cai-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --cai-ligne-bg: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --cai-accent: var(--bb-bright);
+  --cai-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  --cai-ligne-bg: color-mix(in srgb, #fff 4%, var(--bb-surface-card));
+}
+
+.bb-caisse {
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 1080px;
+  margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; margin: 0 0 6px; }
 
   &__carte {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1.25rem 1.35rem;
-    box-shadow: var(--bb-shadow-sm); margin-bottom: 22px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); padding: 1.5rem;
+    box-shadow: var(--bb-shadow); margin-bottom: 26px;
+    @media (max-width: 600px) { padding: 1.1rem; }
   }
 
+  // ✦ Refonte UI : titres de section en display, trait d'accent ; dans la
+  // carte, chaque etape (panier, assurance, paiement) est separee d'un filet.
   &__section {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
     font-family: var(--bb-font-display);
-    font-size: 14px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--bb-text-secondary);
-    margin: 20px 0 12px;
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 26px 0 14px;
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--cai-accent); flex-shrink: 0;
+    }
 
     &:first-child { margin-top: 0; }
   }
 
+  &__carte &__section:not(:first-child) {
+    padding-top: 22px; border-top: 1px solid var(--bb-border-light);
+  }
+
   &__label {
-    display: block; margin-bottom: 5px;
-    font-size: 12.5px; font-weight: 700; color: var(--bb-text-secondary);
+    display: block; margin-bottom: 6px;
+    font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
   }
 
   &__label-mini {
-    display: block; margin-bottom: 4px;
-    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .04em; color: var(--bb-text-muted);
+    display: block; margin-bottom: 5px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--bb-text-secondary);
   }
 
+  // ✦ Refonte UI : champs alignes sur les champs Material de l'application
   &__champ {
-    width: 100%; box-sizing: border-box;
-    padding: 0.55rem 0.7rem;
+    width: 100%; box-sizing: border-box; min-height: 44px;
+    padding: 10px 12px;
     font: inherit; font-size: 14px;
     color: var(--bb-text-primary);
-    background: var(--bb-surface-1); border: 1px solid var(--bb-border);
+    background: var(--bb-surface-0); border: 1px solid var(--bb-border);
     border-radius: var(--bb-radius);
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
 
-    &:focus-visible { outline: 2px solid var(--bb-primary); outline-offset: 1px; }
+    &:hover { border-color: var(--bb-border-strong); }
+    &:focus { outline: none; border-color: var(--cai-accent); box-shadow: 0 0 0 4px var(--cai-accent-soft); }
   }
 
   &__valeur {
-    display: block; padding: 0.55rem 0;
-    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: flex-end; min-height: 44px;
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800;
     color: var(--bb-text-primary); white-space: nowrap;
   }
 
   // ── Une ligne du panier ────────────────────────────────────────────
+  // ✦ Refonte UI : chaque ligne est une tuile, comme sur un ticket.
   &__ligne {
     display: grid;
-    grid-template-columns: minmax(200px, 2.4fr) 90px 120px 130px 36px;
+    grid-template-columns: minmax(200px, 2.4fr) 90px 130px 140px 44px;
     gap: 10px; align-items: end;
-    padding: 10px 0; border-bottom: 1px solid var(--bb-border);
+    padding: 12px; margin-bottom: 10px;
+    background: var(--cai-ligne-bg); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
 
     @media (max-width: 860px) {
-      grid-template-columns: 1fr 1fr;
-      &-produit { grid-column: 1 / -1; }
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      .bb-caisse__ligne-produit { grid-column: 1 / -1; }
+      .bb-caisse__retirer { grid-column: 2; justify-self: end; }
     }
   }
 
+  &__ligne-produit, &__ligne-champ { min-width: 0; }
   &__ligne-champ--lecture { text-align: right; }
 
   &__retirer {
-    width: 34px; height: 34px;
+    width: 44px; height: 44px;
     display: inline-flex; align-items: center; justify-content: center;
-    background: transparent; color: var(--bb-text-muted);
-    border: 1px solid var(--bb-border); border-radius: var(--bb-radius);
+    background: var(--bb-surface-card); color: var(--bb-text-muted);
+    border: 1px solid var(--bb-border); border-radius: 50%;
     cursor: pointer;
+    transition: color var(--bb-transition), border-color var(--bb-transition), background var(--bb-transition);
 
-    &:hover:not(:disabled) { color: var(--bb-danger); border-color: var(--bb-danger); }
+    &:hover:not(:disabled) { color: var(--bb-danger); border-color: var(--bb-danger-border); background: var(--bb-danger-bg); }
     &:disabled { opacity: .4; cursor: not-allowed; }
   }
 
   // ── Avis ───────────────────────────────────────────────────────────
   &__avis {
-    display: flex; align-items: flex-start; gap: 8px;
-    margin: 14px 0 0; padding: 0.7rem 0.85rem;
-    font-size: 13.5px; border-radius: var(--bb-radius);
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 14px 0 0; padding: 12px 14px;
+    font-size: 13.5px; font-weight: 600; line-height: 1.5;
+    border-radius: var(--bb-radius-lg);
     border: 1px solid;
 
-    i { margin-top: 2px; }
+    i { margin-top: 3px; flex-shrink: 0; }
 
     &--exige {
       color: var(--bb-warning); background: var(--bb-warning-bg); border-color: var(--bb-warning-border);
@@ -95,52 +134,69 @@
 
   &__grille {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
+    gap: 16px;
   }
 
   // ── Les totaux ─────────────────────────────────────────────────────
+  // ✦ Refonte UI : le pied est un recapitulatif teinte ; le net a payer est
+  // le plus gros chiffre de l'ecran, c'est celui que le client verifie.
   &__pied {
-    display: flex; align-items: flex-end; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     gap: 18px; flex-wrap: wrap;
-    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--bb-border);
+    margin-top: 22px; padding: 16px 18px;
+    border-radius: var(--bb-radius-lg);
+    background: var(--cai-accent-soft);
+    border: 1px solid color-mix(in srgb, var(--cai-accent) 25%, transparent);
+
+    @media (max-width: 600px) {
+      flex-direction: column; align-items: stretch;
+      button { width: 100%; }
+    }
   }
 
-  &__totaux { display: flex; flex-direction: column; gap: 3px; }
+  &__totaux { display: flex; flex-direction: column; gap: 4px; }
 
   &__total-ligne {
     font-size: 13.5px; color: var(--bb-text-secondary);
-    &--remise { color: var(--bb-warning); }
+    strong { color: var(--bb-text-primary); }
+    &--remise, &--remise strong { color: var(--bb-warning); }
   }
 
   &__total {
-    font-family: var(--bb-font-display); font-size: 17px; color: var(--bb-text-primary);
-    strong { color: var(--bb-primary); }
+    margin-top: 2px;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary);
+    strong { font-size: 24px; font-weight: 800; letter-spacing: -.6px; color: var(--cai-accent); }
   }
 
   // ── Les ventes passees ─────────────────────────────────────────────
   &__vente {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-left: 3px solid var(--bb-success);
-    border-radius: var(--bb-radius-xl); padding: 0.9rem 1.1rem;
-    margin-bottom: 10px; box-shadow: var(--bb-shadow-sm);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--bb-success);
+    border-radius: var(--bb-radius-lg); padding: 1rem 1.2rem;
+    margin-bottom: 12px; box-shadow: var(--bb-shadow-sm);
+    transition: box-shadow var(--bb-transition);
+    &:hover { box-shadow: var(--bb-shadow-hover); }
 
     // Une vente annulee reste visible : elle fait partie du journal de caisse.
     &--annulee {
-      border-left-color: var(--bb-text-muted);
-      opacity: .72;
-      .bb-caisse__montant { text-decoration: line-through; }
+      border-left-color: var(--bb-border-strong);
+      background: var(--cai-ligne-bg); box-shadow: none;
+      .bb-caisse__montant { text-decoration: line-through; color: var(--bb-text-muted); background: transparent; }
+      .bb-caisse__numero, .bb-caisse__vente-nom { color: var(--bb-text-secondary); }
     }
   }
 
   &__vente-head {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 14px; flex-wrap: wrap; margin-bottom: 8px;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 10px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--bb-border-light);
   }
 
-  &__vente-droite { display: flex; align-items: center; gap: 12px; }
+  &__vente-droite { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   &__numero {
-    display: block;
+    display: block; margin-bottom: 2px;
     font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
     color: var(--bb-text-primary);
   }
@@ -149,30 +205,34 @@
 
   &__montant {
     font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
-    color: var(--bb-primary); white-space: nowrap;
+    color: var(--cai-accent); white-space: nowrap;
+    padding: 4px 12px; border-radius: 999px; background: var(--cai-accent-soft);
   }
 
   &__badge-annulee {
-    padding: 2px 9px; font-size: 11.5px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .04em;
-    color: var(--bb-text-secondary); background: var(--bb-surface-1);
-    border: 1px solid var(--bb-border); border-radius: 999px;
+    padding: 3px 10px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .05em;
+    color: var(--bb-text-secondary); background: var(--bb-surface-2);
+    border-radius: 999px;
   }
 
   &__annuler {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 0.35rem 0.7rem; font: inherit; font-size: 12.5px; font-weight: 600;
+    min-height: 36px; padding: 0 14px;
+    font: inherit; font-size: 12.5px; font-weight: 700;
     color: var(--bb-text-secondary); background: transparent;
-    border: 1px solid var(--bb-border); border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); border-radius: var(--bb-radius-pill);
     cursor: pointer;
+    transition: color var(--bb-transition), border-color var(--bb-transition), background var(--bb-transition);
 
-    &:hover { color: var(--bb-danger); border-color: var(--bb-danger); }
+    &:hover { color: var(--bb-danger); border-color: var(--bb-danger-border); background: var(--bb-danger-bg); }
   }
 
   &__vente-ligne {
     display: grid; grid-template-columns: 2fr auto auto auto;
     gap: 12px; align-items: center;
-    padding: 4px 0; font-size: 13px;
+    padding: 6px 0; font-size: 13.5px;
+    & + & { border-top: 1px dashed var(--bb-border-light); }
 
     @media (max-width: 700px) { grid-template-columns: 1fr auto; }
   }
@@ -180,53 +240,52 @@
   &__vente-nom { color: var(--bb-text-primary); font-weight: 600; }
 
   &__vente-cat {
-    font-size: 11.5px; color: var(--bb-text-muted);
-    padding: 1px 8px; background: var(--bb-surface-1);
-    border: 1px solid var(--bb-border); border-radius: 999px;
-    white-space: nowrap;
+    font-size: 11.5px; font-weight: 600; color: var(--bb-text-secondary);
+    padding: 2px 9px; background: var(--bb-surface-2);
+    border-radius: 999px; white-space: nowrap;
   }
 
   &__vente-qte { color: var(--bb-text-muted); white-space: nowrap; }
-  &__vente-montant { color: var(--bb-text-primary); font-weight: 700; white-space: nowrap; text-align: right; }
+  &__vente-montant { color: var(--bb-text-primary); font-weight: 800; white-space: nowrap; text-align: right; }
 
   &__motif {
     display: flex; align-items: center; gap: 7px;
-    margin: 8px 0 0; padding-top: 8px; border-top: 1px dashed var(--bb-border);
+    margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed var(--bb-border);
     font-size: 12.5px; color: var(--bb-text-secondary);
   }
-}
 
-// En sombre, `--bb-warning` (#92400E), `--bb-danger` (#DC2626) et
-// `--bb-success` ne sont pas redefinis : illisibles sur fond sombre.
-:host-context([data-theme='dark']) .bb-caisse {
-  &__avis--exige { color: #FBBF24; }
-  &__avis--danger { color: #F87171; }
-  &__total-ligne--remise { color: #FBBF24; }
-  &__vente { border-left-color: #34D399; }
-  &__vente--annulee { border-left-color: var(--bb-text-muted); }
-  &__retirer:hover:not(:disabled) { color: #F87171; border-color: #F87171; }
-  &__annuler:hover { color: #F87171; border-color: #F87171; }
+  app-export-liste { display: block; margin-bottom: 12px; }
 }
 
 // ── Tiers payant (EF-09) ─────────────────────────────────────────────
 .bb-caisse {
-  &__qr {
+  // Le meme nom sert a l'image du QR de paiement (styles/_paiement.scss) :
+  // on ne vise que la rangee de saisie.
+  div#{&}__qr {
     display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
-    margin-bottom: 8px;
-    &-champ { flex: 1; min-width: 220px; }
+    margin-bottom: 10px;
+    button { min-height: 44px; }
   }
 
+  &__qr-champ { flex: 1; min-width: 220px; }
+
+  // ✦ Refonte UI : le patient reconnu s'affiche comme une carte d'identite
   &__patient {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 0.7rem 0.9rem; margin-bottom: 12px;
-    background: var(--bb-surface-1); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius);
+    padding: 12px 14px; margin-bottom: 12px;
+    background: var(--cai-ligne-bg); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
   }
 
   &__patient-nom {
-    display: inline-flex; align-items: center; gap: 7px; flex: 1;
-    font-family: var(--bb-font-display); font-weight: 700; font-size: 14.5px;
+    display: inline-flex; align-items: center; gap: 10px; flex: 1;
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 15px;
     color: var(--bb-text-primary);
+    i {
+      width: 34px; height: 34px; border-radius: 50%; font-size: 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--cai-accent); background: var(--cai-accent-soft);
+    }
   }
 
   &__avis--ok {
@@ -235,67 +294,64 @@
 
   &__bascule {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; flex-wrap: wrap; margin: 12px 0;
+    gap: 14px; flex-wrap: wrap; margin: 14px 0;
   }
 
   &__bascule-label {
-    display: inline-flex; align-items: center; gap: 9px;
-    font-size: 14px; font-weight: 600; color: var(--bb-text-primary);
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 14px; font-weight: 700; color: var(--bb-text-primary);
     cursor: pointer;
-    input { width: 17px; height: 17px; accent-color: var(--bb-primary); cursor: pointer; }
+    input { width: 18px; height: 18px; accent-color: var(--cai-accent); cursor: pointer; }
   }
 
   // Le detail de la prise en charge, avant paiement.
   &__prise {
-    border: 1px solid var(--bb-border); border-radius: var(--bb-radius);
-    padding: 0.7rem 0.9rem; background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border-light); border-radius: var(--bb-radius-lg);
+    padding: 8px 14px; background: var(--cai-ligne-bg);
   }
 
   &__prise-ligne {
     display: grid; grid-template-columns: minmax(140px, 1.4fr) auto minmax(0, 1.6fr) auto;
     gap: 10px; align-items: center;
-    padding: 5px 0; font-size: 13px;
-    border-bottom: 1px solid var(--bb-border);
+    padding: 8px 0; font-size: 13.5px;
+    border-bottom: 1px solid var(--bb-border-light);
 
     &:last-of-type { border-bottom: 0; }
 
     // Une ligne exclue se lit d'un coup d'oeil : c'est elle que le patient
     // paiera, et c'est d'elle qu'il demandera la raison.
     &--exclue .bb-caisse__prise-nom { color: var(--bb-text-secondary); }
-    &--exclue .bb-caisse__prise-taux { color: var(--bb-danger); font-weight: 700; }
+    &--exclue .bb-caisse__prise-taux { color: var(--bb-danger); background: var(--bb-danger-bg); }
 
     @media (max-width: 760px) { grid-template-columns: 1fr auto; }
   }
 
   &__prise-nom { font-weight: 600; color: var(--bb-text-primary); }
-  &__prise-taux { white-space: nowrap; color: var(--bb-success); font-weight: 700; }
+  &__prise-taux {
+    white-space: nowrap; color: var(--bb-success); font-weight: 700; font-size: 12.5px;
+    padding: 2px 9px; border-radius: 999px; background: var(--bb-success-bg);
+  }
   &__prise-motif { font-size: 12px; color: var(--bb-text-muted); }
   &__prise-montant {
-    font-family: var(--bb-font-display); font-weight: 700;
+    font-family: var(--bb-font-display); font-weight: 800;
     white-space: nowrap; text-align: right; color: var(--bb-text-primary);
   }
 
   &__prise-note {
     display: flex; align-items: center; gap: 7px;
-    margin: 8px 0 0; padding-top: 8px; border-top: 1px dashed var(--bb-border);
+    margin: 4px 0 6px; padding-top: 8px; border-top: 1px dashed var(--bb-border);
     font-size: 12.5px; color: var(--bb-text-secondary);
   }
 
-  &__total-ligne--assureur { color: var(--bb-success); }
+  &__total-ligne--assureur, &__total-ligne--assureur strong { color: var(--bb-success); }
 
   &__badge-assure {
-    padding: 2px 9px; font-size: 11.5px; font-weight: 700;
+    padding: 3px 10px; font-size: 11.5px; font-weight: 700;
     color: var(--bb-success); background: var(--bb-success-bg);
     border: 1px solid var(--bb-success-border); border-radius: 999px;
     white-space: nowrap;
   }
 }
 
-// `--bb-success` et `--bb-danger` ne sont pas redefinis en sombre.
-:host-context([data-theme='dark']) .bb-caisse {
-  &__avis--ok { color: #34D399; }
-  &__prise-taux { color: #34D399; }
-  &__prise-ligne--exclue .bb-caisse__prise-taux { color: #F87171; }
-  &__total-ligne--assureur { color: #34D399; }
-  &__badge-assure { color: #34D399; }
-}
+// ✦ Refonte UI : couleurs sombres codees en dur retirees — --bb-danger,
+// --bb-warning et --bb-success sont redefinis en sombre (styles.scss).
