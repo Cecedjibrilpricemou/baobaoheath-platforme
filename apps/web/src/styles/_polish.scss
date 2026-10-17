@@ -67,6 +67,35 @@ p { text-wrap: pretty; }
   &:active:not(:disabled) { transform: scale(0.98); }
 }
 
+// ✦ Refonte UI : beaucoup de boutons Material posent une icone PrimeIcons
+// (<i class="pi">) directement dans le libelle, sans espace : l'icone
+// touchait le texte (« ⊕Nouvelle admission »). Espacement commun ; une
+// icone placee en fin de libelle prend la marge de l'autre cote.
+.mdc-button__label > i.pi {
+  font-size: 0.95em;
+  &:first-child { margin-right: 7px; }
+  &:last-child:not(:first-child) { margin-left: 7px; margin-right: 0; }
+}
+
+// ── LIENS DANS LE TEXTE ────────────────────────────────────────────
+// ✦ Refonte UI : un lien sans classe s'affichait en bleu navigateur
+// (#0000EE) souligne, hors charte et peu lisible en mode sombre.
+a:not([class]) {
+  color: var(--bb-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--bb-transition);
+
+  &:hover { color: var(--bb-mid); text-decoration-thickness: 2px; }
+}
+
+[data-theme='dark'] a:not([class]) {
+  color: var(--bb-bright);
+  &:hover { color: color-mix(in srgb, var(--bb-bright) 80%, #fff); }
+}
+
 // ── CHAMPS DE FORMULAIRE ───────────────────────────────────────────
 // Halo doux autour du champ actif : on voit tout de suite ou l'on ecrit.
 .mat-mdc-form-field.mat-focused .mdc-notched-outline {
