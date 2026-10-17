@@ -1,9 +1,17 @@
 .bb-confirm {
   text-align: center;
-  padding: 0.5rem 0.25rem;
+  // ✦ Refonte UI : l'icone touchait le bord haut du dialogue ; respiration
+  // genereuse et colonne de lecture limitee.
+  padding: 1.75rem 1.5rem 1.375rem;
+
+  @media (max-width: 480px) { padding: 1.5rem 1.125rem 1.125rem; }
 
   &__icon {
-    width: 56px; height: 56px; margin: 0 auto 1rem;
+    width: 60px; height: 60px; margin: 0 auto 1.125rem;
+    font-size: 22px;
+    // ✦ Refonte UI : halo doux autour de la pastille, apparition en douceur
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--bb-bright) 10%, transparent);
+    animation: bb-confirm-pop 0.3s var(--bb-ease) both;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     background: var(--bb-success-bg);
@@ -14,28 +22,42 @@
       background: var(--bb-danger-bg);
       border-color: var(--bb-danger-border);
       color: var(--bb-danger);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--bb-danger) 10%, transparent);
     }
   }
 
   &__title {
     font-family: var(--bb-font-display);
-    font-size: 1.125rem; font-weight: 700;
+    font-size: 1.1875rem; font-weight: 800; letter-spacing: -0.01em;
+    text-wrap: balance;
     color: var(--bb-text-primary);
     padding: 0; margin: 0 0 0.5rem;
   }
 
   &__text {
     font-size: 0.875rem; color: var(--bb-text-muted);
-    line-height: 1.55; padding: 0 0 1.25rem;
+    line-height: 1.55; padding: 0 0 1.5rem;
+    max-width: 36ch; margin: 0 auto; text-wrap: pretty;
   }
 
   &__actions {
     display: flex; gap: 0.75rem; padding: 0;
     button { flex: 1; }
+
+    // ✦ Refonte UI : sur mobile, action principale en haut, a portee de pouce
+    @media (max-width: 400px) {
+      flex-direction: column-reverse;
+      button { flex: none; width: 100%; min-height: 44px; }
+    }
   }
 
   &__confirm--danger {
     --mat-button-filled-container-color: var(--bb-danger);
-    --mat-button-filled-label-text-color: #fff;
+    --mat-button-filled-label-text-color: var(--bb-text-inverse);
   }
+}
+
+@keyframes bb-confirm-pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: none; }
 }
