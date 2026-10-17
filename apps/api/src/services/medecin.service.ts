@@ -8,7 +8,7 @@ import {
     SendMessageDto,
 } from '../types/medecin.types';
 import { JwtPayload } from '../types/auth.types';
-import { assertCanAccessConsultation } from './access-control.service';
+import { assertCanAccessConsultation, buildConsultationWhereForUser } from './access-control.service';
 import { avecExpirationEtAlertes } from './ordonnance.service';
 import { getIdentitePlateforme, getValeursParametres } from './parametres.service';
 import type { OrientationMedecinView, RendezVousMedecinView } from '@baobaoheath/shared-types';
@@ -35,19 +35,34 @@ function lienEspace(role: string, sousChemin: string): string {
 
 // ─── Consultations à valider par le médecin ───────────────
 export async function getConsultationsAValider(
-    userId: string,
+    user: JwtPayload,
     filters: MedecinFilters
 ) {
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 20;
     const skip = (page - 1) * limit;
 
+    // **Cette liste n'etait filtree par rien.** `userId` arrivait en premier
+    // argument et n'etait jamais lu : la requete ne retenait que le statut, si
+    // bien que chaque medecin voyait les consultations terminees de **toutes
+    // les structures du pays** — nom du patient, motif, diagnostics et
+    // ordonnances. C'est la clause nue que le test P0 croyait avoir retiree de
+    // `buildConsultationWhereForUser` : elle avait seulement demenage ici.
+    //
+    // `validerConsultation` appelle deja `assertCanAccessConsultation`, donc
+    // la liste proposait en plus des lignes sur lesquelles le medecin n'avait
+    // aucun pouvoir. Le meme filtre des deux cotes remet les deux d'accord.
     const where = {
-        statut: 'TERMINEE' as const,
-        idMedecinValideur: null,
-        ...(filters.prefecture && {
-            patient: { prefecture: filters.prefecture },
-        }),
+        AND: [
+            await buildConsultationWhereForUser(user),
+            {
+                statut: 'TERMINEE' as const,
+                idMedecinValideur: null,
+                ...(filters.prefecture && {
+                    patient: { prefecture: filters.prefecture },
+                }),
+            },
+        ],
     };
 
     const [consultations, total] = await Promise.all([

@@ -4,13 +4,14 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { Patient } from '../models/patient.model';
 import { Consultation } from '../models/asc.model';
-import { MedecinStats, OrdonnanceCreationPayload, ValidationDiagnosticPayload } from '../models/medecin.model';
+import { MedecinStats, OrdonnanceCreationPayload } from '../models/medecin.model';
 import { ApiResponse } from '../models/api.model';
 import type {
   DemandeAnalyseView,
   LibererResultatsDto,
   AccepterDemandeRendezVousDto,
   DemandeRendezVousView,
+  ValiderConsultationDto,
   FixerRendezVousDto,
   OrientationMedecinView,
   RendezVousMedecinView,
@@ -88,7 +89,7 @@ export class MedecinService {
     return this.api.put<ApiResponse<ReferencementATraiterView>>(`/medecin/referencements/${id}/repondre`, payload);
   }
 
-  validerConsultation(idConsultation: string, payload: ValidationDiagnosticPayload): Observable<ApiResponse<Consultation>> {
+  validerConsultation(idConsultation: string, payload: ValiderConsultationDto): Observable<ApiResponse<Consultation>> {
     return this.api.put<ApiResponse<Consultation>>(`/medecin/consultations/${idConsultation}/valider`, payload);
   }
 

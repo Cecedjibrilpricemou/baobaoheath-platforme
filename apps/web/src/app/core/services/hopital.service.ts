@@ -97,6 +97,17 @@ export class HopitalService {
     return this.api.post<ApiResponse<EpisodeSoinsView>>(`/hopital/episodes/${id}/orientation`, dto);
   }
 
+  /**
+   * Ouvrir la consultation de cette visite.
+   *
+   * Le patient et le motif viennent de l'episode : rien a envoyer. Si une
+   * consultation y est deja ouverte, l'API rend celle-la plutot que d'en
+   * creer une seconde.
+   */
+  ouvrirConsultation(idEpisode: string): Observable<ApiResponse<{ id: string }>> {
+    return this.api.post<ApiResponse<{ id: string }>>(`/hopital/episodes/${idEpisode}/consultation`, {});
+  }
+
   creerDemandeAnalyse(idEpisode: string, dto: CreateDemandeAnalyseDto): Observable<ApiResponse<DemandeAnalyseView>> {
     return this.api.post<ApiResponse<DemandeAnalyseView>>(`/hopital/episodes/${idEpisode}/demandes-analyse`, dto);
   }

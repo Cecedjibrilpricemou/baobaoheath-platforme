@@ -37,7 +37,7 @@ export async function getConsultationsAValiderController(
       limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     };
     const result = await medecinService.getConsultationsAValider(
-      req.user!.userId,
+      req.user!,
       filters
     );
     const data: ConsultationAValiderView[] = result.data;

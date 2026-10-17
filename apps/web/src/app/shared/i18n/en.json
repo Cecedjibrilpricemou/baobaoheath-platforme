@@ -958,7 +958,12 @@
       "SUCCESS_REFERRAL": "Referral created!",
       "ERR_REFERRAL": "Error while creating referral.",
       "SUCCESS_CLOSE": "Consultation closed successfully!",
-      "ERR_CLOSE": "Error while closing."
+      "ERR_CLOSE": "Error while closing.",
+      "SIGN_BTN": "Validate and sign",
+      "SIGNING": "Signing...",
+      "SIGN_CONFIRM_TITLE": "Validate and sign this consultation?",
+      "SIGN_CONFIRM_TEXT": "Your signature ends the encounter. Prescriptions become collectable at a pharmacy.",
+      "SUCCESS_SIGNEE": "Consultation validated and signed."
     },
     "SYNC": {
       "TITLE": "Sync Center",
@@ -1175,7 +1180,10 @@
       "A_LIBERER": "Results validated: the patient cannot see them yet.",
       "A_LIBERER_LIEN": "Release them",
       "CLOTURER_CONFIRM": "Close this episode? Care will be considered complete.",
-      "INTROUVABLE": "Record not found."
+      "INTROUVABLE": "Record not found.",
+      "OUVRIR_CONSULTATION": "Open the consultation",
+      "REPRENDRE_CONSULTATION": "Resume the consultation",
+      "CONSULTATION_HINT": "Vitals, diagnosis and prescription."
     },
     "NAV_AGENDA": "Schedule",
     "AGENDA": {

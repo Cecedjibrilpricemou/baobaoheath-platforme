@@ -958,7 +958,12 @@
       "SUCCESS_REFERRAL": "Référencement créé !",
       "ERR_REFERRAL": "Erreur lors du référencement.",
       "SUCCESS_CLOSE": "Consultation clôturée avec succès !",
-      "ERR_CLOSE": "Erreur lors de la clôture."
+      "ERR_CLOSE": "Erreur lors de la clôture.",
+      "SIGN_BTN": "Valider et signer",
+      "SIGNING": "Signature...",
+      "SIGN_CONFIRM_TITLE": "Valider et signer cette consultation ?",
+      "SIGN_CONFIRM_TEXT": "Votre signature termine l’acte. Les ordonnances deviennent retirables en pharmacie.",
+      "SUCCESS_SIGNEE": "Consultation validée et signée."
     },
     "SYNC": {
       "TITLE": "Centre de Synchronisation",
@@ -1175,7 +1180,10 @@
       "A_LIBERER": "Résultats validés : le patient ne les voit pas encore.",
       "A_LIBERER_LIEN": "Les libérer",
       "CLOTURER_CONFIRM": "Clôturer cet épisode ? La prise en charge sera considérée comme terminée.",
-      "INTROUVABLE": "Dossier introuvable."
+      "INTROUVABLE": "Dossier introuvable.",
+      "OUVRIR_CONSULTATION": "Ouvrir la consultation",
+      "REPRENDRE_CONSULTATION": "Reprendre la consultation",
+      "CONSULTATION_HINT": "Constantes, diagnostic et ordonnance."
     },
     "NAV_AGENDA": "Agenda",
     "AGENDA": {

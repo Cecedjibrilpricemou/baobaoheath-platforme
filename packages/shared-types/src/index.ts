@@ -370,12 +370,26 @@ export interface VitalsDto {
   glycemie?: number;
 }
 
+/**
+ * La severite d'un diagnostic.
+ *
+ * **Nommee parce que le front l'avait recopiee de travers** : son selecteur
+ * proposait `LEGERE` et `MODEREE`, et le serveur rejetait le diagnostic en
+ * 400. Un type nomme fait echouer la compilation au lieu de laisser la faute
+ * se decouvrir a l'usage.
+ */
+export type SeveriteDiagnostic = 'LEGER' | 'MODERE' | 'SEVERE' | 'CRITIQUE';
+
+export type TypeDiagnostic = 'PRINCIPAL' | 'DIFFERENTIEL' | 'SECONDAIRE';
+
+export type SourceDiagnostic = 'IA_LOCALE' | 'IA_CLAUDE' | 'MEDECIN' | 'ASC';
+
 export interface DiagnosticDto {
   libelle: string;
   codeIcd11?: string;
-  typeDiagnostic?: 'PRINCIPAL' | 'DIFFERENTIEL' | 'SECONDAIRE';
-  severite?: 'LEGER' | 'MODERE' | 'SEVERE' | 'CRITIQUE';
-  source: 'IA_LOCALE' | 'IA_CLAUDE' | 'MEDECIN' | 'ASC';
+  typeDiagnostic?: TypeDiagnostic;
+  severite?: SeveriteDiagnostic;
+  source: SourceDiagnostic;
 }
 
 export interface OrdonnanceDto {
@@ -655,8 +669,10 @@ export interface VerifierOrdonnanceDto {
 }
 
 export interface ValiderConsultationDto {
-  notesMedecin: string;
+  /** Facultatif : le serveur ne l'a jamais exige. */
+  notesMedecin?: string;
   idOrdonnances?: string[];
+  tarifGnf?: number;
 }
 
 export interface RepondreReferencementDto {

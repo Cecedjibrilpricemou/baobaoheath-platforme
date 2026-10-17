@@ -15,8 +15,8 @@
         <div class="bb-logout-modal__icon" style="background:#FEF9C3">
           <i class="pi pi-check-circle" style="color:#CA8A04" aria-hidden="true"></i>
         </div>
-        <h3 id="close-confirm-title" class="bb-logout-modal__title">{{ 'ASC.CONSULTATION_DETAIL.CLOSE_CONFIRM_TITLE' | translate }}</h3>
-        <p id="close-confirm-text" class="bb-logout-modal__text">{{ 'ASC.CONSULTATION_DETAIL.CLOSE_CONFIRM_TEXT' | translate }}</p>
+        <h3 id="close-confirm-title" class="bb-logout-modal__title">{{ (estMedecin() ? 'ASC.CONSULTATION_DETAIL.SIGN_CONFIRM_TITLE' : 'ASC.CONSULTATION_DETAIL.CLOSE_CONFIRM_TITLE') | translate }}</h3>
+        <p id="close-confirm-text" class="bb-logout-modal__text">{{ (estMedecin() ? 'ASC.CONSULTATION_DETAIL.SIGN_CONFIRM_TEXT' : 'ASC.CONSULTATION_DETAIL.CLOSE_CONFIRM_TEXT') | translate }}</p>
         <div class="bb-logout-modal__actions">
           <button class="bb-logout-modal__btn bb-logout-modal__btn--cancel" (click)="showCloseConfirm.set(false)">
             {{ 'COMMON.CANCEL' | translate }}
@@ -58,7 +58,11 @@
             [disabled]="isClosing()"
           >
             <i class="pi pi-check-circle"></i>
-            {{ (isClosing() ? 'ASC.CONSULTATION_DETAIL.CLOSING' : 'ASC.CONSULTATION_DETAIL.CLOSE_BTN') | translate }}
+            @if (estMedecin()) {
+              {{ (isClosing() ? 'ASC.CONSULTATION_DETAIL.SIGNING' : 'ASC.CONSULTATION_DETAIL.SIGN_BTN') | translate }}
+            } @else {
+              {{ (isClosing() ? 'ASC.CONSULTATION_DETAIL.CLOSING' : 'ASC.CONSULTATION_DETAIL.CLOSE_BTN') | translate }}
+            }
           </button>
         }
       </div>
@@ -132,17 +136,22 @@
         <span class="bb-detail__tab-badge">{{ consultation()!.ordonnances.length }}</span>
       }
     </button>
-    <button
-      class="bb-detail__tab"
-      [class.bb-detail__tab--active]="activeSection() === 'referral'"
-      [attr.aria-pressed]="activeSection() === 'referral'"
-      (click)="activeSection.set('referral')"
-    >
-      <i class="pi pi-send" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.TAB_REFERRAL' | translate }}
-      @if (consultation()?.referencement) {
-        <span class="bb-detail__tab-badge">✓</span>
-      }
-    </button>
+    <!-- `POST /consultations/:id/referral` est reserve a l'ASC : pour le
+         medecin, cet onglet ne pourrait que repondre 403. Il oriente depuis
+         ses referencements, qui sont un autre ecran. -->
+    @if (!estMedecin()) {
+      <button
+        class="bb-detail__tab"
+        [class.bb-detail__tab--active]="activeSection() === 'referral'"
+        [attr.aria-pressed]="activeSection() === 'referral'"
+        (click)="activeSection.set('referral')"
+      >
+        <i class="pi pi-send" aria-hidden="true"></i> {{ 'ASC.CONSULTATION_DETAIL.TAB_REFERRAL' | translate }}
+        @if (consultation()?.referencement) {
+          <span class="bb-detail__tab-badge">✓</span>
+        }
+      </button>
+    }
   </div>
 
   <!-- ── Section Constantes vitales ────────────────────────── -->
@@ -620,7 +629,7 @@
   }
 
   <!-- ── Section Référencement ─────────────────────────────── -->
-  @if (activeSection() === 'referral') {
+  @if (activeSection() === 'referral' && !estMedecin()) {
     <div class="bb-detail__section">
 
       <!-- Référencement existant -->

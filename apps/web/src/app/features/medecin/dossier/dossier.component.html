@@ -34,7 +34,16 @@
 
       @if (!termine()) {
         <div class="bb-dossier__actions">
-          <button matButton="filled" type="button" (click)="prescrit.set(!prescrit())">
+          <!-- **Le pas qui manquait.** Le medecin avait la visite sous les
+               yeux et aucun moyen d'y mener la consultation : seul un agent de
+               sante communautaire pouvait en ouvrir une. -->
+          <button matButton="filled" type="button" (click)="ouvrirConsultation()" [disabled]="ouvre()">
+            <i class="pi pi-stethoscope" aria-hidden="true"></i>
+            {{ (ep.nbConsultations > 0
+                 ? 'MEDECIN.DOSSIER.REPRENDRE_CONSULTATION'
+                 : 'MEDECIN.DOSSIER.OUVRIR_CONSULTATION') | translate }}
+          </button>
+          <button matButton type="button" (click)="prescrit.set(!prescrit())">
             <i class="pi pi-filter" aria-hidden="true"></i>
             {{ (prescrit() ? 'COMMON.CANCEL' : 'MEDECIN.DOSSIER.PRESCRIRE') | translate }}
           </button>

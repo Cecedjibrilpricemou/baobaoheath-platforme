@@ -95,6 +95,68 @@ describe('buildConsultationWhereForUser — MEDECIN', () => {
   });
 });
 
+// ── La consultation que le medecin mene lui-meme ─────────────────────────────
+//
+// **Les trois branches d'origine supposaient toutes un tiers** : un ASC qui a
+// ouvert la consultation, un referencement qui la lui adresse, ou sa propre
+// signature deja posee. Une consultation ouverte sur une visite de son propre
+// hopital n'a aucun des trois. Le medecin pouvait donc la creer — puis se
+// faisait refuser les constantes, le diagnostic, l'ordonnance et jusqu'a sa
+// propre validation. Le parcours hospitalier s'arretait au 403 suivant.
+describe('buildConsultationWhereForUser — la visite du medecin', () => {
+  const medecinDe = (idStructure: string | null) => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      role: 'MEDECIN', idStructure,
+      patientProfile: null, ascProfile: null,
+      medecinProfile: { idStructure }, pharmacienProfile: null,
+    });
+    prisma.medecinProfile.findUnique.mockResolvedValue({ idStructure });
+  };
+
+  it('porte sur les consultations des visites de sa structure', async () => {
+    medecinDe('structure-A');
+    const where = await buildConsultationWhereForUser(makeUser('MEDECIN'));
+    expect(where).toMatchObject({
+      OR: expect.arrayContaining([{ episode: { idStructure: 'structure-A' } }]),
+    });
+  });
+
+  // La branche est **ajoutee**, pas substituee : le parcours ASC et le
+  // referencement doivent continuer de passer.
+  it('sans retirer l acces par l ASC ni par le referencement', async () => {
+    medecinDe('structure-A');
+    const where = await buildConsultationWhereForUser(makeUser('MEDECIN', 'doc-1'));
+    expect(where).toMatchObject({
+      OR: expect.arrayContaining([
+        { idMedecinValideur: 'doc-1' },
+        { asc: { idStructure: 'structure-A' } },
+        { referencement: { idStructureCible: 'structure-A' } },
+      ]),
+    });
+  });
+
+  // **Un medecin sans structure n'herite pas des visites de tout le pays.**
+  it('ne porte sur aucune visite quand il n a pas de structure', async () => {
+    medecinDe(null);
+    const where = await buildConsultationWhereForUser(makeUser('MEDECIN', 'doc-2'));
+    expect(JSON.stringify(where)).not.toContain('episode');
+  });
+
+  // `ACTE_MEDICAL` ouvre la consultation d'une visite a l'administrateur de
+  // structure autant qu'au medecin : sa porte doit suivre la meme regle.
+  it('vaut aussi pour l administrateur de structure', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      role: 'ADMIN_STRUCTURE', idStructure: 'structure-A',
+      patientProfile: null, ascProfile: null,
+      medecinProfile: null, pharmacienProfile: null,
+    });
+    const where = await buildConsultationWhereForUser(makeUser('ADMIN_STRUCTURE'));
+    expect(where).toMatchObject({
+      OR: expect.arrayContaining([{ episode: { idStructure: 'structure-A' } }]),
+    });
+  });
+});
+
 // ── buildConsultationWhereForUser — ASC ───────────────────────────────────────
 describe('buildConsultationWhereForUser — ASC', () => {
   it('scopes consultations to the ASC own profile', async () => {

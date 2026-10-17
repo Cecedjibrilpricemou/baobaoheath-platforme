@@ -96,12 +96,13 @@ export class MedecinConsultationsComponent implements OnInit {
     if (!c) return;
     this.isValidating.set(true);
     // On utilise validerConsultation du service
+    // **Trois des quatre champs envoyes ici n'existaient pas.** Le schema est
+    // `.strict()` : `diagnosticConfirme` et `commentaires` faisaient rejeter
+    // tout le corps, et la validation repondait 400 a chaque fois — dans le
+    // seul ecran ou le medecin peut signer.
     this.medecinService.validerConsultation(c.id, {
-      diagnosticConfirme: 'CONFIRME', // Ou récupérer depuis un champ s'il existe
-      commentaires: this.notesMedecin,
-      // On passe les idOrdonnances si l'API l'accepte ou on s'adapte à l'interface
-      // @ts-ignore - adapter selon l'implémentation backend réelle
-      idOrdonnances: this.ordonnancesSelectionnees 
+      notesMedecin: this.notesMedecin.trim() || undefined,
+      idOrdonnances: this.ordonnancesSelectionnees,
     }).subscribe({
       next: () => {
         this.isValidating.set(false);

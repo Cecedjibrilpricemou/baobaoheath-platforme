@@ -56,6 +56,7 @@ export class DossierComponent implements OnInit {
   isLoading = signal(true);
   isSaving  = signal(false);
   prescrit  = signal(false);
+  ouvre     = signal(false);
 
   readonly termine = computed(() => {
     const s = this.episode()?.statut;
@@ -115,6 +116,29 @@ export class DossierComponent implements OnInit {
       e?.error?.error ?? e?.error?.message ?? this.i18n.t('COMMON.ERROR_GENERIC'),
       this.i18n.t('COMMON.ERROR_TITLE')
     );
+  }
+
+  // ── La consultation ──────────────────────────────────────────────
+  //
+  // **Le pas qui manquait au parcours hospitalier.** Le patient demande un
+  // rendez-vous, l'accueil l'oriente, le medecin fixe l'heure, le patient
+  // arrive — et la, plus rien : `POST /consultations` est reserve a l'ASC. Le
+  // medecin avait la visite sous les yeux et aucun moyen d'y consulter.
+  //
+  // L'ecran qui suit est **celui de l'ASC**, qui ne depend d'aucun service
+  // propre a ce role et s'adapte au role appelant.
+  ouvrirConsultation() {
+    const ep = this.episode();
+    if (!ep || this.ouvre()) return;
+    this.ouvre.set(true);
+    this.hopital.ouvrirConsultation(ep.id).subscribe({
+      next: (r) => {
+        this.ouvre.set(false);
+        const id = r.data?.id;
+        if (id) this.router.navigate(['/medecin/consultations', id]);
+      },
+      error: (err) => { this.ouvre.set(false); this.erreur(err); },
+    });
   }
 
   // ── Prescription d'analyses ──────────────────────────────────────

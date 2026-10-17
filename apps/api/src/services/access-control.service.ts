@@ -184,6 +184,13 @@ export async function buildConsultationWhereForUser(user: JwtPayload): Promise<C
     return {
       OR: [
         { idMedecinValideur: user.userId },
+        // **La consultation qu'il mene lui-meme.** Les trois autres branches
+        // supposent un tiers : un ASC qui l'a ouverte, un referencement qui
+        // la lui adresse, ou sa propre signature deja posee. Une consultation
+        // ouverte sur une visite de son hopital n'a aucun des trois : le
+        // medecin la creait, puis recevait 403 sur les constantes, le
+        // diagnostic, l'ordonnance et jusqu'a sa propre validation.
+        ...(medecin?.idStructure ? [{ episode: { idStructure: medecin.idStructure } }] : []),
         ...(medecin?.idStructure ? [{ asc: { idStructure: medecin.idStructure } }] : []),
         ...(medecin?.idStructure ? [{ referencement: { idStructureCible: medecin.idStructure } }] : []),
       ],
@@ -200,6 +207,9 @@ export async function buildConsultationWhereForUser(user: JwtPayload): Promise<C
 
     return {
       OR: [
+        // `ACTE_MEDICAL` ouvre la consultation d'une visite a l'administrateur
+        // de structure autant qu'au medecin : sa porte d'acces doit suivre.
+        { episode: { idStructure: utilisateur.idStructure } },
         { asc: { idStructure: utilisateur.idStructure } },
         { referencement: { idStructureCible: utilisateur.idStructure } },
       ],

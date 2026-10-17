@@ -528,9 +528,19 @@ export const sendSmsMasseSchema = z.object({
   message: z.string().trim().min(1).max(480),
 }).strict();
 
+/**
+ * Valider et signer une consultation.
+ *
+ * **`idOrdonnances` manquait ici alors que le service le lit** pour signer les
+ * ordonnances choisies. Le schema etant `.strict()`, la cle faisait rejeter
+ * tout le corps : l'ecran de validation du medecin recevait 400 a chaque
+ * tentative, et c'est le seul qu'il ait. `ValiderConsultationDto`
+ * (shared-types) decrivait le bon contrat depuis le debut.
+ */
 export const validerConsultationSchema = z.object({
   notesMedecin: z.string().trim().max(3000).optional(),
   tarifGnf: z.coerce.number().int().min(0).max(10_000_000).optional(),
+  idOrdonnances: z.array(z.string().trim().min(1).max(60)).max(40).optional(),
 }).strict();
 
 // `motifRefus` : nom du champ dans RepondreReferencementDto (shared-types) et
