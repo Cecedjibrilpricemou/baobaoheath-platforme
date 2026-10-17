@@ -1,16 +1,32 @@
 // features/patient/qr-code/qr-code.component.scss
-.qr-page {}
+
+// ✦ Refonte UI : accent propre a l'ecran (vert vif en mode sombre)
+:host {
+  display: block;
+  --qr-accent: var(--bb-primary);
+  --qr-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --qr-accent: var(--bb-bright);
+  --qr-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
 
 .qr-layout {
-  display: grid; grid-template-columns: 380px 1fr; gap: 24px;
+  display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); gap: 20px; align-items: start;
   @media (max-width: 900px) { grid-template-columns: 1fr; }
 }
 
 // ── Carte QR principale ──────────────────────────────────────────
+// ✦ Refonte UI : la carte du QR est la piece maitresse de l'ecran (on la
+// montre au soignant) — liseré d'accent en haut et ombre plus marquee.
 .qr-main-card {
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius-xl); padding: 2rem; text-align: center;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  border-top: 4px solid var(--qr-accent);
+  border-radius: var(--bb-radius-xl); padding: 1.75rem; text-align: center;
   box-shadow: var(--bb-shadow);
+
+  @media (max-width: 600px) { padding: 1.25rem; }
 }
 
 .qr-patient-header {
@@ -36,18 +52,23 @@
   i { font-size: 10px; }
 }
 
+.qr-patient-info { min-width: 0; }
+
 // ── Frame QR ─────────────────────────────────────────────────────
 .qr-code-frame {
-  position: relative; width: 220px; height: 220px; margin: 0 auto 16px;
+  // Fond blanc conserve en mode sombre : un QR doit rester noir sur blanc
+  // pour etre lu par tous les scanners.
+  // ✦ Refonte UI : plus grand (lecture plus fiable), fluide sur mobile
+  position: relative; width: min(240px, 72vw); aspect-ratio: 1; margin: 0 auto 14px;
   background: #fff; border-radius: var(--bb-radius-lg);
-  border: 2px solid var(--bb-border); padding: 10px;
+  border: 1px solid var(--bb-border-light); padding: 14px;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--bb-shadow);
+  box-shadow: var(--bb-shadow-sm);
 }
 
 .qr-corner {
   position: absolute; width: 20px; height: 20px;
-  border-color: var(--bb-primary); border-style: solid; border-width: 0;
+  border-color: var(--bb-bright); border-style: solid; border-width: 0;
 
   &--tl { top: 4px; left: 4px;  border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 6px; }
   &--tr { top: 4px; right: 4px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 6px; }
@@ -65,17 +86,20 @@
 
 .qr-scan-label { font-size: 13px; color: var(--bb-text-muted); margin-bottom: 20px; }
 
-.qr-actions { display: flex; gap: 10px; justify-content: center; }
-
-.qr-btn { flex: 1; max-width: 160px; }
+.qr-actions {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  > * { flex: 1 1 140px; max-width: 200px; }
+}
 
 // ── Colonne droite ────────────────────────────────────────────────
 .qr-side { display: flex; flex-direction: column; gap: 16px; }
 
 // ── Info card ─────────────────────────────────────────────────────
 .info-card {
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius-xl); padding: 1.5rem; box-shadow: var(--bb-shadow-xs);
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-xl); padding: 1.375rem 1.5rem; box-shadow: var(--bb-shadow-sm);
+
+  @media (max-width: 600px) { padding: 1.125rem; }
 
   &__header {
     display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
@@ -83,13 +107,13 @@
   }
 
   &__icon {
-    width: 32px; height: 32px; border-radius: 10px;
-    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--qr-accent-soft);
     display: flex; align-items: center; justify-content: center;
-    i { font-size: 13px; color: var(--bb-primary); }
+    i { font-size: 14px; color: var(--qr-accent); }
   }
 
-  &__title { font-family: var(--bb-font-display); font-size: 14px; font-weight: 700; color: var(--bb-text-primary); }
+  &__title { font-family: var(--bb-font-display); font-size: 15px; font-weight: 800; color: var(--bb-text-primary); margin: 0; }
 }
 
 .info-list { display: flex; flex-direction: column; gap: 0; }
@@ -104,16 +128,16 @@
     display: flex; align-items: center; justify-content: center;
     i { font-size: 13px; }
 
-    &--green  { background: var(--bb-success-bg); border: 1px solid var(--bb-success-border); i { color: var(--bb-primary); } }
-    &--blue   { background: var(--bb-info-bg);    border: 1px solid var(--bb-info-border);    i { color: var(--bb-info); } }
-    &--orange { background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border); i { color: var(--bb-warning); } }
-    &--red    { background: var(--bb-danger-bg);  border: 1px solid var(--bb-danger-border);  i { color: var(--bb-danger); } }
+    &--green  { background: var(--qr-accent-soft); i { color: var(--qr-accent); } }
+    &--blue   { background: var(--bb-info-bg);    i { color: var(--bb-info); } }
+    &--orange { background: var(--bb-warning-bg); i { color: var(--bb-warning); } }
+    &--red    { background: var(--bb-danger-bg);  i { color: var(--bb-danger); } }
   }
 
-  &__body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-  &__label { font-size: 11.5px; color: var(--bb-text-muted); }
+  &__body { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  &__label { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--bb-text-muted); }
   &__value {
-    font-size: 13.5px; font-weight: 600; color: var(--bb-text-primary);
+    font-size: 14px; font-weight: 600; color: var(--bb-text-primary); font-variant-numeric: tabular-nums;
     &--blood { font-family: var(--bb-font-display); font-size: 15px; font-weight: 800; color: var(--bb-danger); }
   }
 }
@@ -126,12 +150,13 @@
 
   &__icon {
     width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-    background: rgba(146,64,14,.12); display: flex; align-items: center; justify-content: center;
+    // ✦ Refonte UI : rgba code en dur → token (suit le mode sombre)
+    background: color-mix(in srgb, var(--bb-warning) 14%, transparent); display: flex; align-items: center; justify-content: center;
     i { font-size: 16px; color: var(--bb-warning); }
   }
 
-  &__title { font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; color: var(--bb-warning); margin-bottom: 4px; }
-  &__text  { font-size: 12.5px; color: var(--bb-text-secondary); line-height: 1.55; }
+  &__title { font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700; color: var(--bb-warning); margin: 0 0 4px; }
+  &__text  { font-size: 12.5px; color: var(--bb-text-secondary); line-height: 1.55; margin: 0; }
 }
 
 // ── Nav links ─────────────────────────────────────────────────────
@@ -140,12 +165,16 @@
 .nav-link {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; border-radius: var(--bb-radius-lg);
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-  text-decoration: none; transition: all var(--bb-transition);
-  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-xs); }
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  text-decoration: none;
+  // ✦ Refonte UI : transitions ciblees, fleche qui avance, sans !important
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow), transform var(--bb-transition-slow);
+  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-hover); transform: translateY(-1px); }
+  &:hover &__arrow { transform: translateX(3px); color: var(--qr-accent); }
+  &:active { transform: scale(0.99); }
 
-  i { font-size: 14px; color: var(--bb-primary); }
+  > i:first-child { font-size: 14px; color: var(--qr-accent); }
   span { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--bb-text-primary); }
 
-  &__arrow { font-size: 11px !important; color: var(--bb-text-muted) !important; }
+  &__arrow { font-size: 11px; color: var(--bb-text-muted); transition: transform var(--bb-transition), color var(--bb-transition); }
 }

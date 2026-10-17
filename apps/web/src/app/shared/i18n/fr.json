@@ -1605,5 +1605,225 @@
       "ECHANTILLONS_TITLE": "Échantillons",
       "ECHANTILLONS_EMPTY": "Aucun échantillon prélevé pour l’instant."
     }
+  },
+  "PUBLIC": {
+    "NAV_PROS": "Professionnels",
+    "NAV_SECURITY": "Sécurité",
+    "MENU_OPEN": "Ouvrir le menu",
+    "MENU_CLOSE": "Fermer le menu",
+    "LINK_PROS": "Professionnels de santé",
+    "LINK_SECURITY": "Sécurité et données",
+    "LINK_ABOUT": "À propos",
+    "CONTACT_US": "Nous écrire",
+    "CONTACT_FALLBACK": "l'adresse de contact indiquée sur la plateforme",
+    "TOC": "Sommaire",
+    "DRAFT_TITLE": "Version provisoire.",
+    "DRAFT_TEXT": "Ce document est en cours de validation juridique et peut encore évoluer avant sa version définitive.",
+    "PRIVACY": {
+      "TITLE": "Politique de confidentialité",
+      "LEAD": "Comment {{nom}} collecte, utilise et protège vos données personnelles et vos données de santé.",
+      "UPDATED": "Projet du 17 octobre 2026",
+      "S1": {
+        "TITLE": "Responsable du traitement",
+        "P1": "Le responsable du traitement des données est [Raison sociale], éditeur de {{nom}}, dont le siège est situé [adresse du siège]. Pour toute question relative à vos données, écrivez à {{contact}}."
+      },
+      "S2": {
+        "TITLE": "Données collectées",
+        "P1": "Nous ne collectons que les données nécessaires à votre prise en charge :",
+        "L1": "Identité et coordonnées : nom, prénom, téléphone, et adresse email si vous la renseignez.",
+        "L2": "Données de santé : consultations, constantes, diagnostics, ordonnances, vaccinations et résultats d'analyses, saisis par les professionnels qui vous prennent en charge.",
+        "L3": "Données techniques : historique des connexions et des accès à votre dossier, nécessaire à la sécurité."
+      },
+      "S3": {
+        "TITLE": "Utilisation de vos données",
+        "P1": "Vos données servent uniquement à :",
+        "L1": "assurer la continuité de vos soins entre agents de santé, médecins, laboratoires, hôpitaux et pharmacies ;",
+        "L2": "vous permettre de consulter votre dossier, vos résultats et vos ordonnances ;",
+        "L3": "produire des statistiques de santé publique, toujours anonymisées.",
+        "P2": "Elles ne sont jamais vendues ni utilisées à des fins publicitaires."
+      },
+      "S4": {
+        "TITLE": "Consentement et partage",
+        "P1": "Vous décidez qui peut accéder à votre dossier depuis l'espace « Confidentialité et consentements ». Seuls les professionnels habilités, dans le cadre de votre prise en charge, peuvent consulter vos données. Chaque accès est enregistré : vous pouvez voir qui a ouvert votre dossier, et quand."
+      },
+      "S5": {
+        "TITLE": "Durée de conservation",
+        "P1": "Vos données sont conservées pendant [durée légale de conservation du dossier médical], puis supprimées ou anonymisées."
+      },
+      "S6": {
+        "TITLE": "Sécurité",
+        "P1": "Les données médicales sensibles sont chiffrées, les accès sont limités au rôle de chaque professionnel et la connexion peut être confirmée par un code à usage unique. La page « Sécurité et données » détaille ces mesures."
+      },
+      "S7": {
+        "TITLE": "Vos droits",
+        "P1": "Conformément à la loi L/2016/037/AN relative à la cybersécurité et à la protection des données à caractère personnel, vous disposez des droits suivants :",
+        "L1": "accéder à vos données et obtenir une copie de votre dossier ;",
+        "L2": "faire corriger les informations inexactes ;",
+        "L3": "vous opposer à un traitement et retirer vos consentements à tout moment ;",
+        "L4": "demander la suppression de vos données, dans la limite des obligations légales de conservation.",
+        "P2": "Pour exercer ces droits, écrivez à {{contact}}."
+      },
+      "S8": {
+        "TITLE": "Évolution de cette politique",
+        "P1": "Cette politique peut évoluer. En cas de changement important, vous en serez informé dans l'application."
+      }
+    },
+    "TERMS": {
+      "TITLE": "Conditions d'utilisation",
+      "LEAD": "Les règles d'utilisation de {{nom}}, pour les patients comme pour les professionnels de santé.",
+      "UPDATED": "Projet du 17 octobre 2026",
+      "S1": {
+        "TITLE": "Objet",
+        "P1": "{{nom}} est une plateforme numérique qui relie les patients, les agents de santé communautaire, les médecins, les laboratoires, les hôpitaux et les pharmacies pour assurer le suivi du parcours de soins. Les présentes conditions encadrent son utilisation."
+      },
+      "S2": {
+        "TITLE": "Urgences médicales",
+        "P1": "{{nom}} ne remplace ni un avis médical ni les services d'urgence. En cas d'urgence, contactez immédiatement les secours ou rendez-vous dans la structure de santé la plus proche."
+      },
+      "S3": {
+        "TITLE": "Comptes et accès",
+        "P1": "Les patients créent leur compte eux-mêmes. Les comptes des professionnels sont créés par l'administrateur de leur structure.",
+        "L1": "Vous êtes responsable de la confidentialité de votre mot de passe et des codes que vous recevez.",
+        "L2": "Signalez sans délai toute utilisation suspecte de votre compte.",
+        "L3": "Les informations que vous fournissez doivent être exactes et à jour."
+      },
+      "S4": {
+        "TITLE": "Engagements des professionnels",
+        "P1": "Les professionnels de santé n'accèdent aux dossiers que pour la prise en charge des patients, dans le respect du secret médical. Chaque accès est enregistré."
+      },
+      "S5": {
+        "TITLE": "Disponibilité du service",
+        "P1": "Nous faisons le nécessaire pour assurer la disponibilité du service, y compris en faible débit et hors ligne pour les agents de terrain, sans pouvoir garantir un fonctionnement ininterrompu."
+      },
+      "S6": {
+        "TITLE": "Responsabilité",
+        "P1": "Les informations médicales saisies relèvent de la responsabilité des professionnels qui les renseignent. [Raison sociale] ne saurait être tenue responsable d'une utilisation de la plateforme contraire aux présentes conditions."
+      },
+      "S7": {
+        "TITLE": "Propriété intellectuelle",
+        "P1": "La plateforme, sa marque et ses contenus sont protégés. Toute reproduction sans autorisation est interdite."
+      },
+      "S8": {
+        "TITLE": "Droit applicable et contact",
+        "P1": "Les présentes conditions sont régies par le droit guinéen. Pour toute question, écrivez à {{contact}}."
+      }
+    },
+    "SECURITY": {
+      "TAG": "Confiance",
+      "TITLE_A": "Vos données de santé,",
+      "TITLE_B": "protégées à chaque étape.",
+      "LEAD": "Vos données de santé comptent parmi les plus sensibles. Voici, concrètement, comment {{nom}} les protège.",
+      "C1": {
+        "TITLE": "Données sensibles chiffrées",
+        "TEXT": "Les informations médicales et personnelles sensibles sont chiffrées dans la base de données (AES-256-GCM) : illisibles sans la clé, même en cas d'accès au stockage."
+      },
+      "C2": {
+        "TITLE": "Mots de passe jamais en clair",
+        "TEXT": "Les mots de passe ne sont jamais enregistrés tels quels : ils sont transformés par un algorithme de hachage (bcrypt) avant d'être stockés."
+      },
+      "C3": {
+        "TITLE": "Connexion vérifiée",
+        "TEXT": "Une connexion peut être confirmée par un code à 6 chiffres envoyé par email, valable quelques minutes seulement."
+      },
+      "C4": {
+        "TITLE": "Sessions limitées",
+        "TEXT": "Les sessions expirent automatiquement : un appareil oublié ne reste pas connecté indéfiniment."
+      },
+      "C5": {
+        "TITLE": "Accès selon le rôle",
+        "TEXT": "Chaque professionnel n'accède qu'aux informations utiles à son métier : un pharmacien ne voit pas ce que voit un médecin."
+      },
+      "C6": {
+        "TITLE": "Vos consentements",
+        "TEXT": "Depuis votre espace, vous décidez qui peut consulter votre dossier, et vous pouvez retirer votre accord à tout moment."
+      },
+      "C7": {
+        "TITLE": "Journal des accès",
+        "TEXT": "Chaque consultation de votre dossier est enregistrée : vous voyez qui l'a ouvert, et quand."
+      },
+      "C8": {
+        "TITLE": "Conçu pour le terrain",
+        "TEXT": "Les agents de santé peuvent travailler hors ligne ; les données sont synchronisées dès que le réseau revient."
+      },
+      "RIGHTS_TITLE": "Vos données vous appartiennent",
+      "RIGHTS_TEXT": "Accès, correction, retrait de vos consentements : notre politique de confidentialité détaille vos droits et la façon de les exercer."
+    },
+    "PROS": {
+      "TAG": "Espaces professionnels",
+      "TITLE_A": "Un espace pour chaque métier,",
+      "TITLE_B": "un seul dossier patient.",
+      "LEAD": "{{nom}} accompagne chaque professionnel du parcours de soins avec un espace dédié, connecté au même dossier patient.",
+      "CTA_LOGIN": "Accéder à mon espace",
+      "CTA_JOIN": "Inscrire ma structure",
+      "ASC": {
+        "TITLE": "Agent de santé communautaire",
+        "TEXT": "Consultations de proximité, triage assisté, planning des rendez-vous, gestion du stock et travail hors ligne avec synchronisation."
+      },
+      "MED": {
+        "TITLE": "Médecin",
+        "TEXT": "Validation des consultations, signature des ordonnances, référencements et messagerie avec les équipes de terrain."
+      },
+      "PHARMA": {
+        "TITLE": "Pharmacien",
+        "TEXT": "Délivrance des ordonnances par QR code ou par numéro et code de vérification, et suivi des stocks."
+      },
+      "LABO": {
+        "TITLE": "Laboratoire",
+        "TEXT": "File des demandes d'analyse, saisie et validation des résultats, alertes sur les valeurs critiques."
+      },
+      "HOPITAL": {
+        "TITLE": "Hôpital",
+        "TEXT": "Admission des patients, épisodes de soins, demandes d'analyse et suivi des résultats critiques."
+      },
+      "ADMIN": {
+        "TITLE": "Administration de structure",
+        "TEXT": "Gestion des agents et de leurs accès, paramètres de la structure et suivi de l'activité."
+      },
+      "JOIN_TITLE": "Comment rejoindre la plateforme",
+      "JOIN_SUB": "Les comptes professionnels sont créés par la structure : personne n'entre sur {{nom}} sans y avoir été habilité.",
+      "E1": {
+        "TITLE": "Votre structure nous contacte",
+        "TEXT": "Poste ou centre de santé, hôpital, laboratoire ou pharmacie : nous l'enregistrons sur la plateforme."
+      },
+      "E2": {
+        "TITLE": "L'administrateur crée les comptes",
+        "TEXT": "Chaque professionnel reçoit un compte avec le rôle qui correspond à son métier."
+      },
+      "E3": {
+        "TITLE": "Chacun se connecte",
+        "TEXT": "Depuis un ordinateur ou un téléphone, y compris en faible débit."
+      },
+      "PANEL_TITLE": "La sécurité, au cœur de chaque espace",
+      "PANEL_TEXT": "Accès limités au rôle, données sensibles chiffrées, chaque consultation de dossier enregistrée."
+    },
+    "ABOUT": {
+      "TAG": "Notre mission",
+      "TITLE_A": "Un seul dossier,",
+      "TITLE_B": "partout en Guinée.",
+      "LEAD": "{{nom}} est né d'un constat simple : le dossier d'un patient se perd trop souvent entre le poste de santé, l'hôpital, le laboratoire et la pharmacie.",
+      "PROBLEM_LABEL": "Le constat",
+      "PROBLEM": "Des carnets papier égarés, des examens refaits, des ordonnances illisibles, des patients qui répètent leur histoire à chaque soignant : la continuité des soins dépend encore trop souvent du hasard.",
+      "MISSION_LABEL": "Notre mission",
+      "MISSION": "Qu'un seul dossier suive chaque patient, partout, en ligne comme hors ligne, pour que chaque soignant dispose de la bonne information au bon moment. C'est la raison d'être de {{nom}}.",
+      "VALUES_TITLE": "Ce qui nous guide",
+      "V1": {
+        "TITLE": "Pensé pour le terrain",
+        "TEXT": "Faible débit, coupures de réseau, téléphones modestes : chaque écran est conçu pour les conditions réelles."
+      },
+      "V2": {
+        "TITLE": "Confiance et confidentialité",
+        "TEXT": "Le patient garde la main sur son dossier ; les accès sont limités, enregistrés et chiffrés."
+      },
+      "V3": {
+        "TITLE": "Un parcours, pas des silos",
+        "TEXT": "Agents de santé, médecins, laboratoires, hôpitaux et pharmacies travaillent sur le même dossier."
+      },
+      "V4": {
+        "TITLE": "Fait en Guinée",
+        "TEXT": "Construit en Guinée, avec et pour les professionnels de santé guinéens."
+      },
+      "PANEL_TITLE": "Prêt à rejoindre le mouvement ?",
+      "PANEL_TEXT": "Créez votre dossier patient en deux minutes, ou faites entrer votre structure sur la plateforme."
+    }
   }
 }

@@ -1,156 +1,165 @@
+// features/asc/sync/sync.scss
+
+// ✦ Refonte UI : suppression du code mort (.sync-header, .header-icon,
+// surcharges ::ng-deep de p-button) ; bordure #e2e8f0 codee en dur (trait
+// blanc en mode sombre) et ombres rgba remplacees par les tokens ; l'etat
+// vide local (icone de 64px) cede la place au composant global.
+:host {
+  display: block;
+  --sync-accent: var(--bb-primary);
+  --sync-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --sync-accent: var(--bb-bright);
+  --sync-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
 .sync-page {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
   max-width: 900px;
   margin: 0 auto;
 }
 
-.sync-header {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  background: var(--bb-surface-card);
-  padding: 32px;
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-
-  .header-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    i {
-      font-size: 32px;
-      color: white;
-    }
-
-    &.online-icon {
-      background: linear-gradient(135deg, var(--bb-primary), var(--bb-bright));
-    }
-
-    &.offline-icon {
-      background: linear-gradient(135deg, #f59e0b, #fbbf24);
-    }
-  }
-
-  .header-content {
-    flex: 1;
-
-    h1 {
-      margin: 0 0 8px 0;
-      color: var(--bb-text-primary);
-    }
-
-    p {
-      margin: 0;
-      color: var(--bb-text-secondary);
-    }
-  }
+// Bouton principal : pleine largeur sur mobile, a portee de pouce
+.bb-sync__cta {
+  @media (max-width: 600px) { width: 100%; }
 }
 
 .section-card {
   background: var(--bb-surface-card);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-xl);
+  padding: 1.375rem 1.5rem;
+  box-shadow: var(--bb-shadow-sm);
+
+  @media (max-width: 600px) { padding: 1.125rem; }
 }
 
+// Meme en-tete de carte que les autres espaces
 .section-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  
+  gap: 11px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--bb-border-light);
+
   i {
-    font-size: 24px;
-    color: var(--bb-primary);
-    background: rgba(45, 125, 70, 0.1);
-    padding: 12px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--sync-accent);
+    background: var(--sync-accent-soft);
   }
-  
+
   h2 {
-    font-size: 22px;
-    font-weight: 600;
+    font-family: var(--bb-font-display);
+    font-size: 15px;
+    font-weight: 800;
     color: var(--bb-text-primary);
     margin: 0;
   }
 }
 
+// Tout est synchronise : pastille de reussite
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 0;
-  text-align: center;
-
-  i {
-    font-size: 64px;
-    margin-bottom: 24px;
+  > i {
+    width: 64px; height: 64px; border-radius: 50%; font-size: 28px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--sync-accent); background: var(--sync-accent-soft);
+    margin-bottom: 8px;
   }
 
   h3 {
-    margin: 0 0 8px 0;
+    margin: 0;
+    font-family: var(--bb-font-display);
+    font-size: 16px;
+    font-weight: 800;
     color: var(--bb-text-primary);
-    font-size: 20px;
   }
+
+  p { margin: 0; font-size: 13.5px; max-width: 320px; }
 }
 
 .pending-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .pending-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
+  gap: 14px;
+  padding: 14px 16px;
   background: var(--bb-surface-1);
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--bb-border-light);
+  border-left: 4px solid var(--bb-warning);
+  border-radius: var(--bb-radius-lg);
+  transition: transform var(--bb-transition-slow), box-shadow var(--bb-transition-slow);
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transform: translateY(-1px);
+    box-shadow: var(--bb-shadow-hover);
   }
 
   .item-icon {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
     border-radius: 12px;
     background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 
-    i {
-      font-size: 24px;
-    }
+    i { font-size: 17px; color: var(--sync-accent); }
   }
 
   .item-info {
     flex: 1;
+    min-width: 0;
 
     h3 {
-      margin: 0 0 4px 0;
-      font-size: 16px;
-      font-weight: 600;
+      margin: 0 0 3px;
+      font-size: 14.5px;
+      font-weight: 700;
       color: var(--bb-text-primary);
     }
 
     p {
       margin: 0;
-      font-size: 14px;
+      font-size: 12.5px;
       color: var(--bb-text-secondary);
+    }
+  }
+
+  .item-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  // ✦ Refonte UI : mobile — plus de centrage du texte (les libelles longs
+  // devenaient illisibles) ; le statut passe sous l'information.
+  @media (max-width: 600px) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: 12px;
+
+    .item-status {
+      width: 100%;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 56px;
     }
   }
 }
@@ -159,36 +168,19 @@
   color: var(--bb-text-secondary);
 }
 
-@media (max-width: 768px) {
-  .sync-header {
-    flex-direction: column;
-    text-align: center;
-
-    .header-actions {
-      width: 100%;
-      ::ng-deep .p-button {
-        width: 100%;
-      }
-    }
-  }
-
-  .pending-item {
-    flex-direction: column;
-    text-align: center;
-
-    .item-status {
-      margin-top: 12px;
-    }
-  }
-}
 // ── File d'attente réelle : dernière sync, erreurs, mutations rejetées ──
 .sync-last {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
-  font-size: 12.5px;
+  margin: 8px 0 0;
+  padding: 3px 10px;
+  border-radius: var(--bb-radius-pill);
+  background: var(--bb-surface-card);
+  border: 1px solid var(--bb-border-light);
+  font-size: 12px;
   color: var(--bb-text-muted);
+  font-variant-numeric: tabular-nums;
 
   i { font-size: 11px; }
 }
@@ -199,37 +191,52 @@
   gap: 10px;
   margin-bottom: 16px;
   padding: 12px 16px;
-  border-radius: var(--bb-radius);
+  border-radius: var(--bb-radius-lg);
   background: var(--bb-danger-bg);
   border: 1px solid var(--bb-danger-border);
+  border-left: 4px solid var(--bb-danger);
   color: var(--bb-danger);
   font-size: 13.5px;
+  font-weight: 600;
 
   i { flex-shrink: 0; }
 }
 
 .pending-item--rejected {
   border-color: var(--bb-danger-border);
+  border-left-color: var(--bb-danger);
   background: var(--bb-danger-bg);
+
+  .item-icon i { color: var(--bb-danger); }
 }
 
-.item-error {
-  margin-top: 4px;
+// Classe doublee : passe devant `.pending-item .item-info p`
+.item-error.item-error {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: var(--bb-radius-sm);
+  background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
   font-size: 12px;
+  font-weight: 600;
   color: var(--bb-danger);
 }
 
+// Abandon d'une saisie rejetee : action destructive, discrete mais nette
 .item-discard {
   display: block;
   margin-top: 6px;
-  padding: 0;
+  padding: 4px 8px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: var(--bb-radius-sm);
   font-size: 12px;
-  font-weight: 600;
-  color: var(--bb-text-muted);
+  font-weight: 700;
+  color: var(--bb-text-secondary);
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
+  transition: color var(--bb-transition), background var(--bb-transition), border-color var(--bb-transition);
 
-  &:hover { color: var(--bb-danger); }
+  &:hover { color: var(--bb-danger); background: var(--bb-surface-card); border-color: var(--bb-danger-border); }
 }

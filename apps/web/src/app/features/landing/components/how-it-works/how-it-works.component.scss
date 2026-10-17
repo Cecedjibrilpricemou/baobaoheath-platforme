@@ -2,13 +2,41 @@
 // numerotee pleine, prolongee d'un trait de progression qui s'allonge d'une
 // carte a l'autre — court au depart, plein a l'arrivee. Puis une photo quand
 // elle illustre vraiment l'etape, sinon l'icone dans son carre arrondi.
-.section-header { text-align: center; margin-bottom: 44px; }
-.section-tag { display: inline-block; padding: 4px 14px; border-radius: var(--bb-radius-pill); background: var(--land-accent-soft); border: 1px solid var(--bb-success-border); font-family: var(--bb-font-display); font-size: 11px; font-weight: 700; color: var(--land-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-.section-title { font-family: var(--bb-font-display); font-size: clamp(28px, 3.6vw, 38px); font-weight: 800; color: var(--bb-text-primary); letter-spacing: -1px; margin: 0 0 12px; text-wrap: balance; }
-.section-title__accent { color: var(--land-accent); }
-.section-sub { font-size: 15px; color: var(--bb-text-muted); max-width: 520px; margin: 0 auto; line-height: 1.65; }
+// ✦ Refonte UI : apparition au defilement (CSS pur, coupee si l'utilisateur
+// reduit les animations ou si le navigateur ne gere pas animation-timeline)
+@mixin apparition($debut: 0%, $fin: 40%) {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: bb-how-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry $debut entry $fin;
+    }
+  }
+}
+@keyframes bb-how-reveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
 
-.how-section { max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; @media (max-width: 768px) { padding: 56px 20px 40px; } }
+// ✦ Refonte UI : en-tete de section — etiquette en pastille fine, titre
+// Sora 800 serre en grande taille, sous-titre DM Sans aere.
+.section-header { text-align: center; margin: 0 auto clamp(40px, 6vw, 72px); max-width: 760px; @include apparition; }
+.section-tag {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: var(--bb-radius-pill);
+  background: var(--land-glass, var(--bb-surface-card)); border: 1px solid var(--land-glass-border, var(--bb-border-light));
+  font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 700; color: var(--land-accent);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 20px;
+  &::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--land-accent); box-shadow: 0 0 0 4px var(--land-accent-soft); }
+}
+.section-title {
+  font-family: var(--bb-font-display); font-size: clamp(32px, 4.6vw, 56px); font-weight: 800; line-height: 1.04;
+  color: var(--bb-text-primary); letter-spacing: -.045em; margin: 0 0 18px; text-wrap: balance;
+}
+.section-title__accent { color: var(--land-accent); }
+.section-sub { font-size: clamp(15px, 1.3vw, 18px); font-weight: 400; color: var(--bb-text-secondary); max-width: 56ch; margin: 0 auto; line-height: 1.65; text-wrap: pretty; }
+
+// ✦ Refonte UI : respiration verticale du rythme de la page (~120px)
+.how-section { max-width: 1200px; margin: 0 auto; padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 32px); }
 .steps-grid {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: 22px;
@@ -17,15 +45,62 @@
   grid-template-columns: repeat(4, 1fr);
   @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 640px)  { grid-template-columns: 1fr; }
+
+  // ✦ Refonte UI : sur deux colonnes, la 7e etape restait seule sur sa
+  // rangee ; elle s'etend sur toute la largeur.
+  @media (min-width: 641px) and (max-width: 1100px) {
+    > .step:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+      // le cadre 3/2 deviendrait demesure en pleine largeur
+      .step__icon, .step__media { aspect-ratio: auto; height: 200px; }
+    }
+  }
+
+  // ✦ Refonte UI : sur quatre colonnes, 7 etapes laissaient un trou en fin
+  // de seconde rangee. La derniere carte s'etend sur deux colonnes, en
+  // format horizontal (visuel a gauche, texte a droite) : la rangee est
+  // pleine et l'etape « bientot » se distingue des etapes disponibles.
+  @media (min-width: 1101px) {
+    > .step:last-child:nth-child(4n + 3) {
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      grid-template-areas: "track track" "media title" "media desc";
+      grid-template-rows: auto auto 1fr;
+      column-gap: 26px;
+      .step__track { grid-area: track; margin-right: 0; }
+      .step__icon, .step__media { grid-area: media; aspect-ratio: auto; height: 100%; min-height: 180px; margin-bottom: 0; }
+      .step__title { grid-area: title; align-self: end; margin-top: 4px; }
+      .step__desc { grid-area: desc; }
+    }
+  }
 }
 
 .step {
   position: relative;
   display: flex; flex-direction: column;
   padding: 24px 26px 28px;
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 22px;
-  transition: transform var(--bb-transition), box-shadow var(--bb-transition), border-color var(--bb-transition);
-  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow); transform: translateY(-3px); }
+  // ✦ Refonte UI : micro-bordure de 1px, ombre en couches, liseré lumineux
+  // qui s'allume en haut de la carte au survol ; apparition au defilement.
+  background: var(--bb-surface-card); border: 1px solid var(--land-glass-border, var(--bb-border-light)); border-radius: 24px;
+  box-shadow: 0 1px 0 var(--land-hairline, transparent), 0 12px 32px -22px color-mix(in srgb, var(--bb-deep) 40%, transparent);
+  transition: transform .35s var(--bb-ease), box-shadow .35s var(--bb-ease), border-color .35s var(--bb-ease);
+  isolation: isolate;
+  @include apparition(0%, 50%);
+  &::before {
+    content: ''; position: absolute; left: 24px; right: 24px; top: -1px; height: 1px; border-radius: 1px;
+    background: linear-gradient(90deg, transparent, var(--land-accent), transparent);
+    opacity: 0; transition: opacity .35s var(--bb-ease);
+  }
+  &:hover {
+    border-color: color-mix(in srgb, var(--land-accent) 40%, transparent);
+    box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--bb-deep) 50%, transparent);
+    transform: translateY(-4px);
+    &::before { opacity: 1; }
+  }
+
+  // ✦ Refonte UI : carte un peu plus serree sur mobile
+  @media (max-width: 640px) { padding: 20px 20px 22px; .step__track { margin-right: -20px; } .step__track--end { margin-right: 0; } }
 }
 
 // Piste : la ligne part de la pastille et file jusqu'au bord de la carte,
@@ -41,7 +116,7 @@
   background: var(--land-accent); color: var(--land-on-band-btn, #fff);
   font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 800; letter-spacing: .14em;
   display: inline-flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 14px rgba(45, 125, 70, .25);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 6px 14px color-mix(in srgb, var(--land-accent) 25%, transparent); // ✦ Refonte UI
 }
 .step__line {
   // La largeur est posee en ligne par le composant (largeurTrait) : c'est
@@ -56,6 +131,9 @@
     // dans le vide.
     position: relative;
     background: var(--land-accent);
+    // ✦ Refonte UI : la largeur posee en ligne (100 %) s'ajoutait a la
+    // pastille et le trait sortait de la carte ; on le borne a l'espace libre.
+    max-width: calc(100% - 62px);
     &::after {
       content: ''; position: absolute; right: -3px; top: 50%;
       width: 9px; height: 9px; border-radius: 50%;
@@ -73,9 +151,45 @@
   border-radius: 16px;
   background: var(--land-accent-soft); color: var(--land-accent);
   font-size: 30px;
+  // ✦ Refonte UI : le cadre n'est plus un aplat vide — halo, anneaux
+  // concentriques et icone en tuile de verre composent une petite
+  // illustration, en attendant une photo pour chaque etape.
+  position: relative; isolation: isolate; overflow: hidden;
+  background:
+    radial-gradient(60% 70% at 50% 50%, color-mix(in srgb, var(--bb-bright) 22%, transparent), transparent 70%),
+    linear-gradient(160deg, var(--land-accent-soft), color-mix(in srgb, var(--land-accent-soft) 40%, var(--bb-surface-card)));
+  border: 1px solid color-mix(in srgb, var(--land-accent) 14%, transparent);
+  &::before {
+    content: ''; position: absolute; inset: -40%; z-index: -1; pointer-events: none;
+    background: repeating-radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--land-accent) 14%, transparent) 0 1px, transparent 1px 26px);
+    mask-image: radial-gradient(closest-side, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 75%);
+  }
+  i {
+    width: 76px; height: 76px; border-radius: 22px; font-size: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--bb-surface-card) 78%, transparent);
+    border: 1px solid color-mix(in srgb, #fff 60%, transparent);
+    box-shadow: 0 16px 32px -14px color-mix(in srgb, var(--bb-deep) 45%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 70%, transparent);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    transition: transform .4s var(--bb-ease);
+  }
+  .step:hover & i { transform: translateY(-3px) scale(1.04); }
+  :host-context([data-theme="dark"]) & i { border-color: color-mix(in srgb, #fff 10%, transparent); box-shadow: 0 16px 32px -14px #000, inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent); }
+
+  // ✦ Refonte UI : le cadre 3/2 n'a de sens que pour aligner les titres
+  // d'une colonne a l'autre. En colonne unique (mobile) il ne restait qu'un
+  // grand aplat vide autour d'une petite icone, sur sept etapes : la page
+  // s'etirait inutilement. L'icone devient une pastille compacte.
+  @media (max-width: 640px) {
+    aspect-ratio: auto; width: 52px; height: 52px;
+    margin-bottom: 14px; border-radius: 14px; font-size: 20px;
+    &::before { display: none; }
+    i { width: auto; height: auto; background: none; border: 0; box-shadow: none; backdrop-filter: none; font-size: 20px; }
+  }
 }
-.step__title { font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 8px; }
-.step__desc { font-size: 14px; color: var(--bb-text-secondary); line-height: 1.65; margin: 0; }
+.step__title { font-family: var(--bb-font-display); font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: var(--bb-text-primary); margin: 0 0 8px; } // ✦ Refonte UI
+.step__desc { font-size: 14.5px; color: var(--bb-text-secondary); line-height: 1.7; margin: 0; text-wrap: pretty; } // ✦ Refonte UI
 .step__title { text-wrap: balance; }
 
 
@@ -102,7 +216,7 @@
   border-style: dashed;
   .step__num { background: var(--bb-surface-2); color: var(--bb-text-secondary); }
   .step__line { opacity: .35; }
-  .step__icon { background: var(--bb-surface-2); color: var(--bb-text-muted); }
+  .step__icon { background: var(--bb-surface-2); color: var(--bb-text-muted); border-color: var(--bb-border-light); &::before { opacity: .5; } }
 }
 
 .step__bientot {

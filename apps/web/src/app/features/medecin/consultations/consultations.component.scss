@@ -1,7 +1,21 @@
 // features/medecin/consultations/consultations.component.scss
+// Partage avec referencements.component (classes bb-med-cons).
+
+// ✦ Refonte UI : accent propre a l'ecran (vert vif en mode sombre).
+:host {
+  display: block;
+  --cons-accent: var(--bb-primary);
+  --cons-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --cons-accent: var(--bb-bright);
+  --cons-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
 // ─── Layout ─────────────────────────────────────────────────────
 .bb-med-cons {
-  padding: 1.75rem;
+  // ✦ Refonte UI : plus de double padding (goutiere fournie par la coquille)
 
   &__header {
     display: flex; align-items: flex-start; justify-content: space-between;
@@ -12,184 +26,260 @@
     font-family: var(--bb-font-display); font-size: 20px; font-weight: 800;
     color: var(--bb-text-primary); letter-spacing: -0.3px; margin: 0 0 3px;
     display: flex; align-items: center; gap: 8px;
-    i { color: var(--bb-primary); }
+    i { color: var(--cons-accent); }
   }
 
   &__subtitle { font-size: 13px; color: var(--bb-text-muted); }
 
   &__alert {
     display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px; border-radius: var(--bb-radius);
-    font-size: 13.5px; margin-bottom: 16px; border: 1px solid transparent;
+    padding: 12px 16px; border-radius: var(--bb-radius-lg);
+    font-size: 13.5px; font-weight: 600; margin-bottom: 16px; border: 1px solid transparent;
+    animation: bb-cons-drop 0.3s var(--bb-ease) both;
     i { font-size: 16px; flex-shrink: 0; }
 
     &--success { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
     &--error   { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger);  }
   }
 
+  // ✦ Refonte UI : colonne de liste fluide, detail aligne en haut
   &__layout {
-    display: grid; grid-template-columns: 340px 1fr; gap: 20px;
+    display: grid; grid-template-columns: clamp(300px, 34%, 380px) minmax(0, 1fr); gap: 20px; align-items: start;
     @media (max-width: 900px) { grid-template-columns: 1fr; }
   }
 
   // ── Liste ────────────────────────────────────────────────────
   &__list {
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 8px; min-width: 0;
     &--hidden { @media (max-width: 900px) { display: none; } }
   }
 
   &__item {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 12px; position: relative;
     padding: 13px 14px; border-radius: var(--bb-radius-lg);
     border: 1px solid var(--bb-border-light);
     background: var(--bb-surface-card); cursor: pointer;
-    transition: all var(--bb-transition);
+    box-shadow: var(--bb-shadow-xs);
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow), transform var(--bb-transition-slow), background var(--bb-transition);
 
-    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-xs); }
+    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-hover); transform: translateY(-1px); }
+    &:hover > .pi-chevron-right { transform: translateX(3px); color: var(--cons-accent); }
 
-    &--active {
-      border-color: var(--bb-bright) !important;
-      background: var(--bb-success-bg) !important;
-      box-shadow: 0 0 0 3px rgba(62,187,112,.10) !important;
+    > .pi-chevron-right { font-size: 12px; color: var(--bb-text-muted); transition: transform var(--bb-transition), color var(--bb-transition); }
+
+    // ✦ Refonte UI : element ouvert — barre d'accent interieure et anneau
+    // doux, sans !important ni rgba code en dur.
+    &--active, &--active:hover {
+      border-color: var(--cons-accent);
+      background: var(--bb-success-bg);
+      box-shadow: inset 4px 0 0 var(--cons-accent), 0 0 0 3px var(--cons-accent-soft);
+      transform: none;
     }
   }
 
   &__item-avatar {
-    width: 38px; height: 38px; border-radius: 50%;
+    width: 40px; height: 40px; border-radius: 50%;
     background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
     color: #fff; display: flex; align-items: center; justify-content: center;
-    font-family: var(--bb-font-display); font-size: 12px; font-weight: 700;
+    font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700;
     flex-shrink: 0; text-transform: uppercase;
   }
 
   &__item-info { flex: 1; min-width: 0; }
-  &__item-patient { font-size: 13.5px; font-weight: 600; color: var(--bb-text-primary); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  &__item-motif   { font-size: 12.5px; color: var(--bb-text-muted); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  &__item-meta    { font-size: 11.5px; color: var(--bb-text-muted); margin: 0; display: flex; align-items: center; gap: 5px; font-style: italic; i { font-size: 10px; } }
+  &__item-patient { font-size: 14px; font-weight: 700; color: var(--bb-text-primary); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__item-motif   { font-size: 12.5px; color: var(--bb-text-secondary); margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  // ✦ Refonte UI : plus d'italique (moins lisible en petit corps)
+  // Flux en ligne (et non flex) : l'icone reste collee au texte quand la
+  // ligne passe a la ligne, au lieu de rester seule au-dessus.
+  &__item-meta    { font-size: 11.5px; color: var(--bb-text-muted); margin: 0; line-height: 1.5; i { font-size: 10px; margin-right: 4px; } }
 
   // ── État vide ────────────────────────────────────────────────
   &__empty {
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    padding: 56px 24px; text-align: center;
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 52px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1.5px dashed var(--bb-border);
     border-radius: var(--bb-radius-xl);
-    i { font-size: 40px; color: var(--bb-bright); opacity: .35; }
-    p { font-size: 13.5px; color: var(--bb-text-muted); margin: 0; font-weight: 500; }
-    span { font-size: 12.5px; color: var(--bb-text-muted); }
+    // ✦ Refonte UI : icone en pastille (a 35 % d'opacite elle se perdait)
+    i {
+      font-size: 26px; color: var(--cons-accent); width: 64px; height: 64px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center; background: var(--cons-accent-soft);
+      margin-bottom: 6px;
+    }
+    p { font-family: var(--bb-font-display); font-size: 15px; color: var(--bb-text-primary); margin: 0; font-weight: 700; }
+    span { font-size: 13px; color: var(--bb-text-muted); max-width: 300px; line-height: 1.5; }
   }
 
   // ── Détail ───────────────────────────────────────────────────
   &__detail {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1.5rem;
-    box-shadow: var(--bb-shadow-xs); animation: bb-fade-in .25s ease;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); padding: 1.5rem; min-width: 0;
+    box-shadow: var(--bb-shadow-sm); animation: bb-cons-rise .3s var(--bb-ease) both;
+
+    @media (max-width: 600px) { padding: 1.125rem; }
   }
 
-  &__detail-header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--bb-border-light); }
+  // ✦ Refonte UI : en-tete en ligne — « Retour » sur sa propre ligne, nom a
+  // gauche, badge eventuel a droite (referencements). La colonne centree
+  // imposee cote referencements decalait le nom et centrait le bouton.
+  &__detail-header {
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; row-gap: 10px;
+    margin-bottom: 20px; padding-bottom: 18px; border-bottom: 1px solid var(--bb-border-light);
+
+    > div { flex: 1 1 240px; min-width: 0; }
+  }
 
   &__back {
-    display: inline-flex; align-items: center; gap: 7px;
+    flex-basis: 100%;
+    display: inline-flex; align-items: center; gap: 7px; align-self: flex-start;
     font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 600;
     color: var(--bb-text-muted); background: none; border: none; cursor: pointer;
-    transition: color var(--bb-transition); padding: 0;
-    &:hover { color: var(--bb-primary); }
-    i { font-size: 12px; }
+    padding: 4px 8px; margin: -4px -8px; border-radius: var(--bb-radius-sm);
+    transition: color var(--bb-transition), background var(--bb-transition);
+    &:hover { color: var(--cons-accent); background: var(--cons-accent-soft); }
+    &:hover i { transform: translateX(-2px); }
+    i { font-size: 12px; transition: transform var(--bb-transition); }
   }
 
   &__detail-patient {
-    font-family: var(--bb-font-display); font-size: 18px; font-weight: 800;
-    color: var(--bb-text-primary); letter-spacing: -0.3px; margin: 0 0 3px;
+    font-family: var(--bb-font-display); font-size: clamp(18px, 2vw, 21px); font-weight: 800;
+    color: var(--bb-text-primary); letter-spacing: -0.4px; margin: 0 0 4px;
   }
 
-  &__detail-meta { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__detail-meta { font-size: 12.5px; color: var(--bb-text-muted); margin: 0; line-height: 1.5; }
 
   // ── Blocs de contenu ─────────────────────────────────────────
   &__block {
     background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
-    border-radius: var(--bb-radius-lg); padding: 1rem 1.25rem; margin-bottom: 14px;
+    border-radius: var(--bb-radius-lg); padding: 1rem 1.125rem; margin-bottom: 12px;
   }
 
+  // ✦ Refonte UI : icone de bloc en pastille (comme les titres de section
+  // du tableau de bord) ; les icones absentes du jeu PrimeIcons ne laissent
+  // plus de trou visuel.
   &__block-title {
-    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
-    color: var(--bb-text-primary); margin-bottom: 10px;
-    display: flex; align-items: center; gap: 7px;
-    i { color: var(--bb-primary); font-size: 13px; }
+    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 10px;
+    display: flex; align-items: center; gap: 9px;
+    i {
+      color: var(--cons-accent); font-size: 12px; flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--cons-accent-soft);
+    }
   }
 
-  &__block-text { font-size: 13.5px; color: var(--bb-text-secondary); line-height: 1.6; }
-  &__block-note { font-size: 12px; color: var(--bb-text-muted); margin-bottom: 10px; }
+  &__block-text { font-size: 14px; color: var(--bb-text-secondary); line-height: 1.6; margin: 0; strong { color: var(--bb-text-primary); } }
+  &__block-note {
+    font-size: 12.5px; color: var(--bb-text-muted); margin: 8px 0 10px; line-height: 1.5;
+    display: flex; align-items: center; gap: 6px;
+  }
 
   &__alertes {
     background: var(--bb-danger-bg); border: 1px solid var(--bb-danger-border);
-    border-radius: var(--bb-radius); padding: 10px 14px; margin-bottom: 12px;
-    display: flex; flex-wrap: wrap; gap: 8px;
+    border-radius: var(--bb-radius); padding: 10px 12px; margin-bottom: 12px;
+    display: flex; flex-wrap: wrap; gap: 6px;
   }
 
   &__alertes-title { font-size: 12px; font-weight: 700; color: var(--bb-danger); width: 100%; display: flex; align-items: center; gap: 6px; i { font-size: 12px; } }
 
   &__alerte-item {
-    display: inline-flex; align-items: center; padding: 3px 10px;
-    background: rgba(220,38,38,.1); border-radius: 100px;
-    font-size: 12px; font-weight: 600; color: var(--bb-danger);
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+    background: color-mix(in srgb, var(--bb-danger) 12%, transparent);
+    border-radius: var(--bb-radius-pill);
+    font-size: 12px; font-weight: 700; color: var(--bb-danger);
   }
 
+  // ✦ Refonte UI : les constantes etaient une ligne de texte brut ; chaque
+  // mesure devient une pastille lisible d'un coup d'oeil, chiffres alignes.
   &__vitals {
     display: flex; flex-wrap: wrap; gap: 8px;
+
+    > span {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: var(--bb-radius);
+      background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+      font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+      color: var(--bb-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
   }
 
   // ── Diagnostics ──────────────────────────────────────────────
   &__diag {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 0; border-bottom: 1px solid var(--bb-border-light);
-    &:last-child { border-bottom: none; }
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 0; border-bottom: 1px solid var(--bb-border-light);
+    &:first-of-type { padding-top: 2px; }
+    &:last-child { border-bottom: none; padding-bottom: 0; }
   }
 
   &__diag-type {
     font-family: var(--bb-font-display); font-size: 10px; font-weight: 700;
-    color: var(--bb-text-muted); text-transform: uppercase; letter-spacing: .5px;
-    background: var(--bb-surface-2); padding: 3px 8px; border-radius: 100px;
+    color: var(--bb-text-secondary); text-transform: uppercase; letter-spacing: .06em;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    padding: 3px 8px; border-radius: var(--bb-radius-pill);
     flex-shrink: 0;
   }
 
-  &__diag-label { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--bb-text-primary); }
-  &__diag-code  { font-size: 11.5px; color: var(--bb-text-muted); font-family: monospace; }
+  &__diag-label { flex: 1; min-width: 140px; font-size: 14px; font-weight: 600; color: var(--bb-text-primary); }
+  &__diag-code  { font-size: 11.5px; color: var(--bb-text-muted); font-family: ui-monospace, Menlo, Consolas, monospace; }
 
   // ── Ordonnances ──────────────────────────────────────────────
+  // ✦ Refonte UI : carte selectionnable avec case a cocher aux couleurs de
+  // marque ; l'etat coche se lit aussi par la barre laterale.
   &__ordo {
-    display: flex; align-items: flex-start; gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px; position: relative;
     padding: 12px 14px; border-radius: var(--bb-radius);
-    border: 1.5px solid var(--bb-border); margin-bottom: 8px;
-    cursor: pointer; transition: all var(--bb-transition);
+    border: 1.5px solid var(--bb-border-light); background: var(--bb-surface-card); margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color var(--bb-transition), background var(--bb-transition), box-shadow var(--bb-transition);
 
-    &:hover { border-color: var(--bb-bright); background: var(--bb-success-bg); }
+    &:hover { border-color: var(--bb-success-border); }
 
-    &--selected {
-      border-color: var(--bb-bright) !important;
-      background: var(--bb-success-bg) !important;
+    &--selected, &--selected:hover {
+      border-color: var(--cons-accent);
+      background: var(--bb-success-bg);
+      box-shadow: inset 4px 0 0 var(--cons-accent);
     }
 
-    input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: var(--bb-primary); }
+    label { cursor: pointer; flex: 1; min-width: 0; }
+
+    input[type=checkbox] {
+      width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0;
+      accent-color: var(--cons-accent); cursor: pointer;
+    }
   }
 
   &__ordo-numero {
-    font-family: var(--bb-font-display); font-size: 12px; font-weight: 800;
-    letter-spacing: 0.4px; color: var(--bb-text-secondary); margin: 0 0 6px;
+    font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 800;
+    letter-spacing: 0.06em; color: var(--bb-text-secondary); margin: 0 0 6px;
+    font-variant-numeric: tabular-nums;
   }
 
-  &__ordo-med     { font-size: 13.5px; font-weight: 600; color: var(--bb-text-primary); margin: 0 0 3px; }
-  &__ordo-posologie { font-size: 12.5px; color: var(--bb-text-muted); margin: 0; }
+  &__ordo-med     { font-size: 14px; font-weight: 700; color: var(--bb-text-primary); margin: 0 0 2px; }
+  &__ordo-posologie { font-size: 12.5px; color: var(--bb-text-muted); margin: 0 0 6px; &:last-child { margin-bottom: 0; } }
 
   // ── Bouton valider ───────────────────────────────────────────
   &__valider-btn {
-    width: 100%; padding: 13px; border-radius: var(--bb-radius);
+    width: 100%; padding: 13px 20px; border-radius: var(--bb-radius-lg);
     background: var(--bb-primary); color: #fff; border: none;
-    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800;
     cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-    box-shadow: 0 4px 14px rgba(45,125,70,.28); margin-top: 16px;
-    transition: all var(--bb-transition);
+    box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--bb-primary) 70%, transparent); margin-top: 16px;
+    transition: background var(--bb-transition), transform var(--bb-transition), box-shadow var(--bb-transition);
 
-    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); box-shadow: 0 8px 22px rgba(45,125,70,.36); }
-    &:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); box-shadow: 0 12px 24px -8px color-mix(in srgb, var(--bb-primary) 80%, transparent); }
+    &:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+    // ✦ Refonte UI : desactive lisible
+    &:disabled { cursor: not-allowed; background: var(--bb-surface-2); color: var(--bb-text-muted); box-shadow: none; }
     i { font-size: 14px; }
   }
+}
+
+@keyframes bb-cons-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes bb-cons-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }

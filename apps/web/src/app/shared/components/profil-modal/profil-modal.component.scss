@@ -15,7 +15,8 @@
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  background: rgba(11, 38, 24, 0.55);
+  // ✦ Refonte UI : voile derive du vert profond (token) plutot qu'un rgba fige
+  background: color-mix(in srgb, var(--bb-deep) 55%, transparent);
   backdrop-filter: blur(3px);
   animation: bb-profil-fade 0.18s ease;
 }
@@ -38,7 +39,7 @@
   border-radius: var(--bb-radius-xl);
   background: var(--bb-surface-card);
   border: 1px solid var(--bb-border-light);
-  box-shadow: 0 24px 60px rgba(11, 38, 24, 0.28);
+  box-shadow: var(--bb-shadow-lg); // ✦ Refonte UI
   overflow: hidden;
   animation: bb-profil-rise 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -93,7 +94,7 @@
     border: none;
     cursor: pointer;
     color: #fff;
-    background: rgba(11, 38, 24, 0.42);
+    background: color-mix(in srgb, var(--bb-deep) 42%, transparent); // ✦ Refonte UI
     opacity: 0;
     transition: opacity var(--bb-transition);
 
@@ -115,7 +116,7 @@
 
   // Sur ecran tactile il n'y a pas de survol : on montre l'appareil photo.
   @media (hover: none) {
-    &__photo-btn { opacity: 1; background: rgba(11, 38, 24, 0.28); }
+    &__photo-btn { opacity: 1; background: color-mix(in srgb, var(--bb-deep) 28%, transparent); } // ✦ Refonte UI
   }
 
   &__name {
@@ -341,7 +342,7 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(45, 125, 70, 0.25);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--bb-primary) 25%, transparent); // ✦ Refonte UI
     transition: background var(--bb-transition), transform var(--bb-transition), box-shadow var(--bb-transition);
 
     i { font-size: 13px; }
@@ -349,7 +350,7 @@
     &:hover:not(:disabled) {
       background: var(--bb-mid);
       transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(45, 125, 70, 0.32);
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--bb-primary) 32%, transparent);
     }
 
     &:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }

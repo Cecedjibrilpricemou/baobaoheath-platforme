@@ -1,45 +1,123 @@
 // Contact : trois cartes d'information (icone ronde coloree) + formulaire.
-.section-header { text-align: center; margin-bottom: 44px; }
-.section-tag { display: inline-block; padding: 4px 14px; border-radius: var(--bb-radius-pill); background: var(--land-accent-soft); border: 1px solid var(--bb-success-border); font-family: var(--bb-font-display); font-size: 11px; font-weight: 700; color: var(--land-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-.section-title { font-family: var(--bb-font-display); font-size: clamp(28px, 3.6vw, 38px); font-weight: 800; color: var(--bb-text-primary); letter-spacing: -1px; margin: 0 0 12px; text-wrap: balance; }
+
+// ✦ Refonte UI : apparition au defilement (CSS pur, coupee si l'utilisateur
+// reduit les animations ou si le navigateur ne gere pas animation-timeline)
+@mixin apparition($debut: 0%, $fin: 40%) {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: bb-contact-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry $debut entry $fin;
+    }
+  }
+}
+@keyframes bb-contact-reveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+
+// ✦ Refonte UI : meme en-tete de section que « Comment ca marche »
+.section-header { text-align: center; margin: 0 auto clamp(40px, 6vw, 64px); max-width: 760px; @include apparition; }
+.section-tag {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: var(--bb-radius-pill);
+  background: var(--land-glass, var(--bb-surface-card)); border: 1px solid var(--land-glass-border, var(--bb-border-light));
+  font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 700; color: var(--land-accent);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 20px;
+  &::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--land-accent); box-shadow: 0 0 0 4px var(--land-accent-soft); }
+}
+.section-title {
+  font-family: var(--bb-font-display); font-size: clamp(32px, 4.6vw, 56px); font-weight: 800; line-height: 1.04;
+  color: var(--bb-text-primary); letter-spacing: -.045em; margin: 0 0 18px; text-wrap: balance;
+}
 .section-title__accent { color: var(--land-accent); }
-.section-sub { font-size: 15px; color: var(--bb-text-muted); max-width: 520px; margin: 0 auto; line-height: 1.65; }
+.section-sub { font-size: clamp(15px, 1.3vw, 18px); color: var(--bb-text-secondary); max-width: 56ch; margin: 0 auto; line-height: 1.65; text-wrap: pretty; }
 
-.contact-section { background: var(--bb-surface-1); padding: 72px 24px; @media (max-width: 768px) { padding: 56px 20px; } }
+// ✦ Refonte UI : fond legerement teinte avec un halo, rythme de ~120px
+.contact-section {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: var(--bb-surface-1);
+  border-top: 1px solid var(--land-hairline, var(--bb-border-light));
+  padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 32px);
+  &::before {
+    content: ''; position: absolute; z-index: -1; pointer-events: none; inset: 0;
+    background: radial-gradient(40% 50% at 85% 10%, var(--land-glow, transparent), transparent 70%);
+  }
+}
 .contact-inner { max-width: 1200px; margin: 0 auto; }
-.contact-container { display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px; @media (max-width: 860px) { grid-template-columns: 1fr; } }
+.contact-container { display: grid; grid-template-columns: 1fr 1.5fr; gap: clamp(24px, 3vw, 40px); align-items: start; @media (max-width: 860px) { grid-template-columns: 1fr; } }
 
-.contact-info { display: flex; flex-direction: column; gap: 16px; }
+.contact-info { display: flex; flex-direction: column; gap: 14px; }
+// ✦ Refonte UI : cartes de coordonnees en verre, liseré de 1px
 .info-card {
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 18px; padding: 22px;
+  background: var(--land-glass, var(--bb-surface-card));
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--land-glass-border, var(--bb-border-light)); border-radius: 20px; padding: 20px 22px;
   display: flex; align-items: center; gap: 16px;
-  transition: transform var(--bb-transition), box-shadow var(--bb-transition);
-  h3 { font-family: var(--bb-font-display); font-size: 15px; font-weight: 800; margin: 0 0 4px; color: var(--bb-text-primary); }
-  p { font-size: 14px; color: var(--bb-text-secondary); margin: 0; a { color: var(--land-accent); text-decoration: none; &:hover { text-decoration: underline; } } }
-  &:hover { transform: translateY(-2px); box-shadow: var(--bb-shadow); }
+  transition: transform .3s var(--bb-ease), box-shadow .3s var(--bb-ease), border-color .3s var(--bb-ease);
+  @include apparition(0%, 55%);
+  h3 { font-family: var(--bb-font-display); font-size: 15px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 4px; color: var(--bb-text-primary); }
+  p { font-size: 14px; color: var(--bb-text-secondary); margin: 0; a { color: var(--land-accent); text-decoration: none; text-underline-offset: 3px; &:hover { text-decoration: underline; } } }
+  &:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--land-accent) 35%, transparent);
+    box-shadow: 0 18px 40px -22px color-mix(in srgb, var(--bb-deep) 45%, transparent);
+  }
 
+  // ✦ Refonte UI : pastilles en carre arrondi, teintes semantiques (jetons)
   &__icon {
-    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;
-    &--green  { background: var(--land-accent); }
-    &--purple { background: #7c5cff; }
-    &--orange { background: #f59e0b; }
+    width: 50px; height: 50px; border-radius: 15px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 19px; color: #fff;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 25%, transparent);
+    &--green  { background: linear-gradient(180deg, color-mix(in srgb, var(--bb-bright) 30%, var(--bb-primary)), var(--bb-primary)); }
+    &--purple { background: linear-gradient(180deg, color-mix(in srgb, #fff 15%, var(--bb-info)), var(--bb-info)); }
+    &--orange { background: linear-gradient(180deg, color-mix(in srgb, #fff 15%, var(--bb-warning)), var(--bb-warning)); }
+    // En sombre, info et alerte sont des teintes claires : icone en vert profond
+    :host-context([data-theme="dark"]) &--purple, :host-context([data-theme="dark"]) &--orange { color: var(--bb-deep); }
   }
 }
 
-.contact-form { background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 22px; padding: 32px; box-shadow: var(--bb-shadow-sm); @media (max-width: 500px) { padding: 22px; } }
+// ✦ Refonte UI : formulaire en carte de verre, ombre en couches
+.contact-form {
+  background: var(--bb-surface-card); border: 1px solid var(--land-glass-border, var(--bb-border-light)); border-radius: 24px;
+  padding: clamp(22px, 3vw, 36px);
+  box-shadow: 0 1px 0 var(--land-hairline, transparent), 0 30px 60px -36px color-mix(in srgb, var(--bb-deep) 50%, transparent);
+  @include apparition(0%, 45%);
+}
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; @media (max-width: 500px) { grid-template-columns: 1fr; } }
-.form-group { margin-bottom: 18px; label { display: block; font-size: 13px; font-weight: 600; color: var(--bb-text-primary); margin-bottom: 8px; } }
-.bb-input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--bb-border); background: var(--bb-surface-ground); font-family: inherit; font-size: 14.5px; color: var(--bb-text-primary); transition: border-color var(--bb-transition), box-shadow var(--bb-transition); outline: none; &::placeholder { color: var(--bb-text-muted); } &:focus { border-color: var(--land-accent); box-shadow: 0 0 0 3px rgba(62, 187, 112, 0.18); background: var(--bb-surface-card); } }
-.bb-textarea { resize: vertical; min-height: 110px; font-family: inherit; }
+.form-group { margin-bottom: 18px; label { display: block; font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 600; letter-spacing: .01em; color: var(--bb-text-secondary); margin-bottom: 8px; } }
+// ✦ Refonte UI : champs « premium » — liseré de 1px, halo vert au focus
+.bb-input {
+  width: 100%; padding: 13px 16px; border-radius: 12px; border: 1px solid var(--bb-border);
+  background: var(--bb-surface-ground); font-family: inherit; font-size: 15px; color: var(--bb-text-primary);
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition), background var(--bb-transition);
+  outline: none;
+  &::placeholder { color: var(--bb-text-muted); }
+  &:hover { border-color: var(--bb-border-strong); }
+  &:focus { border-color: var(--land-accent); box-shadow: var(--bb-focus-ring); background: var(--bb-surface-card); }
+}
+.bb-textarea { resize: vertical; min-height: 120px; font-family: inherit; }
 
+// ✦ Refonte UI : meme bouton « prestige » que le reste de l'accueil
 .btn-primary {
+  position: relative; isolation: isolate; overflow: hidden;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 13px 26px; border-radius: 12px; background: var(--bb-primary); color: #fff;
-  font-family: var(--bb-font-display); font-size: 14px; font-weight: 700; border: none; cursor: pointer;
-  transition: background var(--bb-transition), transform var(--bb-transition);
-  box-shadow: 0 6px 16px rgba(45, 125, 70, .25);
-  &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
-  &:disabled { opacity: .55; cursor: not-allowed; }
+  padding: 14px 26px; border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bb-bright) 22%, var(--bb-primary)), var(--bb-primary)); color: #fff;
+  font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700; border: 1px solid color-mix(in srgb, var(--bb-mid) 60%, var(--bb-primary)); cursor: pointer;
+  transition: background .25s var(--bb-ease), transform .25s var(--bb-ease), box-shadow .25s var(--bb-ease);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 8px 20px -8px color-mix(in srgb, var(--bb-primary) 55%, transparent);
+  &::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, #fff 30%, transparent) 50%, transparent 70%);
+    transform: translateX(-120%); transition: transform .7s var(--bb-ease);
+  }
+  &:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--bb-primary), var(--bb-mid)); transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 16px 32px -12px color-mix(in srgb, var(--bb-primary) 70%, transparent);
+    &::after { transform: translateX(120%); }
+  }
+  &:active:not(:disabled) { transform: translateY(0) scale(.99); }
+  &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
+  &:disabled { cursor: not-allowed; background: var(--bb-surface-2); color: var(--bb-text-muted); border-color: var(--bb-border); box-shadow: none; }
 }
 .w-full { width: 100%; }
