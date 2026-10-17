@@ -609,9 +609,10 @@ body {
 }
 
 // ── CORPS DE PAGE ─────────────────────────────────────────────────
-// ✦ Refonte UI : goutiere fluide (16px mobile → 28px bureau)
+// ✦ Refonte UI : plus de marge laterale — la coquille porte deja la
+// goutiere ; ce retrait decalait le contenu par rapport au hero au-dessus.
 .page-body {
-  padding: 0 clamp(0rem, 2vw, 1.75rem) 2.5rem;
+  padding: 0 0 2.5rem;
 }
 
 // ── STAT CARD (composant partagé) ─────────────────────────────────
