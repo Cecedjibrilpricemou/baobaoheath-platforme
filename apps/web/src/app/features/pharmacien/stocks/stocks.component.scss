@@ -67,6 +67,10 @@
   &__kpis {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px;
     @media (max-width: 600px) { gap: 8px; margin-bottom: 20px; }
+    // ✦ Refonte UI : la disposition des compteurs suit la largeur reelle de
+    // la rangee (menu lateral ouvert sur tablette) : en dessous de 640px,
+    // icone au-dessus du chiffre, sinon « TOTAL MEDICAMENTS » etait tronque.
+    container-type: inline-size;
   }
 
   &__kpi {
@@ -95,8 +99,14 @@
     // Le compteur critique, quand il n'est pas nul, se signale par sa bordure
     &--red { border-color: var(--bb-danger-border); }
 
+    grid-template-columns: auto minmax(0, 1fr);
+
+    @container (max-width: 640px) {
+      grid-template-columns: minmax(0, 1fr); padding: 14px; row-gap: 4px; text-align: left;
+      i { grid-row: auto; width: 36px; height: 36px; border-radius: 11px; font-size: 15px; margin-bottom: 6px; }
+    }
     @media (max-width: 600px) {
-      grid-template-columns: 1fr; padding: 12px; row-gap: 4px; text-align: left;
+      grid-template-columns: minmax(0, 1fr); padding: 12px; row-gap: 4px; text-align: left;
       i { grid-row: auto; width: 32px; height: 32px; border-radius: 10px; font-size: 14px; margin-bottom: 6px; }
     }
   }
@@ -111,6 +121,7 @@
   &__kpi-lbl {
     font-size: 12px; color: var(--bb-text-secondary); font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.05em;
+    overflow-wrap: anywhere;
     @media (max-width: 600px) { font-size: 10px; letter-spacing: .02em; line-height: 1.25; }
   }
 

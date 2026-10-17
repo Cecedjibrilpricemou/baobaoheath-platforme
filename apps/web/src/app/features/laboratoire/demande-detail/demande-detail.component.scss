@@ -51,6 +51,22 @@
 // ── Tableau des resultats ────────────────────────────────────────────
 .labo-resultats {
   display: flex; flex-direction: column; gap: 6px; overflow-x: auto;
+  // ✦ Refonte UI : sur mobile et tablette le tableau (760px mini) defile
+  // horizontalement, mais rien ne l'indiquait : la colonne de saisie
+  // paraissait coupee. Barre de defilement visible, et un fondu sur le bord
+  // droit tant qu'il reste des colonnes a voir (navigateurs qui gerent les
+  // animations liees au defilement ; ailleurs, la barre suffit).
+  scrollbar-width: thin;
+  scrollbar-color: var(--bb-border-strong) transparent;
+  padding-bottom: 6px;
+
+  @media (max-width: 1100px) {
+    @supports (animation-timeline: scroll()) {
+      mask-image: linear-gradient(90deg, #000 calc(100% - var(--labo-fade)), transparent);
+      animation: bb-labo-fade linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
 
   &__head, &__row {
     display: grid; grid-template-columns: minmax(200px, 1.6fr) minmax(110px, .9fr) 70px minmax(90px, .8fr) 110px minmax(160px, 1.2fr);
@@ -95,4 +111,11 @@
 @keyframes bb-labo-pulse {
   0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-bright) 18%, transparent); }
   50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--bb-bright) 8%, transparent); }
+}
+
+// Le fondu disparait quand on arrive au bout du tableau
+@property --labo-fade { syntax: '<length>'; inherits: false; initial-value: 0px; } // sans defilement actif : aucun fondu
+@keyframes bb-labo-fade {
+  0%, 92% { --labo-fade: 32px; }
+  100%    { --labo-fade: 0px; }
 }

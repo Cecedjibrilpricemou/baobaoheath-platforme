@@ -93,11 +93,22 @@
     font-family: var(--bb-font-display); font-size: 14px; font-weight: 800;
   }
   &__body { flex: 1; min-width: 0; }
+  // ✦ Refonte UI : une ligne porteuse d'actions passe a la ligne quand la
+  // place manque. Avant, les actions (flex-shrink: 0) gardaient toute leur
+  // largeur : le texte s'ecrasait sur ~60px et le bouton « Accuser »
+  // sortait de l'ecran (resultats critiques sur mobile et tablette).
+  &:has(> .bb-hop-item__actions) {
+    flex-wrap: wrap;
+    > .bb-hop-item__body { flex: 1 1 260px; }
+  }
   &__title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 2px; }
   &__num { font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--bb-text-muted); }
   &__sub { font-size: 13px; color: var(--bb-text-secondary); margin: 0; }
   &__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--bb-text-muted); margin: 4px 0 0; i { margin-right: 4px; } }
-  &__actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  &__actions {
+    display: flex; gap: 8px; flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end;
+    @media (max-width: 600px) { flex-basis: 100%; > * { flex: 1 1 auto; } }
+  }
   > .pi-chevron-right { color: var(--bb-text-muted); }
 }
 

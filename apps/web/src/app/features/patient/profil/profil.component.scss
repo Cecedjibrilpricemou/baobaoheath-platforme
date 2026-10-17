@@ -24,7 +24,10 @@
   flex-direction: column;
 
   // Le hero global porte deja sa marge basse
-  .page-hero__content { margin-bottom: 0; align-items: center; }
+  // ✦ Refonte UI : quand la place manque (tablette, menu ouvert), les
+  // actions passent sous l'identite au lieu de l'ecraser : le telephone
+  // s'affichait un mot par ligne.
+  .page-hero__content { margin-bottom: 0; align-items: center; flex-wrap: wrap; row-gap: 16px; }
 }
 
 // ── HERO IDENTITÉ ────────────────────────────────────────────────
@@ -33,7 +36,7 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    flex: 1;
+    flex: 1 1 360px;
     min-width: 0;
 
     @media (max-width: 600px) {
