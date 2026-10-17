@@ -596,9 +596,6 @@
       "VALID_UNTIL": "Valid until {{date}}",
       "REGLEMENTE": "Controlled product - check the patient's identity.",
       "RENEW_LEFT": "{{n}} renewal(s) left",
-      "RENEW_BTN": "Renew",
-      "RENEW_OK": "Prescription {{numero}} renewed: the treatment is due again.",
-      "ERR_RENEW": "Renewal is unavailable right now.",
       "EXPIREE": "Expired",
       "SERVIE": "Fully collected",
       "PARTIELLE": "{{n}} left to collect",
@@ -1777,7 +1774,11 @@
       "SUBSTITUE_OK": "Substitution recorded. The doctor and the patient have been notified.",
       "REFUSE_OK": "Refusal recorded. The prescription remains valid elsewhere.",
       "DEJA_SERVI": "{{servi}} already served out of {{total}}",
-      "RESTE_A_SERVIR": "Left to serve: {{reste}}"
+      "RESTE_A_SERVIR": "Left to serve: {{reste}}",
+      "RENEW_LEFT": "{{n}} renewal(s) left",
+      "RENEW_BTN": "Renew",
+      "RENEW_OK": "Prescription {{numero}} renewed: the treatment is due again.",
+      "ERR_RENEW": "Renewal is unavailable right now."
     },
     "STOCKS": {
       "TITLE": "Pharmacy stock",

@@ -96,4 +96,14 @@ export class PatientLayoutComponent {
     { labelKey: 'PATIENT.NAV_QR_CODE',   icon: 'pi-qrcode', route: '/patient/qr-code'   },
     { labelKey: 'PATIENT.NAV_CONSENTS',  icon: 'pi-shield', route: '/patient/consentements' }
   ];
+
+  /**
+   * Le fil d'Ariane se deduit du menu : une page atteinte hors menu (le carnet
+   * vaccinal, ouvert depuis le tableau de bord) n'avait pas de titre. On la
+   * declare ici sans l'ajouter au menu.
+   */
+  crumbItems = [
+    ...this.navItems,
+    { labelKey: 'PATIENT.DASHBOARD.VACCINE_BOOK', icon: 'pi-book', route: '/patient/carnet-vaccinal' }
+  ];
 }
