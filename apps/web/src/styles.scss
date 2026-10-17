@@ -116,6 +116,10 @@
   // Typographie
   --bb-font-display: 'Sora', sans-serif;
   --bb-font-body: 'DM Sans', 'Segoe UI', sans-serif;
+  // ✦ Refonte UI : utilisee par les ecrans de develop (codes, references,
+  // mot de passe temporaire) mais definie nulle part : elle retombait sur la
+  // police du texte. Pile systeme, aucune police a charger.
+  --bb-font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
   --bb-font-size: 14px;
   --bb-line-height: 1.55;
 

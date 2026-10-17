@@ -160,8 +160,10 @@
   &__regle-date { font-size: 12.5px; color: var(--bb-text-muted); }
   &__regle-date { margin-left: auto; }
 
+  // ✦ Refonte UI : un taux ou « exclue » n'est pas un identifiant :
+  // police d'affichage, chiffres tabulaires (et non la pile monospace).
   &__pastille {
-    font-family: var(--bb-font-mono); font-size: 12px; font-weight: 700;
+    font-family: var(--bb-font-display); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700;
     padding: 2px 8px; border-radius: var(--bb-radius-sm);
     background: var(--bb-info-bg); color: var(--bb-info);
     border: 1px solid var(--bb-info-border);
