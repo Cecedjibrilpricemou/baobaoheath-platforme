@@ -64,8 +64,9 @@
   --bb-text-primary: #0D2B1A;
   --bb-text-secondary: #3A5848;
   // ✦ Refonte UI : #7A9485 ne passait pas le contraste AA (3,2:1 sur fond
-  // clair). #5C7769 atteint 4,7:1 tout en restant discret.
-  --bb-text-muted: #5C7769;
+  // clair). #5C7769 passait sur blanc mais tombait a 4,43:1 sur les cartes
+  // teintees (--bb-surface-2) ; #557063, meme teinte, tient 4,9:1 partout.
+  --bb-text-muted: #557063;
   --bb-text-inverse: #FFFFFF;
 
   // Sidebar
@@ -116,6 +117,10 @@
   // Typographie
   --bb-font-display: 'Sora', sans-serif;
   --bb-font-body: 'DM Sans', 'Segoe UI', sans-serif;
+  // ✦ Refonte UI : utilisee par les ecrans de develop (codes, references,
+  // mot de passe temporaire) mais definie nulle part : elle retombait sur la
+  // police du texte. Pile systeme, aucune police a charger.
+  --bb-font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
   --bb-font-size: 14px;
   --bb-line-height: 1.55;
 

@@ -4,6 +4,18 @@
 // `--bb-radius-md` n'existe pas dans ce projet, et l'avoir suppose a deja
 // coute une page sans coins arrondis.
 
+// ✦ Refonte UI : accent de l'ecran — vert de marque en clair, vert vif en
+// sombre (--bb-primary y tombe a 3,3:1 sur les cartes : statuts et liens
+// illisibles).
+:host {
+  display: block;
+  --jrn-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --jrn-accent: var(--bb-bright);
+}
+
 .journal-avis {
   display: flex;
   align-items: center;
@@ -76,7 +88,13 @@
     gap: 0.6rem;
     margin-bottom: 0.75rem;
 
-    h2 { margin: 0; font-size: 1rem; }
+    h2 {
+      margin: 0; font-size: 1rem;
+      // ✦ Refonte UI : titre de carte en display, trait d'accent
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+      &::before { content: ''; width: 4px; height: 18px; border-radius: 4px; background: var(--jrn-accent); flex-shrink: 0; }
+    }
   }
 
   &__compte {
@@ -172,7 +190,12 @@
     gap: 0.5rem;
     margin-bottom: 0.3rem;
 
-    h2 { margin: 0; font-size: 0.9375rem; }
+    // ✦ Refonte UI : titre en display ; pas de trait d'accent ici, l'icone
+    // d'alerte qui le precede joue deja ce role.
+    h2 {
+      margin: 0; font-size: 0.9375rem;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+    }
     mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--bb-warning); }
   }
 

@@ -21,7 +21,7 @@
             {{ ep.patient.sexe }} · {{ ep.patient.telephone }}
           </span>
         </div>
-        <span [class]="statutClasse(ep.statut)">{{ 'HOPITAL.EPISODE_STATUT.' + ep.statut | translate }}</span>
+        <span [class]="statutClasse(ep.statut)">{{ 'HOPITAL.STATUT.' + ep.statut | translate }}</span>
       </div>
 
       <p class="bb-dossier__motif">{{ ep.motif }}</p>

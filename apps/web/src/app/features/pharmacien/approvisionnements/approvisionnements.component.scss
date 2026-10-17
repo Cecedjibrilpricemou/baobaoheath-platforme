@@ -1,38 +1,69 @@
 // features/pharmacien/approvisionnements — la saisie d'une facture.
+
+// ✦ Refonte UI : accent de l'espace pharmacien (vert vif en sombre).
+:host {
+  display: block;
+  --apr-accent: var(--bb-primary);
+  --apr-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --apr-ligne-bg: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --apr-accent: var(--bb-bright);
+  --apr-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  // En sombre, `--bb-surface-1` vaut `--bb-surface-card` : les lignes se
+  // fondraient dans la carte.
+  --apr-ligne-bg: color-mix(in srgb, #fff 4%, var(--bb-surface-card));
+}
+
 .bb-appro {
-  padding: 1.75rem;
-  max-width: 1040px;
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 1080px;
   margin: 0 auto;
+  font-variant-numeric: tabular-nums;
 
   &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
 
+  // ✦ Refonte UI : titres de section en display, trait d'accent
   &__section {
+    display: flex; align-items: center; gap: 10px;
     font-family: var(--bb-font-display);
-    font-size: 14px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--bb-text-secondary);
-    margin: 22px 0 10px;
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 28px 0 12px;
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--apr-accent); flex-shrink: 0;
+    }
   }
 
+  // ✦ Refonte UI : le formulaire ouvert se distingue par un liseré d'accent
+  // et arrive en douceur.
   &__carte {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1.25rem;
-    margin-bottom: 18px; box-shadow: var(--bb-shadow-sm);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-top: 4px solid var(--apr-accent);
+    border-radius: var(--bb-radius-xl); padding: 1.5rem;
+    margin-bottom: 22px; box-shadow: var(--bb-shadow);
+    animation: bb-apr-in 0.35s var(--bb-ease) both;
+    .bb-appro__section { margin-top: 24px; }
+    @media (max-width: 600px) { padding: 1.1rem; }
   }
 
   &__grille {
-    display: grid; gap: 14px;
+    display: grid; gap: 16px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   }
 
   &__label {
-    display: block; margin-bottom: 4px;
+    display: block; margin-bottom: 6px;
     font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
   }
 
   &__label-mini {
-    display: block; margin-bottom: 3px;
-    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .04em; color: var(--bb-text-muted);
+    display: block; margin-bottom: 5px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--bb-text-secondary);
   }
 
   &__aide {
@@ -40,61 +71,82 @@
     font-size: 12.5px; color: var(--bb-text-muted); line-height: 1.5;
   }
 
+  // ✦ Refonte UI : champs alignes sur les champs Material de l'application
+  // (44px de haut, coins 12px, halo d'accent au focus).
   &__champ {
-    width: 100%; box-sizing: border-box;
-    padding: 9px 11px; border-radius: var(--bb-radius);
-    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    width: 100%; box-sizing: border-box; min-height: 44px;
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
     color: var(--bb-text-primary);
-    font-family: inherit; font-size: 13.5px;
-    &:focus { outline: none; border-color: var(--bb-primary); }
+    font-family: inherit; font-size: 14px;
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { border-color: var(--bb-border-strong); }
+    &:focus { outline: none; border-color: var(--apr-accent); box-shadow: 0 0 0 4px var(--apr-accent-soft); }
   }
 
   // Une ligne de facture : produit large, le reste étroit.
   &__ligne {
     display: grid; gap: 10px; align-items: end;
-    grid-template-columns: minmax(180px, 2.2fr) 90px 1fr 140px 120px 36px;
-    padding: 10px; margin-bottom: 8px;
-    border-radius: var(--bb-radius);
-    background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+    grid-template-columns: minmax(180px, 2.2fr) 90px 1fr 150px 120px 44px;
+    padding: 12px; margin-bottom: 10px;
+    border-radius: var(--bb-radius-lg);
+    background: var(--apr-ligne-bg); border: 1px solid var(--bb-border-light);
+
+    // ✦ Refonte UI : six colonnes ne tiennent pas sous 900px (la ligne
+    // debordait de la carte) : produit en pleine largeur, champs par deux.
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      .bb-appro__ligne-produit { grid-column: 1 / -1; }
+      .bb-appro__retirer { grid-column: 2; justify-self: end; }
+    }
   }
 
+  &__ligne-produit, &__ligne-champ { min-width: 0; }
+
   &__retirer {
-    height: 36px; width: 36px;
-    border-radius: var(--bb-radius);
-    border: 1px solid var(--bb-border); background: transparent;
-    color: var(--bb-danger); cursor: pointer;
-    &:hover:not(:disabled) { border-color: var(--bb-danger); }
+    height: 44px; width: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
+    color: var(--bb-text-muted); cursor: pointer;
+    transition: color var(--bb-transition), border-color var(--bb-transition), background var(--bb-transition);
+    &:hover:not(:disabled) { color: var(--bb-danger); border-color: var(--bb-danger-border); background: var(--bb-danger-bg); }
     &:disabled { opacity: .35; cursor: default; }
   }
 
+  // ✦ Refonte UI : le total se lit comme un montant, pas comme une note.
   &__pied {
     display: flex; align-items: center; justify-content: space-between;
     gap: 14px; flex-wrap: wrap;
-    margin-top: 16px; padding-top: 14px;
-    border-top: 1px solid var(--bb-border-light);
+    margin-top: 18px; padding: 14px 16px;
+    border-radius: var(--bb-radius-lg);
+    background: var(--apr-accent-soft);
   }
 
   &__total {
     font-size: 14px; color: var(--bb-text-secondary);
-    strong { font-family: var(--bb-font-display); font-size: 17px; color: var(--bb-text-primary); }
+    strong { font-family: var(--bb-font-display); font-size: 20px; font-weight: 800; color: var(--bb-text-primary); letter-spacing: -.4px; }
   }
 
-  &__actions { display: flex; gap: 10px; }
+  &__actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
   // ── Historique ────────────────────────────────────────────────────
   &__entree {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1rem 1.15rem;
-    margin-bottom: 10px; box-shadow: var(--bb-shadow-sm);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
+    margin-bottom: 12px; box-shadow: var(--bb-shadow-sm);
+    transition: transform var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { transform: translateY(-1px); box-shadow: var(--bb-shadow-hover); }
   }
 
   &__entree-head {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--bb-border-light);
   }
 
   &__numero {
-    display: block;
+    display: block; margin-bottom: 2px;
     font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
     color: var(--bb-text-primary);
   }
@@ -102,32 +154,42 @@
   &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
 
   &__montant {
-    font-family: var(--bb-font-display); font-weight: 800; font-size: 15px;
-    color: var(--bb-primary); white-space: nowrap;
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 16px;
+    color: var(--apr-accent); white-space: nowrap;
+    padding: 4px 12px; border-radius: 999px; background: var(--apr-accent-soft);
   }
 
   &__lots-titre {
-    margin: 0 0 6px;
-    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .04em; color: var(--bb-text-muted);
+    margin: 0 0 8px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--bb-text-secondary);
   }
 
   &__lot {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    padding: 7px 10px; margin-bottom: 5px;
-    border-radius: var(--bb-radius-sm);
-    background: var(--bb-surface-1);
-    font-size: 12.5px;
+    padding: 8px 12px; margin-bottom: 6px;
+    border-radius: var(--bb-radius);
+    background: var(--apr-ligne-bg);
+    font-size: 13px;
   }
 
   &__lot-nom { flex: 1; min-width: 160px; color: var(--bb-text-primary); font-weight: 600; }
   &__lot-qte { font-family: var(--bb-font-display); font-weight: 800; color: var(--bb-text-primary); }
-  &__lot-num, &__lot-date { color: var(--bb-text-muted); }
+  &__lot-num, &__lot-date {
+    color: var(--bb-text-secondary); font-size: 12px;
+    padding: 1px 8px; border-radius: 999px; background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+  }
+
+  app-export-liste { display: block; margin-bottom: 12px; }
 }
 
-// En sombre, `--bb-surface-1` vaut `--bb-surface-card` : les lignes se
-// fondraient dans la carte.
-:host-context([data-theme='dark']) .bb-appro {
-  &__ligne, &__lot { background: rgba(255, 255, 255, .04); }
-  &__retirer { color: #F87171; }
+@keyframes bb-apr-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-appro__carte { animation: none; }
+  .bb-appro__entree { transition: none; &:hover { transform: none; } }
 }

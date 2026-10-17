@@ -1,47 +1,79 @@
 // features/medecin/dossier — même grammaire que « Orientations » et
 // « Résultats à libérer ». Les blocs `bb-hop-*` viennent de la feuille
 // globale `_hopital.scss` et se stylent tout seuls.
+
+// ✦ Refonte UI : accent de l'espace médecin (vert vif en sombre).
+:host {
+  display: block;
+  --dos-accent: var(--bb-primary);
+  --dos-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --dos-encart: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --dos-accent: var(--bb-bright);
+  --dos-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  // En sombre, `--bb-surface-1` vaut `--bb-surface-card` : le bandeau du
+  // motif disparaitrait dans la carte.
+  --dos-encart: color-mix(in srgb, #fff 5%, var(--bb-surface-card));
+}
+
 .bb-dossier {
-  padding: 1.75rem;
-  max-width: 920px;
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 960px;
   margin: 0 auto;
 
   &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
 
+  // ✦ Refonte UI : titres de section en display, trait d'accent
   &__section {
+    display: flex; align-items: center; gap: 10px;
     font-family: var(--bb-font-display);
-    font-size: 14px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--bb-text-secondary);
-    margin: 26px 0 10px;
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 30px 0 12px;
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--dos-accent); flex-shrink: 0;
+    }
   }
 
+  // ✦ Refonte UI : la carte d'identite de la visite, en tete, avec un halo
+  // d'accent — c'est d'elle que part la consultation.
   &__card {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
-    margin-bottom: 14px; box-shadow: var(--bb-shadow-sm);
+    position: relative; overflow: hidden;
+    background:
+      radial-gradient(90% 120% at 100% 0%, var(--dos-accent-soft), transparent 55%),
+      var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); padding: 1.4rem 1.5rem;
+    margin-bottom: 16px; box-shadow: var(--bb-shadow);
+    @media (max-width: 600px) { padding: 1.1rem; }
   }
 
   &__head {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
   }
 
   &__patient {
-    display: block;
-    font-family: var(--bb-font-display); font-size: 17px; font-weight: 800;
-    color: var(--bb-text-primary);
+    display: block; margin-bottom: 2px;
+    font-family: var(--bb-font-display); font-size: 20px; font-weight: 800;
+    letter-spacing: -.4px; color: var(--bb-text-primary);
   }
 
-  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__meta { font-size: 13px; color: var(--bb-text-muted); }
 
   &__motif {
-    margin: 0 0 10px; padding: 9px 12px;
+    margin: 0 0 12px; padding: 12px 14px;
     border-radius: var(--bb-radius);
-    background: var(--bb-surface-1);
-    font-size: 13.5px; color: var(--bb-text-primary);
+    border-left: 3px solid var(--dos-accent);
+    background: var(--dos-encart);
+    font-size: 14px; line-height: 1.55; color: var(--bb-text-primary);
   }
 
-  &__pied { margin: 0; font-size: 12px; color: var(--bb-text-muted); }
+  &__pied { margin: 0; font-size: 12.5px; color: var(--bb-text-muted); }
 
   &__numero {
     font-family: var(--bb-font-display); font-weight: 800;
@@ -50,26 +82,24 @@
 
   &__actions {
     display: flex; gap: 10px; flex-wrap: wrap;
-    margin-top: 14px;
+    margin-top: 18px; padding-top: 16px;
+    border-top: 1px solid var(--bb-border-light);
+    @media (max-width: 600px) { > * { flex: 1 1 100%; } }
   }
 
   // Résultats validés que le patient ne voit pas encore : le dire ici évite
   // au médecin d'aller vérifier ailleurs.
   &__alerte {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    margin: 8px 0; padding: 8px 12px;
+    margin: 10px 0; padding: 10px 14px;
     border-radius: var(--bb-radius);
     background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
-    font-size: 12.5px; color: var(--bb-warning);
+    font-size: 13px; font-weight: 600; color: var(--bb-warning);
 
-    a { color: inherit; font-weight: 700; }
-    i { font-size: 13px; }
+    a { color: inherit; font-weight: 800; }
+    i { font-size: 14px; }
   }
 }
 
-// En sombre, `--bb-surface-1` vaut `--bb-surface-card` : le bandeau du motif
-// disparaîtrait dans la carte. Et `--bb-warning` (#92400E) y serait illisible.
-:host-context([data-theme='dark']) .bb-dossier {
-  &__motif { background: rgba(255, 255, 255, .05); }
-  &__alerte { color: #FBBF24; }
-}
+// ✦ Refonte UI : couleur sombre codee en dur retiree — --bb-warning est
+// redefini en sombre (styles.scss).

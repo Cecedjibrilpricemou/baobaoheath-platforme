@@ -1,18 +1,39 @@
 // features/medecin/resultats — même grammaire que « Orientations ».
+
+// ✦ Refonte UI : accent de l'espace médecin (vert vif en sombre).
+:host {
+  display: block;
+  --lib-accent: var(--bb-primary);
+  --lib-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --lib-encart: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --lib-accent: var(--bb-bright);
+  --lib-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  --lib-encart: color-mix(in srgb, #fff 5%, var(--bb-surface-card));
+}
+
 .bb-liber {
-  padding: 1.75rem;
-  max-width: 880px;
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 920px;
   margin: 0 auto;
 
+  // ✦ Refonte UI : titres de section en display, trait d'accent
   &__section {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
     font-family: var(--bb-font-display);
-    font-size: 14px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--bb-text-secondary);
-    margin: 22px 0 10px;
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 26px 0 12px;
 
-    &--danger { color: var(--bb-danger); }
-    i { font-size: 14px; }
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--lib-accent); flex-shrink: 0;
+    }
+
+    &--danger { color: var(--bb-danger); &::before { background: var(--bb-danger); } }
+    i { font-size: 15px; }
   }
 
   &__empty { color: var(--bb-text-secondary); font-size: 13.5px; }
@@ -22,25 +43,36 @@
     padding: 46px 24px; text-align: center;
     background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
     border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
-    i { font-size: 30px; color: var(--bb-primary); }
+    i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--lib-accent); background: var(--lib-accent-soft);
+    }
+    p { margin: 0; font-weight: 600; }
   }
 
   &__card {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
-    margin-bottom: 12px; box-shadow: var(--bb-shadow-sm);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--lib-accent);
+    border-radius: var(--bb-radius-xl); padding: 1.2rem 1.35rem;
+    margin-bottom: 14px; box-shadow: var(--bb-shadow-sm);
+    transition: box-shadow var(--bb-transition);
+    &:hover { box-shadow: var(--bb-shadow-hover); }
 
     // Une valeur critique que le patient n'a pas encore reçue : la carte le dit.
-    &--critique { border-color: var(--bb-danger-border); }
+    &--critique {
+      border-color: var(--bb-danger-border); border-left-color: var(--bb-danger);
+      background: linear-gradient(90deg, var(--bb-danger-bg), transparent 45%), var(--bb-surface-card);
+    }
   }
 
   &__head {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
   }
 
   &__patient {
-    display: block;
+    display: block; margin-bottom: 2px;
     font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
     color: var(--bb-text-primary);
   }
@@ -48,38 +80,50 @@
   &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
 
   &__attente {
-    margin: 0 0 12px;
+    margin: 0 0 14px;
     font-size: 12.5px; color: var(--bb-text-secondary);
-    strong { color: var(--bb-danger); font-weight: 700; }
+    strong {
+      display: inline-block; padding: 1px 8px; border-radius: 999px;
+      color: var(--bb-danger); background: var(--bb-danger-bg); font-weight: 700;
+    }
   }
 
-  &__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  &__actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
   &__lien {
-    font-size: 13px; font-weight: 600;
-    color: var(--bb-primary); text-decoration: none;
-    &:hover { text-decoration: underline; }
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 700;
+    color: var(--lib-accent); text-decoration: none;
+    &::after { content: '→'; transition: transform var(--bb-transition); }
+    &:hover::after { transform: translateX(3px); }
   }
 
+  // ✦ Refonte UI : boutons pilule de 40px, comme les boutons Material
   &__btn {
-    padding: 8px 16px; border-radius: var(--bb-radius-pill);
-    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 40px; padding: 0 18px; border-radius: var(--bb-radius-pill);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
     color: var(--bb-text-primary);
-    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: border-color var(--bb-transition), color var(--bb-transition), background var(--bb-transition), transform var(--bb-transition);
 
-    &:hover:not(:disabled) { border-color: var(--bb-primary); color: var(--bb-primary); }
+    &:hover:not(:disabled) { border-color: var(--lib-accent); color: var(--lib-accent); }
+    &:active:not(:disabled) { transform: scale(.98); }
     &:disabled { opacity: .6; cursor: default; }
 
     &--primaire {
       background: var(--bb-primary); border-color: var(--bb-primary); color: #fff;
-      margin-top: 10px;
-      &:hover:not(:disabled) { color: #fff; filter: brightness(1.05); }
+      margin-top: 12px;
+      box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent);
+      &:hover:not(:disabled) { color: #fff; border-color: var(--bb-mid); background: var(--bb-mid); }
     }
   }
 
   &__form {
-    margin-top: 14px; padding-top: 14px;
-    border-top: 1px solid var(--bb-border-light);
+    margin-top: 16px; padding: 16px;
+    border-radius: var(--bb-radius-lg);
+    background: var(--lib-encart);
+    animation: bb-lib-in 0.3s var(--bb-ease) both;
   }
 
   &__label {
@@ -89,45 +133,48 @@
 
   // Pourquoi ce champ existe : sans explication, le chiffre ne dit rien au patient.
   &__aide {
-    margin: 4px 0 8px;
+    margin: 4px 0 10px;
     font-size: 12.5px; color: var(--bb-text-muted); line-height: 1.5;
   }
 
+  // ✦ Refonte UI : champ aligne sur les champs Material de l'application
   &__textarea {
     width: 100%; box-sizing: border-box;
     padding: 10px 12px; border-radius: var(--bb-radius);
-    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
     color: var(--bb-text-primary);
-    font-family: inherit; font-size: 13.5px; line-height: 1.55;
+    font-family: inherit; font-size: 14px; line-height: 1.55;
     resize: vertical;
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
 
-    &:focus { outline: none; border-color: var(--bb-primary); }
+    &:hover { border-color: var(--bb-border-strong); }
+    &:focus { outline: none; border-color: var(--lib-accent); box-shadow: 0 0 0 4px var(--lib-accent-soft); }
     &::placeholder { color: var(--bb-text-muted); }
   }
+
+  app-export-liste { display: block; margin-bottom: 4px; }
 }
 
 .bb-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 11px; border-radius: var(--bb-radius-pill);
-  font-size: 12.5px; font-weight: 700; white-space: nowrap;
-  background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
-  color: var(--bb-text-secondary);
+  padding: 5px 12px; border-radius: var(--bb-radius-pill);
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  background: var(--bb-surface-2); color: var(--bb-text-secondary);
 
   i { font-size: 12px; }
 
-  &--danger  { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
-  &--warning { background: var(--bb-warning-bg); border-color: var(--bb-warning-border); color: var(--bb-warning); }
+  &--danger  { background: var(--bb-danger-bg);  color: var(--bb-danger); }
+  &--warning { background: var(--bb-warning-bg); color: var(--bb-warning); }
 }
 
-// En sombre, `--bb-danger` et `--bb-warning` ne sont pas redéfinis : le rouge
-// #DC2626 sur #2D0A0A serait illisible. Même parti pris que le tableau de bord
-// médecin — l'accent passe à une teinte claire.
-:host-context([data-theme='dark']) {
-  .bb-liber__section--danger,
-  .bb-liber__attente strong { color: #F87171; }
-
-  .bb-badge {
-    &--danger  { color: #F87171; }
-    &--warning { color: #FBBF24; }
-  }
+@keyframes bb-lib-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-liber__form { animation: none; }
+}
+
+// ✦ Refonte UI : couleurs sombres codees en dur retirees — --bb-danger et
+// --bb-warning sont redefinis en sombre (styles.scss).

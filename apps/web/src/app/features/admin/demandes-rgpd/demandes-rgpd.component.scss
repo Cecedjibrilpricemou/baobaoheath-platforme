@@ -4,6 +4,18 @@
 
 // Le retard en premier : c'est un engagement envers le patient qui n'est pas
 // tenu, pas une statistique.
+// ✦ Refonte UI : accent de l'ecran — vert de marque en clair, vert vif en
+// sombre (--bb-primary y tombe a 3,3:1 sur les cartes : statuts et liens
+// illisibles).
+:host {
+  display: block;
+  --rgpd-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --rgpd-accent: var(--bb-bright);
+}
+
 .rgpd-retard {
   display: flex;
   align-items: center;
@@ -51,7 +63,7 @@
 .rgpd-succes {
   background: var(--bb-success-bg);
   border: 1px solid var(--bb-success-border);
-  color: var(--bb-primary);
+  color: var(--rgpd-accent);
 }
 
 .rgpd-erreur {
@@ -92,7 +104,7 @@
     background: var(--bb-surface-1);
     color: var(--bb-text-secondary);
 
-    &--SATISFAITE { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--SATISFAITE { background: var(--bb-success-bg); color: var(--rgpd-accent); }
     &--REFUSEE { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); color: var(--bb-danger); }
   }
 
@@ -157,7 +169,13 @@
     width: min(620px, 100%);
     padding: 1.25rem 1.4rem 1.1rem;
 
-    h2 { margin: 0 0 0.75rem; font-size: 1.05rem; line-height: 1.4; }
+    h2 {
+      margin: 0 0 0.75rem; font-size: 1.05rem; line-height: 1.4;
+      // ✦ Refonte UI : titre de carte en display, trait d'accent
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+      &::before { content: ''; width: 4px; height: 18px; border-radius: 4px; background: var(--rgpd-accent); flex-shrink: 0; }
+    }
   }
 
   // Un effacement n'est pas une suppression. Le rappel est au moment de
