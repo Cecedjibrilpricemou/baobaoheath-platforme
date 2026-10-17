@@ -70,7 +70,9 @@
 
   &__head, &__row {
     display: grid; grid-template-columns: minmax(200px, 1.6fr) minmax(110px, .9fr) 70px minmax(90px, .8fr) 110px minmax(160px, 1.2fr);
-    gap: 10px; align-items: center; min-width: 760px;
+    // ✦ Refonte UI : colonnes mini (780px) + 5 gouttieres (50px) : avec 760px
+    // la derniere colonne sortait du fond colore de la ligne.
+    gap: 10px; align-items: center; min-width: 830px;
   }
   &__head {
     padding: 4px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-muted);
