@@ -596,9 +596,6 @@
       "VALID_UNTIL": "Valable jusqu'au {{date}}",
       "REGLEMENTE": "Produit réglementé — contrôlez l'identité du patient.",
       "RENEW_LEFT": "{{n}} renouvellement(s) restant(s)",
-      "RENEW_BTN": "Renouveler",
-      "RENEW_OK": "Ordonnance {{numero}} renouvelée : le traitement est de nouveau à délivrer.",
-      "ERR_RENEW": "Renouvellement impossible pour le moment.",
       "EXPIREE": "Expirée",
       "SERVIE": "Entièrement retirée",
       "PARTIELLE": "{{n}} à retirer",
@@ -1301,7 +1298,11 @@
       "SUBSTITUE_OK": "Substitution enregistrée. Le médecin et le patient sont prévenus.",
       "REFUSE_OK": "Refus enregistré. L’ordonnance reste valable ailleurs.",
       "DEJA_SERVI": "{{servi}} déjà servie(s) sur {{total}}",
-      "RESTE_A_SERVIR": "Reste à servir : {{reste}}"
+      "RESTE_A_SERVIR": "Reste à servir : {{reste}}",
+      "RENEW_LEFT": "{{n}} renouvellement(s) restant(s)",
+      "RENEW_BTN": "Renouveler",
+      "RENEW_OK": "Ordonnance {{numero}} renouvelée : le traitement est de nouveau à délivrer.",
+      "ERR_RENEW": "Renouvellement impossible pour le moment."
     },
     "STOCKS": {
       "TITLE": "Stocks de la pharmacie",

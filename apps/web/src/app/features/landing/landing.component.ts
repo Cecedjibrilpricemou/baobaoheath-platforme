@@ -103,7 +103,7 @@ export class LandingComponent implements OnInit {
 
   private chargerStats(): void {
     this.api.get<{ success: boolean; data: PublicStats }>('/stats/public').subscribe({
-      next: (r) => { if (r.success && r.data) this.platformStats.set(r.data); },
+      next: (r) => { if (r.success && LandingComponent.statsValides(r.data)) this.platformStats.set(r.data); },
       error: () => { /* les tirets restent */ }
     });
   }
@@ -113,6 +113,19 @@ export class LandingComponent implements OnInit {
       next: (r) => { this.structures.set(r.data ?? []); this.isLoadingStructures.set(false); },
       error: () => { this.isLoadingStructures.set(false); }
     });
+  }
+
+  /**
+   * Une reponse qui n'a pas la forme attendue (liste vide, champ manquant)
+   * faisait planter le calcul des chiffres, et l'accueil ne se rafraichissait
+   * plus. On ne retient que des chiffres : sinon le bandeau reste masque,
+   * comme en cas d'erreur.
+   */
+  private static statsValides(d: unknown): d is PublicStats {
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return false;
+    const s = d as Record<string, unknown>;
+    return ['patients', 'consultations', 'asc', 'structures']
+      .every(k => typeof s[k] === 'number' && Number.isFinite(s[k]));
   }
 
   private formatCount(n: number): string {
