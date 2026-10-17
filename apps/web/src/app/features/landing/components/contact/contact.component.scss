@@ -38,7 +38,7 @@
   padding: 13px 26px; border-radius: 12px; background: var(--bb-primary); color: #fff;
   font-family: var(--bb-font-display); font-size: 14px; font-weight: 700; border: none; cursor: pointer;
   transition: background var(--bb-transition), transform var(--bb-transition);
-  box-shadow: 0 6px 16px rgba(45, 125, 70, .25);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--bb-primary) 25%, transparent); // ✦ Refonte UI
   &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
   &:disabled { opacity: .55; cursor: not-allowed; }
 }

@@ -47,7 +47,7 @@ $largeur: 1200px;
   transition: transform var(--bb-transition), background var(--bb-transition), box-shadow var(--bb-transition);
   &:hover { transform: translateY(-1px); }
 }
-.btn-primary { @extend %bouton; background: var(--bb-primary); color: #fff; border: 1.5px solid var(--bb-primary); box-shadow: 0 6px 16px rgba(45, 125, 70, .25); &:hover { background: var(--bb-mid); } }
+.btn-primary { @extend %bouton; background: var(--bb-primary); color: #fff; border: 1.5px solid var(--bb-primary); box-shadow: 0 6px 16px color-mix(in srgb, var(--bb-primary) 25%, transparent); /* ✦ Refonte UI */ &:hover { background: var(--bb-mid); } }
 .btn-outline { @extend %bouton; background: transparent; color: var(--bb-text-primary); border: 1.5px solid var(--bb-border); &:hover { border-color: var(--land-accent); color: var(--land-accent); } }
 .btn-white   { @extend %bouton; background: #fff; color: var(--land-on-band-btn); border: 1.5px solid #fff; &:hover { background: #f2fbf5; } }
 .btn-ghost-white { @extend %bouton; background: transparent; color: var(--land-band-text); border: 1.5px solid rgba(255, 255, 255, .55); &:hover { background: rgba(255, 255, 255, .12); } }
@@ -138,7 +138,7 @@ $largeur: 1200px;
 
   &--primary {
     background: var(--bb-primary); border-color: var(--bb-primary); color: #fff;
-    box-shadow: 0 6px 16px rgba(45, 125, 70, .25);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--bb-primary) 25%, transparent); // ✦ Refonte UI
     i { color: #fff; }
     &:hover { background: var(--bb-mid); }
   }

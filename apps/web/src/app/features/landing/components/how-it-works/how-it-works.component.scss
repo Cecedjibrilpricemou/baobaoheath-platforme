@@ -26,6 +26,9 @@
   background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: 22px;
   transition: transform var(--bb-transition), box-shadow var(--bb-transition), border-color var(--bb-transition);
   &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow); transform: translateY(-3px); }
+
+  // ✦ Refonte UI : carte un peu plus serree sur mobile
+  @media (max-width: 640px) { padding: 20px 20px 22px; .step__track { margin-right: -20px; } .step__track--end { margin-right: 0; } }
 }
 
 // Piste : la ligne part de la pastille et file jusqu'au bord de la carte,
@@ -41,7 +44,7 @@
   background: var(--land-accent); color: var(--land-on-band-btn, #fff);
   font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 800; letter-spacing: .14em;
   display: inline-flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 14px rgba(45, 125, 70, .25);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--land-accent) 25%, transparent); // ✦ Refonte UI
 }
 .step__line {
   // La largeur est posee en ligne par le composant (largeurTrait) : c'est
@@ -73,6 +76,15 @@
   border-radius: 16px;
   background: var(--land-accent-soft); color: var(--land-accent);
   font-size: 30px;
+
+  // ✦ Refonte UI : le cadre 3/2 n'a de sens que pour aligner les titres
+  // d'une colonne a l'autre. En colonne unique (mobile) il ne restait qu'un
+  // grand aplat vide autour d'une petite icone, sur sept etapes : la page
+  // s'etirait inutilement. L'icone devient une pastille compacte.
+  @media (max-width: 640px) {
+    aspect-ratio: auto; width: 52px; height: 52px;
+    margin-bottom: 14px; border-radius: 14px; font-size: 20px;
+  }
 }
 .step__title { font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 8px; }
 .step__desc { font-size: 14px; color: var(--bb-text-secondary); line-height: 1.65; margin: 0; }
