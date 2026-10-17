@@ -158,6 +158,14 @@
   --bb-topbar-bg: #0F1F14;
   --bb-topbar-border: #1F3828;
 
+  // ✦ Refonte UI : les teintes semantiques du mode clair (#DC2626,
+  // #92400E, #1A5C35, #1E40AF) tombaient entre 2,2:1 et 3,7:1 sur ces fonds
+  // sombres : alertes allergie, produits reglementes et succes etaient
+  // difficiles a lire. Versions eclaircies, toutes au-dessus de 4,4:1.
+  --bb-danger: #EF4444;
+  --bb-success: #3EBB70;
+  --bb-warning: #FBBF24;
+  --bb-info: #60A5FA;
   --bb-danger-bg: #2D0A0A;
   --bb-danger-border: #7F1D1D;
   --bb-success-bg: #0A1F10;
