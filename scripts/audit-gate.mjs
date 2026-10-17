@@ -29,50 +29,16 @@ const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * pas seulement qu'il gene.
  */
 const EXCEPTIONS = [
-  {
-    ghsa: 'GHSA-ggr8-5vv4-36mx',
-    paquet: 'deepmerge-ts',
-    reexamen: '2026-12-01',
-    motif:
-      "Epuisement de pile en fusionnant des objets recursifs. Atteint via " +
-      "@prisma/config, qui ne fusionne que notre propre prisma.config.ts : " +
-      "l'entree n'est pas controlee par un tiers. prisma 7.10.0, la derniere " +
-      "version publiee, epingle deepmerge-ts 7.1.5 ; aucune version corrigee " +
-      "n'existe en amont. Le seul correctif propose par npm est une " +
-      "retrogradation vers prisma 6.19.3, incompatible avec le format " +
-      "prisma.config.ts et avec @prisma/client 7.",
-  },
-  {
-    ghsa: 'GHSA-3f6p-5ww8-9rcr',
-    paquet: 'mysql2',
-    reexamen: '2026-12-01',
-    motif:
-      "Fuite d'identifiants en clair par retrogradation du plugin " +
-      "d'authentification MySQL. La plateforme tourne sur PostgreSQL ; mysql2 " +
-      "est une dependance de la CLI Prisma (devDependency) pour " +
-      "l'introspection MySQL, jamais importee par le code applicatif.",
-  },
-  {
-    ghsa: 'GHSA-rgwj-5xj2-c3m3',
-    paquet: 'mysql2',
-    reexamen: '2026-12-01',
-    motif:
-      "Deni de service par bombe de decompression dans le protocole MySQL " +
-      "compresse. Meme raison : aucune connexion MySQL n'est jamais ouverte.",
-  },
+  // Aucune exception en vigueur.
+  //
+  // Historique : du 13/09 au 17/10/2026, trois avis etaient toleres —
+  // GHSA-ggr8-5vv4-36mx (deepmerge-ts, via @prisma/config) et
+  // GHSA-3f6p-5ww8-9rcr / GHSA-rgwj-5xj2-c3m3 (mysql2, via la CLI prisma).
+  // prisma 7.10.1 embarque deepmerge-ts 8.0.2 et mysql2 3.24.4, versions
+  // corrigees : les exceptions ont ete retirees (le portillon les signalait
+  // comme obsoletes). Le mecanisme reste pour la prochaine faille sans
+  // correctif amont : ghsa, paquet, date de reexamen et motif.
 ];
-
-// Ce que couvrent ces trois exceptions ne tourne pas en production : depuis
-// le Dockerfile de l'API (etape prod-deps), l'image embarque les seules
-// dependances de production — la CLI prisma, mysql2 et deepmerge-ts n'y sont
-// pas. Elles restent dans l'arbre audite ici parce que la CI et le job Deploy
-// en ont besoin (migrate deploy depuis le runner).
-//
-// Piste ecartee (13/09/2026) : `overrides` npm sur mysql2 / deepmerge-ts.
-// Avec npm 11 et les workspaces, l'override d'une dependance epinglee en
-// version exacte par prisma retire le paquet de l'arbre au lieu de le
-// remplacer, et la CLI ne demarre plus. A reessayer quand prisma > 7.10
-// relachera ses epingles.
 
 const AUTORISES = new Set(EXCEPTIONS.map((e) => e.ghsa));
 const BLOQUANTS = new Set(['high', 'critical']);
