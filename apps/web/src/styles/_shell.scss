@@ -224,7 +224,16 @@
   // app-avatar plus bas.
   &__burger#{&}__burger { display: none; }
 
-  &__user { margin-left: 0.25rem; }
+  // ✦ Refonte UI : le bouton icone Material (40px, 8px de marge interne) etait
+  // plus petit que l'avatar et son liseré : l'avatar debordait de 4px et
+  // pouvait etre rogne au bord droit sur tablette. Boite ajustee a l'avatar.
+  &__user#{&}__user {
+    margin-left: 0.25rem;
+    --mat-icon-button-state-layer-size: 44px;
+    width: 44px; height: 44px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
 
   &__avatar,
   app-avatar#{&}__avatar {

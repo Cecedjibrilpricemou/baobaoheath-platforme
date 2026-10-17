@@ -187,6 +187,9 @@
     max-width: 720px; margin: 20px auto 0; padding: 1.25rem 1.5rem;
     background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
     border-radius: var(--bb-radius-xl); box-shadow: var(--bb-shadow-sm);
+    // ✦ Refonte UI : la mise en page suit la largeur de la carte, pas celle
+    // de l'ecran (sur tablette, le menu lateral ouvert reduit la place).
+    container-type: inline-size;
   }
 
   &__verif-head h3 {
@@ -207,6 +210,14 @@
 
     // Bouton aligne sur la hauteur des champs (56px), pleine largeur sur mobile
     .bb-ordo__search-btn { height: 56px; padding: 0 22px; justify-content: center; }
+
+    // ✦ Refonte UI : carte etroite → les deux champs cote a cote, le bouton
+    // dessous en pleine largeur ; tres etroite → tout en colonne.
+    @container (max-width: 600px) {
+      grid-template-columns: 1fr 1fr;
+      .bb-ordo__search-btn { grid-column: 1 / -1; }
+    }
+    @container (max-width: 380px) { grid-template-columns: 1fr; }
   }
 
   &__verif-result {
@@ -509,7 +520,16 @@
     i { font-size: 38px; color: var(--ordo-accent); }
   }
 
-  &__search-box { width: 100%; max-width: 540px; margin: 0 auto; }
+  // ✦ Refonte UI : meme logique de conteneur pour la recherche patient
+  &__search-box {
+    width: 100%; max-width: 540px; margin: 0 auto; container-type: inline-size;
+
+    @container (max-width: 440px) {
+      .bb-ordo__search-wrapper { flex-direction: column; gap: 6px; border-radius: 20px; }
+      .bb-ordo__search-input { padding: 12px 14px; }
+      .bb-ordo__search-btn { justify-content: center; }
+    }
+  }
 
   &__search-wrapper {
     display: flex; align-items: stretch; background: var(--bb-surface-1);
