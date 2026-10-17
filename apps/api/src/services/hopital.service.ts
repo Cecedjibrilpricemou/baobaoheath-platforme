@@ -187,6 +187,87 @@ async function episodeDeLaStructure(user: JwtPayload, idEpisode: string) {
   return episode;
 }
 
+/**
+ * Ouvrir la consultation d'une visite (EF-03, EF-05).
+ *
+ * **Jusqu'ici seul un agent de sante communautaire pouvait ouvrir une
+ * consultation.** `POST /consultations` est reserve a `ASC` : le parcours
+ * hospitalier — le patient demande un rendez-vous, l'accueil l'oriente, le
+ * medecin fixe l'heure, le patient arrive — s'arretait net. Le medecin avait
+ * un episode de soins ouvert et aucun moyen d'y mener la consultation.
+ *
+ * L'ASC est une porte d'entree **communautaire**, pour les zones sans
+ * medecin, avec un paquet d'actes protocolaire. En faire le seul createur de
+ * consultations etait une erreur de modele : la plateforme avait une porte la
+ * ou il en faut deux.
+ *
+ * Le patient et le motif viennent de **l'episode**, pas du corps de la
+ * requete : ils y sont deja, et les redemander ouvrirait la porte a une
+ * consultation rattachee a une visite qui parle d'autre chose.
+ */
+export async function ouvrirConsultationDeLEpisode(
+  user: JwtPayload,
+  idEpisode: string,
+  dto: { motifPrincipal?: string } = {}
+) {
+  const episode = await episodeDeLaStructure(user, idEpisode);
+
+  if (episode.statut === 'CLOS' || episode.statut === 'ANNULE') {
+    throw new ValidationError(
+      `Cette visite est ${episode.statut === 'CLOS' ? 'close' : 'annulee'} : rouvrez-en une pour consulter.`,
+    );
+  }
+
+  // **Une consultation ouverte a la fois par visite.** Deux consultations
+  // pour une meme venue donneraient deux comptes rendus a signer, et le
+  // patient ne saurait pas lequel fait foi.
+  const deja = await prisma.consultation.findFirst({
+    where: { idEpisode, statut: { in: ['EN_COURS', 'PLANIFIEE'] } },
+    select: { id: true },
+  });
+  if (deja) return getConsultationOuverte(deja.id);
+
+  const motifPrincipal = (dto.motifPrincipal ?? episode.motif).trim();
+  if (motifPrincipal.length < 2) {
+    throw new ValidationError('Le motif de la consultation est obligatoire.');
+  }
+
+  const creee = await prisma.consultation.create({
+    data: {
+      idPatient: episode.idPatient,
+      idEpisode: episode.id,
+      motifPrincipal,
+      symptomes: [],
+      statut: 'EN_COURS',
+    },
+    select: { id: true },
+  });
+
+  // La visite passe en cours : elle n'est plus seulement ouverte, quelqu'un
+  // s'en occupe.
+  if (episode.statut === 'OUVERT') {
+    await prisma.episodeSoins.update({
+      where: { id: episode.id },
+      data: { statut: 'EN_COURS' },
+    });
+  }
+
+  return getConsultationOuverte(creee.id);
+}
+
+/** La consultation telle que l'ecran du medecin l'attend. */
+async function getConsultationOuverte(idConsultation: string) {
+  return prisma.consultation.findUniqueOrThrow({
+    where: { id: idConsultation },
+    include: {
+      patient: { include: { utilisateur: { select: { id: true, prenom: true, nom: true, telephone: true } } } },
+      constantes: true,
+      diagnostics: true,
+      ordonnances: { include: { lignes: { include: { medicament: true } } } },
+    },
+  });
+}
+
 // ── EF-03-01 : recherche avant toute creation de dossier ─────────────
 /**
  * Comment on reconnait un patient a partir de ce que l'agent a tape.

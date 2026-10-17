@@ -133,6 +133,14 @@ export async function validerConsultation(
                 idMedecinValideur: user.userId,
                 notesMedecin: dto.notesMedecin,
                 signeLe: new Date(),
+                // **Valider et signer, c'est terminer l'acte medical.** Seul
+                // le `complete` de l'ASC posait `TERMINEE` : une consultation
+                // menee par un medecin restait donc EN_COURS pour toujours,
+                // et son ordonnance **n'apparaissait jamais au comptoir** —
+                // le scan du pharmacien ne retient que les consultations
+                // terminees. Idempotent pour le parcours ASC, ou elle l'est
+                // deja avant la validation.
+                statut: 'TERMINEE',
             },
         });
 

@@ -707,7 +707,17 @@ export type NiveauInteraction =
   | 'ASSOCIATION_DECONSEILLEE'
   | 'CONTRE_INDICATION';
 
-export type TypeAlertePrescription = 'ALLERGIE' | 'INTERACTION' | 'CONTRE_INDICATION';
+/**
+ * `RESULTATS_EN_ATTENTE` : des analyses ont ete demandees et ne sont pas
+ * revenues. **C'est un avertissement, pas un verrou** — on prescrit parfois
+ * un antipyretique tout de suite et on ajuste quand les resultats arrivent.
+ * Son niveau reste `PRECAUTION`, donc il n'exige aucun motif.
+ */
+export type TypeAlertePrescription =
+  | 'ALLERGIE'
+  | 'INTERACTION'
+  | 'CONTRE_INDICATION'
+  | 'RESULTATS_EN_ATTENTE';
 
 /**
  * Une raison de ne pas prescrire ce medicament a ce patient. L'alerte ne

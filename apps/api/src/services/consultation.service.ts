@@ -147,7 +147,24 @@ export async function getConsultationById(user: JwtPayload, id: string) {
 }
 
 export async function saveVitals(user: JwtPayload, idConsultation: string, dto: VitalsDto) {
-  const { asc } = await assertCanModifyAsAsc(user, idConsultation);
+  // **Deux auteurs possibles, deux controles.** Un medecin n'a pas de profil
+  // d'agent communautaire : exiger `assertCanModifyAsAsc` de lui refusait la
+  // saisie des constantes en consultation hospitaliere, alors que c'est lui
+  // qui prend la tension quand il mene l'entretien. Meme forme que
+  // `alertesPrescription` et `addOrdonnance`, qui branchent deja sur le role.
+  let idStructureAuteur: string | undefined;
+  if (user.role === 'MEDECIN') {
+    await assertCanAccessConsultation(user, idConsultation);
+    const u = await prisma.utilisateur.findUnique({
+      where: { id: user.userId },
+      select: { idStructure: true, medecinProfile: { select: { idStructure: true } } },
+    });
+    idStructureAuteur = u?.idStructure ?? u?.medecinProfile?.idStructure ?? undefined;
+  } else {
+    const { asc } = await assertCanModifyAsAsc(user, idConsultation);
+    idStructureAuteur = asc.idStructure ?? undefined;
+  }
+
   const consultation = await prisma.consultation.findUnique({
     where: { id: idConsultation },
     include: { constantes: true },
@@ -181,7 +198,7 @@ export async function saveVitals(user: JwtPayload, idConsultation: string, dto: 
     entityId: vitals.id,
     operation: consultation.constantes ? SyncOperation.UPDATE : SyncOperation.CREATE,
     idUtilisateur: user.userId,
-    idStructure: asc.idStructure ?? undefined,
+    idStructure: idStructureAuteur,
     payload: { idConsultation, alertes },
   });
 

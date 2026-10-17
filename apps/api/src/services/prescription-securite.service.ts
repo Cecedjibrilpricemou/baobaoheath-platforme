@@ -104,6 +104,27 @@ function alerteAllergie(
  * de la consultation. Ordre de restitution : du plus grave au moins grave, un
  * prescripteur presse lit la premiere ligne.
  */
+/**
+ * Les demandes d'analyse de cet episode qui n'ont pas encore de resultats.
+ *
+ * On compte celles qui sont parties et pas encore validees : transmise, recue,
+ * prelevee, en analyse. Une demande annulee n'attend plus rien, et une
+ * demande validee a rendu ses resultats.
+ */
+async function analysesEnAttente(idEpisode: string | null): Promise<string[]> {
+  if (!idEpisode) return [];
+  const demandes = await prisma.demandeAnalyse.findMany({
+    where: {
+      idEpisode,
+      statut: { in: ['TRANSMISE', 'RECUE', 'PRELEVEE', 'EN_ANALYSE'] },
+    },
+    select: { numero: true },
+    orderBy: { creeLe: 'asc' },
+    take: 10,
+  });
+  return demandes.map((d) => d.numero);
+}
+
 export async function analyserPrescription(
   idConsultation: string,
   idMedicament: string
@@ -112,6 +133,7 @@ export async function analyserPrescription(
     where: { id: idConsultation },
     select: {
       idPatient: true,
+      idEpisode: true,
       patient: { select: { allergies: true, maladiesChroniques: true } },
     },
   });
@@ -211,6 +233,26 @@ export async function analyserPrescription(
   }
 
   alertes.sort((a, b) => RANG[b.niveau] - RANG[a.niveau]);
+
+  // **Des analyses attendues changent une prescription.** Un avertissement,
+  // pas un verrou : on prescrit parfois un antipyretique tout de suite et on
+  // ajuste quand les resultats arrivent. Au niveau `PRECAUTION`, donc sans
+  // motif exige — exiger une justification pour tout finirait en « RAS »
+  // systematique, et l'information se perdrait.
+  const enAttente = await analysesEnAttente(consultation.idEpisode);
+  if (enAttente.length > 0) {
+    alertes.push({
+      type: 'RESULTATS_EN_ATTENTE',
+      niveau: 'PRECAUTION',
+      libelle: enAttente.length === 1
+        ? 'Une analyse est en attente de resultats'
+        : `${enAttente.length} analyses sont en attente de resultats`,
+      detail: `Demande(s) ${enAttente.join(', ')} : les resultats ne sont pas revenus.`
+        + ` La prescription reste possible, et pourra etre ajustee.`,
+      conduite: 'Verifiez si le traitement peut attendre les resultats.',
+      source: null,
+    });
+  }
 
   return {
     alertes,

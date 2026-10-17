@@ -372,6 +372,17 @@ export const payerCommandeSchema = z.object({
   numeroOperateur: z.string().trim().min(6).max(30).optional(),
 }).strict();
 
+/**
+ * Ouvrir la consultation d'une visite.
+ *
+ * **Aucun patient dans le corps** : il vient de l'episode. Le redemander
+ * ouvrirait la porte a une consultation rattachee a une visite qui parle
+ * d'autre chose. Le motif est optionnel et vaut par defaut celui de la visite.
+ */
+export const ouvrirConsultationSchema = z.object({
+  motifPrincipal: z.string().trim().min(2).max(500).optional(),
+}).strict();
+
 export const createConsultationSchema = z.object({
   idPatient: id,
   motifPrincipal: z.string().trim().min(2).max(500),

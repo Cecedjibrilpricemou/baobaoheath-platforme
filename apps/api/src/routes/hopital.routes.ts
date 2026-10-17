@@ -10,6 +10,7 @@ import * as demandeRdv from '../services/demande-rendez-vous.service';
 import {
   annulerDemandeSchema,
   createDemandeAnalyseSchema,
+  ouvrirConsultationSchema,
   createEpisodeSchema,
   episodesQuerySchema,
   orientationSchema,
@@ -164,6 +165,17 @@ router.post('/episodes/:id/orientation', validateBody(orientationSchema), async 
 });
 
 // ── Demandes d'analyse (EF-03-03, EF-03-04, EF-03-06) ────────────────
+/**
+ * Ouvrir la consultation de cette visite.
+ *
+ * Reserve a l'acte medical : l'accueil oriente et pointe, il ne consulte pas
+ * (addendum du 2026-09-28, point 9).
+ */
+router.post('/episodes/:id/consultation', ACTE_MEDICAL, validateBody(ouvrirConsultationSchema), async (req: AuthRequest, res: Response) => {
+  const data = await hopital.ouvrirConsultationDeLEpisode(req.user!, String(req.params.id), req.body);
+  res.status(201).json({ success: true, data });
+});
+
 router.post('/episodes/:id/demandes-analyse', ACTE_MEDICAL, validateBody(createDemandeAnalyseSchema), async (req: AuthRequest, res: Response) => {
   const data: DemandeAnalyseView = await hopital.creerDemandeAnalyse(req.user!, req.params['id'] as string, req.body);
   res.status(201).json({ success: true, data });

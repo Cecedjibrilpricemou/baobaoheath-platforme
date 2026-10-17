@@ -66,6 +66,33 @@ beforeEach(() => {
   lancerRecherchePharmacie.mockResolvedValue({ id: 'cmd-1' });
 });
 
+// **Valider et signer, c'est terminer l'acte medical.** Seul le `complete` de
+// l'ASC posait `TERMINEE` : une consultation menee par un medecin restait
+// EN_COURS pour toujours, et son ordonnance **n'apparaissait jamais au
+// comptoir** — le scan du pharmacien ne retient que les consultations
+// terminees. Le defaut ne se voyait pas tant que seuls les ASC ouvraient des
+// consultations.
+describe('validerConsultation : l acte medical se termine', () => {
+  it('passe la consultation a TERMINEE', async () => {
+    await validerConsultation(MEDECIN, 'cons-1', { idOrdonnances: [] } as never);
+    const maj = prisma.consultation.update.mock.calls[0]?.[0] as {
+      data: { statut: string; idMedecinValideur: string; signeLe: Date };
+    };
+    expect(maj.data.statut).toBe('TERMINEE');
+  });
+
+  it('et garde la trace nominative du valideur et de l heure', async () => {
+    await validerConsultation(MEDECIN, 'cons-1', { idOrdonnances: [] } as never);
+    const maj = prisma.consultation.update.mock.calls[0]?.[0] as {
+      data: { idMedecinValideur: string; signeLe: Date };
+    };
+    // `MEDECIN` est type `never` dans ce fichier (cast de doublure) : on
+    // nomme l'identifiant attendu plutot que de le relire a travers lui.
+    expect(maj.data.idMedecinValideur).toBe('u-med');
+    expect(maj.data.signeLe).toBeInstanceOf(Date);
+  });
+});
+
 describe('validerConsultation : appel aux pharmacies', () => {
   it('lance la recherche pour chaque ordonnance signee', async () => {
     await validerConsultation(MEDECIN, 'cons-1', {
