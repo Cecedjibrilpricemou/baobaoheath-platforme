@@ -23,10 +23,19 @@ import { prochainNumero } from './numero.service';
 import { envoyerSmsSimule, notifierSansBloquer } from './notification.service';
 import { getIdentitePlateforme } from './parametres.service';
 import type {
+
   DemandeRendezVousView,
   CreerDemandeRendezVousDto,
   AccepterDemandeRendezVousDto,
 } from '@baobaoheath/shared-types';
+
+/**
+ * Les structures ou l'on peut etre recu en consultation.
+ *
+ * Une pharmacie, un laboratoire et une compagnie d'assurance n'en sont pas —
+ * et la liste proposee au patient les contenait toutes.
+ */
+const TYPES_DE_SOIN = ['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'] as const;
 
 const DEMANDE_INCLUDE = {
   patient: {
@@ -107,10 +116,17 @@ export async function creerDemande(userId: string, dto: CreerDemandeRendezVousDt
   if (!idStructure) throw new ValidationError('Choisissez un etablissement');
 
   const structure = await prisma.structureSante.findFirst({
-    where: { id: idStructure, estActive: true },
+    // **Le type est verifie ici, pas seulement dans la liste deroulante.**
+    // Filtrer l'affichage ne protege rien : l'identifiant d'une pharmacie
+    // reste un identifiant valide, et la demande serait acceptee.
+    where: { id: idStructure, estActive: true, type: { in: [...TYPES_DE_SOIN] } },
     select: { id: true, nom: true },
   });
-  if (!structure) throw new ValidationError('Etablissement introuvable ou inactif');
+  if (!structure) {
+    throw new ValidationError(
+      "Etablissement introuvable, inactif, ou ne recevant pas de consultation.",
+    );
+  }
 
   // Le medecin souhaite, s'il y en a un, doit appartenir a cet etablissement :
   // sinon la demande partirait vers quelqu'un qui n'y consulte pas.

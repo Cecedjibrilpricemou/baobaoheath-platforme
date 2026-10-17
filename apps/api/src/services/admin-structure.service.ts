@@ -199,9 +199,23 @@ export async function creerPharmacieAvecPharmacien(dto: {
  *  - elle joint le nom et le telephone de l'administrateur de chaque
  *    structure, qui n'ont rien a faire sur un endpoint public.
  */
+/**
+ * Les structures ou l'on peut etre recu en consultation.
+ *
+ * **Une pharmacie, un laboratoire et une compagnie d'assurance n'en sont
+ * pas.** Ce sont des structures de la plateforme, actives, et la liste les
+ * renvoyait donc au patient : son ecran de demande de rendez-vous proposait
+ * « Pharmacie Pricemou » et « Pricemou & Frere Assurances » comme lieux de
+ * consultation. On ne prend pas rendez-vous chez un pharmacien.
+ *
+ * Le pendant de `TYPES_LABO` dans `hopital.service` : qui peut recevoir une
+ * demande d'analyse se dit de la meme facon.
+ */
+const TYPES_DE_SOIN = ['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'] as const;
+
 export async function getStructuresPubliques() {
     return prisma.structureSante.findMany({
-        where: { estActive: true },
+        where: { estActive: true, type: { in: [...TYPES_DE_SOIN] } },
         orderBy: { nom: 'asc' },
         select: {
             id: true,
