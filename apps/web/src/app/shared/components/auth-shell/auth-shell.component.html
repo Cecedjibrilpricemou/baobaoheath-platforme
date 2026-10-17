@@ -29,7 +29,7 @@
   <aside class="bb-auth__visual" aria-hidden="true">
     <div class="bb-auth__visual-card">
       <div class="bb-auth__visual-photo">
-        <img src="assets/images/loginimage.jpeg" alt="" width="1024" height="1024" />
+        <img src="assets/images/loginimage.jpeg" alt="" width="736" height="1051" />
       </div>
       <span class="bb-auth__visual-chip bb-auth__visual-chip--top">
         <i class="pi pi-shield"></i> {{ 'LANDING.TRUST_SECURE' | translate }}
@@ -43,8 +43,8 @@
       <p class="bb-auth__visual-title">{{ titleKey() | translate }}</p>
       <p class="bb-auth__visual-text">{{ textKey() | translate }}</p>
       <ul class="bb-auth__visual-points">
-        @for (p of points; track p) {
-          <li><i class="pi pi-check-circle"></i> {{ p | translate }}</li>
+        @for (p of points; track p; let i = $index) {
+          <li><i [class]="icones[i]"></i> {{ p | translate }}</li>
         }
       </ul>
     </div>

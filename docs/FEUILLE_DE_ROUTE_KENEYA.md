@@ -2,7 +2,54 @@
 
 > Référence : *Cahier des charges Kènèya v2.0* du 13 septembre 2026 (exigences EF-01…EF-13, ENF-01…06, priorités M/S/C, lots V1→V4).
 > Ce fichier est le plan de travail vivant : on coche au fur et à mesure, on renumérote jamais.
-> Dernière mise à jour : 2026-09-19.
+> Dernière mise à jour : **2026-10-02**.
+>
+> ⚠️ **Un addendum du 2026-09-28** (`ADDENDUM-CDC-2026-09-28.md`) ajoute huit points remontés par le chef de projet, dont **trois rouvraient du code livré** : le médecin fixe désormais les rendez-vous, le rôle biologiste disparaît, et les résultats d'analyse ne sont visibles du patient qu'après accord du médecin. **Six des huit blocs sont livrés** ; les blocs concernés portent la mention **🔁 rouvert**.
+>
+> ⚠️ Tout ce qui est coché ci-dessous est sur **`develop`**. La branche `main` s'arrête au **2026-09-26** et ne contient aucun bloc de l'addendum.
+
+## Où nous en sommes — recompté le 2026-10-10
+
+Les cases de ce fichier, comptées à la main le 2026-10-02. `[~]` note un bloc livré en partie.
+
+| Bloc | Fait | Partiel | Reste | État |
+|---|---|---|---|---|
+| **P0** Identité de la plateforme | 5 | — | 0 | ✅ **fini** |
+| **P1** Épisode de soins + demande d'analyse | 11 | — | 0 | ✅ **fini** (🔁 repris puis complété) |
+| **P2** Laboratoire | 11 | — | 1 | ⏳ reste la synchronisation hors connexion (EF-04-11) |
+| **P3** Ordonnance + sécurité de prescription | 5 | — | 1 | ⏳ |
+| **P4** Identité patient, consentement, accès | 7 | — | 0 | ✅ **fini** — journal des accès, identito-vigilance, doublons, fusion réversible, consentement versionné et branché, bris de glace, n° d'ordre pro. **Le bloc le plus sensible réglementairement** |
+| **P5** Fil d'avancement du parcours | 0 | — | 3 | ❌ non commencé |
+| **P6** Commande pharmacie et gestion d'officine | 5 | 1 | 7 | ⏳ lots, approvisionnement, péremptions, **vente au comptoir et tableau de bord** livrés ; restent les écrans de commande, l'import Excel et l'OCR |
+| **P7** Paiement | 3 | — | 2 | ⏳ passerelle réelle livrée |
+| **P8** Livraison, carte, annuaire | 0 | — | 9 | ❌ non commencé |
+| **P9** Notifications neutres | 1 | — | 1 | ⏳ **la neutralité est livrée le 02/10** — c'était un défaut en service, pas une case vide. Restent les préférences de canaux et le rejeu |
+| **P10** Assurance et tiers payant | 3 | 4 | 2 | ⏳ **livré le 02/10, API + caisse** : assureur, contrat, règles par catégorie, éligibilité tracée, reste à charge ligne par ligne affiché avant paiement. Restent la vue assureur, l'administration des assureurs à l'écran et les échanges automatiques |
+| **P11** Administration, audit, référentiels | 6 | 1 | — | ⏳ **référentiels, journal d'audit, suspension de compte, détection d'anomalies et demandes RGPD livrés** (API, Swagger et écrans). Reste **EF-12-02**, les conventions des partenaires |
+| **P12** Interopérabilité | 0 | — | 3 | ❌ non commencé |
+| **P13** Extension (lot V4) | 1 | — | 4 | ⏳ prise de RDV à distance livrée ; téléconsultation suspendue à D2 |
+| **Total** | **55** | **6** | **36** | **sur 97** |
+
+> **La ligne de total était fausse** : elle annonçait 42 faites sur 95, alors
+> que la somme des blocs donne 51 sur 97. Recomptée le 2026-10-04 en
+> additionnant la colonne, pas en reportant le chiffre précédent. C'est
+> pourtant cette ligne qu'on lit pour répondre à « qu'est-ce qu'il reste ».
+
+**Deux blocs sont réellement finis : P0 et P1.** P2 et P3 n'ont plus qu'une case chacun.
+
+### Ce qui a été livré hors feuille de route, et qui compte
+
+| Date | Objet | Pourquoi ça ne figure dans aucune case |
+|---|---|---|
+| 2026-09-26 | Écran « Orientations » du médecin | L'accueil orientait un patient : l'épisode recevait son responsable, mais **rien ne le disait au médecin**. L'orientation écrivait dans le vide. |
+| 2026-09-26 | « Serveur injoignable » ≠ « identifiants incorrects » | La page de connexion accusait le mot de passe quand l'API était éteinte. |
+| 2026-10-01 | **Catégorie de produit fermée** (`CategorieProduit`) | Préalable aux blocs 7 et 8 de l'addendum. Le catalogue accepte des articles non médicamenteux ; une contrainte SQL garantit qu'un médicament porte DCI, forme et dosage. |
+| 2026-10-01 | Garde-fou d'invariant dans les semences | Une quantité de stock sans lot est **indélivrable** depuis les lots. Les deux semences le vérifient en terminant. |
+| 2026-09-30 → 10-02 | Trois correctifs de sécurité amont | `engine.io`, `brace-expansion`, `nodemailer`, `@angular/router`, et une exception datée pour `piscina`. |
+
+### Le chemin critique n'est pas le code
+
+L'agrément de l'hébergeur de données de santé (ENF-05) et la reprise des données commandent la date de mise en service. Ils ne s'accélèrent pas en écrivant plus vite : **à lancer en parallèle, maintenant**. Six décisions externes (D1, D2, D4, D5, D6, D7, D8) conditionnent des blocs entiers ; toutes sont déjà des paramètres, les trancher ne demande aucun développement.
 
 ## Objectif produit
 
@@ -22,7 +69,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 
 | Module | État | Existant | Manquant principal |
 |---|---|---|---|
-| EF-01 Identité | 🟡 | compte, OTP e-mail, 2FA (champ), reset, QR | OTP SMS, identito-vigilance, niveaux d'identité, doublons/fusion, n° d'ordre pro, 2FA imposé |
+| EF-01 Identité | 🟡 | compte, OTP e-mail, 2FA (champ), reset, QR ; *depuis le 04/10 : identito-vigilance, niveaux d'identité, détection de doublons, fusion réversible* | OTP SMS, n° d'ordre pro, 2FA imposé |
 | EF-02 Consentement | 🟡 | 4 scopes, historique | versionnage du texte, granularité, bris de glace, journal des accès patient |
 | EF-03 Hôpital | 🟠 | structures, référencement | épisode de soins, demande d'analyse structurée, orientation avec RDV |
 | EF-04 Laboratoire | 🔴 | — | tout |
@@ -45,28 +92,34 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [x] Plus aucune valeur de marque en dur dans le code (API et web).
 - [x] Écran super-admin : section « Identité » avec téléversement du logo.
 
-### P1 — Épisode de soins + demande d'analyse · M · EF-03 · ✅ livré le 2026-09-19 (API + front)
+### P1 — Épisode de soins + demande d'analyse · M · EF-03 · ✅ **complet** (livré le 2026-09-19, 🔁 repris et complété le 2026-09-30)
 - [x] `EpisodeSoins` (motif, service, professionnel responsable, statut, dates), rattaché au patient. Rôle `AGENT_ACCUEIL`, espace web « Accueil hôpital ».
 - [x] Recherche patient obligatoire avant création (EF-03-01).
 - [x] Référentiel `Examen` avec codes LOINC (33 seedés ; import admin à venir avec P11).
 - [x] `DemandeAnalyse` + lignes, urgence, laboratoire destinataire, consignes patient (à jeun…), transmission et notification (EF-03-03/04). Type de structure `LABORATOIRE`.
 - [x] Orientation vers un médecin ou un service avec RDV proposé (EF-03-05).
+- [x] ✅ **Livré le 2026-09-30 (API + front)** — l'accueil n'est plus celui qui fixe le créneau : il oriente, **le médecin fixe le rendez-vous** (addendum, point 3). Le champ date disparaît de l'écran d'accueil.
+- [x] ✅ **Livré le 2026-09-30** — **Agenda du médecin** (addendum, point 8) : ses rendez-vous **par ordre chronologique**, le plus proche en premier, groupés par jour, avec l'état de présence. Aucun écran de ce genre n'existe, mais l'index `@@index([idMedecin, prevuLe])` est déjà en base — il ne manque que l'endpoint et l'écran. Se livre avec la reprise ci-dessus : un médecin qui fixe ses rendez-vous a besoin de l'endroit où les voir.
+- [x] ✅ **Fermé le 2026-09-30** — `RendezVous.statut` était une **chaîne libre** (`String @default("PLANIFIE")`) : à fermer en `enum` au moment où le pointage y ajoute ses états, la base n'interdisant aujourd'hui aucune valeur.
+- [x] ✅ **Livré le 2026-09-30 (API + front)** — **Pointage de présence** (addendum, point 2) : file des patients attendus du jour, arrivée pointée par l'assistante, redirection vers le médecin au bon moment. Le rôle reste `AGENT_ACCUEIL`, dont l'intitulé affiché devient « Assistante ».
 - [x] Documents administratifs imprimables (EF-03-06) : bon d'examen HTML côté accueil et côté patient.
 - [x] Tableau de bord établissement (EF-03-07). Côté patient : page « Mon parcours » (épisodes, analyses, rendez-vous, frise).
 
-### P2 — Laboratoire · L · EF-04 · ✅ livré le 2026-09-19 (API + front)
+### P2 — Laboratoire · L · EF-04 · ⏳ **11 cases sur 12** (livré le 2026-09-19, 🔁 repris les 28 et 30/09) — reste la synchronisation hors connexion
 - [x] Rôles `BIOLOGISTE` (validation) et `TECHNICIEN_LABO` (réception, prélèvement, saisie) ; type de structure `LABORATOIRE` (P1).
+- [x] ✅ **Livré le 2026-09-30** — **le rôle `BIOLOGISTE` est supprimé** : c'est le laborantin (`TECHNICIEN_LABO`) qui valide (addendum, point 4). La validation nominative **reste bloquante** — quelqu'un continue de signer. Migration des comptes existants obligatoire ; les comptes rendus déjà validés gardent le nom de leur valideur.
 - [x] File des demandes triée par urgence puis ancienneté (EF-04-01) ; tableau de bord du laboratoire.
 - [x] Prélèvement sur place ou à domicile avec créneau, patient notifié (EF-04-02) ; `Echantillon` codé `EC-AAAA-NNNNNN` (EF-04-03).
 - [x] `ResultatAnalyse` : valeur, unité, références figées à la saisie, lecture NORMAL/ANORMAL/CRITIQUE calculée ; saisie par ligne ou import par code LOINC (EF-04-04/06).
 - [x] Validation nominative du biologiste **bloquante** (toutes les lignes renseignées) avant toute diffusion (EF-04-05) ; compte rendu imprimable avec filigrane « NON VALIDÉ » avant validation.
 - [x] Résultats critiques : seuils `critiqueMin/Max` par examen, alerte prioritaire au prescripteur avec accusé de lecture, escalade automatique vers l'admin de structure par job (30 min), diffusion patient différée jusqu'à l'accusé ou 24 h (EF-04-07/08/09).
 - [x] Courbe d'évolution d'une valeur, côté patient et côté professionnel (EF-04-10).
+- [x] ✅ **Livré le 2026-09-28 (API + front)** — **le patient ne voit un résultat qu'après que le médecin l'a libéré**, avec la possibilité d'y joindre une explication en langage clair (addendum, point 7). Aujourd'hui un résultat non critique part au patient dès la validation du laboratoire, et un résultat critique finit par partir tout seul au bout de 24 h : **cette diffusion automatique disparaît**. Un garde-fou relance le médecin puis escalade vers l'admin de structure — jamais vers le patient.
 - [ ] Saisie hors connexion via la sync existante (EF-04-11) — reporté : la sync ne couvre que l'ASC pour l'instant.
 - [x] Front : espace « Laboratoire » (tableau de bord, file, fiche demande avec frise, planification, prélèvement, saisie, validation biologiste, compte rendu), page « Alertes critiques » côté accueil, résultats dans la fiche épisode et dans « Mon parcours », page « Mes résultats » (courbe SVG + tableau) côté patient.
-- [ ] Médecin prescripteur : l'espace médecin n'émet pas encore de demandes d'analyse (seul l'accueil le fait) ; à brancher avec P3 (compte rendu de consultation).
+- [x] ✅ **Livré le 2026-09-29** — Médecin prescripteur : écran « Dossier de la visite » côté médecin (analyses de l'épisode, prescription, clôture). L'API l'autorisait déjà ; c'est l'écran qui manquait. Dans le même mouvement, l'accueil perd prescription, lecture de résultats, bon d'examen, clôture et envoi aux pharmacies (addendum, point 9). Les valeurs d'analyse sont masquées dans la fiche d'épisode qu'il continue de voir : fermer les routes ne suffisait pas.
 
-### P3 — Ordonnance infalsifiable + sécurité de prescription · M · EF-05
+### P3 — Ordonnance infalsifiable + sécurité de prescription · M · EF-05 · ⏳ **5 cases sur 6**
 - [x] **API livrée le 2026-09-23** — Numéro unique + code de vérification, durée de validité, statuts `PARTIELLEMENT_SERVIE`/`SERVIE`, vérification côté pharmacie (EF-05-07/08, EF-07-01).
   - L'ordonnance devient un **document** (`ordonnances`) et les médicaments ses **lignes** (`lignes_ordonnance`) : avant, trois médicaments prescrits le même jour formaient trois objets sans lien, donc rien à numéroter ni à contrôler.
   - Numérotation `OR-AAAA-NNNNNN` par le compteur atomique existant ; code de vérification tiré au CSPRNG sur un alphabet sans caractères ambigus (ni 0/O, ni 1/I/L).
@@ -83,7 +136,7 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les libellés étant saisis à la main, la comparaison est insensible aux accents et à la casse, avec un seuil de 4 caractères : sans lui, « fer » se rapprocherait de « fermeture » et les alertes deviendraient du bruit.
   - **Rien n'est bloqué** : le prescripteur voit le patient, le référentiel voit une paire de molécules. `POST /consultations/:id/ordonnances/alertes` renvoie ce qu'il doit savoir ; `motifRequis` n'est vrai qu'au-delà de la simple précaution, pour ne pas provoquer des « RAS » systématiques.
   - Les alertes sont **recalculées côté serveur** à la prescription (sauter l'appel ne les contourne pas) et **figées sur la ligne** avec le motif : le référentiel évoluera, ce qui compte est ce qui a été montré ce jour-là. La traçabilité du motif est en outre assurée par le journal d'audit, qui enregistre déjà le corps de chaque POST.
-  - ⚠️ **Le référentiel d'interactions est vide** : aucune donnée clinique n'a été inventée. Les alertes allergies et contre-indications fonctionnent dès maintenant depuis le dossier patient ; les interactions attendent l'import du référentiel (P11, décision D6).
+  - ⚠️ **Le référentiel d'interactions est vide** : aucune donnée clinique n'a été inventée. Les alertes allergies et contre-indications fonctionnent dès maintenant depuis le dossier patient. L'import qui permet de le remplir est livré depuis le 03/10 (EF-12-03) et vérifié de bout en bout : ce qui manque est **la source médicale validée**, pas l'outil (décision D6).
 - [x] **Front livré le 2026-09-23** : les alertes s'affichent dès le choix du médicament (pas à l'enregistrement — savoir après avoir rédigé la posologie n'aide personne), triées par gravité et colorées sur les tokens sémantiques (contre-indication → danger, déconseillée → warning, précaution → info), donc justes en clair comme en sombre. Le champ « motif de dépassement » n'apparaît qu'au-delà de la simple précaution, et le seuil vient de l'API.
   - Une analyse indisponible le dit au lieu de laisser croire que le dossier est sans particularité.
   - Parcours e2e étendu : la patiente du jeu d'essai est déclarée allergique à l'amoxicilline ; choisir cette molécule fait apparaître l'alerte et le motif, en changer les efface.
@@ -95,23 +148,61 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
   - Les deux durées et le plafond de renouvellements sont des **paramètres administrables** dans l'onglet « Ordonnances » du super-admin.
 - [ ] Compte rendu de consultation structuré, daté, signé (EF-05-03).
 
-### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02
-- [ ] Champs identito-vigilance (lieu de naissance, nom de la mère), identifiant définitif.
-- [ ] Niveaux d'identité `PROVISOIRE` / `VERIFIEE` et verrou tiers payant / produits sur prescription (EF-01-04/10).
-- [ ] Détection de doublons à la création et fusion par agent habilité, réversible (EF-01-05/06).
-- [ ] Vérification du numéro d'ordre avant activation d'un compte pro (EF-01-08) ; 2FA imposée aux pros (EF-01-07).
-- [ ] Consentement versionné avec le texte présenté, granularité pro/document, retrait immédiat (EF-02-01/03/05/07).
-- [ ] Bris de glace motivé, tracé, notifié, contrôlé (EF-02-06).
-- [ ] Journal des accès au dossier consultable par le patient (EF-02-08).
+### P4 — Identité patient, consentement, accès · L · EF-01 / EF-02 · ✅ **fini**
+- [x] **Livré le 2026-10-04** — champs identito-vigilance (lieu de naissance, nom de la mère) et niveaux d'identité `PROVISOIRE` / `VERIFIEE`, avec le **verrou du tiers payant** (EF-01-04/10). La contrainte SQL `patients_identite_verifiee_fondee` interdit une identité vérifiée sans pièce nommée : l'invariant est structurel, pas déclaratif. L'écran d'accueil dit que cela **ne conditionne pas les soins** — un agent qui refuserait quelqu'un sans papiers commettrait une faute grave. Le numéro de pièce n'est jamais réaffiché en entier.
+  > **Ce que cela réparait** : l'assurance livrée le 02/10 facturait des tiers sur des identités simplement déclarées. Le verrou par défaut était `VERIFIEE`, donc tout appelant qui l'oubliait passait — avec 1036 tests au vert. Le paramètre est désormais obligatoire.
+- [x] **Livré le 2026-10-04** — **détection de doublons** (EF-01-05). Proposition de candidats à un agent ; **aucune fusion n'est automatique**. Les poids viennent des données réelles : 9 patients sur 10 portaient le 1er janvier 2000, donc la date ne vaut presque rien et ce sont le nom de la mère et le lieu de naissance qui tranchent. Deux bornes structurelles : sans concordance de nom, et sur une simple variante d'orthographe, le score ne franchit jamais le seuil « probable » — deux frères partagent mère, ville, téléphone et parfois date, et atteignaient 115. Tolérance d'écriture (« Diallo » / « Dialo »), parce que c'est ainsi que naissent la plupart des doublons.
+  > **Trouvé en appelant la vraie API** : le pré-filtre SQL cherchait les mots du nom par sous-chaîne entière, donc « Dialo » ne retrouvait jamais « Diallo » et toute la tolérance d'orthographe était inatteignable — verte en test unitaire, muette en service. Et un dossier inexistant répondait 200 avec une liste vide, ce qui se lit « ce patient n'a pas de doublon ».
+- [x] **Livré le 2026-10-04** — **fusion de deux dossiers, réversible** (EF-01-06). Réservée à `ADMIN_STRUCTURE` : vérifier une pièce est le geste de l'accueil, mélanger deux dossiers médicaux ne l'est pas. Onze tables suivent le patient ; **le journal d'audit ne bouge pas** — un accès au dossier absorbé reste un accès à ce dossier, et le réécrire serait une falsification que les déclencheurs d'EF-12-04 refusent de toute façon. Le dossier absorbé n'est jamais supprimé : il garde son code QR, et les lectures suivent le lien, donc une ancienne carte continue de fonctionner.
+  > **La réversibilité n'est pas une promesse, c'est une liste** : chaque ligne déplacée est enregistrée, et annuler, c'est la relire. Ce qui a été ajouté au dossier survivant depuis la fusion lui reste. Vérifié par comparaison contre une vraie base (`scripts/prouver-fusion-reversible.mts`), et les quinze sabotages du service ont tous été attrapés — huit par ce script seul.
+  > **Les consentements : le plus restrictif l'emporte.** `@@unique([idPatient, scope])` interdit de garder les deux lignes en cas de désaccord. Élargir un accès sans que le patient l'ait dit ne se rattrape pas ; un consentement retiré à tort se redonne en une phrase. La réponse rapporte les usages restreints, pour qu'un agent redemande.
+  > **Trouvé en vérifiant l'écran** : l'`ADMIN_STRUCTURE` — le seul rôle autorisé à fusionner — était redirigé hors de l'écran des identités, qui n'était routé que pour l'accueil. La fonction aurait été livrée inatteignable.
+- [x] **Livré le 2026-10-07** — **numéro d'ordre vérifié avant activation** (EF-01-08). Un soignant dont l'inscription n'est pas confirmée ne soigne pas : l'activation du compte est refusée tant qu'un administrateur n'a pas déclaré avoir confronté le numéro au registre de l'ordre. Il n'existe pas d'API nationale à interroger — c'est un acte humain, tracé, comme la vérification d'identité (EF-01-04).
+  > **Le numéro vit sur l'utilisateur, pas sur chaque profil.** Il existait sur `MedecinProfile.numeroCom` et `AscProfile.numeroCertification`, et nulle part pour les pharmaciens et les techniciens : trois champs dispersés, deux absents. C'est pourquoi rien ne le vérifiait.
+  > **EF-01-07 était déjà fait** et personne ne l'avait noté : tout rôle non-PATIENT doit se connecter avec un e-mail professionnel et passe obligatoirement par un code à usage unique. Aucun contournement dans `login`.
+- [x] **Livré le 2026-10-04** — **consentement versionné, avec le texte présenté et le retrait immédiat** (EF-02-01/03/07). Un consentement ne vaut que pour ce qui a été expliqué : chaque accord pointe vers la version exacte du texte qui était à l'écran, et les textes évoluent sans réécrire ce à quoi les gens ont dit oui. L'historique est **en ajout seul** — deux déclencheurs PostgreSQL refusent `UPDATE`, `DELETE` et `TRUNCATE` — parce qu'avant, un retrait écrasait l'accord : on voyait le refus d'aujourd'hui, jamais l'accord d'hier.
+  > **Ce que les données ont montré** : sur les quatre consentements en base, **deux avaient été posés par le système** à la création du dossier, sans que personne ne voie rien. L'écran du patient l'affiche désormais en ces termes — « Accord présumé, jamais recueilli. Ce n'est pas un consentement » — et propose de confirmer. C'est tout l'objet du versionnage : distinguer un accord d'une case cochée à la place de quelqu'un.
+  > **La langue fait partie du texte** : seul le français existe, et un patient en pular voit le texte français avec la mention « Ce texte n'existe pas encore dans votre langue ». Le manque se voit au lieu de se cacher.
+  > **Un texte plus récent ne révoque pas l'accord donné** : révoquer d'office couperait l'accès au dossier de tous les patients le jour où l'on corrige une faute d'orthographe. On demande un renouvellement, on ne l'impose pas.
+- [ ] **Granularité par professionnel et par document** (EF-02-05). Le consentement est aujourd'hui global par usage.
+- [x] **Livré le 2026-10-07** — **le consentement commande réellement l'accès au dossier.** Un retrait ferme le dossier aux soignants dès la demande suivante ; le bris de glace passe outre, parce que c'est sa raison d'être.
+  > **Défaut permissif, et c'est un choix de déploiement assumé.** Pas de ligne de consentement = accès autorisé ; seul un refus explicite coupe. Exiger un accord positif aujourd'hui rendrait **11 dossiers sur 13 invisibles à tous les soignants** — mesuré avant de brancher quoi que ce soit — et treize bris de glace par jour ne sont pas une issue de secours, c'est la porte principale. Le jour où les patients auront répondu, basculer en accord positif tient en une ligne.
+  > Le filtre vit **au seul endroit où tous les rôles passent** : le mettre dans chaque branche aurait laissé un rôle dehors tôt ou tard, et un rôle dehors ici, c'est un dossier lu sans droit. Les deux copies du bris de glace ont disparu au passage.
+- [x] **Livré le 2026-10-04** — **bris de glace motivé, tracé, notifié, contrôlé** (EF-02-06). Un contrôle d'accès sans issue de secours ferait prescrire à l'aveugle devant un patient inconscient, et la règle serait contournée autrement — par un compte prêté — sans laisser de trace. Une porte déclarée vaut mieux qu'une porte dérobée.
+  > **Ce qui la distingue d'un passe-partout** : un motif pris dans une liste fermée *et* expliqué en toutes lettres (la liste permet de compter, le texte permet de juger) ; un accès qui **expire au bout de 4 heures** ; le **patient prévenu** avec le motif déclaré ; une **relecture** par l'administration, avec avis écrit exigé même pour dire que l'accès était fondé ; et une **déclaration qu'on ne peut pas réécrire** — un déclencheur PostgreSQL refuse de toucher au motif, au patient, à l'auteur et aux dates. Quelqu'un qui pourrait changer son motif après coup n'aurait rien déclaré.
+  > **Réservé aux rôles qui donnent des soins** : médecin, ASC, superviseur d'ASC. Ni l'accueil, ni l'administration, ni le laboratoire — leur ouvrir cette porte ferait de l'exception la règle.
+  > **Branché sur le contrôle d'accès**, et vérifié de bout en bout contre la vraie API : le dossier est refusé, la déclaration l'ouvre, la refermeture le referme aussitôt. Sans ce câblage, le soignant aurait rempli un formulaire pour rien.
+  > 22 sabotages du service, tous attrapés. 20 garde-fous SQL vus refuser sur une base jetable.
+- [x] **Livré le 2026-10-03** — **journal des accès consultable par le patient** (EF-02-08). Il existait, mais sa requête manquait les scans de QR (30 accès invisibles pour la patiente de démonstration) et n'était servie par aucun index. Le patient concerné vit désormais dans une colonne indexée, les libellés sont rédigés pour lui, et un filtre sépare les accès de tiers des siens. Détaillé en P11.
 
-### P5 — Fil d'avancement du parcours · S · EF-06
+> Cette case était comptée comme non commencée jusqu'au 2026-10-04, alors qu'elle était livrée la veille — la livraison ayant été faite sous P11, où vit le journal d'audit.
+
+### P5 — Fil d'avancement du parcours · S · EF-06 · ❌ **0 sur 3**
 - [ ] Endpoint patient agrégeant épisode → analyses → consultation → ordonnance → commande → livraison avec horodatages (EF-06-01).
 - [ ] Tous les documents téléchargeables/imprimables (EF-06-02/03).
 - [ ] Déclaration des informations d'assurance (EF-06-04).
 
-### P6 — Commande pharmacie · L · EF-07 / §3.2
+### P6 — Commande pharmacie **et gestion d'officine** · L · EF-07 / §3.2 · ⏳ **5 faites + 1 partielle sur 13**
 
-> **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**. Le front reste à faire.
+> **Élargi le 2026-09-28** (addendum, point 1) : il ne s'agit plus seulement de servir des ordonnances, mais de **tenir une pharmacie**. S'ajoutent la vente au comptoir, l'import Excel du catalogue, l'approvisionnement par facture et les alertes de péremption.
+>
+> ⚠️ **Un blocage de modèle est à lever d'abord.** `Stock` porte `@@unique([idStructure, idMedicament])` et **une seule** `datePeremption` : deux lots du même produit périmant à deux dates différentes ne tiennent pas dedans, alors que c'est exactement ce que produit un approvisionnement. Il faut un modèle `LotStock`, `Stock` devenant la somme de ses lots. Migration avec reprise.
+>
+> De même, la **vente au comptoir n'existe pas**. `Facture` ne sait pas dire **ce qui** a été vendu : elle n'a qu'un `montantGnf`, aucune ligne. Elle exige aussi un `idPatient`, donc un client de passage sans dossier ne peut pas être facturé. Elle ne porte ni vendeur, ni remise, ni établissement. (`idConsultation` est `String?`, donc une facture sans consultation est déjà possible — le verrou n'est pas là.) Sans lignes, il n'y a rien à totaliser dans un tableau de bord.
+
+> **Socle livré le 2026-09-26 (API)** : géographie (`commune`, `quartier` sur le patient et la structure), `StructureSante.estPartenaire`, rôle `LIVREUR`, modèles `Commande` et `ReponsePharmacie`, appel au quartier et **attribution atomique**.
+>
+> **L'écran du comptoir est livré le 2026-10-09** (`/pharmacien/commandes`) : la file des appels du quartier, la liste exacte des produits, « j'ai tout » / « je n'ai pas tout », et rendre une commande prise par erreur. Un 409 n'y est pas une panne — une autre officine a été plus rapide, et l'écran le dit ainsi.
+>
+> **Aucune pharmacie n'avait jamais été prévenue d'un appel.** `idUtilisateur` recevait l'identifiant de la **structure** : la clé étrangère refusait, l'erreur était avalée, et le défaut ne se voyait pas parce que l'écran finit par montrer l'appel — encore faut-il penser à le regarder. Corrigé le 09/10, et tenu par deux tests.
+>
+> **L'appel part à la signature de l'ordonnance** depuis le 2026-10-10 : c'est le geste décrit par l'addendum (« dès l'ordonnance prête »), et plus rien n'exige d'appeler l'API à la main. Il part hors transaction et sans bloquer — une recherche qui échoue ne défait jamais une signature, et l'ordonnance reste servable au comptoir.
+>
+> **L'écran du patient** (`/patient/commandes`) : il voit l'officine qui a pris sa commande, ses produits, et choisit **retrait ou livraison**. Les deux options ont le même poids visuel et aucune n'est présélectionnée — le test vérifie qu'elles ont la même largeur, pas seulement qu'elles existent.
+>
+> ⚠️ **`GET /commandes/:id` n'avait aucun contrôle** — ni rôle, ni propriété : tout compte connecté lisait la commande d'un inconnu, avec son nom et ses médicaments. Défaut présent depuis la mise en place de la route le 26/09, corrigé le 10/10. Quatre lectures sont légitimes : le patient, la pharmacie concernée, le prescripteur, l'administration.
+>
+> **Reste la machine à états au-delà de la prise en charge** : préparation, prêt pour retrait, et côté livraison les frais de transport proposés puis acceptés.
 >
 > L'attribution repose sur un `updateMany` conditionnel : deux pharmacies simultanées donnent un gagnant et un perdant, jamais deux gagnants. Vérifié par sabotage.
 
@@ -126,15 +217,30 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Validation nominative obligatoire du pharmacien (EF-07-03) ; substitution tracée et notifiée (EF-07-04) ; refus motivé (EF-07-05).
 - [ ] Stock temps réel + pharmacie alternative (EF-07-06) ; délivrance partielle (EF-07-07) ; pas de retour (EF-07-11).
 - [ ] Historique et renouvellement (EF-07-09).
+- [x] **API + front livrés le 2026-09-30** — **`LotStock`** : quantité, date de péremption, facture d'origine, prix d'achat. Sortie au plus proche de la péremption (`consommerLots`), et délivrance d'un lot périmé bloquée. `Stock.datePeremption` a disparu ; `Stock.quantite` est la somme de ses lots.
+- [x] **API + front livres le 2026-10-02** — **Vente au comptoir** : modeles `VenteComptoir` et `LigneVente`, panier, remise plafonnee par parametre, mode de paiement, vendeur, client **facultatif** (un passant n'a pas de dossier), ordonnance exigee pour un produit reglemente (EF-05-12) — l'ecran le dit **avant** d'encaisser — et verifiee par les memes regles qu'au guichet. Sortie de stock par `consommerLots`. Annulation d'une erreur de saisie qui remet **exactement** les lots sortis ; ce n'est pas un retour client (EF-07-11). **Reste le volet assurance, qui depend de P10.**
+- [x] **API + front livres le 2026-10-02** — **Tableau de bord officine** : chiffre du jour depuis minuit, panier moyen, encaissements par moyen de paiement, dix produits les plus vendus sur trente jours, ruptures et lots a perimer. Les ventes annulees sont exclues de tous les agregats.
+- [ ] **Import Excel du catalogue**, avec rapport ligne par ligne — un import qui échoue en silence sur trois lignes est pire que pas d'import.
+- [~] **Approvisionnement par facture** — **premier temps livré le 2026-09-30 (API + front)** : saisie assistée, une ligne par lot avec sa propre péremption, facture attachée en justificatif, total recalculé à la frappe. **Reste l'extraction automatique**, qui devra **toujours** être relue avant enregistrement : une erreur d'OCR sur une quantité ou une péremption ne doit jamais entrer seule en stock.
+- [x] **API + front livrés le 2026-09-30** — **Alerte de péremption proche**, seuil paramétrable (`STOCK_PEREMPTION_ALERTE_JOURS`, 90 par défaut) et horizon choisi à l'écran (30/60/90/180). Les lots déjà périmés sont présentés à part : ils sont à retirer, pas à surveiller.
 
-### P7 — Paiement fiable (fournisseur simulé) · M · EF-08
-- [ ] `TentativePaiement` avec référence unique → idempotence (EF-08-03).
-- [ ] Statuts en attente et job de vérification répétée (EF-08-04).
-- [ ] Détail du calcul avant paiement (EF-08-01) ; reçu et facture téléchargeables (EF-08-06).
+### P7 — Paiement · M · EF-08 · ⏳ **3 sur 5** — passerelle **réelle** livrée les 8 et 9/10
+
+> Le titre disait « fournisseur simulé ». Il l'était : `payment-provider.service.ts` fabriquait une référence et n'appelait personne, et une facture ne passait à `PAYEE` que si un humain la confirmait. **Chap Chap Pay** est désormais branché pour de vrai.
+>
+> Trois faits découverts en sondant leur bac à sable, que leur documentation ne dit pas ou dit faux : le guide annonce `POST /api/ecommerce/operation`, **qui n'existe pas** (c'est `/ecommerce/create`) ; le **minimum est de 3 000 GNF** exactement ; et un même `order_id` peut porter plusieurs opérations, la lecture rendant **la plus récente** — d'où la lecture par `operation_id`, stable.
+>
+> **La relecture du statut fait foi, le rappel accélère.** Toute réponse HTTP de notre part met fin aux reprises de ChapChap, 500 compris : dépendre du rappel, c'est faire payer deux fois un patient qui a payé.
+
+- [x] **Idempotence (EF-08-03)** — portée par la facture et la vente, pas par une table de tentatives : `success` est définitif et n'est jamais défait par un rappel tardif, et la prise est conditionnelle (un seul gagnant).
+- [x] **Statuts en attente et vérification (EF-08-04)** — `statutOperateur` sur la facture et sur la vente ; la relecture interroge la passerelle à la demande. **Pas de tâche de fond** : au comptoir, le pharmacien appuie quand le client dit avoir payé.
+- [x] **Aucune donnée de carte stockée (EF-08-05)** — la plateforme n'en voit jamais : le paiement se fait sur la page de l'opérateur.
+- [ ] Détail du calcul avant paiement (EF-08-01) : fait à la caisse pour l'assurance, **reste le reçu et la facture téléchargeables** (EF-08-06).
 - [ ] Remboursements totaux/partiels motivés (EF-08-07) ; rapprochement quotidien avec signalement des écarts (EF-08-08).
-- [ ] Aucune donnée de carte stockée (EF-08-05).
 
-### P8 — Livraison + carte + annuaire · L · EF-10
+> **La pharmacie avait un trou** : le pharmacien cochait « Orange Money » et la vente naissait `PAYEE` sans qu'un franc ait bougé. Une vente mobile naît maintenant `EN_ATTENTE`, affiche un QR que le client scanne avec son propre téléphone, et ne devient `PAYEE` qu'en portant `referenceTransaction` — deux contraintes SQL l'imposent.
+
+### P8 — Livraison + carte + annuaire · L · EF-10 · ❌ **0 sur 9**
 - [ ] Rôle `LIVREUR` ; `OrdreLivraison` créé après paiement et préparation (EF-10-01).
 - [ ] Adresse avec points de repère, instructions, position GPS (EF-10-02) ; créneaux (EF-10-03).
 - [ ] Affectation au livreur ; positions horodatées pour le **suivi du trajet** (EF-10-04/05).
@@ -145,34 +251,74 @@ Tailles : **S** ≈ 1 jour · **M** ≈ 2–3 jours · **L** ≈ 4–6 jours.
 - [ ] Le retrait en pharmacie n'est **pas un repli** : c'est un mode de remise permanent, à égalité avec la livraison.
 - [ ] Annuaire public géolocalisé : cliniques, pharmacies, laboratoires (horaires, services, coordonnées).
 
-### P9 — Notifications neutres · S · EF-11
-- [ ] Aucun contenu médical dans un message sortant (EF-11-02) ; SMS en repli (EF-11-03).
+### P9 — Notifications neutres · S · EF-11 · ⏳ **1 sur 2**
+- [x] **API livrée le 2026-10-02** — **aucun contenu médical dans un message sortant** (EF-11-02). Ce n'était pas une case vide mais un **défaut en service** : le code envoyait « des analyses vous attendent », « prélèvement prévu », « vos résultats d'analyses sont disponibles », « RESULTAT CRITIQUE », « votre vaccination BCG est due ». Le contrôle vit au **point de sortie** des SMS, donc un site d'appel oublié ne peut pas fuir ; des constructeurs nommés produisent les messages. Hors production le refus **lève** ; en production il remplace par un message neutre et journalise. Un message tapé par un administrateur est refusé en **400** avec le mot fautif. SMS en repli (EF-11-03) : reste à faire.
 - [ ] Préférences de canaux et de langue (EF-11-04) ; rejeu des non délivrées (EF-11-05).
 
-### P10 — Assurance et tiers payant · L · EF-09
-- [ ] `Assureur`, `ContratAssurance`, bénéficiaires, date d'effet (EF-09-01).
-- [ ] Taux par acte/analyse/produit avec date d'effet ; plafonds, franchises, exclusions, carence (EF-09-03/04).
-- [ ] Calcul du reste à charge ligne par ligne (ENF-04-08).
+### P10 — Assurance et tiers payant · L · EF-09 · ⏳ **5 faites + 4 partielles sur 9** — complété les 8 et 9/10
+
+> **L'écran d'administration** (`/admin/assurance`) : déclarer un assureur, ses règles de couverture, et rattacher une police à un assuré. L'API existait depuis le 02/10 et ne se joignait qu'en ligne de commande.
+>
+> **L'espace de l'assureur** (`/assureur`, neuvième rôle) : la compagnie se connecte elle-même. Elle voit ses assurés, ce qu'elle a pris en charge, et la situation par officine — délivré, facturé, versé, reste dû (point 5.2). **Rien de médical n'en sort** : un assureur qui lirait ce qu'on soigne pourrait refuser un contrat dessus. `ReglementAssureur` rend « payé » et « reste dû » calculables.
+- [~] **API livrée le 2026-10-02** — `Assureur` (code, mode d'échange, structure de type `ASSURANCE`) et `ContratAssurance` (police, taux de base, plafond annuel, franchise, date d'effet, date de fin, carence). **Reste les bénéficiaires** : un contrat couvre aujourd'hui un seul patient, pas ses ayants droit.
+- [~] **API livrée le 2026-10-02** — taux **par catégorie de produit** avec date d'effet, plafond par ligne, plafond annuel, franchise, carence. `RegleCouverture` ne remplace jamais la précédente : sa date d'effet décide, et le calcul retient celle en vigueur à la date de la vente. **Reste les taux par acte et par analyse**, qui supposent un référentiel d'actes (P11).
+- [x] **API + front livrés le 2026-10-02** — calcul du reste à charge **ligne par ligne**, fonction pure et testée pour elle-même. Le détail s'additionne exactement à la part de l'assureur, franchise et plafonds compris : sinon l'écran afficherait une somme qui ne tombe pas juste. La caisse l'affiche **avant** l'encaissement.
 - [ ] Autorisation préalable bloquante au-delà d'un seuil paramétrable (EF-09-05).
-- [ ] Trois modes : API, portail assureur, validation manuelle (EF-09-02) ; dossier de facturation et suivi (EF-09-06/07).
-- [ ] Règle de rejet après délivrance en paramètre (EF-09-08, décision D4) ; non assurés en paiement direct (EF-09-09).
+- [ ] Trois modes : API, portail assureur, validation manuelle (EF-09-02) — `Assureur.modeEchange` existe, **seul `MANUEL` fonctionne** ; dossier de facturation et suivi (EF-09-06/07).
+- [~] Non assurés en **paiement direct** : acquis, une vente sans `avecAssurance` est intégralement payée par le client (EF-09-09). **Reste la règle de rejet après délivrance** (EF-09-08, décision D4).
+- [~] **API + front livrés le 2026-10-02** — contrôle d'éligibilité **opposable et tracé** : le patient se reconnaît par son QR au comptoir, la réponse est figée en base, jamais recalculée, et un refus porte toujours son motif (contrainte SQL). **Reste la vue de l'assureur sur ses pharmacies conventionnées** (délivré, facturé, payé, dû, écarts) — elle suppose un suivi de règlement qui n'existe pas encore.
+- [x] **API livrée le 2026-10-02** — **exclusions par catégorie de produit**. Les deux préalables ont été levés le 2026-10-01 : le catalogue accepte des articles non médicamenteux, et `CategorieProduit` est une énumération fermée. Une catégorie exclue n'a pas de taux : porter les deux serait contradictoire, et une contrainte SQL le refuse.
+- [x] **API + front livrés le 2026-10-02** — **un taux de 100 % ne couvre pas tout**. Vérifié à l'écran : un assuré à 100 % chez qui le lait est exclu voit « Total 47 000 · Pris par l'assureur − 2 000 · À encaisser 45 000 », et la ligne de lait porte « Catégorie LAIT_INFANTILE exclue par l'assureur ». Le détail est montré **avant** paiement, avec les notes disant ce qui a raboté la part de l'assureur.
 
-### P11 — Administration, audit, référentiels · M · EF-12
-- [ ] Journal non modifiable incluant les **lectures** de dossier ; recherche et export (EF-12-04/05).
-- [ ] Suspension immédiate d'un compte (EF-12-01) ; conventions des partenaires (EF-12-02).
-- [ ] Référentiels importables : LOINC, CIM-10, ATC, tarifs, taux, zones de livraison (EF-12-03).
-- [ ] Demandes RGPD : accès, rectification, effacement, portabilité (EF-12-09).
-- [ ] Détection d'anomalies d'accès (EF-12-06).
+### P11 — Administration, audit, référentiels · M · EF-12 · ⏳ **6 livrés** — reste EF-12-02
+- [~] **API livrée le 03/10** — **journal non modifiable incluant les lectures** (EF-12-04). Trois constats en éprouvant la table :
+  - l'**ajout seul existait déjà**, depuis la migration du 2026-06-19 : un déclencheur refuse `UPDATE` et `DELETE`. Cette case était comptée comme non commencée à tort ;
+  - **mais `TRUNCATE` n'était pas couvert.** Ce déclencheur est `FOR EACH ROW`, et `TRUNCATE` ne déclenche jamais un déclencheur de ligne : `TRUNCATE journal_audit` vidait le journal entier sans obstacle. Fermé par un déclencheur d'instruction ;
+  - la colonne `ressource` était **fausse en service** : Express tronque `req.path` du préfixe de montage, et le code y cherchait le segment `v1`. D'où 288 lignes de ressource « me » et 120 « unknown » dans la base de démonstration.
+  - **Limite assumée** : le propriétaire de la table peut supprimer ou désactiver un déclencheur. Une inviolabilité complète suppose des droits restreints au niveau du SGBD, voire un stockage en écriture unique.
+  - **Reste sur EF-12-04** : rien. La recherche et l'export (EF-12-05) sont livrés le même jour, voir ci-dessous.
+- [x] **API, Swagger et écran livrés le 03/10** — **recherche et export du journal** (EF-12-05). `/admin/journal` : période, rôle, ressource, patient, auteur, refus seulement, et export CSV.
+  - **La recherche est elle-même journalisée.** Sans cela, le seul endroit d'où l'on voit tout serait le seul qu'on ne verrait pas. L'écran le dit à l'opérateur plutôt que de le lui cacher.
+  - **Un export trop large est refusé, jamais tronqué en silence** (limite 10 000 lignes, le message donne le nombre exact). Un journal d'audit amputé sans le dire est pire qu'un export absent : on conclut d'une absence de ligne qu'il ne s'est rien passé. L'écran prévient avant le clic.
+  - **Sans date de début, la recherche ne remonte pas au-delà de 30 jours** : le journal est la table qui grandit le plus vite.
+  - Deux fautes trouvées contre l'API réelle, pas par les tests : un critère mal orthographié passait en silence (le routeur recopiait les critères à la main, court-circuitant `.strict()`), et un rôle inconnu rendait 500 au lieu de 400.
+  - Au passage, l'**export d'analytics** joignait ses champs sur une virgule sans échappement : « Fièvre, toux » décalait toutes les colonnes suivantes, et le fichier s'ouvrait quand même. Il passe par le même générateur CSV, qui échappe, pose le BOM et sépare par des points-virgules.
+- [~] **API, Swagger et écran livrés le 03/10** — **suspension immédiate d'un compte** (EF-12-01). `/admin/comptes`, réservé à `ADMIN_NATIONAL` et `SUPER_ADMIN` ; un admin de structure disposait déjà de `desactiverAgent`, borné à ses propres agents.
+  - **Le trou comblé** : un socket n'est authentifié qu'à la poignée de main. Un compte suspendu continuait de recevoir les notifications de ses patients jusqu'à ce qu'il ferme son navigateur, alors que la moindre requête HTTP lui était refusée dans la seconde. Vérifié contre l'API : « 33 session(s) et 1 connexion(s) temps réel coupées ».
+  - « Immédiate » engage donc **trois portes** : `estActif = false` relu à chaque requête, sessions supprimées, sockets fermés — avec un événement `session:revoquee` avant la coupure, sinon le navigateur se contente de réessayer.
+  - **Qui, quand, pourquoi** : trois colonnes, et une contrainte SQL qui refuse qu'elles se contredisent. Le motif fait au moins dix caractères. La contrainte tolère les 15 comptes fermés par l'ancienne voie, sans motif connu, et l'écran les distingue d'une suspension documentée.
+  - **Garde-fous** : soi-même, un compte déjà fermé, un `SUPER_ADMIN` quand on n'en est pas un, et **le dernier super administrateur actif** — la base de démonstration n'en porte qu'un, le suspendre laisserait la plateforme sans administration.
+- [ ] **Conventions des partenaires** (EF-12-02) — ni modèle ni écran.
+- [x] **API livrée le 2026-10-03** — **référentiels importables par CSV** (EF-12-03) : examens LOINC, interactions médicamenteuses, catalogue produits. `POST /api/v1/referentiels/{type}/import`, réservé à `ADMIN_NATIONAL` et `SUPER_ADMIN` — une règle d'interaction erronée se traduirait en alerte fausse, ou absente, chez chaque prescripteur.
+  - **`simulation: true` valide tout et n'écrit rien** : c'est ce qu'on lance avant un import réel.
+  - Le rapport porte **une ligne par ligne du fichier** avec son verdict (`CREEE`, `MISE_A_JOUR`, `REFUSEE`) et le motif de chaque refus. Les lignes valides passent malgré un refus : rejeter deux mille bonnes lignes pour trois mauvaises serait pire, mais rien n'est silencieux.
+  - Format réel d'Excel en français : séparateur `;` ou `,` déduit de l'en-tête, guillemets avec échappement par doublement, champs sur plusieurs lignes, CRLF, BOM, lignes vides.
+  - Les paires de DCI sont **normalisées et triées** avant écriture, parce que la détection d'interaction normalise et trie ses arguments : sans cela la règle serait en base et l'alerte ne sortirait jamais. Vérifié en rejouant la requête de la détection après un import réel.
+  - **Le numéro de ligne rendu est celui du tableur de l'opérateur**, lignes vides et champs multilignes compris. La première version numérotait par position dans le tableau après filtrage : une seule ligne vide et l'opérateur était renvoyé à la ligne précédant la fautive, donc il corrigeait une ligne saine. Trouvé en interrogeant l'API réelle, pas par les 40 tests unitaires. Six sabotages verrouillent la correction.
+  - **Reste à faire** : CIM-10, ATC, zones de livraison, tarifs par acte et par analyse — et un écran d'administration ; aujourd'hui l'import se fait par l'API.
+- [x] **API, Swagger et deux écrans livrés le 04/10** — **demandes d'exercice de droits** (EF-12-09). Le patient dépose depuis sa page de confidentialité ; l'administration traite depuis `/admin/demandes-rgpd`, avec un délai de 30 jours et les retards annoncés en tête.
+  - **Rien n'est exécuté automatiquement.** Ni effacement, ni rectification d'un dossier de soins : ces actes ont des conséquences légales et se décident.
+  - **L'effacement d'un dossier de soins n'est pas une suppression.** Le patient le lit avant d'envoyer sa demande, et l'agent le relit au moment de répondre : la loi impose la conservation, la trace des accès doit subsister, et ce qui est possible est une anonymisation de l'identité. Promettre une suppression qui ne viendra pas serait pire que de ne rien proposer.
+  - **La réponse écrite est obligatoire** dès que la demande est close, au moins dix caractères — règle posée dans le schéma Zod, dans le service **et** dans une contrainte SQL. Un refus qu'on ne motive pas n'est pas contestable.
+  - **Ce que l'absence de ce cadre avait coûté** : 15 comptes de la base ont vu leur téléphone remplacé par « purged-<id> » le 2026-08-04, sans trace ni dans le journal ni dans le code, et à moitié seulement — nom et prénom sont restés lisibles.
+  - **Reste à construire** : l'anonymisation elle-même. Aujourd'hui une demande d'effacement se traite à la main et la réponse dit ce qui a été fait.
+- [x] **API, Swagger et écran livrés le 03/10** — **détection d'anomalies d'accès** (EF-12-06). `GET /journal/anomalies`, et un encart en tête de `/admin/journal` d'où chaque signal mène au détail.
+  - **Ce sont des signaux à examiner, pas des verdicts.** Un soignant de garde consulte beaucoup de dossiers sans rien faire de mal ; un comptoir de pharmacie scanne des dizaines de codes par jour. Un détecteur qui trancherait ferait suspendre des gens à tort. L'écran le dit, en toutes lettres.
+  - **Trois détecteurs** : refus répétés (**seuls 401 et 403** — un 400 est une requête mal formée, pas une porte forcée), dossiers **distincts** touchés, et adresses IP multiples. Ce dernier ne monte jamais en alerte : un soignant qui passe du wifi au téléphone le déclenche.
+  - **Les seuils ne sont pas calibrés** sur du trafic réel et devront probablement varier selon le rôle. C'est écrit dans le code, dans Swagger, dans un test qui les fixe, et **affiché à l'écran**.
+  - Vérifié en **provoquant** l'anomalie : seize tentatives refusées sur le journal d'audit, puis l'écran ouvert. « Alerte — David Camara (Médecin) s'est vu refuser l'accès 41 fois, pour un seuil de 5 », et le clic sur « Voir le détail » a rendu les lignes correspondantes.
 
-### P12 — Interopérabilité · L · EF-13
+### P12 — Interopérabilité · L · EF-13 · ❌ **0 sur 3**
 - [ ] HL7 v2 en réception (EF-13-03) ; ressources FHIR R4 étendues (EF-13-02).
 - [ ] Connecteur fichier CSV/XML (EF-13-05) ; portail de saisie manuelle (EF-13-06).
 - [ ] Journal et rejeu des échanges externes (EF-13-07) ; environnement de test partenaires (EF-13-08).
 
-### P13 — Extension (lot V4) · L
+### P13 — Extension (lot V4) · L · ⏳ **1 sur 5**
 - [ ] Comptes aidants avec mandat et périmètre (EF-06-05) ; mineurs (EF-06-06).
 - [ ] Rappels de prise de traitement (EF-06-09) ; code d'urgence (EF-06-08).
-- [ ] Téléconsultation (EF-05-10/11) ; statistiques anonymisées (EF-12-08).
+- [x] ✅ **Livré le 2026-09-30 (API + front)** — **Prise de rendez-vous à distance** (addendum, point 6) : le patient demande sa consultation depuis chez lui, le médecin fixe le créneau, l'assistante le pointe à son arrivée. Se construit avec le circuit RDV ci-dessus.
+- [ ] **Téléconsultation réelle (EF-05-10/11)** — visioconférence, acte à distance : **reste en lot V4**, décision du chef de projet (« on verra un peu plus tard »), et toujours suspendue à **D2**. Elle s'appuiera sur le circuit de prise de rendez-vous à distance : on ne consulte pas à distance quelqu'un qui n'a pas pu prendre rendez-vous à distance.
+- [ ] Statistiques anonymisées (EF-12-08).
 
 ## Du point où nous en sommes à la mise en service
 
@@ -200,7 +346,7 @@ Ce qui rend la plateforme utilisable en établissement, sans commerce ni assuran
 | P9 | Notifications sans contenu médical, préférences de canal, rejeu | S | — |
 | P11 | Journal d'audit des **lectures**, référentiels importables, demandes RGPD | M | — |
 
-**P11 conditionne le reste** : c'est lui qui apporte l'import des référentiels (LOINC, CIM-10, ATC, tarifs). Sans lui, le référentiel d'interactions médicamenteuses reste vide et le catalogue de médicaments ne se gère qu'en base.
+**Le verrou P11 est partiellement levé** (03/10) : l'import CSV existe pour les examens, les interactions et le catalogue produits. Le référentiel d'interactions **reste vide en base** — aucune donnée clinique n'a été inventée — mais il est désormais remplissable sans toucher au SQL. Restent à couvrir par l'import : CIM-10, ATC, tarifs par acte et par analyse, zones de livraison.
 
 À l'issue de cette phase, le lot V1 du cahier des charges est couvert : **recette possible sur le parcours médical**.
 
@@ -237,11 +383,11 @@ Constatée et vérifiée le 2026-09-25. Rien ici n'est bloquant pour développer
 | Point | Constat | Effort |
 |---|---|---|
 | `apps/api/prisma.config.js` | Artefact de build **commité** à côté du `.ts`. Prisma le préfère et fait échouer les commandes sans `--config` explicite. | S |
-| Swagger | **2 routes pharmacien documentées sur 12.** Le CDC impose que chaque livraison référence ses exigences dans Swagger. | S |
+| Swagger | **2 routes pharmacien documentées sur 10.** Le CDC impose que chaque livraison référence ses exigences dans Swagger. | S |
 | CI | `actions/checkout@v4` et `setup-node@v4` ciblent Node 20, déprécié. Avertissement aujourd'hui, panne demain. | S |
 | Redis | `REDIS_URL` non configuré : la limitation de débit est **en mémoire**, donc inopérante dès qu'il y a plus d'une instance. | S |
 | E-mail | Gmail non configuré : l'OTP tombe en repli développement. Inacceptable en production. | S |
-| Référentiels | Interactions médicamenteuses **vides** (aucune donnée clinique inventée), catalogue médicaments non administrable depuis l'interface. | résolu par P11 |
+| Référentiels | Interactions médicamenteuses **vides** en base : aucune donnée clinique n'a été inventée, et il faut une source médicale validée pour les remplir. L'import existe depuis le 03/10 (EF-12-03), mais seulement par l'API : pas encore d'écran d'administration. | import livré, **données et écran à venir** |
 | Sync hors connexion | Ne couvre que l'ASC. Le laboratoire (EF-04-11) l'attend. | M |
 
 ### Ce qui n'est pas du code
@@ -294,6 +440,13 @@ Hébergeur agréé santé et localisation des données (ENF-05), sauvegardes RPO
 
 | Date | Bloc | Commit / note |
 |---|---|---|
+| 2026-09-30 | P13→P1 | **Bloc 5 de l'addendum livré (API + front)** : le patient demande un rendez-vous depuis chez lui, l'accueil oriente ce que personne ne vise, le médecin accepte en fixant l'heure — ce geste ouvre l'épisode et le rendez-vous dans la même transaction. La demande n'ouvre pas d'épisode tant qu'elle n'est pas acceptée : un épisode est une visite, et une demande n'en est pas encore une. 376 tests API. |
+| 2026-09-30 | P2 | **Bloc 4 de l'addendum livré** : le rôle `BIOLOGISTE` disparaît, le laborantin valide. Migration écrite à la main — Prisma proposait une conversion d'énumération qui **échoue** sur les comptes existants, et un `DROP COLUMN` qui aurait effacé les 4 conclusions de laboratoire. Vérifié : 2 comptes migrés, 4 conclusions préservées. `commentaireBiologiste` devient `commentaireLaboratoire`. Le compte rendu n'imprime plus « Biologiste » sous le signataire : cette qualification n'a jamais été stockée. |
+| 2026-09-30 | P1 | **Bloc 3 de l'addendum livré (API + front)** : l'accueil oriente sans date, le médecin fixe le créneau et tient son agenda, l'assistante pointe l'arrivée. `RendezVous.statut` devient une énumération — ce qui a révélé que `asc.service.ts` comptait des rendez-vous « HONORE » que personne n'écrivait jamais, compteur structurellement à zéro. Migration écrite à la main : `prisma migrate diff` proposait un DROP COLUMN qui aurait effacé les statuts. 351 tests API. |
+| 2026-09-29 | P1/P2 | **Bloc 2 de l'addendum livré (API + front)** : le médecin prescrit les analyses depuis un écran « Dossier de la visite » ; l'accueil ne fait plus rien de médical. Vérifié en appelant réellement l'API avec le compte du médecin avant d'écrire quoi que ce soit — il avait déjà le droit. `requireRole` porte désormais ses rôles, ce qui rend le câblage des permissions vérifiable : 14 tests décrivent qui peut atteindre quoi, alors qu'aucun ne le faisait avant. 321 tests API. |
+| 2026-09-28 | P2 | **Bloc 1 de l'addendum livré (API + front)** : le patient ne voit un résultat qu'après libération par un médecin, avec explication en langage clair. La diffusion automatique à 24 h est supprimée, remplacée par une relance du médecin (12 h) puis une escalade vers l'admin de structure (48 h) — jamais vers le patient. Les 4 tests qui verrouillaient l'ancienne règle ont échoué au premier lancement et ont été réécrits ; 2 sabotages vérifiés. 305 tests API, 21 web. Dette soldée au passage : `prisma.config.js` supprimé (il faisait échouer migrate, generate et diff). |
+| 2026-09-28 | CDC | Compléments : **agenda du médecin** (point 8, l'index existe déjà en base) et arbitrage téléconsultation — la **prise de rendez-vous à distance se fait maintenant**, la consultation à distance réelle attend D2. |
+| 2026-09-28 | CDC | **Addendum du chef de projet** (`ADDENDUM-CDC-2026-09-28.md`) : huit points, dont **trois reprises de code livré** (RDV fixés par le médecin, suppression du rôle biologiste, résultats libérés par le médecin). Trois arbitrages tranchés le jour même. Ordonnancement proposé : les reprises d'abord, ~20 à 27 jours au total. Cinq questions restent ouvertes. |
 | 2026-09-26 | P6 | Socle commande pharmacie (API) : quartier/commune, pharmacie partenaire, rôle `LIVREUR`, `Commande` + `ReponsePharmacie`, appel au quartier, attribution atomique au premier déclarant, rétractation, choix du mode de remise. 283 tests API. Front à faire. |
 | 2026-09-25 | P3 | Renouvellement et produits réglementés (EF-05-09, EF-05-12), API + interfaces. 261 tests API, 5 parcours e2e. Deux signatures rendues obligatoires dans `motifDeRefus` pour que le compilateur force les appelants : sans cela les deux règles restaient inertes. |
 | 2026-09-23 | P3 | Front sécurité de prescription : alertes affichées au choix du médicament, triées par gravité, motif de dépassement exigé au-delà de la précaution. Jeu e2e enrichi d'une allergie déclarée pour vérifier que l'alerte arrive bien à l'écran. |

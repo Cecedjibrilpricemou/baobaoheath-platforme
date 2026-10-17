@@ -10,6 +10,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'EXPORT.DOC.CONSULTATIONS_A_VALIDER'"
+    [colonnes]="colonnes"
+    [lignes]="consultations()"
+    [nomFichier]="'consultations-a-valider'" />
+
+
   <!-- Messages -->
   @if (successMessage()) {
     <div class="bb-med-cons__alert bb-med-cons__alert--success" role="status" aria-live="polite">
@@ -147,7 +154,7 @@
                 <label [for]="'ordo-check-' + ordonnance.id" (click)="$event.stopPropagation()">
                   <p class="bb-med-cons__ordo-numero">{{ ordonnance.numero }}</p>
                   @for (o of ordonnance.lignes; track o.id) {
-                    <p class="bb-med-cons__ordo-med">{{ o.medicament?.nomCommercial ?? o.medicament?.dci }} — {{ o.medicament?.dosage }}</p>
+                    <p class="bb-med-cons__ordo-med">{{ o.medicament?.libelle }}</p>
                     <p class="bb-med-cons__ordo-posologie">{{ o.posologie }} · {{ o.frequence }} · {{ o.dureeJours }}j</p>
                   }
                 </label>

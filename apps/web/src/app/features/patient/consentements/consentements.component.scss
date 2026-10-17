@@ -215,6 +215,38 @@
     color: var(--bb-text-secondary);
   }
   &__res { color: var(--bb-text-secondary); }
+
+  // Le libelle redige pour le patient, a la place du motif de route. Le
+  // detail technique reste en infobulle.
+  &__libelle { color: var(--bb-text-primary); }
+
+  // Un refus est une tentative, pas un acces : il doit se distinguer d'un
+  // coup d'oeil, c'est le plus interessant du journal.
+  &__refus {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--bb-radius-sm);
+    background: color-mix(in srgb, var(--bb-danger) 12%, transparent);
+    color: var(--bb-danger);
+  }
+
+  // Ses propres acces s'effacent visuellement : ce ne sont pas eux qu'on
+  // cherche. Un fond plutot qu'une opacite, pour rester lisible.
+  &__row--moi {
+    background: var(--bb-surface-1);
+
+    .access-table__date,
+    .access-table__who,
+    .access-table__libelle { color: var(--bb-text-secondary); }
+  }
+}
+
+.access-filter {
+  margin: 0 0 0.75rem;
+  font-size: 13px;
 }
 
 .bb-empty {
@@ -253,4 +285,260 @@
     td:nth-child(2) { grid-column: 1; grid-row: 1; }
     td:nth-child(3) { grid-column: 1 / -1; margin-top: 4px; }
   }
+}
+
+// ── Mes droits (EF-12-09) ───────────────────────────────────────────
+//
+// Une demande RGPD n'est pas un réglage : elle part à quelqu'un, qui répond.
+// La carte doit donc se lire comme un courrier, pas comme un interrupteur.
+.droits {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem 1.15rem;
+
+  &__tete {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+
+    h2 { margin: 0; font-size: 1rem; }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--bb-primary); }
+  }
+
+  &__avis {
+    margin: 0 0 1rem;
+    font-size: 0.8125rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__formulaire {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+
+    mat-form-field { width: 100%; max-width: 420px; }
+    // `mat-card` est en flex colonne : sans `align-self`, le bouton s'étire
+    // sur toute la largeur. Déjà payé sur l'écran des comptes.
+    button { align-self: flex-start; margin-top: 0.35rem; }
+  }
+
+  &__precision { max-width: 100% !important; }
+
+  // Ce que la demande veut dire, avant de l'envoyer. Pour l'effacement
+  // surtout : un dossier de soins ne se supprime pas, il s'anonymise.
+  &__explication {
+    margin: 0 0 0.6rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+  }
+
+  &__succes,
+  &__erreur {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8125rem;
+    border-radius: var(--bb-radius-sm);
+
+    mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; }
+  }
+
+  &__succes {
+    background: var(--bb-success-bg);
+    border: 1px solid var(--bb-success-border);
+    color: var(--bb-primary);
+  }
+
+  &__erreur {
+    background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+    color: var(--bb-danger);
+  }
+
+  &__liste {
+    list-style: none;
+    margin: 1.1rem 0 0;
+    padding: 0;
+
+    li {
+      padding: 0.6rem 0;
+      border-top: 1px solid var(--bb-border-light);
+      font-size: 13px;
+    }
+  }
+
+  &__ligne {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  &__type { font-weight: 600; color: var(--bb-text-primary); }
+  &__date { margin-left: auto; color: var(--bb-text-muted); font-size: 11.5px; }
+
+  &__statut {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+
+    &--SATISFAITE { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--REFUSEE { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); color: var(--bb-danger); }
+  }
+
+  &__delai {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+
+    &--retard { color: var(--bb-warning); font-weight: 600; }
+  }
+
+  // La réponse écrite, en entier : c'est elle qui rend la décision
+  // contestable. La tronquer reviendrait à la masquer.
+  &__reponse {
+    margin: 0.5rem 0 0;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    border-left: 2px solid var(--bb-border-light);
+    color: var(--bb-text-secondary);
+  }
+
+  &__par {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--bb-text-muted);
+  }
+}
+
+// ── Le consentement versionné (EF-02-01/03/07) ───────────────────────
+.consent-row__avis {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bb-primary) 8%, transparent);
+  font-size: 12.5px;
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; flex: none; margin-top: 1px; }
+  p { margin: 0.25rem 0 0.5rem; line-height: 1.5; }
+  strong { font-size: 13px; }
+
+  // Un accord posé sans que personne ne montre rien n'est pas un
+  // consentement. L'écran ne doit pas l'afficher comme une information douce.
+  &--grave {
+    background: color-mix(in srgb, var(--bb-warning) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bb-warning) 40%, transparent);
+    mat-icon { color: var(--bb-warning); }
+  }
+}
+
+.consent-row__lire { font-size: 12px; margin-top: 0.4rem; align-self: flex-start; }
+
+.consent-row__meta--manque { color: var(--bb-warning); line-height: 1.5; }
+
+.consent-texte {
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--bb-border);
+  border-radius: 10px;
+  background: var(--bb-surface-1);
+
+  h4 { margin: 0.5rem 0 0.4rem; font-size: 13.5px; }
+
+  &__quoi { font-size: 11px; font-weight: 600; color: var(--bb-text-muted); }
+  &__version { font-size: 11px; color: var(--bb-text-muted); margin-left: 0.5rem; }
+
+  &__langue {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    font-size: 11.5px;
+    color: var(--bb-warning);
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  }
+
+  // Le texte est enregistré avec ses retours à la ligne : les écraser
+  // rendrait illisible ce que la personne est censée lire.
+  &__corps {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+}
+
+.consent-historique__bascule { font-size: 12px; margin-top: 0.8rem; }
+
+.consent-historique {
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--bb-border);
+  border-radius: 12px;
+
+  h3 { margin: 0 0 0.3rem; font-size: 14px; }
+
+  &__inaltérable {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.7rem;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  }
+
+  &__liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.45rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--bb-border);
+    }
+
+    li:last-child { border-bottom: none; padding-bottom: 0; }
+  }
+
+  &__sens {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    &--retire {
+      background: color-mix(in srgb, var(--bb-text-muted) 16%, transparent);
+      color: var(--bb-text-muted);
+    }
+  }
+
+  &__quoi { font-size: 12.5px; font-weight: 500; }
+  &__note { width: 100%; font-size: 11.5px; font-style: italic; color: var(--bb-text-muted); }
 }

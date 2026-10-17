@@ -1,0 +1,209 @@
+// Traiter les demandes d'exercice de droits (EF-12-09).
+//
+// Jetons vérifiés un à un avant d'être écrits.
+
+// Le retard en premier : c'est un engagement envers le patient qui n'est pas
+// tenu, pas une statistique.
+.rgpd-retard {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem 0.95rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--bb-radius-sm);
+  background: color-mix(in srgb, var(--bb-warning) 14%, transparent);
+  color: var(--bb-warning);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+.rgpd-filtres {
+  padding: 0.9rem 1.15rem 0.5rem;
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.4rem 0.8rem;
+  }
+
+  &__compte {
+    margin: 0 0 0.4rem;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+  }
+}
+
+.rgpd-succes,
+.rgpd-erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8125rem;
+  border-radius: var(--bb-radius-sm);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+.rgpd-succes {
+  background: var(--bb-success-bg);
+  border: 1px solid var(--bb-success-border);
+  color: var(--bb-primary);
+}
+
+.rgpd-erreur {
+  background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+  color: var(--bb-danger);
+}
+
+.rgpd-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.rgpd-demande {
+  padding: 0.9rem 1.15rem 1rem;
+  border-left: 3px solid transparent;
+
+  &--retard { border-left-color: var(--bb-warning); }
+
+  &__tete {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 13px;
+  }
+
+  &__type { font-weight: 600; color: var(--bb-text-primary); }
+  &__qui { color: var(--bb-text-secondary); }
+  &__date { margin-left: auto; font-size: 11.5px; color: var(--bb-text-muted); }
+
+  &__statut {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+
+    &--SATISFAITE { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--REFUSEE { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); color: var(--bb-danger); }
+  }
+
+  &__delai {
+    display: block;
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: var(--bb-text-muted);
+
+    &--retard { color: var(--bb-warning); font-weight: 600; }
+  }
+
+  // Ce que le patient demande, dans ses mots.
+  &__precision {
+    margin: 0.6rem 0 0;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-1);
+    color: var(--bb-text-secondary);
+  }
+
+  // La réponse écrite, en entier : la tronquer reviendrait à la masquer.
+  &__reponse {
+    margin: 0.6rem 0 0;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    border-left: 2px solid var(--bb-border-light);
+    color: var(--bb-text-secondary);
+  }
+
+  &__par {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--bb-text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+}
+
+// ── La boîte de réponse ─────────────────────────────────────────────
+.rgpd-boite {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.45);
+
+  &__carte {
+    width: min(620px, 100%);
+    padding: 1.25rem 1.4rem 1.1rem;
+
+    h2 { margin: 0 0 0.75rem; font-size: 1.05rem; line-height: 1.4; }
+  }
+
+  // Un effacement n'est pas une suppression. Le rappel est au moment de
+  // répondre, parce que c'est là qu'il sert.
+  &__rappel {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0 0 0.9rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    border-radius: var(--bb-radius-sm);
+    background: color-mix(in srgb, var(--bb-warning) 12%, transparent);
+    color: var(--bb-text-primary);
+
+    mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; color: var(--bb-warning); }
+  }
+
+  &__demande {
+    margin: 0 0 0.9rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--bb-text-secondary);
+  }
+
+  &__reponse { width: 100%; }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+  }
+}
+
+.bb-empty {
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: var(--bb-text-muted);
+
+  mat-icon { font-size: 26px; width: 26px; height: 26px; opacity: 0.45; }
+  p { font-size: 0.8125rem; margin: 0; }
+}

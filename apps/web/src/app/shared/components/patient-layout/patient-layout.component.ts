@@ -52,7 +52,15 @@ export class PatientLayoutComponent {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
-  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  /**
+   * Sur mobile la barre s'ouvre par-dessus ; sur grand écran elle est ancrée,
+   * et le même bouton la replie sur ses icônes. Un seul bouton, deux gestes
+   * selon la place disponible.
+   */
+  toggleSidebar() {
+    if (this.layout.estMobile()) this.sidebarOpen.update(v => !v);
+    else this.layout.basculerRepli();
+  }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
@@ -79,8 +87,11 @@ export class PatientLayoutComponent {
   navItems = [
     { labelKey: 'PATIENT.NAV_DASHBOARD', icon: 'pi-home',   route: '/patient/dashboard' },
     { labelKey: 'PATIENT.NAV_PARCOURS',  icon: 'pi-map',    route: '/patient/parcours'  },
+    { labelKey: 'PATIENT.NAV_RENDEZ_VOUS', icon: 'pi-calendar-plus', route: '/patient/rendez-vous' },
     { labelKey: 'PATIENT.NAV_ORDONNANCES', icon: 'pi-file-edit', route: '/patient/ordonnances' },
     { labelKey: 'PATIENT.NAV_RESULTATS', icon: 'pi-chart-line', route: '/patient/resultats' },
+    { labelKey: 'PATIENT.NAV_COMMANDES', icon: 'pi-shopping-bag', route: '/patient/commandes' },
+    { labelKey: 'PATIENT.NAV_PAIEMENTS', icon: 'pi-wallet', route: '/patient/paiements' },
     { labelKey: 'PATIENT.NAV_PROFIL',    icon: 'pi-user',   route: '/patient/profil'    },
     { labelKey: 'PATIENT.NAV_QR_CODE',   icon: 'pi-qrcode', route: '/patient/qr-code'   },
     { labelKey: 'PATIENT.NAV_CONSENTS',  icon: 'pi-shield', route: '/patient/consentements' }

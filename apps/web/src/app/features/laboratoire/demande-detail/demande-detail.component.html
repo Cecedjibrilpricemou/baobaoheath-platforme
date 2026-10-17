@@ -34,7 +34,7 @@
           <button matButton="outlined" type="button" (click)="compteRendu()"><i class="pi pi-print" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_CR_BROUILLON' | translate }}</button>
         }
         @case ('EN_ANALYSE') {
-          @if (estBiologiste()) {
+          @if (peutSigner()) {
             <button matButton="filled" type="button" (click)="ouvrir('valider')" [disabled]="!toutSaisi()"><i class="pi pi-verified" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_VALIDER' | translate }}</button>
           }
           <button matButton="outlined" type="button" (click)="compteRendu()"><i class="pi pi-print" aria-hidden="true"></i> {{ 'LABO.DETAIL.ACTION_CR_BROUILLON' | translate }}</button>
@@ -63,7 +63,7 @@
   @if (d.statut === 'VALIDEE' && d.alerteCritiqueEnAttente) {
     <div class="bb-banner bb-banner--offline" role="alert"><i class="pi pi-bell" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'LABO.DETAIL.CRITIQUE_BANNER' | translate }}</span><span class="bb-banner__sub">{{ 'LABO.DETAIL.CRITIQUE_BANNER_SUB' | translate }}</span></div></div>
   }
-  @if (d.statut === 'EN_ANALYSE' && estBiologiste() && toutSaisi()) {
+  @if (d.statut === 'EN_ANALYSE' && peutSigner() && toutSaisi()) {
     <div class="bb-banner bb-banner--online" role="status"><i class="pi pi-verified" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'LABO.DETAIL.PRET_A_VALIDER' | translate }}</span><span class="bb-banner__sub">{{ 'LABO.DETAIL.PRET_A_VALIDER_SUB' | translate }}</span></div></div>
   }
 
@@ -144,7 +144,7 @@
     </section>
   }
 
-  <!-- ── Panneau : validation du biologiste ─────────────────────────── -->
+  <!-- ── Panneau : validation du laborantin ─────────────────────────── -->
   @if (panneau() === 'valider') {
     <section class="bb-hop-panel">
       <h2 class="bb-card__title"><i class="pi pi-verified" aria-hidden="true"></i> {{ 'LABO.DETAIL.VALIDER_TITLE' | translate }}</h2>
@@ -152,7 +152,7 @@
       <div class="form-field-wrap">
         <label class="form-label" for="va-com">{{ 'LABO.DETAIL.CONCLUSION' | translate }}</label>
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-          <textarea matInput id="va-com" rows="3" maxlength="2000" [placeholder]="'LABO.DETAIL.CONCLUSION_PH' | translate" [(ngModel)]="commentaireBiologiste"></textarea>
+          <textarea matInput id="va-com" rows="3" maxlength="2000" [placeholder]="'LABO.DETAIL.CONCLUSION_PH' | translate" [(ngModel)]="commentaireLaboratoire"></textarea>
         </mat-form-field>
       </div>
       <div class="bb-hop-panel__footer">
@@ -212,8 +212,8 @@
         </div>
       }
     </div>
-    @if (d.commentaireBiologiste) {
-      <div class="bb-hop-sub__consignes" style="margin-top:12px"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireBiologiste }}</div>
+    @if (d.commentaireLaboratoire) {
+      <div class="bb-hop-sub__consignes" style="margin-top:12px"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireLaboratoire }}</div>
     }
   </section>
 

@@ -10,6 +10,13 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'EXPORT.DOC.STRUCTURES'"
+    [colonnes]="colonnes"
+    [lignes]="structures()"
+    [nomFichier]="'structures'" />
+
+
   <!-- Modal MDP temporaire -->
   @if (mdpAffiche()) {
     <div class="bb-logout-overlay" (click)="fermerMdp()">

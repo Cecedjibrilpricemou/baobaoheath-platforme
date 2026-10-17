@@ -1,5 +1,6 @@
 // features/pharmacien/stocks/stocks.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
 import { SeveriteVariantePipe } from '../../../shared/pipes/severite-variante.pipe';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -7,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@baobaoheath/shared-types';
@@ -15,8 +17,8 @@ import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@b
   selector: 'app-pharmacien-stocks',
   standalone: true,
   imports: [
-    SeveriteVariantePipe,
-    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
+    CategorieProduitPipe, SeveriteVariantePipe,
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })
@@ -44,6 +46,18 @@ export class PharmacienStocksComponent implements OnInit {
     datePeremption: '',
     margeGnf: null as number | null
   };
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<StockPharmacieView>[] = [
+    { titre: 'EXPORT.COL.PRODUIT', valeur: (s) => s.medicament.libelle },
+    { titre: 'EXPORT.COL.QUANTITE', valeur: (s) => s.quantite, nombre: true },
+    { titre: 'EXPORT.COL.UNITE', valeur: (s) => s.unite },
+    { titre: 'EXPORT.COL.SEUIL_ALERTE', valeur: (s) => s.seuilAlerte, nombre: true },
+    // Ce qu'on vient chercher quand on imprime : ce qu'il faut commander.
+    { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.quantite === 0 ? 'Rupture' : s.quantite <= s.seuilAlerte ? 'À commander' : 'Suffisant') },
+    { titre: 'EXPORT.COL.PEREMPTION_PROCHE', valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
+  ];
 
   ngOnInit() { this.loadStocks(); this.loadMedicaments(); }
 
@@ -76,21 +90,26 @@ export class PharmacienStocksComponent implements OnInit {
   }
 
   get medicamentOptions() {
-    return this.medicaments().map(m => ({
-      label: m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} — ${m.dosage}`,
-      value: m.id
-    }));
+    return this.medicaments().map(m => ({ label: m.libelle, value: m.id }));
   }
 
-  get stocksFiltres(): StockPharmacieView[] {
+  /**
+   * Le stock tel qu'il est affiche, recherche appliquee.
+   *
+   * `computed` et non un accesseur : l'accesseur refabriquait le tableau a
+   * chaque cycle de detection, donc l'entree de `<app-export-liste>`
+   * changeait d'identite sans arret.
+   */
+  readonly stocksFiltres = computed<StockPharmacieView[]>(() => {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s =>
+      s.medicament.libelle.toLowerCase().includes(q) ||
       s.medicament.dci?.toLowerCase().includes(q) ||
       s.medicament.nomCommercial?.toLowerCase().includes(q) ||
-      s.medicament.categorie?.toLowerCase().includes(q)
+      s.medicament.classeTherapeutique?.toLowerCase().includes(q)
     );
-  }
+  });
 
   reapprovisionner() {
     if (!this.formReappro.idMedicament || !this.formReappro.quantiteAjoutee) {
@@ -121,10 +140,21 @@ export class PharmacienStocksComponent implements OnInit {
     });
   }
 
+  /**
+   * Le libelle est le nom complet du produit. On n'ajoute la DCI que si elle
+   * apporte quelque chose : un article non medicamenteux n'en a pas, et la
+   * formule precedente affichait « null null » pour un lait infantile.
+   */
   getMedicamentLabel(s: StockPharmacieView): string {
-    return s.medicament.nomCommercial
-      ? `${s.medicament.nomCommercial} (${s.medicament.dci})`
-      : `${s.medicament.dci} ${s.medicament.dosage}`;
+    const m = s.medicament;
+    return m.dci && !m.libelle.toLowerCase().includes(m.dci.toLowerCase())
+      ? `${m.libelle} (${m.dci})`
+      : m.libelle;
+  }
+
+  /** Vide pour un article non medicamenteux : il n'a ni forme ni dosage. */
+  formeEtDosage(s: StockPharmacieView): string {
+    return [s.medicament.forme, s.medicament.dosage].filter(Boolean).join(' · ');
   }
 
   getPrixVente(s: StockPharmacieView): number { return s.medicament.prixUnitaireGnf + (s.margeGnf ?? 0); }
@@ -158,7 +188,7 @@ export class PharmacienStocksComponent implements OnInit {
   }
 
   isExpireSoon(s: StockPharmacieView): boolean {
-    if (!s.datePeremption) return false;
-    return new Date(s.datePeremption).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
+    if (!s.peremptionLaPlusProche) return false;
+    return new Date(s.peremptionLaPlusProche).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
   }
 }

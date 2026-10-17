@@ -24,7 +24,12 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        # Le miroir public d'AWS plutot que Docker Hub : ce dernier limite les
+        # telechargements anonymes par adresse IP, et les coureurs GitHub la
+        # partagent. Le 2026-10-09 la CI a echoue deux fois de suite sur
+        # « toomanyrequests » sans qu'aucun test n'ait pu demarrer. Meme image,
+        # meme version, sans quota.
+        image: public.ecr.aws/docker/library/postgres:16-alpine
         env:
           POSTGRES_USER: baobaoheath
           POSTGRES_PASSWORD: baobaoheath
@@ -117,6 +122,14 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
+      # **Les tests du front ne tournaient nulle part.** Le job API lance
+      # "npm test", le job web se contentait de compiler : un test unitaire
+      # ajoute cote navigateur ne gardait donc rien. Le lanceur sort en erreur
+      # quand il ne trouve aucun fichier, ce qui couvre aussi le cas ou la
+      # decouverte des specs casse en silence.
+      - name: Run unit tests
+        run: npm test -- --watch=false
+
       - name: Build production
         run: npm run build -- --configuration=production
 
@@ -150,7 +163,12 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        # Le miroir public d'AWS plutot que Docker Hub : ce dernier limite les
+        # telechargements anonymes par adresse IP, et les coureurs GitHub la
+        # partagent. Le 2026-10-09 la CI a echoue deux fois de suite sur
+        # « toomanyrequests » sans qu'aucun test n'ait pu demarrer. Meme image,
+        # meme version, sans quota.
+        image: public.ecr.aws/docker/library/postgres:16-alpine
         env:
           POSTGRES_USER: baobaoheath
           POSTGRES_PASSWORD: baobaoheath

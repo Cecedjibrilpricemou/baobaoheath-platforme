@@ -36,7 +36,9 @@ const EXCEPTIONS = [
   // GHSA-3f6p-5ww8-9rcr / GHSA-rgwj-5xj2-c3m3 (mysql2, via la CLI prisma).
   // prisma 7.10.1 embarque deepmerge-ts 8.0.2 et mysql2 3.24.4, versions
   // corrigees : les exceptions ont ete retirees (le portillon les signalait
-  // comme obsoletes). Le mecanisme reste pour la prochaine faille sans
+  // comme obsoletes). GHSA-vfj7-8cjw-p6xm (braces, via jest 29), tolere
+  // sur develop depuis le 03/10, disparait avec le passage a jest 30.
+  // Le mecanisme reste pour la prochaine faille sans
   // correctif amont : ghsa, paquet, date de reexamen et motif.
 ];
 

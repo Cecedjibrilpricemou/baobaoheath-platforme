@@ -1,0 +1,28 @@
+// Les deux boutons, à l'écran.
+//
+// Le document lui-même est mis en forme par `styles/_impression.scss` : il
+// n'existe que sur le papier, et ces règles-là valent pour tous les écrans.
+.bb-exp {
+  &__actions {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+
+  &__compte { font-size: 12.5px; color: var(--bb-text-muted); margin-right: auto; }
+
+  &__btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: var(--bb-radius);
+    background: transparent; color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border);
+    font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+
+    &:hover:not(:disabled) { background: var(--bb-surface-2); border-color: var(--bb-primary); color: var(--bb-primary); }
+    &:disabled { opacity: .45; cursor: not-allowed; }
+    i { font-size: 12px; }
+  }
+
+  // Le document n'apparaît pas à l'écran : il n'existe qu'imprimé.
+  &__doc { display: none; }
+}

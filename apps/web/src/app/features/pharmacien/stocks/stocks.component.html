@@ -14,6 +14,14 @@
     </div>
   </header>
 
+  <app-export-liste
+    [titre]="'EXPORT.DOC.ETAT_STOCK'"
+    [sousTitre]="searchQuery() ? ('EXPORT.SOUS.RECHERCHE' | translate: { q: searchQuery() }) : ''"
+    [colonnes]="colonnes"
+    [lignes]="stocksFiltres()"
+    [nomFichier]="'stock'" />
+
+
   <!-- Alertes -->
   @if (successMsg()) {
     <div class="bb-ph-stocks__alert bb-ph-stocks__alert--success" role="status" aria-live="polite">
@@ -119,7 +127,7 @@
         <div class="bb-skeleton" style="height:160px;border-radius:16px"></div>
       }
     </div>
-  } @else if (stocksFiltres.length === 0) {
+  } @else if (stocksFiltres().length === 0) {
     <div class="bb-ph-stocks__empty">
       <i class="pi pi-inbox"></i>
       <p>{{ 'PHARMACIEN.STOCKS.EMPTY_TITLE' | translate }}</p>
@@ -132,16 +140,16 @@
     </div>
   } @else {
     <div class="bb-ph-stocks__list">
-      @for (s of stocksFiltres; track s.id) {
+      @for (s of stocksFiltres(); track s.id) {
         <div class="bb-ph-stocks__card" [class.bb-ph-stocks__card--critique]="s.quantite <= s.seuilAlerte">
           
           <div class="bb-ph-stocks__card-header">
             <div class="bb-ph-stocks__card-info">
               <span class="bb-ph-stocks__card-nom" [title]="getMedicamentLabel(s)">{{ getMedicamentLabel(s) }}</span>
-              <span class="bb-ph-stocks__card-forme">{{ s.medicament.forme }} · {{ s.medicament.dosage }}</span>
-              @if (s.medicament.categorie) {
-                <span class="bb-ph-stocks__card-cat">{{ s.medicament.categorie }}</span>
+              @if (formeEtDosage(s)) {
+                <span class="bb-ph-stocks__card-forme">{{ formeEtDosage(s) }}</span>
               }
+              <span class="bb-ph-stocks__card-cat">{{ s.medicament.categorie | categorieProduit }}</span>
             </div>
             <div class="bb-ph-stocks__card-right">
               <span [class]="'bb-badge bb-badge--' + (getNiveauSeverity(s) | severiteVariante)">{{ getNiveauLabel(s) }}</span>
@@ -164,9 +172,9 @@
 
           <div class="bb-ph-stocks__card-footer">
             <span><i class="pi pi-bell"></i> {{ 'PHARMACIEN.STOCKS.ALERT_THRESHOLD' | translate: { value: s.seuilAlerte, unit: s.unite } }}</span>
-            @if (s.datePeremption) {
+            @if (s.peremptionLaPlusProche) {
               <span [class.bb-ph-stocks__expire]="isExpireSoon(s)">
-                <i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.EXPIRY_LABEL' | translate: { date: formatDate(s.datePeremption) } }}
+                <i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.EXPIRY_LABEL' | translate: { date: formatDate(s.peremptionLaPlusProche) } }}
               </span>
             } @else {
               <span><i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.NO_EXPIRY' | translate }}</span>

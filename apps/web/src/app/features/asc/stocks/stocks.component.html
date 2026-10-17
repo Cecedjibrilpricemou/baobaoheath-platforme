@@ -116,12 +116,19 @@
     </div>
 
     <!-- Loading -->
+    <app-export-liste
+      [titre]="'EXPORT.DOC.DOTATION_ASC'"
+      [sousTitre]="searchQuery() ? ('EXPORT.SOUS.RECHERCHE' | translate: { q: searchQuery() }) : ''"
+      [colonnes]="colonnes"
+      [lignes]="stocksFiltres()"
+      [nomFichier]="'ma-dotation'" />
+
     @if (isLoading()) {
     <div class="loading-state">
       <i class="pi pi-spin pi-spinner"></i>
       <span>{{ 'ASC.STOCKS.LOADING' | translate }}</span>
     </div>
-    } @else if (stocksFiltres.length === 0) {
+    } @else if (stocksFiltres().length === 0) {
     <div class="empty-state">
       <div class="empty-state__icon">📦</div>
       <h3 class="empty-state__title">{{ 'ASC.STOCKS.EMPTY_TITLE' | translate }}</h3>
@@ -142,7 +149,7 @@
     } @else {
 
     <div class="stocks-grid">
-      @for (stock of stocksFiltres; track stock.id) {
+      @for (stock of stocksFiltres(); track stock.id) {
       <div class="stock-card" [class.stock-card--critique]="getNiveauStock(stock) === 'critique'"
         [class.stock-card--faible]="getNiveauStock(stock) === 'faible'">
 
@@ -150,7 +157,7 @@
         <div class="stock-card__header">
           <div class="stock-card__icon"><i class="pi pi-box" aria-hidden="true"></i></div>
           <div class="stock-card__info">
-            <h3 class="stock-card__name">{{ stock.medicament.nomCommercial || stock.medicament.dci }}</h3>
+            <h3 class="stock-card__name">{{ stock.medicament.libelle }}</h3>
             @if (stock.medicament.dosage || stock.medicament.forme) {
             <span class="stock-card__posologie">{{ stock.medicament.forme }} {{ stock.medicament.dosage }}</span>
             }
@@ -205,11 +212,11 @@
         </div>
 
         <!-- Date expiration -->
-        @if (stock.datePeremption) {
-        <div class="stock-card__expiry" [class.stock-card__expiry--soon]="isExpireSoon(stock.datePeremption)">
+        @if (stock.peremptionLaPlusProche) {
+        <div class="stock-card__expiry" [class.stock-card__expiry--soon]="isExpireSoon(stock.peremptionLaPlusProche)">
           <i class="pi pi-calendar"></i>
-          {{ 'ASC.STOCKS.EXPIRES' | translate }} {{ formatDate(stock.datePeremption) }}
-          @if (isExpireSoon(stock.datePeremption)) {
+          {{ 'ASC.STOCKS.EXPIRES' | translate }} {{ formatDate(stock.peremptionLaPlusProche) }}
+          @if (isExpireSoon(stock.peremptionLaPlusProche)) {
           <span class="expiry-warning">⚠️ {{ 'ASC.STOCKS.EXPIRES_SOON' | translate }}</span>
           }
         </div>

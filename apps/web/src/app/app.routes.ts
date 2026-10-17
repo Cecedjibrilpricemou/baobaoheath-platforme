@@ -68,7 +68,7 @@ export const routes: Routes = [
   {
     path: 'laboratoire',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['TECHNICIEN_LABO', 'BIOLOGISTE'] },
+    data: { roles: ['TECHNICIEN_LABO'] },
     loadChildren: () =>
       import('./features/laboratoire/laboratoire.routes').then(m => m.LABORATOIRE_ROUTES)
   },
@@ -83,6 +83,16 @@ export const routes: Routes = [
   },
 
   // ── Module Admin ────────────────────────────────────────────────────
+  {
+    // La compagnie d'assurance se connecte elle-meme (addendum, point 5.2).
+    // Elle ne partage son espace avec personne : ni l'administration, qui
+    // saisit les assureurs, ni le comptoir, qui chiffre les prises en charge.
+    path: 'assureur',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ASSUREUR'] },
+    loadChildren: () =>
+      import('./features/assureur/assureur.routes').then(m => m.ASSUREUR_ROUTES)
+  },
   {
     path: 'admin',
     canActivate: [authGuard, roleGuard],

@@ -707,6 +707,81 @@ export const swaggerDocument = {
     '/api/v1/medecin/consultations/{id}/valider': {
       put: { tags: ['Médecin'], summary: 'Valider une consultation', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ValiderConsultationDto' } } } }, responses: { 200: { description: 'Consultation validée' }, 400: { description: 'Consultation déjà validée ou non trouvée' } } },
     },
+    '/api/v1/pharmacien/approvisionnements': {
+      post: { tags: ['Pharmacien'], summary: 'Enregistrer une facture d\'approvisionnement (addendum 2026-09-28, point 1.3)', description: 'Chaque ligne devient un lot, avec sa propre date de peremption. Le total du stock suit. **Saisie assistee** : la facture est attachee en justificatif ; l\'extraction automatique viendra ensuite et devra toujours etre relue avant enregistrement — une erreur sur une quantite ou une peremption entrerait sinon en silence dans le stock d\'un medicament. Un lot deja perime est refuse a l\'entree.', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['fournisseur', 'dateFacture', 'lignes'], properties: { fournisseur: { type: 'string' }, dateFacture: { type: 'string', format: 'date' }, numeroFacture: { type: 'string' }, justificatifUrl: { type: 'string', description: 'Photo ou scan de la facture' }, lignes: { type: 'array', items: { type: 'object', required: ['idMedicament', 'quantite'], properties: { idMedicament: { type: 'string' }, quantite: { type: 'integer', minimum: 1 }, numeroLot: { type: 'string' }, datePeremption: { type: 'string', format: 'date' }, prixAchatGnf: { type: 'integer' }, unite: { type: 'string' } } } } } } } } }, responses: { 201: { description: 'Entree en stock enregistree' }, 400: { description: 'Produit hors catalogue, ou lot deja perime' } } },
+      get: { tags: ['Pharmacien'], summary: 'Historique des entrees en stock', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Approvisionnements, le plus recent en tete' } } } },
+    '/api/v1/pharmacien/peremptions': {
+      get: { tags: ['Pharmacien'], summary: 'Lots qui approchent de leur date, ou l\'ont depassee (addendum, point 1.4)', description: 'Le plus urgent en tete. Les perimes ne sont pas seulement a surveiller : ils sont a retirer des rayons. Seuil en jours, 90 par defaut (`STOCK_PEREMPTION_ALERTE_JOURS`).', security: [{ bearerAuth: [] }], parameters: [{ name: 'jours', in: 'query', schema: { type: 'integer', default: 90 } }], responses: { 200: { description: 'Lots concernes' } } } },
+    '/api/v1/pharmacien/medicaments/{id}/lots': {
+      get: { tags: ['Pharmacien'], summary: 'Lots d\'un produit dans cette officine', description: 'Du plus proche de sa peremption au plus lointain — l\'ordre dans lequel ils sortiront.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Lots du produit' }, 404: { description: 'Produit absent de l officine' } } } },
+    '/api/v1/pharmacien/ventes': {
+      post: { tags: ['Pharmacien'], summary: 'Enregistrer une vente au comptoir (addendum 2026-09-28, point 1.1)', description: "Payee sur place : il n'y a pas d'etat « en attente ». Le client est **facultatif** — un passant n'a pas de dossier. Les prix sont figes a la vente (tarif national de reference plus la marge de l'officine), pour qu'un changement de tarif ne reecrive pas le chiffre d'affaires d'hier. La sortie de stock se fait **au plus proche de la peremption**, et un lot perime est refuse. Deux refus a connaitre : un produit reglemente sans ordonnance (EF-05-12), et une remise au-dela du plafond administrable (`pharmacie.remiseMaxPourcent`, 20 % par defaut). Scanner deux fois le meme produit vaut quantite 2, ce n'est pas une erreur.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['lignes', 'modePaiement'], properties: { lignes: { type: 'array', minItems: 1, items: { type: 'object', required: ['idMedicament', 'quantite'], properties: { idMedicament: { type: 'string' }, quantite: { type: 'integer', minimum: 1 } } } }, modePaiement: { type: 'string', enum: ['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO'] }, numeroOperateur: { type: 'string', description: 'Obligatoire hors especes' }, remiseGnf: { type: 'integer', minimum: 0 }, idPatient: { type: 'string', description: 'Facultatif : absent pour un client de passage' }, idOrdonnance: { type: 'string', description: 'Obligatoire si le panier contient un produit reglemente' } } } } } }, responses: { 201: { description: 'Vente enregistree, stock decremente' }, 400: { description: 'Panier vide, produit hors stock, ordonnance manquante ou refusee, remise au-dela du plafond' }, 409: { description: 'Lots non perimes insuffisants' } } },
+      get: { tags: ['Pharmacien'], summary: "Ventes de l'officine", description: 'De la plus recente a la plus ancienne. `limite` plafonnee a 200.', security: [{ bearerAuth: [] }], parameters: [{ name: 'limite', in: 'query', schema: { type: 'integer', default: 50, maximum: 200 } }], responses: { 200: { description: 'Ventes de cette officine uniquement' } } } },
+    '/api/v1/pharmacien/ventes/{id}': {
+      get: { tags: ['Pharmacien'], summary: "Detail d'une vente", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Vente avec ses lignes' }, 403: { description: 'Vente d une autre officine' }, 404: { description: 'Vente non trouvee' } } } },
+    '/api/v1/pharmacien/ventes/{id}/annuler': {
+      post: { tags: ['Pharmacien'], summary: 'Annuler une vente et remettre les lots en stock', description: "**Ce n'est pas un retour client** — EF-07-11 l'interdit — mais la correction d'une erreur de saisie. Les lots consommes sont remis **exactement** tels qu'ils sont sortis, car chaque ligne garde la trace de ce qu'elle a pris. Sans cette porte, une erreur de caisse ferait deriver le stock de facon permanente. Le motif est obligatoire : une annulation sans raison n'est pas tracable. Prise atomique : deux annulations simultanees donnent une gagnante et une perdante, jamais deux remises en stock.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string', minLength: 5, maxLength: 500 } } } } } }, responses: { 200: { description: 'Vente annulee, stock remis' }, 400: { description: 'Motif trop court' }, 403: { description: 'Vente d une autre officine' }, 409: { description: 'Deja annulee, ou annulee entre-temps par quelqu un d autre' } } } },
+    '/api/v1/pharmacien/tableau-de-bord': {
+      get: { tags: ['Pharmacien'], summary: "Tableau de bord de l'officine (addendum 2026-09-28, point 1.2)", description: "Chiffre du jour depuis minuit, panier moyen, encaissements par moyen de paiement, dix produits les plus vendus sur trente jours, ruptures de stock et nombre de lots a perimer. **Les ventes annulees sont exclues de tous les agregats** : une erreur de caisse corrigee ne doit pas gonfler le chiffre d'affaires.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Chiffres de cette officine' } } } },
+    '/api/v1/assurance/eligibilite': {
+      post: { tags: ['Assurance'], summary: "Controle d'eligibilite au comptoir (addendum 2026-09-28, point 5.1)", description: "Contrat actif, date d'effet, carence, assureur actif sur la plateforme. **La reponse est enregistree telle quelle** : c'est elle qui justifiera le tiers payant si l'assureur le conteste. On ne la recalcule donc jamais, on la relit. Un refus porte toujours son motif, sans quoi le comptoir n'aurait rien a expliquer au patient — une contrainte SQL l'impose.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idPatient'], properties: { idPatient: { type: 'string' } } } } } }, responses: { 201: { description: 'Controle enregistre. `eligible` peut etre faux : ce n est pas une erreur HTTP' }, 403: { description: 'Compte sans structure' }, 404: { description: 'Patient non trouve' } } } },
+    '/api/v1/assurance/patients/{id}/eligibilite': {
+      get: { tags: ['Assurance'], summary: "Historique des controles d'eligibilite d'un patient", description: 'Le plus recent en tete, 50 au maximum. Ce sont les reponses figees, pas un recalcul.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Controles traces' } } } },
+    '/api/v1/assurance/simulation': {
+      post: { tags: ['Assurance'], summary: 'Chiffrer une prise en charge avant paiement (addendum, point 5.4)', description: "Ne enregistre rien. Rend le detail **ligne par ligne** : couvert ou non, a quel taux, et sinon pourquoi — « un reste a charge sans explication se conteste au comptoir ». Rappel de la regle qui surprend : **un taux de 100 % ne veut pas dire que tout est pris**. Il s'applique apres exclusions, puis dans la limite de la franchise et des plafonds ; un assure a 100 % paie quand meme son lait infantile. Les notes disent ce qui a rabote la part de l'assureur.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idPatient', 'lignes', 'montantNetGnf'], properties: { idPatient: { type: 'string' }, montantNetGnf: { type: 'integer', description: 'Ce que la caisse encaisse, remise deduite' }, lignes: { type: 'array', items: { type: 'object', required: ['idMedicament', 'libelle', 'categorie', 'montantGnf'], properties: { idMedicament: { type: 'string' }, libelle: { type: 'string' }, categorie: { type: 'string', enum: ['MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE', 'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE'] }, montantGnf: { type: 'integer' } } } } } } } } }, responses: { 200: { description: 'Detail de la prise en charge' }, 400: { description: "Aucun contrat utilisable pour ce patient" } } } },
+    '/api/v1/assurance/patients/{id}/contrats': {
+      get: { tags: ['Assurance'], summary: "Contrats d'un patient, et ce qui a deja ete consomme cette annee", description: "`consommeAnneeGnf` est la somme des parts assureur des ventes **non annulees** de l'annee : une erreur de caisse corrigee n'entame pas le plafond du patient.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Contrats, le plus recent en tete' } } } },
+    '/api/v1/assurance/patients/recherche': {
+      get: { tags: ['Assurance'], summary: "Trouver le patient a qui rattacher une police (administration nationale)", description: "Au comptoir le patient est la et presente son QR ; ici l'assureur envoie une liste de noms et de numeros de police, et il faut retomber sur la personne a l'echelle du pays — donc hors de toute structure. Le predicat est **celui du comptoir** (`filtreRecherchePatient`) : un patient trouvable a l'admission doit l'etre ici, sinon sa police reste en suspens sans que personne ne sache pourquoi. Rien de medical ne sort de cette route : l'identite, et le numero masque comme partout ailleurs — il sert a distinguer deux homonymes, pas a appeler qui que ce soit.", security: [{ bearerAuth: [] }], parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string', minLength: 3 }, description: 'Nom, prenom, numero de telephone ou QR' }], responses: { 200: { description: 'Jusqu a 20 identites, par nom' }, 400: { description: 'Moins de 3 caracteres' } } } },
+    '/api/v1/assurance/assureurs': {
+      get: { tags: ['Assurance'], summary: 'Assureurs et leurs regles de couverture', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Assureurs actifs et inactifs' } } },
+      post: { tags: ['Assurance'], summary: 'Creer un assureur (administration nationale)', description: "Le `code` figure sur la carte de l'assure et doit etre unique. `idStructure` rattache l'assureur a une structure de type **ASSURANCE** quand il a des agents sur la plateforme : sans cela ses agents heriteraient des droits d'un hopital ou d'une pharmacie. Les modes PORTAIL et API (EF-09-02) attendent une convention technique ; MANUEL est le depart.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['nom', 'code'], properties: { nom: { type: 'string' }, code: { type: 'string', maxLength: 16 }, telephone: { type: 'string' }, email: { type: 'string', format: 'email' }, modeEchange: { type: 'string', enum: ['MANUEL', 'PORTAIL', 'API'] }, idStructure: { type: 'string' } } } } } }, responses: { 201: { description: 'Assureur cree' }, 400: { description: "La structure rattachee n'est pas de type ASSURANCE" }, 409: { description: 'Code deja pris' } } } },
+    '/api/v1/assurance/assureurs/{id}/regles': {
+      post: { tags: ['Assurance'], summary: 'Ajouter une regle de couverture par categorie (addendum, point 5.3)', description: "C'est ici que vivent les exclusions citees par le chef de projet : le lait infantile, les cosmetiques. Elles visent `CategorieProduit`, une **enumeration fermee** — on ne fonde pas une regle de remboursement sur un champ que chacun remplit comme il veut. La regle **ne remplace pas** la precedente : sa `dateEffet` decide, et le calcul retient celle en vigueur a la date de la vente, pour qu'un changement de taux ne reecrive pas ce qui a deja ete chiffre (EF-09-03). Une categorie exclue n'a pas de taux : porter les deux serait contradictoire, et une contrainte SQL le refuse.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['categorie'], properties: { categorie: { type: 'string', enum: ['MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE', 'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE'] }, exclu: { type: 'boolean' }, tauxPourcent: { type: 'integer', minimum: 0, maximum: 100 }, plafondLigneGnf: { type: 'integer' }, dateEffet: { type: 'string', format: 'date' } } } } } }, responses: { 201: { description: 'Regle ajoutee' }, 400: { description: "Exclusion et taux ensemble, ou regle vide" }, 404: { description: 'Assureur non trouve' } } } },
+    '/api/v1/assurance/contrats': {
+      post: { tags: ['Assurance'], summary: "Enregistrer le contrat d'un patient (administration nationale)", description: "`tauxBasePourcent` s'applique a ce qui est couvert, **apres** exclusions et dans la limite des plafonds. `carenceJours` empeche de s'assurer la veille d'une depense connue. `plafondAnnuelGnf` a 0 vaut « pas de plafond », de meme que `franchiseGnf`. La police est unique chez un assureur donne.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idAssureur', 'idPatient', 'numeroPolice', 'dateEffet'], properties: { idAssureur: { type: 'string' }, idPatient: { type: 'string' }, numeroPolice: { type: 'string' }, tauxBasePourcent: { type: 'integer', minimum: 0, maximum: 100, default: 80 }, plafondAnnuelGnf: { type: 'integer', default: 0 }, franchiseGnf: { type: 'integer', default: 0 }, dateEffet: { type: 'string', format: 'date' }, dateFin: { type: 'string', format: 'date' }, carenceJours: { type: 'integer', default: 0 } } } } } }, responses: { 201: { description: 'Contrat enregistre' }, 400: { description: "Date de fin anterieure a la date d'effet" }, 404: { description: 'Assureur ou patient non trouve' }, 409: { description: 'Police deja prise chez cet assureur' } } } },
+    '/api/v1/pharmacien/ventes/{id}/paiement': {
+      get: { tags: ['Pharmacien'], summary: 'Ou en est le paiement de cette vente (EF-08)', description: "**Jusqu'au 2026-10-09, une vente mobile naissait PAYEE** : le pharmacien cochait « Orange Money », tapait un numero, et rien ne verifiait qu'un franc ait bouge. `numeroOperateur` n'etait qu'une chaine saisie. Desormais une vente mobile naît `EN_ATTENTE` avec une operation de passerelle, et ne devient `PAYEE` que sur un `success` — en portant `referenceTransaction`, qui est la preuve opposable. Une contrainte SQL refuse l'etat qui mentirait : payee par operation, sans reference. Cette route **interroge la passerelle** quand l'issue n'est pas connue : le pharmacien a le client devant lui et ne peut pas attendre un rappel qui peut ne jamais arriver. Les lots sont consommes des la creation — on ne vend pas deux fois la derniere boite pendant que le client tape son code — et une vente abandonnee les rend en etant annulee.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'La vente, avec son statut de passerelle et sa reference si elle est reglee' }, 403: { description: "Vente d'une autre officine" }, 404: { description: 'Vente non trouvee' } } } },
+    '/api/v1/webhooks/chapchap': {
+      post: { tags: ['Paiement'], summary: 'Rappel de la passerelle Chap Chap Pay (EF-08)', description: "**Un meme rappel sert deux sortes d'operations** : `VNT-<id>` une vente de pharmacie, `FAC-<id>` la facture d'une consultation. Le prefixe de `order_id` dit laquelle — chercher dans les deux tables a l'aveugle marcherait tant que les identifiants ne se croisent pas, ce qu'aucune contrainte ne garantit. **Route publique, authentifiee par signature.** ChapChap ne porte ni jeton ni cookie : l'en-tete `CCP-HMAC-Signature` fait foi, et elle seule. Elle est un HMAC-SHA256 calcule avec la **cle d'encryptage** sur les **octets exacts du corps**. Cette route est donc montee **avant l'analyseur JSON global** : le laisser remplacer le corps par un objet rendrait la verification impossible, puisque re-serialiser produit d'autres octets. **Seul `success` fait passer la facture a PAYEE**, et il est definitif. Un `canceled`, `failed`, `error` ou `expired` laisse la facture payable : le patient recommence, au lieu de repasser au guichet pour un code mal saisi. Plusieurs rappels peuvent porter la meme operation, dans n'importe quel ordre — un `canceled` tardif ne defait jamais un paiement acquis. **Toute reponse HTTP met fin aux reprises de ChapChap**, 500 compris : seule une absence de reponse est retentee. Un rappel perdu n'est donc pas rattrape tout seul, et c'est la relecture du statut (`GET /paiements/{id}/statut`) qui ferme le trou. Une facture inconnue est acquittee par un 200 : il n'y a rien a rejouer.", parameters: [{ name: 'CCP-HMAC-Signature', in: 'header', required: true, schema: { type: 'string' }, description: 'HMAC-SHA256 du corps brut, avec la cle d encryptage' }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { order_id: { type: 'string', description: "L identifiant de la facture KENEYA" }, operation_id: { type: 'string' }, amount: { type: 'number' }, status: { type: 'object', properties: { code: { type: 'string', enum: ['new', 'pending', 'success', 'canceled', 'failed', 'error', 'expired'] } } }, transaction: { type: 'object', properties: { payment_method: { type: 'string' }, payment_reference: { type: 'string' } } } } } } } }, responses: { 200: { description: 'Rappel traite, ou acquitte sans effet' }, 400: { description: 'Corps illisible' }, 401: { description: 'Signature invalide' }, 500: { description: 'Traitement impossible : a renvoyer depuis le tableau de bord ChapChap' } } } },
+    '/api/v1/assurance/moi': {
+      get: { tags: ['Assurance'], summary: "L'assureur voit sa propre compagnie (addendum, point 5.2)", description: "**Aucune route de cet espace ne prend d'identifiant de compagnie.** Elle se deduit de la structure de l'agent connecte : l'accepter en parametre laisserait un agent lire la situation d'un concurrent en changeant un chiffre dans l'URL. Les regles sont en lecture seule ici — elles se saisissent depuis l'administration nationale tant que l'echange conventionne (EF-09-02) n'existe pas.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'La compagnie, ses regles et ses compteurs de polices' }, 403: { description: "Compte sans structure, ou structure rattachee a aucune compagnie" } } } },
+    '/api/v1/assurance/moi/assures': {
+      get: { tags: ['Assurance'], summary: 'Les assures de la compagnie, et leur consommation annuelle', description: "**Rien de medical ne traverse cette frontiere.** Le nom de l'assure, son contrat, ce qui a ete pris en charge cette annee et le nombre de passages — jamais un produit delivre, une ordonnance ni un diagnostic. Un assureur qui lirait ce qu'on soigne pourrait refuser un contrat dessus. Ni telephone, ni date de naissance, ni adresse : ils ne servent a rien ici. Les ventes annulees ne comptent pas, pour qu'une erreur de caisse corrigee n'entame pas le plafond d'un assure.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Les polices, actives en tete' } } } },
+    '/api/v1/assurance/moi/pharmacies': {
+      get: { tags: ['Assurance'], summary: 'Situation par officine : delivre, facture, paye, reste du (point 5.2)', description: "« Ce qui a ete delivre, ce qui lui est facture, ce qui est paye, ce qui reste du, et les ecarts. » `montantFactureGnf` est la part de la compagnie sur les ventes non annulees ; `montantPayeGnf` la somme des reglements saisis ; `resteDuGnf` leur difference. **Elle peut etre negative** quand la compagnie a verse plus que du : c'est un ecart aussi, et le masquer le rendrait introuvable. Une officine reglee sans vente apparait, et l'inverse aussi, sans quoi un versement egare resterait invisible. Le plus gros reste du vient en tete.", security: [{ bearerAuth: [] }], responses: { 200: { description: 'Une ligne par officine' } } } },
+    '/api/v1/assurance/moi/reglements': {
+      get: { tags: ['Assurance'], summary: 'Les versements de la compagnie, le plus recent en tete', security: [{ bearerAuth: [] }], responses: { 200: { description: '100 au maximum' } } },
+      post: { tags: ['Assurance'], summary: 'Enregistrer un versement a une officine (point 5.2)', description: "Le versement couvre **une periode** et non des ventes nommees : c'est ainsi qu'une compagnie regle une officine, par bordereau mensuel. Rattacher chaque virement a des lignes supposerait un rapprochement que personne ne fait a la main. Pas d'`idAssureur` en entree : il se deduit de la structure de l'agent. La destinataire doit etre une **pharmacie** — une erreur de destinataire fausserait la situation des deux cotes sans rien dire. Deux contraintes SQL doublent les controles : montant strictement positif, et periode ordonnee.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idStructure', 'montantGnf', 'periodeDebut', 'periodeFin'], properties: { idStructure: { type: 'string' }, montantGnf: { type: 'integer', minimum: 1 }, periodeDebut: { type: 'string', format: 'date' }, periodeFin: { type: 'string', format: 'date' }, reference: { type: 'string', maxLength: 120, description: 'Reference du virement ou du bordereau' } } } } } }, responses: { 201: { description: 'Versement enregistre' }, 400: { description: 'Periode a l envers, ou montant nul' }, 404: { description: "La structure n est pas une pharmacie" } } } },
+    '/api/v1/assurance/assureurs/{id}/agents': {
+      post: { tags: ['Assurance'], summary: "Creer le compte par lequel un assureur se connecte (administration nationale)", description: "**L'assureur n'appartient a aucun hopital.** Son agent se connecte depuis une structure de type ASSURANCE qui lui est propre — sans elle, il heriterait des droits d'une pharmacie ou d'un etablissement de soins, et donc d'un acces aux dossiers. Cette structure est creee a la volee si la compagnie n'en a pas : demander a l'administration de declarer d'abord un « etablissement de sante » pour une compagnie d'assurance n'aurait aucun sens a l'ecran, alors que le modele en a besoin. Le mot de passe temporaire n'est rendu **qu'une fois** et devra etre change.", security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['prenom', 'nom', 'telephone'], properties: { prenom: { type: 'string' }, nom: { type: 'string' }, telephone: { type: 'string' }, email: { type: 'string', format: 'email' }, prefecture: { type: 'string', description: 'Siege, si la structure reste a creer' } } } } } }, responses: { 201: { description: 'Compte cree, mot de passe rendu une fois' }, 404: { description: 'Assureur introuvable' }, 409: { description: 'Numero deja pris' } } } },
+    '/api/v1/patients/me/demandes-rendez-vous': {
+      post: { tags: ['Patient'], summary: 'Demander un rendez-vous a distance (addendum 2026-09-28, point 6)', description: 'Le patient fait sa demande depuis chez lui. Elle n\'ouvre pas d\'episode : un episode est une visite, et une demande n\'en est pas encore une. A defaut d\'etablissement choisi, celui du dossier. Une seule demande en attente a la fois.', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string', minLength: 5, maxLength: 1000 }, idStructure: { type: 'string' }, idMedecin: { type: 'string' } } } } } }, responses: { 201: { description: 'Demande envoyee' }, 400: { description: 'Etablissement ou medecin invalide' }, 409: { description: 'Une demande est deja en attente' } } },
+      get: { tags: ['Patient'], summary: 'Mes demandes de rendez-vous', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Demandes, la plus recente en tete' } } } },
+    '/api/v1/patients/me/demandes-rendez-vous/{id}/annuler': {
+      post: { tags: ['Patient'], summary: 'Retirer une demande encore en attente', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Demande annulee' }, 409: { description: 'Demande deja traitee' } } } },
+    '/api/v1/hopital/demandes': {
+      get: { tags: ['Hôpital'], summary: 'Demandes a distance sans medecin designe', description: 'L\'accueil les oriente : c\'est son metier, et le seul qu\'il garde sur ce circuit. Il ne fixe pas l\'heure. Les plus anciennes d\'abord.', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Demandes a orienter' } } } },
+    '/api/v1/hopital/demandes/{id}/orienter': {
+      post: { tags: ['Hôpital'], summary: 'Designer le medecin qui traitera la demande', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idMedecin'], properties: { idMedecin: { type: 'string' } } } } } }, responses: { 200: { description: 'Demande orientee ; le medecin est prevenu' }, 400: { description: 'Ce medecin n exerce pas dans l etablissement' }, 409: { description: 'Demande deja traitee' } } } },
+    '/api/v1/medecin/demandes': {
+      get: { tags: ['Médecin'], summary: 'Demandes de rendez-vous qui me sont adressees', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Demandes en attente, les plus anciennes d abord' } } } },
+    '/api/v1/medecin/demandes/{id}/accepter': {
+      post: { tags: ['Médecin'], summary: 'Accepter en fixant l\'heure — ce geste ouvre la visite', description: 'L\'episode de soins et le rendez-vous naissent ensemble, dans la meme transaction : un episode sans rendez-vous laisserait un dossier que personne n\'attend. Le medecin en devient d\'emblee responsable.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['prevuLe'], properties: { prevuLe: { type: 'string', format: 'date-time' } } } } } }, responses: { 200: { description: 'Rendez-vous fixe ; le patient est prevenu' }, 404: { description: 'Demande non adressee a ce medecin' }, 409: { description: 'Demande deja traitee' } } } },
+    '/api/v1/medecin/demandes/{id}/refuser': {
+      post: { tags: ['Médecin'], summary: 'Refuser avec un motif', description: 'Le motif est obligatoire : un refus sans explication est un mur. Il reste dans l\'espace du patient, pas dans la notification — il peut porter un detail que rien ne doit sortir de la plateforme.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string', minLength: 5, maxLength: 500 } } } } } }, responses: { 200: { description: 'Demande refusee ; le patient est prevenu' }, 400: { description: 'Motif manquant' } } } },
+    '/api/v1/medecin/orientations/{idEpisode}/rendez-vous': {
+      post: { tags: ['Médecin'], summary: 'Fixer le rendez-vous d\'un patient oriente (addendum 2026-09-28, point 3)', description: 'Le creneau appartient au medecin : l\'accueil oriente sans proposer d\'heure. Un seul rendez-vous en vigueur par episode — deplacer le creneau remplace le precedent. C\'est ce geste, et lui seul, qui annonce une heure au patient.', security: [{ bearerAuth: [] }], parameters: [{ name: 'idEpisode', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['prevuLe'], properties: { prevuLe: { type: 'string', format: 'date-time' }, motif: { type: 'string', maxLength: 500 } } } } } }, responses: { 201: { description: 'Rendez-vous fixe ; le patient est prevenu' }, 404: { description: 'Ce medecin n\'est pas responsable de l\'episode' }, 409: { description: 'Episode termine' } } } },
+    '/api/v1/medecin/rendez-vous': {
+      get: { tags: ['Médecin'], summary: 'Agenda du medecin, par ordre chronologique (addendum 2026-09-28, point 8)', description: 'Du plus proche au plus lointain, les rendez-vous annules ecartes. Par defaut a partir d\'aujourd\'hui.', security: [{ bearerAuth: [] }], parameters: [{ name: 'du', in: 'query', schema: { type: 'string', format: 'date-time' } }, { name: 'au', in: 'query', schema: { type: 'string', format: 'date-time' } }], responses: { 200: { description: 'Rendez-vous du medecin' }, 403: { description: 'Reserve au role MEDECIN' } } } },
+    '/api/v1/medecin/rendez-vous/{id}/statut': {
+      patch: { tags: ['Médecin'], summary: 'Prendre le patient, terminer la consultation ou constater une absence', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['statut'], properties: { statut: { type: 'string', enum: ['EN_CONSULTATION', 'TERMINE', 'ABSENT'] } } } } } }, responses: { 200: { description: 'Statut change' }, 404: { description: 'Rendez-vous introuvable' }, 409: { description: 'Rendez-vous annule' } } } },
+    '/api/v1/medecin/resultats': {
+      get: { tags: ['Médecin'], summary: 'Résultats d\'analyse validés que le patient ne voit pas encore (addendum 2026-09-28)', description: 'Les demandes dont ce médecin est prescripteur ou responsable de l\'épisode, validées par le laboratoire et non encore libérées. Les plus anciennes d\'abord : c\'est le patient qui attend depuis le plus longtemps.', security: [{ bearerAuth: [] }], responses: { 200: { description: 'File des résultats à libérer' }, 403: { description: 'Réservé au rôle MEDECIN' } } },
+    },
+    '/api/v1/medecin/resultats/{id}/liberer': {
+      post: { tags: ['Médecin'], summary: 'Rendre les résultats visibles au patient, avec une explication (addendum 2026-09-28)', description: 'Le patient ne voit un résultat qu\'après ce geste : ni la validation du laboratoire ni le temps qui passe ne le rendent visible. Le commentaire est la traduction en langage clair — facultatif, pour ne pas provoquer des « RAS » systématiques. Libérer vaut accusé de lecture des alertes critiques de la demande.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { commentaire: { type: 'string', maxLength: 2000 } } } } } }, responses: { 200: { description: 'Résultats libérés ; le patient est notifié' }, 403: { description: 'Réservé au médecin prescripteur ou responsable de l\'épisode' }, 409: { description: 'Non validés par le laboratoire, ou déjà libérés' } } },
+    },
     '/api/v1/medecin/referencements': {
       get: { tags: ['Médecin'], summary: 'Référencements à traiter', security: [{ bearerAuth: [] }], parameters: [{ name: 'statut', in: 'query', schema: { type: 'string', enum: ['EN_ATTENTE', 'ACCEPTE', 'REFUSE', 'COMPLETE'] } }, { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } }, { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } }], responses: { 200: { description: 'Référencements récupérés' }, 401: { description: 'Non authentifié' } } },
     },
@@ -754,7 +829,7 @@ export const swaggerDocument = {
     },
     // ─── NOTIFICATIONS ────────────────────────────────────
     '/api/v1/notifications/sms': {
-      post: { tags: ['Notifications'], summary: 'Envoyer un SMS personnalisé', description: 'Envoie un SMS à un numéro spécifique — accessible Admin uniquement', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendSmsDto' } } } }, responses: { 200: { description: 'SMS envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Numéro ou message invalide' }, 403: { description: 'Accès refusé — Admin requis' } } },
+      post: { tags: ['Notifications'], summary: 'Envoyer un SMS personnalisé', description: "Envoie un SMS a un numero specifique — Admin uniquement. **Aucun contenu medical n'est accepte** (EF-11-02) : un SMS voyage en clair, s'affiche sur un ecran verrouille et reste dans un telephone souvent partage. Un message contenant « resultat », « analyse », « ordonnance », « prelevement », « vaccination » ou un autre terme de soin est **refuse en 400**, avec le mot fautif. Invitez le destinataire a consulter son espace plutot que de lui annoncer un soin par SMS.", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SendSmsDto' } } } }, responses: { 200: { description: 'SMS envoyé', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsResult' } } }] } } } }, 400: { description: 'Numéro ou message invalide' }, 403: { description: 'Accès refusé — Admin requis' } } },
     },
     '/api/v1/notifications/sms/masse': {
       post: { tags: ['Notifications'], summary: 'SMS en masse par préfecture', description: "Envoie un SMS à tous les patients d'une préfecture — accessible Admin Régional et National", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/SmsMasseDto' } } } }, responses: { 200: { description: 'SMS envoyés en masse', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { $ref: '#/components/schemas/SmsMasseResult' } } }] } } } }, 400: { description: 'Prefecture ou message manquant' }, 403: { description: 'Accès refusé' } } },
@@ -1000,13 +1075,15 @@ export const swaggerDocument = {
     '/api/v1/privacy/me/consents': {
       get: {
         tags: ['Confidentialite'],
-        summary: 'Lister mes consentements',
+        summary: 'Mes consentements, avec le texte que j ai vu (EF-02-01/03)',
+        description: "Les consentements du patient connecte, avec le texte qu'il avait sous les yeux (EF-02-01/03).\n\n**Toutes les portees sont rendues**, meme celles sur lesquelles il ne s'est jamais prononce : une portee absente de l'ecran est une question qu'on ne lui a jamais posee. `repondu: false` les distingue.\n\n`etat` vaut `A_JOUR`, `TEXTE_PLUS_RECENT` (le texte a change depuis ; l'accord reste valable et un renouvellement est propose), ou **`JAMAIS_RECUEILLI` — l'accord a ete enregistre sans que personne ne montre quoi que ce soit.** Pose par le systeme a la creation du dossier, ou anterieur au versionnage : ce n'est pas un consentement, et l'ecran du patient le dit en ces termes. Dans la base du 2026-10-04, deux des quatre consentements etaient dans ce cas.\n\n`texteAccepte` est le texte **tel qu'il etait**, pas celui d'aujourd'hui : montrer le texte du jour comme s'il l'avait accepte lui ferait dire ce qu'il n'a pas dit.",
         security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Consentements patient' } },
+        responses: { 200: { description: 'Les quatre portees, repondues ou non' } },
       },
       put: {
         tags: ['Confidentialite'],
-        summary: 'Donner ou retirer un consentement',
+        summary: 'Donner ou retirer un consentement (EF-02-03/07)',
+        description: "Accorder ou retirer un consentement (EF-02-03/07).\n\n**Deux ecritures, une transaction** : l'evenement, qui ne s'efface jamais, et l'etat courant, qui sert aux controles d'acces.\n\n**Accorder exige un texte publie** (409 sinon) : on ne consent pas a un texte qui n'existe pas. **Un retrait est toujours possible**, meme sans texte — le refuser faute de documentation reviendrait a retenir quelqu'un contre son gre.\n\n**Le retrait prend effet tout de suite** : aucun delai, aucune file d'attente. Il n'est pas rattache au texte du jour mais a celui qui avait ete accepte.\n\n**Limite a connaitre.** Aujourd'hui, seul l'export FHIR consulte reellement ces consentements. L'acces au dossier par un soignant est decide par la relation de soin (etre suivi dans l'etablissement, avoir un episode en cours), sans passer par `DOSSIER_MEDICAL`. L'ecran du patient le dit desormais au lieu d'affirmer le contraire ; le raccordement demande le bris de glace (EF-02-06), sans quoi couper l'acces bloquerait des soins.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -1018,9 +1095,32 @@ export const swaggerDocument = {
     '/api/v1/privacy/me/audit-logs': {
       get: {
         tags: ['Confidentialite'],
-        summary: 'Voir les acces a mon dossier',
+        summary: 'Qui a consulte mon dossier (EF-02-08)',
+        description: "Le journal des acces au dossier du patient connecte, du plus recent au plus ancien.\n\n**Ce que chaque ligne porte** : qui a agi (nom, prenom, role), quand, le code HTTP rendu (`statutHttp` — un refus >= 400 est une tentative, pas un acces), et deux cles de traduction.\n\n**L'API ne rend pas de texte redige.** `libelle` et `libelleObjet` sont des cles d'i18n : la plateforme est bilingue, et une phrase francaise figee s'afficherait telle quelle a un patient ayant choisi l'anglais. Le client traduit `libelleObjet`, puis le passe en parametre `objet` a `libelle`. `libelleObjet` est vide pour les phrases qui se suffisent a elles-memes, comme le scan d'un code.\n\n`action` et `ressource` restent la trace technique (`GET /:id`), **a ne pas afficher seules** : elles servent une enquete ou un signalement.\n\n**Les objets restent generaux** (« un document de votre dossier », jamais « une ordonnance ») : un journal se lit parfois sur un ecran partage, et ces mots sont interdits par EF-11-02. Une anomalie se repere a l'auteur et a l'heure.\n\n**Ce que le journal ne nomme pas** : une recherche ou une liste touche plusieurs dossiers, ou aucun. Ces acces sont traces mais n'apparaissent dans le journal d'aucun patient. Le couvrir demanderait une ligne par patient affiche — un choix a trancher, pas un oubli.",
         security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Journal des acces' } },
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 50, maximum: 100 } },
+          { name: 'parTiers', in: 'query', schema: { type: 'boolean', default: false }, description: "Ne garder que les acces d'autrui. C'est ce qu'on cherche quand on soupconne une anomalie : les acces du patient lui-meme representaient 273 lignes sur 850 dans la base de demonstration." },
+        ],
+        responses: {
+          200: {
+            description: 'Journal des acces, page par page',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' },
+              action: { type: 'string', description: 'Trace technique : le motif de route' },
+              ressource: { type: 'string' },
+              idRessource: { type: 'string', nullable: true },
+              libelle: { type: 'string', description: "Cle d'i18n de la phrase ; attend un parametre `objet`" },
+              libelleObjet: { type: 'string', description: "Cle d'i18n de l'objet ; vide si la phrase se suffit" },
+              parMoi: { type: 'boolean', description: 'Vrai quand le patient est lui-meme l auteur' },
+              statutHttp: { type: 'integer', nullable: true },
+              creeLe: { type: 'string', format: 'date-time' },
+              utilisateur: { type: 'object', properties: { id: { type: 'string' }, prenom: { type: 'string' }, nom: { type: 'string' }, role: { type: 'string' } } },
+            } } }, meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' }, totalPages: { type: 'integer' } } } } }] } } },
+          },
+          404: { description: 'Profil patient non trouve' },
+        },
       },
     },
     '/api/v1/ussd/session': {
@@ -1065,6 +1165,10 @@ export const swaggerDocument = {
       },
     },
     // ── P1 Hopital : episodes de soins et demandes d'analyse (EF-03) ────
+    '/api/v1/hopital/presences': {
+      get: { tags: ['Hôpital'], summary: 'Patients attendus aujourd\'hui (addendum 2026-09-28, point 2)', description: 'La file de l\'assistante : qui est attendu, avec quel medecin, et qui est deja arrive.', security: [{ bearerAuth: [] }], parameters: [{ name: 'jour', in: 'query', schema: { type: 'string', format: 'date' } }], responses: { 200: { description: 'Rendez-vous du jour dans la structure' } } } },
+    '/api/v1/hopital/rendez-vous/{id}/presence': {
+      post: { tags: ['Hôpital'], summary: 'Pointer l\'arrivee du patient', description: 'Le seul geste de l\'accueil sur un rendez-vous : il ne le cree pas et n\'en change pas l\'heure. Le medecin est prevenu que son patient attend. Un second pointage est refuse.', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Arrivee pointee ; le medecin est prevenu' }, 404: { description: 'Rendez-vous introuvable dans cette structure' }, 409: { description: 'Deja pointe, ou rendez-vous annule' } } } },
     '/api/v1/hopital/tableau-de-bord': { get: { tags: ['Hopital'], summary: 'Tableau de bord de l etablissement (EF-03-07)', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Compteurs et derniers episodes' } } } },
     '/api/v1/hopital/patients/recherche': {
       get: { tags: ['Hopital'], summary: 'Rechercher un patient avant admission (EF-03-01)', security: [{ bearerAuth: [] }],
@@ -1103,13 +1207,14 @@ export const swaggerDocument = {
     '/api/v1/patients/me/demandes-analyse/{id}/document': { get: { tags: ['Patients'], summary: 'Mon bon d examen imprimable', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'HTML', content: { 'text/html': { schema: { type: 'string' } } } } } } },
     // ── P2 Laboratoire : prelevement, resultats, validation, critiques (EF-04) ──
     '/api/v1/laboratoire/tableau-de-bord': { get: { tags: ['Laboratoire'], summary: 'Tableau de bord du laboratoire', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Compteurs, prochains prelevements, file urgente' } } } },
+    '/api/v1/laboratoire/scan/{qrCode}': { get: { tags: ['Laboratoire'], summary: 'Scan du QR patient au comptoir', description: 'Le patient arrive avec son code ; le laborantin le scanne et voit ce qu\'il reste a faire pour lui **dans son laboratoire**. Le scan ouvre une fenetre, pas le dossier : identite minimale et demandes encore a traiter, ni resultats valides, ni ordonnances, ni historique. Le geste est trace au journal d\'audit ; le journal des acces consultable par le patient (EF-02-08) reste a construire en P4.', security: [{ bearerAuth: [] }], parameters: [{ name: 'qrCode', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Patient et demandes a traiter' }, 403: { description: 'Aucun laboratoire rattache au compte' }, 404: { description: 'QR code inconnu' } } } },
     '/api/v1/laboratoire/demandes': { get: { tags: ['Laboratoire'], summary: 'File des demandes triee par urgence puis anciennete (EF-04-01)', security: [{ bearerAuth: [] }], parameters: [{ name: 'statut', in: 'query', schema: { type: 'string', enum: ['TRANSMISE', 'RECUE', 'PRELEVEE', 'EN_ANALYSE', 'VALIDEE', 'ANNULEE'] } }, { name: 'q', in: 'query', schema: { type: 'string' } }, { name: 'page', in: 'query', schema: { type: 'integer' } }, { name: 'limit', in: 'query', schema: { type: 'integer' } }], responses: { 200: { description: 'Page de demandes' } } } },
     '/api/v1/laboratoire/demandes/{id}': { get: { tags: ['Laboratoire'], summary: 'Detail : lignes, echantillons, resultats', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Demande' } } } },
     '/api/v1/laboratoire/demandes/{id}/reception': { post: { tags: ['Laboratoire'], summary: 'Accuser reception (TRANSMISE -> RECUE)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Demande RECUE' }, 409: { description: 'Statut incompatible' } } } },
     '/api/v1/laboratoire/demandes/{id}/prelevement/planifier': { post: { tags: ['Laboratoire'], summary: 'Planifier le prelevement sur place ou a domicile, patient notifie (EF-04-02)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['lieu'], properties: { lieu: { type: 'string', enum: ['SUR_PLACE', 'DOMICILE'] }, creneau: { type: 'string', format: 'date-time' } } } } } }, responses: { 200: { description: 'Creneau enregistre' } } } },
     '/api/v1/laboratoire/demandes/{id}/prelevement': { post: { tags: ['Laboratoire'], summary: 'Enregistrer le prelevement : echantillons codes EC-AAAA-NNNNNN (EF-04-03)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { lieu: { type: 'string', enum: ['SUR_PLACE', 'DOMICILE'] }, echantillons: { type: 'array', description: 'Par defaut : un echantillon par type de specimen', items: { type: 'object', required: ['specimen'], properties: { specimen: { type: 'string' }, commentaire: { type: 'string' } } } } } } } } }, responses: { 201: { description: 'Demande PRELEVEE' } } } },
     '/api/v1/laboratoire/demandes/{id}/resultats': { put: { tags: ['Laboratoire'], summary: 'Saisir ou importer des resultats, lecture calculee d apres les references (EF-04-04, EF-04-06)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['resultats'], properties: { resultats: { type: 'array', items: { type: 'object', required: ['valeur'], properties: { idLigne: { type: 'string' }, codeLoinc: { type: 'string', description: 'Alternative a idLigne (import automate)' }, valeur: { type: 'string' }, unite: { type: 'string' }, commentaire: { type: 'string' }, idEchantillon: { type: 'string' }, interpretation: { type: 'string', enum: ['NORMAL', 'ANORMAL', 'CRITIQUE'] } } } } } } } } }, responses: { 200: { description: 'Demande EN_ANALYSE avec resultats' } } } },
-    '/api/v1/laboratoire/demandes/{id}/valider': { post: { tags: ['Laboratoire'], summary: 'Validation nominative du biologiste, bloquante avant diffusion (EF-04-05) ; alertes critiques au prescripteur (EF-04-07)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { commentaire: { type: 'string' } } } } } }, responses: { 200: { description: 'Demande VALIDEE ; patient informe sauf resultat critique en attente d accuse' }, 403: { description: 'Reserve au role BIOLOGISTE' }, 400: { description: 'Resultat manquant' } } } },
+    '/api/v1/laboratoire/demandes/{id}/valider': { post: { tags: ['Laboratoire'], summary: 'Validation nominative du laborantin, bloquante avant diffusion (EF-04-05) ; alertes critiques au prescripteur (EF-04-07)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { commentaire: { type: 'string' } } } } } }, responses: { 200: { description: 'Demande VALIDEE ; patient informe sauf resultat critique en attente d accuse' }, 403: { description: 'Reserve au role TECHNICIEN_LABO' }, 400: { description: 'Resultat manquant' } } } },
     '/api/v1/laboratoire/demandes/{id}/compte-rendu': { get: { tags: ['Laboratoire'], summary: 'Compte rendu imprimable (filigrane NON VALIDE avant validation)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'HTML', content: { 'text/html': { schema: { type: 'string' } } } } } } },
     '/api/v1/resultats/alertes': { get: { tags: ['Resultats'], summary: 'Mes alertes de resultats critiques, non accusees d abord (EF-04-08)', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Alertes' } } } },
     '/api/v1/resultats/alertes/{id}/accuser': { post: { tags: ['Resultats'], summary: 'Accuser lecture ; declenche la diffusion au patient si plus rien n est en attente (EF-04-09)', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Alerte accusee' } } } },
@@ -1124,6 +1229,531 @@ export const swaggerDocument = {
         tags: ['Parametres'], summary: 'Televerser le logo de la plateforme (SUPER_ADMIN)', security: [{ bearerAuth: [] }],
         requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', properties: { logo: { type: 'string', format: 'binary', description: 'PNG, JPEG, WebP ou SVG, 2 Mo max' } } } } } },
         responses: { 200: { description: 'Identite a jour avec logoUrl' }, 400: { description: 'Image refusee' } },
+      },
+    },
+    // ── P11 Demandes d'exercice de droits (EF-12-09) ──────────────────
+    '/api/v1/privacy/me/demandes-rgpd': {
+      get: {
+        tags: ['Confidentialite'],
+        summary: 'Mes demandes d exercice de droits (EF-12-09)',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Mes demandes, la plus recente d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' },
+              type: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] },
+              statut: { type: 'string', enum: ['RECUE', 'EN_COURS', 'SATISFAITE', 'REFUSEE'] },
+              precision: { type: 'string', nullable: true },
+              creeLe: { type: 'string', format: 'date-time' },
+              dateLimite: { type: 'string', format: 'date-time' },
+              joursRestants: { type: 'integer', nullable: true, description: "Null une fois la demande close : son delai ne court plus" },
+              enRetard: { type: 'boolean' },
+              reponse: { type: 'string', nullable: true },
+              traiteLe: { type: 'string', format: 'date-time', nullable: true },
+              traitePar: { type: 'string', nullable: true, description: "Null si l'agent a depuis quitte la plateforme" },
+              demandeur: { type: 'string' },
+            } } } } }] } } } },
+          404: { description: 'Profil patient non trouve' },
+        },
+      },
+      post: {
+        tags: ['Confidentialite'],
+        summary: 'Deposer une demande (EF-12-09)',
+        description: "Deposer une demande d'exercice de droits. C'est un droit du patient : la route lui est ouverte, et c'est l'administration nationale qui traite.\n\n**Rien n'est execute automatiquement.** Ni effacement, ni rectification d'un dossier de soins : ces actes ont des consequences legales et se decident. La demande est enregistree, suivie, et une reponse ecrite est obligatoire.\n\n**Sur l'effacement.** Un dossier de soins est soumis a une duree de conservation, et le journal d'audit doit survivre — c'est pourquoi `JournalAudit.idPatientConcerne` est en `onDelete: Restrict`. Ce que la plateforme peut offrir est une anonymisation de l'identite, le dossier restant pour sa duree legale. Une demande d'effacement est donc satisfaite *ainsi*, ou refusee avec son motif.\n\n`precision` est **obligatoire pour une rectification** : sans elle, on ne sait pas quoi corriger. Une seconde demande du meme type encore ouverte est refusee.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type'], properties: {
+          type: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] },
+          precision: { type: 'string', maxLength: 2000, description: 'Obligatoire pour une rectification' },
+        } } } } },
+        responses: {
+          201: { description: 'Demande enregistree, avec sa date limite' },
+          400: { description: 'Type inconnu, rectification sans precision, ou demande du meme type deja ouverte' },
+        },
+      },
+    },
+    '/api/v1/demandes-rgpd': {
+      get: {
+        tags: ['Demandes RGPD'],
+        summary: 'La file de traitement (EF-12-09)',
+        description: "La file de traitement : les demandes ouvertes d'abord, puis la plus urgente. Reserve a `ADMIN_NATIONAL` et `SUPER_ADMIN` — une demande RGPD engage le responsable de traitement, pas un etablissement.\n\n`enRetard` compte celles dont le delai est depasse. Le delai applique est de 30 jours ; le RGPD en donne un, prolongeable a trois pour une demande complexe, mais **la prolongation est une decision humaine qui se motive**, pas une regle qu'un service applique seul.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'statut', in: 'query', schema: { type: 'string', enum: ['RECUE', 'EN_COURS', 'SATISFAITE', 'REFUSEE'] } },
+          { name: 'type', in: 'query', schema: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] } },
+        ],
+        responses: {
+          200: { description: 'File de demandes', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            demandes: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' },
+              type: { type: 'string', enum: ['ACCES', 'RECTIFICATION', 'EFFACEMENT', 'PORTABILITE', 'OPPOSITION', 'LIMITATION'] },
+              statut: { type: 'string', enum: ['RECUE', 'EN_COURS', 'SATISFAITE', 'REFUSEE'] },
+              precision: { type: 'string', nullable: true },
+              creeLe: { type: 'string', format: 'date-time' },
+              dateLimite: { type: 'string', format: 'date-time' },
+              joursRestants: { type: 'integer', nullable: true, description: "Null une fois la demande close : son delai ne court plus" },
+              enRetard: { type: 'boolean' },
+              reponse: { type: 'string', nullable: true },
+              traiteLe: { type: 'string', format: 'date-time', nullable: true },
+              traitePar: { type: 'string', nullable: true, description: "Null si l'agent a depuis quitte la plateforme" },
+              demandeur: { type: 'string' },
+            } } },
+            ouvertes: { type: 'integer' }, enRetard: { type: 'integer' }, delaiJours: { type: 'integer' },
+          } } } }] } } } },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/demandes-rgpd/{id}/prendre-en-charge': {
+      post: {
+        tags: ['Demandes RGPD'],
+        summary: 'Se declarer en charge (EF-12-09)',
+        description: "Reclamation atomique : deux agents ne peuvent pas se croire chacun en charge de la meme demande.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Demande passee EN_COURS' },
+          403: { description: 'Deja prise en charge' },
+          404: { description: 'Demande introuvable' },
+        },
+      },
+    },
+    '/api/v1/demandes-rgpd/{id}/repondre': {
+      post: {
+        tags: ['Demandes RGPD'],
+        summary: 'Clore la demande, avec sa reponse ecrite (EF-12-09)',
+        description: "Clore la demande. La reponse est **obligatoire dans les deux cas**, au moins dix caracteres : un refus qu'on ne motive pas n'est pas contestable, et une demande satisfaite doit dire ce qui a ete fait. La regle vit dans le schema, dans le service **et** dans une contrainte SQL, pour ne dependre d'aucun des trois seul.\n\nOn ne repond qu'une fois : une demande deja close est refusee en 403.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['satisfaite', 'reponse'], properties: {
+          satisfaite: { type: 'boolean' },
+          reponse: { type: 'string', minLength: 10, maxLength: 4000 },
+        } } } } },
+        responses: {
+          200: { description: 'Demande close' },
+          400: { description: 'Reponse absente ou trop courte' },
+          403: { description: 'Demande deja close' },
+          404: { description: 'Demande introuvable' },
+        },
+      },
+    },
+    // ── P11 Suspension de compte (EF-12-01) ───────────────────────────
+    '/api/v1/comptes': {
+      get: {
+        tags: ['Comptes'],
+        summary: 'Lister les comptes (EF-12-01)',
+        description: "La liste des comptes de la plateforme, les fermes d'abord. Reserve a `ADMIN_NATIONAL` et `SUPER_ADMIN`.\n\n`fermeSansMotif` distingue un compte ferme par l'ancienne voie (`desactiverAgent`, reservee a l'admin de structure, qui n'enregistre ni date ni motif) d'une suspension documentee. On le dit plutot que de laisser croire a une mesure expliquee.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Nom, prenom, e-mail ou telephone' },
+          { name: 'role', in: 'query', schema: { type: 'string' } },
+          { name: 'actifs', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 25, maximum: 100 } },
+        ],
+        responses: {
+          200: { description: 'Page de comptes', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            comptes: { type: 'array', items: { type: 'object', properties: {
+              id: { type: 'string' }, prenom: { type: 'string' }, nom: { type: 'string' },
+              email: { type: 'string', nullable: true }, telephone: { type: 'string' },
+              role: { type: 'string' }, estActif: { type: 'boolean' },
+              structure: { type: 'string', nullable: true },
+              derniereConnexion: { type: 'string', format: 'date-time', nullable: true },
+              suspension: { type: 'object', nullable: true, properties: { suspenduLe: { type: 'string', format: 'date-time' }, motif: { type: 'string' }, parQui: { type: 'string', nullable: true } } },
+              fermeSansMotif: { type: 'boolean', description: "Ferme par l'ancienne voie, sans date ni motif" },
+            } } },
+            total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' },
+          } } } }] } } } },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/comptes/{id}/suspendre': {
+      post: {
+        tags: ['Comptes'],
+        summary: 'Suspendre un compte immediatement (EF-12-01)',
+        description: "Ferme un compte **immediatement**. Le mot engage : trois portes sont fermees.\n\n1. `estActif = false` — chaque requete HTTP relit la session en base, donc le refus vaut des la requete suivante ;\n2. **les sessions sont supprimees** — sans quoi elles tiennent jusqu'a leur expiration ;\n3. **les connexions temps reel sont coupees** — un socket n'est authentifie qu'a la poignee de main. Avant le 2026-10-03, un compte suspendu continuait de recevoir les notifications de ses patients jusqu'a ce qu'il ferme son navigateur, alors que la moindre requete HTTP lui etait refusee.\n\nLa reponse dit **ce qui a reellement ete coupe** (`sessionsFermees`, `socketsFermes`) plutot qu'un simple « fait » : une mesure annoncee immediate doit pouvoir etre verifiee.\n\n**Le motif est obligatoire**, au moins dix caracteres. Une suspension coupe un soignant de ses patients ; une mesure qu'on ne peut pas expliquer ne peut pas etre contestee. La regle vit aussi dans une contrainte SQL, pour ne dependre d'aucun code seul.\n\n**Refus possibles** : se suspendre soi-meme, un compte deja ferme, un `SUPER_ADMIN` quand on n'en est pas un, et surtout **le dernier super administrateur actif** — le suspendre laisserait la plateforme sans administration, sans retour en arriere possible.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motif'], properties: { motif: { type: 'string', minLength: 10, maxLength: 500 } } } } } },
+        responses: {
+          200: { description: 'Compte ferme', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            id: { type: 'string' }, nomComplet: { type: 'string' }, estActif: { type: 'boolean' },
+            motif: { type: 'string', nullable: true },
+            sessionsFermees: { type: 'integer' }, socketsFermes: { type: 'integer' },
+          } } } }] } } } },
+          400: { description: 'Motif absent ou trop court' },
+          403: { description: 'Soi-meme, compte deja ferme, super administrateur, ou dernier administrateur actif' },
+          404: { description: 'Compte introuvable' },
+        },
+      },
+    },
+    '/api/v1/comptes/{id}/reactiver': {
+      post: {
+        tags: ['Comptes'],
+        summary: 'Reactiver un compte (EF-12-01)',
+        description: "Rouvre un compte. La fiche ne garde **aucune** trace de la suspension levee : une contrainte SQL l'exige, et un compte actif affichant encore un motif de suspension serait trompeur.\n\n**Le journal d'audit garde l'histoire** — il est en ajout seul (EF-12-04), et c'est la qu'une enquete retrouvera la suite des decisions.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Compte reactive' },
+          400: { description: 'Compte deja actif' },
+          403: { description: 'Reserve a un super administrateur pour un super administrateur' },
+          404: { description: 'Compte introuvable' },
+        },
+      },
+    },
+    // ── P11 Journal d'audit : recherche et export (EF-12-05) ──────────
+    '/api/v1/journal': {
+      get: {
+        tags: ['Journal d audit'],
+        summary: 'Rechercher dans le journal d audit (EF-12-05)',
+        description: "L'ecran le plus sensible du produit : c'est le seul endroit ou l'on voit, d'un coup, qui a touche au dossier de qui. Reserve a `ADMIN_NATIONAL` et `SUPER_ADMIN`.\n\n**Cette route est elle-meme journalisee.** Sans cela, le seul endroit d'ou l'on voit tout serait le seul qu'on ne verrait pas — et le journal ne prouverait plus rien le jour ou il faudrait s'en servir.\n\n**Sans `du`, la recherche ne remonte pas au-dela de 30 jours** : une requete sans critere ne doit pas balayer la table entiere, qui est celle qui grandit le plus vite de la plateforme. Une borne haute donnee en date seule (`2026-10-03`) inclut la journee entiere — « jusqu'au 3 » veut dire le 3 compris.\n\n**Un critere mal orthographie est refuse en 400, pas ignore** : un filtre silencieusement ecarte rendrait un resultat trop large a une enquete, sans que personne le sache.\n\n`libelle` et `libelleObjet` sont des cles d'i18n, comme pour le journal du patient ; `action` et `ressource` restent la trace technique.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'du', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne basse. Par defaut : il y a 30 jours.' },
+          { name: 'au', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne haute. Une date seule vaut la fin de la journee.' },
+          { name: 'idUtilisateur', in: 'query', schema: { type: 'string' }, description: "L'auteur de l'action." },
+          { name: 'idPatient', in: 'query', schema: { type: 'string' }, description: 'Le patient dont le dossier a ete touche.' },
+          { name: 'role', in: 'query', schema: { type: 'string', enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'LIVREUR', 'ASSUREUR', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] } },
+          { name: 'ressource', in: 'query', schema: { type: 'string' }, description: 'patients, consultations, laboratoire, journal...' },
+          { name: 'echecsSeulement', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'Ne garder que les refus (code HTTP >= 400) : une tentative, pas un acces. Souvent le premier critere d une enquete.' },
+          { name: 'parTiers', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: "Avec `idPatient` : exclure les acces du patient a son propre dossier. Sans `idPatient`, ce critere n'a pas de sens et reste sans effet." },
+        ],
+        responses: {
+          200: {
+            description: 'Page de lignes, de la plus recente a la plus ancienne',
+            content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+              lignes: { type: 'array', items: { type: 'object', properties: {
+                id: { type: 'string' },
+                creeLe: { type: 'string', format: 'date-time' },
+                action: { type: 'string', description: 'Trace technique : le motif de route' },
+                ressource: { type: 'string' },
+                idRessource: { type: 'string', nullable: true },
+                libelle: { type: 'string', description: "Cle d'i18n ; attend un parametre `objet`" },
+                libelleObjet: { type: 'string' },
+                statutHttp: { type: 'integer', nullable: true },
+                ipAdresse: { type: 'string', nullable: true },
+                idUtilisateur: { type: 'string' },
+                acteur: { type: 'object', properties: { prenom: { type: 'string' }, nom: { type: 'string' }, role: { type: 'string' } } },
+                idPatientConcerne: { type: 'string', nullable: true },
+                patientConcerne: { type: 'string', nullable: true, description: "Nom du patient, ou null quand l'action ne concernait aucun dossier — une liste ou une recherche, par exemple" },
+              } } },
+              meta: { type: 'object', properties: { total: { type: 'integer' }, page: { type: 'integer' }, limit: { type: 'integer' }, totalPages: { type: 'integer' } } },
+              maxExport: { type: 'integer', description: "Au-dela, l'export est refuse plutot que tronque" },
+            } } } }] } } },
+          },
+          400: { description: 'Critere inconnu, role inconnu, date illisible ou intervalle a l envers' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/journal/anomalies': {
+      get: {
+        tags: ['Journal d audit'],
+        summary: 'Anomalies d acces a examiner (EF-12-06)',
+        description: "**Des signaux a examiner, pas des verdicts.** Un soignant de garde consulte beaucoup de dossiers la nuit sans rien faire de mal, et un comptoir de pharmacie scanne des dizaines de codes par jour. Un detecteur qui trancherait ferait suspendre des gens a tort — et une suspension coupe un soignant de ses patients. Chaque signal porte ce qui l'a declenche et de quoi aller voir le detail dans le journal ; il ne conclut rien.\n\n**Trois detecteurs**, sur une fenetre glissante :\n- `REFUS_REPETES` — refus d'acces repetes par le meme compte. **Seuls 401 et 403 comptent** : un 400 est une requete mal formee, pas une porte forcee (la base de demonstration en portait 58, tous issus de scripts de verification), et un 404 est trop bruyant pour declencher seul ;\n- `VOLUME_DOSSIERS` — dossiers **distincts** touches par le meme compte. Ouvrir dix fois le meme dossier ne compte que pour un ;\n- `ADRESSES_MULTIPLES` — un compte vu depuis plusieurs adresses IP : identifiants partages ou voles. Celui-la **ne monte jamais en alerte**, un soignant passant du wifi de l'etablissement a son telephone le declenche.\n\n`gravite` vaut `ALERTE` au-dela du triple du seuil, `SIGNAL` sinon : un compte a six refus et un compte a soixante n'appellent pas la meme reaction. Les alertes sont rendues en tete.\n\n**Les seuils ne sont pas calibres sur du trafic reel** et devront probablement varier selon le role. Ils sont rendus avec la reponse pour que l'ecran puisse les montrer plutot que de les cacher.\n\nDepuis un signal, l'enquete continue sur `/api/v1/journal?idUtilisateur=...&echecsSeulement=true`.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'fenetreHeures', in: 'query', schema: { type: 'integer', default: 1, maximum: 168 }, description: 'Fenetre glissante. Une valeur hors bornes retombe sur la valeur par defaut.' },
+        ],
+        responses: {
+          200: { description: 'Signaux, alertes en tete', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: {
+            anomalies: { type: 'array', items: { type: 'object', properties: {
+              type: { type: 'string', enum: ['REFUS_REPETES', 'VOLUME_DOSSIERS', 'ADRESSES_MULTIPLES'] },
+              gravite: { type: 'string', enum: ['SIGNAL', 'ALERTE'] },
+              idUtilisateur: { type: 'string' },
+              acteur: { type: 'string', description: "« Compte supprime » si le compte n'existe plus : le journal lui survit" },
+              role: { type: 'string', nullable: true },
+              acteurActif: { type: 'boolean', description: 'Faux si le compte est deja ferme' },
+              mesure: { type: 'integer' }, seuil: { type: 'integer' },
+              depuis: { type: 'string', format: 'date-time' },
+            } } },
+            seuils: { type: 'object', properties: { refusRepetes: { type: 'integer' }, dossiersDistincts: { type: 'integer' }, adressesDistinctes: { type: 'integer' }, fenetreHeures: { type: 'integer' } } },
+            depuis: { type: 'string', format: 'date-time' },
+          } } } }] } } } },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/journal/export': {
+      get: {
+        tags: ['Journal d audit'],
+        summary: 'Exporter le journal en CSV (EF-12-05)',
+        description: "L'export CSV des memes criteres. Point-virgule, BOM UTF-8 et fins de ligne CRLF : c'est Excel en francais qui l'ouvrira. Les champs contenant le separateur, un guillemet ou un saut de ligne sont entoures de guillemets, les guillemets interieurs doubles.\n\n**Un export trop large est refuse, jamais tronque en silence** (400, avec le nombre exact de lignes). Un journal d'audit ampute sans le dire est pire qu'un export absent : on conclut d'une absence de ligne qu'il ne s'est rien passe. L'operateur resserre la periode ou ajoute un critere ; la limite est annoncee par `maxExport` sur la route de recherche.\n\nLe fichier porte la trace technique (`action`, `ressource`) et non la phrase redigee pour le patient : un export sert une enquete, pas un ecran.\n\n`Content-Disposition` est expose au navigateur (CORS), pour que le front retrouve le nom du fichier propose.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'du', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne basse. Par defaut : il y a 30 jours.' },
+          { name: 'au', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Borne haute. Une date seule vaut la fin de la journee.' },
+          { name: 'idUtilisateur', in: 'query', schema: { type: 'string' }, description: "L'auteur de l'action." },
+          { name: 'idPatient', in: 'query', schema: { type: 'string' }, description: 'Le patient dont le dossier a ete touche.' },
+          { name: 'role', in: 'query', schema: { type: 'string', enum: ['PATIENT', 'ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'LIVREUR', 'ASSUREUR', 'ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] } },
+          { name: 'ressource', in: 'query', schema: { type: 'string' }, description: 'patients, consultations, laboratoire, journal...' },
+          { name: 'echecsSeulement', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'Ne garder que les refus (code HTTP >= 400) : une tentative, pas un acces. Souvent le premier critere d une enquete.' },
+          { name: 'parTiers', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: "Avec `idPatient` : exclure les acces du patient a son propre dossier. Sans `idPatient`, ce critere n'a pas de sens et reste sans effet." },
+        ],
+        responses: {
+          200: { description: 'Fichier CSV', content: { 'text/csv': { schema: { type: 'string' } } } },
+          400: { description: "Export trop large (le message donne le nombre exact de lignes), ou critere invalide" },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    // ── P11 Referentiels : import CSV reserve a l'administration nationale (EF-12-03) ──
+    '/api/v1/referentiels/{type}/colonnes': {
+      get: {
+        tags: ['Referentiels'],
+        summary: 'Les colonnes a preparer dans le fichier',
+        description: "A consulter **avant** l'import : l'operateur sait quelles colonnes sont exigees et lesquelles sont facultatives. L'ordre des colonnes dans le fichier n'a pas d'importance, seuls les en-tetes comptent (compares en minuscules, espaces retires).",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'type', in: 'path', required: true, schema: { type: 'string', enum: ['examens', 'interactions', 'medicaments'] } }],
+        responses: {
+          200: { description: 'Colonnes obligatoires et facultatives', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { type: { type: 'string' }, obligatoires: { type: 'array', items: { type: 'string' } }, facultatives: { type: 'array', items: { type: 'string' } } } } } }] } } } },
+          400: { description: 'Referentiel inconnu' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/referentiels/{type}/import': {
+      post: {
+        tags: ['Referentiels'],
+        summary: 'Importer un referentiel depuis un CSV (EF-12-03)',
+        description: "Reserve a l'administration nationale : un referentiel vaut pour toute la plateforme, et une regle d'interaction erronee se traduirait en alerte fausse — ou absente — chez chaque prescripteur.\n\n**Format accepte** : separateur `;` ou `,` (deduit de l'en-tete, `;` l'emporte car c'est ce qu'ecrit Excel en francais), guillemets avec echappement par doublement, champs sur plusieurs lignes, fins de ligne CRLF, BOM d'Excel tolere, lignes vides ignorees.\n\n**Toujours simuler d'abord** avec `simulation: true` : tout est valide, rien n'est ecrit. La reponse porte **une ligne par ligne du fichier** avec son verdict — un import qui echoue en silence sur trois lignes est pire que pas d'import. Une ligne refusee porte toujours son motif.\n\nL'import est une **mise a jour** quand la cle existe deja (code LOINC, paire de DCI, code produit), une creation sinon. Les paires de DCI sont normalisees et triees, pour que la detection d'interaction les retrouve dans les deux sens.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'type', in: 'path', required: true, schema: { type: 'string', enum: ['examens', 'interactions', 'medicaments'] } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['contenu'], properties: { contenu: { type: 'string', description: 'Le contenu du fichier CSV, tel quel' }, simulation: { type: 'boolean', default: false, description: 'Valider sans rien ecrire' } } } } } },
+        responses: {
+          200: { description: 'Rapport d import, ligne par ligne', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { type: { type: 'string' }, simulation: { type: 'boolean' }, total: { type: 'integer' }, creees: { type: 'integer' }, misesAJour: { type: 'integer' }, refusees: { type: 'integer' }, lignes: { type: 'array', items: { type: 'object', properties: { ligne: { type: 'integer', description: 'Le numero dans le fichier de l operateur : la ligne 1 est l en-tete' }, cle: { type: 'string' }, statut: { type: 'string', enum: ['CREEE', 'MISE_A_JOUR', 'REFUSEE'] }, motif: { type: 'string', nullable: true } } } } } } } }] } } } },
+          400: { description: 'Fichier vide, colonne obligatoire absente, ou referentiel inconnu' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    // ── P4 Bris de glace (EF-02-06) ───────────────────────────────────
+    '/api/v1/bris-de-glace': {
+      post: {
+        tags: ['Bris de glace'],
+        summary: 'Declarer un acces en urgence (EF-02-06)',
+        description: "Declarer un acces en urgence a un dossier auquel on n'a pas droit (EF-02-06).\n\n**Pourquoi cette porte existe.** Un patient arrive inconscient dans un service qui ne le suit pas. Le soignant a besoin de ses allergies, tout de suite. Un controle d'acces sans porte de secours ferait prescrire a l'aveugle — et la regle serait contournee autrement, par un compte prete, sans laisser la moindre trace. Une porte declaree vaut mieux qu'une porte derobee.\n\n**Pourquoi ce n'est pas un passe-partout :**\n- un **motif** est exige, pris dans une liste fermee *et* explique en toutes lettres. La liste permet de compter, le texte permet de juger ;\n- l'acces **expire au bout de 4 heures**. Sans expiration, le premier bris de glace deviendrait la facon normale d'entrer. La duree est volontairement trop courte pour couvrir une garde : un soignant qui a encore besoin du dossier le lendemain doit redeclarer, et ce second geste se verra ;\n- le **patient est prevenu** dans la foulee ;\n- l'**administration repasse derriere**. Un garde-fou que personne ne relit n'est pas un garde-fou ;\n- la **declaration ne se reecrit pas** : un declencheur PostgreSQL refuse de toucher au motif, au patient, a l'auteur et aux dates.\n\n**Reserve aux roles qui donnent des soins** — medecin, ASC, superviseur d'ASC. Ni l'accueil, ni l'administration, ni le laboratoire : leur ouvrir cette porte ferait de l'exception la regle.\n\n**Si la notification du patient echoue, l'acces est quand meme ouvert** : il y a un patient inconscient au bout. Mais `notifieLe` reste nul, et la revue le signale — un bris de glace dont le patient n'a pas ete prevenu n'est qu'a moitie declare.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idPatient', 'motif', 'explication'], properties: { idPatient: { type: 'string' }, motif: { type: 'string', enum: ['URGENCE_VITALE', 'PATIENT_HORS_ETAT', 'CONTINUITE_DES_SOINS', 'VERIFICATION_AVANT_PRESCRIPTION', 'AUTRE'] }, explication: { type: 'string', minLength: 20, maxLength: 2000, description: 'La situation en une phrase. C est elle qui sera relue, et c est elle qui protege le soignant.' } } } } } },
+        responses: {
+          201: { description: 'Acces ouvert, patient prevenu', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string', enum: ['URGENCE_VITALE', 'PATIENT_HORS_ETAT', 'CONTINUITE_DES_SOINS', 'VERIFICATION_AVANT_PRESCRIPTION', 'AUTRE'] }, explication: { type: 'string', description: 'Ce que le soignant a explique. Ne se reecrit pas.' }, ouvertLe: { type: 'string', format: 'date-time' }, expireLe: { type: 'string', format: 'date-time' }, refermeLe: { type: 'string', format: 'date-time', nullable: true }, ouvert: { type: 'boolean', description: 'Ni referme, ni expire.' }, statutRevue: { type: 'string', enum: ['A_REVOIR', 'JUSTIFIE', 'INJUSTIFIE'] }, avisRevue: { type: 'string', nullable: true }, revuLe: { type: 'string', format: 'date-time', nullable: true }, revuPar: { type: 'string', nullable: true }, notifieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : le patient n a pas pu etre prevenu. La declaration tient, le manque se voit.' }, patient: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, auteur: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, role: { type: 'string' } } }, structure: { type: 'string', nullable: true } } } } }] } } } },
+          400: { description: 'Explication trop courte, ou son propre dossier' },
+          403: { description: 'Reserve aux roles qui donnent des soins : MEDECIN, ASC, ASC_SUPERVISOR' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+      get: {
+        tags: ['Bris de glace'],
+        summary: 'Les acces en urgence (EF-02-06)',
+        description: "Les acces en urgence.\n\n**Un soignant ne voit que les siens** : la liste complete est un outil de controle, pas un annuaire des urgences des autres. L'administration voit tout, parce que c'est elle qui relit.\n\n`aRevoirSeulement=true` ne garde que ceux qui attendent une relecture : c'est la file de travail de l'administration.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'idPatient', in: 'query', schema: { type: 'string' } },
+          { name: 'aRevoirSeulement', in: 'query', schema: { type: 'string', enum: ['true', 'false'] }, description: 'La file de travail de l administration.' },
+        ],
+        responses: {
+          200: { description: 'Acces, le plus recent d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string', enum: ['URGENCE_VITALE', 'PATIENT_HORS_ETAT', 'CONTINUITE_DES_SOINS', 'VERIFICATION_AVANT_PRESCRIPTION', 'AUTRE'] }, explication: { type: 'string', description: 'Ce que le soignant a explique. Ne se reecrit pas.' }, ouvertLe: { type: 'string', format: 'date-time' }, expireLe: { type: 'string', format: 'date-time' }, refermeLe: { type: 'string', format: 'date-time', nullable: true }, ouvert: { type: 'boolean', description: 'Ni referme, ni expire.' }, statutRevue: { type: 'string', enum: ['A_REVOIR', 'JUSTIFIE', 'INJUSTIFIE'] }, avisRevue: { type: 'string', nullable: true }, revuLe: { type: 'string', format: 'date-time', nullable: true }, revuPar: { type: 'string', nullable: true }, notifieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : le patient n a pas pu etre prevenu. La declaration tient, le manque se voit.' }, patient: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, auteur: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, role: { type: 'string' } } }, structure: { type: 'string', nullable: true } } } } } }] } } } },
+          400: { description: 'Critere inconnu' },
+        },
+      },
+    },
+    '/api/v1/bris-de-glace/{id}/refermer': {
+      post: {
+        tags: ['Bris de glace'],
+        summary: 'Refermer un acces avant son expiration (EF-02-06)',
+        description: "Refermer un acces avant son expiration.\n\nLe geste honnete quand on n'a plus besoin du dossier. **Seul celui qui a brise la vitre la referme** : un tiers qui refermerait l'acces d'un autre le laisserait devant un dossier qu'il consultait peut-etre encore.\n\nUn acces referme ne se rouvre pas — un declencheur PostgreSQL le refuse. Il faut declarer un nouveau bris de glace, et ce second geste se verra.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Acces referme' },
+          403: { description: 'Seul celui qui a ouvert l acces peut le refermer' },
+          404: { description: 'Acces introuvable' },
+          409: { description: 'Acces deja referme' },
+        },
+      },
+    },
+    '/api/v1/bris-de-glace/{id}/reviser': {
+      post: {
+        tags: ['Bris de glace'],
+        summary: 'Rendre une revue sur un acces en urgence (EF-02-06)',
+        description: "Rendre une revue sur un acces en urgence (EF-02-06).\n\n**Un avis ecrit est exige, meme pour dire que l'acces etait fonde.** Une case cochee sans phrase ne prouve pas que quelqu'un a regarde.\n\n**On ne relit pas son propre acces** : un garde-fou qu'on s'applique a soi-meme n'en est pas un.\n\nUne revue ne se refait pas : juger deux fois le meme acces reviendrait a pouvoir changer d'avis apres coup, ce qui viderait la relecture de son sens. Un `INJUSTIFIE` n'est pas une sanction — c'est un constat ecrit, et les suites se decident ailleurs.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['statut', 'avis'], properties: { statut: { type: 'string', enum: ['JUSTIFIE', 'INJUSTIFIE'] }, avis: { type: 'string', minLength: 20, maxLength: 2000 } } } } } },
+        responses: {
+          200: { description: 'Revue rendue' },
+          400: { description: 'Avis trop court' },
+          403: { description: 'Reserve a l administration, et jamais sur son propre acces' },
+          404: { description: 'Acces introuvable' },
+          409: { description: 'Acces deja relu' },
+        },
+      },
+    },
+    // ── P4 Consentement versionne (EF-02-01/03/07) ────────────────────
+    '/api/v1/textes-consentement': {
+      get: {
+        tags: ['Consentement'],
+        summary: 'Les versions des textes de consentement (EF-02-01)',
+        description: "Les textes de consentement, versions anciennes et brouillons compris (EF-02-01).\n\n**Un consentement ne vaut que pour ce qui a ete explique.** Sans garder le texte exact qui etait a l'ecran, on ne peut ni prouver ce que la personne a accepte, ni le lui remontrer. Le texte evolue ; les accords deja donnes continuent de pointer vers la version qu'ils ont vue.\n\n**On ne modifie jamais un texte publie** : publier, c'est creer une version de plus. Sans cela on reecrirait apres coup ce a quoi les gens ont dit oui.\n\nLisible par tout compte authentifie : un soignant doit pouvoir lire le texte sur lequel repose l'acces qu'on lui accorde.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'scope', in: 'query', schema: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] } }],
+        responses: {
+          200: { description: 'Textes, les plus recents d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, langue: { type: 'string', example: 'fr' }, version: { type: 'integer' }, titre: { type: 'string' }, corps: { type: 'string' }, publieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : brouillon, montre a personne.' }, dansUneAutreLangue: { type: 'boolean', description: 'Le texte n est pas dans la langue du patient. Le taire ferait passer pour eclaire un consentement qui ne l est pas.' } } } } } }] } } } },
+          400: { description: 'Critere inconnu' },
+        },
+      },
+      post: {
+        tags: ['Consentement'],
+        summary: 'Publier une nouvelle version (EF-02-01)',
+        description: "Publier une nouvelle version d'un texte (EF-02-01).\n\n**Reserve a l'administration nationale.** Un texte de consentement vaut pour toute la plateforme : le laisser modifier par chaque structure ferait dire au consentement des choses differentes selon l'hopital.\n\nLa version est calculee, pas donnee : deux administrateurs qui publient en meme temps ne doivent pas se marcher dessus, et l'unicite `(scope, langue, version)` les departage.\n\n**Un texte plus recent ne revoque pas les accords deja donnes.** Revoquer d'office couperait l'acces au dossier de soins de tous les patients le jour ou l'on corrige une faute d'orthographe — et un acces coupe, en soins, ce n'est pas un desagrement. Les patients concernes lisent « le texte a change depuis votre accord » et peuvent renouveler. On demande, on n'impose pas. La limite est assumee : tant qu'ils n'ont pas repondu, c'est l'ancienne version qui fait foi.",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['scope', 'langue', 'titre', 'corps'], properties: { scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, langue: { type: 'string', pattern: '^[a-z]{2}$', example: 'fr' }, titre: { type: 'string', minLength: 3, maxLength: 200 }, corps: { type: 'string', minLength: 40, maxLength: 20000, description: 'Le texte presente, tel quel. Quarante caracteres au moins : un texte qui n explique rien ne recueille pas un consentement eclaire.' } } } } } },
+        responses: {
+          201: { description: 'Version publiee' },
+          400: { description: 'Texte trop court, titre trop court, ou langue mal ecrite' },
+          403: { description: 'Reserve a ADMIN_NATIONAL et SUPER_ADMIN' },
+        },
+      },
+    },
+    '/api/v1/textes-consentement/en-vigueur': {
+      get: {
+        tags: ['Consentement'],
+        summary: 'Le texte qu un patient verrait aujourd hui (EF-02-01)',
+        description: "Le texte qu'un patient verrait aujourd'hui, dans la langue demandee.\n\n**La version en vigueur est la plus recemment publiee**, et non la plus grande : un numero de version se saisit, une date de publication s'enregistre. Si les deux divergeaient, c'est la date qui dit ce qui a ete reellement mis a l'ecran.\n\n**La langue fait partie du texte.** Un texte en francais montre a quelqu'un qui lit le pular n'est pas un consentement eclaire. Faute de traduction, le francais est rendu et `dansUneAutreLangue` vaut `true` : le manque se voit au lieu de se cacher.\n\n**404 franc quand rien n'est publie**, plutot qu'un texte vide : tant qu'aucun texte n'existe, il n'y a rien a quoi consentir.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'scope', in: 'query', required: true, schema: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] } },
+          { name: 'langue', in: 'query', schema: { type: 'string', default: 'fr' } },
+        ],
+        responses: {
+          200: { description: 'Texte en vigueur', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { id: { type: 'string' }, scope: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] }, langue: { type: 'string', example: 'fr' }, version: { type: 'integer' }, titre: { type: 'string' }, corps: { type: 'string' }, publieLe: { type: 'string', format: 'date-time', nullable: true, description: 'null : brouillon, montre a personne.' }, dansUneAutreLangue: { type: 'boolean', description: 'Le texte n est pas dans la langue du patient. Le taire ferait passer pour eclaire un consentement qui ne l est pas.' } } } } }] } } } },
+          400: { description: 'Portee absente' },
+          404: { description: 'Aucun texte publie pour cette portee, ni dans la langue demandee ni en francais' },
+        },
+      },
+    },
+    '/api/v1/privacy/me/consents/historique': {
+      get: {
+        tags: ['Consentement'],
+        summary: 'L histoire de mes consentements (EF-02-07)',
+        description: "L'histoire des consentements du patient connecte (EF-02-07).\n\n**C'est elle qui donne un sens au mot « versionne ».** Avant, un retrait ecrasait l'accord : on voyait le refus d'aujourd'hui, jamais l'accord d'hier ni le nombre de changements d'avis.\n\n**En ajout seul.** Deux declencheurs PostgreSQL refusent UPDATE, DELETE et TRUNCATE, comme pour le journal d'audit (EF-12-04) : une table qui se laisse reecrire ne prouve rien le jour ou il faut s'en servir.\n\n`versionTexte` et `langueTexte` disent ce que la personne avait sous les yeux a ce moment-la. `null` signifie qu'aucun texte n'avait ete conserve — accord anterieur au versionnage, ou pose d'office par le systeme.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'scope', in: 'query', schema: { type: 'string', enum: ['DOSSIER_MEDICAL', 'FHIR_EXPORT', 'RAPPELS_SMS', 'RECHERCHE_ANONYMISEE'] } }],
+        responses: {
+          200: { description: 'Decisions, la plus recente d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, scope: { type: 'string' }, sens: { type: 'string', enum: ['ACCORDE', 'RETIRE'] }, source: { type: 'string', description: 'WEB, MOBILE, COMPTOIR, DEFAUT_SYSTEME...' }, commentaire: { type: 'string', nullable: true }, creeLe: { type: 'string', format: 'date-time' }, versionTexte: { type: 'integer', nullable: true }, langueTexte: { type: 'string', nullable: true }, titreTexte: { type: 'string', nullable: true }, parQui: { type: 'string' } } } } } }] } } } },
+          403: { description: 'Reserve au patient' },
+        },
+      },
+    },
+    // ── P4 Identito-vigilance et doublons (EF-01-04/05/10) ────────────
+    '/api/v1/identites': {
+      get: {
+        tags: ['Identites'],
+        summary: 'Les patients et le niveau de leur identite (EF-01-04/10)',
+        description: "Les patients et le niveau de leur identite, pour le comptoir d'accueil.\n\n**Ce que ce niveau conditionne, et ce qu'il ne conditionne pas.** Une identite verifiee ouvre le tiers payant et la delivrance de produits reglementes. Elle ne conditionne **pas les soins** : un patient a l'identite provisoire est consulte, suivi et prescrit normalement. Un agent qui refuserait quelqu'un sans piece commettrait une faute grave.\n\n**Le numero de piece ne revient jamais en entier** : seuls ses quatre derniers caracteres sont lisibles. Il prouve qu'une piece a ete vue ; il n'a pas a etre recopie devant une file d'attente.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'q', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 100 }, description: 'Nom, prenom ou telephone.' },
+          { name: 'niveau', in: 'query', schema: { type: 'string', enum: ['PROVISOIRE', 'VERIFIEE'] } },
+        ],
+        responses: {
+          200: { description: 'Patients, numero de piece masque', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, telephone: { type: 'string' }, dateNaissance: { type: 'string', format: 'date-time' }, lieuNaissance: { type: 'string', nullable: true }, nomMere: { type: 'string', nullable: true }, prefecture: { type: 'string', nullable: true }, niveauIdentite: { type: 'string', enum: ['PROVISOIRE', 'VERIFIEE'] }, typePiece: { type: 'string', nullable: true }, numeroPieceMasque: { type: 'string', nullable: true, description: 'Quatre derniers caracteres seulement.' }, identiteVerifieeLe: { type: 'string', format: 'date-time', nullable: true }, verifiePar: { type: 'string', nullable: true } } } } } }] } } } },
+          400: { description: 'Critere inconnu ou hors bornes' },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/verifier': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Declarer avoir vu une piece d identite (EF-01-04/10)',
+        description: "Enregistrer qu'une piece d'identite a ete vue (EF-01-04/10).\n\n**C'est une declaration d'agent, pas une verification automatique.** L'agent dit avoir vu le document et lequel ; son identifiant et l'horodatage sont enregistres. C'est ce qui rend l'acte contestable plus tard.\n\n`numeroPiece` et `lieuNaissance` sont exiges : la contrainte SQL `patients_identite_verifiee_fondee` les reclame pour une identite verifiee. Une verification qui ne peut pas nommer le document sur lequel elle se fonde n'est ni verifiable ni contestable.\n\n**Pourquoi ce verrou existe.** Dans la region, « Mamadou Diallo, ne en 1990 » peut designer plusieurs personnes dans la meme prefecture. Si l'identite est la mauvaise, c'est l'assureur qui paie pour quelqu'un d'autre, et le vrai titulaire voit son plafond annuel consomme sans le savoir.\n\nReverifier un dossier deja verifie exige `remplacerPiece: true` : une piece se renouvelle, mais remplacer la trace d'une verification anterieure est un geste conscient.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Identifiant du dossier patient.' }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['typePiece', 'numeroPiece', 'lieuNaissance'], properties: { typePiece: { type: 'string', enum: ['CARTE_NATIONALE', 'PASSEPORT', 'ACTE_NAISSANCE', 'CARTE_CONSULAIRE', 'PERMIS_CONDUIRE', 'AUTRE'] }, numeroPiece: { type: 'string', minLength: 3, maxLength: 60 }, lieuNaissance: { type: 'string', minLength: 2, maxLength: 120 }, nomMere: { type: 'string', minLength: 2, maxLength: 120, description: 'Facultatif ici, mais c est le trait le plus discriminant pour les doublons.' }, remplacerPiece: { type: 'boolean', description: 'Exige pour reverifier un dossier deja verifie.' } } } } } },
+        responses: {
+          200: { description: 'Identite verifiee, tiers payant ouvert' },
+          400: { description: 'Piece incomplete, ou dossier deja verifie sans remplacerPiece' },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/traits': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Noter un trait d etat civil sans verifier (EF-01-04)',
+        description: "Noter un trait d'etat civil sans verifier d'identite.\n\nAu telephone ou sur declaration, un agent recueille le lieu de naissance et le nom de la mere sans voir de piece. **Ces traits servent la detection de doublons, qui n'attend pas une verification pour etre utile** — et ils ne font pas passer l'identite en `VERIFIEE`.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { lieuNaissance: { type: 'string', minLength: 2, maxLength: 120 }, nomMere: { type: 'string', minLength: 2, maxLength: 120 } } } } } },
+        responses: {
+          200: { description: 'Traits enregistres, niveau d identite inchange' },
+          400: { description: 'Aucun trait fourni' },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+          404: { description: 'Dossier patient introuvable' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/fusionner': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Fusionner un dossier dans un autre (EF-01-06)',
+        description: "Fusionner un dossier dans un autre (EF-01-06).\n\n**L'operation la plus dangereuse du produit.** Fusionner deux personnes distinctes melange leurs dossiers medicaux : l'allergie de l'une devient celle de l'autre, et personne ne s'en apercoit avant une prescription. Reserve a `ADMIN_STRUCTURE` — verifier une piece est le geste de celui qui recoit le patient, melanger deux dossiers ne l'est pas.\n\n`{id}` est le dossier **qui survit**. C'est l'agent qui le choisit : lui seul sait lequel des deux porte l'histoire la plus complete.\n\n**Ce qui bouge.** Consultations, vaccinations, rendez-vous et demandes de rendez-vous, factures, episodes de soins, demandes d'analyse, ventes au comptoir, contrats d'assurance, controles d'eligibilite, demandes RGPD — et les consentements, un par un.\n\n**Ce qui ne bouge pas : le journal d'audit.** Un acces au dossier absorbe etait un acces au dossier absorbe. Le reattribuer ferait dire au journal que quelqu'un a ouvert un dossier qu'il n'a jamais ouvert — une falsification, que les declencheurs PostgreSQL d'EF-12-04 refusent de toute facon. Les lectures du journal suivent le lien de fusion au lieu de deplacer les lignes.\n\n**Les consentements : le plus restrictif l'emporte.** La contrainte `@@unique([idPatient, scope])` interdit de garder les deux lignes quand les dossiers ne s'accordent pas sur un usage. Elargir un acces sans que le patient l'ait dit montrerait des donnees qui ne devaient pas l'etre, et cela ne se rattrape pas ; un consentement retire a tort se redonne en une phrase. La reponse rapporte les usages restreints, pour que l'agent puisse redemander au patient.\n\n**Le dossier absorbe n'est jamais supprime.** Il garde son identifiant et son code QR : une personne qui presente son ancienne carte est amenee au dossier survivant. Il sort simplement des listes de travail et des propositions de doublon.\n\n**Pas de chaine de fusion** : un dossier deja fusionne ne peut etre ni principal ni absorbe. Trois doublons se traitent sans chaine — A absorbe B, puis A absorbe C. Un declencheur PostgreSQL le garantit.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Le dossier QUI SURVIT.' }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['idAbsorbe', 'motif'], properties: { idAbsorbe: { type: 'string', description: 'Le dossier absorbe. Il est conserve, jamais supprime.' }, motif: { type: 'string', minLength: 10, maxLength: 2000, description: 'Sur quoi vous vous fondez. Exige : un acte de cette portee sans motif n est pas contestable.' } } } } } },
+        responses: {
+          200: { description: 'Fusion faite, et annulable', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string' }, statut: { type: 'string', enum: ['ACTIVE', 'ANNULEE'] }, fusionneLe: { type: 'string', format: 'date-time' }, fusionnePar: { type: 'string' }, motifAnnulation: { type: 'string', nullable: true }, annuleeLe: { type: 'string', format: 'date-time', nullable: true }, annuleePar: { type: 'string', nullable: true }, principal: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, absorbe: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, lignes: { type: 'array', description: 'Ce qui a bouge, resume par table. C est ce qui rend la reversibilite credible.', items: { type: 'object', properties: { tableCible: { type: 'string' }, operation: { type: 'string', enum: ['DEPLACEMENT', 'RESTRICTION_CONSENTEMENT'] }, nombre: { type: 'integer' } } } } } } } }] } } } },
+          400: { description: 'Meme dossier, ou motif trop court' },
+          403: { description: 'Reserve a ADMIN_STRUCTURE' },
+          404: { description: "L'un des deux dossiers n'existe pas" },
+          409: { description: 'Deja fusionne, ou deux identites verifiees sur deux pieces differentes. Le corps porte `motif` : DOSSIER_INTROUVABLE, MEME_DOSSIER, MOTIF_TROP_COURT, DEJA_FUSIONNE, DEUX_PIECES_DIFFERENTES, FUSION_INTROUVABLE, DEJA_ANNULEE' },
+        },
+      },
+    },
+    '/api/v1/identites/fusions/{idFusion}/annuler': {
+      post: {
+        tags: ['Identites'],
+        summary: 'Defaire une fusion (EF-01-06)',
+        description: "Defaire une fusion (EF-01-06).\n\n**C'est ce qui rend la fusion acceptable.** On ne remet pas « ce qui devrait etre » : chaque ligne deplacee a ete enregistree, et l'annulation relit cette liste. La reversibilite n'est pas une promesse, c'est une liste.\n\n**Ce qui a ete ajoute au dossier survivant depuis la fusion lui reste** : il ne figure pas dans la liste, donc il ne bouge pas. C'est le comportement voulu — une consultation faite apres la fusion a bien eu lieu sur le dossier survivant.\n\nVerifie par comparaison contre une vraie base : `npx tsx scripts/prouver-fusion-reversible.mts` photographie les deux dossiers, fusionne, annule, et compare.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'idFusion', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['motifAnnulation'], properties: { motifAnnulation: { type: 'string', minLength: 10, maxLength: 2000 } } } } } },
+        responses: {
+          200: { description: 'Fusion annulee, chaque ligne rendue' },
+          400: { description: 'Motif trop court' },
+          403: { description: 'Reserve a ADMIN_STRUCTURE' },
+          404: { description: 'Fusion introuvable' },
+          409: { description: 'Fusion deja annulee' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/fusions': {
+      get: {
+        tags: ['Identites'],
+        summary: 'L historique des fusions d un dossier (EF-01-06)',
+        description: "L'historique des fusions d'un dossier, annulations comprises.\n\nLe resume `lignes` dit **combien** de lignes ont bouge et dans quelles tables. C'est cela qui rend la reversibilite credible aux yeux d'un agent : il voit ce qui a ete deplace avant de decider d'annuler.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Fusions, la plus recente d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, motif: { type: 'string' }, statut: { type: 'string', enum: ['ACTIVE', 'ANNULEE'] }, fusionneLe: { type: 'string', format: 'date-time' }, fusionnePar: { type: 'string' }, motifAnnulation: { type: 'string', nullable: true }, annuleeLe: { type: 'string', format: 'date-time', nullable: true }, annuleePar: { type: 'string', nullable: true }, principal: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, absorbe: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' } } }, lignes: { type: 'array', description: 'Ce qui a bouge, resume par table. C est ce qui rend la reversibilite credible.', items: { type: 'object', properties: { tableCible: { type: 'string' }, operation: { type: 'string', enum: ['DEPLACEMENT', 'RESTRICTION_CONSENTEMENT'] }, nombre: { type: 'integer' } } } } } } } } }] } } } },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+        },
+      },
+    },
+    '/api/v1/identites/{id}/doublons': {
+      get: {
+        tags: ['Identites'],
+        summary: 'Les doublons possibles d un dossier (EF-01-05)',
+        description: "Les dossiers qui pourraient etre la meme personne (EF-01-05).\n\n**Ce ne sont pas des verdicts, et rien n'est fusionne automatiquement.** Un agent decide. Fusionner deux personnes distinctes melange leurs dossiers medicaux : c'est bien plus dangereux que de laisser un doublon.\n\n**Ce que les donnees reelles ont impose.** Dans la base du 2026-10-04, 9 patients sur 10 portaient le 1er janvier 2000 comme date de naissance : c'est la valeur qu'on saisit quand on l'ignore. Elle ne vaut donc presque rien ici (`DATE_PAR_DEFAUT`, 5 points, contre 25 pour une vraie date partagee), sans quoi ces neuf patients seraient signales comme doublons les uns des autres et l'agent apprendrait a ignorer l'alerte.\n\nCe sont **le nom de la mere** (45) et **le lieu de naissance** (25) qui tranchent, comme dans les registres d'etat civil.\n\n**La regle qui empeche de fusionner deux freres.** Sans concordance de nom, le score est plafonne sous `probable`. Deux freres partagent leur mere, leur ville et le telephone familial ; des jumeaux partagent en plus leur date. Tout concorde sauf le prenom, et le score atteignait 115. Le cas remonte quand meme, en tete et avec ses traits, mais il ne sera jamais annonce comme probable.\n\n**Une variante d'orthographe ne conclut jamais non plus.** « Diallo » et « Dialo » sont reconnus comme le meme nom (`NOM_VARIANTE`), parce que c'est ainsi que naissent la plupart des doublons quand un nom est transcrit a l'oreille. Mais « Mamadou » et « Amadou » tombent dans la meme categorie et peuvent etre deux freres : le plafond s'applique, avec le trait `ORTHOGRAPHE_A_CONFIRMER` pour dire a l'agent que le nom concorde — mal ecrit — et non qu'il ne concorde pas.\n\n**Limites assumees.** Les poids disent un ordre d'importance, ils ne sont pas calibres sur du trafic reel. Et la comparaison entre familles de traits reste arbitraire : un meme nom de mere sans aucun nom commun (45) passe devant une variante d'orthographe avec telephone partage (42), alors que la seconde est plus probablement un doublon. Rien n'en decoule, puisque aucun des deux ne conclut.",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Le dossier dont on cherche les doublons. Il est exclu du resultat.' }],
+        responses: {
+          200: { description: 'Candidats, le plus ressemblant d abord', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { properties: { data: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, nomComplet: { type: 'string' }, telephone: { type: 'string' }, dateNaissance: { type: 'string', format: 'date-time' }, lieuNaissance: { type: 'string', nullable: true }, nomMere: { type: 'string', nullable: true }, prefecture: { type: 'string', nullable: true }, niveauIdentite: { type: 'string', enum: ['PROVISOIRE', 'VERIFIEE'] }, score: { type: 'integer', description: 'A partir de 60 : doublon probable. De 40 a 59 : a verifier. En deca, le candidat n est pas rendu.' }, probable: { type: 'boolean', description: 'score >= 60. Jamais vrai sans concordance de nom exacte ou partielle.' }, traits: { type: 'array', items: { type: 'string', enum: ['NOM_IDENTIQUE', 'NOM_VARIANTE', 'NOM_PROCHE', 'MERE_IDENTIQUE', 'LIEU_IDENTIQUE', 'DATE_IDENTIQUE', 'DATE_PAR_DEFAUT', 'TELEPHONE_IDENTIQUE', 'SANS_CONCORDANCE_DE_NOM', 'ORTHOGRAPHE_A_CONFIRMER'] }, description: 'Ce qui a produit le score. C est ce que l agent lit pour decider : le score seul ne dit rien.' } } } } } }] } } } },
+          403: { description: 'Reserve a AGENT_ACCUEIL et ADMIN_STRUCTURE' },
+          404: { description: 'Dossier patient introuvable' },
+        },
       },
     },
   },

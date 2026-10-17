@@ -1,0 +1,274 @@
+<div class="bb-cmd">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shopping-bag" aria-hidden="true"></i> {{ 'PATIENT.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.COMMANDES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.COMMANDES.SOUS_TITRE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-cmd__btn bb-cmd__btn--plat" type="button" (click)="charger()" [disabled]="chargement()">
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        {{ 'PATIENT.COMMANDES.ACTUALISER' | translate }}
+      </button>
+    </div>
+  </header>
+  <app-export-liste
+    [titre]="'EXPORT.DOC.MES_COMMANDES'"
+    [colonnes]="colonnes"
+    [lignes]="commandes()"
+    [nomFichier]="'mes-commandes'" />
+
+
+  @if (chargement()) {
+    <p class="bb-cmd__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (commandes().length === 0) {
+    <div class="bb-cmd__vide">
+      <i class="pi pi-shopping-bag" aria-hidden="true"></i>
+      <p class="bb-cmd__vide-titre">{{ 'PATIENT.COMMANDES.AUCUNE' | translate }}</p>
+      <p class="bb-cmd__vide-aide">{{ 'PATIENT.COMMANDES.AUCUNE_AIDE' | translate }}</p>
+    </div>
+  } @else {
+
+    <!-- ── Une pharmacie a pris : c'est ici qu'on choisit ──────────── -->
+    @for (c of prises(); track c.id) {
+      <article class="bb-cmd__carte bb-cmd__carte--mienne">
+        <div class="bb-cmd__entete">
+          <div>
+            <p class="bb-cmd__patient">
+              {{ c.pharmacie?.nom || ('PATIENT.COMMANDES.UNE_PHARMACIE' | translate) }}
+            </p>
+            <p class="bb-cmd__meta">
+              {{ 'PATIENT.COMMANDES.A_VOS_PRODUITS' | translate }}
+              · {{ c.numeroOrdonnance }}
+            </p>
+            <p class="bb-cmd__etat">{{ libelleEtat(c.statut) }}</p>
+          </div>
+          <span class="bb-cmd__boites">
+            {{ 'PATIENT.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+          </span>
+        </div>
+
+        <ul class="bb-cmd__lignes">
+          @for (l of c.lignes; track l.id) {
+            <li class="bb-cmd__ligne">
+              <span class="bb-cmd__produit">
+                {{ l.libelle }}
+                @if (dosageUtile(l.libelle, l.dosage); as d) {
+                  <span class="bb-cmd__dosage">{{ d }}</span>
+                }
+                @if (l.posologie) { <span class="bb-cmd__dosage">— {{ l.posologie }}</span> }
+              </span>
+              <span class="bb-cmd__qte">× {{ l.quantite }}</span>
+              @if (l.prixUnitaireGnf != null) {
+                <span class="bb-cmd__prix">
+                  {{ 'PATIENT.COMMANDES.PRIX_UNITAIRE' | translate: { prix: montant(l.prixUnitaireGnf) } }}
+                  · {{ montant(l.montantGnf) }} GNF
+                </span>
+              }
+            </li>
+          }
+        </ul>
+
+        <!-- **Le montant avant le paiement, jamais apres.** Un patient doit
+             savoir ce qu'il va debourser avant d'ouvrir son porte-monnaie. -->
+        @if (c.montantTotalGnf != null) {
+          <p class="bb-cmd__total">
+            {{ 'PATIENT.COMMANDES.TOTAL' | translate }}
+            <strong>{{ montant(c.montantTotalGnf) }} GNF</strong>
+          </p>
+        }
+
+        @switch (c.statut) {
+          @case ('PRISE_EN_CHARGE') {
+            <p class="bb-cmd__note">
+              <i class="pi pi-clock" aria-hidden="true"></i>
+              {{ 'PATIENT.COMMANDES.ATTENDRE_CHIFFRAGE' | translate }}
+            </p>
+          }
+          @case ('A_PAYER') {
+            <div class="bb-cmd__actions">
+              <button class="bb-cmd__btn" type="button"
+                      (click)="ouvrirPaiement(c)" [disabled]="enCours() === c.id">
+                <i class="pi pi-wallet" aria-hidden="true"></i>
+                {{ 'PATIENT.COMMANDES.PAYER' | translate }}
+              </button>
+            </div>
+          }
+        }
+
+        <!-- Renoncer reste possible tant que rien n'est parti. Le
+             remboursement, s'il y a lieu, se fait a la pharmacie. -->
+        @if (!['RETIREE', 'CLOTUREE'].includes(c.statut)) {
+          <div class="bb-cmd__actions">
+            <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                    (click)="demanderRenoncement(c)" [disabled]="enCours() === c.id">
+              {{ 'PATIENT.COMMANDES.RENONCER' | translate }}
+            </button>
+          </div>
+        }
+
+        @if (c.modeRemise) {
+          <p class="bb-cmd__note">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            {{ 'PATIENT.COMMANDES.MODE_CHOISI' | translate: { mode: libelleMode(c.modeRemise) } }}
+          </p>
+        } @else {
+          <!-- Les deux à égalité, aucun présélectionné : beaucoup de patients
+               habitent à côté d'une pharmacie et iront chercher eux-mêmes. -->
+          <p class="bb-cmd__question">{{ 'PATIENT.COMMANDES.QUESTION' | translate }}</p>
+          <div class="bb-cmd__choix">
+            <button class="bb-cmd__option" type="button"
+                    (click)="choisir(c, 'RETRAIT_PHARMACIE')" [disabled]="enCours() === c.id">
+              <i class="pi pi-shop" aria-hidden="true"></i>
+              <span class="bb-cmd__option-titre">{{ 'PATIENT.COMMANDES.RETRAIT' | translate }}</span>
+              <span class="bb-cmd__option-aide">{{ 'PATIENT.COMMANDES.RETRAIT_AIDE' | translate }}</span>
+            </button>
+            <button class="bb-cmd__option" type="button"
+                    (click)="choisir(c, 'LIVRAISON')" [disabled]="enCours() === c.id">
+              <i class="pi pi-send" aria-hidden="true"></i>
+              <span class="bb-cmd__option-titre">{{ 'PATIENT.COMMANDES.LIVRAISON' | translate }}</span>
+              <span class="bb-cmd__option-aide">{{ 'PATIENT.COMMANDES.LIVRAISON_AIDE' | translate }}</span>
+            </button>
+          </div>
+        }
+      </article>
+    }
+
+    <!-- ── On cherche encore ───────────────────────────────────────── -->
+    @for (c of enRecherche(); track c.id) {
+      <article class="bb-cmd__carte bb-cmd__carte--appel">
+        <div class="bb-cmd__entete">
+          <div>
+            <p class="bb-cmd__patient">{{ 'PATIENT.COMMANDES.RECHERCHE' | translate }}</p>
+            <p class="bb-cmd__meta">
+              {{ c.numeroOrdonnance }}
+              @if (c.quartierRecherche) { · {{ c.quartierRecherche }} }
+            </p>
+          </div>
+          <span class="bb-cmd__boites">
+            {{ 'PATIENT.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+          </span>
+        </div>
+        <p class="bb-cmd__note">
+          <i class="pi pi-clock" aria-hidden="true"></i>
+          {{ 'PATIENT.COMMANDES.RECHERCHE_AIDE' | translate }}
+        </p>
+      </article>
+    }
+
+    <!-- ── Aucune officine du quartier ─────────────────────────────── -->
+    @for (c of sansPharmacie(); track c.id) {
+      <article class="bb-cmd__carte">
+        <div class="bb-cmd__entete">
+          <div>
+            <p class="bb-cmd__patient">{{ 'PATIENT.COMMANDES.SANS_PHARMACIE' | translate }}</p>
+            <p class="bb-cmd__meta">{{ c.numeroOrdonnance }}</p>
+          </div>
+        </div>
+        <!-- L'ordonnance reste valide : elle se présente au comptoir. -->
+        <p class="bb-cmd__note">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          {{ 'PATIENT.COMMANDES.SANS_PHARMACIE_AIDE' | translate }}
+        </p>
+      </article>
+    }
+
+    <!-- ── Ce qui est terminé ──────────────────────────────────────── -->
+    <!--
+      **La commande disparaissait de l'écran du patient en se clôturant.**
+      Elle quittait la liste des commandes en cours et n'apparaissait nulle
+      part ailleurs : après être allé la chercher à la pharmacie, le patient
+      ne retrouvait plus trace de ce qu'il avait payé.
+    -->
+    @if (terminees().length > 0) {
+      <h2 class="bb-cmd__sec-titre">{{ 'PATIENT.COMMANDES.TERMINEES' | translate }}</h2>
+      <ul class="bb-cmd__closes">
+        @for (c of terminees(); track c.id) {
+          <li class="bb-cmd__close">
+            <span>{{ c.numeroOrdonnance }}</span>
+            @if (c.pharmacie?.nom) { <span class="bb-cmd__meta">{{ c.pharmacie!.nom }}</span> }
+            <span class="bb-cmd__etat">{{ libelleEtat(c.statut) }}</span>
+            @if (c.montantTotalGnf != null) {
+              <span class="bb-cmd__meta">{{ montant(c.montantTotalGnf) }} GNF</span>
+            }
+            @if (c.motifAnnulation) {
+              <span class="bb-cmd__meta">{{ c.motifAnnulation }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>
+
+<!-- ── Payer son panier ──────────────────────────────────────────────── -->
+<!--
+  Les medicaments se paient avant la preparation ; le transport, lui, se
+  regle au livreur a l'arrivee et ne passe pas par la plateforme (decision du
+  2026-09-26). On le dit ici, parce que c'est ici qu'on se demande ce qu'on
+  paie.
+-->
+@if (cible(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PATIENT.COMMANDES.PAYER_TITRE' | translate }}</h2>
+      <p class="bb-cmd__total">
+        {{ 'PATIENT.COMMANDES.TOTAL' | translate }}
+        <strong>{{ montant(c.montantTotalGnf) }} GNF</strong>
+      </p>
+      <p class="bb-cmd__modale-texte">{{ 'PATIENT.COMMANDES.PAYER_AIDE' | translate }}</p>
+
+      <label class="bb-cmd__label" for="cmd-mode">{{ 'PATIENT.COMMANDES.MODE_PAIEMENT' | translate }}</label>
+      <select id="cmd-mode" class="bb-cmd__select"
+              [value]="modePaiement()"
+              (change)="modePaiement.set($any($event.target).value)">
+        @for (m of modes; track m.valeur) {
+          <option [value]="m.valeur">{{ m.libelle }}</option>
+        }
+      </select>
+
+      @if (modePaiement() !== 'ESPECES') {
+        <label class="bb-cmd__label" for="cmd-numero">{{ 'PATIENT.COMMANDES.NUMERO' | translate }}</label>
+        <input id="cmd-numero" class="bb-cmd__motif" type="tel" inputmode="tel"
+               [value]="numeroOperateur()"
+               (input)="numeroOperateur.set($any($event.target).value)" />
+      }
+
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerPaiement()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn" type="button" (click)="payer()" [disabled]="!peutPayer()">
+          {{ 'PATIENT.COMMANDES.PAYER_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+<!-- ── Renoncer ──────────────────────────────────────────────────────── -->
+@if (renonce(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PATIENT.COMMANDES.RENONCER_TITRE' | translate }}</h2>
+      <p class="bb-cmd__modale-texte">{{ 'PATIENT.COMMANDES.RENONCER_TEXTE' | translate }}</p>
+      <label class="bb-cmd__label" for="cmd-renonce-motif">
+        {{ 'PATIENT.COMMANDES.RENONCER_MOTIF' | translate }}
+      </label>
+      <textarea id="cmd-renonce-motif" class="bb-cmd__motif" rows="3"
+                [value]="motif()"
+                (input)="motif.set($any($event.target).value)"></textarea>
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerRenoncement()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn bb-cmd__btn--danger" type="button"
+                (click)="confirmerRenoncement()" [disabled]="!peutRenoncer()">
+          {{ 'PATIENT.COMMANDES.RENONCER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

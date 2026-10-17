@@ -10,17 +10,20 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import type {
+  CategorieProduit,
   IdentitePlateformeView,
   ParametresAlertesView,
   ParametresFacturationView,
   ParametresIdentiteView,
   ParametresSecuriteView,
+  ParametresPharmacieView,
   ParametresPrescriptionView,
   ParametresSyncView,
   ParametresSystemeValeurs,
   ParametresSystemeView,
   UpdateParametresSystemeDto,
 } from '@baobaoheath/shared-types';
+import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { AdminService } from '../../../core/services/admin.service';
@@ -33,7 +36,8 @@ type Onglet = keyof ParametresSystemeValeurs;
   standalone: true,
   imports: [
     MatButtonModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule, MatSliderModule,
-    MatProgressSpinnerModule, CommonModule, FormsModule, RouterLink, TranslatePipe
+    MatProgressSpinnerModule, CommonModule, FormsModule, RouterLink, TranslatePipe,
+    CategorieProduitPipe
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
@@ -59,7 +63,8 @@ export class SettingsComponent implements OnInit {
       { id: 'securite',    label: this.i18n.t('ADMIN.SETTINGS.TAB_SECURITY'), icon: 'pi pi-lock' },
       { id: 'alertes',     label: this.i18n.t('ADMIN.SETTINGS.TAB_ALERTS'),   icon: 'pi pi-bolt' },
       { id: 'sync',        label: this.i18n.t('ADMIN.SETTINGS.TAB_SYNC'),     icon: 'pi pi-sync' },
-      { id: 'prescription', label: this.i18n.t('ADMIN.SETTINGS.TAB_PRESCRIPTION'), icon: 'pi pi-file-edit' }
+      { id: 'prescription', label: this.i18n.t('ADMIN.SETTINGS.TAB_PRESCRIPTION'), icon: 'pi pi-file-edit' },
+      { id: 'pharmacie',   label: this.i18n.t('ADMIN.SETTINGS.TAB_PHARMACIE'),    icon: 'pi pi-shopping-cart' }
     ];
   }
 
@@ -103,6 +108,33 @@ export class SettingsComponent implements OnInit {
     dureeValiditeReglementeJours: 28,
     renouvellementsMax: 6
   };
+
+  // Le comptoir d'officine. `categoriesExigeantOrdonnance` porte la reponse a
+  // la question E de l'addendum, non tranchee : quelles categories, en plus
+  // des produits reglementes, ne se vendent pas sans ordonnance.
+  pharmacie: ParametresPharmacieView = {
+    remiseMaxPourcent: 20,
+    categoriesExigeantOrdonnance: []
+  };
+
+  /**
+   * Les categories que l'on peut soumettre a ordonnance. `MEDICAMENT` n'y
+   * figure pas : un medicament reglemente l'est deja de droit (EF-05-12), et
+   * soumettre *tous* les medicaments fermerait la vente libre de paracetamol.
+   */
+  readonly categoriesDisponibles: CategorieProduit[] = [
+    'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE',
+    'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',
+  ];
+
+  categorieSoumise(c: CategorieProduit): boolean {
+    return this.pharmacie.categoriesExigeantOrdonnance.includes(c);
+  }
+
+  basculerCategorie(c: CategorieProduit, soumise: boolean) {
+    const sans = this.pharmacie.categoriesExigeantOrdonnance.filter((x) => x !== c);
+    this.pharmacie.categoriesExigeantOrdonnance = soumise ? [...sans, c] : sans;
+  }
 
   ngOnInit() {
     this.charger();
@@ -190,6 +222,8 @@ export class SettingsComponent implements OnInit {
     this.alertes     = { ...vue.alertes };
     this.sync        = { ...vue.sync };
     this.prescription = { ...vue.prescription };
+    // La liste est copiee, pas partagee : ngModel mute les tableaux.
+    this.pharmacie = { ...vue.pharmacie, categoriesExigeantOrdonnance: [...vue.pharmacie.categoriesExigeantOrdonnance] };
     this.modifieLe.set(vue.modifieLe);
   }
 }

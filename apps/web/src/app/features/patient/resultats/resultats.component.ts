@@ -6,6 +6,7 @@ import { DatePipe } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import type { EvolutionResultatView, ExamenSuiviView, InterpretationResultat } from '@baobaoheath/shared-types';
 import { LaboratoireService } from '../../../core/services/laboratoire.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { interpretationClasse } from '../../laboratoire/laboratoire.utils';
@@ -18,7 +19,7 @@ const L = 640, H = 260, M = { haut: 18, droite: 22, bas: 34, gauche: 46 };
 @Component({
   selector: 'app-patient-resultats',
   standalone: true,
-  imports: [DatePipe, TranslatePipe],
+  imports: [DatePipe, TranslatePipe, ExportListeComponent],
   templateUrl: './resultats.component.html',
   styleUrl: './resultats.component.scss',
 })
@@ -31,6 +32,19 @@ export class ResultatsComponent implements OnInit {
   readonly lectureClasse = interpretationClasse;
 
   examens    = signal<ExamenSuiviView[]>([]);
+
+  /**
+   * **Les valeurs ne sont pas sur la feuille.** L'ecran les trace sur une
+   * courbe, examen par examen ; ce que cette liste donne, c'est de quoi on a
+   * un suivi et sur combien de points — de quoi dire a un medecin ce qu'il
+   * peut demander.
+   */
+  readonly colonnes: ColonneExport<ExamenSuiviView>[] = [
+    { titre: 'EXPORT.COL.EXAMEN', valeur: (e) => e.libelle },
+    { titre: 'EXPORT.COL.CODE_LOINC', valeur: (e) => e.codeLoinc },
+    { titre: 'EXPORT.COL.UNITE', valeur: (e) => e.unite },
+    { titre: 'EXPORT.COL.MESURES', valeur: (e) => e.nbPoints, nombre: true },
+  ];
   choisi     = signal<string | null>(null);
   evolution  = signal<EvolutionResultatView | null>(null);
   isLoading  = signal(true);

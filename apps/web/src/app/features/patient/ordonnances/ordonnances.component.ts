@@ -14,13 +14,14 @@ import { ToastrService } from 'ngx-toastr';
 import type { OrdonnanceView } from '@baobaoheath/shared-types';
 
 import { OrdonnanceService } from '../../../core/services/ordonnance.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-patient-ordonnances',
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, TranslatePipe],
+  imports: [DatePipe, NgTemplateOutlet, TranslatePipe, ExportListeComponent],
   templateUrl: './ordonnances.component.html',
   styleUrl: './ordonnances.component.scss',
 })
@@ -30,6 +31,19 @@ export class OrdonnancesComponent implements OnInit {
   private i18n = inject(I18nService);
 
   ordonnances = signal<OrdonnanceView[]>([]);
+
+  /**
+   * **Le code de retrait n'est pas sur la feuille.** Il est masque a l'ecran
+   * tant qu'on ne le demande pas, pour une raison : qui l'a peut retirer le
+   * traitement. Une feuille qui le porte annule cette precaution, et une
+   * feuille se perd.
+   */
+  readonly colonnes: ColonneExport<OrdonnanceView>[] = [
+    { titre: 'EXPORT.COL.NUMERO', valeur: (o) => o.numero },
+    { titre: 'EXPORT.COL.PRESCRITE_LE', valeur: (o) => new Date(o.creeLe) },
+    { titre: 'EXPORT.COL.LIGNES', valeur: (o) => o.lignes.length, nombre: true },
+    { titre: 'EXPORT.COL.STATUT', valeur: (o) => o.statut },
+  ];
   isLoading = signal(true);
   /** Identifiants des ordonnances dont le code est momentanement visible. */
   codesVisibles = signal<ReadonlySet<string>>(new Set());

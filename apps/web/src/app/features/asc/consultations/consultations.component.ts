@@ -1,5 +1,5 @@
 // features/asc/consultations/consultations.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { AscService } from '../../../core/services/asc.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { Consultation } from '../../../core/models/asc.model';
@@ -21,8 +22,8 @@ import { Patient } from '../../../core/models/patient.model';
   imports: [
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    TranslatePipe
-  ],
+    TranslatePipe,
+  ExportListeComponent],
   templateUrl: './consultations.component.html',
   styleUrl: './consultations.component.scss'
 })
@@ -34,6 +35,20 @@ export class ConsultationsComponent implements OnInit {
 
   currentUser = this.authService.currentUser;
   consultations = signal<Consultation[]>([]);
+
+  /** Ce que l'agent a fait sur le terrain, et chez qui. */
+  readonly colonnes: ColonneExport<Consultation>[] = [
+    { titre: 'EXPORT.COL.PATIENT', valeur: (c) => {
+        const p = c.patient;
+        if (!p) return '';
+        return p.utilisateur ? p.utilisateur.prenom + ' ' + p.utilisateur.nom
+                             : ((p.prenom ?? '') + ' ' + (p.nom ?? '')).trim();
+      } },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (c) => c.motif },
+    { titre: 'EXPORT.COL.STATUT', valeur: (c) => c.statut },
+    { titre: 'EXPORT.COL.MEDECIN', valeur: (c) => (c.medecin?.utilisateur
+        ? c.medecin.utilisateur.prenom + ' ' + c.medecin.utilisateur.nom : '') },
+  ];
   patients = signal<Patient[]>([]);
   isLoading = signal(true);
   showNewForm = signal(false);
@@ -84,10 +99,17 @@ export class ConsultationsComponent implements OnInit {
     });
   }
 
-  get consultationsFiltrees(): Consultation[] {
+  /**
+   * La liste telle qu'elle est affichee, filtre applique.
+   *
+   * `computed` et non un accesseur : l'accesseur refabriquait le tableau a
+   * chaque cycle de detection, donc l'entree de `<app-export-liste>`
+   * changeait d'identite sans arret.
+   */
+  readonly consultationsFiltrees = computed<Consultation[]>(() => {
     const f = this.filtreStatut();
     return f === 'TOUS' ? this.consultations() : this.consultations().filter(c => c.statut === f);
-  }
+  });
 
   // ── Navigation vers le détail ─────────────────────────────
   voirDetail(consultation: Consultation) {

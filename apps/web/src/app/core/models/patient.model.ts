@@ -84,11 +84,6 @@ export interface OrdonnanceLigne {
 // prochaineDose) n'etaient jamais renvoyes par l'API et sont supprimes.
 export type { VaccinationView as Vaccination } from '@baobaoheath/shared-types';
 
-export interface Paiement {
-  id: string;
-  montant: number;
-  devise: string;
-  statut: string;
-  methode: string;
-  datePaiement: string;
-}
+// `Paiement` a ete retire le 2026-10-08 : ses champs (`montant`, `devise`,
+// `methode`, `datePaiement`) n'existaient nulle part cote API. Le contrat
+// reel est `FactureView`, dans @baobaoheath/shared-types.

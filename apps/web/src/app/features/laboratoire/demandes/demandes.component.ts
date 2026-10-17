@@ -9,19 +9,21 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
-import type { DemandeAnalyseView, StatutDemandeAnalyse } from '@baobaoheath/shared-types';
+import type { DemandeAnalyseView, ScanLaboratoireView, StatutDemandeAnalyse } from '@baobaoheath/shared-types';
 import { LaboratoireService } from '../../../core/services/laboratoire.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { statutDemandeClasse, urgenceClasse } from '../../hopital/hopital.utils';
 import { nbResultatsSaisis } from '../laboratoire.utils';
+import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
 
 type Filtre = 'TOUS' | StatutDemandeAnalyse;
 
 @Component({
   selector: 'app-labo-demandes',
   standalone: true,
-  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, QrScannerComponent, ExportListeComponent],
   templateUrl: './demandes.component.html',
 })
 export class LaboDemandesComponent implements OnInit {
@@ -41,7 +43,56 @@ export class LaboDemandesComponent implements OnInit {
   limit     = 20;
   total     = signal(0);
   items     = signal<DemandeAnalyseView[]>([]);
+
+  /**
+   * La file du laboratoire, sur une feuille de paillasse.
+   *
+   * **Les resultats n'y sont pas, seulement les examens demandes.** Une
+   * feuille de paillasse sert a savoir quoi prelever et pour qui ; les
+   * valeurs appartiennent au compte rendu, pas a la file.
+   */
+  readonly colonnes: ColonneExport<DemandeAnalyseView>[] = [
+    { titre: 'EXPORT.COL.NUMERO', valeur: (d) => d.numero },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (d) => d.patient.prenom + ' ' + d.patient.nom },
+    { titre: 'EXPORT.COL.URGENCE', valeur: (d) => d.urgence },
+    { titre: 'EXPORT.COL.STATUT', valeur: (d) => d.statut },
+    { titre: 'EXPORT.COL.EXAMENS', valeur: (d) => d.lignes.length, nombre: true },
+    { titre: 'EXPORT.COL.PRESCRIPTEUR', valeur: (d) => d.prescripteur.prenom + ' ' + d.prescripteur.nom },
+    { titre: 'EXPORT.COL.EPISODE', valeur: (d) => d.numeroEpisode },
+    { titre: 'EXPORT.COL.PRELEVEMENT', valeur: (d) => d.lieuPrelevement },
+    { titre: 'EXPORT.COL.CRENEAU', valeur: (d) => (d.creneauPrelevement ? new Date(d.creneauPrelevement) : null) },
+    { titre: 'EXPORT.COL.TRANSMISE_LE', valeur: (d) => (d.transmiseLe ? new Date(d.transmiseLe) : null) },
+    { titre: 'EXPORT.COL.VALIDEE_LE', valeur: (d) => (d.valideeLe ? new Date(d.valideeLe) : null) },
+  ];
   isLoading = signal(true);
+
+  /**
+   * Scan du QR patient au comptoir. Le laborantin voit ce qui reste a faire
+   * pour ce patient dans son laboratoire, sans le chercher dans la file.
+   */
+  showScanner = signal(false);
+  scan = signal<ScanLaboratoireView | null>(null);
+
+  ouvrirScanner() {
+    this.scan.set(null);
+    this.showScanner.set(true);
+  }
+
+  onQrDetecte(qrCode: string) {
+    this.showScanner.set(false);
+    this.labo.scanPatient(qrCode).subscribe({
+      next: (r) => this.scan.set(r.data ?? null),
+      error: (err) => {
+        const e = err as { status?: number; error?: { error?: string } };
+        this.toastr.error(
+          e?.status === 0
+            ? this.i18n.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE')
+            : e?.error?.error ?? this.i18n.t('LABO.SCAN_ERREUR'),
+          this.i18n.t('COMMON.ERROR_TITLE')
+        );
+      },
+    });
+  }
 
   private terme$ = new Subject<string>();
 

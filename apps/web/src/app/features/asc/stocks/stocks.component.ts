@@ -1,5 +1,5 @@
 // features/asc/stocks/stocks.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { AscService } from '../../../core/services/asc.service';
 import { OfflineQueueService } from '../../../core/services/offline-queue.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { CreateStockDto, HorodatageApi, MedicamentView, StockAscView } from '@baobaoheath/shared-types';
@@ -19,8 +20,8 @@ import type { CreateStockDto, HorodatageApi, MedicamentView, StockAscView } from
   imports: [
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    TranslatePipe
-  ],
+    TranslatePipe,
+  ExportListeComponent],
   templateUrl: './stocks.component.html',
   styleUrl: './stocks.component.scss'
 })
@@ -31,6 +32,17 @@ export class StocksComponent implements OnInit {
   protected Math = Math;
 
   stocks           = signal<StockAscView[]>([]);
+
+  /** Ce qu'on emporte en tournee, et ce qu'il faut demander avant de partir. */
+  readonly colonnes: ColonneExport<StockAscView>[] = [
+    { titre: 'EXPORT.COL.PRODUIT', valeur: (s) => s.medicament?.libelle },
+    { titre: 'EXPORT.COL.QUANTITE', valeur: (s) => s.quantite, nombre: true },
+    { titre: 'EXPORT.COL.UNITE', valeur: (s) => s.unite },
+    { titre: 'EXPORT.COL.SEUIL', valeur: (s) => s.seuilAlerte, nombre: true },
+    { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.enAlerte ? 'À demander' : 'Suffisant') },
+    { titre: 'EXPORT.COL.PEREMPTION_PROCHE',
+      valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
+  ];
   isLoading        = signal(true);
   isSaving         = signal(false);
   successMessage   = signal('');
@@ -110,7 +122,7 @@ export class StocksComponent implements OnInit {
   }
 
   libelleMedicament(m: MedicamentView): string {
-    return m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} — ${m.dosage}`;
+    return m.libelle;
   }
 
   private loadStocks() {
@@ -135,21 +147,33 @@ export class StocksComponent implements OnInit {
   getMedicamentLabel(s: StockAscView): string {
     const m = s.medicament;
     if (!m) return '—';
-    return m.nomCommercial ? `${m.nomCommercial} (${m.dci})` : `${m.dci} ${m.dosage}`;
+    // Le libelle est le nom complet ; la DCI n'est ajoutee que si elle apporte
+    // quelque chose. L'ancienne formule rendait « null null » hors medicament.
+    return m.dci && !m.libelle.toLowerCase().includes(m.dci.toLowerCase())
+      ? `${m.libelle} (${m.dci})`
+      : m.libelle;
   }
 
-  get stocksFiltres(): StockAscView[] {
+  /**
+   * La liste telle qu'elle est affichee, filtre applique.
+   *
+   * `computed` et non un accesseur : l'accesseur refabriquait le tableau a
+   * chaque cycle de detection, donc l'entree de `<app-export-liste>`
+   * changeait d'identite sans arret.
+   */
+  readonly stocksFiltres = computed<StockAscView[]>(() => {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.stocks();
     return this.stocks().filter(s => {
       const m = s.medicament;
       return (
+        m?.libelle?.toLowerCase().includes(q) ||
         m?.dci?.toLowerCase().includes(q) ||
         m?.nomCommercial?.toLowerCase().includes(q) ||
-        s.medicament.categorie?.toLowerCase().includes(q)
+        m?.classeTherapeutique?.toLowerCase().includes(q)
       );
     });
-  }
+  });
 
   getNiveauStock(s: StockAscView): 'critique' | 'faible' | 'normal' {
     if (s.quantite <= s.seuilAlerte) return 'critique';
@@ -179,7 +203,7 @@ export class StocksComponent implements OnInit {
     this.isSaving.set(true); this.errorMessage.set('');
     const stock = this.stocks().find(s => s.id === stockId);
     const libelle = stock
-      ? `${stock.medicament.nomCommercial || stock.medicament.dci} — ${this.editQuantite()} ${stock.unite}`
+      ? `${stock.medicament.libelle} — ${this.editQuantite()} ${stock.unite}`
       : undefined;
 
     const nouvelleQuantite = this.editQuantite();

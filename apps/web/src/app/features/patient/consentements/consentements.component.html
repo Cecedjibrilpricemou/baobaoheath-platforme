@@ -34,9 +34,83 @@
                 @if (item.modifieLe) {
                   <span class="consent-row__meta">
                     {{ (item.actif ? 'PATIENT.CONSENTS.GRANTED_ON' : 'PATIENT.CONSENTS.REVOKED_ON') | translate: { date: (item.modifieLe | date:'mediumDate') ?? '' } }}
+                    @if (item.source === 'DEFAUT_SYSTEME') {
+                      — {{ 'PATIENT.CONSENTS.PAR_SYSTEME' | translate }}
+                    }
                   </span>
                 } @else {
                   <span class="consent-row__meta">{{ 'PATIENT.CONSENTS.NOT_SET' | translate }}</span>
+                }
+
+                <!-- La différence entre un accord et une case cochée à sa
+                     place (EF-02-01). Deux des quatre consentements de la base
+                     avaient été posés par le système, sans que personne ne
+                     montre rien. Le dire est tout l'objet du versionnage. -->
+                @if (item.repondu && item.actif && item.etat === 'JAMAIS_RECUEILLI') {
+                  <div class="consent-row__avis consent-row__avis--grave" role="note">
+                    <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+                    <div>
+                      <strong>{{ 'PATIENT.CONSENTS.ETAT_JAMAIS_RECUEILLI' | translate }}</strong>
+                      <p>{{ 'PATIENT.CONSENTS.ETAT_JAMAIS_RECUEILLI_DIT' | translate }}</p>
+                      <button mat-stroked-button (click)="confirmer(item)" [disabled]="item.saving">
+                        {{ 'PATIENT.CONSENTS.ETAT_CONFIRMER' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <!-- On ne retire pas son accord à sa place : on le lui dit, et
+                     c'est lui qui tranche. -->
+                @if (item.repondu && item.actif && item.etat === 'TEXTE_PLUS_RECENT') {
+                  <div class="consent-row__avis" role="note">
+                    <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+                    <div>
+                      <strong>{{ 'PATIENT.CONSENTS.ETAT_TEXTE_PLUS_RECENT' | translate }}</strong>
+                      <p>{{ 'PATIENT.CONSENTS.ETAT_TEXTE_PLUS_RECENT_DIT' | translate }}</p>
+                      <button mat-stroked-button (click)="confirmer(item)" [disabled]="item.saving">
+                        {{ 'PATIENT.CONSENTS.ETAT_CONFIRMER' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <!-- Le texte lui-même. C'est à cela qu'il a dit oui. -->
+                @if (texteAMontrer(item); as texte) {
+                  <button mat-button class="consent-row__lire" (click)="basculerTexte(item)">
+                    <mat-icon fontSet="pi" [fontIcon]="item.texteOuvert ? 'pi-chevron-up' : 'pi-chevron-down'"
+                              aria-hidden="true"></mat-icon>
+                    {{ (item.texteOuvert ? 'PATIENT.CONSENTS.TEXT_MASQUER' : 'PATIENT.CONSENTS.TEXT_LIRE')
+                       | translate }}
+                  </button>
+
+                  @if (item.texteOuvert) {
+                    <div class="consent-texte">
+                      <span class="consent-texte__quoi">
+                        {{ (item.texteAccepte ? 'PATIENT.CONSENTS.TEXT_ACCEPTE'
+                                              : 'PATIENT.CONSENTS.TEXT_EN_VIGUEUR') | translate }}
+                      </span>
+                      <span class="consent-texte__version">
+                        {{ 'PATIENT.CONSENTS.TEXT_VERSION' | translate:{
+                              v: texte.version,
+                              date: (texte.publieLe | date:'mediumDate') ?? '' } }}
+                      </span>
+                      <!-- Un texte en français montré à quelqu'un qui lit le
+                           pular n'est pas un consentement éclairé. Le taire
+                           serait pire que de ne pas le traduire. -->
+                      @if (texte.dansUneAutreLangue) {
+                        <span class="consent-texte__langue">
+                          <mat-icon fontSet="pi" fontIcon="pi-globe" aria-hidden="true"></mat-icon>
+                          {{ 'PATIENT.CONSENTS.TEXT_AUTRE_LANGUE' | translate }}
+                        </span>
+                      }
+                      <h4>{{ texte.titre }}</h4>
+                      <p class="consent-texte__corps">{{ texte.corps }}</p>
+                    </div>
+                  }
+                } @else {
+                  <span class="consent-row__meta consent-row__meta--manque">
+                    {{ 'PATIENT.CONSENTS.TEXT_AUCUN' | translate }}
+                  </span>
                 }
               </div>
               <mat-slide-toggle
@@ -48,6 +122,54 @@
             </li>
           }
         </ul>
+
+        <!-- « Versionné » veut dire qu'on garde l'histoire, pas seulement
+             l'état. Avant, un retrait écrasait l'accord : on voyait le refus
+             d'aujourd'hui, jamais l'accord d'hier. -->
+        <button mat-button class="consent-historique__bascule" (click)="basculerHistorique()">
+          <mat-icon fontSet="pi" [fontIcon]="historiqueOuvert() ? 'pi-chevron-up' : 'pi-history'"
+                    aria-hidden="true"></mat-icon>
+          {{ (historiqueOuvert() ? 'PATIENT.CONSENTS.HISTORIQUE_MASQUER'
+                                 : 'PATIENT.CONSENTS.HISTORIQUE_VOIR') | translate }}
+        </button>
+
+        @if (historiqueOuvert()) {
+          <div class="consent-historique">
+            <h3>{{ 'PATIENT.CONSENTS.HISTORIQUE' | translate }}</h3>
+            <p class="consent-historique__inaltérable">
+              <mat-icon fontSet="pi" fontIcon="pi-lock" aria-hidden="true"></mat-icon>
+              {{ 'PATIENT.CONSENTS.HISTORIQUE_INALTERABLE' | translate }}
+            </p>
+
+            @if (historique().length === 0) {
+              <p class="consent-row__meta">{{ 'PATIENT.CONSENTS.HISTORIQUE_VIDE' | translate }}</p>
+            } @else {
+              <ul class="consent-historique__liste">
+                @for (e of historique(); track e.id) {
+                  <li>
+                    <span class="consent-historique__sens"
+                          [class.consent-historique__sens--retire]="e.sens === 'RETIRE'">
+                      {{ 'PATIENT.CONSENTS.SENS_' + e.sens | translate }}
+                    </span>
+                    <span class="consent-historique__quoi">
+                      {{ 'PATIENT.CONSENTS.SCOPE.' + e.scope + '.TITLE' | translate }}
+                    </span>
+                    <span class="consent-row__meta">
+                      {{ e.creeLe | date:'medium' }}
+                      @if (e.versionTexte) { · v{{ e.versionTexte }} ({{ e.langueTexte }}) }
+                      @if (e.source === 'DEFAUT_SYSTEME') {
+                        · {{ 'PATIENT.CONSENTS.PAR_SYSTEME' | translate }}
+                      }
+                    </span>
+                    @if (e.commentaire) {
+                      <span class="consent-historique__note">« {{ e.commentaire }} »</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
         <p class="consent-note">
           <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
           {{ 'PATIENT.CONSENTS.NOTE' | translate }}
@@ -56,6 +178,100 @@
     </mat-card>
 
     <!-- ── QUI A ACCÉDÉ À MON DOSSIER ────────────────────────────── -->
+    <!-- Mes droits (EF-12-09).
+         Rien ne s'exécute automatiquement : l'administration répond par écrit,
+         dans un délai annoncé. L'écran le dit, pour qu'un patient ne clique pas
+         « effacement » en croyant que son dossier disparaîtra dans la minute. -->
+    <mat-card class="droits">
+      <div class="droits__tete">
+        <mat-icon fontSet="pi" fontIcon="pi-file-edit" aria-hidden="true"></mat-icon>
+        <h2>{{ 'PATIENT.CONSENTS.RGPD_TITLE' | translate }}</h2>
+      </div>
+      <p class="droits__avis">{{ 'PATIENT.CONSENTS.RGPD_NOTE' | translate }}</p>
+
+      <div class="droits__formulaire">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'PATIENT.CONSENTS.RGPD_TYPE' | translate }}</mat-label>
+          <mat-select [ngModel]="typeChoisi()" (ngModelChange)="typeChoisi.set($event)">
+            @for (t of typesDemande; track t) {
+              <mat-option [value]="t">{{ 'PATIENT.CONSENTS.RGPD_TYPE_' + t | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (typeChoisi()) {
+          <!-- Ce que ce type de demande veut dire, avant de l'envoyer. Pour
+               l'effacement en particulier : un dossier de soins ne se supprime
+               pas, il s'anonymise. -->
+          <p class="droits__explication">
+            {{ 'PATIENT.CONSENTS.RGPD_EXPLAIN_' + typeChoisi() | translate }}
+          </p>
+
+          <mat-form-field appearance="outline" class="droits__precision">
+            <mat-label>
+              {{ (precisionRequise() ? 'PATIENT.CONSENTS.RGPD_PRECISION_REQUIRED'
+                                     : 'PATIENT.CONSENTS.RGPD_PRECISION') | translate }}
+            </mat-label>
+            <textarea matInput rows="3" [ngModel]="precision()" (ngModelChange)="precision.set($event)"
+                      [placeholder]="'PATIENT.CONSENTS.RGPD_PRECISION_HINT' | translate"></textarea>
+            @if (precisionRequise()) {
+              <mat-hint>{{ 'PATIENT.CONSENTS.RGPD_PRECISION_WHY' | translate }}</mat-hint>
+            }
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" (click)="envoyerDemande()" [disabled]="!peutEnvoyer()">
+            {{ 'PATIENT.CONSENTS.RGPD_SEND' | translate }}
+          </button>
+        }
+      </div>
+
+      @if (succesDemande()) {
+        <div class="droits__succes" role="status">
+          <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+          <span>{{ succesDemande() }}</span>
+        </div>
+      }
+      @if (erreurDemande()) {
+        <div class="droits__erreur" role="alert">
+          <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+          <span>{{ erreurDemande() }}</span>
+        </div>
+      }
+
+      @if (demandesChargees() && demandes().length > 0) {
+        <ul class="droits__liste">
+          @for (d of demandes(); track d.id) {
+            <li>
+              <div class="droits__ligne">
+                <span class="droits__type">{{ 'PATIENT.CONSENTS.RGPD_TYPE_' + d.type | translate }}</span>
+                <span class="droits__statut" [class]="'droits__statut--' + d.statut">
+                  {{ 'PATIENT.CONSENTS.RGPD_STATUT_' + d.statut | translate }}
+                </span>
+                <span class="droits__date">{{ d.creeLe | date:'shortDate' }}</span>
+              </div>
+              @if (d.joursRestants !== null) {
+                <span class="droits__delai" [class.droits__delai--retard]="d.enRetard">
+                  {{ (d.enRetard ? 'PATIENT.CONSENTS.RGPD_LATE' : 'PATIENT.CONSENTS.RGPD_DUE')
+                     | translate:{ jours: d.joursRestants } }}
+                </span>
+              }
+              <!-- La réponse écrite : c'est elle qui rend la décision
+                   contestable, donc elle s'affiche en entier. -->
+              @if (d.reponse) {
+                <p class="droits__reponse">{{ d.reponse }}</p>
+                @if (d.traitePar) {
+                  <span class="droits__par">
+                    {{ 'PATIENT.CONSENTS.RGPD_BY' | translate:{ qui: d.traitePar } }}
+                    · {{ d.traiteLe | date:'short' }}
+                  </span>
+                }
+              }
+            </li>
+          }
+        </ul>
+      }
+    </mat-card>
+
     <mat-card appearance="outlined" class="section-card">
       <div class="section-title">
         <mat-icon fontSet="pi" fontIcon="pi-eye" aria-hidden="true"></mat-icon>
@@ -63,6 +279,16 @@
         @if (totalAcces() > 0) {
           <span class="section-count">{{ totalAcces() }}</span>
         }
+      </div>
+
+      <!-- Sans ce filtre, les acces du patient lui-meme noient ceux des tiers :
+           273 lignes sur 850 dans la base de demonstration. -->
+      <div class="access-filter">
+        <mat-slide-toggle
+          [checked]="parTiersSeulement()"
+          (change)="basculerParTiers($event.checked)">
+          {{ 'PATIENT.CONSENTS.ACCESS_THIRD_PARTY_ONLY' | translate }}
+        </mat-slide-toggle>
       </div>
 
       @if (isLoadingAcces()) {
@@ -87,13 +313,26 @@
             </thead>
             <tbody>
               @for (a of acces(); track a.id) {
-                <tr>
+                <tr [class.access-table__row--moi]="a.parMoi">
                   <td class="access-table__date">{{ a.creeLe | date:'short' }}</td>
                   <td>
-                    <span class="access-table__who">{{ a.utilisateur.prenom }} {{ a.utilisateur.nom }}</span>
-                    <span class="access-table__role">{{ 'ROLE.' + a.utilisateur.role | translate }}</span>
+                    @if (a.parMoi) {
+                      <span class="access-table__who">{{ 'PATIENT.CONSENTS.ACCESS_BY_ME' | translate }}</span>
+                    } @else {
+                      <span class="access-table__who">{{ a.utilisateur.prenom }} {{ a.utilisateur.nom }}</span>
+                      <span class="access-table__role">{{ 'ROLE.' + a.utilisateur.role | translate }}</span>
+                    }
                   </td>
-                  <td><code class="access-table__action">{{ a.action }}</code> <span class="access-table__res">{{ a.ressource }}</span></td>
+                  <!-- Le libelle vient de l'API, deja redige pour un patient.
+                       Cette colonne affichait « GET /:id » jusqu'au 03/10. Le
+                       motif de route reste disponible en infobulle, pour un
+                       signalement. -->
+                  <td>
+                    <span class="access-table__libelle" [title]="a.action + ' · ' + a.ressource">{{ libelleAcces(a) }}</span>
+                    @if (a.statutHttp !== null && a.statutHttp >= 400) {
+                      <span class="access-table__refus">{{ 'PATIENT.CONSENTS.ACCESS_REFUSED' | translate }}</span>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>

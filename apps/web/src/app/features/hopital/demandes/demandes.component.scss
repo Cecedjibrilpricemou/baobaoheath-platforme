@@ -1,0 +1,61 @@
+// features/hopital/demandes — la file d'orientation de l'accueil.
+.bb-hdem {
+  padding: 1.75rem;
+  max-width: 880px;
+  margin: 0 auto;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i { font-size: 30px; color: var(--bb-primary); }
+  }
+
+  &__card {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
+    margin-bottom: 12px; box-shadow: var(--bb-shadow-sm);
+  }
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+
+  &__patient {
+    display: block;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__attente {
+    font-size: 12px; color: var(--bb-text-muted); text-align: right;
+    strong { color: var(--bb-warning); font-weight: 700; }
+  }
+
+  &__motif {
+    margin: 0 0 12px; padding: 10px 12px;
+    border-radius: var(--bb-radius);
+    background: var(--bb-surface-1);
+    font-size: 13.5px; color: var(--bb-text-primary);
+    white-space: pre-wrap; line-height: 1.55;
+  }
+
+  &__actions {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+
+  &__select { min-width: 240px; flex: 1; }
+}
+
+// En sombre, `--bb-warning` n'est pas redéfini et `--bb-surface-1` vaut
+// `--bb-surface-card`.
+:host-context([data-theme='dark']) .bb-hdem {
+  &__motif { background: rgba(255, 255, 255, .05); }
+  &__attente strong { color: #FBBF24; }
+}

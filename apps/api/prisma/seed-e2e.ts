@@ -20,15 +20,15 @@ export const E2E = {
   pharmacien: { email: 'pharma.e2e@baobao.test', telephone: '690000003', prenom: 'Ibrahima', nom: 'Sow' },
   adminStructure: { email: 'admin.centre.e2e@baobao.test', telephone: '690000004', prenom: 'Aissatou', nom: 'Barry' },
   accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
-  biologiste: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
+  laborantin2: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
   patient: { telephone: '690000010', prenom: 'Awa', nom: 'Diallo', qrCode: 'E2E-QR-AWA-0001' },
-  medicament: { dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
+  medicament: { libelle: 'Doliprane e2e 500mg', dci: 'Paracetamol', nomCommercial: 'Doliprane e2e', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
   // Molecule a laquelle la patiente se declare allergique : elle sert a
   // verifier que l'alerte de prescription (EF-05-05) arrive a l'ecran.
-  allergene: { dci: 'Amoxicilline', nomCommercial: 'Clamoxyl e2e', forme: 'gelule', dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
+  allergene: { libelle: 'Clamoxyl e2e 500mg', dci: 'Amoxicilline', nomCommercial: 'Clamoxyl e2e', forme: 'gelule', dosage: '500mg', prixUnitaireGnf: 2500, codeAtc: 'J01CA04' },
   // Produit a circuit reglemente (EF-05-12) : ni renouvelable, validite
   // reduite, signature d'un medecin exigee.
-  reglemente: { dci: 'Morphine', nomCommercial: 'Morphine e2e', forme: 'ampoule', dosage: '10mg', prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
+  reglemente: { libelle: 'Morphine e2e 10mg', dci: 'Morphine', nomCommercial: 'Morphine e2e', forme: 'ampoule', dosage: '10mg', prixUnitaireGnf: 8000, codeAtc: 'N02AA01', estReglemente: true },
 } as const;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -93,8 +93,9 @@ async function main() {
 
   // Accueil du centre : admission, episodes, demandes d'analyse (P1).
   await upsertUtilisateur(E2E.accueil, Role.AGENT_ACCUEIL, motDePasseHash, centre.id);
-  // Biologiste du laboratoire : prelevement, resultats, validation (P2).
-  await upsertUtilisateur(E2E.biologiste, Role.BIOLOGISTE, motDePasseHash, laboratoire.id);
+  // Second laborantin : prelevement, resultats, validation (P2). Le role de
+  // biologiste a ete supprime le 2026-09-30 (addendum, point 4).
+  await upsertUtilisateur(E2E.laborantin2, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
 
   const pharmacien = await upsertUtilisateur(E2E.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
   await prisma.pharmacienProfile.upsert({
@@ -143,13 +144,51 @@ async function main() {
 
   // La pharmacie doit avoir du stock pour delivrer ; l'ASC n'en a pas encore
   // (le test d'ajout de stock le cree).
-  await prisma.stock.upsert({
+  //
+  // Le stock seul ne suffit plus depuis le 2026-09-30 : la sortie se fait par
+  // lots, au plus proche de la peremption. Une quantite sans lot est
+  // indelivrable — et c'est ainsi que la delivrance e2e a casse.
+  const stockPharmacie = await prisma.stock.upsert({
     where: { idStructure_idMedicament: { idStructure: pharmacie.id, idMedicament: medicament.id } },
     update: { quantite: 500 },
     create: { idStructure: pharmacie.id, idMedicament: medicament.id, quantite: 500, unite: 'boite', seuilAlerte: 10 },
   });
 
+  // Semence rejouable : on repart d'un lot unique plutot que d'en empiler un
+  // de plus a chaque execution, sinon la somme des lots quitte la quantite.
+  await prisma.lotStock.deleteMany({ where: { idStock: stockPharmacie.id } });
+  await prisma.lotStock.create({
+    data: {
+      idStock: stockPharmacie.id,
+      numeroLot: 'E2E-LOT-001',
+      quantite: 500,
+      quantiteRecue: 500,
+      datePeremption: new Date(Date.now() + 540 * 86_400_000),
+    },
+  });
+
+  await verifierInvariantDesLots();
+
   console.log('Seed e2e termine.');
+}
+
+/**
+ * La quantite d'un stock est la somme de ses lots. Rien dans le schema ne
+ * l'impose, et une semence qui l'oublie laisse une pharmacie incapable de
+ * delivrer tout en affichant du stock. On echoue ici plutot qu'au milieu
+ * d'un parcours.
+ */
+async function verifierInvariantDesLots() {
+  const stocks = await prisma.stock.findMany({ include: { lots: true } });
+  const ecarts = stocks
+    .map((s) => ({ id: s.id, quantite: s.quantite, lots: s.lots.reduce((t, l) => t + l.quantite, 0) }))
+    .filter((e) => e.quantite !== e.lots);
+  if (ecarts.length > 0) {
+    throw new Error(
+      'Stock sans lots ou lots incoherents : ' +
+        ecarts.map((e) => `${e.id} (quantite=${e.quantite}, lots=${e.lots})`).join(', ')
+    );
+  }
 }
 
 main()

@@ -13,7 +13,10 @@ import type { AlerteCritiqueView, EvolutionResultatView, ExamenSuiviView } from 
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRole('MEDECIN', 'AGENT_ACCUEIL', 'ADMIN_STRUCTURE', 'ASC', 'ASC_SUPERVISOR'));
+// L'accueil avait ce droit parce qu'il prescrivait. Depuis l'addendum du
+// 2026-09-28 il ne prescrit plus, donc plus aucune alerte ne lui est destinee
+// et il n'a plus de raison de lire un resultat.
+router.use(requireRole('MEDECIN', 'ADMIN_STRUCTURE', 'ASC', 'ASC_SUPERVISOR'));
 
 router.get('/alertes', async (req: AuthRequest, res: Response) => {
   const data: AlerteCritiqueView[] = await labo.mesAlertes(req.user!);

@@ -17,9 +17,13 @@
     </div>
     @if (!termine()) {
       <div class="bb-page-head__actions">
-        <button matButton="filled" type="button" (click)="ouvrir('analyse')"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ANALYSE' | translate }}</button>
+        @if (!estAccueil()) {
+          <button matButton="filled" type="button" (click)="ouvrir('analyse')"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ANALYSE' | translate }}</button>
+        }
         <button matButton="outlined" type="button" (click)="ouvrir('orientation')"><i class="pi pi-directions" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ORIENTER' | translate }}</button>
-        <button matButton type="button" (click)="cloturer(false)"><i class="pi pi-lock" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_CLOTURER' | translate }}</button>
+        @if (!estAccueil()) {
+          <button matButton type="button" (click)="cloturer(false)"><i class="pi pi-lock" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_CLOTURER' | translate }}</button>
+        }
         <button matButton type="button" style="color:var(--bb-danger)" (click)="cloturer(true)"><i class="pi pi-times-circle" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ACTION_ANNULER' | translate }}</button>
       </div>
     }
@@ -66,12 +70,13 @@
           </mat-form-field>
         </div>
         @if (orientation.idMedecin) {
-          <div class="form-field-wrap">
-            <label class="form-label" for="or-date">{{ 'HOPITAL.DETAIL.ORIENT_DATE' | translate }}</label>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-              <input matInput id="or-date" type="datetime-local" [(ngModel)]="orientation.prevuLe" [disabled]="!orientation.avecRdv" />
-            </mat-form-field>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px;cursor:pointer"><input type="checkbox" [(ngModel)]="orientation.avecRdv" style="accent-color:var(--bb-primary)" /> {{ 'HOPITAL.DETAIL.ORIENT_DATE' | translate }}</label>
+          <!-- Le champ de date a disparu le 2026-09-30 : c'est le médecin qui
+               fixe le créneau, lui seul connaissant son agenda. -->
+          <div class="form-field-wrap bb-hop-panel__full">
+            <p class="bb-hop-note">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              {{ 'HOPITAL.DETAIL.ORIENT_SANS_DATE' | translate }}
+            </p>
           </div>
           <div class="form-field-wrap">
             <label class="form-label" for="or-motif">{{ 'HOPITAL.DETAIL.ORIENT_MOTIF' | translate }}</label>
@@ -92,7 +97,7 @@
   }
 
   <!-- ── Panneau : demande d'analyse (EF-03-03) ───────────────────── -->
-  @if (panneau() === 'analyse') {
+  @if (panneau() === 'analyse' && !estAccueil()) {
     <section class="bb-hop-panel">
       <h2 class="bb-hop-card__title"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_TITLE' | translate }}</h2>
       @if (laboratoires().length === 0) {
@@ -192,7 +197,7 @@
                   </div>
                 }
               </div>
-              @if (d.commentaireBiologiste) { <div class="bb-hop-sub__consignes"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireBiologiste }}</div> }
+              @if (d.commentaireLaboratoire) { <div class="bb-hop-sub__consignes"><strong>{{ 'LABO.DETAIL.CONCLUSION' | translate }} — {{ d.valideur?.prenom }} {{ d.valideur?.nom }}</strong>{{ '\n' + d.commentaireLaboratoire }}</div> }
               @if (d.alerteCritiqueEnAttente) { <p class="bb-hop-sub__line" style="color:var(--bb-danger);font-weight:700"><i class="pi pi-bell" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.CRITIQUE_A_ACCUSER' | translate }} <a routerLink="/hopital/alertes">{{ 'HOPITAL.NAV_ALERTES' | translate }}</a></p> }
             } @else {
               <div class="bb-hop-sub__tags">@for (l of d.lignes; track l.id) { <span class="bb-badge bb-badge--neutral" [title]="l.examen.codeLoinc">{{ l.examen.libelle }}@if (l.commentaire) { — {{ l.commentaire }} }</span> }</div>
@@ -201,11 +206,11 @@
             @if (d.motifAnnulation) { <p class="bb-hop-sub__line" style="color:var(--bb-danger)">{{ d.motifAnnulation }}</p> }
             <div class="bb-hop-sub__actions">
               @if (d.statut === 'VALIDEE') {
-                <button matButton="filled" type="button" (click)="compteRendu(d)"><i class="pi pi-file-check" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.CR' | translate }}</button>
+                @if (!estAccueil()) { <button matButton="filled" type="button" (click)="compteRendu(d)"><i class="pi pi-file-check" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.CR' | translate }}</button> }
               }
-              <button matButton="outlined" type="button" (click)="bonExamen(d)"><i class="pi pi-print" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.BON' | translate }}</button>
+              @if (!estAccueil()) { <button matButton="outlined" type="button" (click)="bonExamen(d)"><i class="pi pi-print" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.BON' | translate }}</button> }
               @if (peutAnnulerDemande(d) && !termine()) {
-                <button matButton type="button" style="color:var(--bb-danger)" (click)="demandeAAnnuler.set(d)"><i class="pi pi-times" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ANNULER_DEMANDE' | translate }}</button>
+                @if (!estAccueil()) { <button matButton type="button" style="color:var(--bb-danger)" (click)="demandeAAnnuler.set(d)"><i class="pi pi-times" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.ANNULER_DEMANDE' | translate }}</button> }
               }
             </div>
             @if (demandeAAnnuler()?.id === d.id) {

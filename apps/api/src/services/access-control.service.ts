@@ -8,6 +8,21 @@ type ConsultationWhere = Prisma.ConsultationWhereInput;
 
 const ADMIN_ROLES = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
+/**
+ * Un refus explicite de partager le dossier (EF-02-03).
+ *
+ * **Defaut permissif, et c'est un choix de deploiement.** Pas de ligne de
+ * consentement = acces autorise ; seul un `actif: false` coupe. Exiger un
+ * accord positif aujourd'hui rendrait 11 dossiers sur 13 invisibles a tous les
+ * soignants — mesure le 2026-10-07 — et treize bris de glace par jour ne sont
+ * pas une issue de secours, c'est la porte principale.
+ *
+ * Ce qui change quand meme : **un retrait coupe reellement**, tout de suite.
+ */
+const REFUS_DE_PARTAGE: PatientWhere = {
+  consentements: { some: { scope: 'DOSSIER_MEDICAL', actif: false } },
+};
+
 export async function buildPatientWhereForUser(user: JwtPayload): Promise<PatientWhere> {
   if (ADMIN_ROLES.has(user.role)) return {};
 
@@ -25,8 +40,45 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
 
   if (!utilisateur) return { id: '__forbidden__' };
 
+  // Son propre dossier, toujours. Un patient ne se refuse pas a lui-meme.
   if (utilisateur.patientProfile) return { id: utilisateur.patientProfile.id };
 
+  const parSoin = await relationDeSoin(user, utilisateur);
+  if (!parSoin) return { id: '__forbidden__' };
+
+  // **Le consentement et le bris de glace, au seul endroit ou tous les roles
+  // passent.** Les mettre dans chaque branche laisserait un role dehors tot ou
+  // tard — et un role dehors, ici, c'est un dossier lu sans droit.
+  return {
+    OR: [
+      { AND: [parSoin, { NOT: REFUS_DE_PARTAGE }] },
+      // L'acces d'urgence passe outre le refus : c'est sa raison d'etre
+      // (EF-02-06). Il est declare, date, notifie au patient et relu.
+      {
+        brisDeGlace: {
+          some: { idAuteur: user.userId, refermeLe: null, expireLe: { gt: new Date() } },
+        },
+      },
+    ],
+  };
+}
+
+type Profils = NonNullable<Awaited<ReturnType<typeof chargerProfils>>>;
+async function chargerProfils(id: string) {
+  return prisma.utilisateur.findUnique({
+    where: { id },
+    select: {
+      role: true, idStructure: true,
+      patientProfile: { select: { id: true } },
+      ascProfile: { select: { id: true, idStructure: true } },
+      medecinProfile: { select: { idStructure: true } },
+      pharmacienProfile: { select: { idStructure: true } },
+    },
+  });
+}
+
+/** La relation de soin seule. `null` : aucun lien, donc aucun acces. */
+async function relationDeSoin(user: JwtPayload, utilisateur: Profils): Promise<PatientWhere | null> {
   const idStructure =
     utilisateur.idStructure ??
     utilisateur.ascProfile?.idStructure ??
@@ -74,7 +126,7 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
   }
 
   // Le laboratoire ne voit que les patients dont une demande lui est adressee (EF-04).
-  if ((user.role === 'TECHNICIEN_LABO' || user.role === 'BIOLOGISTE') && idStructure) {
+  if (user.role === 'TECHNICIEN_LABO' && idStructure) {
     return { demandesAnalyse: { some: { idLaboratoire: idStructure } } };
   }
 
@@ -99,7 +151,7 @@ export async function buildPatientWhereForUser(user: JwtPayload): Promise<Patien
     };
   }
 
-  return { id: '__forbidden__' };
+  return null;
 }
 
 export async function buildConsultationWhereForUser(user: JwtPayload): Promise<ConsultationWhere> {
@@ -132,6 +184,13 @@ export async function buildConsultationWhereForUser(user: JwtPayload): Promise<C
     return {
       OR: [
         { idMedecinValideur: user.userId },
+        // **La consultation qu'il mene lui-meme.** Les trois autres branches
+        // supposent un tiers : un ASC qui l'a ouverte, un referencement qui
+        // la lui adresse, ou sa propre signature deja posee. Une consultation
+        // ouverte sur une visite de son hopital n'a aucun des trois : le
+        // medecin la creait, puis recevait 403 sur les constantes, le
+        // diagnostic, l'ordonnance et jusqu'a sa propre validation.
+        ...(medecin?.idStructure ? [{ episode: { idStructure: medecin.idStructure } }] : []),
         ...(medecin?.idStructure ? [{ asc: { idStructure: medecin.idStructure } }] : []),
         ...(medecin?.idStructure ? [{ referencement: { idStructureCible: medecin.idStructure } }] : []),
       ],
@@ -148,6 +207,9 @@ export async function buildConsultationWhereForUser(user: JwtPayload): Promise<C
 
     return {
       OR: [
+        // `ACTE_MEDICAL` ouvre la consultation d'une visite a l'administrateur
+        // de structure autant qu'au medecin : sa porte d'acces doit suivre.
+        { episode: { idStructure: utilisateur.idStructure } },
         { asc: { idStructure: utilisateur.idStructure } },
         { referencement: { idStructureCible: utilisateur.idStructure } },
       ],

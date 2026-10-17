@@ -52,7 +52,15 @@ export class PharmacienLayoutComponent {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
-  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  /**
+   * Sur mobile la barre s'ouvre par-dessus ; sur grand écran elle est ancrée,
+   * et le même bouton la replie sur ses icônes. Un seul bouton, deux gestes
+   * selon la place disponible.
+   */
+  toggleSidebar() {
+    if (this.layout.estMobile()) this.sidebarOpen.update(v => !v);
+    else this.layout.basculerRepli();
+  }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
@@ -77,7 +85,12 @@ export class PharmacienLayoutComponent {
   }
 
   navItems = [
+    { labelKey: 'PHARMACIEN.NAV_TABLEAU_DE_BORD', icon: 'pi-chart-bar', route: '/pharmacien/tableau-de-bord' },
+    { labelKey: 'PHARMACIEN.NAV_CAISSE',       icon: 'pi-shopping-cart', route: '/pharmacien/caisse' },
+    { labelKey: 'PHARMACIEN.NAV_COMMANDES',    icon: 'pi-inbox',   route: '/pharmacien/commandes'    },
     { labelKey: 'PHARMACIEN.NAV_ORDONNANCES',  icon: 'pi-file',    route: '/pharmacien/ordonnances'  },
-    { labelKey: 'PHARMACIEN.NAV_STOCKS',       icon: 'pi-box',     route: '/pharmacien/stocks'       }
+    { labelKey: 'PHARMACIEN.NAV_STOCKS',       icon: 'pi-box',     route: '/pharmacien/stocks'       },
+    { labelKey: 'PHARMACIEN.NAV_APPROVISIONNEMENTS', icon: 'pi-truck', route: '/pharmacien/approvisionnements' },
+    { labelKey: 'PHARMACIEN.NAV_PEREMPTIONS',  icon: 'pi-clock',   route: '/pharmacien/peremptions'  }
   ];
 }

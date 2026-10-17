@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── ENUMS ───────────────────────────────────────────────
+// â”€â”€â”€ ENUMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 enum Role {
   PATIENT
@@ -15,10 +15,16 @@ enum Role {
   ASC_SUPERVISOR
   MEDECIN
   PHARMACIEN
-  AGENT_ACCUEIL    // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
-  TECHNICIEN_LABO  // Laboratoire : reception, prelevement, saisie des resultats (EF-04)
-  BIOLOGISTE       // Laboratoire : idem + validation nominative des resultats (EF-04-05)
-  LIVREUR          // Taxi-moto : courses de livraison de medicaments (EF-10)
+  AGENT_ACCUEIL // Hopital : admission, episodes de soins, demandes d'analyse (EF-03)
+  TECHNICIEN_LABO // Laborantin : reception, prelevement, saisie ET validation (EF-04)
+  LIVREUR // Taxi-moto : courses de livraison de medicaments (EF-10)
+  /// Agent d'un assureur. Il se connecte lui-meme, depuis la structure de type
+  /// ASSURANCE rattachee a son `Assureur` (addendum 2026-09-28, point 5.2).
+  ///
+  /// **Il ne lit aucun dossier medical.** Il voit qui est assure chez lui, ce
+  /// que sa compagnie a pris en charge, et dans quelles pharmacies. Un
+  /// assureur qui lirait un diagnostic pourrait refuser un contrat dessus.
+  ASSUREUR
   ADMIN_STRUCTURE
   ADMIN_REGIONAL
   ADMIN_NATIONAL
@@ -93,8 +99,9 @@ enum TypeStructure {
   HOPITAL_REG
   CHU
   CLINIQUE
-  PHARMACIE        // ← NOUVEAU
-  LABORATOIRE      // Laboratoire d'analyses (EF-04)
+  PHARMACIE // â† NOUVEAU
+  LABORATOIRE // Laboratoire d'analyses (EF-04)
+  ASSURANCE // Assureur : ses agents s'y connectent comme les autres (EF-09)
 }
 
 // Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
@@ -102,6 +109,19 @@ enum TypeStructure {
 // SERVIE, calcules a partir de ses lignes. DELIVREE reste dans le type pour les
 // lignes : PostgreSQL ne permet pas de retirer une valeur d'enum sans recreer
 // le type.
+/// Ce qu'une officine a fait d'une ligne d'ordonnance (EF-07-03/04/05).
+enum TypeActeDelivrance {
+  /// Le produit prescrit, en tout ou en partie.
+  DELIVRE
+  /// Un autre produit, avec son motif. Le prescripteur et le patient sont
+  /// prevenus : une substitution muette est une modification de traitement
+  /// decidee par quelqu'un qui n'a pas vu le patient.
+  SUBSTITUE
+  /// Rien n'a ete remis, et on dit pourquoi. Un refus muet laisse le patient
+  /// repartir sans savoir s'il doit revenir ou aller ailleurs.
+  REFUSE
+}
+
 enum StatutOrdonnance {
   EN_ATTENTE
   DELIVREE
@@ -109,6 +129,61 @@ enum StatutOrdonnance {
   SERVIE
   EXPIREE
   ANNULEE
+}
+
+/// Comment la plateforme echange avec l'assureur (EF-09-02). `MANUEL` est le
+/// depart : un agent valide a la main. Les deux autres attendent une
+/// convention technique avec chaque assureur.
+enum ModeEchangeAssureur {
+  MANUEL
+  PORTAIL
+  API
+}
+
+enum StatutContrat {
+  ACTIF
+  SUSPENDU
+  RESILIE
+}
+
+/// ANNULEE ne sert pas a un retour client — EF-07-11 l'interdit — mais a
+/// corriger une erreur de saisie, et elle remet les lots consommes.
+///
+/// **`EN_ATTENTE` est arrive le 2026-10-09, et contredit ce que ce
+/// commentaire affirmait** : « une vente au comptoir est payee sur place, il
+/// n'y a pas d'etat en attente ». C'etait vrai tant qu'aucune passerelle
+/// n'intervenait — le pharmacien cochait « Orange Money » et la vente naissait
+/// payee, sans qu'un seul franc ait bouge. Un paiement mobile prend quelques
+/// secondes pendant lesquelles la vente existe sans etre reglee, et les
+/// medicaments ne se remettent pas avant.
+///
+/// Tout ce qui compte de l'argent filtre deja sur PAYEE — la consommation de
+/// l'assureur, le chiffre d'affaires du jour — et ignore donc correctement une
+/// vente en attente.
+enum StatutVente {
+  EN_ATTENTE
+  PAYEE
+  ANNULEE
+}
+
+/// Ce que le catalogue peut contenir, en liste fermee (decision du 2026-10-01).
+///
+/// `Medicament.categorie` etait un texte libre facultatif : « cosmetique »,
+/// « Cosmetique » et « cosmetiques » faisaient trois categories, et on ne fonde
+/// pas une exclusion d'assurance sur cela. La classe therapeutique, elle, reste
+/// en texte libre sous `classeTherapeutique` : c'est un autre axe.
+///
+/// Seul MEDICAMENT se prescrit et passe les controles d'allergie et
+/// d'interaction. Les autres s'achetent au comptoir.
+enum CategorieProduit {
+  MEDICAMENT
+  LAIT_INFANTILE
+  COMPLEMENT_ALIMENTAIRE
+  COSMETIQUE
+  HYGIENE
+  PARAPHARMACIE
+  DISPOSITIF_MEDICAL
+  AUTRE
 }
 
 enum ModePaiement {
@@ -153,9 +228,16 @@ enum TypeNotification {
   RESULTATS_DISPONIBLES
   RESULTAT_CRITIQUE
   ESCALADE_CRITIQUE
-  COMMANDE_A_SERVIR         // P6 : appel aux pharmacies du quartier
-  COMMANDE_PRISE_EN_CHARGE  // P6 : une pharmacie a tout, elle sert
-  COMMANDE_SANS_PHARMACIE   // P6 : aucune n'a la totalite
+  COMMANDE_A_SERVIR // P6 : appel aux pharmacies du quartier
+  COMMANDE_PRISE_EN_CHARGE // P6 : une pharmacie a tout, elle sert
+  COMMANDE_SANS_PHARMACIE // P6 : aucune n'a la totalite
+  COMMANDE_A_PAYER // P6 : le panier est chiffre, le patient sait quoi payer
+  COMMANDE_PAYEE // P6 : les medicaments sont regles
+  COMMANDE_PRETE // P6 : le sachet attend, au comptoir ou pour le motard
+  COMMANDE_REMISE // P6 : remis au patient, ou au motard
+  COMMANDE_ANNULEE // P6 : avec son motif
+  ORDONNANCE_SUBSTITUTION // P6-b : un produit a ete remplace, avec son motif
+  ORDONNANCE_LIGNE_REFUSEE // P6-b : une officine n'a pas pu servir une ligne
 }
 
 enum UssdSessionStatus {
@@ -170,57 +252,111 @@ enum NiveauAlerteEpidemique {
   URGENCE
 }
 
-// ─── DOMAINE 1 — UTILISATEURS & ACCES ────────────────────
+// â”€â”€â”€ DOMAINE 1 â€” UTILISATEURS & ACCES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Utilisateur {
-  id                String    @id @default(cuid())
-  telephone         String    @unique
-  email             String?   @unique
-  motDePasseHash    String
-  role              Role
-  prenom            String
-  nom               String
-  langue            String    @default("fr")
-  photoUrl          String?
-  estActif          Boolean   @default(true)
-  twoFaActive       Boolean   @default(false)
-  twoFaSecret       String?
-  doitChangerMotDePasse Boolean @default(false)
-  derniereConnexion DateTime?
-  creeLe            DateTime  @default(now())
-  modifieLe         DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  telephone             String    @unique
+  email                 String?   @unique
+  motDePasseHash        String
+  role                  Role
+  prenom                String
+  nom                   String
+  langue                String    @default("fr")
+  photoUrl              String?
+  estActif              Boolean   @default(true)
+  twoFaActive           Boolean   @default(false)
+  twoFaSecret           String?
+  doitChangerMotDePasse Boolean   @default(false)
+  derniereConnexion     DateTime?
+  creeLe                DateTime  @default(now())
+  modifieLe             DateTime  @updatedAt
+
+  /// Quand la suspension a pris effet (EF-12-01).
+  ///
+  /// `estActif = false` dit qu'un compte est ferme, mais pas **qui** l'a
+  /// ferme, **quand**, ni **pourquoi**. Une suspension est une mesure grave —
+  /// elle coupe un soignant de ses patients — et doit pouvoir etre expliquee
+  /// et contestee. Ces trois colonnes sont donc renseignees ensemble, et une
+  /// contrainte SQL refuse qu'elles se contredisent.
+  suspenduLe            DateTime?
+  motifSuspension       String?
+  /// L'auteur de la suspension. `SetNull` : son depart ne doit pas effacer la
+  /// trace de sa decision, ni empecher la suppression de son compte.
+  idSuspenduPar         String?
+  suspenduPar           Utilisateur?  @relation("SuspensionsProoncees", fields: [idSuspenduPar], references: [id], onDelete: SetNull)
+  suspensionsPrononcees Utilisateur[] @relation("SuspensionsProoncees")
+
+  /// Les identites de patients qu'il a verifiees (EF-01-04).
+  identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
+  brisDeGlaceDeclares BrisDeGlace[] @relation("BrisDeGlaceDeclares")
+  brisDeGlaceRevus    BrisDeGlace[] @relation("BrisDeGlaceRevus")
+  /// Numero d'inscription a l'ordre professionnel (EF-01-08).
+  ///
+  /// **Sur l'utilisateur, pas sur chaque profil.** Le numero vivait sur
+  /// `MedecinProfile.numeroCom` et `AscProfile.numeroCertification`, et nulle
+  /// part pour les pharmaciens et les techniciens. Trois champs disperses,
+  /// deux absents : c'est pourquoi rien ne le verifiait.
+  ///
+  /// `ordreVerifieLe` dit qu'un administrateur **declare** avoir confronte ce
+  /// numero au registre de l'ordre. Il n'y a pas d'API nationale a interroger ;
+  /// c'est donc un acte humain, trace comme la verification d'identite
+  /// (EF-01-04).
+  numeroOrdre       String?
+  ordreVerifieLe    DateTime?
+  idOrdreVerifiePar String?
+  ordreVerifiePar   Utilisateur?  @relation("OrdresVerifies", fields: [idOrdreVerifiePar], references: [id], onDelete: SetNull)
+  ordresVerifies    Utilisateur[] @relation("OrdresVerifies")
+
+  textesConsentementPublies TexteConsentement[] @relation("TextesConsentementPublies")
+  evenementsConsentement    EvenementConsentement[] @relation("EvenementsConsentement")
+  fusionsProoncees FusionDossier[] @relation("FusionsProoncees")
+  fusionsAnnulees  FusionDossier[] @relation("FusionsAnnulees")
+
+  /// Les demandes RGPD qu'il a traitees (EF-12-09).
+  demandesRgpdTraitees DemandeRgpd[] @relation("DemandesRgpdTraitees")
 
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
-  patientProfile       PatientProfile?
-  ascProfile           AscProfile?
-  medecinProfile       MedecinProfile?
-  pharmacienProfile    PharmacienProfile?
-  sessions             Session[]
-  authOtps             AuthOtp[]
-  motDePasseResets     MotDePasseReset[]
-  auditLogs            JournalAudit[]
-  messagesEnvoyes      Message[]       @relation("Expediteur")
-  messagesRecus        Message[]       @relation("Destinataire")
-  consultationsSigne   Consultation[]  @relation("MedecinValideur")
-  ordonnancesSigne     Ordonnance[]    @relation("MedecinSignataire")
-  vaccinsAdministres   Vaccination[]
-  referencementsValide Referencement[] @relation("MedecinValideurRef")
-  episodesOuverts      EpisodeSoins[]  @relation("EpisodeOuvertPar")
-  episodesResponsable  EpisodeSoins[]  @relation("EpisodeResponsable")
-  demandesPrescrites   DemandeAnalyse[] @relation("Prescripteur")
-  demandesValidees     DemandeAnalyse[] @relation("Valideur")
-  echantillonsPreleves Echantillon[]    @relation("Preleveur")
-  resultatsSaisis      ResultatAnalyse[] @relation("SaisiPar")
-  alertesCritiques     AlerteResultatCritique[] @relation("DestinataireAlerte")
-  alertesEscaladees    AlerteResultatCritique[] @relation("EscaladeVers")
-  rendezVousMedecin    RendezVous[]    @relation("RendezVousMedecin")
-  syncEvents            SyncEvent[]
-  syncMutations         SyncMutation[]
-  consentementsDonnes   ConsentementPatient[]
-  ussdSessions          UssdSession[]
-  notifications         Notification[]
+  patientProfile           PatientProfile?
+  ascProfile               AscProfile?
+  actesDelivrance          ActeDelivrance[] @relation("ActeDelivrancePharmacien")
+  medecinProfile           MedecinProfile?
+  pharmacienProfile        PharmacienProfile?
+  sessions                 Session[]
+  authOtps                 AuthOtp[]
+  motDePasseResets         MotDePasseReset[]
+  auditLogs                JournalAudit[]
+  messagesEnvoyes          Message[]                @relation("Expediteur")
+  messagesRecus            Message[]                @relation("Destinataire")
+  consultationsSigne       Consultation[]           @relation("MedecinValideur")
+  ordonnancesSigne         Ordonnance[]             @relation("MedecinSignataire")
+  vaccinsAdministres       Vaccination[]
+  referencementsValide     Referencement[]          @relation("MedecinValideurRef")
+  episodesOuverts          EpisodeSoins[]           @relation("EpisodeOuvertPar")
+  episodesResponsable      EpisodeSoins[]           @relation("EpisodeResponsable")
+  demandesPrescrites       DemandeAnalyse[]         @relation("Prescripteur")
+  demandesValidees         DemandeAnalyse[]         @relation("Valideur")
+  demandesLiberees         DemandeAnalyse[]         @relation("LibereParMedecin")
+  echantillonsPreleves     Echantillon[]            @relation("Preleveur")
+  resultatsSaisis          ResultatAnalyse[]        @relation("SaisiPar")
+  alertesCritiques         AlerteResultatCritique[] @relation("DestinataireAlerte")
+  alertesEscaladees        AlerteResultatCritique[] @relation("EscaladeVers")
+  rendezVousMedecin        RendezVous[]             @relation("RendezVousMedecin")
+  rendezVousPointes        RendezVous[]             @relation("PointageArrivee")
+  demandesRdvVisees        DemandeRendezVous[]      @relation("DemandesRendezVousMedecin")
+  demandesRdvTraitees      DemandeRendezVous[]      @relation("DemandesRendezVousTraitees")
+  approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
+  ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
+  ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
+  reglementsAssureurSaisis ReglementAssureur[]      @relation("ReglementsAssureur")
+  controlesEligibilite     ControleEligibilite[]    @relation("ControlesEligibilite")
+  syncEvents               SyncEvent[]
+  syncMutations            SyncMutation[]
+  consentementsDonnes      ConsentementPatient[]
+  ussdSessions             UssdSession[]
+  notifications            Notification[]
 
   @@map("utilisateurs")
 }
@@ -256,17 +392,200 @@ model AuthOtp {
 }
 
 model MotDePasseReset {
-  id         String    @id @default(cuid())
-  tokenHash  String    @unique
-  expireLe   DateTime
-  utiliseLe  DateTime?
-  creeLe     DateTime  @default(now())
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  expireLe  DateTime
+  utiliseLe DateTime?
+  creeLe    DateTime  @default(now())
 
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
 
   @@index([idUtilisateur])
   @@map("mot_de_passe_resets")
+}
+
+/// Journal d'audit, en ajout seul (EF-12-04).
+///
+/// Deux declencheurs PostgreSQL refusent toute modification de cette table :
+/// `trg_journal_audit_immutable` (UPDATE et DELETE, pose le 2026-06-19) et
+/// `trg_journal_audit_pas_de_troncature` (TRUNCATE, pose le 2026-10-03 — un
+/// declencheur de ligne ne voit pas TRUNCATE, et le journal entier etait donc
+/// effacable d'une commande). La non-modifiabilite est structurelle, pas
+/// conventionnelle.
+///
+/// Sa limite, a connaitre : le proprietaire de la table peut supprimer ou
+/// desactiver un declencheur. Une inviolabilite complete suppose des droits
+/// restreints au niveau du SGBD, voire un stockage en ecriture unique. Ces
+/// declencheurs ferment la porte a une erreur de code ou de script, pas a un
+/// administrateur de base determine.
+/// Les droits qu'un patient peut exercer sur ses donnees (EF-12-09).
+enum TypeDemandeRgpd {
+  /// Obtenir copie de ce que la plateforme detient.
+  ACCES
+  /// Faire corriger une donnee inexacte.
+  RECTIFICATION
+  /// Demander l'effacement. Voir la note du modele : sur un dossier de soins,
+  /// cela ne peut pas vouloir dire suppression.
+  EFFACEMENT
+  /// Recevoir ses donnees dans un format reutilisable.
+  PORTABILITE
+  /// S'opposer a un traitement — la recherche anonymisee, par exemple.
+  OPPOSITION
+  /// Demander le gel d'un traitement le temps d'une contestation.
+  LIMITATION
+}
+
+enum StatutDemandeRgpd {
+  RECUE
+  EN_COURS
+  SATISFAITE
+  /// Un refus est toujours motive : c'est ce qui le rend contestable.
+  REFUSEE
+}
+
+/// Une demande d'exercice de droits, et ce qu'elle est devenue (EF-12-09).
+///
+/// **Pourquoi un modele, et pas un simple bouton.** Une demande RGPD a un
+/// delai, un auteur, une decision et une motivation. Sans trace, on ne peut ni
+/// prouver qu'on a repondu, ni expliquer un refus, ni savoir ce qui a ete
+/// fait.
+///
+/// Le projet a deja paye l'absence de ce modele : 15 comptes de la base de
+/// demonstration ont vu leur telephone remplace par « purged-<id> » le
+/// 2026-08-04, sans aucune trace — ni au journal d'audit, ni dans le code du
+/// depot. Et la purge etait a moitie faite : nom et prenom sont restes
+/// lisibles, et un profil patient complet avec.
+///
+/// **L'effacement d'un dossier de soins n'est pas une suppression.** Des
+/// obligations de conservation s'y opposent, et le journal d'audit doit
+/// survivre — c'est pour cela que `JournalAudit.idPatientConcerne` est en
+/// `onDelete: Restrict`. Ce que la plateforme peut offrir est une
+/// anonymisation de l'identite, le dossier de soins restant pour la duree
+/// legale. Une demande d'effacement est donc satisfaite *ainsi*, ou refusee
+/// avec son motif — jamais executee en silence.
+/// Une fusion de deux dossiers patients (EF-01-06).
+///
+/// **L'operation la plus dangereuse du produit.** Fusionner deux personnes
+/// distinctes melange leurs dossiers medicaux : l'allergie de l'une devient
+/// celle de l'autre, et personne ne s'en apercoit avant une prescription.
+/// C'est pourquoi rien n'est automatique, pourquoi un motif est exige, et
+/// pourquoi tout est reversible.
+///
+/// **La reversibilite n'est pas une promesse, c'est une liste.** Chaque ligne
+/// deplacee est enregistree dans `LigneFusion`. Annuler, c'est remettre
+/// exactement ce qui a ete bouge — et rien d'autre : ce qui a ete ajoute au
+/// dossier survivant apres la fusion lui reste.
+model FusionDossier {
+  id String @id @default(cuid())
+
+  /// Pourquoi cette fusion. Exige, comme pour une suspension de compte : un
+  /// acte irreversible-en-apparence sans motif n'est pas contestable.
+  motif  String
+  statut StatutFusion @default(ACTIVE)
+
+  /// Le dossier qui survit. **C'est l'agent qui le choisit**, pas le service :
+  /// lui seul sait lequel des deux porte l'histoire la plus complete.
+  idPrincipal String
+  principal   PatientProfile @relation("FusionPrincipal", fields: [idPrincipal], references: [id], onDelete: Restrict)
+
+  idAbsorbe String
+  absorbe   PatientProfile @relation("FusionAbsorbe", fields: [idAbsorbe], references: [id], onDelete: Restrict)
+
+  idFusionnePar String
+  fusionnePar   Utilisateur @relation("FusionsProoncees", fields: [idFusionnePar], references: [id], onDelete: Restrict)
+
+  fusionneLe DateTime @default(now())
+
+  motifAnnulation String?
+  idAnnuleePar    String?
+  annuleePar      Utilisateur? @relation("FusionsAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
+  annuleeLe       DateTime?
+
+  lignes LigneFusion[]
+
+  @@index([idPrincipal, fusionneLe])
+  @@index([idAbsorbe])
+  @@index([statut, fusionneLe])
+  @@map("fusions_dossier")
+}
+
+enum StatutFusion {
+  ACTIVE
+  ANNULEE
+}
+
+/// Ce qu'une fusion a deplace, ligne par ligne.
+///
+/// **Sans cette liste, « reversible » serait un mot.** On ne peut pas deviner
+/// apres coup quelles consultations venaient du dossier absorbe.
+model LigneFusion {
+  id String @id @default(cuid())
+
+  idFusion String
+  fusion   FusionDossier @relation(fields: [idFusion], references: [id], onDelete: Cascade)
+
+  /// Le nom de la table, tel qu'il est dans la base.
+  tableCible String
+  idLigne    String
+
+  operation TypeOperationFusion
+
+  /// Pour une restriction de consentement : ce que la ligne valait avant.
+  /// C'est ce qui permet de la remettre telle quelle.
+  valeurAvant Json?
+
+  @@index([idFusion])
+  @@map("lignes_fusion")
+}
+
+enum TypeOperationFusion {
+  /// La ligne a change de dossier. Annuler : la rendre au dossier absorbe.
+  DEPLACEMENT
+
+  /// **Un refus de consentement l'a emporte sur une autorisation.**
+  ///
+  /// Les deux dossiers ne pouvaient pas s'accorder sur le meme usage, et la
+  /// contrainte `@@unique([idPatient, scope])` interdit de garder les deux.
+  /// Le plus restrictif gagne, quelle que soit sa date : elargir un acces
+  /// sans que le patient l'ait dit montrerait des donnees qui ne devaient pas
+  /// l'etre, et cela ne se rattrape pas. Un consentement retire a tort se
+  /// redonne en une phrase.
+  RESTRICTION_CONSENTEMENT
+}
+
+model DemandeRgpd {
+  id        String            @id @default(cuid())
+  type      TypeDemandeRgpd
+  statut    StatutDemandeRgpd @default(RECUE)
+  /// Ce que le patient demande, dans ses mots. Indispensable pour une
+  /// rectification : sans cela on ne sait pas quoi corriger.
+  precision String?
+
+  /// Le delai de reponse. Pose a la creation plutot que calcule a la lecture :
+  /// une regle qui changerait ne doit pas deplacer retroactivement l'echeance
+  /// de demandes deja recues.
+  dateLimite DateTime
+
+  /// La reponse faite au demandeur. Obligatoire des que la demande est close,
+  /// et une contrainte SQL le verifie.
+  reponse  String?
+  traiteLe DateTime?
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  /// Qui a traite. `SetNull` : son depart n'efface pas la decision.
+  idTraitePar String?
+  traitePar   Utilisateur? @relation("DemandesRgpdTraitees", fields: [idTraitePar], references: [id], onDelete: SetNull)
+
+  /// La file de l'administration : les plus urgentes d'abord.
+  @@index([statut, dateLimite])
+  @@index([idPatient, creeLe])
+  @@map("demandes_rgpd")
 }
 
 model JournalAudit {
@@ -279,9 +598,35 @@ model JournalAudit {
   metadonnees Json?
   creeLe      DateTime @default(now())
 
+  /// Le code HTTP rendu. Sorti des metadonnees JSON pour etre indexable : une
+  /// rafale de 403 sur des dossiers differents est le motif que la detection
+  /// d'anomalies (EF-12-06) devra reconnaitre.
+  statutHttp Int?
+
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
+  /// Le patient dont le dossier a ete touche, quand la requete permet de le
+  /// determiner (EF-02-08).
+  ///
+  /// Sans cette colonne, « qui a consulte mon dossier ? » ne se repondait
+  /// qu'en fouillant `metadonnees`, du JSON non indexe : le scan d'un QR ne
+  /// laissait le patient que dans `metadonnees.params.qrCode`. La colonne est
+  /// nullable parce que beaucoup d'actions ne concernent aucun patient — se
+  /// connecter, importer un referentiel, modifier un parametre.
+  ///
+  /// `onDelete: Restrict` : un effacement RGPD (EF-12-09) ne doit pas pouvoir
+  /// faire disparaitre la trace des acces. Qui devra trancher ce que devient
+  /// le journal dans ce cas est une question ouverte, pas un oubli.
+  idPatientConcerne String?
+  patientConcerne   PatientProfile? @relation("AccesAuDossier", fields: [idPatientConcerne], references: [id], onDelete: Restrict)
+
+  /// Le journal du patient : ses acces, du plus recent au plus ancien.
+  @@index([idPatientConcerne, creeLe])
+  /// Ce qu'un utilisateur donne a fait, pour une enquete (EF-12-05).
+  @@index([idUtilisateur, creeLe])
+  /// La recherche par periode, sans filtre d'acteur ni de patient.
+  @@index([creeLe])
   @@map("journal_audit")
 }
 
@@ -327,16 +672,16 @@ model SyncMutation {
   @@map("sync_mutations")
 }
 
-// ─── DOMAINE 2 — ACTEURS DE SANTE ────────────────────────
+// â”€â”€â”€ DOMAINE 2 â€” ACTEURS DE SANTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model StructureSante {
-  id          String        @id @default(cuid())
-  nom         String
-  type        TypeStructure
-  prefecture  String
-  commune     String?
-  quartier    String?
-  adresse     String?
+  id         String        @id @default(cuid())
+  nom        String
+  type       TypeStructure
+  prefecture String
+  commune    String?
+  quartier   String?
+  adresse    String?
 
   /// Partenaire conventionne : seules ces structures sont sollicitees pour une
   /// commande (EF-12-02). La gestion complete des conventions viendra avec
@@ -344,27 +689,64 @@ model StructureSante {
   estPartenaire    Boolean   @default(false)
   partenaireDepuis DateTime?
 
-  commandes         Commande[]         @relation("PharmacieCommande")
-  reponsesCommandes ReponsePharmacie[] @relation("ReponsesPharmacie")
-  latitude    Float?
-  longitude   Float?
-  telephone   String?
-  photoUrl    String?
-  estActive   Boolean       @default(true)
-  creeLe      DateTime      @default(now())
+  commandes            Commande[]            @relation("PharmacieCommande")
+  reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
+  ventesComptoir       VenteComptoir[]
+  assureur             Assureur?
+  reglementsRecus      ReglementAssureur[]
+  controlesEligibilite ControleEligibilite[]
+  latitude             Float?
+  longitude            Float?
+  telephone            String?
+  photoUrl             String?
+  estActive            Boolean               @default(true)
+  brisDeGlace BrisDeGlace[]
 
-  utilisateurs            Utilisateur[]
-  ascProfiles             AscProfile[]
-  medecinProfiles         MedecinProfile[]
-  pharmacienProfiles      PharmacienProfile[]
-  stocks                  Stock[]
-  patientsPreferent       PatientProfile[]    @relation("StructurePreferee")
-  referencementsSource    Referencement[]     @relation("StructureSource")
-  referencementsCible     Referencement[]     @relation("StructureCible")
-  episodes                EpisodeSoins[]
-  demandesAnalyseRecues   DemandeAnalyse[]    @relation("Laboratoire")
+  creeLe               DateTime              @default(now())
+
+  utilisateurs          Utilisateur[]
+  ascProfiles           AscProfile[]
+  actesDelivrance       ActeDelivrance[]
+  medecinProfiles       MedecinProfile[]
+  pharmacienProfiles    PharmacienProfile[]
+  stocks                Stock[]
+  patientsPreferent     PatientProfile[]    @relation("StructurePreferee")
+  demandesRendezVous    DemandeRendezVous[] @relation("DemandesRendezVous")
+  approvisionnements    Approvisionnement[] @relation("ApprovisionnementsStructure")
+  referencementsSource  Referencement[]     @relation("StructureSource")
+  referencementsCible   Referencement[]     @relation("StructureCible")
+  episodes              EpisodeSoins[]
+  demandesAnalyseRecues DemandeAnalyse[]    @relation("Laboratoire")
 
   @@map("structures")
+}
+
+/// Le degre de confiance dans l'identite d'un patient (EF-01-04).
+///
+/// **Ce que ces niveaux ne font pas : trier qui a droit aux soins.** Un
+/// patient a l'identite provisoire se fait consulter, suivre et prescrire
+/// normalement. Le niveau ne verrouille que ce qui engage un tiers — la
+/// facturation a un assureur et la delivrance de produits reglementes — parce
+/// que la, une erreur d'identite coute a quelqu'un d'autre.
+enum NiveauIdentite {
+  /// Identite declaree, aucun document presente. C'est l'etat par defaut :
+  /// un ASC qui enregistre quelqu'un en brousse n'a pas de piece a verifier,
+  /// et le refuser reviendrait a lui refuser les soins.
+  PROVISOIRE
+  /// Un agent habilite a vu une piece et a enregistre laquelle.
+  VERIFIEE
+}
+
+/// La piece presentee lors de la verification (EF-01-04).
+enum TypePieceIdentite {
+  CARTE_NATIONALE
+  PASSEPORT
+  /// Frequent pour les mineurs, qui n'ont pas de carte.
+  ACTE_NAISSANCE
+  CARTE_CONSULAIRE
+  PERMIS_CONDUIRE
+  /// Carte d'electeur, carte scolaire, attestation : l'agent precise laquelle.
+  AUTRE
 }
 
 model PatientProfile {
@@ -377,6 +759,55 @@ model PatientProfile {
   maladiesChroniques String[]
   prefecture         String
   sousPrefecture     String?
+
+  // ── Identito-vigilance (EF-01-04/10) ──────────────────────────────
+  //
+  // Les traits qui distinguent deux personnes quand le nom ne suffit pas —
+  // et il ne suffit pas souvent. Dans la region, les homonymes sont la regle
+  // plutot que l'exception : « Mamadou Diallo, ne en 1990 » peut designer
+  // plusieurs personnes dans la meme prefecture. Le lieu de naissance et le
+  // nom de la mere sont les deux traits qui tranchent, et ce sont ceux
+  // qu'emploient les registres de l'etat civil.
+  //
+  // Facultatifs : un ASC qui enregistre quelqu'un en brousse ne les a pas
+  // toujours. Ils deviennent exigibles pour passer en identite verifiee.
+  /// Ville ou village de naissance, tel que declare.
+  lieuNaissance String?
+  /// Nom de la mere. Le trait le plus discriminant quand les noms se repetent.
+  nomMere       String?
+
+  /// Le degre de confiance dans cette identite. Voir `NiveauIdentite`.
+  niveauIdentite NiveauIdentite @default(PROVISOIRE)
+
+  /// La piece presentee, quand l'identite a ete verifiee.
+  typePiece   TypePieceIdentite?
+  /// Le numero de la piece. Jamais affiche en entier a l'ecran.
+  numeroPiece String?
+
+  /// Quand et par qui. Une verification sans auteur ne vaut rien : c'est
+  /// l'agent qui engage sa responsabilite en declarant avoir vu la piece.
+  identiteVerifieeLe DateTime?
+  idVerifiePar       String?
+  verifiePar         Utilisateur? @relation("IdentitesVerifiees", fields: [idVerifiePar], references: [id], onDelete: SetNull)
+
+  /// Le dossier dans lequel celui-ci a ete fusionne (EF-01-06).
+  ///
+  /// **Le dossier absorbe n'est jamais supprime.** Il garde son identifiant,
+  /// son code QR et son compte : une personne qui presente son ancienne carte
+  /// doit etre retrouvee, et une fusion doit pouvoir etre defaite. Il est
+  /// simplement ecarte des recherches, et les lectures suivent ce lien.
+  ///
+  /// `Restrict` : on ne supprime pas un dossier qui en absorbe un autre.
+  idFusionneDans String?
+  fusionneDans   PatientProfile?  @relation("FusionDeDossier", fields: [idFusionneDans], references: [id], onDelete: Restrict)
+  dossiersAbsorbes PatientProfile[] @relation("FusionDeDossier")
+  fusionneLe     DateTime?
+
+  brisDeGlace BrisDeGlace[] @relation("BrisDeGlacePatient")
+  evenementsConsentement EvenementConsentement[]
+
+  fusionsPrincipal FusionDossier[] @relation("FusionPrincipal")
+  fusionsAbsorbe   FusionDossier[] @relation("FusionAbsorbe")
   // Maille reelle du parcours commande/livraison : c'est dans son quartier que
   // le patient cherche une pharmacie, pas dans sa prefecture.
   commune            String?
@@ -387,32 +818,46 @@ model PatientProfile {
   photoUrl           String?
   urgenceNom         String?
   urgenceTelephone   String?
-  creeLe             DateTime @default(now())
-  modifieLe          DateTime @updatedAt
+  creeLe             DateTime     @default(now())
+  modifieLe          DateTime     @updatedAt
 
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
-  // ── MODELE HYBRIDE ────────────────────────────────────────
-  // Structure préférée choisie par le patient (optionnel)
+  // â”€â”€ MODELE HYBRIDE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Structure prÃ©fÃ©rÃ©e choisie par le patient (optionnel)
+  demandesRendezVous DemandeRendezVous[]
+
   idStructurePreferee String?
   structurePreferee   StructureSante? @relation("StructurePreferee", fields: [idStructurePreferee], references: [id])
 
-  // ASC attitré du patient (optionnel)
+  // ASC attitrÃ© du patient (optionnel)
   idAscPrincipal String?
   ascPrincipal   AscProfile? @relation("PatientAscPrincipal", fields: [idAscPrincipal], references: [id])
 
-  consultations Consultation[]
-  vaccinations  Vaccination[]
-  factures      Facture[]
-  rendezVous    RendezVous[]
-  consentements ConsentementPatient[]
-  episodes      EpisodeSoins[]
-  demandesAnalyse DemandeAnalyse[]
+  consultations        Consultation[]
+  vaccinations         Vaccination[]
+  factures             Facture[]
+  ventesComptoir       VenteComptoir[]
+  contratsAssurance    ContratAssurance[]
+  controlesEligibilite ControleEligibilite[]
+  rendezVous           RendezVous[]
+  consentements        ConsentementPatient[]
+  /// Les acces a son dossier, qu'il peut consulter lui-meme (EF-02-08).
+  accesAuDossier       JournalAudit[]        @relation("AccesAuDossier")
+  /// Ses demandes d'exercice de droits (EF-12-09).
+  demandesRgpd         DemandeRgpd[]
+  episodes             EpisodeSoins[]
+  demandesAnalyse      DemandeAnalyse[]
 
   @@index([prefecture])
   @@index([idStructurePreferee])
   @@index([idAscPrincipal])
+  /// Ces deux index existaient en SQL sans etre declares ici : chaque
+  /// `migrate diff` proposait donc de les supprimer. Les declarer evite qu'une
+  /// prochaine migration les emporte en silence.
+  @@index([dateNaissance, lieuNaissance], map: "patients_traits_distinctifs_idx")
+  @@index([niveauIdentite], map: "patients_niveau_identite_idx")
   @@map("patients")
 }
 
@@ -433,23 +878,33 @@ model AscProfile {
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
-  consultations  Consultation[]
-  stocks         Stock[]
-  rendezVous     RendezVous[]
+  consultations    Consultation[]
+  stocks           Stock[]
+  rendezVous       RendezVous[]
   patientsAttitres PatientProfile[] @relation("PatientAscPrincipal")
 
   @@map("profils_asc")
 }
 
 model MedecinProfile {
-  id          String   @id @default(cuid())
-  numeroCom   String?
-  specialite  String?
-  photoUrl    String?
-  creeLe      DateTime @default(now())
+  id         String   @id @default(cuid())
+  numeroCom  String?
+  specialite String?
 
-  idUtilisateur String         @unique
-  utilisateur   Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+  /// Ou le patient doit se rendre : « Batiment B, bureau 12 ».
+  ///
+  /// **Facultatif, et il le restera.** Beaucoup d'hopitaux ne numerotent pas
+  /// leurs bureaux : l'agent d'accueil accompagne le patient a pied. Exiger
+  /// une valeur obligerait a inventer un numero qui n'existe pas.
+  ///
+  /// Du texte libre, pas un plan ni une reservation de salles : les bureaux
+  /// changent, et une table de salles a tenir a jour serait abandonnee.
+  bureau String?
+  photoUrl   String?
+  creeLe     DateTime @default(now())
+
+  idUtilisateur String      @unique
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
@@ -457,7 +912,7 @@ model MedecinProfile {
   @@map("profils_medecin")
 }
 
-// ── NOUVEAU : PharmacienProfile ───────────────────────────
+// â”€â”€ NOUVEAU : PharmacienProfile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model PharmacienProfile {
   id             String   @id @default(cuid())
   photoUrl       String?
@@ -473,7 +928,7 @@ model PharmacienProfile {
   @@map("profils_pharmacien")
 }
 
-// ─── DOMAINE 3 — ACTES MEDICAUX ──────────────────────────
+// â”€â”€â”€ DOMAINE 3 â€” ACTES MEDICAUX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Consultation {
   id               String          @id @default(cuid())
@@ -560,16 +1015,33 @@ model Diagnostic {
 }
 
 model Medicament {
-  id               String   @id @default(cuid())
-  dci              String
-  nomCommercial    String?
-  forme            String
-  dosage           String
-  categorie        String?
+  id String @id @default(cuid())
+
+  /// Le nom affiche partout, quelle que soit la categorie. Jusqu'au
+  /// 2026-10-01 chaque ecran recomposait `nomCommercial ?? dci`, ce qui ne
+  /// veut rien dire pour un lait infantile.
+  libelle String
+
+  /// Denomination commune internationale. Absente hors medicament : un lait
+  /// infantile n'en a pas. La contrainte SQL `medicaments_medicament_complet`
+  /// garantit qu'un MEDICAMENT en porte une.
+  dci           String?
+  nomCommercial String?
+  forme         String?
+  dosage        String?
+
+  /// Ce que le produit est, en liste fermee. Porte les exclusions d'assurance
+  /// et interdit la prescription de ce qui n'est pas un medicament.
+  categorie CategorieProduit @default(MEDICAMENT)
+
+  /// Classe therapeutique en texte libre (« Antalgique »), tant que le
+  /// referentiel national (D6) n'est pas arrete. Autre axe que `categorie`.
+  classeTherapeutique String?
+
   imageUrl         String?
-  listeEssentielle Boolean  @default(false)
-  estActif         Boolean  @default(true)
-  prixUnitaireGnf  Int      @default(0) // prix national de référence en GNF
+  listeEssentielle Boolean @default(false)
+  estActif         Boolean @default(true)
+  prixUnitaireGnf  Int     @default(0) // prix national de reference en GNF
 
   // Classification ATC (EF-05-05, decision D6). Elle permet de rapprocher deux
   // specialites de la meme famille : un patient allergique a l'amoxicilline
@@ -589,9 +1061,13 @@ model Medicament {
   contreIndications String[]
 
   lignesOrdonnance LigneOrdonnance[]
+  lignesCommande   LigneCommande[]
+  actesDelivrance  ActeDelivrance[] @relation("ActeDelivranceMedicament")
   stocks           Stock[]
+  lignesVente      LigneVente[]
 
   @@index([codeAtc])
+  @@index([categorie])
   @@map("medicaments")
 }
 
@@ -616,10 +1092,10 @@ model InteractionMedicament {
   niveau      NiveauInteraction
   description String
   /// Conduite a tenir, affichee au prescripteur avec l'alerte.
-  conduite String?
+  conduite    String?
   /// Referentiel d'origine, pour pouvoir reexaminer une regle contestee.
-  source String?
-  creeLe DateTime @default(now())
+  source      String?
+  creeLe      DateTime          @default(now())
 
   @@unique([dciA, dciB])
   @@index([dciA])
@@ -647,7 +1123,7 @@ model Ordonnance {
 
   // EF-05-09 : nombre de fois que l'ordonnance peut etre servie a nouveau
   // apres avoir ete entierement delivree. Le numero et le code ne changent
-  // pas — c'est le meme papier que le patient represente au comptoir.
+  // pas â€” c'est le meme papier que le patient represente au comptoir.
   renouvellementsAutorises Int @default(0)
   renouvellementsUtilises  Int @default(0)
 
@@ -664,8 +1140,9 @@ model Ordonnance {
   signataire Utilisateur? @relation("MedecinSignataire", fields: [signePar], references: [id])
   signeLe    DateTime?
 
-  lignes   LigneOrdonnance[]
-  commande Commande?
+  lignes         LigneOrdonnance[]
+  ventesComptoir VenteComptoir[]
+  commande       Commande?
 
   @@index([idConsultation])
   @@index([statut])
@@ -700,22 +1177,72 @@ model LigneOrdonnance {
 
   idMedicament String
   medicament   Medicament @relation(fields: [idMedicament], references: [id])
+  actes        ActeDelivrance[]
 
   @@index([idOrdonnance])
   @@index([statut])
   @@map("lignes_ordonnance")
 }
 
+/// Un geste de comptoir sur une ligne d'ordonnance.
+///
+/// **Une ligne peut recevoir plusieurs actes.** Une officine n'a que trois
+/// boites sur dix : elle en remet trois, et le reste se sert ailleurs ou plus
+/// tard (delivrance partielle, EF-07-07). Jusqu'ici la quantite remise etait
+/// **acceptee puis jetee** — `delivrerLigneOrdonnance` recevait
+/// `quantiteDelivree`, le renvoyait a l'appelant et ne l'ecrivait nulle part.
+/// La ligne passait a DELIVREE quelle que soit la quantite, donc le reste ne
+/// pouvait plus jamais etre servi, et l'ordonnance s'annoncait servie.
+///
+/// **L'auteur est nominatif** (EF-07-03). Savoir quelle officine a delivre ne
+/// suffit pas : c'est une personne qui engage sa responsabilite en remettant
+/// un medicament, et c'est elle qu'on cherche quand quelque chose a mal
+/// tourne.
+model ActeDelivrance {
+  id   String             @id @default(cuid())
+  type TypeActeDelivrance
+
+  /// Zero pour un refus. Une contrainte le verifie.
+  quantite Int
+  /// Prix de l'officine, fige a l'acte — meme regle que partout ailleurs :
+  /// prix national de reference plus la marge de l'officine.
+  prixUnitaireGnf Int @default(0)
+  montantGnf      Int @default(0)
+
+  /// Exige pour une substitution et pour un refus.
+  motif String?
+
+  acteLe DateTime @default(now())
+
+  idLigneOrdonnance String
+  ligne             LigneOrdonnance @relation(fields: [idLigneOrdonnance], references: [id], onDelete: Cascade)
+
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  /// **Qui a remis.** Pas l'officine : la personne.
+  idPharmacien String
+  pharmacien   Utilisateur @relation("ActeDelivrancePharmacien", fields: [idPharmacien], references: [id], onDelete: Restrict)
+
+  /// Le produit reellement remis. Egal au prescrit, sauf substitution.
+  idMedicamentDelivre String
+  medicamentDelivre   Medicament @relation("ActeDelivranceMedicament", fields: [idMedicamentDelivre], references: [id], onDelete: Restrict)
+
+  @@index([idLigneOrdonnance])
+  @@index([idStructure, acteLe])
+  @@map("actes_delivrance")
+}
+
 model Vaccination {
-  id              String    @id @default(cuid())
-  vaccinNom       String
-  codeEpi         String?
-  numeroLot       String?
-  siteInjection   String?
-  reaction        String?
-  urlCertificat   String?
-  dateProchaineD  DateTime?
-  administreLe    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  vaccinNom      String
+  codeEpi        String?
+  numeroLot      String?
+  siteInjection  String?
+  reaction       String?
+  urlCertificat  String?
+  dateProchaineD DateTime?
+  administreLe   DateTime  @default(now())
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -728,17 +1255,88 @@ model Vaccination {
   @@map("vaccinations")
 }
 
-// ─── DOMAINE 4 — COORDINATION ────────────────────────────
+// â”€â”€â”€ DOMAINE 4 â€” COORDINATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+/// Ou en est la demande qu'un patient a faite depuis chez lui.
+enum StatutDemandeRendezVous {
+  EN_ATTENTE // personne ne l'a encore prise
+  ACCEPTEE // un medecin a fixe un creneau ; l'episode est ouvert
+  REFUSEE // avec un motif, que le patient lit
+  ANNULEE // le patient s'est ravise
+}
+
+/// Demande de rendez-vous faite a distance (addendum du 2026-09-28, point 6).
+///
+/// Le patient n'ouvre pas un episode de soins : un episode est une visite, et
+/// une demande n'en est pas encore une. Elle devient un episode le jour ou un
+/// medecin l'accepte, et pas avant — sinon la file de l'hopital se remplirait
+/// de visites qui n'auront jamais lieu.
+model DemandeRendezVous {
+  id        String                  @id @default(cuid())
+  motif     String
+  statut    StatutDemandeRendezVous @default(EN_ATTENTE)
+  creeLe    DateTime                @default(now())
+  modifieLe DateTime                @updatedAt
+
+  traiteeLe  DateTime?
+  motifRefus String?
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idStructure String
+  structure   StructureSante @relation("DemandesRendezVous", fields: [idStructure], references: [id])
+
+  /// Le medecin que le patient souhaite, s'il en connait un. Sinon l'accueil
+  /// oriente la demande : c'est son metier, et le seul qu'il garde ici.
+  idMedecin String?
+  medecin   Utilisateur? @relation("DemandesRendezVousMedecin", fields: [idMedecin], references: [id])
+
+  idTraitePar String?
+  traitePar   Utilisateur? @relation("DemandesRendezVousTraitees", fields: [idTraitePar], references: [id])
+
+  /// Rempli a l'acceptation : la demande devient une visite.
+  idEpisode String?       @unique
+  episode   EpisodeSoins? @relation(fields: [idEpisode], references: [id])
+
+  @@index([idPatient, creeLe(sort: Desc)])
+  /// File du medecin : les demandes qui le visent et attendent.
+  @@index([idMedecin, statut])
+  /// File de l'accueil : celles de sa structure que personne ne vise.
+  @@index([idStructure, statut])
+  @@map("demandes_rendez_vous")
+}
+
+/// Le cycle d'un rendez-vous, de la prise au depart du patient.
+///
+/// C'etait une chaine libre jusqu'au 2026-09-30 : la base n'interdisait aucune
+/// valeur, et `asc.service.ts` comptait des rendez-vous `HONORE` que personne
+/// n'ecrivait jamais â€” la statistique valait structurellement zero.
+enum StatutRendezVous {
+  PLANIFIE // le medecin a fixe le creneau (addendum, point 3)
+  PRESENT // l'assistante a pointe l'arrivee du patient
+  EN_CONSULTATION // le medecin a pris le patient
+  TERMINE // consultation faite â€” remplace l'ancien Â« HONORE Â»
+  ABSENT // le patient n'est pas venu
+  ANNULE // remplace par un autre rendez-vous, ou annule
+}
 
 model RendezVous {
-  id        String   @id @default(cuid())
-  statut    String   @default("PLANIFIE")
+  id        String           @id @default(cuid())
+  statut    StatutRendezVous @default(PLANIFIE)
   motif     String?
   prevuLe   DateTime
-  rappel24h Boolean  @default(false)
-  rappel2h  Boolean  @default(false)
-  creeLe    DateTime @default(now())
-  modifieLe DateTime @updatedAt
+  rappel24h Boolean          @default(false)
+  rappel2h  Boolean          @default(false)
+  creeLe    DateTime         @default(now())
+  modifieLe DateTime         @updatedAt
+
+  /// Pointage de l'arrivee par l'assistante (addendum, point 2). C'est le
+  /// moment ou l'attente commence, et il n'a rien a voir avec `prevuLe` : un
+  /// patient arrive en avance ou en retard.
+  arriveeLe   DateTime?
+  idPointePar String?
+  pointePar   Utilisateur? @relation("PointageArrivee", fields: [idPointePar], references: [id])
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -812,16 +1410,18 @@ model Message {
   @@map("messages")
 }
 
-// ─── DOMAINE 5 — GESTION OPERATIONNELLE ──────────────────
+// â”€â”€â”€ DOMAINE 5 â€” GESTION OPERATIONNELLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Stock {
-  id              String    @id @default(cuid())
-  quantite        Int       @default(0)
-  seuilAlerte     Int       @default(10)
-  unite           String
-  datePeremption  DateTime?
-  margeGnf        Int       @default(0) // ← NOUVEAU : marge appliquée par la pharmacie
-  modifieLe       DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  /// Le total, somme des lots encore disponibles. Il reste porte ici : le
+  /// decrement conditionnel de la delivrance s'appuie dessus, et le recalculer
+  /// a chaque lecture couterait cher pour rien.
+  quantite    Int      @default(0)
+  seuilAlerte Int      @default(10)
+  unite       String
+  margeGnf    Int      @default(0) // Marge appliquee par la pharmacie
+  modifieLe   DateTime @updatedAt
 
   idAsc String?
   asc   AscProfile? @relation(fields: [idAsc], references: [id], onDelete: Restrict)
@@ -832,19 +1432,103 @@ model Stock {
   idMedicament String
   medicament   Medicament @relation(fields: [idMedicament], references: [id])
 
+  /// Le detail par lot (addendum du 2026-09-28, point 1.3). `datePeremption`
+  /// etait porte sur le stock jusqu'au 2026-09-30 : une seule date par produit
+  /// et par officine, alors qu'un approvisionnement apporte des lots aux
+  /// peremptions differentes. Le modele ecrasait l'une des deux dates, et le
+  /// stock affichait une peremption fausse.
+  lots LotStock[]
+
   @@unique([idAsc, idMedicament])
   @@unique([idStructure, idMedicament])
   @@map("stocks")
+}
+
+/// Entree en stock, telle que la facture du fournisseur la decrit
+/// (addendum du 2026-09-28, point 1.3).
+///
+/// En deux temps, a dessein : ici la saisie assistee, avec la facture attachee
+/// en justificatif. L'extraction automatique viendra ensuite, et devra
+/// toujours etre relue avant enregistrement — une erreur sur une quantite ou
+/// une peremption entrerait sinon en silence dans le stock d'un medicament.
+model Approvisionnement {
+  id              String   @id @default(cuid())
+  numero          String   @unique
+  /// Reference de la facture chez le fournisseur, telle qu'elle y figure.
+  numeroFacture   String?
+  fournisseur     String
+  dateFacture     DateTime
+  /// Photo ou scan de la facture : la piece qui justifie l'entree.
+  justificatifUrl String?
+  montantTotalGnf Int      @default(0)
+  creeLe          DateTime @default(now())
+
+  idStructure String
+  structure   StructureSante @relation("ApprovisionnementsStructure", fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idSaisiPar String
+  saisiPar   Utilisateur @relation("ApprovisionnementsSaisis", fields: [idSaisiPar], references: [id], onDelete: Restrict)
+
+  lots LotStock[]
+
+  @@index([idStructure, dateFacture(sort: Desc)])
+  @@map("approvisionnements")
+}
+
+/// Un lot recu : une quantite, une date de peremption, une origine.
+///
+/// C'est lui qui rend possible la sortie au plus proche de la peremption
+/// plutot qu'au hasard — la regle attendue dans une pharmacie — et l'alerte
+/// sur les lots qui approchent de leur date.
+model LotStock {
+  id             String    @id @default(cuid())
+  /// Numero de lot du fabricant, quand la boite le porte.
+  numeroLot      String?
+  /// Ce qui reste de ce lot. Un lot a zero est garde : il porte la trace de
+  /// ce qui est entre et de ce qui est sorti.
+  quantite       Int
+  quantiteRecue  Int
+  datePeremption DateTime?
+  prixAchatGnf   Int       @default(0)
+  creeLe         DateTime  @default(now())
+  modifieLe      DateTime  @updatedAt
+
+  idStock String
+  stock   Stock  @relation(fields: [idStock], references: [id], onDelete: Cascade)
+
+  /// Absent pour les lots repris de l'existant a la migration : ils n'ont pas
+  /// de facture d'origine, et inventer un fournisseur serait mentir.
+  idApprovisionnement String?
+  approvisionnement   Approvisionnement? @relation(fields: [idApprovisionnement], references: [id])
+
+  /// Sortie au plus proche de la peremption : cet index sert la regle.
+  @@index([idStock, datePeremption])
+  @@map("lots_stock")
 }
 
 model Facture {
   id                 String        @id @default(cuid())
   montantGnf         Int
   statut             InvoiceStatus @default(EN_ATTENTE)
-  modePaiement       ModePaiement? // ← NOUVEAU : enum au lieu de String
+  modePaiement       ModePaiement? // â† NOUVEAU : enum au lieu de String
   referenceOperateur String?       @unique
   numeroOperateur    String?
   urlRecu            String?
+
+  /// Le lien de paiement de la passerelle, pour que le patient puisse y
+  /// revenir sans qu'on recree une operation a chaque fois.
+  urlPaiement String?
+
+  /// Le dernier statut connu cote passerelle (`new`, `pending`, `success`,
+  /// `canceled`, `failed`, `error`, `expired`).
+  ///
+  /// **Seul `success` fait passer la facture a PAYEE.** Un paiement annule,
+  /// echoue ou expire laisse la facture payable : le patient recommence. La
+  /// marquer annulee l'obligerait a repasser au guichet pour un code mal
+  /// saisi. Ce champ existe pour que l'ecran puisse dire ce qui s'est passe
+  /// sans rappeler la passerelle a chaque affichage.
+  statutOperateur String?
+
   payeeLe            DateTime?
   creeLe             DateTime      @default(now())
   modifieLe          DateTime      @updatedAt
@@ -855,25 +1539,222 @@ model Facture {
   idConsultation String?       @unique
   consultation   Consultation? @relation(fields: [idConsultation], references: [id])
 
+  /// La commande reglee. **Une facture porte l'un ou l'autre, jamais les
+  /// deux** : une contrainte le verifie. Sans ce lien, payer un panier de
+  /// pharmacie aurait exige un second circuit de paiement a cote de celui
+  /// qui marche deja.
+  idCommande String?   @unique
+  commande   Commande? @relation(fields: [idCommande], references: [id])
+
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([statut])
   @@map("factures")
 }
 
-model ConsentementPatient {
-  id            String       @id @default(cuid())
-  scope         ConsentScope
-  actif         Boolean      @default(true)
-  donneLe       DateTime     @default(now())
-  retireLe      DateTime?
-  source        String       @default("WEB")
-  commentaire   String?
+/// Le texte d'un consentement, dans une version et une langue donnees
+/// (EF-02-01).
+///
+/// **Un consentement ne vaut que pour ce qui a ete explique.** Sans garder le
+/// texte exact qui etait a l'ecran, on ne peut ni prouver ce que la personne a
+/// accepte, ni lui montrer plus tard ce a quoi elle a dit oui. Le texte evolue ;
+/// les accords deja donnes continuent de pointer vers la version qu'ils ont vue.
+///
+/// **La langue fait partie du texte.** Un texte en francais montre a quelqu'un
+/// qui lit le pular n'est pas un consentement eclaire. On enregistre donc la
+/// langue reellement presentee, meme quand ce n'est pas celle du patient — la
+/// trace dit alors la verite, et le manque se voit.
+model TexteConsentement {
+  id String @id @default(cuid())
 
-  idPatient     String
-  patient       PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Cascade)
+  scope  ConsentScope
+  langue String
+
+  /// Numero de version, par portee et par langue. Commence a 1.
+  version Int
+
+  titre String
+  /// Le texte presente, tel quel.
+  corps String
+
+  /// Mis en vigueur le... `null` tant que c'est un brouillon. Un brouillon ne
+  /// peut etre montre a personne.
+  publieLe    DateTime?
+  idPubliePar String?
+  publiePar   Utilisateur? @relation("TextesConsentementPublies", fields: [idPubliePar], references: [id], onDelete: SetNull)
+
+  creeLe DateTime @default(now())
+
+  consentements ConsentementPatient[]
+  evenements    EvenementConsentement[]
+
+  @@unique([scope, langue, version])
+  @@index([scope, langue, publieLe])
+  @@map("textes_consentement")
+}
+
+/// Ce qui est arrive au consentement d'une personne, en ajout seul (EF-02-07).
+///
+/// **« Versionne » veut dire qu'on garde l'histoire, pas seulement l'etat.**
+/// Avant, un retrait ecrasait l'accord : on voyait que la personne refusait
+/// aujourd'hui, jamais qu'elle avait accepte hier, ni combien de fois elle
+/// avait change d'avis. Une table qui se laisse reecrire ne prouve rien le
+/// jour ou il faudrait s'en servir, exactement comme le journal d'audit
+/// (EF-12-04) : un declencheur PostgreSQL refuse ici aussi UPDATE, DELETE et
+/// TRUNCATE.
+model EvenementConsentement {
+  id String @id @default(cuid())
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  scope ConsentScope
+  sens  SensConsentement
+
+  /// Le texte exact qui etait a l'ecran. `null` pour les accords poses avant
+  /// EF-02-01, ou par le systeme : c'est precisement ce qu'il faut pouvoir
+  /// distinguer d'un consentement reellement recueilli.
+  idTexte String?
+  texte   TexteConsentement? @relation(fields: [idTexte], references: [id], onDelete: Restrict)
+
+  /// D'ou vient le geste : `WEB`, `MOBILE`, `COMPTOIR`, `DEFAUT_SYSTEME`...
+  source      String
+  commentaire String?
+
+  /// Qui a enregistre le geste. Le patient lui-meme, le plus souvent.
+  idAuteur String
+  auteur   Utilisateur @relation("EvenementsConsentement", fields: [idAuteur], references: [id], onDelete: Restrict)
+
+  creeLe DateTime @default(now())
+
+  @@index([idPatient, creeLe])
+  @@index([idPatient, scope, creeLe])
+  @@map("evenements_consentement")
+}
+
+enum SensConsentement {
+  ACCORDE
+  RETIRE
+}
+
+/// Un acces en urgence a un dossier auquel on n'a normalement pas droit
+/// (EF-02-06).
+///
+/// **Pourquoi cela doit exister.** Un patient arrive inconscient dans un
+/// service qui ne le suit pas. Le soignant a besoin de ses allergies, tout de
+/// suite. Un controle d'acces qui n'aurait aucune porte de secours ferait
+/// prescrire a l'aveugle — et la regle serait contournee autrement, par un
+/// compte prete ou un mot de passe partage, sans laisser de trace.
+///
+/// **Pourquoi ce n'est pas un passe-partout.** Quatre choses le distinguent :
+///
+///   - **un motif est exige**, choisi dans une liste fermee *et* explique en
+///     toutes lettres. La liste permet de compter, le texte permet de juger ;
+///   - **l'acces expire.** Il ouvre quelques heures, pas pour toujours. Sans
+///     expiration, le premier bris de glace deviendrait la facon normale
+///     d'entrer ;
+///   - **le patient est prevenu.** C'est ce qui separe un acces d'urgence
+///     assume d'une porte derobee ;
+///   - **l'administration repasse derriere.** Un garde-fou que personne ne
+///     relit n'est pas un garde-fou.
+///
+/// **La declaration ne se modifie pas.** Un declencheur PostgreSQL refuse de
+/// toucher au motif, au patient, a l'auteur et aux dates une fois la ligne
+/// ecrite : quelqu'un qui pourrait reecrire son motif apres coup n'aurait rien
+/// declare du tout. Seule la revue, qui vient apres, s'ecrit.
+model BrisDeGlace {
+  id String @id @default(cuid())
+
+  motif      MotifBrisDeGlace
+  /// Ce que le soignant explique en toutes lettres. La liste fermee permet de
+  /// compter ; cette phrase permet de juger.
+  explication String
+
+  idPatient String
+  patient   PatientProfile @relation("BrisDeGlacePatient", fields: [idPatient], references: [id], onDelete: Restrict)
+
+  idAuteur String
+  auteur   Utilisateur @relation("BrisDeGlaceDeclares", fields: [idAuteur], references: [id], onDelete: Restrict)
+
+  /// La structure depuis laquelle l'acces a ete pris. Elle situe le geste.
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
+
+  ouvertLe  DateTime @default(now())
+  /// Au-dela, l'acces se referme de lui-meme. Un bris de glace qui ne se
+  /// refermerait pas serait une cle, pas une vitre brisee.
+  expireLe  DateTime
+  /// Referme avant l'heure, par son auteur. Le geste honnete quand on n'a plus
+  /// besoin du dossier.
+  refermeLe DateTime?
+
+  // ── La revue, qui vient apres ───────────────────────────────────────
+  statutRevue  StatutRevueBrisDeGlace @default(A_REVOIR)
+  avisRevue    String?
+  idRevuPar    String?
+  revuPar      Utilisateur? @relation("BrisDeGlaceRevus", fields: [idRevuPar], references: [id], onDelete: SetNull)
+  revuLe       DateTime?
+
+  /// Le patient a-t-il ete prevenu ? `null` : la notification a echoue, et
+  /// cela se voit au lieu de se perdre.
+  notifieLe DateTime?
+
+  @@index([idPatient, ouvertLe])
+  @@index([idAuteur, ouvertLe])
+  @@index([statutRevue, ouvertLe])
+  @@index([expireLe])
+  @@map("bris_de_glace")
+}
+
+/// Pourquoi la vitre a ete brisee.
+///
+/// Liste **fermee** : on ne peut juger ni compter des motifs ecrits comme
+/// chacun veut. Le texte libre vient en plus, pas a la place.
+enum MotifBrisDeGlace {
+  /// Pronostic vital engage, decision immediate.
+  URGENCE_VITALE
+  /// Le patient ne peut pas consentir : inconscient, confus, trop jeune.
+  PATIENT_HORS_ETAT
+  /// Le patient est adresse par une autre structure et son dossier y vit.
+  CONTINUITE_DES_SOINS
+  /// Suspicion d'interaction ou d'allergie a verifier avant de prescrire.
+  VERIFICATION_AVANT_PRESCRIPTION
+  AUTRE
+}
+
+/// Ou en est la relecture.
+enum StatutRevueBrisDeGlace {
+  A_REVOIR
+  /// L'acces etait fonde. Dit explicitement, pas par defaut.
+  JUSTIFIE
+  /// L'acces n'etait pas fonde. Ce n'est pas une sanction : c'est un constat
+  /// ecrit, qui permet d'en tirer les consequences ailleurs.
+  INJUSTIFIE
+}
+
+model ConsentementPatient {
+  id          String       @id @default(cuid())
+  scope       ConsentScope
+  actif       Boolean      @default(true)
+  donneLe     DateTime     @default(now())
+  retireLe    DateTime?
+  source      String       @default("WEB")
+  commentaire String?
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Cascade)
 
   idUtilisateur String
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  /// La version du texte que la personne avait sous les yeux (EF-02-01).
+  ///
+  /// `null` signifie **« accord presume, jamais recueilli »** : soit il a ete
+  /// pose par le systeme a la creation du dossier, soit il est anterieur au
+  /// versionnage. Ce n'est pas un detail d'implementation — c'est la
+  /// difference entre un consentement et une case cochee a la place de
+  /// quelqu'un, et l'ecran du patient le dit.
+  idTexte String?
+  texte   TexteConsentement? @relation(fields: [idTexte], references: [id], onDelete: Restrict)
 
   @@unique([idPatient, scope])
   @@index([scope, actif])
@@ -881,15 +1762,15 @@ model ConsentementPatient {
 }
 
 model AlerteEpidemique {
-  id            String                  @id @default(cuid())
+  id            String                 @id @default(cuid())
   pathologie    String
   prefecture    String
   nombre        Int
   seuil         Int
   niveau        NiveauAlerteEpidemique
-  fenetreJours  Int                     @default(30)
-  statut        String                  @default("ACTIVE")
-  dateDetection DateTime                @default(now())
+  fenetreJours  Int                    @default(30)
+  statut        String                 @default("ACTIVE")
+  dateDetection DateTime               @default(now())
   metadonnees   Json?
 
   @@unique([pathologie, prefecture, fenetreJours, statut])
@@ -899,14 +1780,14 @@ model AlerteEpidemique {
 }
 
 model UssdSession {
-  id          String            @id @default(cuid())
-  telephone   String
-  etape       String            @default("ACCUEIL")
-  statut      UssdSessionStatus @default(ACTIVE)
-  donnees     Json?
-  creeLe      DateTime          @default(now())
-  expireLe    DateTime
-  modifieLe   DateTime          @updatedAt
+  id        String            @id @default(cuid())
+  telephone String
+  etape     String            @default("ACCUEIL")
+  statut    UssdSessionStatus @default(ACTIVE)
+  donnees   Json?
+  creeLe    DateTime          @default(now())
+  expireLe  DateTime
+  modifieLe DateTime          @updatedAt
 
   idUtilisateur String?
   utilisateur   Utilisateur? @relation(fields: [idUtilisateur], references: [id], onDelete: SetNull)
@@ -949,9 +1830,9 @@ model ParametresSysteme {
   @@map("parametres_systeme")
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// P1 — Hopital : episode de soins et demande d'analyse (EF-03)
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// P1 â€” Hopital : episode de soins et demande d'analyse (EF-03)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // Numerotation lisible et continue (EP-2026-000123, DA-2026-000045...).
 // Une ligne par cle ; l'increment se fait en SQL atomique (numero.service).
@@ -963,15 +1844,15 @@ model Compteur {
 }
 
 model EpisodeSoins {
-  id       String        @id @default(cuid())
-  numero   String        @unique
-  motif    String
-  service  String?
-  statut   StatutEpisode @default(OUVERT)
-  notes    String?
-  ouvertLe DateTime      @default(now())
-  closLe   DateTime?
-  modifieLe DateTime     @updatedAt
+  id        String        @id @default(cuid())
+  numero    String        @unique
+  motif     String
+  service   String?
+  statut    StatutEpisode @default(OUVERT)
+  notes     String?
+  ouvertLe  DateTime      @default(now())
+  closLe    DateTime?
+  modifieLe DateTime      @updatedAt
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -990,6 +1871,10 @@ model EpisodeSoins {
   consultations   Consultation[]
   rendezVous      RendezVous[]
 
+  /// La demande a distance qui a donne naissance a cet episode, s'il y en a
+  /// une (addendum du 2026-09-28, point 6).
+  demandeRendezVous DemandeRendezVous?
+
   @@index([idStructure, statut, ouvertLe(sort: Desc)])
   @@index([idPatient, ouvertLe(sort: Desc)])
   @@map("episodes_soins")
@@ -1000,8 +1885,8 @@ model Examen {
   id        String  @id @default(cuid())
   codeLoinc String  @unique
   libelle   String
-  categorie String  // HEMATOLOGIE, BIOCHIMIE, SEROLOGIE, PARASITOLOGIE, MICROBIOLOGIE, URINE...
-  specimen  String  // SANG, URINE, SELLES, ...
+  categorie String // HEMATOLOGIE, BIOCHIMIE, SEROLOGIE, PARASITOLOGIE, MICROBIOLOGIE, URINE...
+  specimen  String // SANG, URINE, SELLES, ...
   unite     String?
   aJeun     Boolean @default(false)
   consignes String?
@@ -1036,18 +1921,36 @@ model DemandeAnalyse {
   motifAnnulation    String?
 
   // Cycle laboratoire (EF-04)
-  lieuPrelevement       LieuPrelevement?
-  creneauPrelevement    DateTime?
-  recueLe               DateTime?
-  preleveeLe            DateTime?
-  valideeLe             DateTime?
-  commentaireBiologiste String?
-  // Diffusion au patient : immediate apres validation, differee si un
-  // resultat critique attend l'accuse de lecture du prescripteur (EF-04-09).
-  diffuseePatientLe     DateTime?
+  lieuPrelevement        LieuPrelevement?
+  creneauPrelevement     DateTime?
+  recueLe                DateTime?
+  preleveeLe             DateTime?
+  valideeLe              DateTime?
+  /// Conclusion du laboratoire, ecrite par le laborantin qui valide.
+  /// S'appelait `commentaireBiologiste` jusqu'au 2026-09-30 : le role de
+  /// biologiste a ete supprime (addendum, point 4).
+  commentaireLaboratoire String?
+  /// Moment ou le patient a pu voir ses resultats. Depuis l'addendum du
+  /// 2026-09-28, il n'est jamais pose par le temps qui passe : seul un medecin
+  /// qui libere les resultats le renseigne. Avant, un resultat non critique
+  /// partait des la validation du laboratoire, et un resultat critique finissait
+  /// par partir seul au bout de 24 h â€” le patient lisait alors des termes que
+  /// personne ne lui avait expliques.
+  diffuseePatientLe      DateTime?
+  /// Traduction en langage clair, redigee par le medecin au moment ou il libere
+  /// les resultats. C'est elle qui donne son sens au chiffre.
+  commentaireMedecin     String?
+  /// Garde-fou : sans ces deux dates, un medecin absent laisserait un patient
+  /// sans ses resultats indefiniment. On relance, puis on escalade vers
+  /// l'administrateur de la structure â€” jamais vers le patient.
+  relanceLiberationLe    DateTime?
+  escaladeLiberationLe   DateTime?
 
   idValideur String?
   valideur   Utilisateur? @relation("Valideur", fields: [idValideur], references: [id])
+
+  idLiberePar String?
+  liberePar   Utilisateur? @relation("LibereParMedecin", fields: [idLiberePar], references: [id])
 
   echantillons     Echantillon[]
   alertesCritiques AlerteResultatCritique[]
@@ -1069,6 +1972,11 @@ model DemandeAnalyse {
   @@index([idLaboratoire, statut, urgence, creeLe])
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([idEpisode])
+  /// File Â« a liberer Â» du medecin : ses demandes validees que le patient ne
+  /// voit pas encore.
+  @@index([idPrescripteur, statut, diffuseePatientLe])
+  /// Job de relance et d'escalade : les validees que personne n'a liberees.
+  @@index([statut, diffuseePatientLe, valideeLe])
   @@map("demandes_analyse")
 }
 
@@ -1090,10 +1998,10 @@ model LigneDemandeAnalyse {
 
 // Echantillon code sans ambiguite (EF-04-03) : EC-2026-000123
 model Echantillon {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  specimen    String    // SANG, URINE, SELLES, CRACHATS...
-  preleveLe   DateTime  @default(now())
+  id          String   @id @default(cuid())
+  code        String   @unique
+  specimen    String // SANG, URINE, SELLES, CRACHATS...
+  preleveLe   DateTime @default(now())
   commentaire String?
 
   idDemande String
@@ -1162,16 +2070,33 @@ model AlerteResultatCritique {
   @@map("alertes_resultat_critique")
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// P6 — Commande pharmacie (EF-07)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// P6 â€” Commande pharmacie (EF-07)
 // Voir docs/PARCOURS-COMMANDE-LIVRAISON.md
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 enum StatutCommande {
   /// L'appel est lance, aucune pharmacie n'a encore declare tout avoir.
   RECHERCHE_PHARMACIE
   /// Une pharmacie a declare detenir la totalite : elle a la commande.
   PRISE_EN_CHARGE
+  /// Le panier est chiffre, ligne par ligne, aux prix de cette officine.
+  /// Le patient sait ce qu'il va payer avant de payer.
+  A_PAYER
+  /// Les medicaments sont regles. Le transport, lui, se reglera au motard
+  /// a l'arrivee : il ne passe pas par la plateforme.
+  PAYEE
+  /// L'officine prepare le sachet.
+  EN_PREPARATION
+  /// Pret, et le patient vient le chercher.
+  PRETE_POUR_RETRAIT
+  /// Pret, et il part en livraison. **C'est le point de jonction avec P8** :
+  /// la course, l'enchere des motards et le suivi commencent ici.
+  PRETE_POUR_LIVRAISON
+  /// Remis au patient, ou au motard pour une livraison.
+  RETIREE
+  /// Dossier clos. Etat terminal.
+  CLOTUREE
   /// Aucune pharmacie du quartier ne detient la totalite, ou aucune n'est
   /// partenaire. Le patient repart avec son ordonnance.
   SANS_PHARMACIE
@@ -1205,11 +2130,28 @@ model Commande {
   ordonnance   Ordonnance @relation(fields: [idOrdonnance], references: [id], onDelete: Cascade)
 
   /// La pharmacie qui a pris la commande. Nul tant que personne n'a declare
-  /// detenir la totalite — c'est ce champ qui porte le verrou d'attribution.
+  /// detenir la totalite â€” c'est ce champ qui porte le verrou d'attribution.
   idPharmacie     String?
   pharmacie       StructureSante? @relation("PharmacieCommande", fields: [idPharmacie], references: [id])
   priseEnChargeLe DateTime?
 
+  /// La somme des lignes, figee au chiffrage. Elle est redondante avec
+  /// `lignes`, et c'est voulu : une contrainte verifie qu'elles s'accordent,
+  /// et l'ecran n'a pas a recalculer un total pour l'afficher.
+  montantTotalGnf Int?
+
+  chiffreeLe DateTime?
+  preteLe    DateTime?
+  remiseLe   DateTime?
+  clotureeLe DateTime?
+
+  /// Pourquoi la commande a ete annulee. Exige par contrainte des que le
+  /// statut est ANNULEE : une annulation sans motif ne s'explique pas trois
+  /// semaines plus tard, et c'est toujours a ce moment qu'on la cherche.
+  motifAnnulation String?
+
+  lignes   LigneCommande[]
+  facture  Facture?
   reponses ReponsePharmacie[]
 
   @@index([statut])
@@ -1218,14 +2160,48 @@ model Commande {
 }
 
 /// Ce que chaque pharmacie sollicitee a repondu. On garde la trace meme des
-/// reponses negatives : c'est ce qui permet de dire au patient « trois
-/// pharmacies ont ete interrogees, aucune n'avait tout ».
+/// reponses negatives : c'est ce qui permet de dire au patient Â« trois
+/// pharmacies ont ete interrogees, aucune n'avait tout Â».
+/// Une ligne du panier, au prix de l'officine qui a pris la commande.
+///
+/// **Les libelles et les prix sont figes ici, pas lus du catalogue.** Le
+/// catalogue national evolue, les marges d'une officine aussi ; ce que le
+/// patient a accepte de payer ce jour-la ne doit pas bouger derriere lui.
+/// C'est la meme raison qui fait figer `alertes` sur une ligne d'ordonnance.
+///
+/// Le prix suit exactement la regle du comptoir : prix national de reference
+/// plus la marge de l'officine. Deux regles de prix divergeraient en silence.
+model LigneCommande {
+  id String @id @default(cuid())
+
+  /// Le libelle tel qu'il a ete montre au patient.
+  libelle         String
+  quantite        Int
+  prixUnitaireGnf Int
+  /// `quantite * prixUnitaireGnf`, figee. Une contrainte le verifie.
+  montantGnf      Int
+
+  creeLe DateTime @default(now())
+
+  idCommande String
+  commande   Commande @relation(fields: [idCommande], references: [id], onDelete: Cascade)
+
+  /// La ligne d'ordonnance servie, pour remonter a la prescription.
+  idLigneOrdonnance String
+  idMedicament      String
+  medicament        Medicament @relation(fields: [idMedicament], references: [id])
+
+  @@unique([idCommande, idLigneOrdonnance])
+  @@index([idCommande])
+  @@map("lignes_commande")
+}
+
 model ReponsePharmacie {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   aTousLesProduits Boolean
-  repondueLe       DateTime @default(now())
+  repondueLe       DateTime  @default(now())
   /// Renseigne quand une pharmacie se retracte apres avoir pris la commande.
-  retracteeLe DateTime?
+  retracteeLe      DateTime?
 
   idCommande String
   commande   Commande @relation(fields: [idCommande], references: [id], onDelete: Cascade)
@@ -1236,4 +2212,324 @@ model ReponsePharmacie {
   @@unique([idCommande, idStructure])
   @@index([idCommande])
   @@map("reponses_pharmacie")
+}
+
+// ============================================================
+// Vente au comptoir (addendum du 2026-09-28, points 1.1 et 1.2)
+// ============================================================
+
+/// Une vente au comptoir d'officine.
+///
+/// `Facture` ne pouvait pas la porter : elle n'a aucune ligne — donc on ne
+/// sait pas ce qui a ete vendu, et il n'y a rien a totaliser dans un tableau
+/// de bord — elle exige un `idPatient`, alors qu'un client de passage n'a pas
+/// de dossier, et elle ne porte ni vendeur, ni remise, ni etablissement.
+/// Elle reste donc la note d'une consultation, et la vente vit ici.
+model VenteComptoir {
+  id     String      @id @default(cuid())
+  numero String      @unique
+  statut StatutVente @default(PAYEE)
+
+  /// Somme des lignes avant remise, la remise, et ce qui est reellement
+  /// encaisse. Les trois sont stockes : recalculer le net a la lecture
+  /// supposerait que la regle de remise n'a jamais change.
+  montantBrutGnf Int
+  remiseGnf      Int @default(0)
+  montantNetGnf  Int
+
+  modePaiement    ModePaiement
+  numeroOperateur String?
+
+  /// Facultatif : un passant n'a pas de dossier, et l'obliger a en ouvrir un
+  /// pour acheter du savon n'a pas de sens. Renseigne, il relie la vente a
+  /// l'historique du patient.
+  idPatient String?
+  patient   PatientProfile? @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  /// Facultative, sauf si la vente contient un produit reglemente ou d'une
+  /// categorie que les parametres soumettent a ordonnance (EF-05-12).
+  idOrdonnance String?
+  ordonnance   Ordonnance? @relation(fields: [idOrdonnance], references: [id], onDelete: Restrict)
+
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idVendeur String
+  vendeur   Utilisateur @relation("VentesVendeur", fields: [idVendeur], references: [id], onDelete: Restrict)
+
+  /// Tiers payant (EF-09). Sans contrat, l'assure paie tout : `montantAssureGnf`
+  /// reste a 0 et `montantPatientGnf` egale le net.
+  idContratAssurance String?
+  contratAssurance   ContratAssurance? @relation(fields: [idContratAssurance], references: [id], onDelete: Restrict)
+
+  /// Ce que l'assureur prend, et ce que le patient paie. Les deux sont
+  /// stockes : recalculer la part de l'assureur a la lecture supposerait que
+  /// ni les taux ni les exclusions n'ont change depuis.
+  montantAssureGnf  Int @default(0)
+  montantPatientGnf Int @default(0)
+
+  /// L'operation de la passerelle de paiement, quand la vente passe par elle.
+  ///
+  /// **C'est la cle stable.** On relit le statut par elle, jamais par le
+  /// numero de commande : un meme numero peut porter plusieurs operations, et
+  /// la passerelle rend alors la plus recente — ce qui masquerait un paiement
+  /// deja reussi si le client recommence.
+  idOperation String? @unique
+
+  /// Le lien de paiement, affiche en QR au comptoir pour que le client le
+  /// scanne avec son propre telephone.
+  urlPaiement String?
+
+  /// Le dernier etat connu cote passerelle (`new`, `pending`, `success`,
+  /// `canceled`, `failed`, `error`, `expired`).
+  statutOperateur String?
+
+  /// **La preuve.** La reference rendue par l'operateur une fois le paiement
+  /// abouti : c'est elle qu'on oppose si quelqu'un conteste. Sans elle, un
+  /// « paye en Orange Money » n'est qu'une case cochee par un agent.
+  referenceTransaction String?
+
+  annuleeLe       DateTime?
+  motifAnnulation String?
+  idAnnuleePar    String?
+  annuleePar      Utilisateur? @relation("VentesAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
+
+  creeLe DateTime @default(now())
+
+  lignes LigneVente[]
+
+  @@index([idStructure, creeLe(sort: Desc)])
+  @@index([idStructure, statut])
+  @@map("ventes_comptoir")
+}
+
+model LigneVente {
+  id       String @id @default(cuid())
+  quantite Int
+
+  /// Prix figes au moment de la vente : prix national de reference plus la
+  /// marge de l'officine. Les relire du catalogue plus tard donnerait un
+  /// chiffre d'affaires qui change quand un tarif change.
+  prixUnitaireGnf Int
+  montantGnf      Int
+
+  /// Les lots effectivement consommes, au format `[{ idLot, quantite }]`.
+  /// Deux usages : annuler une erreur de saisie en remettant exactement ce qui
+  /// est sorti, et savoir quel lot est parti chez qui en cas de rappel.
+  lotsConsommes Json
+
+  /// Le detail de la prise en charge, ligne par ligne (addendum, point 5.4).
+  ///
+  /// « Un reste a charge sans explication se conteste au comptoir » : le taux
+  /// applique et, le cas echeant, le motif d'exclusion sont donc figes ici.
+  couvert              Boolean @default(false)
+  tauxAppliquePourcent Int     @default(0)
+  montantAssureGnf     Int     @default(0)
+  motifExclusion       String?
+
+  idVente String
+  vente   VenteComptoir @relation(fields: [idVente], references: [id], onDelete: Cascade)
+
+  idMedicament String
+  medicament   Medicament @relation(fields: [idMedicament], references: [id], onDelete: Restrict)
+
+  @@index([idVente])
+  @@index([idMedicament])
+  @@map("lignes_vente")
+}
+
+// ============================================================
+// Assurance et tiers payant (EF-09, addendum du 2026-09-28 point 5)
+// ============================================================
+
+/// Un assureur.
+///
+/// Rattache a une structure de type ASSURANCE quand il a des agents sur la
+/// plateforme : ils se connectent alors comme tout le monde, avec les droits
+/// de leur structure. Un assureur sans agents reste utilisable — ses contrats
+/// sont saisis par l'administration.
+model Assureur {
+  id        String  @id @default(cuid())
+  nom       String
+  /// Code court, celui qui figure sur la carte de l'assure.
+  code      String  @unique
+  telephone String?
+  email     String?
+  estActif  Boolean @default(true)
+
+  modeEchange ModeEchangeAssureur @default(MANUEL)
+
+  idStructure String?         @unique
+  structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
+
+  contrats   ContratAssurance[]
+  regles     RegleCouverture[]
+  reglements ReglementAssureur[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@map("assureurs")
+}
+
+/// Ce qu'un assureur a effectivement verse a une pharmacie (addendum, point 5.2).
+///
+/// **Sans cette table, « ce qui est paye » et « ce qui reste du » ne sont pas
+/// calculables.** On sait ce que l'assureur doit — c'est la somme des parts
+/// assureur des ventes — mais rien ne dit ce qu'il a regle. L'ecart entre les
+/// deux est precisement ce que l'addendum demande de montrer.
+///
+/// Le versement couvre une periode et non des ventes nommees : c'est ainsi
+/// qu'une compagnie regle une officine, par bordereau mensuel. Rattacher
+/// chaque virement a des lignes de vente supposerait un rapprochement que
+/// personne ne fait a la main.
+model ReglementAssureur {
+  id String @id @default(cuid())
+
+  idAssureur String
+  assureur   Assureur @relation(fields: [idAssureur], references: [id], onDelete: Cascade)
+
+  /// La pharmacie reglee. `Restrict` : un versement est une trace comptable,
+  /// il ne disparait pas avec la fiche de l'officine.
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  /// En francs guineens, toujours positif. Un remboursement en sens inverse
+  /// serait un autre geste, avec son propre motif.
+  montantGnf Int
+
+  /// La periode couverte. Le debut est inclus, la fin incluse : c'est ainsi
+  /// qu'un bordereau se lit, « du 1er au 30 septembre ».
+  periodeDebut DateTime @db.Date
+  periodeFin   DateTime @db.Date
+
+  /// Reference du virement ou du bordereau, telle que la compagnie la connait.
+  reference String?
+
+  /// Qui a saisi, pour que le chiffre ait un auteur.
+  idSaisiPar String
+  saisiPar   Utilisateur @relation("ReglementsAssureur", fields: [idSaisiPar], references: [id], onDelete: Restrict)
+
+  creeLe DateTime @default(now())
+
+  @@index([idAssureur, idStructure])
+  @@index([idAssureur, periodeFin])
+  @@map("reglements_assureur")
+}
+
+/// Le contrat d'un patient chez un assureur.
+model ContratAssurance {
+  id           String @id @default(cuid())
+  /// Le numero de police, tel qu'il figure sur la carte.
+  numeroPolice String
+
+  /// Taux de base, en pourcentage.
+  ///
+  /// **100 ne veut pas dire « tout est pris »** : il s'applique a ce qui est
+  /// couvert, apres exclusions et dans la limite des plafonds. Un assure a
+  /// 100 % paie quand meme son lait infantile.
+  tauxBasePourcent Int @default(80)
+
+  /// Plafond annuel de prise en charge, en GNF. 0 = pas de plafond.
+  plafondAnnuelGnf Int @default(0)
+
+  /// Franchise, en GNF : toujours a la charge du patient, deduite de la part
+  /// de l'assureur.
+  franchiseGnf Int @default(0)
+
+  dateEffet DateTime
+  dateFin   DateTime?
+
+  /// Carence : jours apres la date d'effet pendant lesquels rien n'est pris.
+  /// C'est ce qui empeche de s'assurer la veille d'une depense connue.
+  carenceJours Int @default(0)
+
+  statut StatutContrat @default(ACTIF)
+
+  idAssureur String
+  assureur   Assureur @relation(fields: [idAssureur], references: [id], onDelete: Restrict)
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  ventes    VenteComptoir[]
+  controles ControleEligibilite[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@unique([idAssureur, numeroPolice])
+  @@index([idPatient, statut])
+  @@map("contrats_assurance")
+}
+
+/// Une regle de couverture par categorie de produit.
+///
+/// C'est ici que vivent les exclusions citees par le chef de projet : le lait
+/// infantile, les cosmetiques. Elles visent `CategorieProduit`, une
+/// enumeration fermee — on ne fonde pas une regle de remboursement sur un
+/// champ que chacun remplit comme il veut.
+///
+/// `dateEffet` permet de changer un taux sans reecrire le passe : le calcul
+/// retient la regle en vigueur a la date de la vente (EF-09-03).
+model RegleCouverture {
+  id        String           @id @default(cuid())
+  categorie CategorieProduit
+
+  /// Exclu : rien n'est pris, quel que soit le taux du contrat.
+  exclu Boolean @default(false)
+
+  /// Taux propre a cette categorie. Null : le taux de base du contrat.
+  tauxPourcent Int?
+
+  /// Plafond par ligne de vente, en GNF. 0 = pas de plafond.
+  plafondLigneGnf Int @default(0)
+
+  dateEffet DateTime @default(now())
+
+  idAssureur String
+  assureur   Assureur @relation(fields: [idAssureur], references: [id], onDelete: Cascade)
+
+  creeLe DateTime @default(now())
+
+  @@index([idAssureur, categorie, dateEffet])
+  @@map("regles_couverture")
+}
+
+/// Un controle d'eligibilite au comptoir (addendum, point 5.1).
+///
+/// La reponse est **figee** : c'est elle qui sera opposable si l'assureur
+/// contente la prise en charge plus tard. On ne la recalcule donc jamais, on
+/// la relit.
+model ControleEligibilite {
+  id String @id @default(cuid())
+
+  eligible Boolean
+  /// Pourquoi la reponse est negative, en clair : c'est ce que le comptoir
+  /// explique au patient.
+  motif    String?
+
+  /// Ce qui a ete lu au moment du controle, recopie pour que la reponse reste
+  /// lisible meme si le contrat change ensuite.
+  numeroPolice     String?
+  tauxBasePourcent Int?
+
+  idContrat String?
+  contrat   ContratAssurance? @relation(fields: [idContrat], references: [id], onDelete: SetNull)
+
+  idPatient String
+  patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  /// Ou le controle a eu lieu, et qui l'a fait.
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idControlePar String
+  controlePar   Utilisateur @relation("ControlesEligibilite", fields: [idControlePar], references: [id], onDelete: Restrict)
+
+  creeLe DateTime @default(now())
+
+  @@index([idPatient, creeLe(sort: Desc)])
+  @@index([idStructure, creeLe(sort: Desc)])
+  @@map("controles_eligibilite")
 }

@@ -1,7 +1,7 @@
 // shared/components/hopital-layout/hopital-layout.component.ts
-// Espace « Accueil hopital » (role AGENT_ACCUEIL) : admission, episodes de
+// Espace Â« Accueil hopital Â» (role AGENT_ACCUEIL) : admission, episodes de
 // soins, demandes d'analyse. Meme coquille que les autres espaces.
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -52,7 +52,15 @@ export class HopitalLayoutComponent {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
-  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  /**
+   * Sur mobile la barre s'ouvre par-dessus ; sur grand écran elle est ancrée,
+   * et le même bouton la replie sur ses icônes. Un seul bouton, deux gestes
+   * selon la place disponible.
+   */
+  toggleSidebar() {
+    if (this.layout.estMobile()) this.sidebarOpen.update(v => !v);
+    else this.layout.basculerRepli();
+  }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
@@ -76,10 +84,24 @@ export class HopitalLayoutComponent {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  navItems = [
-    { labelKey: 'HOPITAL.NAV_DASHBOARD', icon: 'pi-th-large',  route: '/hopital/tableau-de-bord' },
-    { labelKey: 'HOPITAL.NAV_ADMISSION', icon: 'pi-user-plus', route: '/hopital/admission' },
-    { labelKey: 'HOPITAL.NAV_EPISODES',  icon: 'pi-folder',    route: '/hopital/episodes' },
-    { labelKey: 'HOPITAL.NAV_ALERTES',   icon: 'pi-bell',      route: '/hopital/alertes' },
-  ];
+  /**
+   * Les alertes de valeurs critiques ne concernent plus l'agent d'accueil :
+   * depuis l'addendum du 2026-09-28 il ne prescrit plus, donc aucune alerte ne
+   * lui est destinÃ©e, et l'API lui a fermÃ© la lecture des rÃ©sultats. L'entrÃ©e
+   * reste pour l'administrateur de structure, vers qui les escalades partent.
+   */
+  readonly navItems = computed(() => {
+    const items = [
+      { labelKey: 'HOPITAL.NAV_DASHBOARD', icon: 'pi-th-large',  route: '/hopital/tableau-de-bord' },
+      { labelKey: 'HOPITAL.NAV_ADMISSION', icon: 'pi-user-plus', route: '/hopital/admission' },
+      { labelKey: 'HOPITAL.NAV_EPISODES',  icon: 'pi-folder',    route: '/hopital/episodes' },
+      { labelKey: 'HOPITAL.NAV_PRESENCES', icon: 'pi-user-edit', route: '/hopital/presences' },
+      { labelKey: 'HOPITAL.NAV_DEMANDES',  icon: 'pi-directions', route: '/hopital/demandes' },
+      { labelKey: 'HOPITAL.NAV_IDENTITES', icon: 'pi-id-card',   route: '/hopital/identites' },
+    ];
+    if (this.currentUser()?.role !== 'AGENT_ACCUEIL') {
+      items.push({ labelKey: 'HOPITAL.NAV_ALERTES', icon: 'pi-bell', route: '/hopital/alertes' });
+    }
+    return items;
+  });
 }

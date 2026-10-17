@@ -1,0 +1,510 @@
+<div class="bb-identites">
+
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <!-- L'écran est partagé entre l'accueil et l'administration de
+           structure (EF-01-06). Le badge disait « Accueil hôpital » même
+           ouvert depuis l'administration : il annonçait le mauvais espace. -->
+      <span class="bb-page-head__tag"><i class="pi pi-id-card" aria-hidden="true"></i> {{ badgeEspace() | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'HOPITAL.IDENTITES.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'HOPITAL.IDENTITES.SUBTITLE' | translate }}</p>
+    </div>
+  </header>
+  <app-export-liste
+    [titre]="'EXPORT.DOC.IDENTITES'"
+    [colonnes]="colonnes"
+    [lignes]="patients()"
+    [nomFichier]="'identites-patients'" />
+
+
+  <!-- La phrase qui évite une faute grave : un agent ne doit jamais croire
+       qu'il peut refuser quelqu'un sans papiers. -->
+  <div class="identites-avis" role="note">
+    <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+    <span>{{ 'HOPITAL.IDENTITES.NOTE' | translate }}</span>
+  </div>
+
+  <mat-card class="identites-filtres">
+    <div class="identites-filtres__grille">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'HOPITAL.IDENTITES.SEARCH' | translate }}</mat-label>
+        <input matInput [ngModel]="q()" (ngModelChange)="q.set($event)" (keyup.enter)="charger()"
+               placeholder="Nom, téléphone, code QR…" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'HOPITAL.IDENTITES.LEVEL' | translate }}</mat-label>
+        <mat-select [ngModel]="niveau()" (ngModelChange)="niveau.set($event); charger()">
+          <mat-option value="">{{ 'HOPITAL.IDENTITES.ALL_LEVELS' | translate }}</mat-option>
+          <mat-option value="PROVISOIRE">{{ 'HOPITAL.IDENTITES.PROVISOIRE' | translate }}</mat-option>
+          <mat-option value="VERIFIEE">{{ 'HOPITAL.IDENTITES.VERIFIEE' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <button mat-flat-button color="primary" (click)="charger()" [disabled]="chargement()">
+      <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
+      {{ 'HOPITAL.IDENTITES.SEARCH_BTN' | translate }}
+    </button>
+  </mat-card>
+
+  @if (succes()) {
+    <div class="identites-succes" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+  @if (erreur() && !cible()) {
+    <div class="identites-erreur" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  @if (chargement()) {
+    <div class="bb-empty" role="status">
+      <mat-spinner diameter="28"></mat-spinner>
+      <p>{{ 'COMMON.LOADING' | translate }}</p>
+    </div>
+  } @else if (patients().length === 0) {
+    <div class="bb-empty">
+      <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+      <p>{{ 'HOPITAL.IDENTITES.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    <div class="identites-table-wrap">
+      <table class="identites-table">
+        <thead>
+          <tr>
+            <th>{{ 'HOPITAL.IDENTITES.PATIENT' | translate }}</th>
+            <th>{{ 'HOPITAL.IDENTITES.TRAITS' | translate }}</th>
+            <th>{{ 'HOPITAL.IDENTITES.LEVEL' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of patients(); track p.id) {
+            <tr [class.identites-table__row--provisoire]="p.niveauIdentite === 'PROVISOIRE'">
+              <td>
+                <span class="identites-table__nom">{{ p.nomComplet }}</span>
+                <span class="identites-table__sous">
+                  {{ p.dateNaissance | date:'dd/MM/yyyy' }} · {{ p.sexe }} · {{ p.telephone }}
+                </span>
+              </td>
+              <td>
+                <!-- Les deux traits qui tranchent entre homonymes. Ce qui
+                     manque est dit, pour que l'agent sache quoi demander. -->
+                @if (p.lieuNaissance) {
+                  <span class="identites-table__trait">{{ 'HOPITAL.IDENTITES.BORN_IN' | translate:{ lieu: p.lieuNaissance } }}</span>
+                }
+                @if (p.nomMere) {
+                  <span class="identites-table__trait">{{ 'HOPITAL.IDENTITES.MOTHER' | translate:{ nom: p.nomMere } }}</span>
+                }
+                @if (p.traitsManquants.length > 0) {
+                  <span class="identites-table__manque">
+                    {{ 'HOPITAL.IDENTITES.MISSING' | translate:{ n: p.traitsManquants.length } }}
+                  </span>
+                }
+              </td>
+              <td>
+                @if (p.niveauIdentite === 'VERIFIEE') {
+                  <span class="identites-table__niveau identites-table__niveau--ok">
+                    {{ 'HOPITAL.IDENTITES.VERIFIEE' | translate }}
+                  </span>
+                  <!-- La pièce est nommée, son numéro masqué : il prouve
+                       qu'une pièce a été vue, il n'a pas à être recopié. -->
+                  <span class="identites-table__piece">
+                    {{ 'HOPITAL.IDENTITES.PIECE_' + p.typePiece | translate }} · {{ p.numeroPieceMasque }}
+                  </span>
+                  <span class="identites-table__par">
+                    {{ 'HOPITAL.IDENTITES.BY' | translate:{ qui: p.verifieePar ?? '—' } }}
+                    · {{ p.verifieeLe | date:'shortDate' }}
+                  </span>
+                } @else {
+                  <span class="identites-table__niveau identites-table__niveau--provisoire">
+                    {{ 'HOPITAL.IDENTITES.PROVISOIRE' | translate }}
+                  </span>
+                  <span class="identites-table__consequence">{{ 'HOPITAL.IDENTITES.NO_TP' | translate }}</span>
+                }
+              </td>
+              <td class="identites-table__actions">
+                <button mat-stroked-button (click)="ouvrir(p)" [disabled]="enCours()">
+                  {{ (p.niveauIdentite === 'VERIFIEE' ? 'HOPITAL.IDENTITES.REPLACE' : 'HOPITAL.IDENTITES.VERIFY')
+                     | translate }}
+                </button>
+                <!-- À la demande : dix lignes ne doivent pas faire dix requêtes. -->
+                <button mat-button class="identites-table__doublons" (click)="voirDoublons(p)">
+                  <mat-icon fontSet="pi" fontIcon="pi-users" aria-hidden="true"></mat-icon>
+                  {{ 'HOPITAL.IDENTITES.DOUBLONS' | translate }}
+                </button>
+                <button mat-button class="identites-table__doublons" (click)="voirFusions(p)">
+                  <mat-icon fontSet="pi" fontIcon="pi-history" aria-hidden="true"></mat-icon>
+                  {{ 'HOPITAL.IDENTITES.FUSION_HISTORIQUE' | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- La vérification. L'agent déclare avoir vu une pièce : ce n'est pas un
+       formulaire de plus, c'est un engagement. -->
+  @if (cible(); as p) {
+    <div class="identites-boite" role="dialog" aria-modal="true">
+      <mat-card class="identites-boite__carte">
+        <h2>{{ 'HOPITAL.IDENTITES.CONFIRM_TITLE' | translate:{ nom: p.nomComplet } }}</h2>
+        <p class="identites-boite__engagement">{{ 'HOPITAL.IDENTITES.ENGAGEMENT' | translate }}</p>
+
+        @if (dejaVerifiee()) {
+          <div class="identites-boite__deja" role="note">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ 'HOPITAL.IDENTITES.ALREADY' | translate }}</span>
+          </div>
+          <mat-checkbox [ngModel]="remplacerPiece()" (ngModelChange)="remplacerPiece.set($event)">
+            {{ 'HOPITAL.IDENTITES.CONFIRM_REPLACE' | translate }}
+          </mat-checkbox>
+        }
+
+        <div class="identites-boite__grille">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.PIECE' | translate }}</mat-label>
+            <mat-select [ngModel]="typePiece()" (ngModelChange)="typePiece.set($event)">
+              @for (t of pieces; track t) {
+                <mat-option [value]="t">{{ 'HOPITAL.IDENTITES.PIECE_' + t | translate }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.NUMBER' | translate }}</mat-label>
+            <input matInput [ngModel]="numeroPiece()" (ngModelChange)="numeroPiece.set($event)" />
+            <mat-hint>{{ 'HOPITAL.IDENTITES.NUMBER_WHY' | translate }}</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.BIRTHPLACE' | translate }}</mat-label>
+            <input matInput [ngModel]="lieuNaissance()" (ngModelChange)="lieuNaissance.set($event)" />
+            <mat-hint>{{ 'HOPITAL.IDENTITES.BIRTHPLACE_WHY' | translate }}</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HOPITAL.IDENTITES.MOTHER_NAME' | translate }}</mat-label>
+            <input matInput [ngModel]="nomMere()" (ngModelChange)="nomMere.set($event)" />
+            <!-- Facultatif : absent d'un passeport. Mais c'est le trait le
+                 plus discriminant entre homonymes. -->
+            <mat-hint>{{ 'HOPITAL.IDENTITES.MOTHER_WHY' | translate }}</mat-hint>
+          </mat-form-field>
+        </div>
+
+        @if (erreur()) {
+          <div class="identites-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreur() }}</span>
+          </div>
+        }
+
+        <div class="identites-boite__actions">
+          <button mat-stroked-button (click)="annuler()" [disabled]="enCours()">
+            {{ 'HOPITAL.IDENTITES.CANCEL' | translate }}
+          </button>
+          <button mat-flat-button color="primary" (click)="confirmer()" [disabled]="!peutVerifier()">
+            {{ 'HOPITAL.IDENTITES.CONFIRM' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Les doublons possibles (EF-01-05).
+
+       Ce panneau ne conclut pas et ne fusionne rien. Il montre des dossiers à
+       regarder, avec **ce qui concorde** écrit en français : c'est cela que
+       l'agent lit pour décider, pas le score. Et il dit que la fusion n'est
+       pas encore outillée, plutôt que d'offrir un bouton inerte. -->
+  @if (patientDoublons(); as p) {
+    <div class="identites-boite" role="dialog" aria-modal="true">
+      <mat-card class="identites-boite__carte identites-doublons">
+        <h2>{{ 'HOPITAL.IDENTITES.DOUBLONS_TITRE' | translate:{ nom: p.nomComplet } }}</h2>
+
+        <div class="identites-avis" role="note">
+          <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+          <span>{{ 'HOPITAL.IDENTITES.DOUBLONS_AVIS' | translate }}</span>
+        </div>
+
+        @if (chargementDoublons()) {
+          <div class="bb-empty" role="status">
+            <mat-spinner diameter="28"></mat-spinner>
+            <p>{{ 'COMMON.LOADING' | translate }}</p>
+          </div>
+        } @else if (erreurDoublons()) {
+          <div class="identites-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreurDoublons() }}</span>
+          </div>
+        } @else if (candidats().length === 0) {
+          <!-- « Aucun » ne veut pas dire « il n'y en a pas » : la recherche a
+               ses angles morts, et l'écran les dit. -->
+          <div class="bb-empty">
+            <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+            <p>{{ 'HOPITAL.IDENTITES.DOUBLONS_AUCUN' | translate }}</p>
+          </div>
+        } @else {
+          <ul class="identites-doublons__liste">
+            @for (c of candidats(); track c.id) {
+              <li class="identites-doublons__ligne"
+                  [class.identites-doublons__ligne--probable]="c.probable">
+                <div class="identites-doublons__tete">
+                  <span class="identites-doublons__nom">{{ c.nomComplet }}</span>
+                  <span class="identites-doublons__etat"
+                        [class.identites-doublons__etat--probable]="c.probable">
+                    {{ (c.probable ? 'HOPITAL.IDENTITES.DOUBLONS_PROBABLE'
+                                   : 'HOPITAL.IDENTITES.DOUBLONS_A_VERIFIER') | translate }}
+                  </span>
+                  <span class="identites-doublons__score">
+                    {{ 'HOPITAL.IDENTITES.DOUBLONS_SCORE' | translate:{ score: c.score } }}
+                  </span>
+                </div>
+
+                <div class="identites-doublons__sous">
+                  {{ c.dateNaissance | date:'dd/MM/yyyy' }} · {{ c.telephone }}
+                  @if (c.lieuNaissance) { · {{ c.lieuNaissance }} }
+                  @if (c.nomMere) { · {{ 'HOPITAL.IDENTITES.MOTHER' | translate:{ nom: c.nomMere } }} }
+                </div>
+
+                <!-- C'est ici que l'agent décide. Le score seul ne dit rien. -->
+                <div class="identites-doublons__traits">
+                  <span class="identites-doublons__traits-titre">
+                    {{ 'HOPITAL.IDENTITES.DOUBLONS_POURQUOI' | translate }}
+                  </span>
+                  @for (t of c.traits; track t) {
+                    <span class="identites-doublons__trait">
+                      {{ 'HOPITAL.IDENTITES.TRAIT_' + t | translate }}
+                    </span>
+                  }
+                </div>
+
+                <!-- La fusion n'est offerte qu'à ADMIN_STRUCTURE, comme
+                     l'API l'impose : proposer une action qu'on n'a pas le
+                     droit de faire est une façon de mentir. -->
+                @if (peutFusionner()) {
+                  <div class="identites-doublons__action">
+                    <button mat-stroked-button (click)="ouvrirFusion(c)">
+                      <mat-icon fontSet="pi" fontIcon="pi-link" aria-hidden="true"></mat-icon>
+                      {{ 'HOPITAL.IDENTITES.FUSION' | translate }}
+                    </button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+
+          <!-- Depuis EF-01-06 la fusion existe, mais seule l'administration
+               de structure peut la faire. Un agent d'accueil doit savoir quoi
+               faire du doublon qu'il vient de trouver. -->
+          @if (!peutFusionner()) {
+            <p class="identites-doublons__pas-outille">
+              <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+              {{ 'HOPITAL.IDENTITES.DOUBLONS_PAS_OUTILLE' | translate }}
+            </p>
+          }
+        }
+
+        <div class="identites-boite__actions">
+          <button mat-flat-button color="primary" (click)="fermerDoublons()">
+            {{ 'HOPITAL.IDENTITES.DOUBLONS_FERMER' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+
+<!-- Le message qui suit une fusion.
+
+     Il dit **ce qui a réellement bougé**, et non « opération réussie ». Et il
+     rappelle que la fusion est annulable : c'est ce qui rend l'acte
+     acceptable. -->
+@if (derniereFusion(); as f) {
+  <div class="identites-succes identites-fusion-faite" role="status">
+    <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+    <div>
+      <!-- « 0 ligne déplacée » se lit « il ne s'est rien passé ». Le lien est
+           pourtant posé, et la fusion annulable : l'écran le dit autrement. -->
+      <p>{{ (lignesBougees(f) > 0 ? 'HOPITAL.IDENTITES.FUSION_FAITE'
+                                  : 'HOPITAL.IDENTITES.FUSION_FAITE_VIDE') | translate:{
+            absorbe: f.absorbe.nomComplet, principal: f.principal.nomComplet,
+            n: lignesBougees(f) } }}</p>
+      <ul class="identites-fusion__lignes">
+        @for (l of f.lignes; track l.tableCible + l.operation) {
+          <li>{{ l.nombre }} · {{ l.tableCible }} ·
+            {{ 'HOPITAL.IDENTITES.FUSION_OP_' + l.operation | translate }}</li>
+        }
+      </ul>
+      <!-- Un consentement restreint se redemande au patient : l'agent doit le
+           savoir, sinon personne ne le saura. -->
+      @if (consentementsRestreints(f) > 0) {
+        <p class="identites-fusion__restreints">
+          <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+          {{ 'HOPITAL.IDENTITES.FUSION_RESTREINTS' | translate:{ n: consentementsRestreints(f) } }}
+        </p>
+      }
+    </div>
+  </div>
+}
+
+<!-- La fusion. Un formulaire de plus ? Non : l'acte le plus dangereux du
+     produit. L'écran dit ce qui va bouger, ce qui ne bougera pas, et ce qui
+     se passe en cas de désaccord sur un consentement. -->
+@if (sensFusion(); as sens) {
+  <div class="identites-boite" role="dialog" aria-modal="true">
+    <mat-card class="identites-boite__carte identites-fusion">
+      <h2>{{ 'HOPITAL.IDENTITES.FUSION_TITRE' | translate:{
+            absorbe: sens.absorbe.nom, principal: sens.principal.nom } }}</h2>
+
+      <p class="identites-fusion__sens">
+        {{ 'HOPITAL.IDENTITES.FUSION_SENS' | translate:{
+              absorbe: sens.absorbe.nom, principal: sens.principal.nom } }}
+      </p>
+
+      <!-- Le sens n'est pas évident : c'est l'agent qui sait lequel des deux
+           dossiers porte l'histoire la plus complète. -->
+      <button mat-stroked-button class="identites-fusion__inverser"
+              (click)="garderLeCandidat.set(!garderLeCandidat())">
+        <mat-icon fontSet="pi" fontIcon="pi-sync" aria-hidden="true"></mat-icon>
+        {{ 'HOPITAL.IDENTITES.FUSION_INVERSER' | translate:{ nom: sens.absorbe.nom } }}
+      </button>
+
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_AVIS' | translate }}</span>
+      </div>
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-shield" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_AUDIT' | translate }}</span>
+      </div>
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-lock" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_CONSENTEMENTS' | translate }}</span>
+      </div>
+
+      <mat-form-field appearance="outline" class="identites-fusion__motif">
+        <mat-label>{{ 'HOPITAL.IDENTITES.FUSION_MOTIF' | translate }}</mat-label>
+        <textarea matInput rows="2" [ngModel]="motifFusion()"
+                  (ngModelChange)="motifFusion.set($event)"></textarea>
+        <mat-hint>{{ 'HOPITAL.IDENTITES.FUSION_MOTIF_AIDE' | translate }}</mat-hint>
+      </mat-form-field>
+
+      @if (erreurDoublons()) {
+        <div class="identites-erreur" role="alert">
+          <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+          <span>{{ erreurDoublons() }}</span>
+        </div>
+      }
+
+      <p class="identites-fusion__annulable">{{ 'HOPITAL.IDENTITES.FUSION_ANNULABLE' | translate }}</p>
+
+      <div class="identites-boite__actions">
+        <button mat-stroked-button (click)="fermerFusion()" [disabled]="fusionEnCours()">
+          {{ 'HOPITAL.IDENTITES.FUSION_RETOUR' | translate }}
+        </button>
+        <button mat-flat-button color="primary" (click)="confirmerFusion()"
+                [disabled]="!peutConfirmerFusion()">
+          {{ 'HOPITAL.IDENTITES.FUSION_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  </div>
+}
+
+<!-- L'historique. C'est de là qu'on annule. -->
+@if (historique().length > 0) {
+  <div class="identites-boite" role="dialog" aria-modal="true">
+    <mat-card class="identites-boite__carte identites-fusion">
+      <h2>{{ 'HOPITAL.IDENTITES.FUSION_HISTORIQUE' | translate }}</h2>
+      <ul class="identites-fusion__historique">
+        @for (f of historique(); track f.id) {
+          <li [class.identites-fusion__ancienne]="f.statut === 'ANNULEE'">
+            <div class="identites-fusion__tete">
+              <span class="identites-doublons__nom">
+                {{ f.absorbe.nomComplet }} → {{ f.principal.nomComplet }}
+              </span>
+              <span class="identites-doublons__etat"
+                    [class.identites-doublons__etat--probable]="f.statut === 'ACTIVE'">
+                {{ 'HOPITAL.IDENTITES.FUSION_STATUT_' + f.statut | translate }}
+              </span>
+            </div>
+            <div class="identites-doublons__sous">
+              {{ 'HOPITAL.IDENTITES.FUSION_LE' | translate:{
+                    date: (f.fusionneLe | date:'dd/MM/yyyy HH:mm') ?? '', qui: f.fusionnePar } }}
+            </div>
+            <p class="identites-fusion__motif-dit">« {{ f.motif }} »</p>
+            <ul class="identites-fusion__lignes">
+              @for (l of f.lignes; track l.tableCible + l.operation) {
+                <li>{{ l.nombre }} · {{ l.tableCible }} ·
+                  {{ 'HOPITAL.IDENTITES.FUSION_OP_' + l.operation | translate }}</li>
+              }
+            </ul>
+            @if (f.statut === 'ANNULEE') {
+              <p class="identites-fusion__motif-dit">
+                {{ 'HOPITAL.IDENTITES.FUSION_STATUT_ANNULEE' | translate }} :
+                « {{ f.motifAnnulation }} » — {{ f.annuleePar }}
+              </p>
+            } @else if (peutFusionner()) {
+              <button mat-stroked-button (click)="ouvrirAnnulation(f)">
+                <mat-icon fontSet="pi" fontIcon="pi-undo" aria-hidden="true"></mat-icon>
+                {{ 'HOPITAL.IDENTITES.FUSION_ANNULER' | translate }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+      <div class="identites-boite__actions">
+        <button mat-flat-button color="primary" (click)="historique.set([])">
+          {{ 'HOPITAL.IDENTITES.FUSION_FERMER' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  </div>
+}
+
+<!-- L'annulation. Elle dit exactement ce qui sera rendu, et ce qui ne le sera
+     pas : ce qui a été ajouté au dossier survivant depuis la fusion y reste. -->
+@if (aAnnuler(); as f) {
+  <div class="identites-boite" role="dialog" aria-modal="true">
+    <mat-card class="identites-boite__carte identites-fusion">
+      <h2>{{ 'HOPITAL.IDENTITES.FUSION_ANNULER_TITRE' | translate:{
+            absorbe: f.absorbe.nomComplet } }}</h2>
+
+      <div class="identites-avis" role="note">
+        <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+        <span>{{ 'HOPITAL.IDENTITES.FUSION_ANNULER_AVIS' | translate:{
+              absorbe: f.absorbe.nomComplet, principal: f.principal.nomComplet } }}</span>
+      </div>
+
+      <ul class="identites-fusion__lignes">
+        @for (l of f.lignes; track l.tableCible + l.operation) {
+          <li>{{ l.nombre }} · {{ l.tableCible }} ·
+            {{ 'HOPITAL.IDENTITES.FUSION_OP_' + l.operation | translate }}</li>
+        }
+      </ul>
+
+      <mat-form-field appearance="outline" class="identites-fusion__motif">
+        <mat-label>{{ 'HOPITAL.IDENTITES.FUSION_ANNULER_MOTIF' | translate }}</mat-label>
+        <textarea matInput rows="2" [ngModel]="motifAnnulation()"
+                  (ngModelChange)="motifAnnulation.set($event)"></textarea>
+      </mat-form-field>
+
+      <div class="identites-boite__actions">
+        <button mat-stroked-button (click)="aAnnuler.set(null)" [disabled]="fusionEnCours()">
+          {{ 'HOPITAL.IDENTITES.FUSION_RETOUR' | translate }}
+        </button>
+        <button mat-flat-button color="primary" (click)="confirmerAnnulation()"
+                [disabled]="!peutConfirmerAnnulation()">
+          {{ 'HOPITAL.IDENTITES.FUSION_ANNULER_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  </div>
+}
+</div>

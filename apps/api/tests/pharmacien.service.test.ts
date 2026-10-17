@@ -4,6 +4,8 @@
 // passee sous silence.
 import {
   delivrerLigneOrdonnance,
+  getMedicaments,
+  getMedicamentsPrescriptibles,
   getOrdonnances,
   reapprovisionnerStock,
   scanPatient,
@@ -17,8 +19,11 @@ jest.mock('../src/config/prisma', () => ({
     patientProfile: { findUnique: jest.fn() },
     ordonnance: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     ligneOrdonnance: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-    medicament: { findUnique: jest.fn() },
+    medicament: { findUnique: jest.fn(), findMany: jest.fn() },
     stock: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+    lotStock: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+    // P6-b : l'acte de delivrance, nominatif, qui porte la quantite remise.
+    acteDelivrance: { create: jest.fn(), aggregate: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -31,8 +36,10 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     patientProfile: { findUnique: jest.Mock };
     ordonnance: { findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
     ligneOrdonnance: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
-    medicament: { findUnique: jest.Mock };
+    medicament: { findUnique: jest.Mock; findMany: jest.Mock };
     stock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    lotStock: { findMany: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
+    acteDelivrance: { create: jest.Mock; aggregate: jest.Mock };
     $transaction: jest.Mock;
   };
 };
@@ -88,6 +95,29 @@ function pharmacienValide() {
 }
 
 afterEach(() => jest.resetAllMocks());
+
+// Le stock se detaille en lots depuis le 2026-09-30 : entrees comme sorties
+// passent par une transaction. Le defaut ci-dessous la rend transparente ;
+// le bloc « delivrance » l'affine pour suivre la consommation des lots.
+const actesEcrits: number[] = [];
+
+beforeEach(() => {
+  prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(prisma));
+  prisma.lotStock.create.mockResolvedValue({});
+  prisma.lotStock.update.mockResolvedValue({});
+  // **L'agregat suit les actes crees.** Dans une transaction reelle, la somme
+  // lue apres l'insertion compte l'acte qu'on vient d'ecrire ; une doublure
+  // qui renverrait toujours zero ferait croire qu'une ligne n'a jamais rien
+  // recu et la laisserait EN_ATTENTE.
+  actesEcrits.length = 0;
+  prisma.acteDelivrance.create.mockImplementation(async (args: { data: Record<string, unknown> }) => {
+    actesEcrits.push(Number(args.data['quantite']) || 0);
+    return { id: 'acte-1', ...args.data, medicamentDelivre: PARACETAMOL };
+  });
+  prisma.acteDelivrance.aggregate.mockImplementation(async () => ({
+    _sum: { quantite: actesEcrits.reduce((t, q) => t + q, 0) },
+  }));
+});
 
 describe('garde commune : le compte doit etre rattache a une pharmacie', () => {
   it('refuse un pharmacien sans structure', async () => {
@@ -187,10 +217,30 @@ describe('delivrerLigneOrdonnance', () => {
     getValeursParametres.mockResolvedValue(PARAMETRES);
     prisma.ligneOrdonnance.findFirst.mockResolvedValue(null);
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn({
-      stock: { updateMany: prisma.stock.updateMany },
+      stock: { updateMany: prisma.stock.updateMany, update: prisma.stock.update, create: prisma.stock.create },
+      // La delivrance sort desormais du lot le plus proche de sa peremption.
+      lotStock: {
+        findMany: prisma.lotStock.findMany,
+        findFirst: prisma.lotStock.findFirst,
+        create: prisma.lotStock.create,
+        update: prisma.lotStock.update,
+      },
       ligneOrdonnance: { update: prisma.ligneOrdonnance.update },
       ordonnance: { findUnique: prisma.ordonnance.findUnique, update: prisma.ordonnance.update },
+      // P6-b : l'acte nominatif s'ecrit dans la meme transaction que la
+      // sortie de stock. Les deux doivent tomber ensemble, sinon le stock et
+      // la trace divergeraient.
+      acteDelivrance: {
+        create: prisma.acteDelivrance.create,
+        aggregate: prisma.acteDelivrance.aggregate,
+      },
     }));
+    // Un lot disponible, largement suffisant, pour que la sortie aboutisse.
+    prisma.lotStock.findMany.mockResolvedValue([
+      { id: 'lot-1', quantite: 1000, datePeremption: new Date('2030-01-01') },
+    ]);
+    prisma.lotStock.update.mockResolvedValue({});
+    prisma.lotStock.create.mockResolvedValue({});
     // Etat du document relu par recalculerStatut apres la sortie de stock.
     prisma.ordonnance.findUnique.mockResolvedValue({
       ...ORD_VALIDE,
@@ -215,7 +265,8 @@ describe('delivrerLigneOrdonnance', () => {
 
   it('delivre une ordonnance d ASC non signee tant que la signature n est pas imposee', async () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(ligneAvecOrdonnance({ signeLe: null }));
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 50, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
     prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
 
@@ -246,7 +297,8 @@ describe('delivrerLigneOrdonnance', () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(
       ligneAvecOrdonnance({ statut: 'SERVIE', renouvellementsAutorises: 2, renouvellementsUtilises: 0 })
     );
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 50, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
     prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
 
@@ -278,12 +330,17 @@ describe('delivrerLigneOrdonnance', () => {
     prisma.stock.findFirst.mockResolvedValue(null);
 
     await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).rejects.toBeInstanceOf(ValidationError);
-    expect(prisma.stock.findFirst).toHaveBeenCalledWith({ where: { idMedicament: 'm-1', idStructure: 'pharma-1' } });
+    // L'`include` est nouveau : l'acte fige le prix de ce qui est remis, donc
+    // la requete lit le produit de la ligne de stock.
+    expect(prisma.stock.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { idMedicament: 'm-1', idStructure: 'pharma-1' },
+    }));
   });
 
   it('echoue si le stock a baisse entre la lecture et le decrement (check-and-decrement atomique)', async () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(LIGNE);
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 10 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 10, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(delivrerLigneOrdonnance('l1', 'ph-u', {})).rejects.toBeInstanceOf(ValidationError);
@@ -292,7 +349,8 @@ describe('delivrerLigneOrdonnance', () => {
 
   it('decremente le stock, passe la ligne a DELIVREE et facture la quantite reellement delivree', async () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(LIGNE);
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 50, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
     prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
 
@@ -302,14 +360,20 @@ describe('delivrerLigneOrdonnance', () => {
       where: { id: 's1', quantite: { gte: 6 } },
       data: { quantite: { decrement: 6 } },
     });
-    expect(prisma.ligneOrdonnance.update).toHaveBeenCalledWith(expect.objectContaining({ data: { statut: 'DELIVREE' } }));
+    // **Six unites sur dix ne ferment pas la ligne.** L'ancienne version de ce
+    // test attendait `DELIVREE` : elle encodait le defaut. La quantite remise
+    // n'etait pas enregistree, la ligne se fermait quand meme, et les quatre
+    // unites restantes ne pouvaient plus etre servies — ni la, ni ailleurs.
+    expect(prisma.ligneOrdonnance.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { statut: 'PARTIELLEMENT_SERVIE' } }));
     expect(res.quantiteDelivree).toBe(6);
     expect(res.montantGnf).toBe(6_000);
   });
 
   it('passe le document a SERVIE quand sa derniere ligne sort', async () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(LIGNE);
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 50, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
     prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
 
@@ -322,7 +386,8 @@ describe('delivrerLigneOrdonnance', () => {
 
   it('laisse le document PARTIELLEMENT_SERVIE tant qu il reste un medicament', async () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(LIGNE);
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 50, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
     prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
     prisma.ordonnance.findUnique.mockResolvedValue({
@@ -339,7 +404,8 @@ describe('delivrerLigneOrdonnance', () => {
 
   it('delivre la quantite prescrite par defaut', async () => {
     prisma.ligneOrdonnance.findUnique.mockResolvedValue(LIGNE);
-    prisma.stock.findFirst.mockResolvedValue({ id: 's1', quantite: 50 });
+    prisma.stock.findFirst.mockResolvedValue(
+      { id: 's1', quantite: 50, margeGnf: 0, medicament: { prixUnitaireGnf: 1000 } });
     prisma.stock.updateMany.mockResolvedValue({ count: 1 });
     prisma.ligneOrdonnance.update.mockResolvedValue({ ...LIGNE, statut: 'DELIVREE' });
 
@@ -500,5 +566,39 @@ describe('reapprovisionnerStock', () => {
     expect(prisma.stock.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ margeGnf: 300 }),
     }));
+  });
+});
+
+// ── Les deux catalogues ──────────────────────────────────────────────
+//
+// Depuis le 2026-10-01 le catalogue contient des articles non medicamenteux.
+// Le comptoir les vend ; la prescription ne doit pas les proposer, sinon le
+// prescripteur choisit un lait infantile et decouvre le refus apres coup.
+describe('catalogues', () => {
+  it('le comptoir voit tout le catalogue, articles compris', async () => {
+    prisma.medicament.findMany.mockResolvedValue([]);
+    await getMedicaments();
+
+    const [args] = prisma.medicament.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where).toEqual({ estActif: true });
+    expect(args.where).not.toHaveProperty('categorie');
+  });
+
+  it('la prescription ne voit que des medicaments', async () => {
+    prisma.medicament.findMany.mockResolvedValue([]);
+    await getMedicamentsPrescriptibles();
+
+    const [args] = prisma.medicament.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where).toEqual({ estActif: true, categorie: 'MEDICAMENT' });
+  });
+
+  it('les deux trient sur le libelle, seul champ toujours renseigne', async () => {
+    prisma.medicament.findMany.mockResolvedValue([]);
+    await getMedicaments();
+    await getMedicamentsPrescriptibles();
+
+    for (const [args] of prisma.medicament.findMany.mock.calls as [{ orderBy: unknown }][]) {
+      expect(JSON.stringify(args.orderBy)).toContain('libelle');
+    }
   });
 });

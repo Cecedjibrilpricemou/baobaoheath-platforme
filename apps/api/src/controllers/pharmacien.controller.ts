@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as pharmacienService from '../services/pharmacien.service';
 import type {
+  MedicamentTarifeView,
   ScanPatientView,
   StockPharmacieView,
   VerificationOrdonnanceView,
@@ -17,6 +18,22 @@ export async function scanPatientController(req: AuthRequest, res: Response): Pr
 export async function delivrerOrdonnanceController(req: AuthRequest, res: Response): Promise<void> {
   const data = await pharmacienService.delivrerLigneOrdonnance(String(req.params.id), req.user!.userId, req.body);
     res.json({ success: true, data });
+}
+
+/** Substituer un produit, avec son motif (EF-07-04). */
+export async function substituerLigneController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.substituerLigneOrdonnance(
+    String(req.params.id), req.user!.userId, req.body,
+  );
+  res.json({ success: true, data });
+}
+
+/** Refuser une ligne, avec son motif (EF-07-05). */
+export async function refuserLigneController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.refuserLigneOrdonnance(
+    String(req.params.id), req.user!.userId, req.body,
+  );
+  res.json({ success: true, data });
 }
 
 /** EF-07-01 : controle d'une ordonnance par son numero et son code. */
@@ -60,6 +77,9 @@ export async function reapprovisionnerStockController(req: AuthRequest, res: Res
 }
 
 export async function getMedicamentsController(_req: AuthRequest, res: Response): Promise<void> {
-  const data = await pharmacienService.getMedicaments();
-    res.json({ success: true, data });
+  // Le type est annonce ici : c'est ce qui a manque jusqu'au 2026-09-30, ou le
+  // front declarait recevoir des lignes de stock et lisait `m.medicament`,
+  // obtenant `undefined` sans qu'aucune erreur n'apparaisse.
+  const data: MedicamentTarifeView[] = await pharmacienService.getMedicaments();
+  res.json({ success: true, data });
 }

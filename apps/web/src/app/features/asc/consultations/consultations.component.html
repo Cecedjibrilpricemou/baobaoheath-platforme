@@ -127,12 +127,19 @@
     </div>
 
     <!-- Liste -->
+    <app-export-liste
+      [titre]="'EXPORT.DOC.MES_CONSULTATIONS'"
+      [sousTitre]="'EXPORT.SOUS.FILTRE' | translate: { filtre: filtreStatut() }"
+      [colonnes]="colonnes"
+      [lignes]="consultationsFiltrees()"
+      [nomFichier]="'mes-consultations'" />
+
     @if (isLoading()) {
       <div class="loading-state">
         <i class="pi pi-spin pi-spinner"></i>
         <span>{{ 'ASC.CONSULTATIONS.LOADING' | translate }}</span>
       </div>
-    } @else if (consultationsFiltrees.length === 0) {
+    } @else if (consultationsFiltrees().length === 0) {
       <div class="empty-state">
         <div class="empty-state__icon">🩺</div>
         <h3 class="empty-state__title">{{ 'ASC.CONSULTATIONS.EMPTY_TITLE' | translate }}</h3>
@@ -144,7 +151,7 @@
       </div>
     } @else {
       <div class="consult-list">
-        @for (c of consultationsFiltrees; track c.id) {
+        @for (c of consultationsFiltrees(); track c.id) {
           <!-- Toute la carte ouvre la fiche : constantes, diagnostics,
                ordonnances et referencement se saisissent depuis le detail. -->
           <div

@@ -19,8 +19,7 @@ export interface OrdonnanceCreationPayload {
   }[];
 }
 
-export interface ValidationDiagnosticPayload {
-  diagnosticConfirme: string;
-  commentaires?: string;
-  ajustementTraitement?: string;
-}
+// `ValidationDiagnosticPayload` a ete supprime : ses trois champs
+// (`diagnosticConfirme`, `commentaires`, `ajustementTraitement`) n'existaient
+// sur aucun endpoint. Le contrat est `ValiderConsultationDto`
+// (shared-types), que le serveur valide en `.strict()`.

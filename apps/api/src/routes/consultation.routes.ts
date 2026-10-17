@@ -29,7 +29,10 @@ router.use(authenticate);
 router.get('/', requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'ADMIN_STRUCTURE'), getConsultationsController);
 router.post('/', requireRole('ASC', 'ASC_SUPERVISOR'), validateBody(createConsultationSchema), createConsultationController);
 router.get('/:id', requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'ADMIN_STRUCTURE'), getConsultationByIdController);
-router.post('/:id/vitals', requireRole('ASC', 'ASC_SUPERVISOR'), validateBody(vitalsSchema), saveVitalsController);
+// Les constantes se relevent aussi en consultation hospitaliere : le medecin
+// qui mene l'entretien prend la tension, il ne la fait pas prendre par un
+// agent communautaire absent.
+router.post('/:id/vitals', requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN'), validateBody(vitalsSchema), saveVitalsController);
 router.post('/:id/complete', requireRole('ASC', 'ASC_SUPERVISOR'), completeConsultationController);
 router.post('/:id/diagnostics', requireRole('ASC', 'ASC_SUPERVISOR', 'MEDECIN'), validateBody(diagnosticSchema), addDiagnosticController);
 // EF-05-05 : ce que le prescripteur doit savoir avant d'ajouter le

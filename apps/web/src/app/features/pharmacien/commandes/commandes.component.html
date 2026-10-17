@@ -1,0 +1,344 @@
+<div class="bb-cmd">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-inbox" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.COMMANDES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.COMMANDES.SOUS_TITRE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-cmd__btn bb-cmd__btn--plat" type="button" (click)="charger()" [disabled]="chargement()">
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.COMMANDES.ACTUALISER' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-cmd__attente">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else {
+
+    <!-- ── Les appels du quartier ──────────────────────────────────── -->
+    <section class="bb-cmd__sec">
+      <h2 class="bb-cmd__sec-titre">
+        {{ 'PHARMACIEN.COMMANDES.APPELS' | translate }}
+        @if (appels().length > 0) { <span class="bb-cmd__compteur">{{ appels().length }}</span> }
+      </h2>
+      <p class="bb-cmd__sec-aide">{{ 'PHARMACIEN.COMMANDES.APPELS_AIDE' | translate }}</p>
+
+      @if (appels().length === 0) {
+        <div class="bb-cmd__vide">
+          <i class="pi pi-inbox" aria-hidden="true"></i>
+          <p class="bb-cmd__vide-titre">{{ 'PHARMACIEN.COMMANDES.AUCUN_APPEL' | translate }}</p>
+          <p class="bb-cmd__vide-aide">{{ 'PHARMACIEN.COMMANDES.AUCUN_APPEL_AIDE' | translate }}</p>
+        </div>
+      } @else {
+        @for (c of appels(); track c.id) {
+          <article class="bb-cmd__carte bb-cmd__carte--appel">
+            <div class="bb-cmd__entete">
+              <div>
+                <p class="bb-cmd__patient">{{ c.patient.prenom }} {{ c.patient.nom }}</p>
+                <p class="bb-cmd__meta">
+                  {{ c.numeroOrdonnance }} · {{ c.creeLe | date:'dd/MM/yyyy HH:mm' }}
+                  @if (c.quartierRecherche) { · {{ c.quartierRecherche }} }
+                </p>
+              </div>
+              <span class="bb-cmd__boites">
+                {{ 'PHARMACIEN.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+              </span>
+            </div>
+
+            <!-- La liste exacte : c'est sur elle qu'on s'engage. -->
+            <ul class="bb-cmd__lignes">
+              @for (l of c.lignes; track l.id) {
+                <li class="bb-cmd__ligne">
+                  <span class="bb-cmd__produit">
+                    {{ l.libelle }}
+                    @if (dosageUtile(l.libelle, l.dosage); as d) {
+                      <span class="bb-cmd__dosage">{{ d }}</span>
+                    }
+                  </span>
+                  <span class="bb-cmd__qte">× {{ l.quantite }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- Savoir que d'autres ont déjà dit non change la façon dont on
+                 regarde sa propre disponibilité. -->
+            @if (refusAvant(c) > 0) {
+              <p class="bb-cmd__note">
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                {{ 'PHARMACIEN.COMMANDES.DEJA_REFUSE' | translate: { n: refusAvant(c) } }}
+              </p>
+            }
+
+            <div class="bb-cmd__actions">
+              <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                      (click)="demanderRefus(c)" [disabled]="enCours() === c.id">
+                {{ 'PHARMACIEN.COMMANDES.PAS_TOUT' | translate }}
+              </button>
+              <button class="bb-cmd__btn" type="button"
+                      (click)="jePrends(c)" [disabled]="enCours() === c.id">
+                <i class="pi pi-check" aria-hidden="true"></i>
+                {{ (enCours() === c.id ? 'PHARMACIEN.COMMANDES.ENVOI' : 'PHARMACIEN.COMMANDES.JAI_TOUT') | translate }}
+              </button>
+            </div>
+          </article>
+        }
+      }
+    </section>
+
+    <!-- ── Ce que l'officine a pris ────────────────────────────────── -->
+    <section class="bb-cmd__sec">
+      <h2 class="bb-cmd__sec-titre">
+        {{ 'PHARMACIEN.COMMANDES.MIENNES' | translate }}
+        @if (miennes().length > 0) { <span class="bb-cmd__compteur">{{ miennes().length }}</span> }
+      </h2>
+
+      <app-export-liste
+        [titre]="'EXPORT.DOC.COMMANDES_PRISES'"
+        [colonnes]="colonnes"
+        [lignes]="miennes()"
+        [nomFichier]="'commandes-prises'" />
+
+      @if (miennes().length === 0) {
+        <p class="bb-cmd__attente">{{ 'PHARMACIEN.COMMANDES.AUCUNE_MIENNE' | translate }}</p>
+      } @else {
+        @for (c of miennes(); track c.id) {
+          <article class="bb-cmd__carte bb-cmd__carte--mienne">
+            <div class="bb-cmd__entete">
+              <div>
+                <p class="bb-cmd__patient">{{ c.patient.prenom }} {{ c.patient.nom }}</p>
+                <p class="bb-cmd__meta">
+                  {{ c.numeroOrdonnance }} · {{ c.creeLe | date:'dd/MM/yyyy HH:mm' }}
+                  @if (c.modeRemise) { · {{ libelleMode(c.modeRemise) }} }
+                </p>
+                <p class="bb-cmd__etat">{{ libelleEtat(c.statut) }}</p>
+              </div>
+              <span class="bb-cmd__boites">
+                {{ 'PHARMACIEN.COMMANDES.BOITES' | translate: { n: totalBoites(c) } }}
+              </span>
+            </div>
+
+            <ul class="bb-cmd__lignes">
+              @for (l of c.lignes; track l.id) {
+                <li class="bb-cmd__ligne">
+                  <span class="bb-cmd__produit">
+                    {{ l.libelle }}
+                    @if (dosageUtile(l.libelle, l.dosage); as d) {
+                      <span class="bb-cmd__dosage">{{ d }}</span>
+                    }
+                  </span>
+                  <span class="bb-cmd__qte">× {{ l.quantite }}</span>
+                  @if (l.montantGnf != null) {
+                    <span class="bb-cmd__prix">{{ montant(l.montantGnf) }} GNF</span>
+                  }
+                </li>
+              }
+            </ul>
+
+            <!-- Le total, des que le panier est chiffre. **Il n'a rien a
+                 faire sur une carte d'appel** : avant le chiffrage il n'y a
+                 pas de prix, et c'est pourtant la qu'il avait atterri —
+                 l'ancre `</ul>` existait dans les deux cartes. -->
+            @if (c.montantTotalGnf != null) {
+              <p class="bb-cmd__total">
+                {{ 'PHARMACIEN.COMMANDES.TOTAL' | translate }}
+                <strong>{{ montant(c.montantTotalGnf) }} GNF</strong>
+              </p>
+            }
+
+            <!-- Le patient n'a pas encore dit comment il veut être servi : le
+                 retrait n'est pas un repli, la livraison n'est pas imposée. -->
+            @if (!c.modeRemise) {
+              <p class="bb-cmd__note">
+                <i class="pi pi-clock" aria-hidden="true"></i>
+                {{ 'PHARMACIEN.COMMANDES.ATTEND_MODE' | translate }}
+              </p>
+            }
+
+            <!-- **Une seule action proposee a la fois.** Le serveur refuse
+                 tout le reste ; offrir des boutons qu'il refusera ferait
+                 chercher la panne du mauvais cote. -->
+            <div class="bb-cmd__actions">
+              @switch (c.statut) {
+                @case ('PRISE_EN_CHARGE') {
+                  <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                          (click)="rendre(c)" [disabled]="enCours() === c.id">
+                    <i class="pi pi-undo" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.RENDRE' | translate }}
+                  </button>
+                  <button class="bb-cmd__btn" type="button"
+                          (click)="chiffrer(c)" [disabled]="enCours() === c.id"
+                          [title]="'PHARMACIEN.COMMANDES.CHIFFRER_AIDE' | translate">
+                    <i class="pi pi-calculator" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.CHIFFRER' | translate }}
+                  </button>
+                }
+                @case ('A_PAYER') {
+                  <p class="bb-cmd__note">
+                    <i class="pi pi-clock" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.ATTEND_PAIEMENT' | translate }}
+                  </p>
+                  <button class="bb-cmd__btn" type="button"
+                          (click)="demanderEncaissement(c)" [disabled]="enCours() === c.id">
+                    <i class="pi pi-money-bill" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.ENCAISSER' | translate }}
+                  </button>
+                }
+                @case ('PAYEE') {
+                  <button class="bb-cmd__btn" type="button"
+                          (click)="preparer(c)" [disabled]="enCours() === c.id">
+                    <i class="pi pi-box" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.PREPARER' | translate }}
+                  </button>
+                }
+                @case ('EN_PREPARATION') {
+                  <button class="bb-cmd__btn" type="button"
+                          (click)="prete(c)" [disabled]="enCours() === c.id || !c.modeRemise">
+                    <i class="pi pi-check" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.PRETE' | translate }}
+                  </button>
+                }
+                @case ('PRETE_POUR_RETRAIT') {
+                  <button class="bb-cmd__btn" type="button"
+                          (click)="remettre(c)" [disabled]="enCours() === c.id">
+                    <i class="pi pi-user" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.REMETTRE_PATIENT' | translate }}
+                  </button>
+                }
+                @case ('PRETE_POUR_LIVRAISON') {
+                  <button class="bb-cmd__btn" type="button"
+                          (click)="remettre(c)" [disabled]="enCours() === c.id">
+                    <i class="pi pi-send" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.REMETTRE_LIVREUR' | translate }}
+                  </button>
+                }
+                @case ('RETIREE') {
+                  <p class="bb-cmd__note">
+                    <i class="pi pi-truck" aria-hidden="true"></i>
+                    {{ 'PHARMACIEN.COMMANDES.ATTEND_LIVREUR' | translate }}
+                  </p>
+                }
+              }
+
+              @if (c.statut !== 'RETIREE') {
+                <button class="bb-cmd__btn bb-cmd__btn--danger" type="button"
+                        (click)="demanderAnnulation(c)" [disabled]="enCours() === c.id">
+                  <i class="pi pi-times" aria-hidden="true"></i>
+                  {{ 'PHARMACIEN.COMMANDES.ANNULER' | translate }}
+                </button>
+              }
+            </div>
+          </article>
+        }
+      }
+    </section>
+
+    <!-- Ce qui est derriere nous : un pharmacien doit pouvoir verifier ce
+         qu'il a servi ce matin, sans que ca encombre sa file de travail. -->
+    @if (closes().length > 0) {
+      <section class="bb-cmd__sec">
+        <h2 class="bb-cmd__sec-titre">
+          {{ 'PHARMACIEN.COMMANDES.HISTORIQUE' | translate }}
+          <span class="bb-cmd__compteur">{{ closes().length }}</span>
+        </h2>
+        <ul class="bb-cmd__closes">
+          @for (c of closes(); track c.id) {
+            <li class="bb-cmd__close">
+              <span>{{ c.patient.prenom }} {{ c.patient.nom }}</span>
+              <span class="bb-cmd__meta">{{ c.numeroOrdonnance }}</span>
+              <span class="bb-cmd__etat">{{ libelleEtat(c.statut) }}</span>
+              @if (c.motifAnnulation) {
+                <span class="bb-cmd__meta">{{ c.motifAnnulation }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>
+
+<!-- Répondre « je n'ai pas tout » retire l'appel de sa file pour de bon :
+     on le dit avant, pas après. -->
+@if (confirmeRefus(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PHARMACIEN.COMMANDES.REFUS_TITRE' | translate }}</h2>
+      <p class="bb-cmd__modale-texte">
+        {{ 'PHARMACIEN.COMMANDES.REFUS_TEXTE' | translate: { patient: c.patient.prenom + ' ' + c.patient.nom } }}
+      </p>
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerRefus()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn bb-cmd__btn--danger" type="button"
+                (click)="confirmerRefus()" [disabled]="!!enCours()">
+          {{ 'PHARMACIEN.COMMANDES.REFUS_CONFIRMER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+<!-- Le motif est exige par l'ecran, par l'API et par la base. Une annulation
+     sans motif ne s'explique pas trois semaines plus tard, et c'est toujours
+     a ce moment qu'on la cherche. -->
+@if (confirmeAnnulation(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PHARMACIEN.COMMANDES.ANNULER_TITRE' | translate }}</h2>
+      <p class="bb-cmd__modale-texte">
+        {{ 'PHARMACIEN.COMMANDES.ANNULER_TEXTE' | translate: { patient: c.patient.prenom + ' ' + c.patient.nom } }}
+      </p>
+      <label class="bb-cmd__label" for="cmd-motif">
+        {{ 'PHARMACIEN.COMMANDES.ANNULER_MOTIF' | translate }}
+      </label>
+      <textarea id="cmd-motif" class="bb-cmd__motif" rows="3"
+                [value]="motifAnnulation()"
+                (input)="motifAnnulation.set($any($event.target).value)"></textarea>
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerAnnulation()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn bb-cmd__btn--danger" type="button"
+                (click)="confirmerAnnulation()" [disabled]="!peutAnnuler()">
+          {{ 'PHARMACIEN.COMMANDES.ANNULER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+<!-- Encaisser au comptoir : le pharmacien a recu l'argent et le declare. La
+     reference est son numero de recu, ce qui permet de rapprocher la caisse. -->
+@if (encaisse(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PHARMACIEN.COMMANDES.ENCAISSER_TITRE' | translate }}</h2>
+      <p class="bb-cmd__total">
+        {{ 'PHARMACIEN.COMMANDES.TOTAL' | translate }}
+        <strong>{{ montant(c.montantTotalGnf) }} GNF</strong>
+      </p>
+      <p class="bb-cmd__modale-texte">{{ 'PHARMACIEN.COMMANDES.ENCAISSER_AIDE' | translate }}</p>
+      <label class="bb-cmd__label" for="cmd-recu">
+        {{ 'PHARMACIEN.COMMANDES.ENCAISSER_RECU' | translate }}
+      </label>
+      <input id="cmd-recu" class="bb-cmd__motif" type="text"
+             [value]="referenceRecu()"
+             (input)="referenceRecu.set($any($event.target).value)" />
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerEncaissement()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn" type="button"
+                (click)="confirmerEncaissement()" [disabled]="!peutEncaisser()">
+          {{ 'PHARMACIEN.COMMANDES.ENCAISSER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

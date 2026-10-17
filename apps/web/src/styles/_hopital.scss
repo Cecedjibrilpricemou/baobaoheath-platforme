@@ -116,7 +116,11 @@
 .bb-empty, .bb-hop-empty {
   text-align: center; padding: 2.5rem 1rem; color: var(--bb-text-muted);
   border: 1px dashed var(--bb-border); border-radius: 20px; background: var(--bb-surface-card);
-  i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
+  // `> i` et non `i` : la regle visait **toutes** les icones descendantes, y
+  // compris celle d'un bouton place dans l'etat vide — 28px, en bloc, elle
+  // poussait le libelle hors du bouton. Vu a l'oeil sur une capture ; la
+  // boite du bouton, elle, tenait dans la carte.
+  > i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
   p { margin: 0 0 4px; font-family: var(--bb-font-display); font-weight: 700; color: var(--bb-text-primary); }
   span { font-size: 13px; }
 }
@@ -256,3 +260,288 @@
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: none; }
 }
+
+// ── L'explication du médecin, avant les chiffres (addendum du 2026-09-28) ──
+// Elle passe avant la valeur brute parce que c'est elle que le patient doit
+// lire en premier : « Hémoglobine 6 g/dL » ne lui dit rien tout seul.
+// Ces règles sont ici et non dans un .scss de composant : `parcours.component`
+// n'a pas de `styleUrl`, ses styles viennent de cette feuille globale.
+.bb-explication {
+  margin: 10px 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-info-bg);
+  border: 1px solid var(--bb-info-border);
+  border-left: 3px solid var(--bb-info);
+
+  &__titre {
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    font-size: 12.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    color: var(--bb-info);
+    i { font-size: 12px; }
+  }
+
+  &__texte {
+    margin: 7px 0 0;
+    font-size: 13.5px; line-height: 1.6;
+    color: var(--bb-text-primary);
+    white-space: pre-wrap;
+  }
+}
+
+// En sombre, `--bb-info` (#1E40AF) sur #0A0F2D serait illisible. Feuille
+// globale : pas de `:host-context` ici, l'attribut est porté par <html>.
+[data-theme='dark'] .bb-explication {
+  border-left-color: #60A5FA;
+  .bb-explication__titre { color: #60A5FA; }
+}
+
+// ── Panneau du scan patient au comptoir du laboratoire (2026-09-29) ──
+// Volontairement sobre : il montre ce qui reste a faire, pas un dossier.
+.bb-scan {
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-xl); padding: 1rem 1.15rem; margin-bottom: 14px;
+  box-shadow: var(--bb-shadow-sm);
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  &__patient {
+    display: block; font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; color: var(--bb-text-primary);
+  }
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__vide { margin: 0; font-size: 13px; color: var(--bb-text-secondary); }
+
+  &__demande {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 12px; margin-top: 8px; text-decoration: none;
+    border-radius: var(--bb-radius); border: 1px solid var(--bb-border-light);
+    background: var(--bb-surface-1); color: var(--bb-text-primary);
+    &:hover { border-color: var(--bb-primary); }
+  }
+  &__num { font-family: var(--bb-font-display); font-weight: 800; font-size: 13px; }
+  &__examens { font-size: 12.5px; color: var(--bb-text-secondary); flex-basis: 100%; }
+
+  // Un examen a jeun se signale : le laborantin doit le savoir avant de prelever.
+  &__jeune {
+    padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+    color: var(--bb-warning); font-size: 11.5px; font-weight: 700;
+  }
+}
+
+[data-theme='dark'] .bb-scan {
+  &__demande { background: rgba(255, 255, 255, .04); }
+  &__jeune { color: #FBBF24; }
+}
+
+// ── Note explicative dans un panneau (2026-09-30) ────────────────────
+// Posee la ou un champ vient de disparaitre : sans elle, l'agent se demande
+// ou est passee la date du rendez-vous.
+.bb-hop-note {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 0; padding: 11px 13px;
+  border-radius: var(--bb-radius);
+  background: var(--bb-info-bg); border: 1px solid var(--bb-info-border);
+  font-size: 13px; line-height: 1.55; color: var(--bb-text-primary);
+
+  i { font-size: 14px; color: var(--bb-info); flex-shrink: 0; margin-top: 2px; }
+}
+
+// En sombre, --bb-info (#1E40AF) sur #0A0F2D serait illisible.
+[data-theme='dark'] .bb-hop-note i { color: #60A5FA; }
+
+// ── Creer le dossier au comptoir (EF-03-01) ──────────────────────────
+//
+// Le design suit l'espace de l'accueil — mêmes cartes, même grille — et non la
+// page publique d'inscription, qui s'adresse à quelqu'un seul chez lui.
+
+.bb-adm-cta {
+  // Un `div`, pas un `p` : `.bb-hop-empty p` impose une marge et une graisse
+  // qui ecrasaient le bouton contre le texte.
+  margin-top: 18px;
+}
+
+// Ce qui est exige se voit, comme sur le formulaire public.
+.bb-req { color: var(--bb-danger); font-weight: 700; }
+
+.bb-adm-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+
+  // **Le modal se centre dans la zone de travail, pas dans la fenêtre.**
+  //
+  // La barre latérale est un panneau Material : elle vit dans son propre
+  // contexte d'empilement et peint par-dessus quoi qu'on mette ici — un
+  // `z-index` plus haut n'y change rien, essayé. Plutôt que de déplacer le
+  // modal dans le `body` (CDK Overlay, du câblage pour un formulaire), on
+  // décale le voile de la largeur de la barre : elle reste visible, l'agent
+  // garde ses repères, et la boîte est entière.
+  //
+  // Sous 768px la barre se superpose au lieu d'être ancrée : le décalage
+  // disparaît avec elle.
+  @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  display: flex;
+  // **`flex-start`, pas `center`.** Centrer dans un conteneur qui défile rogne
+  // le haut dès que la boîte dépasse la hauteur de l'écran : le titre passait
+  // sous le bord. `margin: auto` sur l'enfant centre quand ça tient, et ne
+  // coupe rien quand ça ne tient pas.
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+  background: rgba(8, 24, 16, .55);
+  backdrop-filter: blur(3px);
+  animation: bb-adm-voile-entre .18s ease-out;
+}
+
+@keyframes bb-adm-voile-entre { from { opacity: 0 } to { opacity: 1 } }
+
+.bb-adm-neuf {
+  width: min(760px, 100%);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  animation: bb-adm-boite-entre .22s cubic-bezier(.2, .8, .3, 1);
+
+  // ── L'en-tête, séparé du formulaire ───────────────────────────────
+  &__tete {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 1.35rem 1.5rem 1.15rem;
+    border-bottom: 1px solid var(--bb-border);
+    background: var(--bb-surface-1);
+  }
+
+  &__icone {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    i { font-size: 19px; }
+  }
+
+  &__titre {
+    margin: 0 0 .2rem;
+    font-family: var(--bb-font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -.4px;
+    color: var(--bb-text-primary);
+  }
+
+  &__sub {
+    margin: 0;
+    font-size: .8125rem;
+    line-height: 1.5;
+    color: var(--bb-text-muted);
+  }
+
+  &__fermer {
+    margin-left: auto;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--bb-text-muted);
+    cursor: pointer;
+    transition: background var(--bb-transition), color var(--bb-transition);
+
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
+  }
+
+  &__corps { padding: 1.35rem 1.5rem; }
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: .75rem 1rem;
+
+    @media (max-width: 620px) { grid-template-columns: 1fr; }
+  }
+
+  // Le pied se détache : on sait où est l'action, même après avoir fait
+  // défiler un formulaire de huit champs.
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .7rem;
+    padding: 1rem 1.5rem 1.15rem;
+    border-top: 1px solid var(--bb-border);
+    background: var(--bb-surface-1);
+  }
+}
+
+@keyframes bb-adm-boite-entre {
+  from { opacity: 0; transform: translateY(10px) scale(.985) }
+  to   { opacity: 1; transform: none }
+}
+
+// Ce qui est exigé se voit, comme sur le formulaire public.
+.bb-req { color: var(--bb-danger); font-weight: 700; }
+
+.bb-adm-mdp {
+  width: min(440px, 100%);
+  margin: auto;
+  padding: 1.6rem 1.6rem 1.35rem;
+  text-align: center;
+  animation: bb-adm-boite-entre .22s cubic-bezier(.2, .8, .3, 1);
+
+  &__icone {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto .9rem;
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    i { font-size: 22px; }
+  }
+
+  // Lu à voix haute au comptoir, parfois dans le bruit : gros, espacé, et en
+  // chasse fixe pour qu'un 1 ne se confonde pas avec un l.
+  &__code {
+    margin: 1.1rem 0;
+    padding: .95rem 1rem;
+    border-radius: var(--bb-radius);
+    border: 1px dashed color-mix(in srgb, var(--bb-primary) 45%, var(--bb-border));
+    background: var(--bb-surface-1);
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: var(--bb-text-primary);
+    user-select: all;
+  }
+
+  &__dit {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    margin: 0 0 1.2rem;
+    text-align: left;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--bb-warning);
+
+    i { font-size: 15px; flex: none; margin-top: 1px; }
+  }
+}
+

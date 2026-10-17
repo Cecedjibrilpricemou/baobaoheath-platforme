@@ -1,0 +1,147 @@
+// features/pharmacien/tableau-de-bord — ce que l'officine a fait aujourd'hui.
+.bb-tdb {
+  padding: 1.75rem;
+  max-width: 980px;
+  margin: 0 auto;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+  &__note { margin-top: -6px; margin-bottom: 12px; }
+
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i { font-size: 30px; color: var(--bb-danger); }
+  }
+
+  &__section {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--bb-font-display);
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--bb-text-secondary);
+    margin: 26px 0 12px;
+
+    &--danger { color: var(--bb-danger); }
+    i { font-size: 14px; }
+  }
+
+  // ── Les chiffres ───────────────────────────────────────────────────
+  &__stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  &__stat {
+    display: flex; flex-direction: column; gap: 2px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1rem 1.1rem;
+    box-shadow: var(--bb-shadow-sm);
+
+    &--primaire { border-left: 3px solid var(--bb-primary); }
+    &--alerte { border-left: 3px solid var(--bb-warning); }
+  }
+
+  &__stat-label {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--bb-text-muted);
+  }
+
+  &__stat-valeur {
+    font-family: var(--bb-font-display); font-size: 24px; font-weight: 800;
+    line-height: 1.15; color: var(--bb-text-primary);
+  }
+
+  &__stat-unite { font-size: 11.5px; color: var(--bb-text-muted); }
+
+  // ── La jauge, partagee par les deux classements ────────────────────
+  &__jauge {
+    height: 8px; border-radius: 999px; overflow: hidden;
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border);
+  }
+
+  &__jauge-part {
+    height: 100%; background: var(--bb-primary);
+    &--top { background: var(--bb-success); }
+  }
+
+  // ── Encaissements ──────────────────────────────────────────────────
+  &__mode {
+    display: grid; grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 2fr) auto;
+    gap: 12px; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--bb-border);
+
+    @media (max-width: 760px) {
+      grid-template-columns: 1fr auto;
+      .bb-tdb__jauge { grid-column: 1 / -1; }
+    }
+  }
+
+  &__mode-nom { font-weight: 600; color: var(--bb-text-primary); font-size: 13.5px; }
+  &__mode-nombre { font-size: 12.5px; color: var(--bb-text-muted); white-space: nowrap; }
+  &__mode-montant {
+    font-family: var(--bb-font-display); font-weight: 700; font-size: 14px;
+    color: var(--bb-text-primary); white-space: nowrap; text-align: right;
+  }
+
+  // ── Produits les plus vendus ───────────────────────────────────────
+  &__produit {
+    display: grid; grid-template-columns: minmax(160px, 1.6fr) minmax(100px, 2fr) auto auto;
+    gap: 12px; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--bb-border);
+
+    @media (max-width: 760px) {
+      grid-template-columns: 1fr auto auto;
+      .bb-tdb__jauge { grid-column: 1 / -1; }
+    }
+  }
+
+  &__produit-tete { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  &__produit-nom { font-weight: 600; color: var(--bb-text-primary); font-size: 13.5px; }
+
+  &__produit-cat, &__rupture-cat {
+    font-size: 11.5px; color: var(--bb-text-muted);
+    padding: 1px 8px; background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border); border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  &__produit-qte {
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 15px;
+    color: var(--bb-text-primary); white-space: nowrap; text-align: right;
+  }
+
+  &__produit-montant {
+    font-size: 13px; color: var(--bb-text-muted);
+    white-space: nowrap; text-align: right; min-width: 92px;
+  }
+
+  // ── Ruptures ───────────────────────────────────────────────────────
+  &__rupture {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-left: 3px solid var(--bb-danger);
+    border-radius: var(--bb-radius-xl); padding: 0.75rem 1rem;
+    margin-bottom: 8px; box-shadow: var(--bb-shadow-sm);
+  }
+
+  &__rupture-nom { flex: 1; min-width: 160px; font-weight: 600; color: var(--bb-text-primary); font-size: 13.5px; }
+
+  &__rupture-qte {
+    font-family: var(--bb-font-display); font-weight: 700; font-size: 13.5px;
+    color: var(--bb-danger); white-space: nowrap;
+  }
+
+  &__actions { margin-top: 14px; }
+}
+
+// En sombre, `--bb-danger` (#DC2626), `--bb-warning` (#92400E) et
+// `--bb-success` ne sont pas redefinis : illisibles sur fond sombre.
+:host-context([data-theme='dark']) .bb-tdb {
+  &__empty i { color: #F87171; }
+  &__section--danger { color: #F87171; }
+  &__stat--alerte { border-left-color: #FBBF24; }
+  &__rupture { border-left-color: #F87171; }
+  &__rupture-qte { color: #F87171; }
+  &__jauge-part--top { background: #34D399; }
+}

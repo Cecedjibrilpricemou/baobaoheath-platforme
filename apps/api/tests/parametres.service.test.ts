@@ -182,3 +182,53 @@ describe('getValeursParametres', () => {
     expect(valeurs.alertes.seuilEbola).toBe(PARAMETRES_PAR_DEFAUT.alertes.seuilEbola);
   });
 });
+
+
+// ── Les sections administrables, et le schema qui les laisse passer ──
+//
+// Le schema de mise a jour est `.strict()`. Une section absente du schema
+// fait rejeter le corps en 400, et l'onglet correspondant de l'ecran
+// d'administration s'affiche, repond, et n'enregistre rien. C'est ce qui
+// arrivait a « Ordonnances » jusqu'au 2026-10-02.
+describe('sections de parametres', () => {
+  it('le schema de mise a jour accepte toutes les sections du contrat', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { updateParametresSystemeSchema } = require('../src/validators/api.schemas');
+    for (const section of Object.keys(PARAMETRES_PAR_DEFAUT)) {
+      const r = updateParametresSystemeSchema.safeParse({ [section]: {} });
+      expect({ section, ok: r.success }).toEqual({ section, ok: true });
+    }
+  });
+
+  it('le comptoir a ses defauts : 20 % de remise, aucune categorie soumise', () => {
+    expect(PARAMETRES_PAR_DEFAUT.pharmacie).toEqual({
+      remiseMaxPourcent: 20,
+      categoriesExigeantOrdonnance: [],
+    });
+  });
+
+  it('la liste des categories soumises se remplace, elle ne fusionne pas', () => {
+    const fusionne = fusionnerParametres(PARAMETRES_PAR_DEFAUT, {
+      pharmacie: { categoriesExigeantOrdonnance: ['COSMETIQUE'] },
+    });
+    expect(fusionne.pharmacie.categoriesExigeantOrdonnance).toEqual(['COSMETIQUE']);
+    // Le reste de la section n'est pas efface pour autant.
+    expect(fusionne.pharmacie.remiseMaxPourcent).toBe(20);
+  });
+
+  it('refuse une categorie qui n existe pas dans l enumeration', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { updateParametresSystemeSchema } = require('../src/validators/api.schemas');
+    const r = updateParametresSystemeSchema.safeParse({
+      pharmacie: { categoriesExigeantOrdonnance: ['CHAUSSURES'] },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('refuse une remise au-dela de 100 %', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { updateParametresSystemeSchema } = require('../src/validators/api.schemas');
+    expect(updateParametresSystemeSchema.safeParse({ pharmacie: { remiseMaxPourcent: 150 } }).success).toBe(false);
+    expect(updateParametresSystemeSchema.safeParse({ pharmacie: { remiseMaxPourcent: 100 } }).success).toBe(true);
+  });
+});

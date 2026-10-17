@@ -52,7 +52,15 @@ export class AdminStructureLayoutComponent {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
-  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  /**
+   * Sur mobile la barre s'ouvre par-dessus ; sur grand écran elle est ancrée,
+   * et le même bouton la replie sur ses icônes. Un seul bouton, deux gestes
+   * selon la place disponible.
+   */
+  toggleSidebar() {
+    if (this.layout.estMobile()) this.sidebarOpen.update(v => !v);
+    else this.layout.basculerRepli();
+  }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
@@ -78,6 +86,7 @@ export class AdminStructureLayoutComponent {
 
   navItems = [
     { labelKey: 'ADMIN_STRUCTURE.NAV_DASHBOARD', icon: 'pi-home',  route: '/admin-structure/dashboard' },
-    { labelKey: 'ADMIN_STRUCTURE.NAV_AGENTS',    icon: 'pi-users', route: '/admin-structure/agents'    }
+    { labelKey: 'ADMIN_STRUCTURE.NAV_AGENTS',    icon: 'pi-users', route: '/admin-structure/agents'    },
+    { labelKey: 'ADMIN_STRUCTURE.NAV_IDENTITES', icon: 'pi-id-card', route: '/admin-structure/identites' }
   ];
 }

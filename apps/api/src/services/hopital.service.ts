@@ -8,12 +8,18 @@
 // structure l'acces au dossier du patient (access-control.service).
 import { Prisma, Role, StatutEpisode, Urgence } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { messagePatientInformation } from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
+import { randomBytes } from 'node:crypto';
+import { logger } from '../config/logger';
+import { hashPassword } from '../utils/password.utils';
+import { initialiserConsentementsParDefaut } from './privacy.service';
 import { envoyerSmsSimule, notifierSansBloquer } from './notification.service';
 import { getIdentitePlateforme } from './parametres.service';
 import type {
+  PresenceDuJourView,
   CreateDemandeAnalyseDto,
   CreateEpisodeDto,
   DemandeAnalyseView,
@@ -44,6 +50,7 @@ export const DEMANDE_INCLUDE = {
   prescripteur: { select: PERSONNE_SELECT },
   laboratoire: { select: STRUCTURE_SELECT },
   valideur: { select: PERSONNE_SELECT },
+  liberePar: { select: PERSONNE_SELECT },
   echantillons: { include: { preleveur: { select: PERSONNE_SELECT } }, orderBy: { preleveLe: 'asc' } },
   lignes: {
     include: { examen: { select: EXAMEN_SELECT }, resultat: { include: { saisiPar: { select: PERSONNE_SELECT }, echantillon: { select: { code: true } } } } },
@@ -111,7 +118,9 @@ export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
     preleveeLe: d.preleveeLe,
     valideeLe: d.valideeLe,
     valideur: d.valideur,
-    commentaireBiologiste: d.commentaireBiologiste,
+    commentaireLaboratoire: d.commentaireLaboratoire,
+    commentaireMedecin: d.commentaireMedecin,
+    libereePar: d.liberePar ?? null,
     diffuseePatientLe: d.diffuseePatientLe,
     echantillons: d.echantillons.map((e) => ({ id: e.id, code: e.code, specimen: e.specimen, preleveLe: e.preleveLe, commentaire: e.commentaire, preleveur: e.preleveur })),
     alerteCritiqueEnAttente: d._count.alertesCritiques > 0,
@@ -120,12 +129,12 @@ export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
 
 /**
  * Vue patient : les resultats ne sont visibles qu'une fois diffuses
- * (validation du biologiste, et accuse du prescripteur si critique — EF-04-09).
+ * (validation du laboratoire, et accuse du prescripteur si critique — EF-04-09).
  */
 export function versDemandeViewPatient(d: DemandeRow): DemandeAnalyseView {
   const vue = versDemandeView(d);
   if (vue.diffuseePatientLe) return vue;
-  return { ...vue, commentaireBiologiste: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
+  return { ...vue, commentaireLaboratoire: null, commentaireMedecin: null, libereePar: null, lignes: vue.lignes.map((l) => ({ ...l, resultat: null })) };
 }
 
 function versEpisodeView(e: EpisodeRow): EpisodeSoinsView {
@@ -178,22 +187,115 @@ async function episodeDeLaStructure(user: JwtPayload, idEpisode: string) {
   return episode;
 }
 
+/**
+ * Ouvrir la consultation d'une visite (EF-03, EF-05).
+ *
+ * **Jusqu'ici seul un agent de sante communautaire pouvait ouvrir une
+ * consultation.** `POST /consultations` est reserve a `ASC` : le parcours
+ * hospitalier — le patient demande un rendez-vous, l'accueil l'oriente, le
+ * medecin fixe l'heure, le patient arrive — s'arretait net. Le medecin avait
+ * un episode de soins ouvert et aucun moyen d'y mener la consultation.
+ *
+ * L'ASC est une porte d'entree **communautaire**, pour les zones sans
+ * medecin, avec un paquet d'actes protocolaire. En faire le seul createur de
+ * consultations etait une erreur de modele : la plateforme avait une porte la
+ * ou il en faut deux.
+ *
+ * Le patient et le motif viennent de **l'episode**, pas du corps de la
+ * requete : ils y sont deja, et les redemander ouvrirait la porte a une
+ * consultation rattachee a une visite qui parle d'autre chose.
+ */
+export async function ouvrirConsultationDeLEpisode(
+  user: JwtPayload,
+  idEpisode: string,
+  dto: { motifPrincipal?: string } = {}
+) {
+  const episode = await episodeDeLaStructure(user, idEpisode);
+
+  if (episode.statut === 'CLOS' || episode.statut === 'ANNULE') {
+    throw new ValidationError(
+      `Cette visite est ${episode.statut === 'CLOS' ? 'close' : 'annulee'} : rouvrez-en une pour consulter.`,
+    );
+  }
+
+  // **Une consultation ouverte a la fois par visite.** Deux consultations
+  // pour une meme venue donneraient deux comptes rendus a signer, et le
+  // patient ne saurait pas lequel fait foi.
+  const deja = await prisma.consultation.findFirst({
+    where: { idEpisode, statut: { in: ['EN_COURS', 'PLANIFIEE'] } },
+    select: { id: true },
+  });
+  if (deja) return getConsultationOuverte(deja.id);
+
+  const motifPrincipal = (dto.motifPrincipal ?? episode.motif).trim();
+  if (motifPrincipal.length < 2) {
+    throw new ValidationError('Le motif de la consultation est obligatoire.');
+  }
+
+  const creee = await prisma.consultation.create({
+    data: {
+      idPatient: episode.idPatient,
+      idEpisode: episode.id,
+      motifPrincipal,
+      symptomes: [],
+      statut: 'EN_COURS',
+    },
+    select: { id: true },
+  });
+
+  // La visite passe en cours : elle n'est plus seulement ouverte, quelqu'un
+  // s'en occupe.
+  if (episode.statut === 'OUVERT') {
+    await prisma.episodeSoins.update({
+      where: { id: episode.id },
+      data: { statut: 'EN_COURS' },
+    });
+  }
+
+  return getConsultationOuverte(creee.id);
+}
+
+/** La consultation telle que l'ecran du medecin l'attend. */
+async function getConsultationOuverte(idConsultation: string) {
+  return prisma.consultation.findUniqueOrThrow({
+    where: { id: idConsultation },
+    include: {
+      patient: { include: { utilisateur: { select: { id: true, prenom: true, nom: true, telephone: true } } } },
+      constantes: true,
+      diagnostics: true,
+      ordonnances: { include: { lignes: { include: { medicament: true } } } },
+    },
+  });
+}
+
 // ── EF-03-01 : recherche avant toute creation de dossier ─────────────
+/**
+ * Comment on reconnait un patient a partir de ce que l'agent a tape.
+ *
+ * **Extrait pour etre partage.** L'assurance cherche le meme patient avec les
+ * memes mots (`/assurance/patients/recherche`) : deux predicats voudraient
+ * dire qu'un patient trouvable au comptoir ne l'est pas quand on lui
+ * rattache une police, et qu'une correction n'en reparerait qu'un.
+ */
+export function filtreRecherchePatient(terme: string): Prisma.PatientProfileWhereInput {
+  const mots = terme.split(/\s+/).filter(Boolean);
+  return {
+    OR: [
+      { qrCode: terme },
+      { utilisateur: { telephone: { contains: terme.replace(/\s/g, '') } } },
+      // Chaque mot doit apparaitre dans le nom ou le prenom (« Diallo Ma » -> Mamadou Diallo).
+      { AND: mots.map((m) => ({ utilisateur: { OR: [{ nom: { contains: m, mode: 'insensitive' as const } }, { prenom: { contains: m, mode: 'insensitive' as const } }] } })) },
+    ],
+  };
+}
+
 export async function rechercherPatients(user: JwtPayload, q: string): Promise<PatientRechercheView[]> {
   const idStructure = await structureDe(user);
   const terme = q.trim();
   if (terme.length < 3) throw new ValidationError('Saisissez au moins 3 caracteres');
 
-  const mots = terme.split(/\s+/).filter(Boolean);
   const patients = await prisma.patientProfile.findMany({
-    where: {
-      OR: [
-        { qrCode: terme },
-        { utilisateur: { telephone: { contains: terme.replace(/\s/g, '') } } },
-        // Chaque mot doit apparaitre dans le nom ou le prenom (« Diallo Ma » -> Mamadou Diallo).
-        { AND: mots.map((m) => ({ utilisateur: { OR: [{ nom: { contains: m, mode: 'insensitive' } }, { prenom: { contains: m, mode: 'insensitive' } }] } })) },
-      ],
-    },
+    where: filtreRecherchePatient(terme),
     select: {
       id: true, sexe: true, dateNaissance: true, prefecture: true,
       utilisateur: { select: { prenom: true, nom: true, telephone: true } },
@@ -297,8 +399,31 @@ export async function listerEpisodes(
   return { items: rows.map(versEpisodeResume), total, page: filtres.page, limit: filtres.limit };
 }
 
+/**
+ * Masque les valeurs d'analyse pour l'agent d'accueil (addendum du 2026-09-28).
+ *
+ * Fermer `/demandes-analyse/:id` ne suffisait pas : la fiche d'episode porte
+ * elle aussi les lignes et leurs resultats, et elle lui reste ouverte — c'est
+ * son ecran de travail. Sans ce filtre, le droit retire d'un cote revenait par
+ * l'autre. Il garde ce dont il a besoin, la liste des examens demandes et
+ * l'avancement, mais pas les valeurs.
+ */
+function sansValeursPourLAccueil(user: JwtPayload, vue: EpisodeSoinsView): EpisodeSoinsView {
+  if (user.role !== 'AGENT_ACCUEIL') return vue;
+  return {
+    ...vue,
+    demandesAnalyse: vue.demandesAnalyse.map((d) => ({
+      ...d,
+      commentaireLaboratoire: null,
+      commentaireMedecin: null,
+      libereePar: null,
+      lignes: d.lignes.map((l) => ({ ...l, resultat: null })),
+    })),
+  };
+}
+
 export async function getEpisode(user: JwtPayload, idEpisode: string): Promise<EpisodeSoinsView> {
-  return versEpisodeView(await episodeDeLaStructure(user, idEpisode));
+  return sansValeursPourLAccueil(user, versEpisodeView(await episodeDeLaStructure(user, idEpisode)));
 }
 
 export async function modifierEpisode(user: JwtPayload, idEpisode: string, dto: UpdateEpisodeDto): Promise<EpisodeSoinsView> {
@@ -332,15 +457,15 @@ export async function cloturerEpisode(user: JwtPayload, idEpisode: string, annul
 }
 
 // ── EF-03-05 : orientation vers un medecin ou un service ─────────────
+//
+// L'accueil oriente, il ne fixe plus l'heure (addendum du 2026-09-28,
+// point 3). Le creneau appartient au medecin, qui seul connait son agenda :
+// jusqu'ici l'accueil posait une convocation que le medecin subissait.
 export async function orienter(user: JwtPayload, idEpisode: string, dto: OrientationDto): Promise<EpisodeSoinsView> {
   const episode = await episodeDeLaStructure(user, idEpisode);
   if (episode.statut === 'CLOS' || episode.statut === 'ANNULE') throw new ConflictError('Cet episode est termine');
   if (!dto.idMedecin && !dto.service) throw new ValidationError('Indiquez un medecin ou un service');
   if (dto.idMedecin) await verifierMedecinDeLaStructure(dto.idMedecin, episode.idStructure);
-  if (dto.prevuLe && !dto.idMedecin) throw new ValidationError('Un rendez-vous doit viser un medecin');
-
-  const prevuLe = dto.prevuLe ? new Date(dto.prevuLe) : null;
-  if (prevuLe && Number.isNaN(prevuLe.getTime())) throw new ValidationError('Date de rendez-vous invalide');
 
   await prisma.$transaction(async (tx) => {
     await tx.episodeSoins.update({
@@ -351,38 +476,43 @@ export async function orienter(user: JwtPayload, idEpisode: string, dto: Orienta
         ...(dto.idMedecin && { idResponsable: dto.idMedecin }),
       },
     });
-    if (prevuLe && dto.idMedecin) {
-      // Une nouvelle orientation datee remplace le rendez-vous encore planifie
-      // de l'episode : on ne cumule pas les convocations.
-      await tx.rendezVous.updateMany({ where: { idEpisode, statut: 'PLANIFIE' }, data: { statut: 'ANNULE' } });
-      await tx.rendezVous.create({
-        data: {
-          idPatient: episode.idPatient,
-          idMedecin: dto.idMedecin,
-          idEpisode,
-          prevuLe,
-          motif: dto.motif ?? episode.motif,
-          statut: 'PLANIFIE',
-        },
+    // Reorienter vers quelqu'un d'autre annule la convocation precedente : on
+    // ne laisse pas un patient attendu par deux medecins.
+    if (dto.idMedecin) {
+      await tx.rendezVous.updateMany({
+        where: { idEpisode, statut: 'PLANIFIE', idMedecin: { not: dto.idMedecin } },
+        data: { statut: 'ANNULE' },
       });
     }
   });
 
+  // Le medecin destinataire doit etre prevenu : sans cela l'orientation
+  // s'ecrit en base et personne ne voit arriver le patient. C'est a lui, et
+  // non plus a l'accueil, de poser le rendez-vous.
+  if (dto.idMedecin) {
+    await notifierSansBloquer({
+      idUtilisateur: dto.idMedecin,
+      type: 'ORIENTATION',
+      titre: 'Un patient vous est oriente',
+      contenu: `Episode ${episode.numero} — ${dto.motif ?? episode.motif}. Fixez-lui un rendez-vous.`,
+      lienAction: '/medecin/orientations',
+      metadonnees: { idEpisode },
+    });
+  }
+
+  // Le patient n'est prevenu d'aucune heure ici : il n'y en a pas encore. Lui
+  // en annoncer une que le medecin n'a pas confirmee serait lui faire perdre
+  // un deplacement.
   const patientUser = await prisma.utilisateur.findFirst({ where: { patientProfile: { id: episode.idPatient } }, select: { id: true, telephone: true } });
   if (patientUser) {
-    const quand = prevuLe ? ` le ${prevuLe.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}` : '';
     await notifierSansBloquer({
       idUtilisateur: patientUser.id,
       type: 'ORIENTATION',
       titre: 'Orientation',
-      contenu: `Vous etes oriente(e) vers ${dto.service ?? 'un medecin'} a ${episode.structure.nom}${quand}. Details dans votre espace.`,
+      contenu: `Vous etes oriente(e) vers ${dto.service ?? 'un medecin'} a ${episode.structure.nom}. Vous serez prevenu(e) des qu'un rendez-vous sera fixe.`,
       lienAction: '/patient/parcours',
       metadonnees: { idEpisode },
     });
-    if (prevuLe) {
-      const { nomCourt } = await getIdentitePlateforme();
-      await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: rendez-vous a ${episode.structure.nom}${quand}. Details dans votre espace.`);
-    }
   }
 
   return versEpisodeView(await episodeDeLaStructure(user, idEpisode));
@@ -478,7 +608,9 @@ export async function creerDemandeAnalyse(user: JwtPayload, idEpisode: string, d
       metadonnees: { idDemande: demande.id, idEpisode },
     });
     const { nomCourt } = await getIdentitePlateforme();
-    await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: des analyses vous attendent au laboratoire ${labo.nom}. Consignes et details dans votre espace.`);
+    // EF-11-02 : le SMS ne dit pas qu'il s'agit d'analyses. Le detail, les
+    // consignes et le laboratoire se lisent dans l'espace du patient.
+    await envoyerSmsSimule(patientUser.telephone, messagePatientInformation(nomCourt));
   }
 
   return versDemandeView(demande);
@@ -606,4 +738,210 @@ export async function documentDemandePourPatient(userId: string, idDemande: stri
   const d = await prisma.demandeAnalyse.findFirst({ where: { id: idDemande, patient: { idUtilisateur: userId } }, include: DEMANDE_INCLUDE });
   if (!d) throw new NotFoundError('Demande introuvable');
   return rendreBonExamen(versDemandeViewPatient(d));
+}
+
+// ── Pointage de presence (addendum du 2026-09-28, point 2) ───────────
+//
+// Le patient arrive avec ou sans rendez-vous ; l'assistante pointe son
+// arrivee, voit avec quel medecin il a rendez-vous, et le redirige au moment
+// opportun. C'est le seul geste de l'accueil qui touche au rendez-vous : il
+// ne le cree pas et n'en change pas l'heure.
+
+const PRESENCE_INCLUDE = {
+  patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true, telephone: true } } } },
+  // `bureau` : ce que l'agent lit au patient juste apres l'avoir pointe.
+  medecin: {
+    select: {
+      id: true, prenom: true, nom: true,
+      medecinProfile: { select: { bureau: true } },
+    },
+  },
+  episode: { select: { id: true } },
+} satisfies Prisma.RendezVousInclude;
+
+type PresenceRow = Prisma.RendezVousGetPayload<{ include: typeof PRESENCE_INCLUDE }>;
+
+function versPresence(r: PresenceRow): PresenceDuJourView {
+  return {
+    idRendezVous: r.id,
+    prevuLe: r.prevuLe.toISOString(),
+    statut: r.statut,
+    arriveeLe: r.arriveeLe?.toISOString() ?? null,
+    patient: {
+      id: r.patient.id,
+      prenom: r.patient.utilisateur.prenom,
+      nom: r.patient.utilisateur.nom,
+      telephone: r.patient.utilisateur.telephone,
+    },
+    medecin: r.medecin
+      ? {
+          id: r.medecin.id,
+          prenom: r.medecin.prenom,
+          nom: r.medecin.nom,
+          // Souvent nul : l'ecran n'affiche alors rien plutot qu'un tiret.
+          bureau: r.medecin.medecinProfile?.bureau ?? null,
+        }
+      : null,
+    idEpisode: r.episode?.id ?? null,
+  };
+}
+
+/** Les patients attendus aujourd'hui dans cette structure. */
+export async function presencesDuJour(user: JwtPayload, jour?: string): Promise<PresenceDuJourView[]> {
+  const idStructure = await structureDe(user);
+
+  const base = jour ? new Date(jour) : new Date();
+  if (Number.isNaN(base.getTime())) throw new ValidationError('Date invalide');
+  const debut = new Date(base); debut.setHours(0, 0, 0, 0);
+  const fin = new Date(base); fin.setHours(23, 59, 59, 999);
+
+  const rdvs = await prisma.rendezVous.findMany({
+    where: {
+      episode: { idStructure },
+      statut: { not: 'ANNULE' },
+      prevuLe: { gte: debut, lte: fin },
+    },
+    include: PRESENCE_INCLUDE,
+    orderBy: { prevuLe: 'asc' },
+    take: 200,
+  });
+  return rdvs.map(versPresence);
+}
+
+/** L'assistante pointe l'arrivee : c'est la que l'attente commence. */
+export async function pointerPresence(user: JwtPayload, idRendezVous: string): Promise<PresenceDuJourView> {
+  const idStructure = await structureDe(user);
+
+  const rdv = await prisma.rendezVous.findFirst({
+    where: { id: idRendezVous, episode: { idStructure } },
+    select: { id: true, statut: true, idMedecin: true, idEpisode: true, patient: { select: { utilisateur: { select: { prenom: true, nom: true } } } } },
+  });
+  if (!rdv) throw new NotFoundError('Rendez-vous introuvable');
+  if (rdv.statut === 'ANNULE') throw new ConflictError('Ce rendez-vous est annule');
+
+  const maintenant = new Date();
+  // Attribution atomique : deux agents qui pointent en meme temps donnent un
+  // gagnant et un perdant, jamais deux notifications au medecin.
+  const prise = await prisma.rendezVous.updateMany({
+    where: { id: idRendezVous, statut: 'PLANIFIE' },
+    data: { statut: 'PRESENT', arriveeLe: maintenant, idPointePar: user.userId },
+  });
+  if (prise.count === 0) throw new ConflictError('Ce patient est deja pointe');
+
+  // Le medecin doit savoir que son patient attend, sinon le pointage ne sert
+  // a rien : l'assistante devrait aller le lui dire de vive voix.
+  if (rdv.idMedecin) {
+    await notifierSansBloquer({
+      idUtilisateur: rdv.idMedecin,
+      type: 'RAPPEL_RENDEZ_VOUS',
+      titre: 'Votre patient est arrive',
+      contenu: `${rdv.patient.utilisateur.prenom} ${rdv.patient.utilisateur.nom} attend a l'accueil.`,
+      lienAction: '/medecin/agenda',
+      metadonnees: { idRendezVous, idEpisode: rdv.idEpisode },
+    });
+  }
+
+  const maj = await prisma.rendezVous.findUniqueOrThrow({ where: { id: idRendezVous }, include: PRESENCE_INCLUDE });
+  return versPresence(maj);
+}
+
+/**
+ * Creer le dossier d'un patient depuis le comptoir (EF-03-01).
+ *
+ * **L'accueil ne quitte plus son espace pour la page publique d'inscription.**
+ * Il y etait renvoye dans un nouvel onglet, avec un formulaire concu pour
+ * quelqu'un qui s'inscrit seul chez lui — et il perdait le fil de l'admission
+ * en cours.
+ *
+ * **Le mot de passe est genere, pas invente par l'agent.** Un agent qui
+ * choisirait le mot de passe du patient le connaitrait ; il est affiche une
+ * seule fois pour etre remis, et le patient doit le changer a sa premiere
+ * connexion (`doitChangerMotDePasse`), comme pour un agent de structure.
+ *
+ * Les antecedents (allergies, maladies chroniques, groupe sanguin) ne sont pas
+ * demandes ici : au comptoir, on enregistre une identite. Le reste se recueille
+ * en consultation, par quelqu'un dont c'est le metier.
+ */
+export async function creerPatientAuComptoir(
+  user: JwtPayload,
+  dto: {
+    telephone: string; prenom: string; nom: string;
+    dateNaissance: string; sexe: string; prefecture: string;
+    sousPrefecture?: string; email?: string;
+  },
+): Promise<{ patient: { id: string; prenom: string; nom: string }; motDePasseTemporaire: string }> {
+  const existant = await prisma.utilisateur.findUnique({
+    where: { telephone: dto.telephone },
+    select: { id: true, prenom: true, nom: true, role: true },
+  });
+  if (existant) {
+    // On nomme la personne : l'agent saura s'il s'agit du bon dossier, au lieu
+    // de recommencer sa recherche a l'aveugle.
+    throw new ConflictError(
+      `Ce numero appartient deja a ${existant.prenom} ${existant.nom}. Cherchez-le dans la liste.`,
+    );
+  }
+
+  const motDePasseTemporaire = genererMotDePasseTemp();
+  const motDePasseHash = await hashPassword(motDePasseTemporaire);
+
+  const patient = await prisma.$transaction(async (tx) => {
+    const u = await tx.utilisateur.create({
+      data: {
+        telephone: dto.telephone,
+        email: dto.email?.trim() || null,
+        motDePasseHash,
+        prenom: dto.prenom.trim(),
+        nom: dto.nom.trim(),
+        role: 'PATIENT',
+        doitChangerMotDePasse: true,
+      },
+      select: { id: true, prenom: true, nom: true },
+    });
+
+    const p = await tx.patientProfile.create({
+      data: {
+        idUtilisateur: u.id,
+        dateNaissance: new Date(dto.dateNaissance),
+        sexe: dto.sexe,
+        prefecture: dto.prefecture.trim(),
+        sousPrefecture: dto.sousPrefecture?.trim() || null,
+        // Le patient est rattache a la structure qui l'enregistre : c'est la
+        // qu'il sera suivi, et c'est ce qui ouvre l'episode de soins.
+        idStructurePreferee: await structureDe(user),
+      },
+      select: { id: true },
+    });
+
+    await initialiserConsentementsParDefaut(tx, p.id, u.id);
+    return { id: p.id, prenom: u.prenom, nom: u.nom };
+  });
+
+  logger.info('[ADMISSION] dossier patient cree au comptoir', {
+    idPatient: patient.id, parQui: user.userId,
+  });
+
+  return { patient, motDePasseTemporaire };
+}
+
+/**
+ * Un mot de passe temporaire dicte au comptoir.
+ *
+ * **Minuscules et chiffres seulement.** Il est lu a voix haute, parfois dans
+ * le bruit, et retape sur un clavier de telephone : une majuscule ou un
+ * caractere special y coute trois gestes et une faute de frappe. La securite
+ * ne vient pas d'ici — elle vient du fait qu'il est temporaire et que le
+ * patient doit le changer a sa premiere connexion.
+ *
+ * Sans `l`, `o`, `1` ni `0` : ces quatre-la se confondent a l'oral comme a
+ * l'ecrit.
+ */
+export function genererMotDePasseTemp(): string {
+  const lettres = 'abcdefghjkmnpqrstuvwxyz';
+  const chiffres = '23456789';
+  const bytes = randomBytes(8);
+  let pwd = '';
+  for (let i = 0; i < 4; i++) pwd += lettres[bytes[i]! % lettres.length];
+  for (let i = 4; i < 8; i++) pwd += chiffres[bytes[i]! % chiffres.length];
+  return pwd;
 }

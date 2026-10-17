@@ -1,0 +1,133 @@
+// features/pharmacien/approvisionnements — la saisie d'une facture.
+.bb-appro {
+  padding: 1.75rem;
+  max-width: 1040px;
+  margin: 0 auto;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  &__section {
+    font-family: var(--bb-font-display);
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--bb-text-secondary);
+    margin: 22px 0 10px;
+  }
+
+  &__carte {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1.25rem;
+    margin-bottom: 18px; box-shadow: var(--bb-shadow-sm);
+  }
+
+  &__grille {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+
+  &__label {
+    display: block; margin-bottom: 4px;
+    font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
+  }
+
+  &__label-mini {
+    display: block; margin-bottom: 3px;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--bb-text-muted);
+  }
+
+  &__aide {
+    margin: 10px 0 0;
+    font-size: 12.5px; color: var(--bb-text-muted); line-height: 1.5;
+  }
+
+  &__champ {
+    width: 100%; box-sizing: border-box;
+    padding: 9px 11px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-primary);
+    font-family: inherit; font-size: 13.5px;
+    &:focus { outline: none; border-color: var(--bb-primary); }
+  }
+
+  // Une ligne de facture : produit large, le reste étroit.
+  &__ligne {
+    display: grid; gap: 10px; align-items: end;
+    grid-template-columns: minmax(180px, 2.2fr) 90px 1fr 140px 120px 36px;
+    padding: 10px; margin-bottom: 8px;
+    border-radius: var(--bb-radius);
+    background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
+  }
+
+  &__retirer {
+    height: 36px; width: 36px;
+    border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: transparent;
+    color: var(--bb-danger); cursor: pointer;
+    &:hover:not(:disabled) { border-color: var(--bb-danger); }
+    &:disabled { opacity: .35; cursor: default; }
+  }
+
+  &__pied {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--bb-border-light);
+  }
+
+  &__total {
+    font-size: 14px; color: var(--bb-text-secondary);
+    strong { font-family: var(--bb-font-display); font-size: 17px; color: var(--bb-text-primary); }
+  }
+
+  &__actions { display: flex; gap: 10px; }
+
+  // ── Historique ────────────────────────────────────────────────────
+  &__entree {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl); padding: 1rem 1.15rem;
+    margin-bottom: 10px; box-shadow: var(--bb-shadow-sm);
+  }
+
+  &__entree-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+
+  &__numero {
+    display: block;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__montant {
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 15px;
+    color: var(--bb-primary); white-space: nowrap;
+  }
+
+  &__lots-titre {
+    margin: 0 0 6px;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--bb-text-muted);
+  }
+
+  &__lot {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 7px 10px; margin-bottom: 5px;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-1);
+    font-size: 12.5px;
+  }
+
+  &__lot-nom { flex: 1; min-width: 160px; color: var(--bb-text-primary); font-weight: 600; }
+  &__lot-qte { font-family: var(--bb-font-display); font-weight: 800; color: var(--bb-text-primary); }
+  &__lot-num, &__lot-date { color: var(--bb-text-muted); }
+}
+
+// En sombre, `--bb-surface-1` vaut `--bb-surface-card` : les lignes se
+// fondraient dans la carte.
+:host-context([data-theme='dark']) .bb-appro {
+  &__ligne, &__lot { background: rgba(255, 255, 255, .04); }
+  &__retirer { color: #F87171; }
+}

@@ -66,11 +66,13 @@ export function startBackgroundJobs() {
     }).catch((error: unknown) => logger.error('[JOB] ussd cleanup failed', { error }));
   };
 
-  // Resultats critiques (EF-04-08/09) : escalade sans accuse, diffusion differee.
+  // Resultats : escalade des alertes critiques sans accuse (EF-04-08), et
+  // relance des medecins qui n'ont pas libere leurs resultats au patient
+  // (addendum du 2026-09-28). Ce job ne rend jamais un resultat visible.
   const runCritiques = () => {
     void withOptionalRedisLock('resultats-critiques', async () => {
       const result = await traiterAlertesCritiques();
-      if (result.escaladees > 0 || result.diffusees > 0 || isVerboseJobsEnabled()) {
+      if (result.escaladees > 0 || result.relancees > 0 || result.escaladesLiberation > 0 || isVerboseJobsEnabled()) {
         logger.info('[JOB] resultats critiques', result);
       }
     }).catch((error: unknown) => logger.error('[JOB] resultats critiques failed', { error }));

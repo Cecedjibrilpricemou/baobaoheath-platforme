@@ -20,6 +20,7 @@ import type {
 } from '@baobaoheath/shared-types';
 import {
   createAgentStructureSchema,
+  definirBureauSchema,
   createPharmacieSchema,
   createStructureSchema,
   updateParametresSystemeSchema,
@@ -57,6 +58,31 @@ router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentS
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
   }
+});
+
+/**
+ * Definir — ou effacer — le bureau d'un medecin.
+ *
+ * **Un bureau change** : un medecin demenage, un service est redecoupe. Figer
+ * la valeur a la creation du compte l'aurait rendue fausse en quelques mois,
+ * et un bureau faux est pire que pas de bureau : le patient y va.
+ *
+ * `null` efface, pour l'hopital qui ne numerote pas ses bureaux et ou l'agent
+ * accompagne le patient a pied.
+ */
+router.put('/agents/:id/bureau', requireRole('ADMIN_STRUCTURE'), validateBody(definirBureauSchema), async (req: AuthRequest, res: Response) => {
+  const data = await service.definirBureau(
+    req.user!,
+    req.params['id'] as string,
+    (req.body as { bureau: string | null }).bureau,
+  );
+  res.json({
+    success: true,
+    data,
+    message: data.bureau
+      ? `Bureau de ${data.nomComplet} : ${data.bureau}.`
+      : `Bureau de ${data.nomComplet} effacé. L'accueil accompagnera le patient.`,
+  });
 });
 
 router.put('/agents/:id/desactiver', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {

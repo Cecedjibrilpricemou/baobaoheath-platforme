@@ -1,0 +1,159 @@
+// La relecture des accès d'urgence (EF-02-06).
+
+.bb-revue { padding-bottom: 2rem; }
+
+.revue-avis {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bb-primary) 8%, transparent);
+  font-size: 12.5px;
+  line-height: 1.55;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex: none; }
+}
+
+.revue-filtre { padding: 0.8rem 1rem; }
+
+.revue-succes,
+.revue-erreur {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+
+.revue-succes { background: color-mix(in srgb, var(--bb-primary) 10%, transparent); }
+.revue-erreur {
+  background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+  color: var(--bb-danger);
+}
+
+.revue-liste {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.revue-ligne {
+  border: 1px solid var(--bb-border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: var(--bb-surface-card);
+
+  // Ce qui attend une relecture se voit avant d'être lu : c'est la file de
+  // travail.
+  &--a-revoir {
+    border-color: color-mix(in srgb, var(--bb-warning) 50%, var(--bb-border));
+    background: color-mix(in srgb, var(--bb-warning) 6%, var(--bb-surface-card));
+  }
+
+  &__tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  &__nom { font-weight: 600; font-size: 0.9375rem; }
+
+  &__etat {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    &--a-revoir {
+      background: color-mix(in srgb, var(--bb-warning) 18%, transparent);
+      color: var(--bb-warning);
+    }
+
+    &--injustifie {
+      background: color-mix(in srgb, var(--bb-danger) 15%, transparent);
+      color: var(--bb-danger);
+    }
+  }
+
+  &__duree { font-size: 11.5px; color: var(--bb-text-muted); margin-left: auto; }
+
+  &__qui { margin: 0.25rem 0 0; font-size: 11.5px; color: var(--bb-text-muted); }
+
+  // Le motif déclaré, mot pour mot. Il ne peut pas avoir été réécrit.
+  &__motif { margin: 0.5rem 0 0; font-size: 12.5px; line-height: 1.55; }
+
+  &__alerte {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.45rem 0 0;
+    font-size: 11.5px;
+    color: var(--bb-warning);
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  }
+
+  &__pied { margin-top: 0.7rem; }
+
+  &__avis {
+    font-size: 11.5px;
+    font-style: italic;
+    color: var(--bb-text-secondary);
+    line-height: 1.5;
+  }
+}
+
+.revue-boite {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.45);
+
+  &__carte {
+    width: min(620px, 100%);
+    max-height: min(86vh, 860px);
+    overflow-y: auto;
+    padding: 1.25rem 1.4rem 1.1rem;
+
+    h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+  }
+
+  // `mat-form-field` ne réserve pas la place de son `mat-hint`.
+  &__avis { width: 100%; margin-top: 0.9rem; margin-bottom: 1.4rem; }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+}
+
+.bb-empty {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  color: var(--bb-text-muted);
+
+  mat-icon { font-size: 26px; width: 26px; height: 26px; opacity: 0.45; }
+  p { font-size: 0.8125rem; margin: 0; }
+}
