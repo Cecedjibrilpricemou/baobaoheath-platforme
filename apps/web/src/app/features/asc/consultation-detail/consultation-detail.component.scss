@@ -99,7 +99,13 @@
     border-radius: var(--bb-radius-lg); padding: 10px 14px;
     display: flex; flex-direction: column; gap: 3px; min-width: 0;
 
-    &--alert { background: #fff; border-color: #fff; .bb-detail__info-label { color: var(--bb-danger); } .bb-detail__info-value { color: var(--bb-danger); } }
+    &--alert {
+      background: #fff; border-color: #fff;
+      .bb-detail__info-label, .bb-detail__info-value { color: var(--bb-danger); }
+      // ✦ Refonte UI : carte blanche en sombre aussi → rouge profond (le rouge
+      // eclairci du theme sombre tombait a 2,8:1 sur blanc)
+      :host-context([data-theme="dark"]) & { .bb-detail__info-label, .bb-detail__info-value { color: var(--bb-danger-border); } }
+    }
 
     @media (max-width: 480px) { flex: 1 1 calc(50% - 6px); }
   }

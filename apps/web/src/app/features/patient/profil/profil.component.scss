@@ -174,6 +174,10 @@
       font-weight: 800;
 
       i { color: var(--bb-danger); opacity: 1; }
+
+      // ✦ Refonte UI : la pastille reste blanche en sombre, mais le rouge du
+      // theme sombre est eclairci (2,8:1 sur blanc) : rouge profond ici.
+      :host-context([data-theme="dark"]) & { color: var(--bb-danger-border); i { color: var(--bb-danger-border); } }
     }
   }
 }
