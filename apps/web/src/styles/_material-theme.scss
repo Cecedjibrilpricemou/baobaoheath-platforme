@@ -51,6 +51,12 @@ html {
     filled-horizontal-padding: 20px,
     outlined-horizontal-padding: 20px,
     outlined-outline-color: var(--bb-border),
+    // ✦ Refonte UI : etat desactive lisible dans les deux modes (en sombre,
+    // le libelle vert sur fond vert du theme M3 disparaissait).
+    filled-disabled-container-color: var(--bb-surface-2),
+    filled-disabled-label-text-color: var(--bb-text-muted),
+    outlined-disabled-outline-color: var(--bb-border),
+    outlined-disabled-label-text-color: var(--bb-text-muted),
   ));
 
   @include mat.form-field-overrides((

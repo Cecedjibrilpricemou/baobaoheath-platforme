@@ -116,8 +116,12 @@ a.bb-stat, a.bb-hop-stat, button.bb-stat, .bb-stat--link,
     margin-bottom: 1.25rem;
 
     &__title { font-size: 21px; }
-    &__stats { width: 100%; flex-wrap: wrap; row-gap: 10px; }
-    .hero-stat { flex: 1 1 33%; padding: 0 12px; }
+    // Compteurs sur une seule ligne, a parts egales (ils passaient a 2 + 1).
+    // Selecteur double : styles.scss (charge apres) fixe width: fit-content.
+    & &__stats { width: 100%; }
+    .hero-stat { flex: 1 1 0; min-width: 0; padding: 0 8px; text-align: center; }
+    .hero-stat__value { font-size: 20px; }
+    .hero-stat__label { font-size: 9.5px; letter-spacing: .02em; }
   }
 }
 

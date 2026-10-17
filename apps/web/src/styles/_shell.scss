@@ -160,15 +160,21 @@
   }
 
   // Compteur (ex. éléments en attente de synchronisation)
-  &__badge {
-    min-width: 20px; height: 20px; padding: 0 6px;
+  // ✦ Refonte UI : le chiffre etait illisible — Material impose sa propre
+  // couleur a l'element de fin de ligne (matListItemMeta), qui l'emportait
+  // sur `color: #fff`. Classe doublee pour passer devant ; pastille vert vif
+  // a texte sombre, lisible sur la barre comme sur la pilule active.
+  &__badge#{&}__badge {
+    min-width: 22px; height: 22px; padding: 0 7px; margin: 0;
     border-radius: var(--bb-radius-pill);
-    background: rgba(255, 255, 255, .16);
-    border: 1px solid rgba(255, 255, 255, .22);
-    color: #fff;
+    background: var(--bb-bright);
+    color: var(--bb-deep);
     font-family: var(--bb-font-display);
-    font-size: 11px; font-weight: 700;
+    font-size: 11px; font-weight: 800; line-height: 1;
     display: inline-flex; align-items: center; justify-content: center;
+    align-self: center;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--bb-deep) 35%, transparent);
+    font-variant-numeric: tabular-nums;
   }
 }
 
