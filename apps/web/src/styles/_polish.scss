@@ -156,6 +156,30 @@ a.bb-stat, a.bb-hop-stat, button.bb-stat, .bb-stat--link,
 .toast-info    { background-color: #1E5FAF; }
 .toast-warning { background-color: #B45309; }
 
+// ── ICONES ABSENTES DE PRIMEICONS 7 ────────────────────────────────
+// ✦ Refonte UI : deux icones employees par les templates n'existent pas
+// dans la version installee et s'affichaient vides :
+// - pi-wifi-slash : indicateur « hors ligne » de l'espace ASC (barre,
+//   bandeau, synchronisation) — l'information la plus utile hors reseau ;
+// - pi-stethoscope : titre « Consultation d'origine » des referencements.
+// On les reconstruit a partir de glyphes existants.
+.pi-wifi-slash {
+  position: relative;
+
+  &::before { content: "\e96f"; } // glyphe pi-wifi
+
+  // Barre diagonale qui raye le wifi
+  &::after {
+    content: '';
+    position: absolute; left: 50%; top: 50%;
+    width: 1.2em; height: 0.12em; min-height: 1.5px;
+    background: currentColor; border-radius: 1px;
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+}
+
+.pi-stethoscope::before { content: "\ea13"; } // glyphe pi-clipboard (dossier clinique)
+
 // ── ETATS VIDES & CHARGEMENT ───────────────────────────────────────
 .empty-state__icon { animation: bb-float 4s ease-in-out infinite; }
 
