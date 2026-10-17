@@ -2,29 +2,7 @@
 <div class="landing">
 
   <!-- ── NAVBAR ──────────────────────────────────────────────────── -->
-  <nav class="lnav">
-    <a href="#top" class="lnav__logo">
-      <app-brand class="lnav__logo-name"></app-brand>
-    </a>
-
-    <div class="lnav__links">
-      <a href="#top" class="lnav__link lnav__link--active">{{ 'LANDING.NAV_HOME' | translate }}</a>
-      <a href="#how" class="lnav__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
-      <a href="#structures" class="lnav__link">{{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
-      <a href="#contact" class="lnav__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
-    </div>
-
-    <div class="lnav__actions">
-      <button class="lnav__icon-btn" type="button" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
-        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-      </button>
-      <button class="lnav__icon-btn lnav__lang" type="button" (click)="toggleLang()">
-        {{ 'COMMON.LANG_TOGGLE' | translate }}
-      </button>
-      <a routerLink="/auth/login" class="btn-outline">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
-      <a routerLink="/auth/register" class="btn-primary">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
-    </div>
-  </nav>
+  <app-public-nav></app-public-nav>
 
   <!-- ── HERO ────────────────────────────────────────────────────── -->
   <section class="hero" id="top">

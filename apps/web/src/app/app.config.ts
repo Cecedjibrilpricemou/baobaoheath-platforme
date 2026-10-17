@@ -6,7 +6,7 @@ import localeFr from '@angular/common/locales/fr';
 // Dates et nombres des pipes Angular en francais (« samedi 20 septembre 2026 »,
 // « 12 500 »). Sans cela, DatePipe rend en anglais americain.
 registerLocaleData(localeFr);
-import { provideRouter, withViewTransitions } from '@angular/router';
+import { provideRouter, withInMemoryScrolling, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideToastr } from 'ngx-toastr';
@@ -37,7 +37,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     { provide: LOCALE_ID, useValue: 'fr' },
-    provideRouter(routes, withViewTransitions()),
+    // Site public : un lien « /#how » defile jusqu'a la section depuis
+    // n'importe quelle page, et chaque nouvelle page s'ouvre en haut. Les
+    // espaces connectes defilent dans leur propre zone : non concernes.
+    provideRouter(routes, withViewTransitions(), withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' })),
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: APP_INITIALIZER, useFactory: initializePlateforme, multi: true },
     { provide: APP_INITIALIZER, useFactory: initializeAuth, multi: true },

@@ -1,31 +1,8 @@
 <!-- shared/components/public-shell/public-shell.component.html -->
 <div class="pub">
 
-  <!-- ── NAVIGATION ──────────────────────────────────────────────── -->
-  <nav class="pub-nav">
-    <a routerLink="/" class="pub-nav__logo" [attr.aria-label]="'LANDING.NAV_HOME' | translate">
-      <app-brand class="pub-nav__logo-name"></app-brand>
-    </a>
-
-    <div class="pub-nav__links">
-      <a routerLink="/" class="pub-nav__link">{{ 'LANDING.NAV_HOME' | translate }}</a>
-      <a routerLink="/professionnels" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_PROS' | translate }}</a>
-      <a routerLink="/securite" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
-      <a routerLink="/a-propos" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_ABOUT' | translate }}</a>
-    </div>
-
-    <div class="pub-nav__actions">
-      <button class="pub-nav__icon-btn" type="button" (click)="toggleTheme()"
-        [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
-        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-      </button>
-      <button class="pub-nav__icon-btn pub-nav__lang" type="button" (click)="toggleLang()">
-        {{ 'COMMON.LANG_TOGGLE' | translate }}
-      </button>
-      <a routerLink="/auth/login" class="pub-btn pub-btn--ghost pub-nav__login">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
-      <a routerLink="/auth/register" class="pub-btn pub-btn--primary">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
-    </div>
-  </nav>
+  <!-- ── NAVIGATION (commune a tout le site public) ─────────────── -->
+  <app-public-nav></app-public-nav>
 
   <!-- ── CONTENU DE LA PAGE ──────────────────────────────────────── -->
   <main class="pub-main">

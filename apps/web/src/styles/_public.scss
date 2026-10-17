@@ -28,7 +28,9 @@ $pub-rythme: clamp(56px, 8vw, 104px);
   }
 }
 
-.pub {
+// La barre (.pub-nav) est aussi posee sur l'accueil, hors de .pub : elle
+// porte donc ses propres variables.
+.pub, .pub-nav {
   --pub-accent: var(--bb-primary);
   --pub-accent-soft: var(--bb-success-bg);
   --pub-band: var(--bb-primary);
@@ -37,17 +39,21 @@ $pub-rythme: clamp(56px, 8vw, 104px);
   --pub-glass-border: color-mix(in srgb, var(--bb-text-primary) 9%, transparent);
   --pub-hairline: color-mix(in srgb, var(--bb-text-primary) 8%, transparent);
   --pub-glow: color-mix(in srgb, var(--bb-bright) 22%, transparent);
+}
 
+.pub {
   min-height: 100dvh;
   display: flex; flex-direction: column;
   background: var(--bb-surface-ground);
   color: var(--bb-text-primary);
   font-family: var(--bb-font-body);
-  overflow-x: hidden;
+  // clip et non hidden : hidden ferait de la page un conteneur de
+  // defilement, et la barre collante partirait avec le contenu.
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
-[data-theme="dark"] .pub {
+[data-theme="dark"] .pub, [data-theme="dark"] .pub-nav {
   --pub-accent: var(--bb-bright);
   --pub-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
   --pub-band: color-mix(in srgb, var(--bb-mid) 78%, var(--bb-deep));
@@ -114,22 +120,30 @@ $pub-rythme: clamp(56px, 8vw, 104px);
   }
 }
 
-// ── Navigation ───────────────────────────────────────────────────────
+// ── Navigation (PublicNavComponent : accueil + pages d'information) ──
+// L'hote du composant ne doit pas former de boite : une barre « sticky » ne
+// colle que dans son parent, et l'hote ne fait que la hauteur de la barre
+// (dans la colonne flex de .pub, elle partait avec le contenu).
+app-public-nav { display: contents; }
+
 .pub-nav {
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
-  padding: 14px max(#{$pub-gouttiere}, calc((100% - #{$pub-largeur}) / 2 + 24px));
+  padding: 12px max(#{$pub-gouttiere}, calc((100% - #{$pub-largeur}) / 2 + 24px));
+  min-height: 64px;
   background: color-mix(in srgb, var(--bb-surface-ground) 76%, transparent);
   backdrop-filter: saturate(170%) blur(16px); -webkit-backdrop-filter: saturate(170%) blur(16px);
   border-bottom: 1px solid var(--pub-hairline);
+  font-family: var(--bb-font-body);
+  color: var(--bb-text-primary);
 
-  &__logo { display: flex; align-items: center; text-decoration: none; color: var(--bb-text-primary); border-radius: 10px; &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); } }
+  &__logo { display: flex; align-items: center; flex-shrink: 0; text-decoration: none; color: var(--bb-text-primary); border-radius: 10px; &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); } }
   &__logo-name { font-size: 17px; letter-spacing: -.02em; }
 
-  &__links { display: flex; gap: 4px; @media (max-width: 960px) { display: none; } }
+  &__links { display: flex; gap: 2px; }
   &__link {
     position: relative; padding: 8px 12px; border-radius: var(--bb-radius-pill);
-    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 600;
+    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 600; white-space: nowrap;
     color: var(--bb-text-secondary); text-decoration: none;
     transition: color var(--bb-transition), background var(--bb-transition);
     &::after {
@@ -142,28 +156,74 @@ $pub-rythme: clamp(56px, 8vw, 104px);
     &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
   }
 
-  &__actions {
-    display: flex; align-items: center; gap: 8px;
-    @media (max-width: 600px) {
-      gap: 6px;
-      .pub-nav__login { display: none; }
-      .pub-btn--primary { padding: 8px 14px; font-size: 12.5px; min-height: 38px; }
-    }
-  }
+  &__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   &__icon-btn {
     width: 36px; height: 36px; border-radius: 50%;
     border: 1px solid var(--pub-glass-border); background: var(--pub-glass);
     color: var(--bb-text-secondary); font-family: var(--bb-font-display); font-size: 12px; font-weight: 700; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     transition: border-color var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
     &:hover { border-color: var(--pub-accent); color: var(--pub-accent); transform: translateY(-1px); }
     &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
   }
   &__lang { width: auto; padding: 0 12px; border-radius: var(--bb-radius-pill); }
 
-  @media (max-width: 600px) { padding-block: 10px; gap: 10px; &__logo-name { font-size: 15px; } }
-  @media (max-width: 380px) { .pub-nav__lang { display: none; } }
+  // Bouton du menu mobile
+  &__burger {
+    display: none;
+    width: 42px; height: 42px; border-radius: 13px;
+    border: 1px solid var(--pub-glass-border); background: var(--pub-glass);
+    color: var(--bb-text-primary); cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: border-color var(--bb-transition), color var(--bb-transition), background var(--bb-transition);
+    i { font-size: 16px; }
+    &:hover { border-color: var(--pub-accent); color: var(--pub-accent); }
+    &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
+  }
+  &--open &__burger { background: var(--pub-accent-soft); border-color: color-mix(in srgb, var(--pub-accent) 40%, transparent); color: var(--pub-accent); }
+
+  // Panneau du menu mobile, en verre, sous la barre
+  &__menu {
+    position: absolute; left: 0; right: 0; top: 100%;
+    max-height: calc(100dvh - 64px); overflow-y: auto;
+    padding: 12px $pub-gouttiere 24px;
+    // Fond opaque : un flou d'arriere-plan imbrique dans la barre (deja
+    // floutee) ne s'applique pas, et le texte de la page transparaissait.
+    background: var(--bb-surface-ground);
+    border-bottom: 1px solid var(--pub-hairline);
+    box-shadow: 0 30px 50px -30px color-mix(in srgb, var(--bb-deep) 60%, transparent);
+    @media (prefers-reduced-motion: no-preference) { animation: bb-pub-menu .28s var(--bb-ease) both; }
+  }
+  &__menu-links { display: flex; flex-direction: column; gap: 2px; padding-bottom: 12px; border-bottom: 1px solid var(--pub-hairline); }
+  &__menu-link {
+    display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 0 12px; border-radius: 14px;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 700; letter-spacing: -.01em;
+    color: var(--bb-text-primary); text-decoration: none;
+    transition: background var(--bb-transition), color var(--bb-transition);
+    i { width: 36px; height: 36px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; color: var(--pub-accent); background: var(--pub-accent-soft); }
+    &:hover, &--active { background: var(--pub-accent-soft); color: var(--pub-accent); }
+    &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
+  }
+  &__menu-tools { display: flex; gap: 8px; padding: 14px 0; }
+  &__menu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; @media (max-width: 380px) { grid-template-columns: 1fr; } }
+
+  // Moins de 1100px : on resserre ; moins de 960px : menu mobile
+  @media (max-width: 1100px) { gap: 12px; &__link { padding: 8px 9px; font-size: 13px; } &__link::after { left: 9px; right: 9px; } }
+  @media (max-width: 960px) {
+    position: sticky;
+    &__links, &__desktop-only, &__login { display: none; }
+    &__burger { display: inline-flex; }
+  }
+  @media (min-width: 961px) { &__menu { display: none; } }
+  @media (max-width: 600px) {
+    padding-block: 10px; gap: 10px; min-height: 60px;
+    &__logo-name { font-size: 15px; }
+    &__register { min-height: 40px; padding: 8px 14px; font-size: 12.5px; }
+  }
 }
+
+// Ancres natives de l'accueil (boutons du hero) : arret sous la barre collante
+.landing section[id] { scroll-margin-top: 76px; }
 
 // ── En-tete de page (hero) ───────────────────────────────────────────
 .pub-hero {
@@ -450,6 +510,10 @@ $pub-rythme: clamp(56px, 8vw, 104px);
 // ── Animations ───────────────────────────────────────────────────────
 @keyframes bb-pub-reveal {
   from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes bb-pub-menu {
+  from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: none; }
 }
 @keyframes bb-pub-rise {

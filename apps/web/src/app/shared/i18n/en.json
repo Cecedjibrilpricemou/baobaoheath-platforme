@@ -1607,6 +1607,10 @@
     }
   },
   "PUBLIC": {
+    "NAV_PROS": "Professionals",
+    "NAV_SECURITY": "Security",
+    "MENU_OPEN": "Open menu",
+    "MENU_CLOSE": "Close menu",
     "LINK_PROS": "Healthcare professionals",
     "LINK_SECURITY": "Security & data",
     "LINK_ABOUT": "About",

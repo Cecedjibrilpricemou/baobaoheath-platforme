@@ -58,7 +58,10 @@ $rythme: clamp(64px, 9vw, 120px);
   background: var(--bb-surface-ground);
   color: var(--bb-text-primary);
   font-family: var(--bb-font-body);
-  overflow-x: hidden;
+  // ✦ Refonte UI : clip et non hidden — overflow-x: hidden faisait de la page
+  // un conteneur de defilement et la barre « collante » partait avec le
+  // contenu au lieu de rester en haut.
+  overflow-x: clip;
   scroll-behavior: smooth;
   // ✦ Refonte UI : texte plus net sur les grands titres
   -webkit-font-smoothing: antialiased;
@@ -106,27 +109,7 @@ $rythme: clamp(64px, 9vw, 120px);
   }
   &:hover::after { transform: translateX(120%); }
 }
-.btn-primary {
-  @extend %bouton;
-  // ✦ Refonte UI : degrade vertical + liseré lumineux interne
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bb-bright) 22%, var(--bb-primary)), var(--bb-primary));
-  color: #fff; border: 1px solid color-mix(in srgb, var(--bb-mid) 60%, var(--bb-primary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent),
-              0 6px 16px -4px color-mix(in srgb, var(--bb-primary) 45%, transparent);
-  &:hover {
-    background: linear-gradient(180deg, var(--bb-primary), var(--bb-mid));
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent),
-                0 12px 28px -8px color-mix(in srgb, var(--bb-primary) 65%, transparent),
-                0 0 0 4px var(--land-glow);
-  }
-}
-.btn-outline {
-  @extend %bouton;
-  background: var(--land-glass); color: var(--bb-text-primary);
-  border: 1px solid var(--land-glass-border);
-  backdrop-filter: blur(10px);
-  &:hover { border-color: var(--land-accent); color: var(--land-accent); box-shadow: var(--bb-shadow-sm); }
-}
+// (.btn-primary / .btn-outline servaient a l'ancienne barre : retires)
 .btn-white {
   @extend %bouton;
   background: #fff; color: var(--land-on-band-btn); border: 1px solid #fff;
@@ -145,68 +128,8 @@ $rythme: clamp(64px, 9vw, 120px);
 }
 
 // ── Navbar ───────────────────────────────────────────────────────────
-// ✦ Refonte UI : barre en verre depoli sur toute la largeur (le contenu
-// reste aligne sur la grille de 1200px), micro-bordure qui apparait avec
-// une ombre douce des que l'on defile.
-.lnav {
-  position: sticky; top: 0; z-index: 50;
-  display: flex; align-items: center; justify-content: space-between; gap: 20px;
-  padding: 14px max(#{$gouttiere}, calc((100% - #{$largeur}) / 2 + 24px));
-  background: color-mix(in srgb, var(--bb-surface-ground) 74%, transparent);
-  backdrop-filter: saturate(170%) blur(16px);
-  -webkit-backdrop-filter: saturate(170%) blur(16px);
-  border-bottom: 1px solid transparent;
-
-  @supports (animation-timeline: scroll()) {
-    animation: bb-land-nav linear both;
-    animation-timeline: scroll();
-    animation-range: 0 140px;
-  }
-  @supports not (animation-timeline: scroll()) { border-bottom-color: var(--land-hairline); }
-
-  &__logo { display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 10px; &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); } }
-  &__logo-name { font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; letter-spacing: -.02em; color: var(--bb-text-primary); }
-
-  // ✦ Refonte UI : liens en casse normale, trait anime sous le lien
-  &__links { display: flex; gap: 6px; @media (max-width: 900px) { display: none; } }
-  &__link {
-    position: relative; padding: 8px 12px; border-radius: var(--bb-radius-pill);
-    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 600; letter-spacing: -.005em;
-    color: var(--bb-text-secondary); text-decoration: none;
-    transition: color var(--bb-transition), background var(--bb-transition);
-    &::after {
-      content: ''; position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px; border-radius: 2px;
-      background: var(--land-accent); transform: scaleX(0); transform-origin: left;
-      transition: transform .3s var(--bb-ease);
-    }
-    &:hover { color: var(--bb-text-primary); background: var(--land-hairline); }
-    &:hover::after, &--active::after { transform: scaleX(1); }
-    &--active { color: var(--bb-text-primary); }
-    &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
-  }
-
-  &__actions {
-    display: flex; align-items: center; gap: 8px;
-    @media (max-width: 600px) {
-      gap: 6px;
-      .btn-outline { display: none; }
-      .btn-primary { padding: 9px 14px; font-size: 12.5px; }
-    }
-  }
-  @media (max-width: 600px) { padding-block: 10px; gap: 10px; &__logo-name { font-size: 15px; } }
-  // Tres petit ecran : nom plus compact pour que le bouton d'inscription reste entier.
-  @media (max-width: 420px) { &__logo-name { font-size: 14px; letter-spacing: .02em; } }
-  &__icon-btn {
-    width: 36px; height: 36px; border-radius: 50%;
-    border: 1px solid var(--land-glass-border); background: var(--land-glass);
-    color: var(--bb-text-secondary); font-family: var(--bb-font-display); font-size: 12px; font-weight: 700; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: border-color var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
-    &:hover { border-color: var(--land-accent); color: var(--land-accent); transform: translateY(-1px); }
-    &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
-  }
-  &__lang { width: auto; padding: 0 12px; border-radius: var(--bb-radius-pill); }
-}
+// ✦ Refonte UI : la barre est desormais le composant partage PublicNav
+// (styles/_public.scss), identique sur l'accueil et les pages d'information.
 
 // ── Hero ─────────────────────────────────────────────────────────────
 // ✦ Refonte UI : premiere impression. Titre Sora 800 tres grand et serre,
@@ -618,9 +541,4 @@ $rythme: clamp(64px, 9vw, 120px);
 @keyframes bb-land-float {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-8px); }
-}
-// Barre de navigation : liseré et ombre apparaissent au defilement
-@keyframes bb-land-nav {
-  from { border-bottom-color: transparent; box-shadow: none; }
-  to   { border-bottom-color: var(--land-hairline); box-shadow: 0 10px 30px -18px color-mix(in srgb, var(--bb-deep) 40%, transparent); }
 }

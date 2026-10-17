@@ -6,7 +6,6 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { StructurePubliqueView } from '@baobaoheath/shared-types';
-import { ThemeService } from '../../shared/services/theme.service';
 import { I18nService } from '../../shared/services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { ApiService } from '../../core/services/api.service';
@@ -14,6 +13,7 @@ import { PlateformeService } from '../../shared/services/plateforme.service';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { ContactComponent } from './components/contact/contact.component';
 import { BrandComponent } from '../../shared/components/brand/brand.component';
+import { PublicNavComponent } from '../../shared/components/public-nav/public-nav.component';
 
 interface PublicStats {
   patients: number;
@@ -35,12 +35,11 @@ const ICONES_TYPE: Record<string, string> = {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [BrandComponent, RouterLink, CommonModule, FormsModule, TranslatePipe, HowItWorksComponent, ContactComponent],
+  imports: [BrandComponent, PublicNavComponent, RouterLink, CommonModule, FormsModule, TranslatePipe, HowItWorksComponent, ContactComponent],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss'
 })
 export class LandingComponent implements OnInit {
-  readonly themeService = inject(ThemeService);
   readonly plateforme   = inject(PlateformeService);
   private i18nService  = inject(I18nService);
   private api          = inject(ApiService);
@@ -117,8 +116,4 @@ export class LandingComponent implements OnInit {
   libelleType(type: string): string {
     return this.i18nService.t(`LANDING.STRUCT_TYPE_${type}`);
   }
-
-  // ── Navbar ────────────────────────────────────────────────────────
-  toggleTheme() { this.themeService.toggle(); }
-  toggleLang()  { this.i18nService.toggle(); }
 }
