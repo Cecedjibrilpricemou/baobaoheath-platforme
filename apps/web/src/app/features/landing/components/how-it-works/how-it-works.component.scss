@@ -17,6 +17,16 @@
   grid-template-columns: repeat(4, 1fr);
   @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 640px)  { grid-template-columns: 1fr; }
+
+  // ✦ Refonte UI : sur deux colonnes, la 7e etape restait seule sur sa
+  // rangee ; elle s'etend sur toute la largeur.
+  @media (min-width: 641px) and (max-width: 1100px) {
+    > .step:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+      // le cadre 3/2 deviendrait demesure en pleine largeur
+      .step__icon, .step__media { aspect-ratio: auto; height: 200px; }
+    }
+  }
 }
 
 .step {
@@ -59,6 +69,9 @@
     // dans le vide.
     position: relative;
     background: var(--land-accent);
+    // ✦ Refonte UI : la largeur posee en ligne (100 %) s'ajoutait a la
+    // pastille et le trait sortait de la carte ; on le borne a l'espace libre.
+    max-width: calc(100% - 62px);
     &::after {
       content: ''; position: absolute; right: -3px; top: 50%;
       width: 9px; height: 9px; border-radius: 50%;

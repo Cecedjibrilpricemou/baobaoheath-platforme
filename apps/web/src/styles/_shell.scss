@@ -67,6 +67,10 @@
   // En superposition (mobile) la barre doit laisser une zone tactile
   // suffisante sur le fond pour pouvoir la refermer d'un doigt.
   width: min(var(--bb-sidebar-width), 78vw);
+  // ✦ Refonte UI : le panneau Material impose sa propre largeur (360px par
+  // defaut) et ignorait --bb-sidebar-width (280px) : sur tablette le menu
+  // mangeait pres de la moitie de l'ecran. On lui passe le token.
+  --mat-sidenav-container-width: min(var(--bb-sidebar-width), 78vw);
   padding: 1.25rem 0.875rem;
   display: flex;
   flex-direction: column;

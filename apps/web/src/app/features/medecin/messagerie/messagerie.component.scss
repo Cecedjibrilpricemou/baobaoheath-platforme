@@ -18,11 +18,13 @@
   }
 
   // ✦ Refonte UI : colonne de conversations un peu plus large sur grand
-  // ecran, plus etroite sur tablette.
+  // ecran, plus etroite sur tablette. Sous 900px (tablette portrait, menu
+  // lateral ouvert), deux colonnes ne laissaient que ~200px a la
+  // conversation : on passe en un seul panneau a la fois, comme sur mobile.
   &__layout {
     display: grid; grid-template-columns: clamp(280px, 31%, 360px) minmax(0, 1fr); gap: 20px;
     flex: 1; min-height: 0;
-    @media (max-width: 768px) { grid-template-columns: 1fr; gap: 0; }
+    @media (max-width: 900px) { grid-template-columns: 1fr; gap: 0; }
   }
 
   // ── Sidebar conversations ────────────────────────────────────
@@ -35,7 +37,7 @@
     // Squelettes de chargement : espaces dans la carte
     > .bb-skeleton { margin: 6px; }
 
-    &--hidden { @media (max-width: 768px) { display: none; } }
+    &--hidden { @media (max-width: 900px) { display: none; } }
   }
 
   // ✦ Refonte UI : conversation en « pilule » arrondie dans la liste ; la
@@ -108,7 +110,7 @@
     &:hover { background: var(--bb-surface-2); color: var(--bb-primary); }
     &:active { transform: scale(0.94); }
 
-    @media (max-width: 768px) { display: inline-flex; }
+    @media (max-width: 900px) { display: inline-flex; }
   }
 
   &__chat-avatar {
@@ -224,7 +226,7 @@
 
     // ✦ Refonte UI : sur mobile la liste occupe l'ecran ; ce panneau vide
     // s'empilait dessous sans rien apporter.
-    @media (max-width: 768px) { display: none; }
+    @media (max-width: 900px) { display: none; }
   }
 
   &__empty {

@@ -12,6 +12,7 @@
 @use './styles/hopital';
 @use './styles/utilities';
 @use './styles/polish';
+@use './styles/unauthorized'; // ✦ Refonte UI
 // primeicons est conservé : jeu d'icônes local et léger, utilisé via
 // mat-icon fontSet="pi" dans toute l'application.
 @import 'primeicons/primeicons.css';
@@ -115,7 +116,7 @@
   --bb-line-height: 1.55;
 
   // Layout
-  --bb-sidebar-width: 260px;
+  --bb-sidebar-width: 280px; // ✦ Refonte UI : « Synchronisation » + pastille tient sans troncature
   --bb-topbar-height: 64px;
   // ✦ Refonte UI : largeur de lecture maximale du contenu (ecrans larges)
   // et goutiere fluide, de 16px (mobile) a 32px (bureau).

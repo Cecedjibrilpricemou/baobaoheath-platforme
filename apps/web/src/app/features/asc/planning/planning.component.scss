@@ -68,10 +68,12 @@
 
   // Bloc heure
   &__time-block {
-    width: 76px; flex-shrink: 0; padding: 18px 14px 16px 0;
+    // ✦ Refonte UI : colonne elargie, la pastille « Aujourd'hui » debordait
+    // a gauche de la colonne horaire (tablette et mobile).
+    width: 92px; flex-shrink: 0; padding: 18px 12px 16px 0;
     display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
 
-    @media (max-width: 480px) { width: 54px; padding-right: 8px; }
+    @media (max-width: 480px) { width: 66px; padding-right: 6px; }
   }
 
   &__heure {
@@ -85,6 +87,8 @@
     color: var(--plan-accent); background: var(--plan-accent-soft);
     padding: 2px 8px; border-radius: var(--bb-radius-pill);
     text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
+    max-width: 100%;
+    @media (max-width: 480px) { font-size: 8px; padding: 2px 5px; letter-spacing: .02em; }
   }
 
   // Ligne de connexion
