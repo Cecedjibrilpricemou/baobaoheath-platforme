@@ -1,0 +1,67 @@
+<!-- features/public/legal/legal.component.html -->
+<app-public-shell>
+
+  <header class="pub-hero pub-hero--compact">
+    <span class="pub-tag">{{ 'LANDING.FOOTER_LEGAL' | translate }}</span>
+    <h1 class="pub-hero__title">{{ cle + '.TITLE' | translate }}</h1>
+    <p class="pub-hero__lead">{{ cle + '.LEAD' | translate: params() }}</p>
+    <p class="pub-hero__meta"><i class="pi pi-calendar" aria-hidden="true"></i> {{ cle + '.UPDATED' | translate }}</p>
+  </header>
+
+  @if (provisoire) {
+    <div class="pub-draft" role="note">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <div>
+        <strong>{{ 'PUBLIC.DRAFT_TITLE' | translate }}</strong>
+        <span>{{ 'PUBLIC.DRAFT_TEXT' | translate }}</span>
+      </div>
+    </div>
+  }
+
+  <div class="pub-legal">
+    <nav class="pub-legal__toc" [attr.aria-label]="'PUBLIC.TOC' | translate">
+      <p class="pub-legal__toc-title">{{ 'PUBLIC.TOC' | translate }}</p>
+      <ol>
+        @for (s of sections; track s.id; let i = $index) {
+          <li>
+            <button type="button" class="pub-legal__toc-link" (click)="allerA(s.id)">
+              <span class="pub-legal__toc-num">{{ i + 1 }}</span>
+              {{ cle + '.' + s.id + '.TITLE' | translate }}
+            </button>
+          </li>
+        }
+      </ol>
+    </nav>
+
+    <article class="pub-legal__body">
+      @for (s of sections; track s.id; let i = $index) {
+        <section class="pub-legal__section" [class.pub-legal__section--important]="s.important" [id]="'legal-' + s.id">
+          <h2 class="pub-legal__h2"><span class="pub-legal__num">{{ i + 1 }}</span>{{ cle + '.' + s.id + '.TITLE' | translate }}</h2>
+          @for (p of s.avant; track p) {
+            <p>{{ cle + '.' + s.id + '.' + p | translate: params() }}</p>
+          }
+          @if (s.liste) {
+            <ul>
+              @for (l of s.liste; track l) {
+                <li>{{ cle + '.' + s.id + '.' + l | translate: params() }}</li>
+              }
+            </ul>
+          }
+          @for (p of s.apres ?? []; track p) {
+            <p>{{ cle + '.' + s.id + '.' + p | translate: params() }}</p>
+          }
+        </section>
+      }
+
+      <div class="pub-legal__end">
+        @if (doc === 'PRIVACY') {
+          <a routerLink="/securite" class="pub-btn pub-btn--ghost"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
+          <a routerLink="/conditions-utilisation" class="pub-btn pub-btn--ghost">{{ 'LANDING.FOOTER_TERMS' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+        } @else {
+          <a routerLink="/confidentialite" class="pub-btn pub-btn--ghost">{{ 'LANDING.FOOTER_PRIVACY' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+        }
+      </div>
+    </article>
+  </div>
+
+</app-public-shell>

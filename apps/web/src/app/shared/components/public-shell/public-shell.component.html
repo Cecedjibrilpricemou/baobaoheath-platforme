@@ -1,0 +1,75 @@
+<!-- shared/components/public-shell/public-shell.component.html -->
+<div class="pub">
+
+  <!-- ── NAVIGATION ──────────────────────────────────────────────── -->
+  <nav class="pub-nav">
+    <a routerLink="/" class="pub-nav__logo" [attr.aria-label]="'LANDING.NAV_HOME' | translate">
+      <app-brand class="pub-nav__logo-name"></app-brand>
+    </a>
+
+    <div class="pub-nav__links">
+      <a routerLink="/" class="pub-nav__link">{{ 'LANDING.NAV_HOME' | translate }}</a>
+      <a routerLink="/professionnels" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_PROS' | translate }}</a>
+      <a routerLink="/securite" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
+      <a routerLink="/a-propos" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_ABOUT' | translate }}</a>
+    </div>
+
+    <div class="pub-nav__actions">
+      <button class="pub-nav__icon-btn" type="button" (click)="toggleTheme()"
+        [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
+        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+      </button>
+      <button class="pub-nav__icon-btn pub-nav__lang" type="button" (click)="toggleLang()">
+        {{ 'COMMON.LANG_TOGGLE' | translate }}
+      </button>
+      <a routerLink="/auth/login" class="pub-btn pub-btn--ghost pub-nav__login">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
+      <a routerLink="/auth/register" class="pub-btn pub-btn--primary">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
+    </div>
+  </nav>
+
+  <!-- ── CONTENU DE LA PAGE ──────────────────────────────────────── -->
+  <main class="pub-main">
+    <ng-content></ng-content>
+  </main>
+
+  <!-- ── PIED DE PAGE ────────────────────────────────────────────── -->
+  <footer class="pub-footer">
+    <div class="pub-footer__top">
+      <div>
+        <div class="pub-footer__logo">
+          <app-brand class="pub-footer__logo-name"></app-brand>
+        </div>
+        <p class="pub-footer__desc">{{ 'LANDING.FOOTER_DESC' | translate }}</p>
+      </div>
+
+      <div class="pub-footer__col">
+        <div class="pub-footer__col-title">{{ 'LANDING.FOOTER_PLATFORM' | translate }}</div>
+        <a routerLink="/" class="pub-footer__link">{{ 'LANDING.NAV_HOME' | translate }}</a>
+        <a routerLink="/professionnels" class="pub-footer__link">{{ 'PUBLIC.LINK_PROS' | translate }}</a>
+        <a routerLink="/securite" class="pub-footer__link">{{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
+        <a routerLink="/a-propos" class="pub-footer__link">{{ 'PUBLIC.LINK_ABOUT' | translate }}</a>
+      </div>
+
+      <div class="pub-footer__col">
+        <div class="pub-footer__col-title">{{ 'LANDING.FOOTER_ACCOUNT' | translate }}</div>
+        <a routerLink="/auth/login" class="pub-footer__link">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
+        <a routerLink="/auth/register" class="pub-footer__link">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
+      </div>
+
+      <div class="pub-footer__col">
+        <div class="pub-footer__col-title">{{ 'LANDING.FOOTER_LEGAL' | translate }}</div>
+        <a routerLink="/confidentialite" class="pub-footer__link">{{ 'LANDING.FOOTER_PRIVACY' | translate }}</a>
+        <a routerLink="/conditions-utilisation" class="pub-footer__link">{{ 'LANDING.FOOTER_TERMS' | translate }}</a>
+      </div>
+    </div>
+
+    <div class="pub-footer__bottom">
+      <span>{{ plateforme.copyright() }}</span>
+      <div class="pub-footer__badges">
+        <span class="pub-footer__badge"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'LANDING.FOOTER_SECURE' | translate }}</span>
+        <span class="pub-footer__badge"><i class="pi pi-globe" aria-hidden="true"></i> {{ 'LANDING.FOOTER_MADE' | translate }}</span>
+      </div>
+    </div>
+  </footer>
+
+</div>

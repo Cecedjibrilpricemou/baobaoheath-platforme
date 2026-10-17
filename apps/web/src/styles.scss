@@ -13,6 +13,7 @@
 @use './styles/utilities';
 @use './styles/polish';
 @use './styles/unauthorized'; // ✦ Refonte UI
+@use './styles/public'; // ✦ Refonte UI : pages publiques d'information
 // primeicons est conservé : jeu d'icônes local et léger, utilisé via
 // mat-icon fontSet="pi" dans toute l'application.
 @import 'primeicons/primeicons.css';
