@@ -4,6 +4,18 @@
 
 // La phrase qui évite une faute grave : un agent ne doit jamais croire qu'il
 // peut refuser quelqu'un sans papiers.
+// ✦ Refonte UI : accent de l'ecran — vert de marque en clair, vert vif en
+// sombre (--bb-primary y tombe a 3,3:1 sur les cartes : statuts et liens
+// illisibles).
+:host {
+  display: block;
+  --idt-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --idt-accent: var(--bb-bright);
+}
+
 .identites-avis {
   display: flex;
   align-items: flex-start;
@@ -17,7 +29,7 @@
   background: var(--bb-surface-1);
   color: var(--bb-text-secondary);
 
-  mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; color: var(--bb-primary); }
+  mat-icon { font-size: 17px; width: 17px; height: 17px; flex-shrink: 0; color: var(--idt-accent); }
 }
 
 .identites-filtres {
@@ -53,7 +65,7 @@
 .identites-succes {
   background: var(--bb-success-bg);
   border: 1px solid var(--bb-success-border);
-  color: var(--bb-primary);
+  color: var(--idt-accent);
 }
 
 .identites-erreur {
@@ -105,7 +117,7 @@
     padding: 1px 8px;
     border-radius: 999px;
 
-    &--ok { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--ok { background: var(--bb-success-bg); color: var(--idt-accent); }
     &--provisoire {
       background: color-mix(in srgb, var(--bb-warning) 16%, transparent);
       color: var(--bb-warning);
@@ -141,7 +153,13 @@
     width: min(640px, 100%);
     padding: 1.25rem 1.4rem 1.1rem;
 
-    h2 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+    h2 {
+      margin: 0 0 0.4rem; font-size: 1.05rem;
+      // ✦ Refonte UI : titre de carte en display, trait d'accent
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+      &::before { content: ''; width: 4px; height: 18px; border-radius: 4px; background: var(--idt-accent); flex-shrink: 0; }
+    }
   }
 
   // L'agent déclare avoir vu une pièce : ce n'est pas un formulaire de plus.

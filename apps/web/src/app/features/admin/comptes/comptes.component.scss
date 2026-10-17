@@ -2,6 +2,18 @@
 //
 // Jetons verifies un a un avant d'etre ecrits.
 
+// ✦ Refonte UI : accent de l'ecran — vert de marque en clair, vert vif en
+// sombre (--bb-primary y tombe a 3,3:1 sur les cartes : statuts et liens
+// illisibles).
+:host {
+  display: block;
+  --cpt-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --cpt-accent: var(--bb-bright);
+}
+
 .comptes-filtres {
   padding: 1rem 1.15rem 0.9rem;
 
@@ -35,7 +47,7 @@
 .comptes-succes {
   background: var(--bb-success-bg);
   border: 1px solid var(--bb-success-border);
-  color: var(--bb-primary);
+  color: var(--cpt-accent);
 }
 
 .comptes-erreur {
@@ -53,7 +65,13 @@
     gap: 0.6rem;
     margin-bottom: 0.75rem;
 
-    h2 { margin: 0; font-size: 1rem; }
+    h2 {
+      margin: 0; font-size: 1rem;
+      // ✦ Refonte UI : titre de carte en display, trait d'accent
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+      &::before { content: ''; width: 4px; height: 18px; border-radius: 4px; background: var(--cpt-accent); flex-shrink: 0; }
+    }
   }
 
   &__compte {
@@ -102,7 +120,7 @@
     padding: 1px 8px;
     border-radius: 999px;
 
-    &--actif { background: var(--bb-success-bg); color: var(--bb-primary); }
+    &--actif { background: var(--bb-success-bg); color: var(--cpt-accent); }
     &--ferme { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); color: var(--bb-danger); }
   }
 
@@ -147,7 +165,13 @@
     width: min(540px, 100%);
     padding: 1.25rem 1.4rem 1.1rem;
 
-    h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    h2 {
+      margin: 0 0 0.5rem; font-size: 1.05rem;
+      // ✦ Refonte UI : titre de carte en display, trait d'accent
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+      &::before { content: ''; width: 4px; height: 18px; border-radius: 4px; background: var(--cpt-accent); flex-shrink: 0; }
+    }
   }
 
   &__avertissement {

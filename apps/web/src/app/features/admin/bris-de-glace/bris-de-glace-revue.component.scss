@@ -1,5 +1,17 @@
 // La relecture des accès d'urgence (EF-02-06).
 
+// ✦ Refonte UI : accent de l'ecran — vert de marque en clair, vert vif en
+// sombre (--bb-primary y tombe a 3,3:1 sur les cartes : statuts et liens
+// illisibles).
+:host {
+  display: block;
+  --bdg-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --bdg-accent: var(--bb-bright);
+}
+
 .bb-revue { padding-bottom: 2rem; }
 
 .revue-avis {
@@ -72,7 +84,7 @@
     padding: 0.1rem 0.45rem;
     border-radius: 999px;
     background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
-    color: var(--bb-primary);
+    color: var(--bdg-accent);
 
     &--a-revoir {
       background: color-mix(in srgb, var(--bb-warning) 18%, transparent);
@@ -130,7 +142,13 @@
     overflow-y: auto;
     padding: 1.25rem 1.4rem 1.1rem;
 
-    h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    h2 {
+      margin: 0 0 0.5rem; font-size: 1.05rem;
+      // ✦ Refonte UI : titre de carte en display, trait d'accent
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--bb-font-display); font-weight: 800; letter-spacing: -.2px;
+      &::before { content: ''; width: 4px; height: 18px; border-radius: 4px; background: var(--bdg-accent); flex-shrink: 0; }
+    }
   }
 
   // `mat-form-field` ne réserve pas la place de son `mat-hint`.

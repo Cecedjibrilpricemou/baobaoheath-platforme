@@ -4,6 +4,19 @@
 // est assure. Les regles et les polices se lisent en une ligne chacune —
 // categorie, taux, plafond, date — parce qu'on les compare entre elles bien
 // plus souvent qu'on en lit une seule.
+
+// ✦ Refonte UI : accent de l'ecran — vert de marque en clair, vert vif en
+// sombre (--bb-primary y tombe a 3,3:1 sur les cartes : statuts et liens
+// illisibles).
+:host {
+  display: block;
+  --assu-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --assu-accent: var(--bb-bright);
+}
+
 .bb-assu {
 
   &__sec {
@@ -53,7 +66,7 @@
   &__lien {
     display: inline-flex; align-items: center; gap: 6px;
     background: none; border: none; padding: 4px 0;
-    color: var(--bb-primary); font-size: 12.5px; font-weight: 700;
+    color: var(--assu-accent); font-size: 12.5px; font-weight: 700;
     font-family: var(--bb-font-display); cursor: pointer;
     &:hover { text-decoration: underline; }
     i { font-size: 11px; }
