@@ -1,8 +1,23 @@
 // features/medecin/agenda — même grammaire que les autres écrans du médecin.
+
+// ✦ Refonte UI : accent de l'espace médecin — vert de marque en clair, vert
+// vif en sombre (--bb-primary y tombe sous 4,5:1 sur les cartes).
+:host {
+  display: block;
+  --agd-accent: var(--bb-primary);
+  --agd-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --agd-accent: var(--bb-bright);
+  --agd-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
 .bb-agenda {
-  padding: 1.75rem;
-  max-width: 900px;
+  // ✦ Refonte UI : la coquille porte deja la goutiere (plus de double marge)
+  max-width: 960px;
   margin: 0 auto;
+  font-variant-numeric: tabular-nums;
 
   &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
 
@@ -11,45 +26,68 @@
     padding: 46px 24px; text-align: center;
     background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
     border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
-    i { font-size: 30px; color: var(--bb-text-muted); }
+    i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--agd-accent); background: var(--agd-accent-soft);
+    }
+    p { margin: 0; font-weight: 600; }
   }
 
+  // ✦ Refonte UI : le jour en titre display, trait d'accent
   &__jour {
+    display: flex; align-items: center; gap: 10px;
     font-family: var(--bb-font-display);
-    font-size: 14px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--bb-text-secondary);
-    margin: 22px 0 10px;
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 26px 0 12px;
+    &::first-letter { text-transform: uppercase; }
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--agd-accent); flex-shrink: 0;
+    }
   }
 
+  // ✦ Refonte UI : l'heure dans une colonne-pastille, la carte en relief
   &__card {
-    display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-left: 3px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1rem 1.15rem;
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--bb-border);
+    border-radius: var(--bb-radius-lg); padding: 1rem 1.2rem;
     margin-bottom: 10px; box-shadow: var(--bb-shadow-sm);
+    transition: transform var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { transform: translateY(-1px); box-shadow: var(--bb-shadow-hover); }
 
     // Le patient est là et attend : c'est ce qu'il faut voir en premier.
-    &--attend { border-left-color: var(--bb-primary); }
+    &--attend {
+      border-left-color: var(--agd-accent);
+      background: linear-gradient(90deg, var(--agd-accent-soft), transparent 45%), var(--bb-surface-card);
+    }
     // Créneau dépassé sans que personne ait pointé l'arrivée.
     &--retard { border-left-color: var(--bb-danger); }
+
+    @media (max-width: 600px) { align-items: flex-start; gap: 12px; }
   }
 
   &__heure {
-    flex: 0 0 auto; min-width: 74px;
-    font-family: var(--bb-font-display); font-size: 17px; font-weight: 800;
-    color: var(--bb-text-primary);
+    flex: 0 0 auto; min-width: 78px; text-align: center;
+    padding: 8px 10px; border-radius: var(--bb-radius);
+    background: var(--bb-surface-2);
+    font-family: var(--bb-font-display); font-size: 18px; font-weight: 800;
+    letter-spacing: -.4px; color: var(--bb-text-primary);
 
     small {
-      display: block; margin-top: 3px;
-      font-family: inherit; font-size: 11px; font-weight: 600;
-      color: var(--bb-primary); text-transform: none; letter-spacing: 0;
+      display: block; margin-top: 2px;
+      font-family: inherit; font-size: 10.5px; font-weight: 700;
+      color: var(--agd-accent); letter-spacing: 0;
     }
   }
 
   &__corps { flex: 1; min-width: 180px; }
 
   &__patient {
-    display: block;
+    display: block; margin-bottom: 2px;
     font-family: var(--bb-font-display); font-size: 15.5px; font-weight: 800;
     color: var(--bb-text-primary);
   }
@@ -57,48 +95,42 @@
   &__meta { display: block; font-size: 12.5px; color: var(--bb-text-muted); }
 
   &__motif {
-    display: block; margin-top: 5px;
+    display: block; margin-top: 6px;
     font-size: 13px; color: var(--bb-text-secondary);
   }
 
   &__droite {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+    @media (max-width: 600px) { width: 100%; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; }
   }
 
   &__statut {
     padding: 4px 11px; border-radius: var(--bb-radius-pill);
-    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .04em; white-space: nowrap;
-    background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
-    color: var(--bb-text-secondary);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; white-space: nowrap;
+    background: var(--bb-surface-2); color: var(--bb-text-secondary);
 
-    &[data-statut='PRESENT'] {
-      background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-primary);
-    }
-    &[data-statut='EN_CONSULTATION'] {
-      background: var(--bb-info-bg); border-color: var(--bb-info-border); color: var(--bb-info);
-    }
-    &[data-statut='ABSENT'] {
-      background: var(--bb-danger-bg); border-color: var(--bb-danger-border); color: var(--bb-danger);
-    }
+    &[data-statut='PRESENT'] { background: var(--agd-accent-soft); color: var(--agd-accent); }
+    &[data-statut='EN_CONSULTATION'] { background: var(--bb-info-bg); color: var(--bb-info); }
+    &[data-statut='ABSENT'] { background: var(--bb-danger-bg); color: var(--bb-danger); }
   }
 
-  &__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  &__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
   &__lien {
-    font-size: 13px; font-weight: 600;
-    color: var(--bb-primary); text-decoration: none;
-    &:hover { text-decoration: underline; }
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 700;
+    color: var(--agd-accent); text-decoration: none;
+    &::after { content: '→'; transition: transform var(--bb-transition); }
+    &:hover::after { transform: translateX(3px); }
   }
+
+  app-export-liste { display: block; margin-bottom: 4px; }
 }
 
-// En sombre, `--bb-info` et `--bb-danger` ne sont pas redéfinis : #1E40AF sur
-// #0A0F2D serait illisible. Même rattrapage que les autres écrans.
-:host-context([data-theme='dark']) .bb-agenda {
-  &__card--retard { border-left-color: #F87171; }
-
-  &__statut {
-    &[data-statut='EN_CONSULTATION'] { color: #60A5FA; }
-    &[data-statut='ABSENT'] { color: #F87171; }
-  }
+@media (prefers-reduced-motion: reduce) {
+  .bb-agenda__card { transition: none; &:hover { transform: none; } }
 }
+
+// ✦ Refonte UI : couleurs sombres codees en dur retirees — --bb-info et
+// --bb-danger sont redefinis en sombre (styles.scss).
