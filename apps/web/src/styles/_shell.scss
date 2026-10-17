@@ -21,6 +21,12 @@
     display: flex;
     flex-direction: column;
     background: var(--bb-surface-ground);
+
+    // ✦ Refonte UI : un voile plein ecran (scanner QR, deconnexion, profil)
+    // ouvert depuis une page restait sous la barre laterale, car
+    // mat-sidenav-content forme un contexte d'empilement inferieur a
+    // mat-sidenav. Le contenu passe devant le temps de la modale.
+    &:has(.bb-qr-overlay, .bb-logout-overlay, .bb-profil-overlay) { z-index: 4; }
   }
 
   &__page {
@@ -36,7 +42,10 @@
 
     // ✦ Refonte UI : chaque page routee apparait en fondu (opacite seule :
     // une transformation creerait un bloc conteneur pour les modales fixes).
-    > :not(router-outlet) { animation: bb-page-in 0.35s var(--bb-ease) both; }
+    // Remplissage `backwards` et non `both` : une animation qui persiste garde
+    // un contexte d'empilement sur la page, et un voile plein ecran ouvert
+    // depuis la page (scanner QR) restait alors sous la barre du haut.
+    > :not(router-outlet) { animation: bb-page-in 0.35s var(--bb-ease) backwards; }
   }
 }
 
