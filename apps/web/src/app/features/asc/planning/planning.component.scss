@@ -1,96 +1,131 @@
 // features/asc/planning/planning.component.scss
-.planning-page {}
+
+// ✦ Refonte UI : accent propre a l'ecran (vert vif en mode sombre)
+:host {
+  display: block;
+  --plan-accent: var(--bb-primary);
+  --plan-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --plan-accent: var(--bb-bright);
+  --plan-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
 
 // ── Toggle vue ───────────────────────────────────────────────────
+// ✦ Refonte UI : meme segment que les filtres des autres ecrans
 .vue-toggle {
-  display: flex; gap: 6px; margin-bottom: 20px;
-  background: var(--bb-surface-1); border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius-lg); padding: 5px; width: fit-content;
+  display: inline-flex; gap: 4px; margin-bottom: 20px;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-pill); padding: 4px; box-shadow: var(--bb-shadow-xs);
 }
 
 .vue-btn {
   display: flex; align-items: center; gap: 7px;
-  padding: 8px 16px; border-radius: var(--bb-radius);
-  border: none; font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 600;
-  cursor: pointer; transition: all var(--bb-transition);
-  background: transparent; color: var(--bb-text-muted);
+  padding: 8px 16px; border-radius: var(--bb-radius-pill);
+  border: none; font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+  cursor: pointer; background: transparent; color: var(--bb-text-secondary);
+  transition: background var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
   i { font-size: 12px; }
 
-  &:hover { background: var(--bb-surface-2); color: var(--bb-text-secondary); }
+  &:hover { background: var(--bb-surface-1); color: var(--plan-accent); }
+  &:active { transform: scale(0.97); }
 
-  &--active {
-    background: var(--bb-surface-0) !important; color: var(--bb-primary) !important;
-    box-shadow: var(--bb-shadow-xs);
+  // ✦ Refonte UI : etat actif sans !important
+  &--active, &--active:hover {
+    background: var(--bb-primary); color: var(--bb-text-inverse);
+    box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent);
   }
 
   &__badge {
-    min-width: 18px; height: 18px; padding: 0 5px;
+    min-width: 20px; height: 20px; padding: 0 6px;
     background: var(--bb-bright); color: var(--bb-deep);
-    border-radius: 100px; font-size: 10px; font-weight: 700;
+    border-radius: var(--bb-radius-pill); font-size: 10.5px; font-weight: 800;
     display: flex; align-items: center; justify-content: center;
   }
 }
 
 // ── Liste RDV ─────────────────────────────────────────────────────
-.rdv-list { display: flex; flex-direction: column; gap: 0; }
+.rdv-list { display: flex; flex-direction: column; }
 
 .rdv-card {
-  display: flex; gap: 0; position: relative;
+  display: flex; position: relative;
 
-  &--today .rdv-card__content { border-left-color: var(--bb-bright); }
-  &--passe  { opacity: .65; }
+  // Le rail ne continue pas apres le dernier rendez-vous
+  &:last-child .rdv-card__line { visibility: hidden; }
+
+  &--today .rdv-card__content {
+    border-left-color: var(--bb-bright);
+    background: color-mix(in srgb, var(--bb-success-bg) 55%, var(--bb-surface-card));
+  }
+
+  // ✦ Refonte UI : un rendez-vous passe s'efface par sa surface et son
+  // heure, pas par une opacite globale qui rendait le texte illisible.
+  &--passe {
+    .rdv-card__content { background: var(--bb-surface-1); box-shadow: none; }
+    .rdv-card__heure { color: var(--bb-text-muted); }
+  }
 
   // Bloc heure
   &__time-block {
-    width: 80px; flex-shrink: 0; padding: 16px 16px 16px 0;
-    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    width: 76px; flex-shrink: 0; padding: 18px 14px 16px 0;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+
+    @media (max-width: 480px) { width: 54px; padding-right: 8px; }
   }
 
   &__heure {
     font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
-    color: var(--bb-primary); line-height: 1;
+    color: var(--plan-accent); line-height: 1; font-variant-numeric: tabular-nums;
+    @media (max-width: 480px) { font-size: 14px; }
   }
 
   &__today-pill {
-    font-family: var(--bb-font-display); font-size: 9px; font-weight: 700;
-    color: var(--bb-bright); background: rgba(62,187,112,.12);
-    border: 1px solid rgba(62,187,112,.22); padding: 2px 8px; border-radius: 100px;
-    text-transform: uppercase; letter-spacing: .5px;
+    font-family: var(--bb-font-display); font-size: 9px; font-weight: 800;
+    color: var(--plan-accent); background: var(--plan-accent-soft);
+    padding: 2px 8px; border-radius: var(--bb-radius-pill);
+    text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
   }
 
   // Ligne de connexion
   &__connector {
     display: flex; flex-direction: column; align-items: center;
-    width: 24px; flex-shrink: 0; padding-top: 20px;
+    width: 20px; flex-shrink: 0; padding-top: 21px;
   }
 
   &__dot {
     width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
-    background: var(--bb-border); border: 2px solid var(--bb-surface-card);
+    background: var(--bb-border-strong); box-shadow: 0 0 0 3px var(--bb-surface-ground);
     z-index: 1;
 
-    &--today { background: var(--bb-bright); border-color: rgba(62,187,112,.3); }
-    &--passe  { background: var(--bb-text-muted); }
+    &--today { background: var(--bb-bright); box-shadow: 0 0 0 3px var(--bb-surface-ground), 0 0 0 6px var(--plan-accent-soft); }
+    &--passe  { background: var(--bb-border); }
   }
 
   &__line {
-    flex: 1; width: 2px; background: var(--bb-border-light); margin-top: 4px;
+    flex: 1; width: 2px; background: var(--bb-border); margin-top: 4px; border-radius: 2px;
   }
 
   // Contenu card
   &__content {
-    flex: 1; background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-left: 3px solid var(--bb-border-light);
-    border-radius: var(--bb-radius-lg); padding: 14px 16px; margin: 8px 0 8px 10px;
-    transition: all var(--bb-transition); box-shadow: var(--bb-shadow-xs);
-    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); }
+    flex: 1; min-width: 0; background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--bb-border);
+    border-radius: var(--bb-radius-lg); padding: 14px 16px; margin: 8px 0 8px 8px;
+    box-shadow: var(--bb-shadow-xs);
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow), transform var(--bb-transition-slow);
+    &:hover { box-shadow: var(--bb-shadow-hover); transform: translateY(-1px); }
+
+    @media (max-width: 480px) { padding: 12px; margin-left: 4px; }
   }
 
-  &__header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  &__header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+    @media (max-width: 480px) { flex-wrap: wrap; gap: 8px 10px; }
+  }
 
   &__avatar {
-    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-    background: var(--bb-surface-2); border: 1px solid var(--bb-border);
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: var(--bb-surface-2); border: 1px solid var(--bb-border-light);
     display: flex; align-items: center; justify-content: center;
     font-family: var(--bb-font-display); font-size: 12px; font-weight: 700;
     color: var(--bb-text-secondary); text-transform: uppercase;
@@ -98,17 +133,18 @@
     &--today { background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid)); color: #fff; border: none; }
   }
 
-  &__patient { flex: 1; min-width: 0; }
-  &__name { font-size: 14px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  &__phone { font-size: 12px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 5px; i { font-size: 10px; } }
+  &__patient { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  &__name { font-size: 14.5px; font-weight: 700; color: var(--bb-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__phone { font-size: 12px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; i { font-size: 10px; } }
 
-  &__details { display: flex; gap: 14px; flex-wrap: wrap; }
+  &__details {
+    display: flex; gap: 6px 16px; flex-wrap: wrap;
+    padding-top: 10px; border-top: 1px dashed var(--bb-border-light);
+  }
 }
 
 .rdv-detail {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 12.5px; color: var(--bb-text-muted);
-  i { font-size: 11px; color: var(--bb-primary); }
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--bb-text-secondary);
+  i { font-size: 11px; color: var(--plan-accent); }
 }
-
-.rdv-tag { font-size: 11.5px !important; }
