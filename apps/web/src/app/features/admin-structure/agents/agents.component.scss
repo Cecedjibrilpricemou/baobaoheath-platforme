@@ -122,7 +122,9 @@
     color: var(--bb-danger); display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 13px;
     transition: background var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
-    &:hover { background: var(--bb-danger); border-color: var(--bb-danger); color: #fff; }
+    &:hover { background: var(--bb-danger); border-color: var(--bb-danger); color: #fff;
+      :host-context([data-theme="dark"]) & { color: var(--bb-deep); } // ✦ Refonte UI
+    }
     &:active { transform: scale(0.94); }
     i { font-size: 13px; }
   }

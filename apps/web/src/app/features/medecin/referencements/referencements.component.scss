@@ -91,6 +91,11 @@
     --mat-button-filled-container-color: var(--bb-danger);
     --mat-button-filled-label-text-color: #fff;
     --mat-button-filled-state-layer-color: #fff;
+    // ✦ Refonte UI : en sombre, libelle vert profond sur le rouge eclairci
+    :host-context([data-theme="dark"]) & {
+      --mat-button-filled-label-text-color: var(--bb-deep);
+      --mat-button-filled-state-layer-color: var(--bb-deep);
+    }
 
     &:hover:not(:disabled) { box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--bb-danger) 60%, transparent); }
   }

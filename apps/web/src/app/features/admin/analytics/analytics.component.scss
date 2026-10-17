@@ -246,6 +246,11 @@
     font-family: var(--bb-font-display);
     font-size: 12px; font-weight: 800; color: #fff;
     font-variant-numeric: tabular-nums;
+    // ✦ Refonte UI : la couleur de la barre est fixee par le composant (vert
+    // vif, orange…) : le blanc posé directement dessus tombait a 2,3:1. Le
+    // chiffre gagne une pastille vert profond, lisible sur toutes les teintes.
+    padding: 2px 7px; border-radius: var(--bb-radius-pill);
+    background: color-mix(in srgb, var(--bb-deep) 72%, transparent);
   }
 
   &__label {

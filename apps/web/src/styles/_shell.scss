@@ -375,6 +375,8 @@
     background: var(--bb-success-bg);
     border: 1px solid var(--bb-success-border);
     color: var(--bb-primary);
+    // ✦ Refonte UI : vert de marque = 3,4:1 sur fond sombre ; vert vif en sombre
+    [data-theme="dark"] & { color: var(--bb-bright); }
   }
 }
 

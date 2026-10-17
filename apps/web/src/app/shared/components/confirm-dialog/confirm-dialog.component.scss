@@ -54,6 +54,9 @@
   &__confirm--danger {
     --mat-button-filled-container-color: var(--bb-danger);
     --mat-button-filled-label-text-color: var(--bb-text-inverse);
+
+    // ✦ Refonte UI : en sombre le rouge s'eclaircit, le libelle passe en vert profond
+    :host-context([data-theme="dark"]) & { --mat-button-filled-label-text-color: var(--bb-deep); }
   }
 }
 

@@ -167,7 +167,9 @@
   // destructive : elle ne doit pas attirer l'oeil avant d'etre visee).
   &__deactivate-btn {
     border-color: var(--bb-danger-border); color: var(--bb-danger);
-    &:hover:not(:disabled) { background: var(--bb-danger); border-color: var(--bb-danger); color: #fff; }
+    &:hover:not(:disabled) { background: var(--bb-danger); border-color: var(--bb-danger); color: #fff;
+      :host-context([data-theme="dark"]) & { color: var(--bb-deep); } // ✦ Refonte UI
+    }
   }
 
   &__activate-btn {

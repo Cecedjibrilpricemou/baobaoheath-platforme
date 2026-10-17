@@ -337,6 +337,8 @@
     &--danger {
       background: var(--bb-danger); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--bb-danger) 70%, transparent);
       &:hover:not(:disabled) { background: color-mix(in srgb, var(--bb-danger) 85%, #000); }
+      // ✦ Refonte UI : en sombre, texte vert profond sur le rouge eclairci
+      :host-context([data-theme="dark"]) & { color: var(--bb-deep); }
     }
     i { font-size: 13px; }
   }
