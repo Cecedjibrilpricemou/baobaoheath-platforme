@@ -70,9 +70,11 @@
   &__structure-sep { opacity: .5; }
 
   // ── STAT CARDS ──────────────────────────────────────────────────
+  // ✦ Refonte UI : auto-fit — les 4 compteurs occupent toute la largeur
+  // disponible au lieu de laisser une colonne vide sur grand ecran.
   &__stats {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px; margin-bottom: 1.75rem;
   }
 

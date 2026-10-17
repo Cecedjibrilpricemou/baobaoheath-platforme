@@ -11,6 +11,7 @@
 @use './styles/auth';
 @use './styles/hopital';
 @use './styles/utilities';
+@use './styles/polish';
 // primeicons est conservé : jeu d'icônes local et léger, utilisé via
 // mat-icon fontSet="pi" dans toute l'application.
 @import 'primeicons/primeicons.css';
@@ -38,7 +39,9 @@
   --bb-light: #EDF7F1;
 
   // Surfaces
-  --bb-surface-ground: #F3F7F5;
+  // ✦ Refonte UI : fond legerement plus froid (sensation « clinique »,
+  // propre) pour mieux detacher les cartes blanches.
+  --bb-surface-ground: #F4F7F6;
   --bb-surface-0: #FFFFFF;
   --bb-surface-1: #F3F7F5;
   --bb-surface-2: #EDF7F1;
@@ -48,11 +51,16 @@
   // Bordures
   --bb-border: #DDE8E2;
   --bb-border-light: #EBF1ED;
+  // ✦ Refonte UI : contour des champs de saisie, assez marque pour etre
+  // repere d'un coup d'oeil (WCAG 1.4.11 : composants d'interface).
+  --bb-border-strong: #7E988A;
 
   // Textes
   --bb-text-primary: #0D2B1A;
   --bb-text-secondary: #3A5848;
-  --bb-text-muted: #7A9485;
+  // ✦ Refonte UI : #7A9485 ne passait pas le contraste AA (3,2:1 sur fond
+  // clair). #5C7769 atteint 4,7:1 tout en restant discret.
+  --bb-text-muted: #5C7769;
   --bb-text-inverse: #FFFFFF;
 
   // Sidebar
@@ -82,10 +90,16 @@
   --bb-info-border: #BFDBFE;
 
   // Ombres
-  --bb-shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --bb-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.07);
-  --bb-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --bb-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+  // ✦ Refonte UI : ombres en couches, teintees du vert profond de marque
+  // (plus naturelles qu'un noir pur, et plus douces sur fond clair).
+  --bb-shadow-xs: 0 1px 2px rgba(11, 38, 24, 0.05);
+  --bb-shadow-sm: 0 1px 2px rgba(11, 38, 24, 0.04), 0 2px 8px rgba(11, 38, 24, 0.05);
+  --bb-shadow: 0 2px 4px rgba(11, 38, 24, 0.04), 0 8px 24px rgba(11, 38, 24, 0.07);
+  --bb-shadow-lg: 0 4px 8px rgba(11, 38, 24, 0.05), 0 18px 44px rgba(11, 38, 24, 0.12);
+  --bb-shadow-hover: 0 4px 10px rgba(11, 38, 24, 0.05), 0 14px 34px rgba(11, 38, 24, 0.10);
+
+  // ✦ Refonte UI : anneau de focus clavier unique pour toute l'application
+  --bb-focus-ring: 0 0 0 3px rgba(62, 187, 112, 0.40);
 
   // Rayons
   --bb-radius-sm: 8px;
@@ -98,14 +112,22 @@
   --bb-font-display: 'Sora', sans-serif;
   --bb-font-body: 'DM Sans', 'Segoe UI', sans-serif;
   --bb-font-size: 14px;
+  --bb-line-height: 1.55;
 
   // Layout
   --bb-sidebar-width: 260px;
   --bb-topbar-height: 64px;
+  // ✦ Refonte UI : largeur de lecture maximale du contenu (ecrans larges)
+  // et goutiere fluide, de 16px (mobile) a 32px (bureau).
+  --bb-content-max: 1440px;
+  --bb-gutter: clamp(1rem, 2.4vw, 2rem);
 
   // Transitions
-  --bb-transition: 0.2s ease;
-  --bb-transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  // ✦ Refonte UI : courbe « ease-out » marquee, plus vive et plus douce a
+  // l'arrivee que `ease` : c'est elle qui donne la sensation de fluidite.
+  --bb-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --bb-transition: 0.2s var(--bb-ease);
+  --bb-transition-slow: 0.35s var(--bb-ease);
 }
 
 // ── TOKENS MODE SOMBRE ────────────────────────────────────────────
@@ -119,10 +141,12 @@
 
   --bb-border: #1F3828;
   --bb-border-light: #1A2E20;
+  --bb-border-strong: #4E7660;
 
   --bb-text-primary: #E2F0E8;
   --bb-text-secondary: #9BBFAB;
-  --bb-text-muted: #5A8870;
+  // ✦ Refonte UI : contraste AA sur les surfaces sombres (etait 4,1:1)
+  --bb-text-muted: #78A08B;
 
   --bb-sidebar-bg: #091510;
   --bb-sidebar-text: rgba(255, 255, 255, 0.85);
@@ -147,6 +171,8 @@
   --bb-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
   --bb-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
   --bb-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.50);
+  --bb-shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.45);
+  --bb-focus-ring: 0 0 0 3px rgba(62, 187, 112, 0.55);
 }
 
 // ── RESET ─────────────────────────────────────────────────────────
@@ -164,6 +190,7 @@ body {
   font-family: var(--bb-font-body);
   font-size: var(--bb-font-size);
   color: var(--bb-text-primary);
+  line-height: var(--bb-line-height);
   background: var(--bb-surface-ground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -250,19 +277,13 @@ body {
     border-color: var(--bb-warning-border);
   }
 
-  // Statut sans charge semantique (ex. consultation referencee)
-  &--neutral {
-    background: var(--bb-surface-1);
-    color: var(--bb-text-secondary);
-    border-color: var(--bb-border);
-  }
-
   &--info {
     background: var(--bb-info-bg);
     color: var(--bb-info);
     border-color: var(--bb-info-border);
   }
 
+  // Statut sans charge semantique (ex. consultation referencee)
   &--neutral {
     background: var(--bb-surface-2);
     color: var(--bb-text-secondary);
@@ -313,10 +334,10 @@ body {
   }
 
   &__sub {
-    font-size: 13px;
+    font-size: 13.5px;
     color: var(--bb-text-muted);
-    max-width: 280px;
-    line-height: 1.55;
+    max-width: 320px;
+    line-height: 1.6;
   }
 }
 
@@ -442,10 +463,10 @@ body {
 
   &__title {
     font-family: var(--bb-font-display);
-    font-size: 24px;
+    font-size: clamp(21px, 2.2vw, 26px);
     font-weight: 800;
     color: #FFFFFF;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.6px;
     line-height: 1.15;
     margin-bottom: 4px;
   }
@@ -493,9 +514,10 @@ body {
     line-height: 1;
   }
 
+  // ✦ Refonte UI : 0.45 d'opacite etait illisible sur le degrade vert
   &__label {
     font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.72);
     text-transform: uppercase;
     letter-spacing: 0.4px;
   }
@@ -526,7 +548,10 @@ body {
   cursor: pointer;
   border: none;
   text-decoration: none;
-  transition: all var(--bb-transition);
+  // ✦ Refonte UI : proprietes ciblees plutot que `all` (pas d'animation
+  // parasite de la largeur ou de la police)
+  transition: background var(--bb-transition), box-shadow var(--bb-transition),
+    transform var(--bb-transition), border-color var(--bb-transition);
   white-space: nowrap;
 
   &--primary {
@@ -536,8 +561,8 @@ body {
 
     &:hover {
       background: #50CC82;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(62, 187, 112, 0.40);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(62, 187, 112, 0.45);
     }
   }
 
@@ -547,7 +572,9 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.18);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.32);
+      transform: translateY(-1px);
     }
   }
 
@@ -574,8 +601,9 @@ body {
 }
 
 // ── CORPS DE PAGE ─────────────────────────────────────────────────
+// ✦ Refonte UI : goutiere fluide (16px mobile → 28px bureau)
 .page-body {
-  padding: 0 1.75rem 2.5rem;
+  padding: 0 clamp(0rem, 2vw, 1.75rem) 2.5rem;
 }
 
 // ── STAT CARD (composant partagé) ─────────────────────────────────
@@ -590,9 +618,10 @@ body {
   overflow: hidden;
   transition: transform var(--bb-transition), box-shadow var(--bb-transition);
 
+  // ✦ Refonte UI : soulevement plus franc, ombre teintee
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--bb-shadow);
+    transform: translateY(-2px);
+    box-shadow: var(--bb-shadow-hover);
   }
 
   &__deco {
@@ -736,7 +765,9 @@ body {
   border: 1px solid var(--bb-border-light);
   margin-bottom: 8px;
   text-decoration: none;
-  transition: background var(--bb-transition), border-color var(--bb-transition);
+  // ✦ Refonte UI : le soulevement au survol (_polish) doit etre anime
+  transition: background var(--bb-transition), border-color var(--bb-transition),
+    transform var(--bb-transition-slow), box-shadow var(--bb-transition-slow);
   cursor: pointer;
   background: var(--bb-surface-ground);
 

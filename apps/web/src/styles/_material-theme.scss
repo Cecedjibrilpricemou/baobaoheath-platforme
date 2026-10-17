@@ -28,6 +28,71 @@ html {
   --mat-sys-corner-medium: 16px;
   --mat-sys-corner-small: 12px;
   --mat-sys-corner-extra-small: 10px;
+
+  // ✦ Refonte UI — composants Material alignes sur le design system bb-*.
+  // Les mixins *-overrides valident les noms de jetons a la compilation.
+  @include mat.button-overrides((
+    filled-container-shape: 12px,
+    outlined-container-shape: 12px,
+    text-container-shape: 12px,
+    tonal-container-shape: 12px,
+    protected-container-shape: 12px,
+    filled-label-text-font: var(--bb-font-display),
+    outlined-label-text-font: var(--bb-font-display),
+    text-label-text-font: var(--bb-font-display),
+    tonal-label-text-font: var(--bb-font-display),
+    filled-label-text-weight: 700,
+    outlined-label-text-weight: 700,
+    text-label-text-weight: 600,
+    tonal-label-text-weight: 700,
+    filled-label-text-tracking: 0,
+    outlined-label-text-tracking: 0,
+    text-label-text-tracking: 0,
+    filled-horizontal-padding: 20px,
+    outlined-horizontal-padding: 20px,
+    outlined-outline-color: var(--bb-border),
+  ));
+
+  @include mat.form-field-overrides((
+    outlined-container-shape: 12px,
+    outlined-outline-color: var(--bb-border-strong),
+    outlined-hover-outline-color: var(--bb-text-secondary),
+    outlined-focus-outline-color: var(--bb-primary),
+    outlined-focus-label-text-color: var(--bb-primary),
+    outlined-caret-color: var(--bb-primary),
+    outlined-input-text-color: var(--bb-text-primary),
+    outlined-input-text-placeholder-color: var(--bb-text-muted),
+    outlined-label-text-color: var(--bb-text-secondary),
+  ));
+
+  @include mat.menu-overrides((
+    container-shape: 14px,
+    container-color: var(--bb-surface-0),
+    item-label-text-font: var(--bb-font-body),
+    item-label-text-size: 13.5px,
+    item-label-text-weight: 500,
+    item-label-text-color: var(--bb-text-primary),
+    item-icon-color: var(--bb-text-secondary),
+    item-hover-state-layer-color: var(--bb-primary),
+  ));
+
+  @include mat.dialog-overrides((
+    container-shape: 20px,
+  ));
+
+  @include mat.tooltip-overrides((
+    container-shape: 8px,
+    container-color: var(--bb-deep),
+    supporting-text-color: #fff,
+    supporting-text-font: var(--bb-font-body),
+    supporting-text-size: 12px,
+  ));
+
+  @include mat.card-overrides((
+    elevated-container-shape: 20px,
+    outlined-container-shape: 20px,
+    filled-container-shape: 20px,
+  ));
 }
 
 html[data-theme='dark'] {

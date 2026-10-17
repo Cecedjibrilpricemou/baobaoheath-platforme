@@ -87,11 +87,12 @@
     font-family: var(--bb-font-body);
     font-size: 12px;
     font-weight: 600;
-    transition: background var(--bb-transition), border-color var(--bb-transition), color var(--bb-transition);
+    transition: background var(--bb-transition), border-color var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
 
     i { font-size: 13px; }
 
-    &:hover { background: var(--bb-surface-1); border-color: var(--auth-accent); color: var(--auth-accent); }
+    &:hover { background: var(--bb-surface-1); border-color: var(--auth-accent); color: var(--auth-accent); transform: translateY(-1px); }
+    &:active { transform: scale(0.97); }
   }
 
   // Le formulaire est centre verticalement dans l'espace restant ; une
@@ -103,6 +104,8 @@
     max-width: 400px;
     margin: auto;
     padding: 0.5rem 0;
+    // ✦ Refonte UI : le formulaire arrive en douceur
+    animation: bb-auth-in 0.45s var(--bb-ease) both;
 
     &--large { max-width: 500px; }
   }
@@ -214,7 +217,10 @@
 
     i { color: var(--auth-chip-icon); }
     &--top    { top: 22px; left: -26px; }
-    &--bottom { bottom: 26px; right: -22px; }
+    &--bottom { bottom: 26px; right: -22px; animation-delay: -3s; }
+
+    // ✦ Refonte UI : les pastilles flottent doucement autour de la photo
+    animation: bb-auth-float 6s ease-in-out infinite;
   }
 
   &__visual-quote {
@@ -324,7 +330,7 @@
     font-size: 14px;
     font-weight: 700;
     box-shadow: 0 6px 16px rgba(45, 125, 70, .25);
-    transition: transform var(--bb-transition), box-shadow var(--bb-transition);
+    transition: transform var(--bb-transition), box-shadow var(--bb-transition), background-color var(--bb-transition);
     // Vert de marche et texte blanc dans les deux modes, comme la landing :
     // on ecrase les jetons Material (v20+ et anciens) et les proprietes finales.
     --mat-button-filled-container-color: var(--bb-primary);
@@ -338,7 +344,8 @@
     color: #fff;
 
     i { margin-right: 6px; }
-    &:hover:not(:disabled) { background-color: var(--bb-mid); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(45, 125, 70, .3); }
+    &:hover:not(:disabled) { background-color: var(--bb-mid); transform: translateY(-1px); box-shadow: 0 12px 26px rgba(45, 125, 70, .32); }
+    &:active:not(:disabled) { transform: translateY(0) scale(0.99); box-shadow: 0 4px 10px rgba(45, 125, 70, .25); }
     &:disabled { opacity: .55; background-color: var(--bb-primary); color: #fff; }
   }
 
@@ -358,10 +365,10 @@
     font-weight: 700;
     color: var(--bb-text-secondary);
     text-decoration: none;
-    transition: border-color var(--bb-transition), color var(--bb-transition), background var(--bb-transition);
+    transition: border-color var(--bb-transition), color var(--bb-transition), background var(--bb-transition), transform var(--bb-transition);
 
     i { font-size: 12px; }
-    &:hover { border-color: var(--auth-accent); background: var(--bb-surface-1); color: var(--auth-accent); }
+    &:hover { border-color: var(--auth-accent); background: var(--auth-accent-soft); color: var(--auth-accent); transform: translateY(-1px); }
   }
 
   .form-separator {
@@ -440,4 +447,15 @@
   --auth-chip-icon: var(--bb-bright);
 
   .bb-auth__visual-photo { box-shadow: 0 24px 60px rgba(0, 0, 0, .55); }
+}
+
+// ✦ Refonte UI : animations propres aux ecrans d'authentification
+@keyframes bb-auth-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes bb-auth-float {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -6px; }
 }

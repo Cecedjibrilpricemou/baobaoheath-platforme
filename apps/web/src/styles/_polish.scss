@@ -1,0 +1,182 @@
+// ═══════════════════════════════════════════════════════════════════
+// _polish.scss — ✦ Refonte UI : finitions transverses
+//
+// Micro-interactions, accessibilite clavier et coherence des composants
+// Material. Purement visuel : aucun selecteur ne depend d'un etat metier,
+// tout s'appuie sur les tokens bb-* (le mode sombre suit donc seul).
+// ═══════════════════════════════════════════════════════════════════
+
+// ── TYPOGRAPHIE DE BASE ────────────────────────────────────────────
+// Titres equilibres sur plusieurs lignes, paragraphes sans veuve.
+h1, h2, h3, h4 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+// Chiffres alignes dans les compteurs et tableaux (lecture des constantes,
+// dosages, montants).
+.bb-stat__value, .bb-hop-stat__value, .bb-stat-card__value, .hero-stat__value,
+.bb-badge, table td { font-variant-numeric: tabular-nums; }
+
+::selection { background: rgba(62, 187, 112, 0.28); color: inherit; }
+
+// ── FOCUS CLAVIER ──────────────────────────────────────────────────
+// Un seul anneau, visible uniquement a la navigation clavier.
+:where(a, button, [role='button'], [tabindex], summary, input[type='checkbox'], input[type='radio']):focus-visible {
+  outline: none;
+  box-shadow: var(--bb-focus-ring);
+  border-radius: var(--bb-radius-sm);
+}
+
+// Les boutons Material gerent leur propre indicateur : on harmonise sa couleur.
+.mat-mdc-button-base:focus-visible { box-shadow: var(--bb-focus-ring); }
+
+// ── BOUTONS MATERIAL ───────────────────────────────────────────────
+.mat-mdc-button-base:not(.mat-mdc-icon-button) {
+  transition:
+    transform var(--bb-transition),
+    box-shadow var(--bb-transition),
+    background-color var(--bb-transition),
+    border-color var(--bb-transition),
+    color var(--bb-transition);
+
+  &:active:not(:disabled) { transform: scale(0.98); }
+
+  .mat-icon, > i { transition: transform var(--bb-transition); }
+}
+
+// Bouton plein : leger soulevement + ombre teintee au survol.
+.mat-mdc-unelevated-button:not(:disabled) {
+  box-shadow: 0 1px 2px rgba(11, 38, 24, 0.10);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px rgba(45, 125, 70, 0.45);
+  }
+}
+
+// Bouton contour : la bordure prend la couleur de marque au survol.
+.mat-mdc-outlined-button:not(:disabled):hover {
+  border-color: var(--bb-primary);
+  background-color: var(--bb-success-bg);
+}
+
+.mat-mdc-icon-button { transition: transform var(--bb-transition), background-color var(--bb-transition); }
+.mat-mdc-icon-button:active:not(:disabled) { transform: scale(0.92); }
+
+// Boutons de la page (hero, modales) : meme retour au clic.
+.hero-btn, .bb-logout-modal__btn, .bb-mdp-modal__btn, .bb-pill, .bb-hop-pill, .bb-auth__alt {
+  &:active:not(:disabled) { transform: scale(0.98); }
+}
+
+// ── CHAMPS DE FORMULAIRE ───────────────────────────────────────────
+// Halo doux autour du champ actif : on voit tout de suite ou l'on ecrit.
+.mat-mdc-form-field.mat-focused .mdc-notched-outline {
+  border-radius: 12px;
+  box-shadow: 0 0 0 4px rgba(62, 187, 112, 0.14);
+  transition: box-shadow var(--bb-transition);
+}
+
+.mat-mdc-form-field-error { font-size: 12px; }
+
+// ── CARTES ─────────────────────────────────────────────────────────
+// Transition partagee ; seules les cartes cliquables se soulevent.
+.bb-card, .bb-hop-card, .bb-stat, .bb-hop-stat, .bb-hop-item, .mat-mdc-card {
+  transition:
+    transform var(--bb-transition-slow),
+    box-shadow var(--bb-transition-slow),
+    border-color var(--bb-transition),
+    background-color var(--bb-transition);
+}
+
+.bb-card:hover, .bb-hop-card:hover { box-shadow: var(--bb-shadow); }
+
+a.bb-stat, a.bb-hop-stat, button.bb-stat, .bb-stat--link,
+.bb-hop-item, .bb-list-item {
+  &:hover { transform: translateY(-2px); box-shadow: var(--bb-shadow-hover); }
+  &:active { transform: translateY(0) scale(0.995); }
+}
+
+// Icone de section : petit rebond quand la carte est survolee.
+.bb-stat:hover .bb-stat__icon,
+.bb-hop-stat:hover .bb-hop-stat__icon,
+.bb-stat-card:hover .bb-stat-card__icon {
+  transform: scale(1.06);
+}
+.bb-stat__icon, .bb-hop-stat__icon, .bb-stat-card__icon { transition: transform var(--bb-transition-slow); }
+
+// Lien « voir tout » : la fleche avance au survol.
+.bb-section-header__link:hover i { transform: translateX(3px); }
+.bb-section-header__link i { transition: transform var(--bb-transition); }
+
+// ── HERO DE PAGE : RESPONSIVE ──────────────────────────────────────
+.page-hero {
+  box-shadow: 0 18px 40px -22px rgba(26, 92, 53, 0.65);
+
+  @media (max-width: 768px) {
+    padding: 22px 20px 20px;
+    margin-bottom: 1.25rem;
+
+    &__title { font-size: 21px; }
+    &__stats { width: 100%; flex-wrap: wrap; row-gap: 10px; }
+    .hero-stat { flex: 1 1 33%; padding: 0 12px; }
+  }
+}
+
+.hero-btn {
+  @media (max-width: 480px) { flex: 1 1 auto; justify-content: center; }
+}
+
+// ── MENUS, INFOBULLES, MODALES ─────────────────────────────────────
+.mat-mdc-menu-panel {
+  border: 1px solid var(--bb-border-light);
+  box-shadow: var(--bb-shadow-lg) !important;
+}
+
+.mat-mdc-menu-item .mat-icon { font-size: 15px; width: 18px; height: 18px; line-height: 18px; }
+
+.mat-mdc-dialog-surface { box-shadow: var(--bb-shadow-lg); }
+
+.cdk-overlay-dark-backdrop { background: rgba(6, 20, 12, 0.48); backdrop-filter: blur(4px); }
+
+// ── NOTIFICATIONS (ngx-toastr) ─────────────────────────────────────
+.toast-container .ngx-toastr {
+  border-radius: var(--bb-radius-lg);
+  box-shadow: var(--bb-shadow-lg);
+  font-family: var(--bb-font-body);
+  font-size: 13.5px;
+  padding: 14px 16px 14px 52px;
+  background-position: 18px center;
+
+  &:hover { box-shadow: var(--bb-shadow-lg); }
+
+  .toast-title { font-family: var(--bb-font-display); font-weight: 700; margin-bottom: 2px; }
+}
+
+.toast-success { background-color: var(--bb-primary); }
+.toast-error   { background-color: var(--bb-danger); }
+.toast-info    { background-color: #1E5FAF; }
+.toast-warning { background-color: #B45309; }
+
+// ── ETATS VIDES & CHARGEMENT ───────────────────────────────────────
+.empty-state__icon { animation: bb-float 4s ease-in-out infinite; }
+
+// ── ANIMATIONS ─────────────────────────────────────────────────────
+@keyframes bb-page-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes bb-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+// ── MOUVEMENT REDUIT ───────────────────────────────────────────────
+// Respect de la preference systeme : aucune animation decorative.
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
