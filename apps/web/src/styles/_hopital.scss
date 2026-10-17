@@ -41,9 +41,11 @@
   &__label { font-size: 12.5px; color: var(--bb-text-muted); }
 
   // Premiere carte : pleine, vert de marque (comme le bandeau des chiffres de la landing).
+  // ✦ Refonte UI : tokens de marque au lieu des hex codes en dur
   &--primary {
-    background: linear-gradient(135deg, #2D7D46, #1A5C35); border-color: transparent; color: #fff;
-    .bb-hop-stat__icon, .bb-stat__icon { background: rgba(255, 255, 255, .18); color: #fff; }
+    background: linear-gradient(135deg, var(--bb-primary), var(--bb-mid)); border-color: transparent; color: #fff;
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--bb-mid) 90%, transparent);
+    .bb-hop-stat__icon, .bb-stat__icon { background: color-mix(in srgb, #fff 18%, transparent); color: #fff; }
     .bb-hop-stat__value, .bb-hop-stat__label, .bb-stat__value, .bb-stat__label { color: #fff; }
     .bb-hop-stat__label, .bb-stat__label { opacity: .9; }
   }
@@ -65,7 +67,8 @@
   font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; color: var(--bb-text-secondary);
   transition: background var(--bb-transition), color var(--bb-transition);
   &:hover { color: var(--bb-primary); }
-  &--active { background: var(--bb-primary); color: #fff; box-shadow: 0 6px 16px rgba(45, 125, 70, .22); &:hover { color: #fff; } }
+  &--active { background: var(--bb-primary); color: #fff; box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent); &:hover { color: #fff; } }
+  &:active { transform: scale(0.97); }
 }
 
 // ── Barre d'outils (recherche + actions) ───────────────────────────
@@ -90,11 +93,22 @@
     font-family: var(--bb-font-display); font-size: 14px; font-weight: 800;
   }
   &__body { flex: 1; min-width: 0; }
+  // ✦ Refonte UI : une ligne porteuse d'actions passe a la ligne quand la
+  // place manque. Avant, les actions (flex-shrink: 0) gardaient toute leur
+  // largeur : le texte s'ecrasait sur ~60px et le bouton « Accuser »
+  // sortait de l'ecran (resultats critiques sur mobile et tablette).
+  &:has(> .bb-hop-item__actions) {
+    flex-wrap: wrap;
+    > .bb-hop-item__body { flex: 1 1 260px; }
+  }
   &__title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 2px; }
   &__num { font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--bb-text-muted); }
   &__sub { font-size: 13px; color: var(--bb-text-secondary); margin: 0; }
   &__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--bb-text-muted); margin: 4px 0 0; i { margin-right: 4px; } }
-  &__actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  &__actions {
+    display: flex; gap: 8px; flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end;
+    @media (max-width: 600px) { flex-basis: 100%; > * { flex: 1 1 auto; } }
+  }
   > .pi-chevron-right { color: var(--bb-text-muted); }
 }
 
@@ -112,24 +126,48 @@
 }
 
 // ── Detail : entete, grille d'infos, sections ──────────────────────
+// ✦ Refonte UI : lien de retour sans soulignement navigateur (c'est un <a>),
+// zone de clic elargie, fleche qui recule au survol.
 .bb-hop-back {
-  display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; padding: 0;
-  font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700; color: var(--bb-text-muted); margin-bottom: 10px;
-  &:hover { color: var(--bb-primary); }
+  display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer;
+  padding: 4px 8px; margin: -4px -8px 10px; border-radius: var(--bb-radius-sm); text-decoration: none;
+  font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700; color: var(--bb-text-muted);
+  transition: color var(--bb-transition), background var(--bb-transition);
+  &:hover { color: var(--bb-primary); background: var(--bb-success-bg); }
+  &:hover .pi-arrow-left { transform: translateX(-2px); }
+  &:hover .pi-arrow-right { transform: translateX(2px); }
+  i { transition: transform var(--bb-transition); }
 }
 .bb-hop-info {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 20px;
   &__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-muted); margin-bottom: 3px; }
-  &__value { font-size: 14px; color: var(--bb-text-primary); font-weight: 600; }
+  &__value { font-size: 14px; color: var(--bb-text-primary); font-weight: 600; overflow-wrap: anywhere; }
+
+  // Deux colonnes sur telephone (une seule laissait une longue liste)
+  @media (max-width: 480px) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 }
 .bb-hop-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.bb-hop-sections { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; @media (min-width: 1100px) { grid-template-columns: 1.4fr 1fr; } }
+// ✦ Refonte UI : colonnes en minmax(0, …) — avec 1fr, un libelle long (badge
+// de statut) elargissait la colonne et les sous-cartes sortaient de leur
+// carte (parcours patient, episodes, sur tablette et mobile).
+.bb-hop-sections {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin-top: 1rem;
+  > * { min-width: 0; }
+  @media (min-width: 1100px) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+}
 
 // Sous-carte (demande d'analyse, rendez-vous)
 .bb-hop-sub {
   border: 1px solid var(--bb-border-light); border-radius: 14px; padding: 0.875rem 1rem; background: var(--bb-surface-1);
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow);
+  &:hover { border-color: var(--bb-border); box-shadow: var(--bb-shadow-xs); }
   & + & { margin-top: 10px; }
-  &__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  &__head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+    // ✦ Refonte UI : un statut long passe a la ligne au lieu de deborder
+    > span:not([class]) { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+    .bb-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  }
   &__num { font-family: var(--bb-font-display); font-size: 13px; font-weight: 800; color: var(--bb-text-primary); }
   &__line { font-size: 13px; color: var(--bb-text-secondary); margin: 2px 0; }
   &__tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
@@ -141,9 +179,13 @@
 .bb-hop-panel {
   margin-top: 1rem; border: 1.5px solid var(--bb-success-border); border-radius: 20px; padding: 1.25rem 1.375rem;
   background: var(--bb-surface-card); box-shadow: var(--bb-shadow);
+  animation: bb-hop-drop .3s var(--bb-ease) both;
   &__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
   &__full { grid-column: 1 / -1; }
-  &__footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  &__footer {
+    display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;
+    @media (max-width: 420px) { flex-direction: column-reverse; > * { width: 100%; } }
+  }
   .form-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-secondary); margin-bottom: 6px; }
   .form-hint { display: block; font-size: 12px; color: var(--bb-text-muted); margin: 4px 0 12px; }
   .form-field-wrap { margin-bottom: 12px; }
@@ -155,12 +197,13 @@
   &__cat { font-family: var(--bb-font-display); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--bb-primary); padding: 10px 10px 4px; }
   &__row {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer;
+    transition: background var(--bb-transition);
     &:hover { background: var(--bb-surface-card); }
-    &--on { background: var(--bb-success-bg); }
-    input { accent-color: var(--bb-primary); width: 16px; height: 16px; }
+    &--on { background: var(--bb-success-bg); box-shadow: inset 3px 0 0 var(--bb-primary); }
+    input { accent-color: var(--bb-primary); width: 18px; height: 18px; flex-shrink: 0; }
   }
   &__lib { flex: 1; font-size: 13.5px; color: var(--bb-text-primary); }
-  &__code { font-size: 11px; color: var(--bb-text-muted); font-family: monospace; }
+  &__code { font-size: 11px; color: var(--bb-text-muted); font-family: ui-monospace, Menlo, Consolas, monospace; }
   &__flag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: var(--bb-radius-pill); background: var(--bb-warning-bg); color: var(--bb-warning); }
 }
 .bb-hop-selected { font-size: 12.5px; color: var(--bb-primary); font-weight: 700; margin: 8px 0 12px; }
@@ -180,22 +223,28 @@
 }
 
 // ── Mode sombre ─────────────────────────────────────────────────────
+// ✦ Refonte UI : vert profond du mode sombre derive des tokens (plus de
+// #17422A / #0F2E1C ni de rgba codes en dur).
 [data-theme='dark'] {
-  .bb-hop-stat--primary, .bb-stat--primary { background: linear-gradient(135deg, #17422A, #0F2E1C); }
+  .bb-hop-stat--primary, .bb-stat--primary { background: linear-gradient(135deg, color-mix(in srgb, var(--bb-mid) 80%, #000), var(--bb-deep)); }
   .bb-hop-pill--active, .bb-pill--active { box-shadow: none; }
   .bb-hop-examens__cat, .bb-hop-selected, .bb-hop-card__title i, .bb-card__title i { color: var(--bb-bright); }
-  .bb-hop-item__avatar, .bb-hop-stat__icon, .bb-stat__icon { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
-  .bb-parcours__etape--done { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
+  .bb-hop-item__avatar, .bb-hop-stat__icon, .bb-stat__icon { color: var(--bb-bright); background: color-mix(in srgb, var(--bb-bright) 14%, transparent); }
+  .bb-parcours__etape--done { color: var(--bb-bright); background: color-mix(in srgb, var(--bb-bright) 14%, transparent); }
+  .bb-hop-back:hover { color: var(--bb-bright); }
+  .bb-hop-examens__row--on { box-shadow: inset 3px 0 0 var(--bb-bright); }
 }
 
 // ── Resultats d'analyse vus par le prescripteur et le patient (P2) ──────
 .bb-resultats {
   display: flex; flex-direction: column; gap: 6px; margin: 8px 0;
+  font-variant-numeric: tabular-nums;
   &__row {
     display: grid; grid-template-columns: minmax(140px, 1.5fr) minmax(90px, .8fr) minmax(80px, .8fr) auto; gap: 8px; align-items: center;
     padding: 8px 12px; border-radius: 12px; background: var(--bb-surface-1); border: 1px solid var(--bb-border-light); font-size: 13px;
-    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); }
-    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg); }
+    // ✦ Refonte UI : barre laterale de gravite — lisible meme sans couleur
+    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); box-shadow: inset 4px 0 0 var(--bb-warning); }
+    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg);  box-shadow: inset 4px 0 0 var(--bb-danger); }
     @media (max-width: 560px) { grid-template-columns: 1fr 1fr; }
   }
   &__lib { color: var(--bb-text-primary); font-weight: 600; }
@@ -203,8 +252,13 @@
   &__ref { font-size: 12px; color: var(--bb-text-secondary); }
 }
 [data-theme="dark"] .bb-resultats {
-  &__row--anormal  { background: rgba(245, 158, 11, .10); }
-  &__row--critique { background: rgba(239, 68, 68, .12); }
+  &__row--anormal  { background: color-mix(in srgb, var(--bb-warning) 10%, transparent); }
+  &__row--critique { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); }
+}
+
+@keyframes bb-hop-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
 }
 
 // ── L'explication du médecin, avant les chiffres (addendum du 2026-09-28) ──

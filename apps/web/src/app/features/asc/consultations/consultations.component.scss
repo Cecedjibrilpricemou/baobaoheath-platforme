@@ -1,13 +1,40 @@
 // features/asc/consultations/consultations.component.scss
 
-.consultations-page {}
+// ✦ Refonte UI : accent propre a l'ecran (vert vif en mode sombre) — meme
+// convention que les autres espaces.
+:host {
+  display: block;
+  --asc-accent: var(--bb-primary);
+  --asc-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --asc-accent: var(--bb-bright);
+  --asc-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
+// ── Bouton du hero ──────────────────────────────────────────────
+// ✦ Refonte UI : sur le bandeau vert, le bouton plein vert de marque se
+// confondait avec le fond ; il reprend le style .hero-btn--primary (vert
+// vif, texte vert profond) commun a tous les heros.
+.hero-btn-new {
+  --mat-button-filled-container-color: var(--bb-bright);
+  --mat-button-filled-label-text-color: var(--bb-deep);
+  --mat-button-filled-state-layer-color: var(--bb-deep);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--bb-deep) 60%, transparent);
+
+  @media (max-width: 480px) { width: 100%; }
+}
 
 // ── Formulaire nouvelle consultation ────────────────────────────
 .form-card {
-  background: var(--bb-surface-card); border: 1px solid var(--bb-success-border);
-  border-radius: var(--bb-radius-xl); padding: 1.5rem; margin-bottom: 20px;
-  box-shadow: 0 0 0 3px rgba(62,187,112,.07), var(--bb-shadow-xs);
-  animation: bb-fade-in .25s ease;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  border-left: 4px solid var(--asc-accent);
+  border-radius: var(--bb-radius-xl); padding: 1.375rem 1.5rem; margin-bottom: 20px;
+  box-shadow: var(--bb-shadow);
+  animation: bb-asc-drop .3s var(--bb-ease) both;
+
+  @media (max-width: 600px) { padding: 1.125rem; }
 
   &__header {
     display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
@@ -15,63 +42,79 @@
 
   &__title {
     display: flex; align-items: center; gap: 10px;
-    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700; color: var(--bb-text-primary);
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800; color: var(--bb-text-primary);
   }
 
   &__title-icon {
-    width: 32px; height: 32px; border-radius: 9px;
-    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--asc-accent-soft);
     display: flex; align-items: center; justify-content: center;
-    i { font-size: 14px; color: var(--bb-primary); }
+    i { font-size: 14px; color: var(--asc-accent); }
   }
 
   &__close {
-    width: 30px; height: 30px; border-radius: 8px;
+    width: 34px; height: 34px; border-radius: 50%;
     border: 1px solid var(--bb-border); background: var(--bb-surface-1);
     color: var(--bb-text-muted); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 13px; transition: all var(--bb-transition);
-    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
+    cursor: pointer; font-size: 12px;
+    transition: background var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); transform: rotate(90deg); }
   }
 
   &__actions {
     display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
     padding-top: 16px; border-top: 1px solid var(--bb-border-light);
+
+    @media (max-width: 420px) { flex-direction: column-reverse; > * { width: 100%; } }
   }
 }
 
 .form-grid-2 {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 }
 
 .form-field-wrap { display: flex; flex-direction: column; gap: 6px; }
 
-.form-label { font-size: 12.5px; font-weight: 600; color: var(--bb-text-secondary); }
+.form-label { font-size: 12.5px; font-weight: 700; color: var(--bb-text-secondary); }
 
 // ── Filtres ───────────────────────────────────────────────────────
+// ✦ Refonte UI : filtres en segment (meme composant que les autres espaces),
+// defilables horizontalement sur mobile plutot que sur trois lignes.
 .filters-bar {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
 
   &__label {
     display: flex; align-items: center; gap: 7px;
-    font-size: 12.5px; font-weight: 600; color: var(--bb-text-muted);
-    i { font-size: 13px; }
+    font-size: 12.5px; font-weight: 700; color: var(--bb-text-muted);
+    i { font-size: 12px; }
+
+    @media (max-width: 600px) { display: none; }
   }
 }
 
-.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-chips {
+  display: flex; gap: 4px; padding: 4px; max-width: 100%;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-pill); box-shadow: var(--bb-shadow-xs);
+  overflow-x: auto; scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
 
 .filter-chip {
-  padding: 6px 14px; border-radius: var(--bb-radius-pill);
-  border: 1px solid var(--bb-border); background: transparent;
-  color: var(--bb-text-muted); font-family: var(--bb-font-display);
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all var(--bb-transition);
+  padding: 7px 14px; border-radius: var(--bb-radius-pill); flex-shrink: 0;
+  border: 0; background: transparent;
+  color: var(--bb-text-secondary); font-family: var(--bb-font-display);
+  font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: background var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
 
-  &:hover { background: var(--bb-surface-2); color: var(--bb-text-secondary); }
+  &:hover { background: var(--bb-surface-1); color: var(--asc-accent); }
+  &:active { transform: scale(0.97); }
 
-  &--active {
-    background: var(--bb-success-bg) !important; border-color: var(--bb-success-border) !important;
-    color: var(--bb-primary) !important;
+  // ✦ Refonte UI : etat actif sans !important
+  &--active, &--active:hover {
+    background: var(--bb-primary); color: var(--bb-text-inverse);
+    box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent);
   }
 }
 
@@ -81,14 +124,16 @@
 .consult-card {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 16px; border-radius: var(--bb-radius-xl);
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-  box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition); cursor: pointer;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+  box-shadow: var(--bb-shadow-xs); cursor: pointer;
+  // ✦ Refonte UI : transitions ciblees ; le focus clavier suit l'anneau global
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow), transform var(--bb-transition-slow);
 
-  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); transform: translateY(-1px); }
-  &:focus-visible { outline: 2px solid var(--bb-primary); outline-offset: 2px; }
+  &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-hover); transform: translateY(-2px); }
+  &:active { transform: translateY(0) scale(0.995); }
 
   &__avatar {
-    width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
     background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
     color: #fff; display: flex; align-items: center; justify-content: center;
     font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
@@ -97,22 +142,38 @@
 
   &__body { flex: 1; min-width: 0; }
 
-  &__patient { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  &__patient { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 4px; }
 
   &__name {
-    font-size: 14px; font-weight: 700; color: var(--bb-text-primary);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 14.5px; font-weight: 700; color: var(--bb-text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
   }
 
-  &__phone { font-size: 12.5px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 4px; i { font-size: 11px; } }
+  &__phone {
+    font-size: 12.5px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 4px;
+    font-variant-numeric: tabular-nums; i { font-size: 11px; }
+  }
 
-  &__meta { display: flex; gap: 14px; flex-wrap: wrap; }
+  &__meta { display: flex; gap: 4px 14px; flex-wrap: wrap; }
 
-  &__motif { font-size: 12.5px; color: var(--bb-text-secondary); display: flex; align-items: center; gap: 5px; i { font-size: 11px; } }
+  &__motif { font-size: 12.5px; color: var(--bb-text-secondary); display: flex; align-items: center; gap: 5px; i { font-size: 11px; color: var(--asc-accent); } }
   &__date  { font-size: 12px; color: var(--bb-text-muted); display: flex; align-items: center; gap: 5px; i { font-size: 11px; } }
-}
 
-.consult-tag { font-size: 11.5px !important; flex-shrink: 0; }
+  > .bb-badge { flex-shrink: 0; }
+
+  // Mobile : le statut passe en haut a droite, le texte garde la largeur
+  @media (max-width: 480px) {
+    align-items: flex-start; position: relative; padding: 12px 14px;
+    &__avatar { width: 38px; height: 38px; border-radius: 12px; font-size: 13px; }
+    &__body { padding-right: 96px; }
+    > .bb-badge { position: absolute; top: 12px; right: 12px; }
+  }
+}
 
 // ── Champs Material pleine largeur dans les formulaires ────────────
 .form-field-full { width: 100%; }
+
+@keyframes bb-asc-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}

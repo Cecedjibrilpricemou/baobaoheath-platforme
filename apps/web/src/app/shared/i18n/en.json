@@ -2839,5 +2839,225 @@
       "PAGE_SUR": "Page {{page}} of {{pages}} · {{total}} entries in all",
       "RECHERCHE": "Search: {{q}}"
     }
+  },
+  "PUBLIC": {
+    "NAV_PROS": "Professionals",
+    "NAV_SECURITY": "Security",
+    "MENU_OPEN": "Open menu",
+    "MENU_CLOSE": "Close menu",
+    "LINK_PROS": "Healthcare professionals",
+    "LINK_SECURITY": "Security & data",
+    "LINK_ABOUT": "About",
+    "CONTACT_US": "Write to us",
+    "CONTACT_FALLBACK": "the contact address shown on the platform",
+    "TOC": "Contents",
+    "DRAFT_TITLE": "Draft version.",
+    "DRAFT_TEXT": "This document is under legal review and may still change before its final version.",
+    "PRIVACY": {
+      "TITLE": "Privacy policy",
+      "LEAD": "How {{nom}} collects, uses and protects your personal and health data.",
+      "UPDATED": "Draft of 17 October 2026",
+      "S1": {
+        "TITLE": "Data controller",
+        "P1": "The data controller is [Company name], publisher of {{nom}}, with registered office at [registered address]. For any question about your data, write to {{contact}}."
+      },
+      "S2": {
+        "TITLE": "Data we collect",
+        "P1": "We only collect the data needed for your care:",
+        "L1": "Identity and contact details: last name, first name, phone number, and email address if you provide it.",
+        "L2": "Health data: consultations, vital signs, diagnoses, prescriptions, vaccinations and test results, entered by the professionals who care for you.",
+        "L3": "Technical data: history of sign-ins and of access to your record, required for security."
+      },
+      "S3": {
+        "TITLE": "How your data is used",
+        "P1": "Your data is used only to:",
+        "L1": "ensure continuity of care between health workers, doctors, laboratories, hospitals and pharmacies;",
+        "L2": "let you view your record, your results and your prescriptions;",
+        "L3": "produce public health statistics, always anonymised.",
+        "P2": "It is never sold or used for advertising."
+      },
+      "S4": {
+        "TITLE": "Consent and sharing",
+        "P1": "You decide who can access your record from the “Privacy & consents” area. Only authorised professionals, as part of your care, can view your data. Every access is recorded: you can see who opened your record, and when."
+      },
+      "S5": {
+        "TITLE": "Retention period",
+        "P1": "Your data is kept for [legal retention period of the medical record], then deleted or anonymised."
+      },
+      "S6": {
+        "TITLE": "Security",
+        "P1": "Sensitive medical data is encrypted, access is limited to each professional's role, and sign-in can be confirmed with a one-time code. The “Security & data” page describes these measures."
+      },
+      "S7": {
+        "TITLE": "Your rights",
+        "P1": "Under Law L/2016/037/AN on cybersecurity and the protection of personal data, you have the following rights:",
+        "L1": "access your data and obtain a copy of your record;",
+        "L2": "have inaccurate information corrected;",
+        "L3": "object to processing and withdraw your consents at any time;",
+        "L4": "request deletion of your data, within the limits of legal retention obligations.",
+        "P2": "To exercise these rights, write to {{contact}}."
+      },
+      "S8": {
+        "TITLE": "Changes to this policy",
+        "P1": "This policy may change. If there is a significant change, you will be informed in the application."
+      }
+    },
+    "TERMS": {
+      "TITLE": "Terms of use",
+      "LEAD": "The rules for using {{nom}}, for patients and healthcare professionals alike.",
+      "UPDATED": "Draft of 17 October 2026",
+      "S1": {
+        "TITLE": "Purpose",
+        "P1": "{{nom}} is a digital platform that connects patients, community health workers, doctors, laboratories, hospitals and pharmacies to follow the care pathway. These terms govern its use."
+      },
+      "S2": {
+        "TITLE": "Medical emergencies",
+        "P1": "{{nom}} does not replace medical advice or emergency services. In an emergency, contact emergency services immediately or go to the nearest health facility."
+      },
+      "S3": {
+        "TITLE": "Accounts and access",
+        "P1": "Patients create their own account. Professional accounts are created by their facility's administrator.",
+        "L1": "You are responsible for keeping your password and the codes you receive confidential.",
+        "L2": "Report any suspicious use of your account without delay.",
+        "L3": "The information you provide must be accurate and up to date."
+      },
+      "S4": {
+        "TITLE": "Professionals' commitments",
+        "P1": "Healthcare professionals only access records to care for patients, in accordance with medical confidentiality. Every access is recorded."
+      },
+      "S5": {
+        "TITLE": "Service availability",
+        "P1": "We do what is needed to keep the service available, including on low bandwidth and offline for field workers, without being able to guarantee uninterrupted operation."
+      },
+      "S6": {
+        "TITLE": "Liability",
+        "P1": "Medical information entered is the responsibility of the professionals who enter it. [Company name] cannot be held liable for any use of the platform contrary to these terms."
+      },
+      "S7": {
+        "TITLE": "Intellectual property",
+        "P1": "The platform, its brand and its content are protected. Any reproduction without permission is prohibited."
+      },
+      "S8": {
+        "TITLE": "Governing law and contact",
+        "P1": "These terms are governed by Guinean law. For any question, write to {{contact}}."
+      }
+    },
+    "SECURITY": {
+      "TAG": "Trust",
+      "TITLE_A": "Your health data,",
+      "TITLE_B": "protected at every step.",
+      "LEAD": "Health data is among the most sensitive there is. Here is, concretely, how {{nom}} protects it.",
+      "C1": {
+        "TITLE": "Sensitive data encrypted",
+        "TEXT": "Sensitive medical and personal information is encrypted in the database (AES-256-GCM): unreadable without the key, even if storage is accessed."
+      },
+      "C2": {
+        "TITLE": "Passwords never in clear",
+        "TEXT": "Passwords are never stored as typed: they are transformed by a hashing algorithm (bcrypt) before being saved."
+      },
+      "C3": {
+        "TITLE": "Verified sign-in",
+        "TEXT": "A sign-in can be confirmed with a 6-digit code sent by email, valid for a few minutes only."
+      },
+      "C4": {
+        "TITLE": "Time-limited sessions",
+        "TEXT": "Sessions expire automatically: a forgotten device does not stay signed in forever."
+      },
+      "C5": {
+        "TITLE": "Role-based access",
+        "TEXT": "Each professional only sees the information their job requires: a pharmacist does not see what a doctor sees."
+      },
+      "C6": {
+        "TITLE": "Your consents",
+        "TEXT": "From your area, you decide who can view your record, and you can withdraw your consent at any time."
+      },
+      "C7": {
+        "TITLE": "Access log",
+        "TEXT": "Every view of your record is recorded: you see who opened it, and when."
+      },
+      "C8": {
+        "TITLE": "Built for the field",
+        "TEXT": "Health workers can work offline; data is synchronised as soon as the network returns."
+      },
+      "RIGHTS_TITLE": "Your data belongs to you",
+      "RIGHTS_TEXT": "Access, correction, withdrawal of consent: our privacy policy explains your rights and how to exercise them."
+    },
+    "PROS": {
+      "TAG": "Professional areas",
+      "TITLE_A": "One area per profession,",
+      "TITLE_B": "one patient record.",
+      "LEAD": "{{nom}} supports every professional along the care pathway with a dedicated area, connected to the same patient record.",
+      "CTA_LOGIN": "Go to my area",
+      "CTA_JOIN": "Register my facility",
+      "ASC": {
+        "TITLE": "Community health worker",
+        "TEXT": "Local consultations, assisted triage, appointment planning, stock management and offline work with synchronisation."
+      },
+      "MED": {
+        "TITLE": "Doctor",
+        "TEXT": "Consultation validation, prescription signing, referrals and messaging with field teams."
+      },
+      "PHARMA": {
+        "TITLE": "Pharmacist",
+        "TEXT": "Dispensing prescriptions by QR code or by number and verification code, and stock tracking."
+      },
+      "LABO": {
+        "TITLE": "Laboratory",
+        "TEXT": "Test request queue, entry and validation of results, alerts on critical values."
+      },
+      "HOPITAL": {
+        "TITLE": "Hospital",
+        "TEXT": "Patient admission, care episodes, test requests and follow-up of critical results."
+      },
+      "ADMIN": {
+        "TITLE": "Facility administration",
+        "TEXT": "Management of staff and their access, facility settings and activity tracking."
+      },
+      "JOIN_TITLE": "How to join the platform",
+      "JOIN_SUB": "Professional accounts are created by the facility: nobody enters {{nom}} without being authorised.",
+      "E1": {
+        "TITLE": "Your facility contacts us",
+        "TEXT": "Health post or centre, hospital, laboratory or pharmacy: we register it on the platform."
+      },
+      "E2": {
+        "TITLE": "The administrator creates accounts",
+        "TEXT": "Each professional receives an account with the role that matches their job."
+      },
+      "E3": {
+        "TITLE": "Everyone signs in",
+        "TEXT": "From a computer or a phone, including on low bandwidth."
+      },
+      "PANEL_TITLE": "Security at the heart of every area",
+      "PANEL_TEXT": "Role-limited access, encrypted sensitive data, every record view recorded."
+    },
+    "ABOUT": {
+      "TAG": "Our mission",
+      "TITLE_A": "One record,",
+      "TITLE_B": "everywhere in Guinea.",
+      "LEAD": "{{nom}} was born from a simple observation: a patient's record too often gets lost between the health post, the hospital, the laboratory and the pharmacy.",
+      "PROBLEM_LABEL": "The problem",
+      "PROBLEM": "Lost paper booklets, repeated tests, illegible prescriptions, patients retelling their history to every caregiver: continuity of care still too often depends on chance.",
+      "MISSION_LABEL": "Our mission",
+      "MISSION": "One record that follows every patient, everywhere, online and offline, so that every caregiver has the right information at the right time. That is why {{nom}} exists.",
+      "VALUES_TITLE": "What guides us",
+      "V1": {
+        "TITLE": "Built for the field",
+        "TEXT": "Low bandwidth, network outages, modest phones: every screen is designed for real conditions."
+      },
+      "V2": {
+        "TITLE": "Trust and privacy",
+        "TEXT": "Patients stay in control of their record; access is limited, recorded and encrypted."
+      },
+      "V3": {
+        "TITLE": "A pathway, not silos",
+        "TEXT": "Health workers, doctors, laboratories, hospitals and pharmacies work on the same record."
+      },
+      "V4": {
+        "TITLE": "Made in Guinea",
+        "TEXT": "Built in Guinea, with and for Guinean healthcare professionals."
+      },
+      "PANEL_TITLE": "Ready to join?",
+      "PANEL_TEXT": "Create your patient record in two minutes, or bring your facility onto the platform."
+    }
   }
 }

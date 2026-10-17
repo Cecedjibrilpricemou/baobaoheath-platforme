@@ -101,6 +101,35 @@ export const routes: Routes = [
       import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
   },
 
+  // ── Pages publiques d'information (sans authentification) ───────────
+  {
+    path: 'confidentialite',
+    data: { doc: 'PRIVACY' },
+    loadComponent: () =>
+      import('./features/public/legal/legal.component').then(m => m.LegalComponent)
+  },
+  {
+    path: 'conditions-utilisation',
+    data: { doc: 'TERMS' },
+    loadComponent: () =>
+      import('./features/public/legal/legal.component').then(m => m.LegalComponent)
+  },
+  {
+    path: 'securite',
+    loadComponent: () =>
+      import('./features/public/securite/securite.component').then(m => m.SecuriteComponent)
+  },
+  {
+    path: 'professionnels',
+    loadComponent: () =>
+      import('./features/public/professionnels/professionnels.component').then(m => m.ProfessionnelsComponent)
+  },
+  {
+    path: 'a-propos',
+    loadComponent: () =>
+      import('./features/public/a-propos/a-propos.component').then(m => m.AProposComponent)
+  },
+
   // ── Unauthorized ────────────────────────────────────────────────────
   {
     path: 'unauthorized',

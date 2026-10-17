@@ -1,0 +1,57 @@
+<!-- features/public/professionnels/professionnels.component.html -->
+<app-public-shell>
+
+  <header class="pub-hero">
+    <span class="pub-tag">{{ 'PUBLIC.PROS.TAG' | translate }}</span>
+    <h1 class="pub-hero__title">{{ 'PUBLIC.PROS.TITLE_A' | translate }} <span class="pub-hero__accent">{{ 'PUBLIC.PROS.TITLE_B' | translate }}</span></h1>
+    <p class="pub-hero__lead">{{ 'PUBLIC.PROS.LEAD' | translate: params() }}</p>
+    <div class="pub-hero__actions">
+      <a routerLink="/auth/login" class="pub-btn pub-btn--primary pub-btn--lg"><i class="pi pi-sign-in" aria-hidden="true"></i> {{ 'PUBLIC.PROS.CTA_LOGIN' | translate }}</a>
+      @if (plateforme.emailContact()) {
+        <a [href]="'mailto:' + plateforme.emailContact()" class="pub-btn pub-btn--ghost pub-btn--lg"><i class="pi pi-building" aria-hidden="true"></i> {{ 'PUBLIC.PROS.CTA_JOIN' | translate }}</a>
+      }
+    </div>
+  </header>
+
+  <section class="pub-section">
+    <div class="pub-grid pub-grid--3">
+      @for (e of espaces; track e.cle) {
+        <article class="pub-card pub-card--space">
+          <span class="pub-card__icon" aria-hidden="true"><i [class]="'pi ' + e.icone"></i></span>
+          <h2 class="pub-card__title">{{ 'PUBLIC.PROS.' + e.cle + '.TITLE' | translate }}</h2>
+          <p class="pub-card__text">{{ 'PUBLIC.PROS.' + e.cle + '.TEXT' | translate }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="pub-section">
+    <div class="pub-section__head">
+      <h2 class="pub-section__title">{{ 'PUBLIC.PROS.JOIN_TITLE' | translate }}</h2>
+      <p class="pub-section__sub">{{ 'PUBLIC.PROS.JOIN_SUB' | translate: params() }}</p>
+    </div>
+    <ol class="pub-steps">
+      @for (s of etapes; track s; let i = $index) {
+        <li class="pub-steps__item">
+          <span class="pub-steps__num">{{ i + 1 }}</span>
+          <h3 class="pub-steps__title">{{ 'PUBLIC.PROS.' + s + '.TITLE' | translate }}</h3>
+          <p class="pub-steps__text">{{ 'PUBLIC.PROS.' + s + '.TEXT' | translate }}</p>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section class="pub-section">
+    <div class="pub-panel">
+      <div class="pub-panel__text">
+        <h2 class="pub-panel__title">{{ 'PUBLIC.PROS.PANEL_TITLE' | translate }}</h2>
+        <p class="pub-panel__sub">{{ 'PUBLIC.PROS.PANEL_TEXT' | translate }}</p>
+      </div>
+      <div class="pub-panel__actions">
+        <a routerLink="/securite" class="pub-btn pub-btn--white"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
+        <a routerLink="/auth/login" class="pub-btn pub-btn--ghost-white">{{ 'PUBLIC.PROS.CTA_LOGIN' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  </section>
+
+</app-public-shell>

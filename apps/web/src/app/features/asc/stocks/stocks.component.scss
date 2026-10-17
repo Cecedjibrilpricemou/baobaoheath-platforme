@@ -1,5 +1,16 @@
 // features/asc/stocks/stocks.component.scss
-.stocks-page {}
+
+// ✦ Refonte UI : accent propre a l'ecran (vert vif en mode sombre)
+:host {
+  display: block;
+  --astk-accent: var(--bb-primary);
+  --astk-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --astk-accent: var(--bb-bright);
+  --astk-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
 
 .mt-3 { margin-top: 14px; }
 
@@ -9,22 +20,37 @@
 
   .bb-search { flex: 1; min-width: 220px; }
   &__add { white-space: nowrap; }
+
+  // Sur mobile, recherche d'abord (geste le plus frequent), bouton dessous
+  @media (max-width: 600px) {
+    flex-direction: column-reverse; align-items: stretch;
+    .bb-search { min-width: 0; }
+    &__add { width: 100%; }
+  }
 }
 
 // ── Formulaire d'ajout d'une ligne de stock ───────────────────────
 .stock-add {
   margin-bottom: 20px;
-  padding: 20px;
+  padding: 1.375rem 1.5rem;
   border: 1px solid var(--bb-border-light);
-  border-radius: var(--bb-radius-lg);
+  border-left: 4px solid var(--astk-accent);
+  border-radius: var(--bb-radius-xl);
   background: var(--bb-surface-card);
+  box-shadow: var(--bb-shadow);
+  animation: bb-astk-drop .3s var(--bb-ease) both;
+
+  @media (max-width: 600px) { padding: 1.125rem; }
 
   &__title {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
     margin: 0 0 16px;
-    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
     color: var(--bb-text-primary);
-    i { color: var(--bb-primary); }
+    i {
+      color: var(--astk-accent); font-size: 14px; width: 34px; height: 34px; border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center; background: var(--astk-accent-soft);
+    }
   }
 
   &__grid {
@@ -38,101 +64,116 @@
 
   &__actions {
     display: flex; justify-content: flex-end; gap: 10px;
-    margin-top: 16px;
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--bb-border-light);
+    @media (max-width: 420px) { flex-direction: column-reverse; > * { width: 100%; } }
   }
 }
 
 // ── Grille de cards stock ────────────────────────────────────────
 .stocks-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+  @media (max-width: 400px) { grid-template-columns: 1fr; }
 }
 
 .stock-card {
-  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+  position: relative; overflow: hidden;
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
   border-radius: var(--bb-radius-xl); padding: 1.25rem;
-  box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition);
+  box-shadow: var(--bb-shadow-xs);
+  // ✦ Refonte UI : transitions ciblees (plus de `all`)
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow), transform var(--bb-transition-slow);
 
-  &:hover { box-shadow: var(--bb-shadow-sm); transform: translateY(-1px); }
+  &:hover { box-shadow: var(--bb-shadow-hover); transform: translateY(-2px); }
 
-  &--critique { border-color: var(--bb-danger-border); background: linear-gradient(135deg, #fff, #FEF2F2); }
-  &--faible   { border-color: var(--bb-warning-border); }
-
-  :host-context([data-theme="dark"]) &--critique { background: linear-gradient(135deg, var(--bb-surface-card), var(--bb-danger-bg)); }
+  // ✦ Refonte UI : niveau signale par une barre laterale (meme langage que
+  // les stocks pharmacie) ; le degrade #fff → #FEF2F2 code en dur disparait.
+  &--critique, &--faible {
+    &::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; }
+  }
+  &--critique { border-color: var(--bb-danger-border); &::before { background: var(--bb-danger); } }
+  &--faible   { border-color: var(--bb-warning-border); &::before { background: var(--bb-warning); } }
 
   &__header {
     display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;
+    > .bb-badge { flex-shrink: 0; }
   }
 
   &__icon {
-    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+    background: var(--astk-accent-soft);
     display: flex; align-items: center; justify-content: center;
-    i { font-size: 16px; color: var(--bb-primary); }
+    i { font-size: 16px; color: var(--astk-accent); }
 
-    .stock-card--critique & { background: var(--bb-danger-bg); border-color: var(--bb-danger-border); i { color: var(--bb-danger); } }
-    .stock-card--faible  & { background: var(--bb-warning-bg); border-color: var(--bb-warning-border); i { color: var(--bb-warning); } }
+    .stock-card--critique & { background: var(--bb-danger-bg); i { color: var(--bb-danger); } }
+    .stock-card--faible  & { background: var(--bb-warning-bg); i { color: var(--bb-warning); } }
   }
 
   &__info { flex: 1; min-width: 0; }
 
   &__name {
-    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
     color: var(--bb-text-primary); margin-bottom: 3px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
   &__posologie {
-    display: block; font-size: 11.5px; color: var(--bb-text-muted);
-    margin-bottom: 4px;
+    display: block; font-size: 12px; color: var(--bb-text-muted);
+    margin-bottom: 6px;
   }
 
   &__cat {
-    font-size: 11.5px; color: var(--bb-text-muted);
-    display: inline-block; background: var(--bb-surface-2);
-    padding: 2px 8px; border-radius: 100px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--bb-text-secondary);
+    display: inline-block; background: var(--bb-surface-2); border: 1px solid var(--bb-border-light);
+    padding: 2px 9px; border-radius: var(--bb-radius-pill);
   }
 
   // ── Quantité ─────────────────────────────────────────────────
-  &__quantity { margin-bottom: 14px; }
+  &__quantity { margin-bottom: 12px; }
 
   .qty-display {
     display: flex; align-items: baseline; gap: 6px;
     &__value {
-      font-family: var(--bb-font-display); font-size: 32px; font-weight: 800;
-      color: var(--bb-text-primary); line-height: 1;
+      font-family: var(--bb-font-display); font-size: 32px; font-weight: 800; letter-spacing: -1px;
+      color: var(--bb-text-primary); line-height: 1; font-variant-numeric: tabular-nums;
       .stock-card--critique & { color: var(--bb-danger); }
       .stock-card--faible  & { color: var(--bb-warning); }
     }
-    &__unit { font-size: 13px; color: var(--bb-text-muted); font-weight: 500; }
+    &__unit { font-size: 13px; color: var(--bb-text-muted); font-weight: 600; }
   }
 
   .qty-edit {
     display: flex; align-items: center; gap: 8px;
   }
 
+  // ✦ Refonte UI : boutons +/- plus grands (cible tactile de 40px, saisie
+  // sur le terrain, souvent d'une main)
   .qty-btn {
-    width: 32px; height: 32px; border-radius: 8px;
+    width: 40px; height: 40px; border-radius: 12px;
     border: 1px solid var(--bb-border); background: var(--bb-surface-1);
     color: var(--bb-text-secondary); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all var(--bb-transition); flex-shrink: 0;
-    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
+    cursor: pointer; flex-shrink: 0;
+    transition: background var(--bb-transition), color var(--bb-transition), border-color var(--bb-transition), transform var(--bb-transition);
+    &:hover { background: var(--astk-accent-soft); color: var(--astk-accent); border-color: var(--bb-success-border); }
+    &:active { transform: scale(0.92); }
     i { font-size: 12px; }
   }
-
-  // ── Barre de progression ──────────────────────────────────────
-  &__level { }
 }
 
 .stock-progress {
   margin-bottom: 12px;
 
   &__track {
-    height: 8px; background: var(--bb-surface-2); border-radius: 100px;
-    overflow: hidden; border: 1px solid var(--bb-border-light); margin-bottom: 5px;
+    height: 8px; background: var(--bb-surface-2); border-radius: var(--bb-radius-pill);
+    overflow: hidden; margin-bottom: 6px;
   }
 
+  // Couleur posee par le composant (rouge / orange / vert)
   &__fill {
-    height: 100%; border-radius: 100px; transition: width .5s ease;
+    height: 100%; border-radius: var(--bb-radius-pill);
+    transition: width .6s var(--bb-ease);
+    transform-origin: left center;
+    animation: bb-astk-fill .9s var(--bb-ease) both;
   }
 
   &__seuil { font-size: 11.5px; color: var(--bb-text-muted); }
@@ -141,13 +182,16 @@
 // Expiration
 .stock-card__expiry {
   font-size: 12px; color: var(--bb-text-muted); margin-bottom: 12px;
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   i { font-size: 11px; }
 
-  &--soon { color: var(--bb-warning); font-weight: 600; }
+  &--soon { color: var(--bb-warning); font-weight: 700; }
 }
 
-.expiry-warning { font-size: 11.5px; font-weight: 700; }
+.expiry-warning {
+  font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: var(--bb-radius-pill);
+  background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border); color: var(--bb-warning);
+}
 
 .stock-card__actions {
   display: flex; gap: 8px;
@@ -159,18 +203,30 @@
 // Champ de saisie de quantite (remplace p-inputNumber)
 .qty-edit__input {
   flex: 1; min-width: 0;
-  height: 38px; padding: 0 12px;
-  border: 1px solid var(--bb-border);
-  border-radius: var(--bb-radius);
-  background: var(--bb-surface-0);
+  height: 40px; padding: 0 12px;
+  border: 1px solid var(--bb-border-strong);
+  border-radius: 12px;
+  background: var(--bb-surface-card);
   color: var(--bb-text-primary);
   font-family: var(--bb-font-display);
-  font-size: 15px; font-weight: 700;
-  text-align: center;
+  font-size: 16px; font-weight: 800;
+  text-align: center; font-variant-numeric: tabular-nums;
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
 
   &:focus {
     outline: none;
     border-color: var(--bb-primary);
-    box-shadow: 0 0 0 3px rgba(62, 187, 112, 0.18);
+    // ✦ Refonte UI : rgba code en dur → anneau de focus commun
+    box-shadow: var(--bb-focus-ring);
   }
+}
+
+@keyframes bb-astk-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes bb-astk-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }

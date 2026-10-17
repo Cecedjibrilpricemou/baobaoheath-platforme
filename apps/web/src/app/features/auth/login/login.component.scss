@@ -1,23 +1,39 @@
 // features/auth/login/login.component.scss
 // La coquille (marque, panneau visuel, champs, boutons) vit dans
 // styles/_auth.scss. Ici : uniquement l'etape OTP.
+//
+// ✦ Refonte UI : l'etape OTP (code PIN a 6 chiffres) recoit le traitement
+// « prestige » : ecusson anime, minuteur en pastille a chiffres fixes,
+// cases larges a halo de focus. Les couleurs suivent --auth-accent (defini
+// par la coquille) : vert de marque en clair, vert vif en sombre — le vert
+// de marque fixe tombait a 3,4:1 sur fond sombre.
 
 // ── En-tete OTP ──────────────────────────────────────────────────
 .otp-header {
   text-align: center;
   margin-bottom: 24px;
 
+  // ✦ Refonte UI : ecusson en verre, anneau qui pulse doucement
   &__icon {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 56px; height: 56px;
-    border-radius: 16px;
-    background: var(--bb-success-bg);
-    color: var(--bb-primary);
-    margin-bottom: 18px;
+    width: 64px; height: 64px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, var(--auth-accent-soft), color-mix(in srgb, var(--auth-accent) 6%, transparent));
+    border: 1px solid color-mix(in srgb, var(--auth-accent) 25%, transparent);
+    color: var(--auth-accent);
+    margin-bottom: 20px;
+    box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--auth-accent) 60%, transparent);
 
-    i { font-size: 24px; }
+    i { font-size: 26px; }
+
+    &::after {
+      content: ''; position: absolute; inset: -6px; border-radius: 24px;
+      border: 1px solid color-mix(in srgb, var(--auth-accent) 35%, transparent);
+      @media (prefers-reduced-motion: no-preference) { animation: bb-otp-pulse 2.4s var(--bb-ease) infinite; }
+    }
   }
 
   .bb-auth__sub { margin-bottom: 0; }
@@ -29,7 +45,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 16px;
   padding: 8px 14px;
   border-radius: var(--bb-radius);
   background: var(--bb-info-bg);
@@ -43,51 +59,74 @@
     font-family: var(--bb-font-display);
     font-size: 15px;
     letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
   }
 }
 
 // ── Compte a rebours ─────────────────────────────────────────────
+// ✦ Refonte UI : pastille centree, chiffres a chasse fixe (le minuteur ne
+// « danse » plus), couleur d'accent lisible dans les deux modes.
 .otp-status {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 14px;
-  border-radius: var(--bb-radius);
+  width: fit-content;
+  margin: 0 auto 22px;
+  padding: 8px 16px;
+  border-radius: var(--bb-radius-pill);
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 20px;
 
   i { font-size: 13px; flex-shrink: 0; }
+  strong { font-family: var(--bb-font-display); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 
-  &--timer   { background: var(--bb-success-bg); color: var(--bb-primary); border: 1px solid var(--bb-success-border); }
+  &--timer   { background: var(--auth-accent-soft); color: var(--auth-accent); border: 1px solid color-mix(in srgb, var(--auth-accent) 25%, transparent); }
   &--warning { background: var(--bb-warning-bg); color: var(--bb-warning); border: 1px solid var(--bb-warning-border); }
   &--expired { background: var(--bb-danger-bg);  color: var(--bb-danger);  border: 1px solid var(--bb-danger-border); }
+
+  // Moins d'une minute : l'icone bat doucement
+  &--warning i { @media (prefers-reduced-motion: no-preference) { animation: bb-otp-tick 1s ease-in-out infinite; } }
 }
 
 // ── Saisie du code ───────────────────────────────────────────────
+// ✦ Refonte UI : six cases larges et regulieres (grille, pas d'espace
+// variable), halo au focus, etat « rempli » en vert doux ; sur mobile les
+// cases se partagent la largeur sans deborder.
 .otp-inputs-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 12px 0 24px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 26px;
+  transition: opacity var(--bb-transition);
+
+  @media (max-width: 380px) { gap: 6px; }
 
   .otp-digit-input {
-    width: 48px;
-    height: 56px;
-    border: 2px solid var(--bb-border);
-    border-radius: 12px;
-    background: var(--bb-surface-1);
+    width: 100%;
+    min-width: 0;
+    height: 64px;
+    border: 1px solid var(--bb-border);
+    border-radius: 16px;
+    background: var(--bb-surface-card);
     color: var(--bb-text-primary);
-    font-size: 24px;
+    caret-color: var(--auth-accent);
+    font-size: 26px;
     font-weight: 800;
     text-align: center;
     font-family: var(--bb-font-display);
-    transition: border-color var(--bb-transition), box-shadow var(--bb-transition), transform var(--bb-transition);
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--bb-deep) 8%, transparent);
+    transition: border-color .2s var(--bb-ease), box-shadow .2s var(--bb-ease), transform .2s var(--bb-ease), background .2s var(--bb-ease);
+
+    @media (max-width: 380px) { height: 56px; font-size: 22px; border-radius: 13px; }
+
+    &:hover:not(:disabled) { border-color: var(--bb-border-strong); }
 
     &:focus {
-      border-color: var(--bb-primary);
-      background: var(--bb-surface-0);
-      box-shadow: 0 0 0 4px rgba(45, 125, 70, 0.15);
+      border-color: var(--auth-accent);
+      background: var(--bb-surface-card);
+      box-shadow: 0 0 0 4px var(--auth-glow), 0 10px 24px -14px color-mix(in srgb, var(--auth-accent) 70%, transparent);
       outline: none;
       transform: translateY(-2px);
     }
@@ -97,9 +136,14 @@
       color: var(--bb-text-muted);
       cursor: not-allowed;
       border-color: var(--bb-border-light);
+      box-shadow: none;
     }
 
-    &.filled { border-color: var(--bb-primary); background: var(--bb-success-bg); }
+    &.filled {
+      border-color: color-mix(in srgb, var(--auth-accent) 60%, transparent);
+      background: var(--auth-accent-soft);
+      @media (prefers-reduced-motion: no-preference) { animation: bb-otp-pop .25s var(--bb-ease); }
+    }
   }
 }
 
@@ -108,28 +152,36 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 18px;
 }
 
+// ✦ Refonte UI : bouton « renvoyer » en verre, couleur d'accent du theme
 .otp-resend-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
+  min-height: 40px;
   padding: 8px 18px;
-  border: 1.5px solid var(--bb-border);
+  border: 1px solid var(--auth-glass-border, var(--bb-border));
   border-radius: var(--bb-radius-pill);
-  background: var(--bb-surface-1);
-  color: var(--bb-primary);
+  background: var(--bb-surface-card);
+  color: var(--auth-accent);
   font-family: var(--bb-font-display);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: border-color var(--bb-transition), background var(--bb-transition);
+  transition: border-color var(--bb-transition), background var(--bb-transition), transform var(--bb-transition);
 
-  i { font-size: 11px; }
+  i { font-size: 12px; transition: transform .4s var(--bb-ease); }
 
-  &:hover:not(:disabled) { border-color: var(--bb-primary); background: var(--bb-success-bg); }
+  &:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--auth-accent) 50%, transparent);
+    background: var(--auth-accent-soft);
+    transform: translateY(-1px);
+    i { transform: rotate(-180deg); }
+  }
+  &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -140,15 +192,33 @@
   padding: 6px 14px;
   background: none;
   border: none;
-  color: var(--bb-text-muted);
+  border-radius: var(--bb-radius-pill);
+  color: var(--bb-text-secondary);
   font-family: var(--bb-font-display);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: color var(--bb-transition);
 
-  i { font-size: 11px; }
+  i { font-size: 11px; transition: transform var(--bb-transition); }
 
-  &:hover:not(:disabled) { color: var(--bb-text-secondary); }
+  &:hover:not(:disabled) { color: var(--bb-text-primary); i { transform: translateX(-2px); } }
+  &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ✦ Refonte UI
+@keyframes bb-otp-pulse {
+  0%   { opacity: .9; transform: scale(.94); }
+  70%  { opacity: 0;  transform: scale(1.18); }
+  100% { opacity: 0;  transform: scale(1.18); }
+}
+@keyframes bb-otp-pop {
+  0%   { transform: scale(.92); }
+  60%  { transform: scale(1.04); }
+  100% { transform: none; }
+}
+@keyframes bb-otp-tick {
+  0%, 100% { transform: none; }
+  50%      { transform: scale(1.15); }
 }

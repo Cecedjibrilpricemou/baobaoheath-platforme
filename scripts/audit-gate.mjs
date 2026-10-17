@@ -29,78 +29,18 @@ const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * pas seulement qu'il gene.
  */
 const EXCEPTIONS = [
-  {
-    ghsa: 'GHSA-ggr8-5vv4-36mx',
-    paquet: 'deepmerge-ts',
-    reexamen: '2026-12-01',
-    motif:
-      "Epuisement de pile en fusionnant des objets recursifs. Atteint via " +
-      "@prisma/config, qui ne fusionne que notre propre prisma.config.ts : " +
-      "l'entree n'est pas controlee par un tiers. prisma 7.10.0, la derniere " +
-      "version publiee, epingle deepmerge-ts 7.1.5 ; aucune version corrigee " +
-      "n'existe en amont. Le seul correctif propose par npm est une " +
-      "retrogradation vers prisma 6.19.3, incompatible avec le format " +
-      "prisma.config.ts et avec @prisma/client 7.",
-  },
-  {
-    ghsa: 'GHSA-3f6p-5ww8-9rcr',
-    paquet: 'mysql2',
-    reexamen: '2026-12-01',
-    motif:
-      "Fuite d'identifiants en clair par retrogradation du plugin " +
-      "d'authentification MySQL. La plateforme tourne sur PostgreSQL ; mysql2 " +
-      "est une dependance de la CLI Prisma (devDependency) pour " +
-      "l'introspection MySQL, jamais importee par le code applicatif.",
-  },
-  {
-    ghsa: 'GHSA-rgwj-5xj2-c3m3',
-    paquet: 'mysql2',
-    reexamen: '2026-12-01',
-    motif:
-      "Deni de service par bombe de decompression dans le protocole MySQL " +
-      "compresse. Meme raison : aucune connexion MySQL n'est jamais ouverte.",
-  },
-  {
-    ghsa: 'GHSA-vfj7-8cjw-p6xm',
-    paquet: 'braces',
-    reexamen: '2026-11-15',
-    motif:
-      "Epuisement de pile sur un motif glob profondement imbrique. Atteint " +
-      "par jest > micromatch > braces, c'est-a-dire le lanceur de tests : les " +
-      "motifs viennent de notre jest.config.cjs et de la ligne de commande, " +
-      "jamais d'une entree exterieure. Verifie le 2026-10-03 : braces est " +
-      "absent de l'arbre de production de la racine et de celui de l'API " +
-      "(npm ls --omit=dev vide), et absent du bundle web livre. " +
-      "**Aucune version corrigee n'existe** : l'avis couvre <=3.0.3 et 3.0.3 " +
-      "est la derniere version publiee. Le correctif que npm propose est un " +
-      "passage a jest 30, changement majeur sans rapport avec la faille et " +
-      "sans braces corrige au bout. Reexamen court : c'est un paquet tres " +
-      "utilise, un correctif amont viendra.",
-  },
+  // Aucune exception en vigueur.
+  //
+  // Historique : du 13/09 au 17/10/2026, trois avis etaient toleres —
+  // GHSA-ggr8-5vv4-36mx (deepmerge-ts, via @prisma/config) et
+  // GHSA-3f6p-5ww8-9rcr / GHSA-rgwj-5xj2-c3m3 (mysql2, via la CLI prisma).
+  // prisma 7.10.1 embarque deepmerge-ts 8.0.2 et mysql2 3.24.4, versions
+  // corrigees : les exceptions ont ete retirees (le portillon les signalait
+  // comme obsoletes). GHSA-vfj7-8cjw-p6xm (braces, via jest 29), tolere
+  // sur develop depuis le 03/10, disparait avec le passage a jest 30.
+  // Le mecanisme reste pour la prochaine faille sans
+  // correctif amont : ghsa, paquet, date de reexamen et motif.
 ];
-
-// Aucune de ces exceptions ne tourne en production : depuis le Dockerfile de
-// l'API (etape prod-deps), l'image embarque les seules dependances de
-// production — la CLI prisma, mysql2, deepmerge-ts et braces
-// n'y sont pas. Elles restent dans l'arbre audite ici
-// parce que la CI et le job Deploy en ont besoin (migrate deploy depuis le
-// runner). Verifie a chaque ajout par `npm ls <paquet> --omit=dev --all` a la
-// racine et dans apps/api, plus un grep sur apps/web/dist.
-//
-// Le point commun des trois dernieres (piscina, braces,
-// http-cache-semantics) : **aucune version corrigee n'est publiee en amont**.
-// Ce que `npm audit` presente comme « fixAvailable » est, dans les trois cas,
-// un changement majeur sans rapport — parfois une retrogradation de plusieurs
-// annees. Lire la suggestion avant de la suivre.
-//
-// Piste ecartee (13/09/2026, reconfirmee le 02/10/2026) : `overrides` npm sur
-// une dependance epinglee en version exacte. Avec npm 11 et les workspaces,
-// l'override est ignore — ni l'override plat `piscina: ^5.3.2`, ni la forme
-// imbriquee `@angular/build: { piscina: ^5.3.2 }`, ni une reinstallation apres
-// suppression de node_modules/.package-lock.json ne deplacent l'epingle. Et
-// retirer l'entree du verrou pour forcer une resolution fait perdre 19 paquets
-// a l'arbre au lieu d'en remplacer un. A reessayer quand prisma > 7.10 et
-// @angular/build > 21.2.24 relacheront leurs epingles.
 
 const AUTORISES = new Set(EXCEPTIONS.map((e) => e.ghsa));
 const BLOQUANTS = new Set(['high', 'critical']);

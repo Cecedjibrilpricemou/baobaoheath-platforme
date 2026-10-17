@@ -1,34 +1,36 @@
 // features/admin-structure/agents/agents.component.scss
+
+// ✦ Refonte UI : plus de double padding, en-tete local supprime (code mort),
+// accent vert vif en sombre, couleurs rgba remplacees par les tokens.
+:host {
+  display: block;
+  --agt-accent: var(--bb-primary);
+  --agt-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --agt-accent: var(--bb-bright);
+  --agt-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
 .bb-agents {
-  padding: 1.75rem;
-
-  &__header {
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
-  }
-
-  &__title {
-    font-family: var(--bb-font-display); font-size: 20px; font-weight: 800;
-    color: var(--bb-text-primary); letter-spacing: -0.3px; margin: 0 0 4px;
-    display: flex; align-items: center; gap: 8px;
-    i { color: var(--bb-primary); }
-  }
-
-  &__sub { font-size: 13px; color: var(--bb-text-muted); }
-
   &__add-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 20px; border-radius: var(--bb-radius);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 20px; border-radius: var(--bb-radius-pill);
     background: var(--bb-primary); color: #fff; border: none;
-    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
-    cursor: pointer; box-shadow: 0 4px 14px rgba(45,125,70,.25); transition: all var(--bb-transition);
+    font-family: var(--bb-font-display); font-size: 13.5px; font-weight: 700; white-space: nowrap;
+    cursor: pointer; box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent);
+    transition: background var(--bb-transition), transform var(--bb-transition);
     &:hover { background: var(--bb-mid); transform: translateY(-1px); }
-    i { font-size: 12px; }
+    &:hover i { transform: rotate(90deg); }
+    &:active { transform: scale(0.98); }
+    i { font-size: 12px; transition: transform var(--bb-transition); }
+    @media (max-width: 600px) { width: 100%; }
   }
 
   &__alert {
     display: flex; align-items: center; gap: 10px; padding: 12px 16px;
-    border-radius: var(--bb-radius); font-size: 13.5px; margin-bottom: 16px; border: 1px solid transparent;
+    border-radius: var(--bb-radius-lg); font-size: 13.5px; font-weight: 600; margin-bottom: 16px; border: 1px solid transparent;
     &--success { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
     &--error   { background: var(--bb-danger-bg);  border-color: var(--bb-danger-border);  color: var(--bb-danger); }
     i { font-size: 15px; flex-shrink: 0; }
@@ -36,13 +38,15 @@
 
   // Formulaire
   &__form {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-success-border);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--agt-accent);
     border-radius: var(--bb-radius-xl); padding: 1.5rem; margin-bottom: 20px;
-    box-shadow: 0 0 0 3px rgba(62,187,112,.07); animation: bb-fade-in .25s ease;
+    box-shadow: var(--bb-shadow); animation: bb-agt-drop .3s var(--bb-ease) both;
+    @media (max-width: 600px) { padding: 1.125rem; }
   }
 
   &__form-title {
-    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
     color: var(--bb-text-primary); margin-bottom: 16px;
   }
 
@@ -52,7 +56,7 @@
 
   &__field {
     display: flex; flex-direction: column; gap: 6px;
-    label { font-size: 12px; font-weight: 600; color: var(--bb-text-secondary); }
+    label { font-size: 12.5px; font-weight: 700; color: var(--bb-text-secondary); }
     // Les champs sont enveloppes dans mat-form-field : habiller l'input brut
     // superposait une seconde bordure a celle du contour Material.
   }
@@ -60,13 +64,15 @@
   &__form-actions {
     display: flex; justify-content: flex-end; gap: 10px;
     padding-top: 16px; border-top: 1px solid var(--bb-border-light);
+    @media (max-width: 420px) { flex-direction: column-reverse; > * { width: 100%; justify-content: center; } }
   }
 
   &__cancel-btn {
-    padding: 9px 18px; border-radius: var(--bb-radius); border: 1px solid var(--bb-border);
+    padding: 10px 18px; border-radius: var(--bb-radius); border: 1px solid var(--bb-border);
     background: var(--bb-surface-1); color: var(--bb-text-secondary);
-    font-family: var(--bb-font-display); font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: all var(--bb-transition); &:hover { background: var(--bb-surface-2); }
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background var(--bb-transition), color var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
   }
 
   &__save-btn {
@@ -74,9 +80,10 @@
     padding: 9px 18px; border-radius: var(--bb-radius);
     background: var(--bb-primary); color: #fff; border: none;
     font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all var(--bb-transition);
-    &:hover:not(:disabled) { background: var(--bb-mid); }
-    &:disabled { opacity: .55; cursor: not-allowed; }
+    cursor: pointer; transition: background var(--bb-transition), transform var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:active:not(:disabled) { transform: scale(0.98); }
+    &:disabled { cursor: not-allowed; background: var(--bb-surface-2); color: var(--bb-text-muted); }
     i { font-size: 12px; }
   }
 
@@ -86,9 +93,10 @@
   &__item {
     display: flex; align-items: center; gap: 14px;
     padding: 14px 16px; border-radius: var(--bb-radius-xl);
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    box-shadow: var(--bb-shadow-xs); transition: all var(--bb-transition);
-    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-sm); }
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    box-shadow: var(--bb-shadow-xs);
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow), transform var(--bb-transition-slow);
+    &:hover { border-color: var(--bb-success-border); box-shadow: var(--bb-shadow-hover); transform: translateY(-1px); }
   }
 
   &__avatar {
@@ -101,31 +109,45 @@
 
   &__info { flex: 1; min-width: 0; }
 
-  &__name    { font-size: 14px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 2px; }
-  &__contact { font-size: 12.5px; color: var(--bb-text-muted); margin-bottom: 2px; }
+  &__name    { font-size: 14.5px; font-weight: 700; color: var(--bb-text-primary); margin-bottom: 2px; }
+  &__contact { font-size: 12.5px; color: var(--bb-text-secondary); margin-bottom: 2px; overflow-wrap: anywhere; }
   &__meta    { font-size: 11.5px; color: var(--bb-text-muted); }
 
   &__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
   &__deactivate {
-    width: 32px; height: 32px; border-radius: 8px;
-    border: 1px solid var(--bb-danger-border); background: var(--bb-danger-bg);
+    // Cible tactile de 40px ; action destructive discrete au repos
+    width: 40px; height: 40px; border-radius: 12px;
+    border: 1px solid var(--bb-danger-border); background: transparent;
     color: var(--bb-danger); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 13px; transition: all var(--bb-transition);
-    &:hover { background: var(--bb-danger); color: #fff; }
+    cursor: pointer; font-size: 13px;
+    transition: background var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
+    &:hover { background: var(--bb-danger); border-color: var(--bb-danger); color: #fff;
+      :host-context([data-theme="dark"]) & { color: var(--bb-deep); } // ✦ Refonte UI
+    }
+    &:active { transform: scale(0.94); }
     i { font-size: 13px; }
   }
 
   // État vide
   &__empty {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
-    padding: 56px 24px; text-align: center;
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+    padding: 52px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1.5px dashed var(--bb-border);
     border-radius: var(--bb-radius-xl);
-    i { font-size: 40px; color: var(--bb-text-muted); opacity: .3; }
-    p { font-size: 14px; color: var(--bb-text-primary); font-weight: 600; }
+    // ✦ Refonte UI : icone en pastille (a 30 % d'opacite elle se perdait)
+    i {
+      font-size: 24px; color: var(--agt-accent); width: 60px; height: 60px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center; background: var(--agt-accent-soft);
+    }
+    p { font-family: var(--bb-font-display); font-size: 15px; color: var(--bb-text-primary); font-weight: 700; margin: 0; }
     span { font-size: 13px; color: var(--bb-text-muted); }
   }
+}
+
+@keyframes bb-agt-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
 }
 
 // ── Le bureau du medecin (addendum, point 2) ─────────────────────

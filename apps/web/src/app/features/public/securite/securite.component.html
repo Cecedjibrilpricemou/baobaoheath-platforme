@@ -1,0 +1,37 @@
+<!-- features/public/securite/securite.component.html -->
+<app-public-shell>
+
+  <header class="pub-hero">
+    <span class="pub-tag">{{ 'PUBLIC.SECURITY.TAG' | translate }}</span>
+    <h1 class="pub-hero__title">{{ 'PUBLIC.SECURITY.TITLE_A' | translate }} <span class="pub-hero__accent">{{ 'PUBLIC.SECURITY.TITLE_B' | translate }}</span></h1>
+    <p class="pub-hero__lead">{{ 'PUBLIC.SECURITY.LEAD' | translate: params() }}</p>
+  </header>
+
+  <section class="pub-section">
+    <div class="pub-grid pub-grid--4">
+      @for (m of mesures; track m.cle) {
+        <article class="pub-card">
+          <span class="pub-card__icon" aria-hidden="true"><i [class]="'pi ' + m.icone"></i></span>
+          <h2 class="pub-card__title">{{ 'PUBLIC.SECURITY.' + m.cle + '.TITLE' | translate }}</h2>
+          <p class="pub-card__text">{{ 'PUBLIC.SECURITY.' + m.cle + '.TEXT' | translate }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="pub-section">
+    <div class="pub-panel">
+      <div class="pub-panel__text">
+        <h2 class="pub-panel__title">{{ 'PUBLIC.SECURITY.RIGHTS_TITLE' | translate }}</h2>
+        <p class="pub-panel__sub">{{ 'PUBLIC.SECURITY.RIGHTS_TEXT' | translate }}</p>
+      </div>
+      <div class="pub-panel__actions">
+        <a routerLink="/confidentialite" class="pub-btn pub-btn--white">{{ 'LANDING.FOOTER_PRIVACY' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+        @if (plateforme.emailContact()) {
+          <a [href]="'mailto:' + plateforme.emailContact()" class="pub-btn pub-btn--ghost-white"><i class="pi pi-envelope" aria-hidden="true"></i> {{ 'PUBLIC.CONTACT_US' | translate }}</a>
+        }
+      </div>
+    </div>
+  </section>
+
+</app-public-shell>
