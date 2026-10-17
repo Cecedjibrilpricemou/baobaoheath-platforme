@@ -21,7 +21,8 @@
     }
     &--done:not(:last-child)::after { background: var(--bb-primary); }
     &--done { color: var(--bb-text-secondary); .labo-etapes__dot { background: var(--bb-primary); color: #fff; border-color: var(--bb-primary); } }
-    &--now  { color: var(--bb-primary); .labo-etapes__dot { border-color: var(--bb-primary); color: var(--bb-primary); box-shadow: 0 0 0 4px rgba(45, 125, 70, .16); } .labo-etapes__label { font-weight: 800; } }
+    // ✦ Refonte UI : rgba code en dur → token ; l'etape en cours pulse
+    &--now  { color: var(--bb-primary); .labo-etapes__dot { border-color: var(--bb-primary); color: var(--bb-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-primary) 16%, transparent); animation: bb-labo-pulse 2s var(--bb-ease) infinite; } .labo-etapes__label { font-weight: 800; } }
   }
 
   &__dot {
@@ -43,7 +44,7 @@
 .labo-ech-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--bb-radius-pill);
   background: var(--bb-surface-1); border: 1px solid var(--bb-border-light); font-size: 12.5px; color: var(--bb-text-secondary);
-  strong { font-family: monospace; color: var(--bb-text-primary); letter-spacing: .04em; }
+  strong { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--bb-text-primary); letter-spacing: .04em; }
   i { color: var(--bb-primary); }
 }
 
@@ -61,23 +62,37 @@
   &__row {
     padding: 10px 12px; border-radius: 14px; background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
     font-size: 13.5px; color: var(--bb-text-primary);
-    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); }
-    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg); }
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    // ✦ Refonte UI : barre laterale de gravite (lisible meme sans la couleur)
+    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); box-shadow: inset 4px 0 0 var(--bb-warning); }
+    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg);  box-shadow: inset 4px 0 0 var(--bb-danger); }
   }
-  &__examen { display: flex; flex-direction: column; gap: 2px; strong { font-size: 13.5px; } small { font-size: 11.5px; color: var(--bb-text-muted); font-family: monospace; } }
+  &__examen { display: flex; flex-direction: column; gap: 2px; strong { font-size: 13.5px; } small { font-size: 11.5px; color: var(--bb-text-muted); font-family: ui-monospace, Menlo, Consolas, monospace; } }
   &__ref { font-size: 12.5px; color: var(--bb-text-secondary); }
 
   &__input, &__select {
     width: 100%; padding: 8px 10px; border-radius: 10px; font-size: 13.5px; font-family: inherit;
-    border: 1px solid var(--bb-border); background: var(--bb-surface-card); color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border-strong); background: var(--bb-surface-card); color: var(--bb-text-primary);
+    font-variant-numeric: tabular-nums;
     transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
-    &:focus { outline: none; border-color: var(--bb-primary); box-shadow: 0 0 0 3px rgba(45, 125, 70, .16); }
+    &:hover { border-color: var(--bb-text-secondary); }
+    // ✦ Refonte UI : anneau de focus commun (rgba code en dur auparavant)
+    &:focus { outline: none; border-color: var(--bb-primary); box-shadow: var(--bb-focus-ring); }
   }
   &__select { margin-top: 6px; font-size: 12px; }
 }
 
 :host-context([data-theme="dark"]) {
-  .labo-resultats__row--anormal  { background: rgba(245, 158, 11, .10); }
-  .labo-resultats__row--critique { background: rgba(239, 68, 68, .12); }
-  .labo-etapes__item--now .labo-etapes__dot { box-shadow: 0 0 0 4px rgba(62, 187, 112, .18); }
+  .labo-resultats__row--anormal  { background: color-mix(in srgb, var(--bb-warning) 10%, transparent); }
+  .labo-resultats__row--critique { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); }
+  // ✦ Refonte UI : frise en vert vif en sombre (le vert de marque s'y perdait)
+  .labo-etapes__item--now { color: var(--bb-bright); .labo-etapes__dot { border-color: var(--bb-bright); color: var(--bb-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-bright) 18%, transparent); } }
+  .labo-etapes__item--done .labo-etapes__dot { background: var(--bb-bright); border-color: var(--bb-bright); color: var(--bb-deep); }
+  .labo-etapes__item--done:not(:last-child)::after { background: var(--bb-bright); }
+  .labo-echantillons__num, .labo-ech-chip i { color: var(--bb-bright); }
+}
+
+@keyframes bb-labo-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-bright) 18%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--bb-bright) 8%, transparent); }
 }
