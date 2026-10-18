@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { Role } from '../config/generated/client/client';
+import { Role, RoleOfficine } from '../config/generated/client/client';
 import { AuthRequest } from './auth.middleware';
 import { ForbiddenError, UnauthorizedError } from '../utils/app-error';
+import { prisma } from '../config/prisma';
 
 /** Middleware de garde, porteur des rôles qu'il laisse passer. */
 export interface GardeDeRole {
@@ -15,6 +16,41 @@ export interface GardeDeRole {
    * qui peut atteindre quoi (voir `tests/routes-permissions.test.ts`).
    */
   readonly roles: readonly Role[];
+  readonly rolesOfficine?: readonly RoleOfficine[];
+}
+
+/** Limite une route officine selon le profil métier, sans multiplier les rôles globaux. */
+export function requireOfficineRole(...rolesOfficine: RoleOfficine[]) {
+  const garde = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      next(new UnauthorizedError('Non authentifié'));
+      return;
+    }
+
+    try {
+      const profile = await prisma.pharmacienProfile.findUnique({
+        where: { idUtilisateur: req.user.userId },
+        select: {
+          roleOfficine: true,
+          roleOfficineTemporaire: true,
+          roleOfficineExpireLe: true,
+        },
+      });
+      const roleEffectif = profile?.roleOfficineTemporaire
+        && profile.roleOfficineExpireLe
+        && profile.roleOfficineExpireLe > new Date()
+        ? profile.roleOfficineTemporaire
+        : profile?.roleOfficine;
+      if (!roleEffectif || !rolesOfficine.includes(roleEffectif)) {
+        next(new ForbiddenError('Accès réservé aux rôles autorisés de cette officine'));
+        return;
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+  return Object.assign(garde, { rolesOfficine: Object.freeze([...rolesOfficine]) });
 }
 
 export function requireRole(...roles: Role[]): GardeDeRole {

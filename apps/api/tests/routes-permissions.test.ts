@@ -34,6 +34,15 @@ type Couche = {
   handle?: unknown;
 };
 
+/** Les gardes de profil d'officine restent distinctes des roles globaux. */
+function rolesOfficinePour(routeur: { stack: Couche[] }, methode: string, chemin: string): string[] | null {
+  const route = routeur.stack.find((c) => c.route?.path === chemin && c.route.methods[methode]);
+  if (!route) return null;
+  return route.route!.stack.flatMap((c) => [
+    ...(((c.handle as { rolesOfficine?: readonly string[] })?.rolesOfficine) ?? []),
+  ]);
+}
+
 /** Les roles qui peuvent atteindre `methode chemin`, gardes du routeur comprises. */
 function rolesPour(routeur: { stack: Couche[] }, methode: string, chemin: string): Role[] | null {
   const globales: Role[][] = [];
@@ -189,6 +198,44 @@ describe('le comptoir d officine est reserve au pharmacien', () => {
     ['get', '/tableau-de-bord'],
   ])('%s %s n est ouverte qu a PHARMACIEN', (methode, chemin) => {
     expect(rolesPour(pharmacien, methode, chemin)).toEqual(['PHARMACIEN']);
+  });
+
+  describe('les permissions internes de l officine', () => {
+    it.each([
+      ['get', '/agents'],
+      ['post', '/agents'],
+      ['get', '/connexions'],
+      ['post', '/catalogue-local'],
+      ['patch', '/catalogue-local/:id'],
+      ['delete', '/catalogue-local/:id'],
+      ['post', '/approvisionnements'],
+      ['post', '/stocks/reapprovisionner'],
+      ['put', '/agents/:id/role-permanent'],
+    ])('%s %s est reserve au titulaire', (methode, chemin) => {
+      expect(rolesOfficinePour(pharmacien, methode, chemin)).toEqual(['TITULAIRE']);
+    });
+
+    it('autorise l annulation apres verification du titulaire au niveau du service', () => {
+      expect(rolesOfficinePour(pharmacien, 'post', '/ventes/:id/annuler')).toEqual([]);
+    });
+
+    it.each([
+      ['post', '/ordonnances/verifier'],
+      ['post', '/ordonnances/:id/delivrer'],
+    ])('%s %s reste reserve au personnel clinique', (methode, chemin) => {
+      expect(rolesOfficinePour(pharmacien, methode, chemin)).toEqual([
+        'TITULAIRE', 'ADJOINT', 'PREPARATEUR',
+      ]);
+    });
+
+    it('les commandes pharmaceutiques ne sont pas accessibles au caissier', () => {
+      expect(rolesOfficinePour(commande, 'get', '/pharmacie')).toEqual([
+        'TITULAIRE', 'ADJOINT', 'PREPARATEUR',
+      ]);
+      expect(rolesOfficinePour(commande, 'post', '/:id/chiffrer')).toEqual([
+        'TITULAIRE', 'ADJOINT', 'PREPARATEUR',
+      ]);
+    });
   });
 
   // Le chiffre d'affaires d'une officine n'est pas une donnee de soin : ni le

@@ -23,6 +23,7 @@ import { chiffrer, type LigneAChiffrer } from './assurance.service';
 import { prochainNumero } from './numero.service';
 import { motifDeRefus, renouvellementsRestants } from './ordonnance.service';
 import { getValeursParametres } from './parametres.service';
+import { verifyPassword } from '../utils/password.utils';
 import type {
   AnnulerVenteDto,
   CreerVenteDto,
@@ -41,6 +42,8 @@ type LotConsomme = { idLot: string; quantite: number };
 
 const VENTE_INCLUDE = {
   vendeur: { select: { id: true, prenom: true, nom: true } },
+  annuleePar: { select: { id: true, prenom: true, nom: true } },
+  annulationAutoriseePar: { select: { id: true, prenom: true, nom: true } },
   patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
   ordonnance: { select: { numero: true } },
   contratAssurance: { select: { assureur: { select: { id: true, nom: true, code: true } } } },
@@ -83,6 +86,10 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
     creeLe: v.creeLe.toISOString(),
     annuleeLe: v.annuleeLe ? v.annuleeLe.toISOString() : null,
     motifAnnulation: v.motifAnnulation,
+    annulation: v.annuleeLe ? {
+      par: v.annuleePar,
+      autoriseePar: v.annulationAutoriseePar,
+    } : null,
     vendeur: v.vendeur,
     patient: v.patient
       ? { id: v.patient.id, prenom: v.patient.utilisateur.prenom, nom: v.patient.utilisateur.nom }
@@ -112,13 +119,41 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
 async function officineDe(userId: string): Promise<string> {
   const u = await prisma.utilisateur.findUnique({
     where: { id: userId },
-    select: { idStructure: true, structure: { select: { type: true } } },
+    select: {
+      idStructure: true,
+      structure: { select: { type: true } },
+      pharmacienProfile: { select: { roleOfficine: true } },
+    },
   });
   if (!u?.idStructure || !u.structure) throw new ForbiddenError('Aucune structure rattachee a votre compte');
   if (u.structure.type !== TypeStructure.PHARMACIE) {
     throw new ValidationError("La structure rattachee a votre compte n'est pas une pharmacie");
   }
+  if (!u.pharmacienProfile) throw new ForbiddenError('Aucune fonction officinale rattachee a votre compte');
   return u.idStructure;
+}
+
+async function roleOfficineEffectif(userId: string) {
+  const profile = await prisma.pharmacienProfile.findUnique({
+    where: { idUtilisateur: userId },
+    select: {
+      roleOfficine: true,
+      roleOfficineTemporaire: true,
+      roleOfficineExpireLe: true,
+    },
+  });
+  if (
+    profile?.roleOfficineTemporaire
+    && profile.roleOfficineExpireLe
+    && profile.roleOfficineExpireLe > new Date()
+  ) {
+    return profile.roleOfficineTemporaire;
+  }
+  return profile?.roleOfficine ?? null;
+}
+
+async function estTitulaire(userId: string): Promise<boolean> {
+  return (await roleOfficineEffectif(userId)) === 'TITULAIRE';
 }
 
 /**
@@ -155,6 +190,8 @@ export function produitsExigeantOrdonnance(
 
 export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<VenteComptoirView> {
   const idStructure = await officineDe(user.userId);
+  const role = await roleOfficineEffectif(user.userId);
+  if (!role) throw new ForbiddenError('Aucune fonction officinale attribuee a votre compte');
 
   const lignes = fusionnerLignes(dto.lignes ?? []);
   if (lignes.length === 0) throw new ValidationError('Le panier est vide');
@@ -198,6 +235,9 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
     lignes.map((l) => parProduit.get(l.idMedicament)!.medicament),
     pharmacie.categoriesExigeantOrdonnance
   );
+  if (exigeants.length > 0 && role === 'CAISSIER') {
+    throw new ForbiddenError('Un caissier ne peut pas encaisser un produit exigeant une ordonnance');
+  }
   if (exigeants.length > 0 && !dto.idOrdonnance) {
     throw new ValidationError(
       `Ordonnance obligatoire pour : ${exigeants.join(', ')}`
@@ -241,17 +281,7 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
   });
 
   const montantBrutGnf = detail.reduce((t, l) => t + l.montantGnf, 0);
-  const remiseGnf = Math.trunc(dto.remiseGnf ?? 0);
-  if (remiseGnf < 0) throw new ValidationError('La remise ne peut pas etre negative');
-
-  const plafond = Math.floor((montantBrutGnf * pharmacie.remiseMaxPourcent) / 100);
-  if (remiseGnf > plafond) {
-    throw new ValidationError(
-      `Remise plafonnee a ${pharmacie.remiseMaxPourcent} % du total, soit ${plafond} GNF`
-    );
-  }
-
-  const montantNetGnf = montantBrutGnf - remiseGnf;
+  const montantNetGnf = montantBrutGnf;
 
   // ── Tiers payant (EF-09) ─────────────────────────────────────────
   //
@@ -320,7 +350,7 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
       data: {
         numero,
         montantBrutGnf,
-        remiseGnf,
+        remiseGnf: 0,
         montantNetGnf,
         montantAssureGnf: prise?.montantAssureGnf ?? 0,
         montantPatientGnf: montantNetGnf - (prise?.montantAssureGnf ?? 0),
@@ -395,6 +425,7 @@ export async function annulerVente(
   dto: AnnulerVenteDto
 ): Promise<VenteComptoirView> {
   const idStructure = await officineDe(user.userId);
+  const titulaire = await estTitulaire(user.userId);
 
   const motif = dto.motif?.trim() ?? '';
   if (motif.length < 5) throw new ValidationError("Le motif d'annulation doit comporter au moins 5 caracteres");
@@ -407,7 +438,37 @@ export async function annulerVente(
   if (vente.idStructure !== idStructure) throw new ForbiddenError("Cette vente n'est pas celle de votre officine");
   if (vente.statut === StatutVente.ANNULEE) throw new ConflictError('Cette vente est deja annulee');
 
-  await rendreLesLots(idVente, motif, user.userId);
+  let idAutoriseePar: string | null = null;
+  if (!titulaire) {
+    const autorisation = dto.autorisationTitulaire;
+    if (!autorisation) {
+      throw new ForbiddenError("La validation du titulaire est requise pour annuler cette vente");
+    }
+    const approbateur = await prisma.utilisateur.findUnique({
+      where: { telephone: autorisation.telephone.trim() },
+      select: {
+        id: true,
+        idStructure: true,
+        role: true,
+        estActif: true,
+        motDePasseHash: true,
+        pharmacienProfile: { select: { roleOfficine: true } },
+      },
+    });
+    if (
+      !approbateur
+      || !approbateur.estActif
+      || approbateur.role !== 'PHARMACIEN'
+      || approbateur.idStructure !== idStructure
+      || approbateur.pharmacienProfile?.roleOfficine !== 'TITULAIRE'
+      || !(await verifyPassword(autorisation.motDePasse, approbateur.motDePasseHash))
+    ) {
+      throw new ForbiddenError("Validation du titulaire refusee");
+    }
+    idAutoriseePar = approbateur.id;
+  }
+
+  await rendreLesLots(idVente, motif, user.userId, idAutoriseePar);
 
   const apres = await prisma.venteComptoir.findUniqueOrThrow({ where: { id: idVente }, include: VENTE_INCLUDE });
   return versVue(apres);
@@ -425,7 +486,12 @@ export async function annulerVente(
  * dont le client est parti sans payer doit rendre ses boites, sinon elles
  * resteraient sorties du stock sans que rien ne les y ramene.
  */
-async function rendreLesLots(idVente: string, motif: string, idAuteur: string): Promise<void> {
+async function rendreLesLots(
+  idVente: string,
+  motif: string,
+  idAuteur: string,
+  idAutoriseePar: string | null = null,
+): Promise<void> {
   const vente = await prisma.venteComptoir.findUniqueOrThrow({
     where: { id: idVente },
     select: {
@@ -444,6 +510,7 @@ async function rendreLesLots(idVente: string, motif: string, idAuteur: string): 
         annuleeLe: new Date(),
         motifAnnulation: motif,
         idAnnuleePar: idAuteur,
+        idAutoriseePar,
       },
     });
     if (prise.count === 0) throw new ConflictError('Cette vente vient d etre annulee par quelqu un d autre');
@@ -471,8 +538,12 @@ async function rendreLesLots(idVente: string, motif: string, idAuteur: string): 
 /** Les ventes de l'officine, de la plus recente a la plus ancienne. */
 export async function listerVentes(user: JwtPayload, limite = 50): Promise<VenteComptoirView[]> {
   const idStructure = await officineDe(user.userId);
+  const titulaire = await estTitulaire(user.userId);
   const ventes = await prisma.venteComptoir.findMany({
-    where: { idStructure },
+    where: {
+      idStructure,
+      ...(!titulaire ? { idVendeur: user.userId, creeLe: { gte: debutDuJour() } } : {}),
+    },
     include: VENTE_INCLUDE,
     orderBy: { creeLe: 'desc' },
     take: Math.min(Math.max(limite, 1), 200),
@@ -482,9 +553,14 @@ export async function listerVentes(user: JwtPayload, limite = 50): Promise<Vente
 
 export async function getVente(user: JwtPayload, idVente: string): Promise<VenteComptoirView> {
   const idStructure = await officineDe(user.userId);
+  const titulaire = await estTitulaire(user.userId);
   const vente = await prisma.venteComptoir.findUnique({ where: { id: idVente }, include: VENTE_INCLUDE });
   if (!vente) throw new NotFoundError('Vente non trouvee');
   if (vente.idStructure !== idStructure) throw new ForbiddenError("Cette vente n'est pas celle de votre officine");
+  if (!titulaire && (
+    vente.idVendeur !== user.userId
+    || vente.creeLe < debutDuJour()
+  )) throw new ForbiddenError("Cette vente n'est pas accessible dans votre session");
   return versVue(vente);
 }
 
@@ -497,12 +573,18 @@ function debutDuJour(maintenant = new Date()): Date {
 
 export async function tableauDeBord(user: JwtPayload, maintenant = new Date()): Promise<TableauDeBordOfficineView> {
   const idStructure = await officineDe(user.userId);
+  const titulaire = await estTitulaire(user.userId);
   const jour = debutDuJour(maintenant);
   const ilYATrenteJours = new Date(maintenant.getTime() - 30 * 86_400_000);
 
   // Les ventes annulees sont exclues partout : une erreur de caisse corrigee
   // ne doit pas gonfler le chiffre d'affaires.
-  const duJour = { idStructure, statut: StatutVente.PAYEE, creeLe: { gte: jour } };
+  const duJour = {
+    idStructure,
+    statut: StatutVente.PAYEE,
+    creeLe: { gte: jour },
+    ...(!titulaire ? { idVendeur: user.userId } : {}),
+  };
 
   const [agregatJour, parMode, topLignes, ruptures, lotsAPerimer] = await Promise.all([
     prisma.venteComptoir.aggregate({ where: duJour, _sum: { montantNetGnf: true }, _count: true }),
@@ -514,7 +596,14 @@ export async function tableauDeBord(user: JwtPayload, maintenant = new Date()): 
     }),
     prisma.ligneVente.groupBy({
       by: ['idMedicament'],
-      where: { vente: { idStructure, statut: StatutVente.PAYEE, creeLe: { gte: ilYATrenteJours } } },
+      where: {
+        vente: {
+          idStructure,
+          statut: StatutVente.PAYEE,
+          creeLe: { gte: titulaire ? ilYATrenteJours : jour },
+          ...(!titulaire ? { idVendeur: user.userId } : {}),
+        },
+      },
       _sum: { quantite: true, montantGnf: true },
       orderBy: { _sum: { quantite: 'desc' } },
       take: 10,
@@ -666,11 +755,17 @@ export async function rafraichirPaiementVente(
   const idStructure = await officineDe(user.userId);
   const vente = await prisma.venteComptoir.findUnique({
     where: { id: idVente },
-    select: { id: true, idStructure: true, statut: true, idOperation: true },
+    select: { id: true, idStructure: true, idVendeur: true, creeLe: true, statut: true, idOperation: true },
   });
   if (!vente) throw new NotFoundError('Vente non trouvee');
   if (vente.idStructure !== idStructure) {
     throw new ForbiddenError("Cette vente n'est pas celle de votre officine");
+  }
+  if (!(await estTitulaire(user.userId)) && (
+    vente.idVendeur !== user.userId
+    || vente.creeLe < debutDuJour()
+  )) {
+    throw new ForbiddenError("Cette vente n'est pas accessible dans votre session");
   }
 
   if (vente.statut === StatutVente.EN_ATTENTE && vente.idOperation) {

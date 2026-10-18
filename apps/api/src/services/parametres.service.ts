@@ -86,7 +86,7 @@ export const PARAMETRES_PAR_DEFAUT: ParametresSystemeValeurs = {
   pharmacie: {
     // Sans plafond, une erreur de frappe ramene une vente a zero sans que rien
     // ne s'y oppose. 20 % est un depart prudent, administrable.
-    remiseMaxPourcent: 20,
+
     // Vide par defaut : seuls les produits reglementes exigent une ordonnance
     // (EF-05-12), ce qui est acquis. La question E de l'addendum — faut-il en
     // soumettre d'autres categories ? — n'est pas tranchee, et la reponse se

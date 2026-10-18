@@ -14,10 +14,12 @@ export const E2E = {
   prefecture: 'Kindia',
   centre: { nom: 'Centre de sante e2e', telephone: '+224600100001' },
   pharmacie: { nom: 'Pharmacie e2e', telephone: '+224600100002' },
+  pharmacieAutre: { nom: 'Pharmacie e2e autre', telephone: '+224600100004' },
   laboratoire: { nom: 'Laboratoire e2e', telephone: '+224600100003' },
   asc: { email: 'asc.e2e@baobao.test', telephone: '690000001', prenom: 'Mamadou', nom: 'Bah' },
   medecin: { email: 'medecin.e2e@baobao.test', telephone: '690000002', prenom: 'Fatoumata', nom: 'Camara' },
   pharmacien: { email: 'pharma.e2e@baobao.test', telephone: '690000003', prenom: 'Ibrahima', nom: 'Sow' },
+  titulaireAutre: { email: 'titulaire.autre.e2e@baobao.test', telephone: '690000007', prenom: 'Mariam', nom: 'Diallo' },
   adminStructure: { email: 'admin.centre.e2e@baobao.test', telephone: '690000004', prenom: 'Aissatou', nom: 'Barry' },
   accueil: { email: 'accueil.e2e@baobao.test', telephone: '690000005', prenom: 'Kadiatou', nom: 'Toure' },
   laborantin2: { email: 'biologiste.e2e@baobao.test', telephone: '690000006', prenom: 'Sekou', nom: 'Camara' },
@@ -71,6 +73,11 @@ async function main() {
 
   const centre = await upsertStructure(E2E.centre.nom, TypeStructure.CENTRE, E2E.centre.telephone);
   const pharmacie = await upsertStructure(E2E.pharmacie.nom, TypeStructure.PHARMACIE, E2E.pharmacie.telephone);
+  const pharmacieAutre = await upsertStructure(
+    E2E.pharmacieAutre.nom,
+    TypeStructure.PHARMACIE,
+    E2E.pharmacieAutre.telephone,
+  );
   const laboratoire = await upsertStructure(E2E.laboratoire.nom, TypeStructure.LABORATOIRE, E2E.laboratoire.telephone);
   await seedExamens(prisma);
 
@@ -100,8 +107,25 @@ async function main() {
   const pharmacien = await upsertUtilisateur(E2E.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
   await prisma.pharmacienProfile.upsert({
     where: { idUtilisateur: pharmacien.id },
-    update: { idStructure: pharmacie.id },
-    create: { idUtilisateur: pharmacien.id, idStructure: pharmacie.id, estResponsable: true },
+    update: { idStructure: pharmacie.id, estResponsable: true, roleOfficine: 'TITULAIRE' },
+    create: { idUtilisateur: pharmacien.id, idStructure: pharmacie.id, estResponsable: true, roleOfficine: 'TITULAIRE' },
+  });
+
+  const titulaireAutre = await upsertUtilisateur(
+    E2E.titulaireAutre,
+    Role.PHARMACIEN,
+    motDePasseHash,
+    pharmacieAutre.id,
+  );
+  await prisma.pharmacienProfile.upsert({
+    where: { idUtilisateur: titulaireAutre.id },
+    update: { idStructure: pharmacieAutre.id, estResponsable: true, roleOfficine: 'TITULAIRE' },
+    create: {
+      idUtilisateur: titulaireAutre.id,
+      idStructure: pharmacieAutre.id,
+      estResponsable: true,
+      roleOfficine: 'TITULAIRE',
+    },
   });
 
   // Un ASC ne voit que ses patients (access-control.service) : Awa est sa

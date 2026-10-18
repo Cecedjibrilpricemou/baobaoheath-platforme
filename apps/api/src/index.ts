@@ -189,6 +189,7 @@ const ROUTES_SENSIBLES = [
   '/api/v1/auth/forgot-password',
   '/api/v1/auth/reset-password',
   '/api/v1/auth/change-password',
+  '/api/v1/pharmacien/ventes/:id/annuler',
 ];
 for (const route of ROUTES_SENSIBLES) {
   app.use(route, authLimiter);

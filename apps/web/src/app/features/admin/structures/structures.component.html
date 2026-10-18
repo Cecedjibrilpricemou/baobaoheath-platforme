@@ -197,10 +197,6 @@
                 }
               </div>
               <p class="bb-struct__meta">{{ s.prefecture }} · {{ getTypeLabel(s.type) }}</p>
-              @if (s._count) { <p class="bb-struct__agents">{{ 'ADMIN.STRUCTURES.USER_COUNT' | translate: { count: s._count.utilisateurs } }}</p> }
-              @if (s.utilisateurs?.length) {
-                <p class="bb-struct__admin-info"><i class="pi pi-user"></i> {{ getAdmin(s) }}</p>
-              }
             </div>
           </div>
           <div class="bb-struct__item-actions">

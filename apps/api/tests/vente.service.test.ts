@@ -1,15 +1,14 @@
 // Vente au comptoir et tableau de bord d'officine (addendum du 2026-09-28,
 // points 1.1 et 1.2).
 //
-// Trois choses comptent ici et sont testees pour elles-memes : un produit
-// reglemente ne sort pas sans ordonnance (EF-05-12), une remise ne depasse pas
-// son plafond administrable, et une annulation remet en stock exactement les
-// lots qui en sont sortis — sinon le stock derive a chaque erreur de caisse.
+// Les prix fixes, l'interdiction de vendre un produit reglemente sans
+// ordonnance (EF-05-12) et la remise en stock exacte lors d'une annulation.
 import {
   annulerVente,
   creerVente,
   fusionnerLignes,
   getVente,
+  listerVentes,
   produitsExigeantOrdonnance,
   tableauDeBord,
 } from '../src/services/vente.service';
@@ -19,6 +18,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 jest.mock('../src/config/prisma', () => {
   const prisma: Record<string, unknown> = {
     utilisateur: { findUnique: jest.fn() },
+    pharmacienProfile: { findUnique: jest.fn() },
     medicament: { findMany: jest.fn() },
     ordonnance: { findUnique: jest.fn() },
     stock: {
@@ -42,11 +42,13 @@ jest.mock('../src/services/parametres.service', () => ({ getValeursParametres: j
 // assurance.service.test.ts : ici on verifie seulement comment la caisse s'en
 // sert, et ce qu'elle fige sur la vente.
 jest.mock('../src/services/assurance.service', () => ({ chiffrer: jest.fn() }));
+jest.mock('../src/utils/password.utils', () => ({ verifyPassword: jest.fn() }));
 
 type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     utilisateur: { findUnique: M };
+    pharmacienProfile: { findUnique: M };
     medicament: { findMany: M };
     ordonnance: { findUnique: M };
     stock: { findMany: M; findUnique: M; update: M; updateMany: M; fields: unknown };
@@ -64,6 +66,7 @@ const { getValeursParametres } = jest.requireMock('../src/services/parametres.se
   getValeursParametres: M;
 };
 const { chiffrer } = jest.requireMock('../src/services/assurance.service') as { chiffrer: M };
+const { verifyPassword } = jest.requireMock('../src/utils/password.utils') as { verifyPassword: M };
 
 const pharmacien: JwtPayload = { userId: 'pharma-1', role: 'PHARMACIEN', sessionId: 's' } as JwtPayload;
 
@@ -106,14 +109,20 @@ const venteRow = {
 };
 
 const PARAMETRES = {
-  pharmacie: { remiseMaxPourcent: 20, categoriesExigeantOrdonnance: [] as string[] },
+  pharmacie: { categoriesExigeantOrdonnance: [] as string[] },
   prescription: { signatureObligatoire: false },
 };
 
 beforeEach(() => {
   jest.resetAllMocks();
   prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
-  prisma.utilisateur.findUnique.mockResolvedValue({ idStructure: 'struct-P', structure: { type: 'PHARMACIE' } });
+  prisma.utilisateur.findUnique.mockResolvedValue({
+    idStructure: 'struct-P',
+    structure: { type: 'PHARMACIE' },
+    pharmacienProfile: { roleOfficine: 'TITULAIRE' },
+  });
+  prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'TITULAIRE' });
+  verifyPassword.mockResolvedValue(true);
   prochainNumero.mockResolvedValue('VE-2026-000001');
   getValeursParametres.mockResolvedValue(PARAMETRES);
   prisma.venteComptoir.create.mockResolvedValue({ id: 've-1' });
@@ -209,7 +218,7 @@ describe('creerVente', () => {
   it('refuse une categorie que les parametres soumettent a ordonnance', async () => {
     getValeursParametres.mockResolvedValue({
       ...PARAMETRES,
-      pharmacie: { remiseMaxPourcent: 20, categoriesExigeantOrdonnance: ['LAIT_INFANTILE'] },
+      pharmacie: { categoriesExigeantOrdonnance: ['LAIT_INFANTILE'] },
     });
     prisma.stock.findMany.mockResolvedValue([STOCK_LAIT]);
     await expect(creerVente(pharmacien, {
@@ -269,40 +278,24 @@ describe('creerVente', () => {
     }));
   });
 
-  it('deduit la remise du net, sans toucher au brut', async () => {
+  it('garde le prix fixe sans remise', async () => {
     prisma.stock.findMany.mockResolvedValue([STOCK_PARA]);
 
     await creerVente(pharmacien, {
-      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES', remiseGnf: 400,
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
     });
 
     expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ montantBrutGnf: 2400, remiseGnf: 400, montantNetGnf: 2000 }),
+      data: expect.objectContaining({ montantBrutGnf: 2400, remiseGnf: 0, montantNetGnf: 2400 }),
     }));
   });
 
-  // Sans plafond, une erreur de frappe ramene une vente a zero.
-  it('refuse une remise au-dela du plafond administrable', async () => {
-    prisma.stock.findMany.mockResolvedValue([STOCK_PARA]);
+  it('ne laisse pas un caissier encaisser un produit exigeant une ordonnance', async () => {
+    prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'CAISSIER' });
+    prisma.stock.findMany.mockResolvedValue([STOCK_MORPHINE]);
     await expect(creerVente(pharmacien, {
-      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES', remiseGnf: 1000,
-    })).rejects.toThrow(/plafonnee a 20 %/);
-  });
-
-  it('suit le plafond quand les parametres le changent', async () => {
-    getValeursParametres.mockResolvedValue({
-      ...PARAMETRES,
-      pharmacie: { remiseMaxPourcent: 50, categoriesExigeantOrdonnance: [] },
-    });
-    prisma.stock.findMany.mockResolvedValue([STOCK_PARA]);
-
-    await creerVente(pharmacien, {
-      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES', remiseGnf: 1000,
-    });
-
-    expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ montantNetGnf: 1400 }),
-    }));
+      lignes: [{ idMedicament: 'm-morph', quantite: 1 }], modePaiement: 'ESPECES',
+    })).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it('consomme les lots, decremente le stock et garde la trace des lots sortis', async () => {
@@ -389,6 +382,63 @@ describe('annulerVente', () => {
       .rejects.toBeInstanceOf(ForbiddenError);
   });
 
+  it('permet a un operateur d annuler apres validation du titulaire de la meme officine', async () => {
+    const operateur: JwtPayload = { userId: 'operateur-1', role: 'PHARMACIEN', sessionId: 's' } as JwtPayload;
+    prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'CAISSIER' });
+    prisma.utilisateur.findUnique
+      .mockResolvedValueOnce({
+        idStructure: 'struct-P',
+        structure: { type: 'PHARMACIE' },
+        pharmacienProfile: { roleOfficine: 'CAISSIER' },
+      })
+      .mockResolvedValueOnce({
+        id: 'titulaire-1',
+        idStructure: 'struct-P',
+        role: 'PHARMACIEN',
+        estActif: true,
+        motDePasseHash: 'hash',
+        pharmacienProfile: { roleOfficine: 'TITULAIRE' },
+      });
+
+    await annulerVente(operateur, 've-1', {
+      motif: 'erreur de saisie',
+      autorisationTitulaire: { telephone: '620000000', motDePasse: 'secret' },
+    });
+
+    expect(verifyPassword).toHaveBeenCalledWith('secret', 'hash');
+    expect(prisma.venteComptoir.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        idAnnuleePar: 'operateur-1',
+        idAutoriseePar: 'titulaire-1',
+      }),
+    }));
+  });
+
+  it('refuse un titulaire d une autre officine et ne modifie pas la vente', async () => {
+    const operateur: JwtPayload = { userId: 'operateur-1', role: 'PHARMACIEN', sessionId: 's' } as JwtPayload;
+    prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'ADJOINT' });
+    prisma.utilisateur.findUnique
+      .mockResolvedValueOnce({
+        idStructure: 'struct-P',
+        structure: { type: 'PHARMACIE' },
+        pharmacienProfile: { roleOfficine: 'ADJOINT' },
+      })
+      .mockResolvedValueOnce({
+        id: 'titulaire-ailleurs',
+        idStructure: 'struct-AUTRE',
+        role: 'PHARMACIEN',
+        estActif: true,
+        motDePasseHash: 'hash',
+        pharmacienProfile: { roleOfficine: 'TITULAIRE' },
+      });
+
+    await expect(annulerVente(operateur, 've-1', {
+      motif: 'erreur de saisie',
+      autorisationTitulaire: { telephone: '620000000', motDePasse: 'secret' },
+    })).rejects.toBeInstanceOf(ForbiddenError);
+    expect(prisma.venteComptoir.updateMany).not.toHaveBeenCalled();
+  });
+
   it('refuse une vente deja annulee', async () => {
     prisma.venteComptoir.findUnique.mockResolvedValue({ ...vendue, statut: 'ANNULEE' });
     await expect(annulerVente(pharmacien, 've-1', { motif: 'erreur de saisie' }))
@@ -442,6 +492,27 @@ describe('getVente', () => {
   it('refuse la vente d une autre officine', async () => {
     prisma.venteComptoir.findUnique.mockResolvedValue({ ...venteRow, idStructure: 'struct-AUTRE' });
     await expect(getVente(pharmacien, 've-1')).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it('un operateur ne peut pas lire une vente faite par un collegue', async () => {
+    prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'ADJOINT' });
+    prisma.venteComptoir.findUnique.mockResolvedValue({ ...venteRow, idVendeur: 'autre-vendeur' });
+    await expect(getVente(pharmacien, 've-1')).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});
+
+describe('portee des ventes par role', () => {
+  it('filtre les ventes d un operateur sur son compte', async () => {
+    prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'ADJOINT' });
+    prisma.venteComptoir.findMany.mockResolvedValue([]);
+    await listerVentes(pharmacien);
+    expect(prisma.venteComptoir.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        idStructure: 'struct-P',
+        idVendeur: 'pharma-1',
+        creeLe: expect.objectContaining({ gte: expect.any(Date) }),
+      }),
+    }));
   });
 });
 
@@ -596,7 +667,7 @@ describe('creerVente avec assurance', () => {
     }));
   });
 
-  it('chiffre sur le net, remise deduite', async () => {
+  it('chiffre sur le total a prix fixes', async () => {
     chiffrer.mockResolvedValue({
       idContrat: 'ct-1', assureur: { id: 'as-1', nom: 'X', code: 'X' },
       montantAssureGnf: 0, montantPatientGnf: 2_000, notes: [], lignes: [],
@@ -604,11 +675,11 @@ describe('creerVente avec assurance', () => {
 
     await creerVente(pharmacien, {
       lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
-      idPatient: 'p-1', avecAssurance: true, remiseGnf: 400,
+      idPatient: 'p-1', avecAssurance: true,
     });
 
     const [, , montantNet] = chiffrer.mock.calls[0] as [string, unknown, number];
-    expect(montantNet).toBe(2_000);
+    expect(montantNet).toBe(2_400);
   });
 
   it('sans assurance, le patient paie tout et on ne chiffre rien', async () => {
@@ -640,11 +711,11 @@ describe('schema de creation de vente', () => {
   const { creerVenteSchema } = require('../src/validators/api.schemas');
   const minimal = { lignes: [{ idMedicament: 'm-1', quantite: 1 }], modePaiement: 'ESPECES' };
 
-  it.each(['numeroOperateur', 'remiseGnf', 'idPatient', 'idOrdonnance', 'avecAssurance'])(
+  it.each(['numeroOperateur', 'idPatient', 'idOrdonnance', 'avecAssurance'])(
     'accepte le champ optionnel %s',
     (champ) => {
       const valeurs: Record<string, unknown> = {
-        numeroOperateur: '620000000', remiseGnf: 100,
+        numeroOperateur: '620000000',
         idPatient: 'p-1', idOrdonnance: 'or-1', avecAssurance: true,
       };
       const r = creerVenteSchema.safeParse({ ...minimal, [champ]: valeurs[champ] });
@@ -654,5 +725,9 @@ describe('schema de creation de vente', () => {
 
   it('refuse un champ inconnu : le schema reste strict', () => {
     expect(creerVenteSchema.safeParse({ ...minimal, inconnu: 1 }).success).toBe(false);
+  });
+
+  it('refuse tout champ de remise : les tarifs sont fixes', () => {
+    expect(creerVenteSchema.safeParse({ ...minimal, remiseGnf: 100 }).success).toBe(false);
   });
 });

@@ -200,9 +200,8 @@ describe('sections de parametres', () => {
     }
   });
 
-  it('le comptoir a ses defauts : 20 % de remise, aucune categorie soumise', () => {
+  it('le comptoir a des prix fixes et aucune categorie soumise par defaut', () => {
     expect(PARAMETRES_PAR_DEFAUT.pharmacie).toEqual({
-      remiseMaxPourcent: 20,
       categoriesExigeantOrdonnance: [],
     });
   });
@@ -212,8 +211,6 @@ describe('sections de parametres', () => {
       pharmacie: { categoriesExigeantOrdonnance: ['COSMETIQUE'] },
     });
     expect(fusionne.pharmacie.categoriesExigeantOrdonnance).toEqual(['COSMETIQUE']);
-    // Le reste de la section n'est pas efface pour autant.
-    expect(fusionne.pharmacie.remiseMaxPourcent).toBe(20);
   });
 
   it('refuse une categorie qui n existe pas dans l enumeration', () => {
@@ -225,10 +222,9 @@ describe('sections de parametres', () => {
     expect(r.success).toBe(false);
   });
 
-  it('refuse une remise au-dela de 100 %', () => {
+  it('refuse toute configuration de remise', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { updateParametresSystemeSchema } = require('../src/validators/api.schemas');
-    expect(updateParametresSystemeSchema.safeParse({ pharmacie: { remiseMaxPourcent: 150 } }).success).toBe(false);
-    expect(updateParametresSystemeSchema.safeParse({ pharmacie: { remiseMaxPourcent: 100 } }).success).toBe(true);
+    expect(updateParametresSystemeSchema.safeParse({ pharmacie: { remiseMaxPourcent: 100 } }).success).toBe(false);
   });
 });

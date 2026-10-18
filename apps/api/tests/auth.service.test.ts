@@ -1,11 +1,13 @@
 import { login, verifyLoginOtp, logout, register } from '../src/services/auth.service';
 import { ConflictError, UnauthorizedError, ValidationError } from '../src/utils/app-error';
+import { createHmac } from 'crypto';
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
     utilisateur: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
     patientProfile: { create: jest.fn() },
     session: { create: jest.fn(), deleteMany: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
+    evenementConnexion: { create: jest.fn() },
     authOtp: {
       findFirst: jest.fn(),
       create: jest.fn(),
@@ -42,6 +44,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     utilisateur: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
     patientProfile: { create: jest.Mock };
     session: { create: jest.Mock; deleteMany: jest.Mock; delete: jest.Mock; findUnique: jest.Mock };
+    evenementConnexion: { create: jest.Mock };
     authOtp: {
       findFirst: jest.Mock;
       create: jest.Mock;
@@ -65,6 +68,7 @@ const TOKEN_PAIR = { accessToken: 'mock-access', refreshToken: 'mock-refresh' };
 
 beforeEach(() => {
   generateTokenPair.mockReturnValue(TOKEN_PAIR);
+  prisma.$transaction.mockImplementation((fn: (tx: unknown) => unknown) => fn(prisma));
 });
 
 afterEach(() => jest.resetAllMocks());
@@ -141,6 +145,17 @@ describe('login', () => {
     await expect(
       login({ identifiant: 'nobody@example.com', motDePasse: 'secret' })
     ).rejects.toBeInstanceOf(UnauthorizedError);
+    expect(prisma.evenementConnexion.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'ECHEC_AUTHENTIFICATION',
+        idUtilisateur: null,
+        idStructure: null,
+        identifiantHash: createHmac('sha256', process.env['JWT_SECRET']!)
+          .update('connection-identifier-v1:')
+          .update('nobody@example.com')
+          .digest('hex'),
+      }),
+    });
   });
 
   it('throws ValidationError when staff tries to login with a phone number', async () => {
@@ -163,8 +178,9 @@ describe('login', () => {
 describe('verifyLoginOtp', () => {
   const baseUser = {
     id: 'doc-1',
-    role: 'MEDECIN',
+    role: 'PHARMACIEN',
     email: 'doc@baobaoheath.gn',
+    idStructure: 'pharmacie-1',
     estActif: true,
     prenom: 'D',
     nom: 'Test',
@@ -186,9 +202,24 @@ describe('verifyLoginOtp', () => {
     prisma.session.create.mockResolvedValue({});
     prisma.utilisateur.update.mockResolvedValue({});
 
-    const result = await verifyLoginOtp({ email: 'doc@baobaoheath.gn', code: '123456' });
+    const result = await verifyLoginOtp(
+      { email: 'doc@baobaoheath.gn', code: '123456' },
+      { ipAdresse: '192.0.2.10', userAgent: 'test-agent' },
+    );
 
     expect(result).toHaveProperty('accessToken');
+    expect(prisma.session.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ ipAdresse: '192.0.2.10', userAgent: 'test-agent' }),
+    }));
+    expect(prisma.evenementConnexion.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        type: 'CONNEXION_REUSSIE',
+        idUtilisateur: 'doc-1',
+        idStructure: 'pharmacie-1',
+        ipAdresse: '192.0.2.10',
+        userAgent: 'test-agent',
+      }),
+    }));
   });
 
   it('throws ValidationError for expired OTP', async () => {
@@ -273,8 +304,13 @@ describe('register', () => {
     const mockUser = { id: 'new-user', role: 'PATIENT' };
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => {
       const mockTx = {
-        utilisateur: { create: jest.fn().mockResolvedValue(mockUser) },
+        utilisateur: {
+          create: jest.fn().mockResolvedValue(mockUser),
+          update: jest.fn().mockResolvedValue({}),
+        },
         patientProfile: { create: jest.fn().mockResolvedValue({ id: 'new-patient' }) },
+        session: { create: jest.fn().mockResolvedValue({}) },
+        evenementConnexion: { create: jest.fn().mockResolvedValue({}) },
       };
       return fn(mockTx);
     });

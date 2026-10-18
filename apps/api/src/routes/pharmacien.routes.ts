@@ -10,7 +10,7 @@ import type {
 import { creerApprovisionnementSchema } from '../validators/api.schemas';
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
-import { requireRole } from '../middlewares/rbac.middleware';
+import { requireOfficineRole, requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as ctrl from '../controllers/pharmacien.controller';
 import {
@@ -22,43 +22,50 @@ import {
   substituerLigneSchema,
   reapprovisionnerStockSchema,
   verifierOrdonnanceSchema,
+  etatAgentSchema,
+  permissionTemporaireAgentSchema,
+  roleAgentSchema,
+  creerProduitOfficineSchema,
+  modifierProduitOfficineSchema,
 } from '../validators/api.schemas';
 
 const router = Router();
+const requireTitulaire = requireOfficineRole('TITULAIRE');
+const requirePersonnelClinique = requireOfficineRole('TITULAIRE', 'ADJOINT', 'PREPARATEUR');
 
 router.use(authenticate);
 router.use(requireRole('PHARMACIEN'));
 
-router.get('/scan/:qrCode', ctrl.scanPatientController);
+router.get('/scan/:qrCode', requirePersonnelClinique, ctrl.scanPatientController);
 // EF-07-01 : controle d'une ordonnance presentee sans QR patient (papier,
 // ordonnance d'un proche). Declaree avant `/ordonnances/:id/...` pour que
 // « verifier » ne soit pas capture comme un identifiant.
-router.post('/ordonnances/verifier', validateBody(verifierOrdonnanceSchema), ctrl.verifierOrdonnanceController);
+router.post('/ordonnances/verifier', requirePersonnelClinique, validateBody(verifierOrdonnanceSchema), ctrl.verifierOrdonnanceController);
 // EF-05-09 : `:id` designe ici l'ordonnance entiere, pas une ligne — un
 // renouvellement rouvre tout le traitement.
-router.post('/ordonnances/:id/renouveler', ctrl.renouvelerOrdonnanceController);
+router.post('/ordonnances/:id/renouveler', requirePersonnelClinique, ctrl.renouvelerOrdonnanceController);
 // `:id` designe une ligne : la delivrance se fait medicament par medicament.
-router.post('/ordonnances/:id/delivrer', validateBody(delivrerOrdonnanceSchema), ctrl.delivrerOrdonnanceController);
+router.post('/ordonnances/:id/delivrer', requirePersonnelClinique, validateBody(delivrerOrdonnanceSchema), ctrl.delivrerOrdonnanceController);
 // EF-07-04 / EF-07-05. Trois gestes distincts et nommes plutot qu'un seul
 // avec des drapeaux : une substitution n'est pas une delivrance avec une
 // option, et un refus n'est pas une delivrance de zero.
-router.post('/ordonnances/:id/substituer', validateBody(substituerLigneSchema), ctrl.substituerLigneController);
-router.post('/ordonnances/:id/refuser', validateBody(refuserLigneSchema), ctrl.refuserLigneController);
+router.post('/ordonnances/:id/substituer', requirePersonnelClinique, validateBody(substituerLigneSchema), ctrl.substituerLigneController);
+router.post('/ordonnances/:id/refuser', requirePersonnelClinique, validateBody(refuserLigneSchema), ctrl.refuserLigneController);
 // ── Approvisionnement et peremptions (addendum, points 1.3 et 1.4) ───
 // Saisie assistee : la facture est attachee en justificatif. L'extraction
 // automatique viendra ensuite, et devra toujours etre relue avant
 // enregistrement.
-router.post('/approvisionnements', validateBody(creerApprovisionnementSchema), async (req: AuthRequest, res: Response) => {
+router.post('/approvisionnements', requireTitulaire, validateBody(creerApprovisionnementSchema), async (req: AuthRequest, res: Response) => {
   const data: ApprovisionnementView = await appro.enregistrerApprovisionnement(req.user!, req.body);
   res.status(201).json({ success: true, data, message: 'Entree en stock enregistree' });
 });
 
-router.get('/approvisionnements', async (req: AuthRequest, res: Response) => {
+router.get('/approvisionnements', requireTitulaire, async (req: AuthRequest, res: Response) => {
   const data: ApprovisionnementView[] = await appro.listerApprovisionnements(req.user!);
   res.json({ success: true, data });
 });
 
-router.get('/peremptions', async (req: AuthRequest, res: Response) => {
+router.get('/peremptions', requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const jours = typeof req.query['jours'] === 'string' ? Number(req.query['jours']) : undefined;
   const data: PeremptionProcheView[] = await appro.peremptionsProches(req.user!, Number.isFinite(jours) ? jours : undefined);
   res.json({ success: true, data });
@@ -116,10 +123,18 @@ router.post('/ventes/:id/annuler', validateBody(annulerVenteSchema), async (req:
 });
 
 router.get('/stocks', ctrl.getStocksController);
-router.post('/stocks/reapprovisionner', validateBody(reapprovisionnerStockSchema), ctrl.reapprovisionnerStockController);
-router.get('/ordonnances', ctrl.getOrdonnancesController);
+router.post('/stocks/reapprovisionner', requireTitulaire, validateBody(reapprovisionnerStockSchema), ctrl.reapprovisionnerStockController);
+router.get('/ordonnances', requirePersonnelClinique, ctrl.getOrdonnancesController);
 router.get('/medicaments', ctrl.getMedicamentsController);
-router.get('/agents', ctrl.getAgentsController);
-router.post('/agents', validateBody(createAgentPharmacieSchema), ctrl.creerAgentController);
+router.post('/catalogue-local', requireTitulaire, validateBody(creerProduitOfficineSchema), ctrl.creerProduitOfficineController);
+router.patch('/catalogue-local/:id', requireTitulaire, validateBody(modifierProduitOfficineSchema), ctrl.modifierProduitOfficineController);
+router.delete('/catalogue-local/:id', requireTitulaire, ctrl.desactiverProduitOfficineController);
+router.get('/connexions', requireTitulaire, ctrl.getJournalConnexionsController);
+router.get('/agents', requireTitulaire, ctrl.getAgentsController);
+router.post('/agents', requireTitulaire, validateBody(createAgentPharmacieSchema), ctrl.creerAgentController);
+router.patch('/agents/:id/statut', requireTitulaire, validateBody(etatAgentSchema), ctrl.mettreAJourEtatAgentController);
+router.put('/agents/:id/role-permanent', requireTitulaire, validateBody(roleAgentSchema), ctrl.changerRoleAgentController);
+router.put('/agents/:id/permission-temporaire', requireTitulaire, validateBody(permissionTemporaireAgentSchema), ctrl.definirPermissionTemporaireController);
+router.delete('/agents/:id/permission-temporaire', requireTitulaire, ctrl.revoquerPermissionTemporaireController);
 
 export default router;

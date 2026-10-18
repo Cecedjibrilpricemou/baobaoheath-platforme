@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  ConsentScope, MotifBrisDeGlace, NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
+  CategorieProduit, ConsentScope, MotifBrisDeGlace, NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
 } from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
@@ -20,6 +20,7 @@ export const registerSchema = z.object({
   motDePasse: z.string().min(6).max(128),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
+  roleOfficine: z.enum(['ADJOINT', 'PREPARATEUR', 'CAISSIER']).default('ADJOINT'),
 }).strict();
 
 export const loginSchema = z.object({
@@ -123,9 +124,7 @@ export const creerApprovisionnementSchema = z.object({
 
 // ── Vente au comptoir (addendum, point 1.1) ──────────────────────────
 //
-// La remise n'est pas plafonnee ici : le plafond est un parametre
-// administrable (`pharmacie.remiseMaxPourcent`), donc la regle vit dans le
-// service. Ce schema ne verifie que la forme.
+// Les prix sont fixes : le schema strict rejette tout champ de remise.
 export const creerVenteSchema = z.object({
   lignes: z.array(z.object({
     idMedicament: id,
@@ -133,7 +132,6 @@ export const creerVenteSchema = z.object({
   })).min(1).max(100),
   modePaiement: z.enum(['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO']),
   numeroOperateur: z.string().trim().max(40).optional(),
-  remiseGnf: nonNegativeInt.optional(),
   idPatient: id.optional(),
   idOrdonnance: id.optional(),
   // Tiers payant (EF-09). Le schema etant `.strict()`, oublier ce champ ici
@@ -145,7 +143,32 @@ export const creerVenteSchema = z.object({
 
 export const annulerVenteSchema = z.object({
   motif: z.string().trim().min(5).max(500),
+  autorisationTitulaire: z.object({
+    telephone: z.string().trim().min(6).max(30),
+    motDePasse: z.string().min(1).max(256),
+  }).strict().optional(),
 }).strict();
+
+const categorieProduitOfficineSchema = z.nativeEnum(CategorieProduit).refine(
+  (categorie) => categorie !== CategorieProduit.MEDICAMENT,
+  'Une officine ne peut creer localement que des produits non medicamenteux',
+);
+
+export const creerProduitOfficineSchema = z.object({
+  libelle: z.string().trim().min(2).max(160),
+  categorie: categorieProduitOfficineSchema,
+  prixUnitaireGnf: positiveInt.max(2_000_000_000),
+  seuilAlerte: z.coerce.number().int().min(0).max(100000).default(10),
+  unite: z.string().trim().min(1).max(40).default('unite'),
+}).strict();
+
+export const modifierProduitOfficineSchema = z.object({
+  libelle: z.string().trim().min(2).max(160).optional(),
+  categorie: categorieProduitOfficineSchema.optional(),
+  prixUnitaireGnf: positiveInt.max(2_000_000_000).optional(),
+  seuilAlerte: z.coerce.number().int().min(0).max(100000).optional(),
+  unite: z.string().trim().min(1).max(40).optional(),
+}).strict().refine((dto) => Object.keys(dto).length > 0, 'Au moins un champ doit etre modifie');
 
 export const creerDemandeRendezVousSchema = z.object({
   motif: z.string().trim().min(5).max(1000),
@@ -283,6 +306,19 @@ export const createAgentPharmacieSchema = z.object({
   motDePasse: z.string().min(6).max(128).optional(),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
+}).strict();
+
+export const permissionTemporaireAgentSchema = z.object({
+  roleOfficine: z.enum(['ADJOINT', 'PREPARATEUR', 'CAISSIER']),
+  expireLe: z.string().datetime(),
+}).strict();
+
+export const etatAgentSchema = z.object({
+  estActif: z.boolean(),
+}).strict();
+
+export const roleAgentSchema = z.object({
+  roleOfficine: z.enum(['ADJOINT', 'PREPARATEUR', 'CAISSIER']),
 }).strict();
 
 export const reapprovisionnerStockSchema = z.object({
@@ -615,7 +651,6 @@ export const updateParametresSystemeSchema = z.object({
   }).partial().strict().optional(),
 
   pharmacie: z.object({
-    remiseMaxPourcent: z.coerce.number().int().min(0).max(100),
     categoriesExigeantOrdonnance: z.array(z.enum([
       'MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE',
       'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',

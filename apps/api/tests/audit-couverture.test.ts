@@ -39,8 +39,9 @@ import { auditRequest } from '../src/services/audit.service';
 async function journalise(methode: string, originalUrl: string, options: {
   connecte?: boolean;
   statut?: number;
+  body?: Record<string, unknown>;
 } = {}): Promise<boolean> {
-  const { connecte = true, statut = 200 } = options;
+  const { connecte = true, statut = 200, body = {} } = options;
   const ecouteurs: (() => void)[] = [];
   const req = {
     method: methode,
@@ -48,7 +49,7 @@ async function journalise(methode: string, originalUrl: string, options: {
     path: originalUrl.replace(/^\/api\/v1\/[^/?]+/, '') || '/',
     params: {},
     query: {},
-    body: {},
+    body,
     get: () => undefined,
     ip: '10.0.0.1',
     ...(connecte ? { user: { userId: 'u1', role: 'MEDECIN', sessionId: 's1' } } : {}),
@@ -141,5 +142,18 @@ describe('la ligne ecrite', () => {
     await journalise('GET', '/api/v1/patients/p1');
     const [args] = prisma.journalAudit.create.mock.calls[0] as [{ data: { ipAdresse: string } }];
     expect(args.data.ipAdresse).toBe('10.0.0.1');
+  });
+
+  it('ne conserve pas les identifiants secrets de validation du titulaire', async () => {
+    await journalise('POST', '/api/v1/pharmacien/ventes/vente-1/annuler', {
+      body: {
+        motif: 'erreur de saisie',
+        autorisationTitulaire: { telephone: '620000000', motDePasse: 'secret' },
+      },
+    });
+    const [args] = prisma.journalAudit.create.mock.calls[0] as [{
+      data: { metadonnees: { body: Record<string, unknown> } };
+    }];
+    expect(args.data.metadonnees.body['autorisationTitulaire']).toBe('[REDACTED]');
   });
 });

@@ -168,11 +168,6 @@
       }
 
       <div>
-        <label class="bb-caisse__label" for="c-remise">{{ 'PHARMACIEN.CAISSE.REMISE' | translate }}</label>
-        <input id="c-remise" class="bb-caisse__champ" type="number" min="0" [(ngModel)]="remiseGnf" />
-      </div>
-
-      <div>
         <label class="bb-caisse__label" for="c-ordo">
           {{ 'PHARMACIEN.CAISSE.ORDONNANCE' | translate }}@if (exigentOrdonnance().length) { * }
         </label>
@@ -185,11 +180,6 @@
         <span class="bb-caisse__total-ligne">
           {{ 'PHARMACIEN.CAISSE.BRUT' | translate }} : <strong>{{ montantBrut() | number }} GNF</strong>
         </span>
-        @if (remiseAppliquee() > 0) {
-          <span class="bb-caisse__total-ligne bb-caisse__total-ligne--remise">
-            {{ 'PHARMACIEN.CAISSE.REMISE' | translate }} : <strong>− {{ remiseAppliquee() | number }} GNF</strong>
-          </span>
-        }
         @if (avecAssurance() && prise()) {
           <span class="bb-caisse__total-ligne bb-caisse__total-ligne--assureur">
             {{ 'PHARMACIEN.CAISSE.PART_ASSUREUR' | translate }} : <strong>− {{ prise()!.montantAssureGnf | number }} GNF</strong>
@@ -269,6 +259,14 @@
             {{ 'PHARMACIEN.CAISSE.MOTIF' | translate }} : {{ v.motifAnnulation }}
           </p>
         }
+        @if (v.annulation?.par; as auteur) {
+          <p class="bb-caisse__motif">
+            {{ 'PHARMACIEN.CAISSE.ANNULATION_PAR' | translate }} {{ auteur.prenom }} {{ auteur.nom }}
+            @if (v.annulation?.autoriseePar; as titulaire) {
+              · {{ 'PHARMACIEN.CAISSE.AUTORISEE_PAR' | translate }} {{ titulaire.prenom }} {{ titulaire.nom }}
+            }
+          </p>
+        }
       </article>
     }
   }
@@ -308,6 +306,47 @@
                 (click)="verifierPaiement()" [disabled]="verifieEnCours()">
           <i class="pi pi-refresh" aria-hidden="true"></i>
           {{ (verifieEnCours() ? 'PHARMACIEN.CAISSE.VERIFICATION' : 'PHARMACIEN.CAISSE.VERIFIER') | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (annulationVente(); as vente) {
+  <div class="bb-caisse__annulation-voile" role="presentation" (click)="fermerAnnulation()">
+    <section class="bb-caisse__annulation" role="dialog" aria-modal="true"
+             aria-labelledby="annulation-titre" (click)="$event.stopPropagation()">
+      <h2 id="annulation-titre">{{ 'PHARMACIEN.CAISSE.ANNULATION_TITRE' | translate }}</h2>
+      <p>{{ vente.numero }} · {{ 'PHARMACIEN.CAISSE.ANNULATION_AIDE' | translate }}</p>
+
+      <label class="bb-caisse__label" for="motif-annulation">{{ 'PHARMACIEN.CAISSE.MOTIF' | translate }}</label>
+      <textarea id="motif-annulation" class="bb-caisse__champ" rows="3" maxlength="500"
+                [value]="motifAnnulation()"
+                (input)="motifAnnulation.set($any($event.target).value)"></textarea>
+
+      @if (validationTitulaireRequise()) {
+        <p class="bb-caisse__avis bb-caisse__avis--exige">
+          <i class="pi pi-lock" aria-hidden="true"></i>
+          {{ 'PHARMACIEN.CAISSE.AUTH_TITULAIRE_AIDE' | translate }}
+        </p>
+        <label class="bb-caisse__label" for="telephone-titulaire">{{ 'PHARMACIEN.CAISSE.TELEPHONE_TITULAIRE' | translate }}</label>
+        <input id="telephone-titulaire" class="bb-caisse__champ" type="tel" autocomplete="username"
+               [value]="telephoneTitulaire()"
+               (input)="telephoneTitulaire.set($any($event.target).value)" />
+        <label class="bb-caisse__label" for="mot-de-passe-titulaire">{{ 'PHARMACIEN.CAISSE.MOT_DE_PASSE_TITULAIRE' | translate }}</label>
+        <input id="mot-de-passe-titulaire" class="bb-caisse__champ" type="password" autocomplete="current-password"
+               [value]="motDePasseTitulaire()"
+               (input)="motDePasseTitulaire.set($any($event.target).value)" />
+      }
+
+      <div class="bb-caisse__annulation-actions">
+        <button class="bb-caisse__btn bb-caisse__btn--plat" type="button"
+                [disabled]="annulationEnCours()" (click)="fermerAnnulation()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-caisse__btn" type="button"
+                [disabled]="annulationEnCours()" (click)="confirmerAnnulation()">
+          {{ (annulationEnCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.ANNULER') | translate }}
         </button>
       </div>
     </section>

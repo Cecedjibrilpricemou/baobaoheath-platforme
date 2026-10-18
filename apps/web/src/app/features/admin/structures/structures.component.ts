@@ -72,7 +72,6 @@ export class StructuresComponent implements OnInit {
     { titre: 'EXPORT.COL.TYPE', valeur: (s) => s.type },
     { titre: 'EXPORT.COL.PREFECTURE', valeur: (s) => s.prefecture },
     { titre: 'EXPORT.COL.TELEPHONE', valeur: (s) => s.telephone },
-    { titre: 'EXPORT.COL.COMPTES', valeur: (s) => s._count?.utilisateurs ?? 0, nombre: true },
     { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.estActive ? 'Active' : 'Inactive') },
     { titre: 'EXPORT.COL.CREEE_LE', valeur: (s) => new Date(s.creeLe) },
   ];
@@ -230,9 +229,4 @@ export class StructuresComponent implements OnInit {
     return this.typeOptions.find(t => t.value === type)?.label ?? type;
   }
 
-  getAdmin(s: StructureAdminView): string {
-    if (!s.utilisateurs?.length) return 'Aucun responsable';
-    const a = s.utilisateurs[0];
-    return `${a.prenom} ${a.nom} — ${a.telephone}`;
-  }
 }

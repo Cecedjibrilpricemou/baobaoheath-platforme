@@ -8,7 +8,7 @@ export const PHARMACIEN_ROUTES: Routes = [
       import('../../shared/components/pharmacien-layout/pharmacien-layout.component')
         .then(m => m.PharmacienLayoutComponent),
     children: [
-      { path: '', redirectTo: 'ordonnances', pathMatch: 'full' },
+      { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
       {
         path: 'commandes',
         loadComponent: () =>
@@ -43,6 +43,16 @@ export const PHARMACIEN_ROUTES: Routes = [
         path: 'stocks',
         loadComponent: () =>
           import('./stocks/stocks.component').then(m => m.PharmacienStocksComponent)
+      },
+      {
+        path: 'connexions',
+        loadComponent: () =>
+          import('./connexions/connexions.component').then(m => m.ConnexionsComponent)
+      },
+      {
+        path: 'agents',
+        loadComponent: () =>
+          import('./agents/agents.component').then(m => m.AgentsComponent)
       }
     ]
   }

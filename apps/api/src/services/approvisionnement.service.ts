@@ -97,8 +97,17 @@ export async function enregistrerApprovisionnement(
   // Les medicaments doivent exister : une facture qui cite un produit inconnu
   // du catalogue est une facture qu'on ne sait pas ranger.
   const ids = [...new Set(dto.lignes.map((l) => l.idMedicament))];
-  const connus = await prisma.medicament.findMany({ where: { id: { in: ids }, estActif: true }, select: { id: true } });
-  if (connus.length !== ids.length) throw new ValidationError('Un ou plusieurs produits sont inconnus du catalogue');
+  const connus = await prisma.medicament.findMany({
+    where: {
+      id: { in: ids },
+      estActif: true,
+      OR: [{ idStructure: null }, { idStructure }],
+    },
+    select: { id: true, idStructure: true },
+  });
+  if (connus.length !== ids.length) {
+    throw new ValidationError('Un ou plusieurs produits sont inconnus ou ne sont pas autorises dans cette officine');
+  }
 
   // Une peremption deja passee a l'entree : c'est une erreur de saisie, et la
   // laisser entrer ferait sortir un lot perime plus tard.

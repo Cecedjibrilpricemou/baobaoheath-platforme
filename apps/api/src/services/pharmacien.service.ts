@@ -22,6 +22,8 @@ import type {
   OrdonnanceDelivranceView,
   OrdonnanceEnAttenteView,
   VerificationOrdonnanceView,
+  CreateProduitOfficineDto,
+  UpdateProduitOfficineDto,
 } from '@baobaoheath/shared-types';
 
 type CreateAgentPharmacieDto = {
@@ -30,6 +32,7 @@ type CreateAgentPharmacieDto = {
   prenom: string;
   nom: string;
   motDePasse?: string;
+  roleOfficine?: 'ADJOINT' | 'PREPARATEUR' | 'CAISSIER';
 };
 
 function genererMotDePasseTemp(): string {
@@ -676,7 +679,7 @@ export async function getStocksPharmacie(pharmacienId: string): Promise<StockPha
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
 
   const stocks = await prisma.stock.findMany({
-    where: { idStructure: pharmacien.idStructure },
+    where: { idStructure: pharmacien.idStructure, medicament: { estActif: true } },
     include: {
       medicament: true,
       // La peremption appartient aux lots depuis le 2026-09-30.
@@ -757,8 +760,16 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
   if (dto.quantiteAjoutee <= 0) throw new ValidationError('La quantite doit etre superieure a 0');
 
-  const medicament = await prisma.medicament.findUnique({ where: { id: dto.idMedicament } });
+  const medicament = await prisma.medicament.findUnique({
+    where: { id: dto.idMedicament },
+    select: { id: true, idStructure: true, estActif: true, prixUnitaireGnf: true },
+  });
   if (!medicament) throw new NotFoundError('Medicament non trouve');
+  if (!medicament.estActif) throw new ValidationError('Ce produit est desactive');
+  if (medicament.idStructure !== null && medicament.idStructure !== pharmacien.idStructure) {
+    throw new NotFoundError('Produit introuvable dans cette officine');
+  }
+  const margeGnf = medicament.idStructure === pharmacien.idStructure ? 0 : dto.margeGnf;
 
   const stockExistant = await prisma.stock.findFirst({
     where: {
@@ -778,7 +789,7 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
         data: {
           quantite: { increment: dto.quantiteAjoutee },
           ...(dto.unite && { unite: dto.unite }),
-          ...(dto.margeGnf !== undefined && { margeGnf: dto.margeGnf }),
+          ...(margeGnf !== undefined && { margeGnf }),
         },
         include: { medicament: true },
       });
@@ -807,7 +818,7 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
         quantite: dto.quantiteAjoutee,
         seuilAlerte: 10,
         unite: dto.unite ?? 'unite',
-        margeGnf: dto.margeGnf ?? margeParDefautGnf,
+        margeGnf: margeGnf ?? margeParDefautGnf,
       },
       include: { medicament: true },
     });
@@ -837,12 +848,20 @@ const CHAMPS_CATALOGUE = {
  * C'est le catalogue du comptoir : une pharmacie vend aussi du lait et du
  * savon. Pour prescrire, voir `getMedicamentsPrescriptibles`.
  */
-export async function getMedicaments(): Promise<MedicamentTarifeView[]> {
-  return prisma.medicament.findMany({
-    where: { estActif: true },
+export async function getMedicaments(pharmacienId: string): Promise<MedicamentTarifeView[]> {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+  const produits = await prisma.medicament.findMany({
+    where: {
+      estActif: true,
+      OR: [{ idStructure: null }, { idStructure: pharmacien.idStructure }],
+    },
     orderBy: [{ categorie: 'asc' }, { libelle: 'asc' }],
-    select: CHAMPS_CATALOGUE,
+    select: { ...CHAMPS_CATALOGUE, idStructure: true },
   });
+  return produits.map(({ idStructure, ...produit }) => ({
+    ...produit,
+    estPropreOfficine: idStructure === pharmacien.idStructure,
+  }));
 }
 
 /**
@@ -854,20 +873,114 @@ export async function getMedicaments(): Promise<MedicamentTarifeView[]> {
  */
 export async function getMedicamentsPrescriptibles(): Promise<MedicamentTarifeView[]> {
   return prisma.medicament.findMany({
-    where: { estActif: true, categorie: 'MEDICAMENT' },
+    where: { estActif: true, idStructure: null, categorie: 'MEDICAMENT' },
     orderBy: { libelle: 'asc' },
     select: CHAMPS_CATALOGUE,
   });
 }
 
+/** Le titulaire administre uniquement les articles non medicamenteux locaux. */
+export async function creerProduitOfficine(
+  pharmacienId: string,
+  dto: CreateProduitOfficineDto,
+): Promise<MedicamentTarifeView> {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+  if (pharmacien.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
+    throw new ForbiddenError('Seul le titulaire peut gerer les produits de son officine');
+  }
+  const produit = await prisma.$transaction(async (tx) => {
+    const cree = await tx.medicament.create({
+      data: {
+        libelle: dto.libelle.trim(),
+        categorie: dto.categorie,
+        prixUnitaireGnf: dto.prixUnitaireGnf,
+        estActif: true,
+        estReglemente: false,
+        idStructure: pharmacien.idStructure,
+      },
+      select: CHAMPS_CATALOGUE,
+    });
+    await tx.stock.create({
+      data: {
+        idStructure: pharmacien.idStructure,
+        idMedicament: cree.id,
+        quantite: 0,
+        seuilAlerte: dto.seuilAlerte ?? 10,
+        unite: dto.unite?.trim() || 'unite',
+        margeGnf: 0,
+      },
+    });
+    return cree;
+  });
+  return { ...produit, estPropreOfficine: true };
+}
+
+export async function modifierProduitOfficine(
+  pharmacienId: string,
+  idMedicament: string,
+  dto: UpdateProduitOfficineDto,
+): Promise<MedicamentTarifeView> {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+  if (pharmacien.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
+    throw new ForbiddenError('Seul le titulaire peut gerer les produits de son officine');
+  }
+  const maj = await prisma.$transaction(async (tx) => {
+    const produit = await tx.medicament.updateMany({
+      where: { id: idMedicament, idStructure: pharmacien.idStructure, estActif: true },
+      data: {
+        ...(dto.libelle !== undefined ? { libelle: dto.libelle.trim() } : {}),
+        ...(dto.categorie !== undefined ? { categorie: dto.categorie } : {}),
+        ...(dto.prixUnitaireGnf !== undefined ? { prixUnitaireGnf: dto.prixUnitaireGnf } : {}),
+      },
+    });
+    if (produit.count === 0) throw new NotFoundError('Produit actif introuvable dans cette officine');
+    if (dto.seuilAlerte !== undefined || dto.unite !== undefined) {
+      await tx.stock.updateMany({
+        where: { idStructure: pharmacien.idStructure, idMedicament },
+        data: {
+          ...(dto.seuilAlerte !== undefined ? { seuilAlerte: dto.seuilAlerte } : {}),
+          ...(dto.unite !== undefined ? { unite: dto.unite.trim() } : {}),
+        },
+      });
+    }
+    return tx.medicament.findUniqueOrThrow({
+      where: { id: idMedicament },
+      select: CHAMPS_CATALOGUE,
+    });
+  });
+  return { ...maj, estPropreOfficine: true };
+}
+
+export async function desactiverProduitOfficine(pharmacienId: string, idMedicament: string): Promise<void> {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+  if (pharmacien.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
+    throw new ForbiddenError('Seul le titulaire peut gerer les produits de son officine');
+  }
+  const produit = await prisma.medicament.findFirst({
+    where: { id: idMedicament, idStructure: pharmacien.idStructure, estActif: true },
+    select: { id: true, stocks: { select: { quantite: true } } },
+  });
+  if (!produit) throw new NotFoundError('Produit actif introuvable dans cette officine');
+  if (produit.stocks.some((stock) => stock.quantite > 0)) {
+    throw new ValidationError('Le produit doit etre en rupture avant sa desactivation');
+  }
+  const resultat = await prisma.medicament.updateMany({
+    where: { id: idMedicament, idStructure: pharmacien.idStructure, estActif: true },
+    data: { estActif: false },
+  });
+  if (resultat.count === 0) throw new NotFoundError('Produit introuvable dans cette officine');
+}
+
 export async function getAgentsPharmacie(pharmacienId: string) {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+  if (pharmacien.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
+    throw new ForbiddenError('Seul le titulaire peut consulter les agents de son officine');
+  }
 
-  return prisma.utilisateur.findMany({
+  const agents = await prisma.utilisateur.findMany({
     where: {
       idStructure: pharmacien.idStructure,
       role: Role.PHARMACIEN,
-      estActif: true,
     },
     select: {
       id: true,
@@ -876,17 +989,28 @@ export async function getAgentsPharmacie(pharmacienId: string) {
       prenom: true,
       nom: true,
       role: true,
+      estActif: true,
       creeLe: true,
       derniereConnexion: true,
-      pharmacienProfile: { select: { estResponsable: true } },
+      pharmacienProfile: {
+        select: {
+          estResponsable: true,
+          roleOfficine: true,
+          roleOfficineTemporaire: true,
+          roleOfficineExpireLe: true,
+        },
+      },
     },
     orderBy: { creeLe: 'desc' },
   });
+  return agents.filter((agent) =>
+    agent.pharmacienProfile && agent.pharmacienProfile.roleOfficine !== 'TITULAIRE'
+  );
 }
 
 export async function creerAgentPharmacie(pharmacienId: string, dto: CreateAgentPharmacieDto) {
   const pharmacien = await getPharmacienAvecStructure(pharmacienId);
-  if (!pharmacien.pharmacienProfile?.estResponsable) {
+  if (pharmacien.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
     throw new ForbiddenError('Seul le pharmacien responsable peut creer des agents');
   }
 
@@ -921,6 +1045,7 @@ export async function creerAgentPharmacie(pharmacienId: string, dto: CreateAgent
         idUtilisateur: user.id,
         idStructure: pharmacien.idStructure,
         estResponsable: false,
+        roleOfficine: dto.roleOfficine ?? 'ADJOINT',
       },
     });
 
@@ -935,8 +1060,131 @@ export async function creerAgentPharmacie(pharmacienId: string, dto: CreateAgent
       prenom: agent.prenom,
       nom: agent.nom,
       role: agent.role,
+      roleOfficine: dto.roleOfficine ?? 'ADJOINT',
     },
     motDePasseTemporaire: isTemporaire ? motDePasseTemp : undefined,
+  };
+}
+
+async function trouverAgentDuTitulaire(pharmacienId: string, agentId: string) {
+  const titulaire = await getPharmacienAvecStructure(pharmacienId);
+  if (titulaire.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
+    throw new ForbiddenError('Seul le titulaire peut gerer les agents de son officine');
+  }
+  if (agentId === pharmacienId) throw new ValidationError('Le titulaire ne peut pas modifier son propre compte agent');
+  const agent = await prisma.utilisateur.findFirst({
+    where: {
+      id: agentId,
+      idStructure: titulaire.idStructure,
+      role: Role.PHARMACIEN,
+    },
+    include: { pharmacienProfile: true },
+  });
+  if (!agent?.pharmacienProfile || agent.pharmacienProfile.roleOfficine === 'TITULAIRE') {
+    throw new NotFoundError('Agent de cette officine introuvable');
+  }
+  return { titulaire, agent };
+}
+
+export async function definirPermissionTemporaire(
+  pharmacienId: string,
+  agentId: string,
+  dto: { roleOfficine: 'ADJOINT' | 'PREPARATEUR' | 'CAISSIER'; expireLe: string },
+) {
+  const { agent } = await trouverAgentDuTitulaire(pharmacienId, agentId);
+  const expireLe = new Date(dto.expireLe);
+  if (!Number.isFinite(expireLe.getTime()) || expireLe <= new Date()) {
+    throw new ValidationError("L'expiration de la permission doit etre une date future");
+  }
+  return prisma.pharmacienProfile.update({
+    where: { idUtilisateur: agent.id },
+    data: {
+      roleOfficineTemporaire: dto.roleOfficine,
+      roleOfficineExpireLe: expireLe,
+    },
+    select: { roleOfficine: true, roleOfficineTemporaire: true, roleOfficineExpireLe: true },
+  });
+}
+
+export async function revoquerPermissionTemporaire(pharmacienId: string, agentId: string) {
+  const { agent } = await trouverAgentDuTitulaire(pharmacienId, agentId);
+  return prisma.pharmacienProfile.update({
+    where: { idUtilisateur: agent.id },
+    data: { roleOfficineTemporaire: null, roleOfficineExpireLe: null },
+    select: { roleOfficine: true, roleOfficineTemporaire: true, roleOfficineExpireLe: true },
+  });
+}
+
+export async function mettreAJourEtatAgent(
+  pharmacienId: string,
+  agentId: string,
+  estActif: boolean,
+) {
+  const { agent } = await trouverAgentDuTitulaire(pharmacienId, agentId);
+  return prisma.utilisateur.update({
+    where: { id: agent.id },
+    data: { estActif },
+    select: { id: true, estActif: true },
+  });
+}
+
+export async function changerRoleAgent(
+  pharmacienId: string,
+  agentId: string,
+  roleOfficine: 'ADJOINT' | 'PREPARATEUR' | 'CAISSIER',
+) {
+  const { agent } = await trouverAgentDuTitulaire(pharmacienId, agentId);
+  return prisma.pharmacienProfile.update({
+    where: { idUtilisateur: agent.id },
+    data: {
+      roleOfficine,
+      roleOfficineTemporaire: null,
+      roleOfficineExpireLe: null,
+      estResponsable: false,
+    },
+    select: { roleOfficine: true },
+  });
+}
+
+export async function getJournalConnexions(pharmacienId: string, page = 1, limit = 25) {
+  const pharmacien = await getPharmacienAvecStructure(pharmacienId);
+  if (pharmacien.pharmacienProfile?.roleOfficine !== 'TITULAIRE') {
+    throw new ForbiddenError('Seul le titulaire peut consulter les connexions de son officine');
+  }
+  const taille = Math.min(Math.max(Math.trunc(limit) || 25, 1), 100);
+  const numeroPage = Math.min(Math.max(Math.trunc(page) || 1, 1), 1_000_000);
+  const where = { idStructure: pharmacien.idStructure };
+  const [items, total] = await Promise.all([
+    prisma.evenementConnexion.findMany({
+      where,
+      select: {
+        id: true,
+        type: true,
+        ipAdresse: true,
+        userAgent: true,
+        creeLe: true,
+        utilisateur: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            email: true,
+            pharmacienProfile: { select: { roleOfficine: true } },
+          },
+        },
+      },
+      orderBy: { creeLe: 'desc' },
+      skip: (numeroPage - 1) * taille,
+      take: taille,
+    }),
+    prisma.evenementConnexion.count({ where }),
+  ]);
+  return {
+    items,
+    total,
+    page: numeroPage,
+    limit: taille,
+    totalPages: Math.ceil(total / taille),
   };
 }
 

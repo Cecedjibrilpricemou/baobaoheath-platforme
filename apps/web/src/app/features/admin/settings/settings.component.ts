@@ -113,7 +113,6 @@ export class SettingsComponent implements OnInit {
   // la question E de l'addendum, non tranchee : quelles categories, en plus
   // des produits reglementes, ne se vendent pas sans ordonnance.
   pharmacie: ParametresPharmacieView = {
-    remiseMaxPourcent: 20,
     categoriesExigeantOrdonnance: []
   };
 

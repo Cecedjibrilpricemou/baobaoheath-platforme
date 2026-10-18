@@ -4,7 +4,7 @@
 import { Router, Response } from 'express';
 
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
-import { requireRole } from '../middlewares/rbac.middleware';
+import { requireOfficineRole, requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as commande from '../services/commande.service';
 import * as paiement from '../services/paiement.service';
@@ -19,6 +19,7 @@ import {
 } from '../validators/api.schemas';
 
 const router = Router();
+const requirePersonnelClinique = requireOfficineRole('TITULAIRE', 'ADJOINT', 'PREPARATEUR');
 
 router.use(authenticate);
 
@@ -38,7 +39,7 @@ router.post(
 );
 
 /** La file du comptoir : les appels du quartier, et ce que la pharmacie a pris. */
-router.get('/pharmacie', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+router.get('/pharmacie', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const data = await commande.commandesDeLaPharmacie(req.user!);
   res.json({ success: true, data });
 });
@@ -50,6 +51,7 @@ router.get('/pharmacie', requireRole('PHARMACIEN'), async (req: AuthRequest, res
 router.post(
   '/:id/disponibilite',
   requireRole('PHARMACIEN'),
+  requirePersonnelClinique,
   validateBody(repondreDisponibiliteSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.repondreDisponibilite(
@@ -65,6 +67,7 @@ router.post(
 router.post(
   '/:id/retirer',
   requireRole('PHARMACIEN'),
+  requirePersonnelClinique,
   validateBody(retirerPriseEnChargeSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.retirerPriseEnCharge(req.user!, String(req.params.id), req.body.motif);
@@ -92,7 +95,7 @@ router.post(
 // « ce pharmacien-la ».
 
 /** L'officine chiffre le panier aux prix de son comptoir (EF-07-02). */
-router.post('/:id/chiffrer', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+router.post('/:id/chiffrer', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const data = await commande.chiffrerCommande(req.user!, String(req.params.id));
   res.json({ success: true, data });
 });
@@ -126,6 +129,7 @@ router.post(
 router.post(
   '/:id/encaisser',
   requireRole('PHARMACIEN'),
+  requirePersonnelClinique,
   validateBody(encaisserCommandeSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await paiement.encaisserCommandeAuComptoir(
@@ -136,19 +140,19 @@ router.post(
 );
 
 /** L'officine commence a preparer. */
-router.post('/:id/preparer', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+router.post('/:id/preparer', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const data = await commande.marquerEnPreparation(req.user!, String(req.params.id));
   res.json({ success: true, data });
 });
 
 /** Le sachet est pret. C'est le mode de remise choisi qui decide de la suite. */
-router.post('/:id/prete', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+router.post('/:id/prete', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const data = await commande.marquerPrete(req.user!, String(req.params.id));
   res.json({ success: true, data });
 });
 
 /** L'officine remet les produits — au patient, ou au motard. */
-router.post('/:id/remettre', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+router.post('/:id/remettre', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const data = await commande.confirmerRemise(req.user!, String(req.params.id));
   res.json({ success: true, data });
 });

@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  --connexion-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --connexion-accent: var(--bb-bright);
+}
+
+.bb-connexions {
+  max-width: 1160px;
+  margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+
+  &__message {
+    color: var(--bb-text-secondary);
+    padding: 18px 4px;
+    &--error { color: var(--bb-danger); }
+  }
+
+  &__empty {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    padding: 44px 20px;
+    color: var(--bb-text-secondary);
+    background: var(--bb-surface-card);
+    border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl);
+    i { font-size: 25px; color: var(--connexion-accent); }
+    p { margin: 0; }
+  }
+
+  &__table-wrap {
+    overflow-x: auto;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    th, td { padding: 13px 15px; border-bottom: 1px solid var(--bb-border-light); }
+    th {
+      color: var(--bb-text-secondary);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td { color: var(--bb-text-primary); font-size: 13px; }
+    tbody tr:last-child td { border-bottom: 0; }
+    td strong, td small { display: block; }
+    td small { margin-top: 3px; color: var(--bb-text-secondary); }
+  }
+
+  &__event {
+    display: inline-block;
+    padding: 4px 9px;
+    color: var(--bb-success);
+    background: color-mix(in srgb, var(--bb-success) 12%, transparent);
+    border-radius: var(--bb-radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    &--failure {
+      color: var(--bb-danger);
+      background: color-mix(in srgb, var(--bb-danger) 12%, transparent);
+    }
+  }
+
+  &__device {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__pager {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    color: var(--bb-text-secondary);
+    font-size: 13px;
+    button {
+      padding: 8px 12px;
+      color: var(--bb-text-primary);
+      background: var(--bb-surface-card);
+      border: 1px solid var(--bb-border-light);
+      border-radius: var(--bb-radius-md);
+      cursor: pointer;
+      &:disabled { opacity: .45; cursor: default; }
+    }
+  }
+
+  @media (max-width: 680px) {
+    &__table { min-width: 760px; }
+    &__pager { justify-content: center; }
+  }
+}

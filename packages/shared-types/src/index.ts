@@ -41,6 +41,9 @@ export type Role =
   | 'ADMIN_NATIONAL'
   | 'SUPER_ADMIN';
 
+/** Responsabilites d'un utilisateur au sein de son officine. */
+export type RoleOfficine = 'TITULAIRE' | 'ADJOINT' | 'PREPARATEUR' | 'CAISSIER';
+
 export type EncounterStatus =
   | 'PLANIFIEE'
   | 'EN_COURS'
@@ -302,6 +305,7 @@ export interface UserDto {
   nom: string;
   prenom: string;
   role: Role;
+  roleOfficine?: RoleOfficine | null;
   langue: string;
   photoUrl?: string;
   estActif: boolean;
@@ -1146,7 +1150,19 @@ export interface MedicamentTarifeView extends MedicamentView {
   /** Classe therapeutique en texte libre (« Antalgique »). Autre axe que `categorie`. */
   classeTherapeutique?: string | null;
   prixUnitaireGnf: number;
+  /** Indique un produit cree et gere par l'officine connectee. */
+  estPropreOfficine?: boolean;
 }
+
+export interface CreateProduitOfficineDto {
+  libelle: string;
+  categorie: Exclude<CategorieProduit, 'MEDICAMENT'>;
+  prixUnitaireGnf: number;
+  seuilAlerte?: number;
+  unite?: string;
+}
+
+export type UpdateProduitOfficineDto = Partial<CreateProduitOfficineDto>;
 
 /** Une ligne de l'ordonnance au comptoir : c'est l'unite de delivrance. */
 export interface LigneDelivranceView {
@@ -1307,9 +1323,8 @@ export interface StructurePubliqueView {
 }
 
 /**
- * GET /admin-structure/structures — vue super-admin : toutes les structures,
- * desactivees comprises, avec le nombre d'utilisateurs rattaches et les
- * administrateurs de la structure.
+ * GET /admin-structure/structures — vue super-admin : metadonnees des
+ * structures, desactivees comprises. Les comptes rattaches restent prives.
  */
 export interface StructureAdminView {
   id: string;
@@ -1323,8 +1338,6 @@ export interface StructureAdminView {
   photoUrl?: string | null;
   estActive: boolean;
   creeLe: HorodatageApi;
-  _count?: { utilisateurs: number };
-  utilisateurs?: { prenom: string; nom: string; telephone: string }[];
 }
 
 /** Compte cree en meme temps qu'une structure ou une pharmacie. */
@@ -1640,13 +1653,6 @@ export interface ParametresPrescriptionView {
 
 /** Regles du comptoir d'officine (addendum du 2026-09-28, point 1.1). */
 export interface ParametresPharmacieView {
-  /**
-   * Plafond de remise qu'un vendeur peut accorder, en pourcentage du brut.
-   * Sans plafond, une erreur de frappe — ou une complaisance — ramene une
-   * vente a zero sans que rien ne s'y oppose.
-   */
-  remiseMaxPourcent: number;
-
   /**
    * Categories soumises a ordonnance **en plus** des produits reglementes,
    * qui le sont toujours (EF-05-12).
@@ -2287,6 +2293,7 @@ export interface VenteComptoirView {
   numero: string;
   statut: StatutVente;
   montantBrutGnf: number;
+  /** Champ historique conservé en lecture ; les nouvelles ventes ont toujours une valeur nulle. */
   remiseGnf: number;
   montantNetGnf: number;
   /** Tiers payant : 0 sans contrat, l'assure payant alors tout. */
@@ -2298,6 +2305,11 @@ export interface VenteComptoirView {
   creeLe: HorodatageApi;
   annuleeLe?: HorodatageApi | null;
   motifAnnulation?: string | null;
+  /** Personne ayant exécuté l'annulation et titulaire qui l'a autorisée, le cas échéant. */
+  annulation?: {
+    par: { id: string; prenom: string; nom: string } | null;
+    autoriseePar: { id: string; prenom: string; nom: string } | null;
+  } | null;
   vendeur: { id: string; prenom: string; nom: string };
   /** Absent pour un client de passage, qui n'a pas de dossier. */
   patient?: { id: string; prenom: string; nom: string } | null;
@@ -2335,7 +2347,6 @@ export interface CreerVenteDto {
   modePaiement: ModePaiement;
   /** Numero mobile money, hors paiement en especes. */
   numeroOperateur?: string;
-  remiseGnf?: number;
   /** Facultatif : un passant n'a pas de dossier. */
   idPatient?: string;
   /**
@@ -2354,6 +2365,11 @@ export interface CreerVenteDto {
 export interface AnnulerVenteDto {
   /** Motif obligatoire : une annulation sans raison n'est pas tracable. */
   motif: string;
+  /** Revalidation du titulaire requise lorsqu'un opérateur demande l'annulation. */
+  autorisationTitulaire?: {
+    telephone: string;
+    motDePasse: string;
+  };
 }
 
 /** Une ligne du classement des produits les plus vendus. */

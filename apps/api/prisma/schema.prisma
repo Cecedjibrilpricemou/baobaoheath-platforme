@@ -31,6 +31,20 @@ enum Role {
   SUPER_ADMIN
 }
 
+enum TypeEvenementConnexion {
+  CONNEXION_REUSSIE
+  ECHEC_AUTHENTIFICATION
+  ECHEC_CODE
+  DECONNEXION
+}
+
+enum RoleOfficine {
+  TITULAIRE
+  ADJOINT
+  PREPARATEUR
+  CAISSIER
+}
+
 enum EncounterStatus {
   PLANIFIEE
   EN_COURS
@@ -325,6 +339,7 @@ model Utilisateur {
   medecinProfile           MedecinProfile?
   pharmacienProfile        PharmacienProfile?
   sessions                 Session[]
+  evenementsConnexion      EvenementConnexion[]
   authOtps                 AuthOtp[]
   motDePasseResets         MotDePasseReset[]
   auditLogs                JournalAudit[]
@@ -350,6 +365,7 @@ model Utilisateur {
   approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
   ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
   ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
+  ventesAnnulationAutorisee VenteComptoir[]         @relation("VentesAnnulationAutorisee")
   reglementsAssureurSaisis ReglementAssureur[]      @relation("ReglementsAssureur")
   controlesEligibilite     ControleEligibilite[]    @relation("ControlesEligibilite")
   syncEvents               SyncEvent[]
@@ -373,6 +389,26 @@ model Session {
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+/// Trace durable des connexions : contrairement aux sessions, ces lignes ne
+/// sont pas supprimees a la deconnexion. Les identifiants inconnus ne sont
+/// conserves que sous forme de hash, jamais en clair.
+model EvenementConnexion {
+  id              String                  @id @default(cuid())
+  type            TypeEvenementConnexion
+  ipAdresse       String?
+  userAgent       String?
+  identifiantHash String?
+  creeLe          DateTime                @default(now())
+
+  idUtilisateur String?
+  utilisateur   Utilisateur? @relation(fields: [idUtilisateur], references: [id], onDelete: SetNull)
+  idStructure   String?
+
+  @@index([idStructure, creeLe])
+  @@index([idUtilisateur, creeLe])
+  @@map("evenements_connexion")
 }
 
 model AuthOtp {
@@ -692,6 +728,7 @@ model StructureSante {
   commandes            Commande[]            @relation("PharmacieCommande")
   reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
   ventesComptoir       VenteComptoir[]
+  medicamentsPersonnalises Medicament[]
   assureur             Assureur?
   reglementsRecus      ReglementAssureur[]
   controlesEligibilite ControleEligibilite[]
@@ -917,6 +954,9 @@ model PharmacienProfile {
   id             String   @id @default(cuid())
   photoUrl       String?
   estResponsable Boolean  @default(false)
+  roleOfficine   RoleOfficine @default(ADJOINT)
+  roleOfficineTemporaire RoleOfficine?
+  roleOfficineExpireLe   DateTime?
   creeLe         DateTime @default(now())
 
   idUtilisateur String      @unique
@@ -1060,6 +1100,12 @@ model Medicament {
   /// patient (EF-05-06).
   contreIndications String[]
 
+  /// Les medicaments du referentiel ont un proprietaire nul. Les articles
+  /// locaux d'une officine sont rattaches a sa structure et ne sont visibles
+  /// que depuis ce perimetre.
+  idStructure String?
+  structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
   lignesOrdonnance LigneOrdonnance[]
   lignesCommande   LigneCommande[]
   actesDelivrance  ActeDelivrance[] @relation("ActeDelivranceMedicament")
@@ -1068,6 +1114,7 @@ model Medicament {
 
   @@index([codeAtc])
   @@index([categorie])
+  @@index([idStructure, estActif])
   @@map("medicaments")
 }
 
@@ -2230,9 +2277,8 @@ model VenteComptoir {
   numero String      @unique
   statut StatutVente @default(PAYEE)
 
-  /// Somme des lignes avant remise, la remise, et ce qui est reellement
-  /// encaisse. Les trois sont stockes : recalculer le net a la lecture
-  /// supposerait que la regle de remise n'a jamais change.
+  /// Totaux historiques figes. `remiseGnf` reste renseigne pour les anciennes
+  /// ventes ; les ventes a prix fixes enregistrees depuis la migration valent 0.
   montantBrutGnf Int
   remiseGnf      Int @default(0)
   montantNetGnf  Int
@@ -2293,6 +2339,8 @@ model VenteComptoir {
   motifAnnulation String?
   idAnnuleePar    String?
   annuleePar      Utilisateur? @relation("VentesAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
+  idAutoriseePar  String?
+  annulationAutoriseePar Utilisateur? @relation("VentesAnnulationAutorisee", fields: [idAutoriseePar], references: [id], onDelete: SetNull)
 
   creeLe DateTime @default(now())
 
@@ -2300,6 +2348,7 @@ model VenteComptoir {
 
   @@index([idStructure, creeLe(sort: Desc)])
   @@index([idStructure, statut])
+  @@index([idAutoriseePar])
   @@map("ventes_comptoir")
 }
 

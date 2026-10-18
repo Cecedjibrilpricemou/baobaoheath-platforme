@@ -8,6 +8,9 @@ import {
   getMedicamentsPrescriptibles,
   getOrdonnances,
   reapprovisionnerStock,
+  creerProduitOfficine,
+  modifierProduitOfficine,
+  desactiverProduitOfficine,
   scanPatient,
   verifierOrdonnance,
 } from '../src/services/pharmacien.service';
@@ -19,7 +22,7 @@ jest.mock('../src/config/prisma', () => ({
     patientProfile: { findUnique: jest.fn() },
     ordonnance: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     ligneOrdonnance: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-    medicament: { findUnique: jest.fn(), findMany: jest.fn() },
+    medicament: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn(), findMany: jest.fn(), create: jest.fn(), updateMany: jest.fn(), findFirst: jest.fn() },
     stock: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     lotStock: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     // P6-b : l'acte de delivrance, nominatif, qui porte la quantite remise.
@@ -36,7 +39,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     patientProfile: { findUnique: jest.Mock };
     ordonnance: { findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
     ligneOrdonnance: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
-    medicament: { findUnique: jest.Mock; findMany: jest.Mock };
+    medicament: { findUnique: jest.Mock; findUniqueOrThrow: jest.Mock; findMany: jest.Mock; create: jest.Mock; updateMany: jest.Mock; findFirst: jest.Mock };
     stock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     lotStock: { findMany: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
     acteDelivrance: { create: jest.Mock; aggregate: jest.Mock };
@@ -50,7 +53,7 @@ const PHARMACIEN = {
   structure: { id: 'pharma-1', type: 'PHARMACIE', prefecture: 'Kindia' },
   pharmacienProfile: {},
 };
-const PARACETAMOL = { id: 'm-1', dci: 'Paracetamol', nomCommercial: 'Doliprane', forme: 'cp', dosage: '500mg', prixUnitaireGnf: 1000, estReglemente: false };
+const PARACETAMOL = { id: 'm-1', idStructure: null, dci: 'Paracetamol', nomCommercial: 'Doliprane', forme: 'cp', dosage: '500mg', prixUnitaireGnf: 1000, estReglemente: false, estActif: true };
 
 const PARAMETRES = {
   prescription: {
@@ -92,6 +95,12 @@ const ORD_VALIDE: EtatOrdonnance = {
 
 function pharmacienValide() {
   prisma.utilisateur.findUnique.mockResolvedValue(PHARMACIEN);
+}
+function titulaireValide() {
+  prisma.utilisateur.findUnique.mockResolvedValue({
+    ...PHARMACIEN,
+    pharmacienProfile: { roleOfficine: 'TITULAIRE' },
+  });
 }
 
 afterEach(() => jest.resetAllMocks());
@@ -576,11 +585,15 @@ describe('reapprovisionnerStock', () => {
 // prescripteur choisit un lait infantile et decouvre le refus apres coup.
 describe('catalogues', () => {
   it('le comptoir voit tout le catalogue, articles compris', async () => {
+    pharmacienValide();
     prisma.medicament.findMany.mockResolvedValue([]);
-    await getMedicaments();
+    await getMedicaments('ph-u');
 
     const [args] = prisma.medicament.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
-    expect(args.where).toEqual({ estActif: true });
+    expect(args.where).toEqual({
+      estActif: true,
+      OR: [{ idStructure: null }, { idStructure: 'pharma-1' }],
+    });
     expect(args.where).not.toHaveProperty('categorie');
   });
 
@@ -589,16 +602,90 @@ describe('catalogues', () => {
     await getMedicamentsPrescriptibles();
 
     const [args] = prisma.medicament.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
-    expect(args.where).toEqual({ estActif: true, categorie: 'MEDICAMENT' });
+    expect(args.where).toEqual({ estActif: true, idStructure: null, categorie: 'MEDICAMENT' });
   });
 
   it('les deux trient sur le libelle, seul champ toujours renseigne', async () => {
+    pharmacienValide();
     prisma.medicament.findMany.mockResolvedValue([]);
-    await getMedicaments();
+    await getMedicaments('ph-u');
     await getMedicamentsPrescriptibles();
 
     for (const [args] of prisma.medicament.findMany.mock.calls as [{ orderBy: unknown }][]) {
       expect(JSON.stringify(args.orderBy)).toContain('libelle');
     }
+  });
+
+  it('cree un produit de comptoir rattache exclusivement a la pharmacie', async () => {
+    titulaireValide();
+    prisma.medicament.create.mockResolvedValue({
+      id: 'local-1', libelle: 'Savon douceur', categorie: 'HYGIENE',
+      dci: null, nomCommercial: null, forme: null, dosage: null,
+      classeTherapeutique: null, prixUnitaireGnf: 12000, estReglemente: false,
+    });
+
+    const produit = await creerProduitOfficine('ph-u', {
+      libelle: 'Savon douceur',
+      categorie: 'HYGIENE',
+      prixUnitaireGnf: 12000,
+    });
+
+    expect(prisma.medicament.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        idStructure: 'pharma-1',
+        categorie: 'HYGIENE',
+        prixUnitaireGnf: 12000,
+        estReglemente: false,
+      }),
+    }));
+    expect(prisma.stock.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        idStructure: 'pharma-1',
+        idMedicament: 'local-1',
+        quantite: 0,
+        seuilAlerte: 10,
+        margeGnf: 0,
+      }),
+    }));
+    expect(produit.estPropreOfficine).toBe(true);
+  });
+
+  it('refuse la modification d un produit ne relevant pas de cette officine', async () => {
+    titulaireValide();
+    prisma.medicament.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(modifierProduitOfficine('ph-u', 'shared-product', { prixUnitaireGnf: 15000 }))
+      .rejects.toBeInstanceOf(NotFoundError);
+    expect(prisma.medicament.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'shared-product', idStructure: 'pharma-1', estActif: true },
+    }));
+  });
+
+  it('met a jour le seuil et l unite du stock local avec le produit', async () => {
+    titulaireValide();
+    prisma.medicament.updateMany.mockResolvedValue({ count: 1 });
+    prisma.medicament.findUniqueOrThrow.mockResolvedValue({
+      id: 'local-1', libelle: 'Savon douceur', categorie: 'HYGIENE',
+      dci: null, nomCommercial: null, forme: null, dosage: null,
+      classeTherapeutique: null, prixUnitaireGnf: 12000, estReglemente: false,
+    });
+
+    await modifierProduitOfficine('ph-u', 'local-1', { seuilAlerte: 5, unite: 'boite' });
+
+    expect(prisma.stock.updateMany).toHaveBeenCalledWith({
+      where: { idStructure: 'pharma-1', idMedicament: 'local-1' },
+      data: { seuilAlerte: 5, unite: 'boite' },
+    });
+  });
+
+  it('ne desactive pas un produit qui est encore en stock', async () => {
+    titulaireValide();
+    prisma.medicament.findFirst.mockResolvedValue({
+      id: 'local-1',
+      stocks: [{ quantite: 2 }],
+    });
+
+    await expect(desactiverProduitOfficine('ph-u', 'local-1')).rejects.toBeInstanceOf(ValidationError);
+    expect(prisma.medicament.updateMany).not.toHaveBeenCalled();
   });
 });

@@ -15,7 +15,10 @@ export async function registerController(req: Request, res: Response): Promise<v
 }
 
 export async function loginController(req: Request, res: Response): Promise<void> {
-  const result = await authService.login(req.body);
+  const result = await authService.login(req.body, {
+    ipAdresse: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   if ('accessToken' in result && 'refreshToken' in result) {
     sendTokens(res, 200, result);
   } else {
@@ -24,12 +27,18 @@ export async function loginController(req: Request, res: Response): Promise<void
 }
 
 export async function verifyLoginOtpController(req: Request, res: Response): Promise<void> {
-  const tokenPair = await authService.verifyLoginOtp(req.body);
+  const tokenPair = await authService.verifyLoginOtp(req.body, {
+    ipAdresse: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   sendTokens(res, 200, tokenPair);
 }
 
 export async function logoutController(req: AuthRequest, res: Response): Promise<void> {
-  await authService.logout(req.user!.sessionId);
+  await authService.logout(req.user!.sessionId, req.user!.userId, {
+    ipAdresse: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   clearAuthCookies(res);
   res.status(200).json({ success: true, message: 'Déconnexion réussie' });
 }

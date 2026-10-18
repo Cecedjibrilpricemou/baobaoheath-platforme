@@ -74,7 +74,7 @@ export class CaisseComponent implements OnInit {
     { titre: 'EXPORT.COL.ORDONNANCE', valeur: (v) => v.numeroOrdonnance },
     { titre: 'EXPORT.COL.PAIEMENT', valeur: (v) => v.modePaiement },
     { titre: 'EXPORT.COL.BRUT_GNF', valeur: (v) => v.montantBrutGnf, nombre: true },
-    { titre: 'EXPORT.COL.REMISE_GNF', valeur: (v) => v.remiseGnf, nombre: true },
+    { titre: 'EXPORT.COL.REMISE_HISTORIQUE_GNF', valeur: (v) => v.remiseGnf, nombre: true },
     { titre: 'EXPORT.COL.NET_GNF', valeur: (v) => v.montantNetGnf, nombre: true },
     { titre: 'EXPORT.COL.PART_ASSUREUR_GNF', valeur: (v) => v.montantAssureGnf, nombre: true },
     { titre: 'EXPORT.COL.PART_PATIENT_GNF', valeur: (v) => v.montantPatientGnf, nombre: true },
@@ -95,19 +95,22 @@ export class CaisseComponent implements OnInit {
   attente = signal<VenteComptoirView | null>(null);
   qrImage = signal<string>('');
   verifieEnCours = signal(false);
+  annulationVente = signal<VenteComptoirView | null>(null);
+  motifAnnulation = signal('');
+  validationTitulaireRequise = signal(false);
+  telephoneTitulaire = signal('');
+  motDePasseTitulaire = signal('');
+  annulationEnCours = signal(false);
 
   modePaiement = signal<ModePaiement>('ESPECES');
   numeroOperateur = signal('');
-  remiseGnf = signal<number | null>(null);
   idOrdonnance = signal('');
 
   readonly montantBrut = computed(() =>
     this.lignes().reduce((t, l) => t + this.prixDe(l.idMedicament()) * (l.quantite() ?? 0), 0)
   );
 
-  readonly remiseAppliquee = computed(() => Math.max(0, Math.trunc(this.remiseGnf() ?? 0)));
-
-  readonly montantNet = computed(() => Math.max(0, this.montantBrut() - this.remiseAppliquee()));
+  readonly montantNet = computed(() => this.montantBrut());
 
   /**
    * Les produits du panier qui ne sortent pas sans ordonnance. L'API applique
@@ -309,7 +312,6 @@ export class CaisseComponent implements OnInit {
       lignes,
       modePaiement: this.modePaiement(),
       ...(this.modePaiement() !== 'ESPECES' ? { numeroOperateur: this.numeroOperateur().trim() } : {}),
-      ...(this.remiseAppliquee() > 0 ? { remiseGnf: this.remiseAppliquee() } : {}),
       ...(this.idOrdonnance().trim() ? { idOrdonnance: this.idOrdonnance().trim() } : {}),
       ...(this.patient() ? { idPatient: this.patient()!.id } : {}),
       ...(this.avecAssurance() && this.peutAppliquerAssurance() ? { avecAssurance: true } : {}),
@@ -402,17 +404,7 @@ export class CaisseComponent implements OnInit {
   abandonnerAttente(): void {
     const vente = this.attente();
     if (!vente) return;
-    this.pharma.annulerVente(vente.id, {
-      motif: this.i18n.t('PHARMACIEN.CAISSE.MOTIF_ABANDON'),
-    }).subscribe({
-      next: () => {
-        this.attente.set(null);
-        this.toastr.info(this.i18n.t('PHARMACIEN.CAISSE.ABANDONNEE'));
-        this.charger();
-        this.pharma.getStocks().subscribe({ next: (s) => this.stocks.set(s.data ?? []) });
-      },
-      error: (err) => this.signaler(err, 'PHARMACIEN.CAISSE.ERR_ANNULER'),
-    });
+    this.demanderAnnulation(vente, this.i18n.t('PHARMACIEN.CAISSE.MOTIF_ABANDON'));
   }
 
   /** Le montant que le client doit payer : la part de l'assureur est deduite. */
@@ -421,21 +413,67 @@ export class CaisseComponent implements OnInit {
   }
 
   annuler(vente: VenteComptoirView) {
-    const motif = window.prompt(this.i18n.t('PHARMACIEN.CAISSE.MOTIF_PROMPT'))?.trim() ?? '';
+    this.demanderAnnulation(vente);
+  }
+
+  demanderAnnulation(vente: VenteComptoirView, motif = ''): void {
+    this.annulationVente.set(vente);
+    this.motifAnnulation.set(motif);
+    this.validationTitulaireRequise.set(false);
+    this.telephoneTitulaire.set('');
+    this.motDePasseTitulaire.set('');
+  }
+
+  fermerAnnulation(): void {
+    if (this.annulationEnCours()) return;
+    this.annulationVente.set(null);
+    this.motDePasseTitulaire.set('');
+  }
+
+  confirmerAnnulation(): void {
+    const vente = this.annulationVente();
+    const motif = this.motifAnnulation().trim();
+    if (!vente || this.annulationEnCours()) return;
     if (motif.length < 5) {
-      if (motif.length > 0) {
-        this.toastr.error(this.i18n.t('PHARMACIEN.CAISSE.MOTIF_COURT'), this.i18n.t('COMMON.ERROR_TITLE'));
-      }
+      this.toastr.error(this.i18n.t('PHARMACIEN.CAISSE.MOTIF_COURT'), this.i18n.t('COMMON.ERROR_TITLE'));
+      return;
+    }
+    if (this.validationTitulaireRequise() && (
+      !this.telephoneTitulaire().trim() || !this.motDePasseTitulaire()
+    )) {
+      this.toastr.error(this.i18n.t('PHARMACIEN.CAISSE.AUTH_TITULAIRE_REQUISE'), this.i18n.t('COMMON.ERROR_TITLE'));
       return;
     }
 
-    this.pharma.annulerVente(vente.id, { motif }).subscribe({
+    this.annulationEnCours.set(true);
+    this.pharma.annulerVente(vente.id, {
+      motif,
+      ...(this.validationTitulaireRequise() ? {
+        autorisationTitulaire: {
+          telephone: this.telephoneTitulaire().trim(),
+          motDePasse: this.motDePasseTitulaire(),
+        },
+      } : {}),
+    }).subscribe({
       next: () => {
+        this.annulationEnCours.set(false);
+        this.annulationVente.set(null);
+        this.motDePasseTitulaire.set('');
+        if (this.attente()?.id === vente.id) this.attente.set(null);
         this.toastr.success(this.i18n.t('PHARMACIEN.CAISSE.ANNULEE'), this.i18n.t('COMMON.SUCCESS'));
         this.charger();
         this.pharma.getStocks().subscribe({ next: (s) => this.stocks.set(s.data ?? []) });
       },
-      error: (err) => this.signaler(err, 'PHARMACIEN.CAISSE.ERR_ANNULER'),
+      error: (err) => {
+        this.annulationEnCours.set(false);
+        const e = err as { status?: number };
+        if (e?.status === 403 && !this.validationTitulaireRequise()) {
+          this.validationTitulaireRequise.set(true);
+          return;
+        }
+        this.motDePasseTitulaire.set('');
+        this.signaler(err, 'PHARMACIEN.CAISSE.ERR_ANNULER');
+      },
     });
   }
 
@@ -459,7 +497,6 @@ export class CaisseComponent implements OnInit {
     this.lignes.set([this.ligneVide()]);
     this.modePaiement.set('ESPECES');
     this.numeroOperateur.set('');
-    this.remiseGnf.set(null);
     this.idOrdonnance.set('');
   }
 }

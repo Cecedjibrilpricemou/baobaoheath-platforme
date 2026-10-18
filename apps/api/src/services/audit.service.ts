@@ -13,6 +13,7 @@ const SENSITIVE_KEYS = new Set([
   'accessToken',
   'token',
   'twoFaSecret',
+  'autorisationTitulaire',
 ]);
 
 function sanitize(value: unknown): unknown {

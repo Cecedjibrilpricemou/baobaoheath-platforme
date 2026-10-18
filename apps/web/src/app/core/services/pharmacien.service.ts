@@ -7,6 +7,8 @@ import { ApiResponse } from '../models/api.model';
 import type {
   CommandeView,
   AnnulerVenteDto,
+  CreateProduitOfficineDto,
+  UpdateProduitOfficineDto,
   CategorieProduit,
   ControleEligibiliteView,
   PriseEnChargeView,
@@ -88,6 +90,18 @@ export class PharmacienService {
    */
   getMedicaments(): Observable<ApiResponse<MedicamentInfo[]>> {
     return this.api.get<ApiResponse<MedicamentInfo[]>>('/pharmacien/medicaments');
+  }
+
+  creerProduitOfficine(dto: CreateProduitOfficineDto): Observable<ApiResponse<MedicamentInfo>> {
+    return this.api.post<ApiResponse<MedicamentInfo>>('/pharmacien/catalogue-local', dto);
+  }
+
+  modifierProduitOfficine(id: string, dto: UpdateProduitOfficineDto): Observable<ApiResponse<MedicamentInfo>> {
+    return this.api.patch<ApiResponse<MedicamentInfo>>(`/pharmacien/catalogue-local/${id}`, dto);
+  }
+
+  desactiverProduitOfficine(id: string): Observable<ApiResponse<void>> {
+    return this.api.delete<ApiResponse<void>>(`/pharmacien/catalogue-local/${id}`);
   }
 
   reapprovisionner(payload: Record<string, unknown>): Observable<ApiResponse<PharmacieStock>> {

@@ -152,7 +152,8 @@ export async function creerPharmacieAvecPharmacien(dto: {
             data: {
                 idUtilisateur: pharmacien.id,
                 idStructure: structure.id,
-                estResponsable: true
+                estResponsable: true,
+                roleOfficine: 'TITULAIRE'
             }
         });
 
@@ -232,13 +233,6 @@ export async function getStructuresPubliques() {
 export async function getStructures() {
     return prisma.structureSante.findMany({
         orderBy: { creeLe: 'desc' },
-        include: {
-            _count: { select: { utilisateurs: true } },
-            utilisateurs: {
-                where: { role: Role.ADMIN_STRUCTURE },
-                select: { prenom: true, nom: true, telephone: true }
-            }
-        }
     });
 }
 
@@ -273,6 +267,9 @@ export async function getAgentsStructure(adminId: string) {
         where: { id: adminId }, include: { structure: true }
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (admin.structure?.type === TypeStructure.PHARMACIE) {
+        throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
+    }
 
     const agents = await prisma.utilisateur.findMany({
         where: { idStructure: admin.idStructure, role: { in: ROLES_AUTORISES }, estActif: true },
@@ -303,6 +300,9 @@ export async function creerAgent(adminId: string, dto: {
         include: { structure: true }
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (admin.structure?.type === TypeStructure.PHARMACIE) {
+        throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
+    }
 
     if (!ROLES_AUTORISES.includes(dto.role)) {
         throw new ForbiddenError(`Vous ne pouvez pas créer un compte de type ${dto.role}`);
@@ -374,8 +374,14 @@ export async function creerAgent(adminId: string, dto: {
 
 // ── ADMIN_STRUCTURE : désactiver un agent ────────────────────────
 export async function desactiverAgent(adminId: string, agentId: string) {
-    const admin = await prisma.utilisateur.findUnique({ where: { id: adminId } });
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: adminId },
+        include: { structure: true },
+    });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (admin.structure?.type === TypeStructure.PHARMACIE) {
+        throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
+    }
 
     const agent = await prisma.utilisateur.findUnique({ where: { id: agentId } });
     if (!agent || agent.idStructure !== admin.idStructure) {

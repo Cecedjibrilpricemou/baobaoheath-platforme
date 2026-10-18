@@ -7,11 +7,18 @@
       <h1 class="bb-page-head__title">{{ 'PHARMACIEN.STOCKS.TITLE' | translate }}</h1>
       <p class="bb-page-head__sub">{{ 'PHARMACIEN.STOCKS.SUBTITLE' | translate }}</p>
     </div>
-    <div class="bb-page-head__actions">
-      <button class="bb-ph-stocks__add-btn" (click)="showForm.set(true)">
-        <i class="pi pi-plus"></i> {{ 'PHARMACIEN.STOCKS.REAPPRO_BTN' | translate }}
-      </button>
-    </div>
+    @if (estTitulaire()) {
+      <div class="bb-page-head__actions">
+        <button class="bb-ph-stocks__add-btn" type="button"
+                (click)="showCatalogueLocal.set(!showCatalogueLocal())">
+          <i class="pi pi-tags"></i>
+          {{ 'PHARMACIEN.STOCKS.GERER_PRODUITS' | translate }}
+        </button>
+        <button class="bb-ph-stocks__add-btn" (click)="showForm.set(true)">
+          <i class="pi pi-plus"></i> {{ 'PHARMACIEN.STOCKS.REAPPRO_BTN' | translate }}
+        </button>
+      </div>
+    }
   </header>
 
   <app-export-liste
@@ -34,8 +41,86 @@
     </div>
   }
 
+  @if (estTitulaire() && showCatalogueLocal()) {
+    <section class="bb-ph-stocks__form">
+      <div class="bb-ph-stocks__form-actions">
+        <h3><i class="pi pi-tags" aria-hidden="true"></i> {{ 'PHARMACIEN.STOCKS.CATALOGUE_LOCAL' | translate }}</h3>
+        @if (!showProduitForm()) {
+          <button class="bb-ph-stocks__save-btn" type="button" (click)="ouvrirCreationProduit()">
+            <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.STOCKS.NOUVEAU_PRODUIT' | translate }}
+          </button>
+        }
+      </div>
+      <p class="bb-ph-stocks__catalogue-aide">{{ 'PHARMACIEN.STOCKS.CATALOGUE_LOCAL_AIDE' | translate }}</p>
+
+      @if (showProduitForm()) {
+        <div class="bb-ph-stocks__form-grid">
+          <div class="bb-ph-stocks__field bb-ph-stocks__field--full">
+            <label for="produit-libelle">{{ 'PHARMACIEN.STOCKS.PRODUIT_NOM' | translate }}</label>
+            <input id="produit-libelle" type="text" maxlength="160"
+                   [(ngModel)]="formProduit.libelle" />
+          </div>
+          <div class="bb-ph-stocks__field">
+            <label for="produit-categorie">{{ 'PHARMACIEN.STOCKS.PRODUIT_CATEGORIE' | translate }}</label>
+            <select id="produit-categorie" [(ngModel)]="formProduit.categorie">
+              @for (categorie of categoriesLocales; track categorie) {
+                <option [value]="categorie">{{ ('CATALOGUE.CATEGORIE.' + categorie) | translate }}</option>
+              }
+            </select>
+          </div>
+          <div class="bb-ph-stocks__field">
+            <label for="produit-prix">{{ 'PHARMACIEN.STOCKS.PRODUIT_PRIX_FIXE' | translate }}</label>
+            <input id="produit-prix" type="number" min="1" step="1"
+                   [(ngModel)]="formProduit.prixUnitaireGnf" />
+          </div>
+          <div class="bb-ph-stocks__field">
+            <label for="produit-seuil">{{ 'PHARMACIEN.STOCKS.PRODUIT_SEUIL_ALERTE' | translate }}</label>
+            <input id="produit-seuil" type="number" min="0" step="1"
+                   [(ngModel)]="formProduit.seuilAlerte" />
+          </div>
+          <div class="bb-ph-stocks__field">
+            <label for="produit-unite">{{ 'PHARMACIEN.STOCKS.PRODUIT_UNITE' | translate }}</label>
+            <input id="produit-unite" type="text" maxlength="40"
+                   [(ngModel)]="formProduit.unite" />
+          </div>
+        </div>
+        <div class="bb-ph-stocks__form-actions">
+          <button class="bb-ph-stocks__cancel-btn" type="button" (click)="annulerEditionProduit()">
+            {{ 'COMMON.CANCEL' | translate }}
+          </button>
+          <button class="bb-ph-stocks__save-btn" type="button" [disabled]="isSaving()" (click)="enregistrerProduit()">
+            {{ (isSaving() ? 'PHARMACIEN.STOCKS.SAVING' : 'COMMON.SAVE') | translate }}
+          </button>
+        </div>
+      }
+
+      @if (produitsLocaux().length === 0) {
+        <p class="bb-ph-stocks__catalogue-vide">{{ 'PHARMACIEN.STOCKS.AUCUN_PRODUIT_LOCAL' | translate }}</p>
+      } @else {
+        <div class="bb-ph-stocks__produits-locaux">
+          @for (produit of produitsLocaux(); track produit.id) {
+            <div class="bb-ph-stocks__produit-local">
+              <div>
+                <strong>{{ produit.libelle }}</strong>
+                <span>{{ produit.categorie | categorieProduit }} · {{ formatMontant(produit.prixUnitaireGnf) }}</span>
+              </div>
+              <div class="bb-ph-stocks__produit-actions">
+                <button type="button" [disabled]="isSaving()" (click)="ouvrirEditionProduit(produit)">
+                  {{ 'COMMON.EDIT' | translate }}
+                </button>
+                <button type="button" [disabled]="isSaving()" (click)="desactiverProduit(produit)">
+                  {{ 'PHARMACIEN.STOCKS.DESACTIVER_PRODUIT' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
   <!-- Formulaire réapprovisionnement -->
-  @if (showForm()) {
+  @if (estTitulaire() && showForm()) {
     <div class="bb-ph-stocks__form">
       <h3><i class="pi pi-cart-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.STOCKS.FORM_TITLE' | translate }}</h3>
       <div class="bb-ph-stocks__form-grid">
@@ -71,18 +156,18 @@
             <input matInput id="reappro-date" type="date" [(ngModel)]="formReappro.datePeremption" />
           </mat-form-field>
         </div>
-        <div class="bb-ph-stocks__field">
-          <label for="reappro-marge">{{ 'PHARMACIEN.STOCKS.FIELD_MARGIN' | translate }}</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-  <input matInput type="number"
-    id="reappro-marge"
-    [min]="0"
-    step="1"
-    [(ngModel)]="formReappro.margeGnf"
-    [placeholder]="'PHARMACIEN.STOCKS.FIELD_MARGIN_PLACEHOLDER' | translate"
-  />
-</mat-form-field>
-        </div>
+        @if (estProduitLocal(formReappro.idMedicament)) {
+          <p class="bb-ph-stocks__catalogue-aide">{{ 'PHARMACIEN.STOCKS.PRIX_LOCAL_FIXE' | translate }}</p>
+        } @else {
+          <div class="bb-ph-stocks__field">
+            <label for="reappro-marge">{{ 'PHARMACIEN.STOCKS.FIELD_MARGIN' | translate }}</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput type="number" id="reappro-marge" [min]="0" step="1"
+                     [(ngModel)]="formReappro.margeGnf"
+                     [placeholder]="'PHARMACIEN.STOCKS.FIELD_MARGIN_PLACEHOLDER' | translate" />
+            </mat-form-field>
+          </div>
+        }
       </div>
       <div class="bb-ph-stocks__form-actions">
         <button class="bb-ph-stocks__cancel-btn" (click)="showForm.set(false); errorMsg.set('')">{{ 'COMMON.CANCEL' | translate }}</button>
@@ -132,7 +217,7 @@
       <i class="pi pi-inbox"></i>
       <p>{{ 'PHARMACIEN.STOCKS.EMPTY_TITLE' | translate }}</p>
       <span>{{ 'PHARMACIEN.STOCKS.EMPTY_SUB' | translate }}</span>
-      @if (!searchQuery() && !showForm()) {
+      @if (estTitulaire() && !searchQuery() && !showForm()) {
       <button type="button" class="bb-ph-stocks__add-btn bb-ph-stocks__empty-action" (click)="showForm.set(true)">
         <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.STOCKS.EMPTY_ACTION' | translate }}
       </button>

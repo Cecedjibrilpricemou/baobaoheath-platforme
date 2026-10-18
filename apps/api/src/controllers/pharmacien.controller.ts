@@ -66,6 +66,52 @@ export async function getAgentsController(req: AuthRequest, res: Response): Prom
     res.json({ success: true, data });
 }
 
+export async function getJournalConnexionsController(req: AuthRequest, res: Response): Promise<void> {
+  const page = Number(req.query['page'] ?? 1);
+  const limit = Number(req.query['limit'] ?? 25);
+  const data = await pharmacienService.getJournalConnexions(
+    req.user!.userId,
+    Number.isFinite(page) ? page : 1,
+    Number.isFinite(limit) ? limit : 25,
+  );
+  res.json({ success: true, data });
+}
+
+export async function mettreAJourEtatAgentController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.mettreAJourEtatAgent(
+    req.user!.userId,
+    String(req.params['id']),
+    req.body.estActif,
+  );
+  res.json({ success: true, data });
+}
+
+export async function changerRoleAgentController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.changerRoleAgent(
+    req.user!.userId,
+    String(req.params['id']),
+    req.body.roleOfficine,
+  );
+  res.json({ success: true, data });
+}
+
+export async function definirPermissionTemporaireController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.definirPermissionTemporaire(
+    req.user!.userId,
+    String(req.params['id']),
+    req.body,
+  );
+  res.json({ success: true, data });
+}
+
+export async function revoquerPermissionTemporaireController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.revoquerPermissionTemporaire(
+    req.user!.userId,
+    String(req.params['id']),
+  );
+  res.json({ success: true, data });
+}
+
 export async function creerAgentController(req: AuthRequest, res: Response): Promise<void> {
   const data = await pharmacienService.creerAgentPharmacie(req.user!.userId, req.body);
     res.status(201).json({ success: true, data });
@@ -76,10 +122,29 @@ export async function reapprovisionnerStockController(req: AuthRequest, res: Res
     res.json({ success: true, data, message: 'Stock mis a jour avec succes' });
 }
 
-export async function getMedicamentsController(_req: AuthRequest, res: Response): Promise<void> {
+export async function getMedicamentsController(req: AuthRequest, res: Response): Promise<void> {
   // Le type est annonce ici : c'est ce qui a manque jusqu'au 2026-09-30, ou le
   // front declarait recevoir des lignes de stock et lisait `m.medicament`,
   // obtenant `undefined` sans qu'aucune erreur n'apparaisse.
-  const data: MedicamentTarifeView[] = await pharmacienService.getMedicaments();
+  const data: MedicamentTarifeView[] = await pharmacienService.getMedicaments(req.user!.userId);
   res.json({ success: true, data });
+}
+
+export async function creerProduitOfficineController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.creerProduitOfficine(req.user!.userId, req.body);
+  res.status(201).json({ success: true, data });
+}
+
+export async function modifierProduitOfficineController(req: AuthRequest, res: Response): Promise<void> {
+  const data = await pharmacienService.modifierProduitOfficine(
+    req.user!.userId,
+    String(req.params['id']),
+    req.body,
+  );
+  res.json({ success: true, data });
+}
+
+export async function desactiverProduitOfficineController(req: AuthRequest, res: Response): Promise<void> {
+  await pharmacienService.desactiverProduitOfficine(req.user!.userId, String(req.params['id']));
+  res.json({ success: true, message: 'Produit desactive' });
 }

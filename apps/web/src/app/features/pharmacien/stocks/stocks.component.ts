@@ -11,7 +11,14 @@ import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@baobaoheath/shared-types';
+import { AuthService } from '../../../core/services/auth.service';
+import type {
+  CategorieProduit,
+  CreateProduitOfficineDto,
+  HorodatageApi,
+  MedicamentTarifeView,
+  StockPharmacieView,
+} from '@baobaoheath/shared-types';
 
 @Component({
   selector: 'app-pharmacien-stocks',
@@ -24,6 +31,7 @@ import type { HorodatageApi, MedicamentTarifeView, StockPharmacieView } from '@b
 })
 export class PharmacienStocksComponent implements OnInit {
   private pharmacienService = inject(PharmacienService);
+  private authService = inject(AuthService);
   private i18n = inject(I18nService);
   protected Math = Math;
 
@@ -36,8 +44,24 @@ export class PharmacienStocksComponent implements OnInit {
   stocksCritiques  = signal(0);
   stocksNormaux    = signal(0);
   showForm         = signal(false);
+  showCatalogueLocal = signal(false);
+  showProduitForm = signal(false);
+  produitEnEdition = signal<string | null>(null);
   successMsg       = signal('');
   errorMsg         = signal('');
+  readonly estTitulaire = computed(() => this.authService.currentUser()?.roleOfficine === 'TITULAIRE');
+  readonly produitsLocaux = computed(() => this.medicaments().filter((m) => m.estPropreOfficine));
+  readonly categoriesLocales: Exclude<CategorieProduit, 'MEDICAMENT'>[] = [
+    'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE', 'HYGIENE',
+    'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',
+  ];
+  formProduit = {
+    libelle: '',
+    categorie: 'PARAPHARMACIE' as Exclude<CategorieProduit, 'MEDICAMENT'>,
+    prixUnitaireGnf: null as number | null,
+    seuilAlerte: 10,
+    unite: 'unite',
+  };
 
   // Formulaire réapprovisionnement
   formReappro = {
@@ -138,6 +162,98 @@ export class PharmacienStocksComponent implements OnInit {
         this.errorMsg.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.STOCKS.ERR_REAPPRO'));
       }
     });
+  }
+
+  ouvrirCreationProduit(): void {
+    this.produitEnEdition.set(null);
+    this.formProduit = {
+      libelle: '', categorie: 'PARAPHARMACIE', prixUnitaireGnf: null, seuilAlerte: 10, unite: 'unite',
+    };
+    this.showProduitForm.set(true);
+    this.showCatalogueLocal.set(true);
+  }
+
+  ouvrirEditionProduit(produit: MedicamentTarifeView): void {
+    if (!produit.estPropreOfficine) return;
+    this.produitEnEdition.set(produit.id);
+    const stock = this.stocks().find((item) => item.medicament.id === produit.id);
+    this.formProduit = {
+      libelle: produit.libelle,
+      categorie: produit.categorie as Exclude<CategorieProduit, 'MEDICAMENT'>,
+      prixUnitaireGnf: produit.prixUnitaireGnf,
+      seuilAlerte: stock?.seuilAlerte ?? 10,
+      unite: stock?.unite ?? 'unite',
+    };
+    this.showProduitForm.set(true);
+    this.showCatalogueLocal.set(true);
+  }
+
+  annulerEditionProduit(): void {
+    this.showProduitForm.set(false);
+    this.produitEnEdition.set(null);
+  }
+
+  enregistrerProduit(): void {
+    const libelle = this.formProduit.libelle.trim();
+    const prix = this.formProduit.prixUnitaireGnf;
+    if (!libelle || !prix || prix < 1) {
+      this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.PRODUIT_CHAMPS_REQUIS'));
+      return;
+    }
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+    this.successMsg.set('');
+    const dto: CreateProduitOfficineDto = {
+      libelle,
+      categorie: this.formProduit.categorie,
+      prixUnitaireGnf: Math.trunc(prix),
+      seuilAlerte: this.formProduit.seuilAlerte,
+      unite: this.formProduit.unite.trim(),
+    };
+    const id = this.produitEnEdition();
+    const requete = id
+      ? this.pharmacienService.modifierProduitOfficine(id, dto)
+      : this.pharmacienService.creerProduitOfficine(dto);
+    requete.subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.showProduitForm.set(false);
+        this.produitEnEdition.set(null);
+        this.successMsg.set(this.i18n.t(id
+          ? 'PHARMACIEN.STOCKS.PRODUIT_MODIFIE'
+          : 'PHARMACIEN.STOCKS.PRODUIT_CREE'));
+        this.loadMedicaments();
+        this.loadStocks();
+      },
+      error: (err) => {
+        this.isSaving.set(false);
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.STOCKS.PRODUIT_ERR'));
+      },
+    });
+  }
+
+  desactiverProduit(produit: MedicamentTarifeView): void {
+    if (!produit.estPropreOfficine || !window.confirm(
+      this.i18n.t('PHARMACIEN.STOCKS.CONFIRMER_DESACTIVATION', { produit: produit.libelle }),
+    )) return;
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+    this.pharmacienService.desactiverProduitOfficine(produit.id).subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.successMsg.set(this.i18n.t('PHARMACIEN.STOCKS.PRODUIT_DESACTIVE'));
+        this.loadMedicaments();
+        this.loadStocks();
+      },
+      error: (err) => {
+        this.isSaving.set(false);
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.STOCKS.PRODUIT_ERR'));
+      },
+    });
+  }
+
+  estProduitLocal(idMedicament: string): boolean {
+    return this.medicaments().some((m) => m.id === idMedicament && m.estPropreOfficine);
   }
 
   /**

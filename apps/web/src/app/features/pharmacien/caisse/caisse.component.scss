@@ -228,6 +228,27 @@
     &:hover { color: var(--bb-danger); border-color: var(--bb-danger-border); background: var(--bb-danger-bg); }
   }
 
+  &__annulation-voile {
+    position: fixed; inset: 0; z-index: 1000;
+    display: grid; place-items: center; padding: 20px;
+    background: rgb(0 0 0 / 48%);
+  }
+
+  &__annulation {
+    width: min(100%, 480px); max-height: calc(100vh - 40px); overflow: auto;
+    padding: 24px; color: var(--bb-text-primary);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); box-shadow: var(--bb-shadow);
+
+    h2 { margin: 0 0 8px; font-family: var(--bb-font-display); font-size: 20px; }
+    p { margin: 0 0 18px; color: var(--bb-text-secondary); font-size: 13.5px; }
+    .bb-caisse__label { margin-top: 14px; }
+  }
+
+  &__annulation-actions {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+  }
+
   &__vente-ligne {
     display: grid; grid-template-columns: 2fr auto auto auto;
     gap: 12px; align-items: center;
