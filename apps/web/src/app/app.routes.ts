@@ -129,6 +129,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/public/a-propos/a-propos.component').then(m => m.AProposComponent)
   },
+  {
+    path: 'faq',
+    loadComponent: () =>
+      import('./features/public/faq/faq.component').then(m => m.FaqComponent)
+  },
 
   // ── Unauthorized ────────────────────────────────────────────────────
   {

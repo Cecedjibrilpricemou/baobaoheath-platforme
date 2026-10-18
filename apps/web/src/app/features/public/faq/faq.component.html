@@ -1,0 +1,53 @@
+<app-public-shell>
+  <header class="pub-hero">
+    <span class="pub-tag">{{ 'PUBLIC.FAQ.TAG' | translate }}</span>
+    <h1 class="pub-hero__title">{{ 'PUBLIC.FAQ.TITLE_A' | translate }} <span class="pub-hero__accent">{{ 'PUBLIC.FAQ.TITLE_B' | translate }}</span></h1>
+    <p class="pub-hero__lead">{{ 'PUBLIC.FAQ.LEAD' | translate: params() }}</p>
+  </header>
+
+  <section class="pub-section pub-faq" aria-label="FAQ">
+    @for (groupe of groupes; track groupe.cle) {
+      <section class="pub-faq__group">
+        <h2 class="pub-faq__group-title">{{ 'PUBLIC.FAQ.' + groupe.cle + '.TITLE' | translate }}</h2>
+        <div class="pub-faq__items">
+          @for (question of groupe.questions; track question) {
+            <details class="pub-faq__item">
+              <summary>
+                <span>{{ 'PUBLIC.FAQ.' + groupe.cle + '.' + question + '.QUESTION' | translate }}</span>
+                <span class="pub-faq__toggle" aria-hidden="true"><i class="pi pi-plus"></i></span>
+              </summary>
+              <div class="pub-faq__answer">
+                <p>{{ 'PUBLIC.FAQ.' + groupe.cle + '.' + question + '.ANSWER' | translate: params() }}</p>
+              </div>
+            </details>
+          }
+        </div>
+      </section>
+    }
+  </section>
+
+  <section class="pub-section">
+    <div class="pub-panel pub-faq__contact">
+      <div class="pub-panel__text">
+        <h2 class="pub-panel__title">{{ 'PUBLIC.FAQ.CONTACT_TITLE' | translate }}</h2>
+        <p class="pub-panel__sub">{{ 'PUBLIC.FAQ.CONTACT_TEXT' | translate }}</p>
+      </div>
+      <div class="pub-panel__actions">
+        @if (plateforme.emailContact()) {
+          <a [href]="'mailto:' + plateforme.emailContact()" class="pub-btn pub-btn--white">
+            <i class="pi pi-envelope" aria-hidden="true"></i>
+            {{ 'PUBLIC.FAQ.CONTACT_BUTTON' | translate }}
+          </a>
+        }
+        <a routerLink="/professionnels" class="pub-btn pub-btn--ghost-white">
+          {{ 'PUBLIC.FAQ.PROS_BUTTON' | translate }}
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
+    <nav class="pub-faq__resources" [attr.aria-label]="'PUBLIC.FAQ.RESOURCES_LABEL' | translate">
+      <a routerLink="/securite">{{ 'PUBLIC.FAQ.SECURITY_LINK' | translate }}</a>
+      <a routerLink="/confidentialite">{{ 'PUBLIC.FAQ.PRIVACY_LINK' | translate }}</a>
+    </nav>
+  </section>
+</app-public-shell>

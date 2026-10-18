@@ -508,6 +508,92 @@ app-public-nav { display: contents; }
 }
 
 // ── Animations ───────────────────────────────────────────────────────
+// FAQ publique : accordéons natifs, accessibles au clavier et sans script.
+.pub-faq {
+  max-width: 920px;
+
+  &__group {
+    @include pub-apparition(0%, 50%);
+    & + & { margin-top: 42px; }
+  }
+  &__group-title {
+    margin: 0 0 16px;
+    font-family: var(--bb-font-display);
+    font-size: clamp(20px, 2vw, 24px);
+    font-weight: 800;
+    letter-spacing: -.025em;
+    color: var(--bb-text-primary);
+  }
+  &__items { display: grid; gap: 10px; }
+  &__item {
+    overflow: hidden;
+    border: 1px solid var(--pub-glass-border);
+    border-radius: 18px;
+    background: var(--bb-surface-card);
+    box-shadow: 0 1px 0 var(--pub-hairline);
+    transition: border-color .25s var(--bb-ease), background .25s var(--bb-ease);
+    &[open] { border-color: color-mix(in srgb, var(--pub-accent) 35%, var(--pub-glass-border)); }
+
+    summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+      padding: 18px 22px;
+      cursor: pointer;
+      list-style: none;
+      font-family: var(--bb-font-display);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      color: var(--bb-text-primary);
+      &::-webkit-details-marker { display: none; }
+      &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); }
+    }
+  }
+  &__toggle {
+    flex: 0 0 30px;
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--pub-accent-soft);
+    color: var(--pub-accent);
+    font-size: 13px;
+    transition: transform .25s var(--bb-ease);
+    [open] & { transform: rotate(45deg); }
+  }
+  &__answer {
+    padding: 0 22px 20px;
+    p {
+      max-width: 72ch;
+      margin: 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--pub-hairline);
+      color: var(--bb-text-secondary);
+      font-size: 15px;
+      line-height: 1.75;
+      text-wrap: pretty;
+    }
+  }
+  &__contact { margin-bottom: 22px; }
+  &__resources {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 24px;
+    a {
+      color: var(--bb-text-secondary);
+      font-size: 13.5px;
+      text-decoration: none;
+      &:hover { color: var(--pub-accent); }
+      &:focus-visible { outline: none; box-shadow: var(--bb-focus-ring); border-radius: 4px; }
+    }
+  }
+
+  @media (max-width: 600px) {
+    &__item summary { min-height: 62px; padding: 16px; font-size: 14px; }
+    &__answer { padding: 0 16px 18px; }
+  }
+}
+
 @keyframes bb-pub-reveal {
   from { opacity: 0; transform: translateY(26px); }
   to   { opacity: 1; transform: none; }

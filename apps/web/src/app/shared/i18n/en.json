@@ -2849,11 +2849,84 @@
     "LINK_PROS": "Healthcare professionals",
     "LINK_SECURITY": "Security & data",
     "LINK_ABOUT": "About",
+    "LINK_FAQ": "FAQ",
     "CONTACT_US": "Write to us",
     "CONTACT_FALLBACK": "the contact address shown on the platform",
     "TOC": "Contents",
     "DRAFT_TITLE": "Draft version.",
     "DRAFT_TEXT": "This document is under legal review and may still change before its final version.",
+    "FAQ": {
+      "TAG": "Help centre",
+      "TITLE_A": "Your questions,",
+      "TITLE_B": "answered",
+      "LEAD": "Find clear answers about accounts, appointments, care follow-up and how your data is protected.",
+      "PLATFORM": {
+        "TITLE": "About the platform",
+        "Q1": {
+          "QUESTION": "What is Baobao Health for?",
+          "ANSWER": "Baobao Health supports care follow-up and helps patients and the professionals caring for them share relevant information."
+        },
+        "Q2": {
+          "QUESTION": "Who can use the platform?",
+          "ANSWER": "Patients and healthcare professionals can use spaces tailored to their roles, including doctors, reception teams, laboratories and pharmacies."
+        }
+      },
+      "ACCOUNT": {
+        "TITLE": "Account and access",
+        "Q1": {
+          "QUESTION": "How do I create an account?",
+          "ANSWER": "Choose “Create an account” and follow the steps shown. Registration uses an email address and a one-time verification code."
+        },
+        "Q2": {
+          "QUESTION": "I forgot my password. What should I do?",
+          "ANSWER": "On the sign-in page, choose “Forgot password” and follow the reset instructions sent to your email address."
+        }
+      },
+      "CARE": {
+        "TITLE": "Appointments and care follow-up",
+        "Q1": {
+          "QUESTION": "How do I request an appointment?",
+          "ANSWER": "You can submit a remote appointment request from your patient space. A request is not a confirmation: the doctor sets the time, and you are notified when it is scheduled."
+        },
+        "Q2": {
+          "QUESTION": "Can I have a teleconsultation?",
+          "ANSWER": "Teleconsultation is not currently available on the platform. Appointments and consultations follow the arrangements agreed with your healthcare professional."
+        },
+        "Q3": {
+          "QUESTION": "When will my test results be visible?",
+          "ANSWER": "Results appear in your patient space after they have been validated and approved by the doctor. They are not published automatically when entered by the laboratory."
+        },
+        "Q4": {
+          "QUESTION": "Which documents can I find in my patient space?",
+          "ANSWER": "Depending on the information recorded by your healthcare professionals, your space may show your record, appointments, prescriptions, vaccination record and test results."
+        }
+      },
+      "PROS": {
+        "TITLE": "Healthcare professionals",
+        "Q1": {
+          "QUESTION": "I am a healthcare professional. Where can I learn more?",
+          "ANSWER": "Visit the page for healthcare professionals to learn about the available spaces and how to access the platform."
+        }
+      },
+      "DATA": {
+        "TITLE": "Data and privacy",
+        "Q1": {
+          "QUESTION": "How is my health data protected?",
+          "ANSWER": "Access to information is limited by roles and permissions. The platform uses technical safeguards and keeps a record of access to patient files."
+        },
+        "Q2": {
+          "QUESTION": "Where can I learn how my personal data is handled?",
+          "ANSWER": "Visit Security & data for information about safeguards, and the Privacy Policy to learn how your data is used and managed."
+        }
+      },
+      "CONTACT_TITLE": "Still have a question?",
+      "CONTACT_TEXT": "Send us a message or find information for healthcare professionals.",
+      "CONTACT_BUTTON": "Contact us",
+      "PROS_BUTTON": "For professionals",
+      "SECURITY_LINK": "Security & data",
+      "PRIVACY_LINK": "Privacy",
+      "RESOURCES_LABEL": "Related resources"
+    },
     "PRIVACY": {
       "TITLE": "Privacy policy",
       "LEAD": "How {{nom}} collects, uses and protects your personal and health data.",

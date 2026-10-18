@@ -2849,11 +2849,84 @@
     "LINK_PROS": "Professionnels de santé",
     "LINK_SECURITY": "Sécurité et données",
     "LINK_ABOUT": "À propos",
+    "LINK_FAQ": "FAQ",
     "CONTACT_US": "Nous écrire",
     "CONTACT_FALLBACK": "l'adresse de contact indiquée sur la plateforme",
     "TOC": "Sommaire",
     "DRAFT_TITLE": "Version provisoire.",
     "DRAFT_TEXT": "Ce document est en cours de validation juridique et peut encore évoluer avant sa version définitive.",
+    "FAQ": {
+      "TAG": "Centre d'aide",
+      "TITLE_A": "Vos questions,",
+      "TITLE_B": "nos réponses",
+      "LEAD": "Retrouvez des réponses claires sur les comptes, les rendez-vous, le suivi des soins et la protection de vos données.",
+      "PLATFORM": {
+        "TITLE": "Découvrir la plateforme",
+        "Q1": {
+          "QUESTION": "À quoi sert Baobao Health ?",
+          "ANSWER": "Baobao Health facilite le suivi du parcours de soins et le partage des informations utiles entre le patient et les professionnels qui le prennent en charge."
+        },
+        "Q2": {
+          "QUESTION": "Qui peut utiliser la plateforme ?",
+          "ANSWER": "Les patients et les professionnels de santé peuvent utiliser des espaces adaptés à leur rôle, notamment les médecins, les équipes d'accueil, les laboratoires et les pharmacies."
+        }
+      },
+      "ACCOUNT": {
+        "TITLE": "Compte et accès",
+        "Q1": {
+          "QUESTION": "Comment créer mon compte ?",
+          "ANSWER": "Choisissez « Créer un compte » et suivez les étapes affichées. L'inscription utilise une adresse e-mail et un code de vérification à usage unique."
+        },
+        "Q2": {
+          "QUESTION": "J'ai oublié mon mot de passe, que faire ?",
+          "ANSWER": "Depuis la page de connexion, choisissez « Mot de passe oublié » et suivez les instructions de réinitialisation envoyées à votre adresse e-mail."
+        }
+      },
+      "CARE": {
+        "TITLE": "Rendez-vous et suivi des soins",
+        "Q1": {
+          "QUESTION": "Comment prendre un rendez-vous ?",
+          "ANSWER": "Vous pouvez transmettre une demande de rendez-vous à distance depuis votre espace patient. La demande n'est pas une confirmation : le médecin fixe le créneau et vous êtes informé lorsqu'il est planifié."
+        },
+        "Q2": {
+          "QUESTION": "Puis-je faire une téléconsultation ?",
+          "ANSWER": "La téléconsultation n'est pas actuellement disponible sur la plateforme. Les rendez-vous et consultations nécessitent les modalités convenues avec le professionnel de santé."
+        },
+        "Q3": {
+          "QUESTION": "Quand mes résultats d'analyse seront-ils visibles ?",
+          "ANSWER": "Les résultats apparaissent dans votre espace patient après leur validation et l'accord du médecin. Ils ne sont pas publiés automatiquement dès leur saisie par le laboratoire."
+        },
+        "Q4": {
+          "QUESTION": "Quels documents puis-je retrouver dans mon espace patient ?",
+          "ANSWER": "Selon les informations enregistrées par vos professionnels de santé, votre espace peut présenter votre dossier, vos rendez-vous, vos ordonnances, votre carnet vaccinal et vos résultats."
+        }
+      },
+      "PROS": {
+        "TITLE": "Professionnels de santé",
+        "Q1": {
+          "QUESTION": "Je suis professionnel de santé : comment en savoir plus ?",
+          "ANSWER": "Consultez la page dédiée aux professionnels pour découvrir les espaces disponibles et les modalités d'accès à la plateforme."
+        }
+      },
+      "DATA": {
+        "TITLE": "Données et confidentialité",
+        "Q1": {
+          "QUESTION": "Comment mes données de santé sont-elles protégées ?",
+          "ANSWER": "L'accès aux informations est limité selon les rôles et les autorisations. La plateforme met en œuvre des protections techniques et conserve une trace des accès au dossier."
+        },
+        "Q2": {
+          "QUESTION": "Où consulter les détails sur mes données personnelles ?",
+          "ANSWER": "Consultez la page Sécurité et données pour les mesures de protection, ainsi que la Politique de confidentialité pour connaître l'utilisation et la gestion de vos données."
+        }
+      },
+      "CONTACT_TITLE": "Vous avez encore une question ?",
+      "CONTACT_TEXT": "Écrivez-nous ou découvrez les informations destinées aux professionnels de santé.",
+      "CONTACT_BUTTON": "Nous contacter",
+      "PROS_BUTTON": "Espace professionnels",
+      "SECURITY_LINK": "Sécurité et données",
+      "PRIVACY_LINK": "Confidentialité",
+      "RESOURCES_LABEL": "Ressources complémentaires"
+    },
     "PRIVACY": {
       "TITLE": "Politique de confidentialité",
       "LEAD": "Comment {{nom}} collecte, utilise et protège vos données personnelles et vos données de santé.",
