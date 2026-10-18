@@ -2927,6 +2927,14 @@
       "PRIVACY_LINK": "Confidentialité",
       "RESOURCES_LABEL": "Ressources complémentaires"
     },
+    "NOT_FOUND": {
+      "TAG": "Erreur 404",
+      "TITLE_A": "Cette page",
+      "TITLE_B": "est introuvable",
+      "LEAD": "Le lien a peut-être changé ou l'adresse saisie contient une erreur.",
+      "HOME_BUTTON": "Retour à l'accueil",
+      "FAQ_BUTTON": "Consulter la FAQ"
+    },
     "PRIVACY": {
       "TITLE": "Politique de confidentialité",
       "LEAD": "Comment {{nom}} collecte, utilise et protège vos données personnelles et vos données de santé.",

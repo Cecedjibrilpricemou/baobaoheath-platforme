@@ -143,6 +143,10 @@ export const routes: Routes = [
         .then(m => m.UnauthorizedComponent)
   },
 
-  // ── Wildcard ────────────────────────────────────────────────────────
-  { path: '**', redirectTo: '' }
+  // ── Page introuvable ────────────────────────────────────────────────
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./features/public/not-found/not-found.component').then(m => m.NotFoundComponent)
+  }
 ];

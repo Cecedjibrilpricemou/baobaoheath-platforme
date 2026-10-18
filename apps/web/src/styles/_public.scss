@@ -594,6 +594,23 @@ app-public-nav { display: contents; }
   }
 }
 
+.pub-not-found {
+  min-height: min(64vh, 620px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 28px;
+  }
+}
+
 @keyframes bb-pub-reveal {
   from { opacity: 0; transform: translateY(26px); }
   to   { opacity: 1; transform: none; }

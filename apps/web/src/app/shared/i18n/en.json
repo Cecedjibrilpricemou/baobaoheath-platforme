@@ -2927,6 +2927,14 @@
       "PRIVACY_LINK": "Privacy",
       "RESOURCES_LABEL": "Related resources"
     },
+    "NOT_FOUND": {
+      "TAG": "Error 404",
+      "TITLE_A": "This page",
+      "TITLE_B": "can't be found",
+      "LEAD": "The link may have changed, or there may be a typo in the address.",
+      "HOME_BUTTON": "Back to home",
+      "FAQ_BUTTON": "Visit the FAQ"
+    },
     "PRIVACY": {
       "TITLE": "Privacy policy",
       "LEAD": "How {{nom}} collects, uses and protects your personal and health data.",

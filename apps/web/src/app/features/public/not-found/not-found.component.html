@@ -1,0 +1,17 @@
+<app-public-shell>
+  <header class="pub-hero pub-not-found">
+    <span class="pub-tag">{{ 'PUBLIC.NOT_FOUND.TAG' | translate }}</span>
+    <h1 class="pub-hero__title">{{ 'PUBLIC.NOT_FOUND.TITLE_A' | translate }} <span class="pub-hero__accent">{{ 'PUBLIC.NOT_FOUND.TITLE_B' | translate }}</span></h1>
+    <p class="pub-hero__lead">{{ 'PUBLIC.NOT_FOUND.LEAD' | translate }}</p>
+    <nav class="pub-not-found__actions" [attr.aria-label]="'COMMON.NAVIGATION' | translate">
+      <a routerLink="/" class="pub-btn pub-btn--primary">
+        <i class="pi pi-home" aria-hidden="true"></i>
+        {{ 'PUBLIC.NOT_FOUND.HOME_BUTTON' | translate }}
+      </a>
+      <a routerLink="/faq" class="pub-btn pub-btn--ghost">
+        <i class="pi pi-question-circle" aria-hidden="true"></i>
+        {{ 'PUBLIC.NOT_FOUND.FAQ_BUTTON' | translate }}
+      </a>
+    </nav>
+  </header>
+</app-public-shell>
