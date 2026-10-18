@@ -116,4 +116,23 @@ test('Pharmacie — catalogue, stock, vente, agents et cloisonnement entre offic
   } finally {
     await autreContexte.close();
   }
+
+  await page.goto('/pharmacien/stocks');
+  await expect(page.locator('.bb-page-head__title')).toBeVisible();
+  await expect(page.locator('.bb-ph-stocks__card-nom', { hasText: libelleProduit })).toBeVisible();
+
+  await page.goto('/pharmacien/caisse');
+  await expect(page.locator('.bb-page-head__title')).toBeVisible();
+  await expect(page.locator('select#c-med-0 option', { hasText: libelleProduit })).toHaveCount(1);
+
+  await page.goto('/pharmacien/agents');
+  await expect(page.locator('.bb-page-head__title')).toBeVisible();
+  await expect(page.locator('.bb-agents__list')).toContainText(emailAgent);
+
+  await page.goto('/pharmacien/connexions');
+  await expect(page.locator('.bb-page-head__title')).toBeVisible();
+  await expect(page.locator('.bb-connexions__table')).toContainText(emailAgent);
+
+  await page.goto('/pharmacien/tableau-de-bord');
+  await expect(page.locator('.bb-page-head__title')).toBeVisible();
 });
