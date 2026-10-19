@@ -26,6 +26,7 @@ jest.mock('../src/config/prisma', () => ({
     stock: { findFirst: jest.fn(), updateMany: jest.fn() },
     lotStock: { findMany: jest.fn(), update: jest.fn() },
     acteDelivrance: { create: jest.fn(), aggregate: jest.fn() },
+    mouvementStock: { create: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -43,6 +44,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     stock: { findFirst: M; updateMany: M };
     lotStock: { findMany: M; update: M };
     acteDelivrance: { create: M; aggregate: M };
+    mouvementStock: { create: M };
     $transaction: M;
   };
 };
@@ -113,7 +115,8 @@ beforeEach(() => {
   prisma.lotStock.findMany.mockResolvedValue([
     { id: 'lot-1', quantite: 1000, datePeremption: new Date('2030-01-01') },
   ]);
-  prisma.lotStock.update.mockResolvedValue({});
+  prisma.lotStock.update.mockResolvedValue({ idStock: 's1' });
+  prisma.mouvementStock.create.mockResolvedValue({});
 
   prisma.acteDelivrance.create.mockImplementation(async (args: { data: Record<string, unknown> }) => {
     actesEcrits.push(args.data as never);

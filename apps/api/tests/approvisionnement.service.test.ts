@@ -20,6 +20,7 @@ jest.mock('../src/config/prisma', () => {
     stock: { findFirst: jest.fn(), upsert: jest.fn() },
     lotStock: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
     approvisionnement: { create: jest.fn(), findMany: jest.fn(), findUniqueOrThrow: jest.fn() },
+    mouvementStock: { create: jest.fn() },
   };
   prisma['$transaction'] = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   return { prisma };
@@ -35,6 +36,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     stock: { findFirst: M; upsert: M };
     lotStock: { findMany: M; create: M; update: M };
     approvisionnement: { create: M; findMany: M; findUniqueOrThrow: M };
+    mouvementStock: { create: M };
     $transaction: M;
   };
 };
@@ -58,6 +60,8 @@ beforeEach(() => {
   prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   prisma.utilisateur.findUnique.mockResolvedValue({ idStructure: 'struct-P' });
   prochainNumero.mockResolvedValue('AP-2026-000001');
+  prisma.lotStock.create.mockResolvedValue({ id: 'lot-new' });
+  prisma.mouvementStock.create.mockResolvedValue({});
 });
 
 describe('enregistrerApprovisionnement', () => {
@@ -97,7 +101,7 @@ describe('enregistrerApprovisionnement', () => {
     prisma.medicament.findMany.mockResolvedValue([{ id: 'm-1' }]);
     prisma.stock.upsert.mockResolvedValue({ id: 'st-1' });
     prisma.approvisionnement.create.mockResolvedValue({ id: 'ap-1' });
-    prisma.lotStock.create.mockResolvedValue({});
+    prisma.lotStock.create.mockResolvedValue({ id: 'lot-1' });
     prisma.approvisionnement.findUniqueOrThrow.mockResolvedValue(approRow);
 
     await enregistrerApprovisionnement(pharmacien, facture);
@@ -111,13 +115,20 @@ describe('enregistrerApprovisionnement', () => {
     const lot = prisma.lotStock.create.mock.calls[0][0].data;
     expect(lot).toMatchObject({ idStock: 'st-1', idApprovisionnement: 'ap-1', quantite: 300, quantiteRecue: 300 });
     expect(lot.datePeremption).toBeInstanceOf(Date);
+    expect(prisma.mouvementStock.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'ENTREE', quantite: 300, reference: 'ap-1',
+        idStructure: 'struct-P', idMedicament: 'm-1', idStock: 'st-1',
+        idLot: 'lot-1', idUtilisateur: 'pharma-1',
+      }),
+    });
   });
 
   it('calcule le montant de la facture depuis ses lignes', async () => {
     prisma.medicament.findMany.mockResolvedValue([{ id: 'm-1' }, { id: 'm-2' }]);
     prisma.stock.upsert.mockResolvedValue({ id: 'st-1' });
     prisma.approvisionnement.create.mockResolvedValue({ id: 'ap-1' });
-    prisma.lotStock.create.mockResolvedValue({});
+    prisma.lotStock.create.mockResolvedValue({ id: 'lot-1' });
     prisma.approvisionnement.findUniqueOrThrow.mockResolvedValue(approRow);
 
     await enregistrerApprovisionnement(pharmacien, {

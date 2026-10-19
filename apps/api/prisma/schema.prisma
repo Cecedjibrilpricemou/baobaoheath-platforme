@@ -370,6 +370,7 @@ model Utilisateur {
   approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
   ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
   sessionsCaisse           SessionCaisse[]
+  mouvementsStock          MouvementStock[]
   ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
   ventesAnnulationAutorisee VenteComptoir[]         @relation("VentesAnnulationAutorisee")
   reglementsAssureurSaisis ReglementAssureur[]      @relation("ReglementsAssureur")
@@ -735,6 +736,7 @@ model StructureSante {
   reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
   ventesComptoir       VenteComptoir[]
   sessionsCaisse       SessionCaisse[]
+  mouvementsStock      MouvementStock[]
   medicamentsPersonnalises Medicament[]
   assureur             Assureur?
   reglementsRecus      ReglementAssureur[]
@@ -1117,6 +1119,7 @@ model Medicament {
   lignesCommande   LigneCommande[]
   actesDelivrance  ActeDelivrance[] @relation("ActeDelivranceMedicament")
   stocks           Stock[]
+  mouvementsStock  MouvementStock[]
   lignesVente      LigneVente[]
 
   @@index([codeAtc])
@@ -1492,6 +1495,7 @@ model Stock {
   /// peremptions differentes. Le modele ecrasait l'une des deux dates, et le
   /// stock affichait une peremption fausse.
   lots LotStock[]
+  mouvementsStock MouvementStock[]
 
   @@unique([idAsc, idMedicament])
   @@unique([idStructure, idMedicament])
@@ -1554,6 +1558,7 @@ model LotStock {
   /// de facture d'origine, et inventer un fournisseur serait mentir.
   idApprovisionnement String?
   approvisionnement   Approvisionnement? @relation(fields: [idApprovisionnement], references: [id])
+  mouvementsStock     MouvementStock[]
 
   /// Sortie au plus proche de la peremption : cet index sert la regle.
   @@index([idStock, datePeremption])
@@ -2639,20 +2644,28 @@ enum MouvementType {
 }
 
 model MouvementStock {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   type         MouvementType
   quantite     Int
-  reference    String?  // id de la ressource source (vente, approvisionnement, ajustement)
+  reference    String?
   motif        String?
   creeLe       DateTime @default(now())
 
   idStructure  String
+  structure    StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
   idMedicament String?
+  medicament   Medicament?    @relation(fields: [idMedicament], references: [id], onDelete: Restrict)
   idStock      String?
+  stock        Stock?         @relation(fields: [idStock], references: [id], onDelete: SetNull)
   idLot        String?
+  lot          LotStock?      @relation(fields: [idLot], references: [id], onDelete: SetNull)
   idUtilisateur String
+  utilisateur  Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   @@index([idStructure, creeLe(sort: Desc)])
-  @@index([idMedicament])
+  @@index([idStructure, idMedicament, creeLe(sort: Desc)])
+  @@index([idStructure, idUtilisateur, creeLe(sort: Desc)])
+  @@index([idLot, creeLe(sort: Desc)])
+  @@index([reference])
   @@map("mouvements_stock")
 }

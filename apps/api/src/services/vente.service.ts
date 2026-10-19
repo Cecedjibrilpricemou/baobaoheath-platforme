@@ -22,6 +22,7 @@ import { consommerLots, peremptionLaPlusProche } from './approvisionnement.servi
 import { chiffrer, type LigneAChiffrer } from './assurance.service';
 import { prochainNumero } from './numero.service';
 import { motifDeRefus, renouvellementsRestants } from './ordonnance.service';
+import { enregistrerMouvementStock } from './mouvement-stock.service';
 import { getValeursParametres } from './parametres.service';
 import { verifyPassword } from '../utils/password.utils';
 import type {
@@ -398,6 +399,19 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
       // chez qui en cas de rappel.
       const lots = await consommerLots(tx, l.idStock, l.quantite);
       await tx.stock.update({ where: { id: l.idStock }, data: { quantite: { decrement: l.quantite } } });
+      for (const lot of lots) {
+        await enregistrerMouvementStock(tx, {
+          type: 'SORTIE',
+          quantite: -lot.quantite,
+          reference: vente.id,
+          motif: `Vente ${vente.numero}`,
+          idStructure,
+          idMedicament: l.idMedicament,
+          idStock: l.idStock,
+          idLot: lot.idLot,
+          idUtilisateur: user.userId,
+        });
+      }
       const couverture = couvertureParProduit.get(l.idMedicament);
       await tx.ligneVente.create({
         data: {
@@ -535,9 +549,20 @@ async function rendreLesLots(
     for (const ligne of vente.lignes) {
       const lots = (ligne.lotsConsommes ?? []) as unknown as LotConsomme[];
       for (const lot of lots) {
-        await tx.lotStock.update({
+        const lotRemis = await tx.lotStock.update({
           where: { id: lot.idLot },
           data: { quantite: { increment: lot.quantite } },
+        });
+        await enregistrerMouvementStock(tx, {
+          type: 'CORRECTION',
+          quantite: lot.quantite,
+          reference: idVente,
+          motif: `Annulation vente ${idVente}: ${motif}`,
+          idStructure: vente.idStructure,
+          idMedicament: ligne.idMedicament,
+          idStock: lotRemis.idStock,
+          idLot: lot.idLot,
+          idUtilisateur: idAuteur,
         });
       }
       // Le stock total suit la somme de ses lots.

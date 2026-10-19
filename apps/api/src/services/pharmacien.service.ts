@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { prisma } from '../config/prisma';
 import { peremptionLaPlusProche } from './approvisionnement.service';
 import { consommerLots } from './approvisionnement.service';
+import { enregistrerMouvementStock } from './mouvement-stock.service';
 import { Role, StatutOrdonnance, TypeActeDelivrance, TypeStructure } from '../config/generated/client/client';
 import { notifierSansBloquer } from './notification.service';
 import { hashPassword } from '../utils/password.utils';
@@ -476,7 +477,7 @@ async function ecrireActe(args: {
 
     // Sortie au plus proche de la peremption, et jamais un lot perime
     // (addendum du 2026-09-28, point 1.3).
-    await consommerLots(tx, stock.id, args.quantite);
+    const lotsConsommes = await consommerLots(tx, stock.id, args.quantite);
 
     const cree = await tx.acteDelivrance.create({
       data: {
@@ -492,6 +493,19 @@ async function ecrireActe(args: {
       },
       include: { medicamentDelivre: true },
     });
+    for (const lot of lotsConsommes) {
+      await enregistrerMouvementStock(tx, {
+        type: 'SORTIE',
+        quantite: -lot.quantite,
+        reference: cree.id,
+        motif: `Delivrance ordonnance ${args.ligne.idOrdonnance}`,
+        idStructure: args.pharmacien.idStructure!,
+        idMedicament: args.idMedicamentDelivre,
+        idStock: stock.id,
+        idLot: lot.idLot,
+        idUtilisateur: args.pharmacienId,
+      });
+    }
 
     // L'etat de la ligne se deduit de la somme de ses actes, jamais d'une
     // decision prise au vol.
@@ -793,13 +807,23 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
         },
         include: { medicament: true },
       });
-      await tx.lotStock.create({
+      const lot = await tx.lotStock.create({
         data: {
           idStock: stockExistant.id,
           quantite: dto.quantiteAjoutee,
           quantiteRecue: dto.quantiteAjoutee,
           datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
         },
+      });
+      await enregistrerMouvementStock(tx, {
+        type: 'ENTREE',
+        quantite: dto.quantiteAjoutee,
+        motif: 'Reapprovisionnement rapide',
+        idStructure: pharmacien.idStructure!,
+        idMedicament: dto.idMedicament,
+        idStock: stockExistant.id,
+        idLot: lot.id,
+        idUtilisateur: pharmacienId,
       });
       return maj;
     });
@@ -822,13 +846,23 @@ export async function reapprovisionnerStock(pharmacienId: string, dto: {
       },
       include: { medicament: true },
     });
-    await tx.lotStock.create({
+    const lot = await tx.lotStock.create({
       data: {
         idStock: cree.id,
         quantite: dto.quantiteAjoutee,
         quantiteRecue: dto.quantiteAjoutee,
         datePeremption: dto.datePeremption ? new Date(dto.datePeremption) : null,
       },
+    });
+    await enregistrerMouvementStock(tx, {
+      type: 'ENTREE',
+      quantite: dto.quantiteAjoutee,
+      motif: 'Reapprovisionnement rapide',
+      idStructure: pharmacien.idStructure!,
+      idMedicament: dto.idMedicament,
+      idStock: cree.id,
+      idLot: lot.id,
+      idUtilisateur: pharmacienId,
     });
     return cree;
   });

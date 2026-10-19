@@ -27,6 +27,7 @@ jest.mock('../src/config/prisma', () => ({
     lotStock: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     // P6-b : l'acte de delivrance, nominatif, qui porte la quantite remise.
     acteDelivrance: { create: jest.fn(), aggregate: jest.fn() },
+    mouvementStock: { create: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -43,6 +44,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     stock: { findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     lotStock: { findMany: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
     acteDelivrance: { create: jest.Mock; aggregate: jest.Mock };
+    mouvementStock: { create: jest.Mock };
     $transaction: jest.Mock;
   };
 };
@@ -112,8 +114,9 @@ const actesEcrits: number[] = [];
 
 beforeEach(() => {
   prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(prisma));
-  prisma.lotStock.create.mockResolvedValue({});
-  prisma.lotStock.update.mockResolvedValue({});
+  prisma.lotStock.create.mockResolvedValue({ id: 'lot-new' });
+  prisma.lotStock.update.mockResolvedValue({ idStock: 's1' });
+  prisma.mouvementStock.create.mockResolvedValue({});
   // **L'agregat suit les actes crees.** Dans une transaction reelle, la somme
   // lue apres l'insertion compte l'acte qu'on vient d'ecrire ; une doublure
   // qui renverrait toujours zero ferait croire qu'une ligne n'a jamais rien
@@ -243,6 +246,7 @@ describe('delivrerLigneOrdonnance', () => {
         create: prisma.acteDelivrance.create,
         aggregate: prisma.acteDelivrance.aggregate,
       },
+      mouvementStock: { create: prisma.mouvementStock.create },
     }));
     // Un lot disponible, largement suffisant, pour que la sortie aboutisse.
     prisma.lotStock.findMany.mockResolvedValue([
@@ -377,6 +381,13 @@ describe('delivrerLigneOrdonnance', () => {
       expect.objectContaining({ data: { statut: 'PARTIELLEMENT_SERVIE' } }));
     expect(res.quantiteDelivree).toBe(6);
     expect(res.montantGnf).toBe(6_000);
+    expect(prisma.mouvementStock.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'SORTIE', quantite: -6, reference: 'acte-1',
+        idStructure: 'pharma-1', idMedicament: 'm-1', idStock: 's1',
+        idLot: 'lot-1', idUtilisateur: 'ph-u',
+      }),
+    });
   });
 
   it('passe le document a SERVIE quand sa derniere ligne sort', async () => {
@@ -552,6 +563,12 @@ describe('reapprovisionnerStock', () => {
       where: { id: 's1' },
       data: { quantite: { increment: 20 } },
     }));
+    expect(prisma.mouvementStock.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'ENTREE', quantite: 20, idStructure: 'pharma-1',
+        idMedicament: 'm-1', idStock: 's1', idLot: 'lot-new', idUtilisateur: 'ph-u',
+      }),
+    });
     expect(prisma.stock.create).not.toHaveBeenCalled();
   });
 

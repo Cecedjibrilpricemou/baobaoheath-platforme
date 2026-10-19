@@ -11,6 +11,7 @@ import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { prochainNumero } from './numero.service';
+import { enregistrerMouvementStock } from './mouvement-stock.service';
 import type {
   ApprovisionnementView,
   CreerApprovisionnementDto,
@@ -149,7 +150,7 @@ export async function enregistrerApprovisionnement(
         },
       });
 
-      await tx.lotStock.create({
+      const lot = await tx.lotStock.create({
         data: {
           idStock: stock.id,
           idApprovisionnement: appro.id,
@@ -159,6 +160,17 @@ export async function enregistrerApprovisionnement(
           datePeremption: ligne.datePeremption ? new Date(ligne.datePeremption) : null,
           prixAchatGnf: ligne.prixAchatGnf ?? 0,
         },
+      });
+      await enregistrerMouvementStock(tx, {
+        type: 'ENTREE',
+        quantite: ligne.quantite,
+        reference: appro.id,
+        motif: `Approvisionnement ${appro.numero}`,
+        idStructure,
+        idMedicament: ligne.idMedicament,
+        idStock: stock.id,
+        idLot: lot.id,
+        idUtilisateur: user.userId,
       });
     }
 

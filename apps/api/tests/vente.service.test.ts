@@ -35,6 +35,7 @@ jest.mock('../src/config/prisma', () => {
       updateMany: jest.fn(), aggregate: jest.fn(), groupBy: jest.fn(),
     },
     ligneVente: { create: jest.fn(), groupBy: jest.fn() },
+    mouvementStock: { create: jest.fn() },
   };
   prisma['$transaction'] = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   return { prisma };
@@ -65,6 +66,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
       updateMany: M; aggregate: M; groupBy: M;
     };
     ligneVente: { create: M; groupBy: M };
+    mouvementStock: { create: M };
     $transaction: M;
   };
 };
@@ -139,7 +141,8 @@ beforeEach(() => {
   prisma.lotStock.findMany.mockResolvedValue([
     { id: 'lot-1', quantite: 500, datePeremption: new Date(Date.now() + 200 * 86_400_000), creeLe: new Date() },
   ]);
-  prisma.lotStock.update.mockResolvedValue({});
+  prisma.lotStock.update.mockResolvedValue({ idStock: 'st-para' });
+  prisma.mouvementStock.create.mockResolvedValue({});
   prisma.stock.update.mockResolvedValue({});
   prisma.ligneVente.create.mockResolvedValue({});
   chiffrer.mockResolvedValue(null);
@@ -338,6 +341,16 @@ describe('creerVente', () => {
       where: { id: 'st-para' },
       data: { quantite: { decrement: 3 } },
     }));
+    expect(prisma.mouvementStock.create.mock.calls.map(([args]) => args.data)).toEqual([
+      expect.objectContaining({
+        type: 'SORTIE', quantite: -1, idLot: 'lot-proche',
+        idStock: 'st-para', idUtilisateur: 'pharma-1',
+      }),
+      expect.objectContaining({
+        type: 'SORTIE', quantite: -2, idLot: 'lot-lointain',
+        idStock: 'st-para', idUtilisateur: 'pharma-1',
+      }),
+    ]);
   });
 
   it('refuse la vente quand les lots non perimes ne suffisent pas', async () => {
@@ -479,6 +492,18 @@ describe('annulerVente', () => {
       where: { idStructure: 'struct-P', idMedicament: 'm-para' },
       data: { quantite: { increment: 3 } },
     });
+    expect(prisma.mouvementStock.create.mock.calls.map(([args]) => args.data)).toEqual([
+      expect.objectContaining({
+        type: 'CORRECTION', quantite: 1, reference: 've-1',
+        idStructure: 'struct-P', idMedicament: 'm-para', idStock: 'st-para',
+        idLot: 'lot-proche', idUtilisateur: 'pharma-1',
+      }),
+      expect.objectContaining({
+        type: 'CORRECTION', quantite: 2, reference: 've-1',
+        idStructure: 'struct-P', idMedicament: 'm-para', idStock: 'st-para',
+        idLot: 'lot-lointain', idUtilisateur: 'pharma-1',
+      }),
+    ]);
   });
 
   it('trace qui a annule, quand et pourquoi', async () => {
