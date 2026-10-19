@@ -343,6 +343,15 @@ export const reapprovisionnerStockSchema = z.object({
   margeGnf: nonNegativeInt.optional(),
 }).strict();
 
+export const ajusterLotStockSchema = z.object({
+  quantiteComptee: nonNegativeInt,
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+export const mouvementsStockQuerySchema = z.object({
+  limite: z.coerce.number().int().positive().max(200).default(100),
+}).strict();
+
 export const delivrerOrdonnanceSchema = z.object({
   modePaiement: z.enum(['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO']).optional(),
   quantiteDelivree: z.coerce.number().int().positive().optional(),

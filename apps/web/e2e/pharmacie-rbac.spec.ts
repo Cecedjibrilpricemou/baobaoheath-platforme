@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { E2E, login } from './helpers';
 
-const API = 'http://localhost:3137/api/v1';
+const API = 'http://localhost:3000/api/v1';
 
 async function csrfHeaders(page: import('@playwright/test').Page): Promise<Record<string, string>> {
   const csrf = (await page.context().cookies(API)).find((cookie) => cookie.name === 'bb_csrf')?.value;
@@ -75,6 +75,31 @@ test('Pharmacie — catalogue, stock, vente, agents et cloisonnement entre offic
   expect(stockLocal.seuilAlerte).toBe(3);
   expect(stockLocal.unite).toBe('flacon');
   expect(stockLocal.margeGnf).toBe(0);
+
+  const lotsResponse = await page.request.get(`${API}/pharmacien/medicaments/${produitId}/lots`);
+  expect(lotsResponse.ok()).toBeTruthy();
+  const lot = (await lotsResponse.json()).data[0] as { id: string; quantite: number };
+  expect(lot.quantite).toBe(6);
+  const ajustement = await page.request.post(`${API}/pharmacien/stocks/lots/${lot.id}/ajuster`, {
+    headers: await csrfHeaders(page),
+    data: { quantiteComptee: 5, motif: 'Comptage physique acceptance' },
+  });
+  expect(ajustement.ok()).toBeTruthy();
+  expect((await ajustement.json()).data.variation).toBe(-1);
+
+  const mouvements = await page.request.get(`${API}/pharmacien/stocks/mouvements`);
+  expect(mouvements.ok()).toBeTruthy();
+  const historique = (await mouvements.json()).data as Array<{
+    type: string; quantite: number; medicament: { id: string } | null;
+  }>;
+  expect(historique.some((m) => m.type === 'AJUSTEMENT' && m.quantite === -1 &&
+    m.medicament?.id === produitId)).toBe(true);
+
+  await page.goto('/pharmacien/stocks');
+  await expect(page.getByRole('heading', { name: 'Historique des mouvements' })).toBeVisible();
+  await expect(page.locator('.bb-ph-stocks__movement-row').filter({ hasText: 'Comptage physique acceptance' })).toBeVisible();
+  await page.getByRole('button', { name: "Faire l'inventaire des lots" }).first().click();
+  await expect(page.getByRole('heading', { name: /Inventaire par lot/ })).toBeVisible();
 
   await page.goto('/pharmacien/caisse');
   await page.locator('#c-med-0').selectOption(produitId);

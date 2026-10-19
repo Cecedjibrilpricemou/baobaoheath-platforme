@@ -24,6 +24,9 @@ import type {
   VerifierOrdonnanceDto,
   SessionCaisseView,
   RapportCaisseView,
+  AjusterLotStockDto,
+  AjustementLotStockView,
+  MouvementStockView,
 } from '@baobaoheath/shared-types';
 
 @Injectable({ providedIn: 'root' })
@@ -108,6 +111,16 @@ export class PharmacienService {
 
   reapprovisionner(payload: Record<string, unknown>): Observable<ApiResponse<PharmacieStock>> {
     return this.api.post<ApiResponse<PharmacieStock>>('/pharmacien/stocks/reapprovisionner', payload);
+  }
+
+  ajusterLotStock(idLot: string, dto: AjusterLotStockDto): Observable<ApiResponse<AjustementLotStockView>> {
+    return this.api.post<ApiResponse<AjustementLotStockView>>(
+      `/pharmacien/stocks/lots/${idLot}/ajuster`, dto);
+  }
+
+  getMouvementsStock(limite = 100): Observable<ApiResponse<MouvementStockView[]>> {
+    return this.api.get<ApiResponse<MouvementStockView[]>>(
+      '/pharmacien/stocks/mouvements', { limite: String(limite) });
   }
 
   // ── Approvisionnement et peremptions (addendum, points 1.3 et 1.4) ──

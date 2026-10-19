@@ -1,8 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import * as pharmacienService from '../services/pharmacien.service';
+import * as mouvementStockService from '../services/mouvement-stock.service';
 import type {
+  AjustementLotStockView,
   MedicamentTarifeView,
+  MouvementStockView,
   ScanPatientView,
   StockPharmacieView,
   VerificationOrdonnanceView,
@@ -54,6 +57,25 @@ export async function renouvelerOrdonnanceController(req: AuthRequest, res: Resp
 export async function getStocksController(req: AuthRequest, res: Response): Promise<void> {
   const data: StockPharmacieView[] = await pharmacienService.getStocksPharmacie(req.user!.userId);
     res.json({ success: true, data });
+}
+
+export async function getMouvementsStockController(req: AuthRequest, res: Response): Promise<void> {
+  const limite = Number(req.query['limite'] ?? 100);
+  const data: MouvementStockView[] = await mouvementStockService.listerMouvementsStock(
+    req.user!.userId,
+    Number.isFinite(limite) ? limite : 100,
+  );
+  res.json({ success: true, data });
+}
+
+export async function ajusterLotStockController(req: AuthRequest, res: Response): Promise<void> {
+  const data: AjustementLotStockView = await mouvementStockService.ajusterLotStock(
+    req.user!,
+    String(req.params['idLot']),
+    req.body.quantiteComptee,
+    req.body.motif,
+  );
+  res.json({ success: true, data, message: 'Inventaire du lot enregistre' });
 }
 
 export async function getOrdonnancesController(req: AuthRequest, res: Response): Promise<void> {

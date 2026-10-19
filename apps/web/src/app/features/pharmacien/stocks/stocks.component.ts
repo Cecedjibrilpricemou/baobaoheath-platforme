@@ -17,6 +17,8 @@ import type {
   CreateProduitOfficineDto,
   HorodatageApi,
   MedicamentTarifeView,
+  LotStockView,
+  MouvementStockView,
   StockPharmacieView,
 } from '@baobaoheath/shared-types';
 
@@ -49,7 +51,15 @@ export class PharmacienStocksComponent implements OnInit {
   produitEnEdition = signal<string | null>(null);
   successMsg       = signal('');
   errorMsg         = signal('');
+  inventaireStockId = signal<string | null>(null);
+  inventaireLots = signal<Array<LotStockView & { quantiteComptee: number }>>([]);
+  isLoadingLots = signal(false);
+  mouvementsStock = signal<MouvementStockView[]>([]);
+  isLoadingMouvements = signal(false);
+  motifAjustement = '';
   readonly estTitulaire = computed(() => this.authService.currentUser()?.roleOfficine === 'TITULAIRE');
+  readonly stockInventaire = computed(() =>
+    this.stocks().find((stock) => stock.id === this.inventaireStockId()) ?? null);
   readonly produitsLocaux = computed(() => this.medicaments().filter((m) => m.estPropreOfficine));
   readonly categoriesLocales: Exclude<CategorieProduit, 'MEDICAMENT'>[] = [
     'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE', 'HYGIENE',
@@ -83,7 +93,91 @@ export class PharmacienStocksComponent implements OnInit {
     { titre: 'EXPORT.COL.PEREMPTION_PROCHE', valeur: (s) => (s.peremptionLaPlusProche ? new Date(s.peremptionLaPlusProche) : null) },
   ];
 
-  ngOnInit() { this.loadStocks(); this.loadMedicaments(); }
+  ngOnInit() {
+    this.loadStocks();
+    this.loadMedicaments();
+    if (this.estTitulaire()) this.loadMouvementsStock();
+  }
+
+  loadMouvementsStock(): void {
+    this.isLoadingMouvements.set(true);
+    this.pharmacienService.getMouvementsStock().subscribe({
+      next: (response) => {
+        this.mouvementsStock.set(response.success ? response.data ?? [] : []);
+        this.isLoadingMouvements.set(false);
+        if (!response.success) this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_MOVEMENTS'));
+      },
+      error: () => {
+        this.isLoadingMouvements.set(false);
+        this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_MOVEMENTS'));
+      },
+    });
+  }
+
+  ouvrirInventaire(stock: StockPharmacieView): void {
+    this.inventaireStockId.set(stock.id);
+    this.inventaireLots.set([]);
+    this.motifAjustement = '';
+    this.isLoadingLots.set(true);
+    this.errorMsg.set('');
+    this.pharmacienService.getLots(stock.medicament.id).subscribe({
+      next: (response) => {
+        this.isLoadingLots.set(false);
+        if (!response.success || !response.data) {
+          this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_LOTS'));
+          return;
+        }
+        this.inventaireLots.set(response.data.map((lot) => ({ ...lot, quantiteComptee: lot.quantite })));
+      },
+      error: () => {
+        this.isLoadingLots.set(false);
+        this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_LOTS'));
+      },
+    });
+  }
+
+  fermerInventaire(): void {
+    this.inventaireStockId.set(null);
+    this.inventaireLots.set([]);
+    this.motifAjustement = '';
+  }
+
+  ajusterLot(lot: LotStockView & { quantiteComptee: number }): void {
+    const motif = this.motifAjustement.trim();
+    if (!Number.isInteger(lot.quantiteComptee) || lot.quantiteComptee < 0 || motif.length < 5) {
+      this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_ADJUSTMENT_FIELDS'));
+      return;
+    }
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+    this.pharmacienService.ajusterLotStock(lot.id, {
+      quantiteComptee: lot.quantiteComptee,
+      motif,
+    }).subscribe({
+      next: (response) => {
+        this.isSaving.set(false);
+        if (!response.success || !response.data) {
+          this.errorMsg.set(this.i18n.t('PHARMACIEN.STOCKS.ERR_ADJUSTMENT'));
+          return;
+        }
+        this.successMsg.set(response.data.variation === 0
+          ? this.i18n.t('PHARMACIEN.STOCKS.ADJUSTMENT_UNCHANGED')
+          : this.i18n.t('PHARMACIEN.STOCKS.ADJUSTMENT_SUCCESS'));
+        this.loadStocks();
+        this.loadMouvementsStock();
+        const stock = this.stocks().find((item) => item.id === this.inventaireStockId());
+        if (stock) this.ouvrirInventaire(stock);
+      },
+      error: (err) => {
+        this.isSaving.set(false);
+        this.errorMsg.set(err?.error?.error ?? this.i18n.t('PHARMACIEN.STOCKS.ERR_ADJUSTMENT'));
+      },
+    });
+  }
+
+  labelMouvement(type: MouvementStockView['type']): string {
+    return this.i18n.t(`PHARMACIEN.STOCKS.MOVEMENT_${type}`);
+  }
 
   private loadStocks() {
     this.isLoading.set(true);

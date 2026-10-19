@@ -210,6 +210,8 @@ describe('le comptoir d officine est reserve au pharmacien', () => {
       ['delete', '/catalogue-local/:id'],
       ['post', '/approvisionnements'],
       ['post', '/stocks/reapprovisionner'],
+      ['get', '/stocks/mouvements'],
+      ['post', '/stocks/lots/:idLot/ajuster'],
       ['put', '/agents/:id/role-permanent'],
     ])('%s %s est reserve au titulaire', (methode, chemin) => {
       expect(rolesOfficinePour(pharmacien, methode, chemin)).toEqual(['TITULAIRE']);

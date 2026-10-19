@@ -33,6 +33,8 @@ import {
   ouvrirSessionCaisseSchema,
   cloturerSessionCaisseSchema,
   rapportCaisseQuerySchema,
+  ajusterLotStockSchema,
+  mouvementsStockQuerySchema,
 } from '../validators/api.schemas';
 
 const router = Router();
@@ -150,6 +152,8 @@ router.post('/ventes/:id/annuler', validateBody(annulerVenteSchema), async (req:
   res.json({ success: true, data, message: 'Vente annulee, stock remis' });
 });
 
+router.get('/stocks/mouvements', requireTitulaire, validateQuery(mouvementsStockQuerySchema), ctrl.getMouvementsStockController);
+router.post('/stocks/lots/:idLot/ajuster', requireTitulaire, validateBody(ajusterLotStockSchema), ctrl.ajusterLotStockController);
 router.get('/stocks', ctrl.getStocksController);
 router.post('/stocks/reapprovisionner', requireTitulaire, validateBody(reapprovisionnerStockSchema), ctrl.reapprovisionnerStockController);
 router.get('/ordonnances', requirePersonnelClinique, ctrl.getOrdonnancesController);

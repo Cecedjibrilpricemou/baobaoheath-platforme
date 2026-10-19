@@ -41,6 +41,53 @@
     </div>
   }
 
+  @if (estTitulaire() && stockInventaire(); as stockCourant) {
+    <section class="bb-ph-stocks__form bb-ph-stocks__inventory" aria-labelledby="inventory-title">
+      <div class="bb-ph-stocks__form-actions">
+        <h3 id="inventory-title"><i class="pi pi-clipboard" aria-hidden="true"></i>
+          {{ 'PHARMACIEN.STOCKS.INVENTORY_TITLE' | translate }} — {{ stockCourant.medicament.libelle }}
+        </h3>
+        <button class="bb-ph-stocks__cancel-btn" type="button" (click)="fermerInventaire()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+      </div>
+      <p class="bb-ph-stocks__catalogue-aide">{{ 'PHARMACIEN.STOCKS.INVENTORY_HELP' | translate }}</p>
+      @if (isLoadingLots()) {
+        <p>{{ 'PHARMACIEN.STOCKS.LOADING_LOTS' | translate }}</p>
+      } @else if (inventaireLots().length === 0) {
+        <p class="bb-ph-stocks__catalogue-vide">{{ 'PHARMACIEN.STOCKS.NO_LOTS' | translate }}</p>
+      } @else {
+        <div class="bb-ph-stocks__field bb-ph-stocks__field--full bb-ph-stocks__inventory-reason">
+          <label for="inventory-reason">{{ 'PHARMACIEN.STOCKS.ADJUSTMENT_REASON' | translate }}</label>
+          <textarea id="inventory-reason" rows="2" maxlength="300" minlength="5"
+                    [(ngModel)]="motifAjustement"></textarea>
+        </div>
+        <div class="bb-ph-stocks__inventory-list">
+          @for (lot of inventaireLots(); track lot.id) {
+            <div class="bb-ph-stocks__inventory-row">
+              <div>
+                <strong>{{ lot.numeroLot || ('PHARMACIEN.STOCKS.BATCH_UNNUMBERED' | translate) }}</strong>
+                <span>{{ 'PHARMACIEN.STOCKS.CURRENT_QUANTITY' | translate }}: {{ lot.quantite }} {{ stockCourant.unite }}</span>
+                @if (lot.datePeremption) {
+                  <span>{{ 'PHARMACIEN.STOCKS.EXPIRY_LABEL' | translate: { date: formatDate(lot.datePeremption) } }}</span>
+                }
+              </div>
+              <div class="bb-ph-stocks__inventory-input">
+                <label [for]="'lot-count-' + lot.id">{{ 'PHARMACIEN.STOCKS.COUNTED_QUANTITY' | translate }}</label>
+                <input [id]="'lot-count-' + lot.id" type="number" min="0" step="1"
+                       [(ngModel)]="lot.quantiteComptee" />
+              </div>
+              <button class="bb-ph-stocks__save-btn" type="button" [disabled]="isSaving() || isLoadingLots()"
+                      (click)="ajusterLot(lot)">
+                {{ 'PHARMACIEN.STOCKS.ADJUST' | translate }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
   @if (estTitulaire() && showCatalogueLocal()) {
     <section class="bb-ph-stocks__form">
       <div class="bb-ph-stocks__form-actions">
@@ -265,9 +312,61 @@
               <span><i class="pi pi-calendar-times"></i> {{ 'PHARMACIEN.STOCKS.NO_EXPIRY' | translate }}</span>
             }
           </div>
+          @if (estTitulaire()) {
+            <button class="bb-ph-stocks__history-btn" type="button" [disabled]="isSaving()"
+                    (click)="ouvrirInventaire(s)">
+              <i class="pi pi-clipboard" aria-hidden="true"></i>
+              {{ 'PHARMACIEN.STOCKS.INVENTORY_OPEN' | translate }}
+            </button>
+          }
         </div>
       }
     </div>
+  }
+
+  @if (estTitulaire()) {
+    <section class="bb-ph-stocks__movement-section">
+      <div class="bb-ph-stocks__movement-heading">
+        <div>
+          <h2>{{ 'PHARMACIEN.STOCKS.MOVEMENTS_TITLE' | translate }}</h2>
+          <p>{{ 'PHARMACIEN.STOCKS.MOVEMENTS_HELP' | translate }}</p>
+        </div>
+        <button class="bb-ph-stocks__cancel-btn" type="button" [disabled]="isLoadingMouvements()"
+                (click)="loadMouvementsStock()">
+          <i [class]="isLoadingMouvements() ? 'pi pi-spinner pi-spin' : 'pi pi-refresh'" aria-hidden="true"></i>
+          {{ 'PHARMACIEN.STOCKS.REFRESH' | translate }}
+        </button>
+      </div>
+      @if (isLoadingMouvements()) {
+        <p class="bb-ph-stocks__catalogue-vide">{{ 'PHARMACIEN.STOCKS.LOADING_LOTS' | translate }}</p>
+      } @else if (mouvementsStock().length === 0) {
+        <p class="bb-ph-stocks__catalogue-vide">{{ 'PHARMACIEN.STOCKS.NO_MOVEMENTS' | translate }}</p>
+      } @else {
+        <div class="bb-ph-stocks__movement-list">
+          @for (mouvement of mouvementsStock(); track mouvement.id) {
+            <article class="bb-ph-stocks__movement-row">
+              <div class="bb-ph-stocks__movement-type"
+                   [class.bb-ph-stocks__movement-type--in]="mouvement.quantite > 0"
+                   [class.bb-ph-stocks__movement-type--out]="mouvement.quantite < 0">
+                {{ labelMouvement(mouvement.type) }}
+              </div>
+              <div class="bb-ph-stocks__movement-detail">
+                <strong>{{ mouvement.medicament?.libelle ?? ('PHARMACIEN.STOCKS.UNKNOWN_PRODUCT' | translate) }}</strong>
+                <span>{{ mouvement.motif || mouvement.reference || '—' }}</span>
+              </div>
+              <div class="bb-ph-stocks__movement-quantity"
+                   [class.bb-ph-stocks__movement-quantity--negative]="mouvement.quantite < 0">
+                {{ mouvement.quantite > 0 ? '+' : '' }}{{ mouvement.quantite }}
+              </div>
+              <div class="bb-ph-stocks__movement-meta">
+                <time [attr.datetime]="mouvement.creeLe">{{ formatDate(mouvement.creeLe) }}</time>
+                <span>{{ mouvement.utilisateur.prenom }} {{ mouvement.utilisateur.nom }}</span>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
   }
 
 </div>

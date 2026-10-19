@@ -1288,6 +1288,34 @@ export interface StockPharmacieView {
   medicament: MedicamentTarifeView;
 }
 
+export type MouvementStockType = 'ENTREE' | 'SORTIE' | 'AJUSTEMENT' | 'CORRECTION';
+
+/** Mouvement signe dans le registre immuable de l'officine. */
+export interface MouvementStockView {
+  id: string;
+  type: MouvementStockType;
+  quantite: number;
+  reference: string | null;
+  motif: string | null;
+  creeLe: HorodatageApi;
+  medicament: { id: string; libelle: string } | null;
+  lot: { id: string; numeroLot: string | null } | null;
+  utilisateur: { id: string; prenom: string; nom: string };
+}
+
+export interface AjusterLotStockDto {
+  quantiteComptee: number;
+  motif: string;
+}
+
+export interface AjustementLotStockView {
+  idLot: string;
+  quantiteAvant: number;
+  quantiteComptee: number;
+  variation: number;
+  idMouvement: string | null;
+}
+
 // ─── Vaccinations ─────────────────────────────────────────────────────────────
 // GET /vaccinations/me renvoie les lignes Prisma avec l'agent administrant.
 // Les noms sont ceux du schema : `vaccinNom` et `administreLe`. Le front a
