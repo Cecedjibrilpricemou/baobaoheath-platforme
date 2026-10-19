@@ -247,9 +247,23 @@ describe('le comptoir d officine est reserve au pharmacien', () => {
     }
   );
 
+  it('les routes caisse existent bien et restent limitees au personnel officinal', () => {
+    for (const [methode, chemin] of [
+      ['get', '/caisse/session'],
+      ['post', '/caisse/sessions'],
+      ['post', '/caisse/sessions/:id/cloturer'],
+      ['get', '/caisse/rapport'],
+    ] as const) {
+      expect(rolesOfficinePour(pharmacien, methode, chemin)).toEqual([
+        'TITULAIRE', 'ADJOINT', 'PREPARATEUR', 'CAISSIER',
+      ]);
+      expect(rolesPour(pharmacien, methode, chemin)).toEqual(['PHARMACIEN']);
+    }
+  });
+
   // Une route qu'on croit protegee mais qui n'existe pas donnerait un test
   // vert sans rien garder.
-  it('les cinq routes existent bien', () => {
+  it('les cinq routes de vente existent bien', () => {
     for (const [methode, chemin] of [
       ['post', '/ventes'], ['get', '/ventes'], ['get', '/ventes/:id'],
       ['post', '/ventes/:id/annuler'], ['get', '/tableau-de-bord'],

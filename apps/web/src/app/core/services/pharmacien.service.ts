@@ -22,6 +22,8 @@ import type {
   OrdonnanceEnAttenteView,
   VerificationOrdonnanceView,
   VerifierOrdonnanceDto,
+  SessionCaisseView,
+  RapportCaisseView,
 } from '@baobaoheath/shared-types';
 
 @Injectable({ providedIn: 'root' })
@@ -150,6 +152,25 @@ export class PharmacienService {
   getVentes(limite?: number): Observable<ApiResponse<VenteComptoirView[]>> {
     return this.api.get<ApiResponse<VenteComptoirView[]>>(
       '/pharmacien/ventes', limite ? { limite: String(limite) } : undefined);
+  }
+
+  getSessionCaisse(): Observable<ApiResponse<SessionCaisseView | null>> {
+    return this.api.get<ApiResponse<SessionCaisseView | null>>('/pharmacien/caisse/session');
+  }
+
+  ouvrirSessionCaisse(montantOuvertureGnf: number): Observable<ApiResponse<SessionCaisseView>> {
+    return this.api.post<ApiResponse<SessionCaisseView>>('/pharmacien/caisse/sessions', { montantOuvertureGnf });
+  }
+
+  cloturerSessionCaisse(
+    id: string,
+    dto: { montantCompteGnf: number; motifEcart?: string },
+  ): Observable<ApiResponse<SessionCaisseView>> {
+    return this.api.post<ApiResponse<SessionCaisseView>>(`/pharmacien/caisse/sessions/${id}/cloturer`, dto);
+  }
+
+  getRapportCaisse(periode: 'JOUR' | 'MOIS' | 'ANNEE'): Observable<ApiResponse<RapportCaisseView>> {
+    return this.api.get<ApiResponse<RapportCaisseView>>('/pharmacien/caisse/rapport', { periode });
   }
 
   /**

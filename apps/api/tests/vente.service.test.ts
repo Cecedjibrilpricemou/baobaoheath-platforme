@@ -19,6 +19,10 @@ jest.mock('../src/config/prisma', () => {
   const prisma: Record<string, unknown> = {
     utilisateur: { findUnique: jest.fn() },
     pharmacienProfile: { findUnique: jest.fn() },
+    sessionCaisse: {
+      findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), updateMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
+    },
     medicament: { findMany: jest.fn() },
     ordonnance: { findUnique: jest.fn() },
     stock: {
@@ -49,6 +53,9 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     utilisateur: { findUnique: M };
     pharmacienProfile: { findUnique: M };
+    sessionCaisse: {
+      findFirst: M; findMany: M; create: M; updateMany: M; findUniqueOrThrow: M;
+    };
     medicament: { findMany: M };
     ordonnance: { findUnique: M };
     stock: { findMany: M; findUnique: M; update: M; updateMany: M; fields: unknown };
@@ -122,6 +129,8 @@ beforeEach(() => {
     pharmacienProfile: { roleOfficine: 'TITULAIRE' },
   });
   prisma.pharmacienProfile.findUnique.mockResolvedValue({ roleOfficine: 'TITULAIRE' });
+  prisma.sessionCaisse.findFirst.mockResolvedValue({ id: 'session-1' });
+  prisma.sessionCaisse.updateMany.mockResolvedValue({ count: 1 });
   verifyPassword.mockResolvedValue(true);
   prochainNumero.mockResolvedValue('VE-2026-000001');
   getValeursParametres.mockResolvedValue(PARAMETRES);
@@ -198,6 +207,14 @@ describe('creerVente', () => {
     })).rejects.toThrow(/numero de l abonne/i);
   });
 
+  it('refuse toute vente sans session de caisse ouverte', async () => {
+    prisma.sessionCaisse.findFirst.mockResolvedValue(null);
+    await expect(creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 1 }], modePaiement: 'ESPECES',
+    })).rejects.toBeInstanceOf(ConflictError);
+    expect(prisma.venteComptoir.create).not.toHaveBeenCalled();
+  });
+
   it('refuse un produit absent du stock de cette officine', async () => {
     prisma.stock.findMany.mockResolvedValue([]);
     await expect(creerVente(pharmacien, {
@@ -271,7 +288,9 @@ describe('creerVente', () => {
 
     // 1 000 de reference + 200 de marge = 1 200 ; deux boites = 2 400.
     expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ montantBrutGnf: 2400, remiseGnf: 0, montantNetGnf: 2400 }),
+      data: expect.objectContaining({
+        montantBrutGnf: 2400, remiseGnf: 0, montantNetGnf: 2400, idSessionCaisse: 'session-1',
+      }),
     }));
     expect(prisma.ligneVente.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ prixUnitaireGnf: 1200, montantGnf: 2400 }),

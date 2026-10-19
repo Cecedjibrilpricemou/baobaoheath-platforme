@@ -83,6 +83,7 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
     urlPaiement: v.statut === StatutVente.EN_ATTENTE ? v.urlPaiement : null,
     statutOperateur: v.statutOperateur,
     referenceTransaction: v.referenceTransaction,
+    idSessionCaisse: v.idSessionCaisse,
     creeLe: v.creeLe.toISOString(),
     annuleeLe: v.annuleeLe ? v.annuleeLe.toISOString() : null,
     motifAnnulation: v.motifAnnulation,
@@ -116,7 +117,7 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
  * `PHARMACIEN` rattache par erreur a un centre de sante ne doit pas pouvoir
  * ouvrir une caisse.
  */
-async function officineDe(userId: string): Promise<string> {
+export async function officineDe(userId: string): Promise<string> {
   const u = await prisma.utilisateur.findUnique({
     where: { id: userId },
     select: {
@@ -152,7 +153,7 @@ async function roleOfficineEffectif(userId: string) {
   return profile?.roleOfficine ?? null;
 }
 
-async function estTitulaire(userId: string): Promise<boolean> {
+export async function estTitulaire(userId: string): Promise<boolean> {
   return (await roleOfficineEffectif(userId)) === 'TITULAIRE';
 }
 
@@ -199,6 +200,12 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
   if (dto.modePaiement !== 'ESPECES' && !dto.numeroOperateur?.trim()) {
     throw new ValidationError('Un paiement mobile exige le numero de l abonne');
   }
+
+  const session = await prisma.sessionCaisse.findFirst({
+    where: { idStructure, idUtilisateur: user.userId, statut: 'OUVERTE' },
+    select: { id: true },
+  });
+  if (!session) throw new ConflictError('Ouvrez une session de caisse avant d enregistrer une vente');
 
   /**
    * Les especes n'ont pas de passerelle : l'agent encaisse devant lui, et la
@@ -344,6 +351,15 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
   }
 
   const cree = await prisma.$transaction(async (tx) => {
+    // Le verrou de ligne serialize la vente avec la cloture : une vente ne
+    // peut pas passer apres le comptage de fin de session.
+    const sessionVerrouillee = await tx.sessionCaisse.updateMany({
+      where: { id: session.id, statut: 'OUVERTE' },
+      data: { version: { increment: 1 } },
+    });
+    if (sessionVerrouillee.count !== 1) {
+      throw new ConflictError('La session de caisse vient d etre cloturee');
+    }
     const numero = await prochainNumero('VE', tx);
 
     const vente = await tx.venteComptoir.create({
@@ -370,6 +386,7 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         idPatient: dto.idPatient ?? null,
         idOrdonnance: dto.idOrdonnance ?? null,
         idStructure,
+        idSessionCaisse: session.id,
         idVendeur: user.userId,
       },
     });

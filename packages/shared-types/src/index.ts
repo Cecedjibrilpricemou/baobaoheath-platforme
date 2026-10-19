@@ -2332,6 +2332,8 @@ export interface VenteComptoirView {
    * abouti. Sans elle, « paye en Orange Money » n'est qu'une case cochee.
    */
   referenceTransaction?: string | null;
+  /** Session de caisse associee, absente sur les ventes historiques. */
+  idSessionCaisse?: string | null;
 
   lignes: LigneVenteView[];
 }
@@ -2401,6 +2403,53 @@ export interface TableauDeBordOfficineView {
   ruptures: RuptureStockView[];
   /** Nombre de lots qui approchent de leur date, ou l'ont depassee. */
   lotsAPerimer: number;
+}
+
+export type StatutSessionCaisse = 'OUVERTE' | 'CLOTUREE';
+
+export interface SessionCaisseView {
+  id: string;
+  statut: StatutSessionCaisse;
+  montantOuvertureGnf: number;
+  montantEspecesEncaisseGnf: number;
+  montantOrangeMoneyGnf: number;
+  montantMtnMomoGnf: number;
+  montantTheoriqueGnf: number;
+  montantCompteGnf: number | null;
+  ecartGnf: number | null;
+  motifEcart: string | null;
+  nombreVentesPayees: number;
+  nombreVentesEnAttente: number;
+  nombreVentesAnnulees: number;
+  ouverteLe: HorodatageApi;
+  clotureeLe: HorodatageApi | null;
+  utilisateur: { id: string; prenom: string; nom: string };
+}
+
+export interface RapportCaisseView {
+  periode: 'JOUR' | 'MOIS' | 'ANNEE';
+  dateDebut: HorodatageApi;
+  dateFin: HorodatageApi;
+  chiffreAffairesGnf: number;
+  nombreVentesPayees: number;
+  nombreVentesEnAttente: number;
+  nombreVentesAnnulees: number;
+  encaissementsParMode: { modePaiement: ModePaiement; montantGnf: number; nombre: number }[];
+  parUtilisateur: {
+    utilisateur: { id: string; prenom: string; nom: string };
+    chiffreAffairesGnf: number;
+    nombreVentesPayees: number;
+  }[];
+  sessions: SessionCaisseView[];
+}
+
+export interface OuvrirSessionCaisseDto {
+  montantOuvertureGnf: number;
+}
+
+export interface CloturerSessionCaisseDto {
+  montantCompteGnf: number;
+  motifEcart?: string;
 }
 
 

@@ -15,18 +15,31 @@ test('Pharmacie — catalogue, stock, vente, agents et cloisonnement entre offic
   const libelleProduit = `Produit acceptance ${suffixe}`;
   const emailAgent = `agent.${suffixe}@baobao.test`;
 
-  const creerProduit = await page.request.post(`${API}/pharmacien/catalogue-local`, {
-    headers: await csrfHeaders(page),
-    data: {
-      libelle: libelleProduit,
-      categorie: 'HYGIENE',
-      prixUnitaireGnf: 12345,
-      seuilAlerte: 3,
-      unite: 'flacon',
-    },
-  });
-  expect(creerProduit.ok()).toBeTruthy();
-  const produitResponse = await creerProduit.json();
+  await page.goto('/pharmacien/caisse');
+  await page.locator('#caisse-fond').fill('50000');
+  const ouvertureCaisse = page.waitForResponse((response) =>
+    response.url().endsWith('/pharmacien/caisse/sessions') &&
+    response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Ouvrir la caisse' }).click();
+  expect((await ouvertureCaisse).status()).toBe(201);
+
+  await page.goto('/pharmacien/stocks');
+  await page.getByRole('button', { name: 'Produits de mon officine' }).click();
+  await page.getByRole('button', { name: 'Créer un produit' }).click();
+  await page.locator('#produit-libelle').fill(libelleProduit);
+  await page.locator('#produit-categorie').selectOption('HYGIENE');
+  await page.locator('#produit-prix').fill('12345');
+  await page.locator('#produit-seuil').fill('3');
+  await page.locator('#produit-unite').fill('flacon');
+  const creerProduit = page.waitForResponse((response) =>
+    response.url().includes('/pharmacien/catalogue-local') &&
+    response.request().method() === 'POST',
+  );
+  await page.locator('.bb-ph-stocks__form-actions .bb-ph-stocks__save-btn').last().click();
+  const reponseProduit = await creerProduit;
+  expect(reponseProduit.status()).toBe(201);
+  const produitResponse = await reponseProduit.json();
   const produitId = produitResponse.data.id as string;
   expect(produitResponse.data.estPropreOfficine).toBe(true);
 
@@ -62,6 +75,49 @@ test('Pharmacie — catalogue, stock, vente, agents et cloisonnement entre offic
   expect(stockLocal.seuilAlerte).toBe(3);
   expect(stockLocal.unite).toBe('flacon');
   expect(stockLocal.margeGnf).toBe(0);
+
+  await page.goto('/pharmacien/caisse');
+  await page.locator('#c-med-0').selectOption(produitId);
+  await page.locator('#c-qte-0').fill('1');
+  const venteDepuisCaisse = page.waitForResponse((response) =>
+    response.url().endsWith('/pharmacien/ventes') &&
+    response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Encaisser', exact: true }).click();
+  const reponseVenteCaisse = await venteDepuisCaisse;
+  expect(reponseVenteCaisse.status()).toBe(201);
+  expect((await reponseVenteCaisse.json()).data.montantNetGnf).toBe(12345);
+
+  await page.locator('#caisse-compte').fill('87035');
+  const clotureCaisse = page.waitForResponse((response) =>
+    response.url().includes('/pharmacien/caisse/sessions/') &&
+    response.url().endsWith('/cloturer') &&
+    response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Clôturer la caisse' }).click();
+  const reponseCloture = await clotureCaisse;
+  expect(reponseCloture.ok()).toBeTruthy();
+  expect((await reponseCloture.json()).data.montantTheoriqueGnf).toBe(87035);
+
+  await page.goto('/pharmacien/approvisionnements');
+  await page.getByRole('button', { name: 'Saisir une facture' }).click();
+  await page.locator('#ap-fournisseur').fill('Grossiste acceptance');
+  await page.locator('#ap-numero').fill(`FAC-${suffixe}`);
+  await page.locator('#l-med-0').selectOption(produitId);
+  await page.locator('#l-qte-0').fill('4');
+  await page.locator('#l-lot-0').fill(`LOT-${suffixe}`);
+  await page.locator('#l-per-0').fill('2028-12-31');
+  await page.locator('#l-prix-0').fill('7000');
+  const approvisionnement = page.waitForResponse((response) =>
+    response.url().endsWith('/pharmacien/approvisionnements') &&
+    response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: "Enregistrer l'entrée en stock" }).click();
+  const reponseAppro = await approvisionnement;
+  expect(reponseAppro.status()).toBe(201);
+  expect((await reponseAppro.json()).data.fournisseur).toBe('Grossiste acceptance');
+  await expect(page.locator('.bb-appro__entree').filter({ hasText: `FAC-${suffixe}` }))
+    .toContainText('Grossiste acceptance');
 
   const creerAgent = await page.request.post(`${API}/pharmacien/agents`, {
     headers: await csrfHeaders(page),
@@ -135,4 +191,20 @@ test('Pharmacie — catalogue, stock, vente, agents et cloisonnement entre offic
 
   await page.goto('/pharmacien/tableau-de-bord');
   await expect(page.locator('.bb-page-head__title')).toBeVisible();
+  await expect(page.locator('.bb-tdb__rapport-session').first()).toContainText('Clôturée');
+
+  const autresPages = [
+    { route: '/pharmacien/ordonnances', endpoint: '/pharmacien/ordonnances' },
+    { route: '/pharmacien/commandes', endpoint: '/commandes/pharmacie' },
+    { route: '/pharmacien/peremptions', endpoint: '/pharmacien/peremptions' },
+  ];
+  for (const item of autresPages) {
+    const chargement = page.waitForResponse((response) =>
+      response.url().includes(item.endpoint) &&
+      response.request().method() === 'GET',
+    );
+    await page.goto(item.route);
+    await expect(page.locator('.bb-page-head__title')).toBeVisible();
+    expect((await chargement).status()).toBe(200);
+  }
 });

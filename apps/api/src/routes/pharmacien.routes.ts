@@ -1,17 +1,20 @@
 import * as appro from '../services/approvisionnement.service';
 import * as vente from '../services/vente.service';
+import * as caisse from '../services/caisse.service';
 import type {
   ApprovisionnementView,
   LotStockView,
   PeremptionProcheView,
   TableauDeBordOfficineView,
   VenteComptoirView,
+  SessionCaisseView,
+  RapportCaisseView,
 } from '@baobaoheath/shared-types';
 import { creerApprovisionnementSchema } from '../validators/api.schemas';
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireOfficineRole, requireRole } from '../middlewares/rbac.middleware';
-import { validateBody } from '../middlewares/validate.middleware';
+import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as ctrl from '../controllers/pharmacien.controller';
 import {
   annulerVenteSchema,
@@ -27,11 +30,15 @@ import {
   roleAgentSchema,
   creerProduitOfficineSchema,
   modifierProduitOfficineSchema,
+  ouvrirSessionCaisseSchema,
+  cloturerSessionCaisseSchema,
+  rapportCaisseQuerySchema,
 } from '../validators/api.schemas';
 
 const router = Router();
 const requireTitulaire = requireOfficineRole('TITULAIRE');
 const requirePersonnelClinique = requireOfficineRole('TITULAIRE', 'ADJOINT', 'PREPARATEUR');
+const requirePersonnelCaisse = requireOfficineRole('TITULAIRE', 'ADJOINT', 'PREPARATEUR', 'CAISSIER');
 
 router.use(authenticate);
 router.use(requireRole('PHARMACIEN'));
@@ -82,6 +89,27 @@ router.get('/medicaments/:id/lots', async (req: AuthRequest, res: Response) => {
 // capture comme un identifiant de vente.
 router.get('/tableau-de-bord', async (req: AuthRequest, res: Response) => {
   const data: TableauDeBordOfficineView = await vente.tableauDeBord(req.user!);
+  res.json({ success: true, data });
+});
+
+router.get('/caisse/session', requirePersonnelCaisse, async (req: AuthRequest, res: Response) => {
+  const data: SessionCaisseView | null = await caisse.sessionCourante(req.user!);
+  res.json({ success: true, data });
+});
+
+router.post('/caisse/sessions', requirePersonnelCaisse, validateBody(ouvrirSessionCaisseSchema), async (req: AuthRequest, res: Response) => {
+  const data: SessionCaisseView = await caisse.ouvrirSession(req.user!, req.body);
+  res.status(201).json({ success: true, data, message: 'Session de caisse ouverte' });
+});
+
+router.post('/caisse/sessions/:id/cloturer', requirePersonnelCaisse, validateBody(cloturerSessionCaisseSchema), async (req: AuthRequest, res: Response) => {
+  const data: SessionCaisseView = await caisse.cloturerSession(req.user!, req.params['id'] as string, req.body);
+  res.json({ success: true, data, message: 'Session de caisse cloturee' });
+});
+
+router.get('/caisse/rapport', requirePersonnelCaisse, validateQuery(rapportCaisseQuerySchema), async (req: AuthRequest, res: Response) => {
+  const { periode, date } = req.query as { periode: 'JOUR' | 'MOIS' | 'ANNEE'; date?: string };
+  const data: RapportCaisseView = await caisse.rapportCaisse(req.user!, periode, date);
   res.json({ success: true, data });
 });
 

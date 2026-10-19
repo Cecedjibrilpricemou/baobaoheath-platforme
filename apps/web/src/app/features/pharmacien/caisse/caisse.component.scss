@@ -23,6 +23,15 @@
 
   &__muted { color: var(--bb-text-secondary); font-size: 13.5px; margin: 0 0 6px; }
 
+  &__fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  &__session-chiffres, &__session-form {
+    display: flex; flex-wrap: wrap; align-items: end; gap: 12px 20px;
+    color: var(--bb-text-secondary); font-size: 13.5px;
+  }
+  &__session-chiffres strong { color: var(--bb-text-primary); }
+  &__session-form { margin-top: 14px; max-width: 560px; }
+  &__session-form .bb-caisse__champ { max-width: 220px; }
+
   &__carte {
     background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
     border-radius: var(--bb-radius-xl); padding: 1.5rem;

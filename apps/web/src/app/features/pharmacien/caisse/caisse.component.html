@@ -7,8 +7,62 @@
     </div>
   </header>
 
+  <section class="bb-caisse__carte bb-caisse__session">
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.SESSION' | translate }}</h2>
+    @if (session(); as s) {
+      <p class="bb-caisse__muted">
+        {{ s.utilisateur.prenom }} {{ s.utilisateur.nom }} · {{ s.ouverteLe | date:'dd/MM/yyyy HH:mm' }}
+        · {{ (s.statut === 'OUVERTE' ? 'PHARMACIEN.CAISSE.SESSION_ACTIVE' : 'PHARMACIEN.CAISSE.SESSION_FERMEE') | translate }}
+      </p>
+      <div class="bb-caisse__session-chiffres">
+        <span>{{ 'PHARMACIEN.CAISSE.FOND_OUVERTURE' | translate }} : <strong>{{ s.montantOuvertureGnf | number }} GNF</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.ESPECES_ENCAISSEES' | translate }} : <strong>{{ s.montantEspecesEncaisseGnf | number }} GNF</strong></span>
+        <span>{{ 'PAIEMENT.MODE.ORANGE_MONEY' | translate }} : <strong>{{ s.montantOrangeMoneyGnf | number }} GNF</strong></span>
+        <span>{{ 'PAIEMENT.MODE.MTN_MOMO' | translate }} : <strong>{{ s.montantMtnMomoGnf | number }} GNF</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.THEORIQUE' | translate }} : <strong>{{ s.montantTheoriqueGnf | number }} GNF</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.VENTES_PAYEES' | translate }} : <strong>{{ s.nombreVentesPayees }}</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.VENTES_ATTENTE' | translate }} : <strong>{{ s.nombreVentesEnAttente }}</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.VENTES_ANNULEES' | translate }} : <strong>{{ s.nombreVentesAnnulees }}</strong></span>
+        @if (s.statut === 'CLOTUREE') {
+          <span>{{ 'PHARMACIEN.CAISSE.COMPTE' | translate }} : <strong>{{ s.montantCompteGnf | number }} GNF</strong></span>
+          <span>{{ 'PHARMACIEN.CAISSE.ECART' | translate }} : <strong>{{ s.ecartGnf | number }} GNF</strong></span>
+        }
+      </div>
+    }
+
+    @if (caisseOuverte()) {
+      <div class="bb-caisse__session-form">
+        <label class="bb-caisse__label" for="caisse-compte">{{ 'PHARMACIEN.CAISSE.COMPTE' | translate }} (GNF)</label>
+        <input id="caisse-compte" class="bb-caisse__champ" type="number" min="0" step="1"
+               [value]="clotureMontant() ?? ''"
+               (input)="clotureMontant.set($any($event.target).value === '' ? null : +$any($event.target).value)" />
+        @if (clotureMontant() !== session()!.montantTheoriqueGnf) {
+          <label class="bb-caisse__label" for="caisse-ecart">{{ 'PHARMACIEN.CAISSE.MOTIF_ECART' | translate }}</label>
+          <textarea id="caisse-ecart" class="bb-caisse__champ" rows="2" maxlength="500"
+                    [value]="motifEcart()"
+                    (input)="motifEcart.set($any($event.target).value)"></textarea>
+        }
+        <button matButton type="button" [disabled]="sessionEnCours() || !peutCloturer()" (click)="cloturerSession()">
+          {{ (sessionEnCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.CLOTURER') | translate }}
+        </button>
+      </div>
+    } @else {
+      <div class="bb-caisse__session-form">
+        <label class="bb-caisse__label" for="caisse-fond">{{ 'PHARMACIEN.CAISSE.FOND_OUVERTURE' | translate }} (GNF)</label>
+        <input id="caisse-fond" class="bb-caisse__champ" type="number" min="0" step="1"
+               [value]="ouvertureMontant() ?? ''"
+               (input)="ouvertureMontant.set($any($event.target).value === '' ? null : +$any($event.target).value)" />
+        <button matButton="filled" type="button" [disabled]="sessionEnCours() || ouvertureMontant() === null || ouvertureMontant()! < 0"
+                (click)="ouvrirSession()">
+          {{ (sessionEnCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.OUVRIR') | translate }}
+        </button>
+      </div>
+    }
+  </section>
+
   <!-- ── Le panier ─────────────────────────────────────────────────── -->
   <section class="bb-caisse__carte">
+    <fieldset class="bb-caisse__fieldset" [disabled]="!caisseOuverte()">
     <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PANIER' | translate }}</h2>
 
     @for (l of lignes(); track $index) {
@@ -193,6 +247,7 @@
         {{ (enCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.ENCAISSER') | translate }}
       </button>
     </div>
+    </fieldset>
   </section>
 
   <!-- ── Les ventes du jour ────────────────────────────────────────── -->

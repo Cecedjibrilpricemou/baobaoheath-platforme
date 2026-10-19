@@ -141,6 +141,20 @@ export const creerVenteSchema = z.object({
   avecAssurance: z.boolean().optional(),
 }).strict();
 
+export const ouvrirSessionCaisseSchema = z.object({
+  montantOuvertureGnf: nonNegativeInt.max(2_000_000_000),
+}).strict();
+
+export const cloturerSessionCaisseSchema = z.object({
+  montantCompteGnf: nonNegativeInt.max(2_000_000_000),
+  motifEcart: z.string().trim().min(5).max(500).optional(),
+}).strict();
+
+export const rapportCaisseQuerySchema = z.object({
+  periode: z.enum(['JOUR', 'MOIS', 'ANNEE']).default('JOUR'),
+  date: z.string().date().optional(),
+}).strict();
+
 export const annulerVenteSchema = z.object({
   motif: z.string().trim().min(5).max(500),
   autorisationTitulaire: z.object({

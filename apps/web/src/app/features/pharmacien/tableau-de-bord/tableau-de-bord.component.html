@@ -57,6 +57,65 @@
       </article>
     </div>
 
+    <section class="bb-tdb__rapport">
+      <div class="bb-tdb__rapport-tete">
+        <h2 class="bb-tdb__section">{{ 'PHARMACIEN.TDB.RAPPORT_CAISSE' | translate }}</h2>
+        <div class="bb-tdb__rapport-filtres">
+          @for (p of ['JOUR', 'MOIS', 'ANNEE']; track p) {
+            <button matButton type="button" [disabled]="periodeRapport() === p"
+                    (click)="periodeRapport.set($any(p)); chargerRapport()">
+              {{ ('PHARMACIEN.TDB.PERIODE_' + p) | translate }}
+            </button>
+          }
+        </div>
+      </div>
+      @if (rapport(); as r) {
+        <p class="bb-tdb__muted">{{ r.dateDebut | date:'dd/MM/yyyy' }} – {{ r.dateFin | date:'dd/MM/yyyy' }}</p>
+        <div class="bb-tdb__stats">
+          <article class="bb-tdb__stat bb-tdb__stat--primaire">
+            <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.CHIFFRE' | translate }}</span>
+            <span class="bb-tdb__stat-valeur">{{ r.chiffreAffairesGnf | number }}</span>
+            <span class="bb-tdb__stat-unite">GNF</span>
+          </article>
+          <article class="bb-tdb__stat">
+            <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.VENTES' | translate }}</span>
+            <span class="bb-tdb__stat-valeur">{{ r.nombreVentesPayees }}</span>
+          </article>
+          <article class="bb-tdb__stat">
+            <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.EN_ATTENTE' | translate }}</span>
+            <span class="bb-tdb__stat-valeur">{{ r.nombreVentesEnAttente }}</span>
+          </article>
+          <article class="bb-tdb__stat" [class.bb-tdb__stat--alerte]="r.nombreVentesAnnulees > 0">
+            <span class="bb-tdb__stat-label">{{ 'PHARMACIEN.TDB.ANNULEES' | translate }}</span>
+            <span class="bb-tdb__stat-valeur">{{ r.nombreVentesAnnulees }}</span>
+          </article>
+        </div>
+        @if (r.sessions.length > 0) {
+          <h3 class="bb-tdb__rapport-sous-titre">{{ 'PHARMACIEN.TDB.SESSIONS' | translate }}</h3>
+          @for (s of r.sessions; track s.id) {
+            <div class="bb-tdb__rapport-session">
+              <span>{{ s.utilisateur.prenom }} {{ s.utilisateur.nom }} · {{ s.ouverteLe | date:'dd/MM HH:mm' }}</span>
+              <span>{{ s.statut === 'OUVERTE' ? ('PHARMACIEN.CAISSE.SESSION_ACTIVE' | translate) : ('PHARMACIEN.CAISSE.SESSION_FERMEE' | translate) }}</span>
+              <strong>{{ s.montantTheoriqueGnf | number }} GNF</strong>
+              @if (s.ecartGnf !== null) { <span>{{ 'PHARMACIEN.CAISSE.ECART' | translate }} : {{ s.ecartGnf | number }} GNF</span> }
+            </div>
+          }
+        }
+        @if (r.encaissementsParMode.length > 0) {
+          <h3 class="bb-tdb__rapport-sous-titre">{{ 'PHARMACIEN.TDB.ENCAISSEMENTS' | translate }}</h3>
+          @for (m of r.encaissementsParMode; track m.modePaiement) {
+            <div class="bb-tdb__rapport-session">
+              <span>{{ 'PAIEMENT.MODE.' + m.modePaiement | translate }}</span>
+              <span>{{ m.nombre }} {{ 'PHARMACIEN.TDB.VENTES_COURT' | translate }}</span>
+              <strong>{{ m.montantGnf | number }} GNF</strong>
+            </div>
+          }
+        }
+      } @else {
+        <p class="bb-tdb__muted">{{ 'COMMON.LOADING' | translate }}</p>
+      }
+    </section>
+
     <!-- ── Encaissements par moyen de paiement ────────────────────── -->
     <h2 class="bb-tdb__section">{{ 'PHARMACIEN.TDB.ENCAISSEMENTS' | translate }}</h2>
 

@@ -180,6 +180,11 @@ enum StatutVente {
   ANNULEE
 }
 
+enum StatutSessionCaisse {
+  OUVERTE
+  CLOTUREE
+}
+
 /// Ce que le catalogue peut contenir, en liste fermee (decision du 2026-10-01).
 ///
 /// `Medicament.categorie` etait un texte libre facultatif : « cosmetique »,
@@ -364,6 +369,7 @@ model Utilisateur {
   demandesRdvTraitees      DemandeRendezVous[]      @relation("DemandesRendezVousTraitees")
   approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
   ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
+  sessionsCaisse           SessionCaisse[]
   ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
   ventesAnnulationAutorisee VenteComptoir[]         @relation("VentesAnnulationAutorisee")
   reglementsAssureurSaisis ReglementAssureur[]      @relation("ReglementsAssureur")
@@ -728,6 +734,7 @@ model StructureSante {
   commandes            Commande[]            @relation("PharmacieCommande")
   reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
   ventesComptoir       VenteComptoir[]
+  sessionsCaisse       SessionCaisse[]
   medicamentsPersonnalises Medicament[]
   assureur             Assureur?
   reglementsRecus      ReglementAssureur[]
@@ -1553,6 +1560,7 @@ model LotStock {
   @@map("lots_stock")
 }
 
+
 model Facture {
   id                 String        @id @default(cuid())
   montantGnf         Int
@@ -2300,6 +2308,9 @@ model VenteComptoir {
   idStructure String
   structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
 
+  idSessionCaisse String?
+  sessionCaisse   SessionCaisse? @relation(fields: [idSessionCaisse], references: [id], onDelete: Restrict)
+
   idVendeur String
   vendeur   Utilisateur @relation("VentesVendeur", fields: [idVendeur], references: [id], onDelete: Restrict)
 
@@ -2350,6 +2361,41 @@ model VenteComptoir {
   @@index([idStructure, statut])
   @@index([idAutoriseePar])
   @@map("ventes_comptoir")
+}
+
+/// Une session de caisse appartient a un utilisateur et a une officine.
+/// Les montants de cloture sont figes pour conserver la reconciliation meme
+/// si une vente est annulee ou corrigee ulterieurement.
+model SessionCaisse {
+  id String @id @default(cuid())
+
+  statut                       StatutSessionCaisse @default(OUVERTE)
+  montantOuvertureGnf          Int
+  montantEspecesEncaisseGnf    Int?
+  montantOrangeMoneyGnf        Int?
+  montantMtnMomoGnf             Int?
+  montantTheoriqueGnf          Int?
+  montantCompteGnf             Int?
+  ecartGnf                     Int?
+  nombreVentesPayees           Int?
+  nombreVentesEnAttente        Int?
+  nombreVentesAnnulees         Int?
+  motifEcart                   String?
+  ouverteLe                    DateTime            @default(now())
+  clotureeLe                   DateTime?
+  version                      Int                 @default(0)
+
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+
+  idUtilisateur String
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  ventes VenteComptoir[]
+
+  @@index([idStructure, ouverteLe(sort: Desc)])
+  @@index([idUtilisateur, ouverteLe(sort: Desc)])
+  @@map("sessions_caisse")
 }
 
 model LigneVente {
@@ -2581,4 +2627,32 @@ model ControleEligibilite {
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([idStructure, creeLe(sort: Desc)])
   @@map("controles_eligibilite")
+}
+
+// Mouvement de stock immutable : ajoute seul pour tracer toute mutation de
+// quantite (approvisionnement, vente, annulation, ajustement, ecriture manuelle).
+enum MouvementType {
+  ENTREE
+  SORTIE
+  AJUSTEMENT
+  CORRECTION
+}
+
+model MouvementStock {
+  id           String   @id @default(cuid())
+  type         MouvementType
+  quantite     Int
+  reference    String?  // id de la ressource source (vente, approvisionnement, ajustement)
+  motif        String?
+  creeLe       DateTime @default(now())
+
+  idStructure  String
+  idMedicament String?
+  idStock      String?
+  idLot        String?
+  idUtilisateur String
+
+  @@index([idStructure, creeLe(sort: Desc)])
+  @@index([idMedicament])
+  @@map("mouvements_stock")
 }

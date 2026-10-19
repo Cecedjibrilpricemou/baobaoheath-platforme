@@ -8,7 +8,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { ToastrService } from 'ngx-toastr';
-import type { RuptureStockView, TableauDeBordOfficineView } from '@baobaoheath/shared-types';
+import type { RapportCaisseView, RuptureStockView, TableauDeBordOfficineView } from '@baobaoheath/shared-types';
 
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
@@ -29,6 +29,8 @@ export class TableauDeBordComponent implements OnInit {
   private i18n = inject(I18nService);
 
   tb = signal<TableauDeBordOfficineView | null>(null);
+  rapport = signal<RapportCaisseView | null>(null);
+  periodeRapport = signal<'JOUR' | 'MOIS' | 'ANNEE'>('JOUR');
 
   /** Ce qu'on emporte chez le grossiste : les produits en manque, et de
    * combien. Le manque est la difference au seuil — c'est le nombre qu'on
@@ -78,6 +80,20 @@ export class TableauDeBordComponent implements OnInit {
           e?.status === 0
             ? this.i18n.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE')
             : this.i18n.t('PHARMACIEN.TDB.ERR_LOAD'),
+          this.i18n.t('COMMON.ERROR_TITLE')
+        );
+      },
+    });
+    this.chargerRapport();
+  }
+
+  chargerRapport() {
+    this.pharma.getRapportCaisse(this.periodeRapport()).subscribe({
+      next: (r) => this.rapport.set(r.data ?? null),
+      error: (err) => {
+        const e = err as { status?: number; error?: { error?: string } };
+        this.toastr.error(
+          e?.status === 0 ? this.i18n.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE') : e?.error?.error ?? this.i18n.t('PHARMACIEN.TDB.RAPPORT_ERR'),
           this.i18n.t('COMMON.ERROR_TITLE')
         );
       },

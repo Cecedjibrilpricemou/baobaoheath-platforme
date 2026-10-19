@@ -37,11 +37,25 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-async function upsertStructure(nom: string, type: TypeStructure, telephone: string) {
+async function upsertStructure(
+  nom: string,
+  type: TypeStructure,
+  telephone: string,
+  estPartenaire?: boolean,
+) {
   const existante = await prisma.structureSante.findFirst({ where: { nom } });
-  if (existante) return existante;
+  if (existante) {
+    if (estPartenaire === undefined) return existante;
+    return prisma.structureSante.update({
+      where: { id: existante.id },
+      data: { estPartenaire },
+    });
+  }
   return prisma.structureSante.create({
-    data: { nom, type, prefecture: E2E.prefecture, telephone, estActive: true },
+    data: {
+      nom, type, prefecture: E2E.prefecture, telephone, estActive: true,
+      ...(estPartenaire === undefined ? {} : { estPartenaire }),
+    },
   });
 }
 
@@ -72,11 +86,14 @@ async function main() {
   const motDePasseHash = await hashPassword(E2E.motDePasse);
 
   const centre = await upsertStructure(E2E.centre.nom, TypeStructure.CENTRE, E2E.centre.telephone);
-  const pharmacie = await upsertStructure(E2E.pharmacie.nom, TypeStructure.PHARMACIE, E2E.pharmacie.telephone);
+  const pharmacie = await upsertStructure(
+    E2E.pharmacie.nom, TypeStructure.PHARMACIE, E2E.pharmacie.telephone, true,
+  );
   const pharmacieAutre = await upsertStructure(
     E2E.pharmacieAutre.nom,
     TypeStructure.PHARMACIE,
     E2E.pharmacieAutre.telephone,
+    true,
   );
   const laboratoire = await upsertStructure(E2E.laboratoire.nom, TypeStructure.LABORATOIRE, E2E.laboratoire.telephone);
   await seedExamens(prisma);

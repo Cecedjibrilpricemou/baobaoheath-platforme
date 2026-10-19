@@ -34,6 +34,7 @@
       display: inline-flex; align-items: center; justify-content: center;
       color: var(--bb-danger); background: var(--bb-danger-bg);
     }
+
     p { margin: 0; font-weight: 600; }
   }
 
@@ -220,6 +221,17 @@
 
 // Les classements numerotent leurs lignes : le compteur repart a chaque bloc.
 .bb-tdb { counter-reset: bb-tdb-rang; }
+
+.bb-tdb__rapport { margin: 24px 0; }
+.bb-tdb__rapport-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bb-tdb__rapport-filtres { display: flex; gap: 6px; flex-wrap: wrap; }
+.bb-tdb__rapport-sous-titre { margin: 20px 0 10px; color: var(--bb-text-primary); font-family: var(--bb-font-display); }
+.bb-tdb__rapport-session {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 18px;
+  padding: 12px 14px; margin-bottom: 8px; color: var(--bb-text-secondary);
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: var(--bb-radius-lg);
+}
+.bb-tdb__rapport-session strong { color: var(--bb-text-primary); }
 
 @keyframes bb-tdb-jauge {
   from { transform: scaleX(0); }

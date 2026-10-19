@@ -25,6 +25,7 @@ import type {
   LigneVenteDto,
   ModePaiement,
   PriseEnChargeView,
+  SessionCaisseView,
   VenteComptoirView,
 } from '@baobaoheath/shared-types';
 
@@ -56,6 +57,21 @@ export class CaisseComponent implements OnInit {
   /** Le stock de l'officine : il contient aussi des articles non medicamenteux. */
   stocks = signal<PharmacieStock[]>([]);
   ventes = signal<VenteComptoirView[]>([]);
+  session = signal<SessionCaisseView | null>(null);
+  ouvertureMontant = signal<number | null>(0);
+  clotureMontant = signal<number | null>(0);
+  motifEcart = signal('');
+  sessionEnCours = signal(false);
+  readonly caisseOuverte = computed(() => this.session()?.statut === 'OUVERTE');
+  readonly peutCloturer = computed(() => {
+    const compte = this.clotureMontant();
+    const attendu = this.session()?.montantTheoriqueGnf;
+    return this.caisseOuverte()
+      && compte !== null
+      && Number.isInteger(compte)
+      && compte >= 0
+      && (compte === attendu || this.motifEcart().trim().length >= 5);
+  });
 
   /**
    * Le journal de caisse, tel qu'on le rend en fin de journee.
@@ -133,6 +149,7 @@ export class CaisseComponent implements OnInit {
   );
 
   readonly peutEncaisser = computed(() =>
+    this.caisseOuverte() &&
     this.lignes().some((l) => l.idMedicament() && (l.quantite() ?? 0) > 0) &&
     this.depassements().length === 0 &&
     (this.modePaiement() === 'ESPECES' || this.numeroOperateur().trim().length > 0) &&
@@ -175,6 +192,7 @@ export class CaisseComponent implements OnInit {
   }
 
   private charger() {
+    this.chargerSession();
     this.isLoading.set(true);
     this.pharma.getVentes(20).subscribe({
       next: (r) => {
@@ -184,6 +202,56 @@ export class CaisseComponent implements OnInit {
       error: () => {
         this.isLoading.set(false);
         this.toastr.error(this.i18n.t('PHARMACIEN.CAISSE.ERR_LOAD'), this.i18n.t('COMMON.ERROR_TITLE'));
+      },
+    });
+  }
+
+  private chargerSession() {
+    this.pharma.getSessionCaisse().subscribe({
+      next: (r) => {
+        this.session.set(r.data ?? null);
+        if (r.data?.statut === 'OUVERTE') {
+          this.clotureMontant.set(r.data.montantTheoriqueGnf);
+        }
+      },
+      error: (err) => this.signaler(err, 'PHARMACIEN.CAISSE.ERR_SESSION'),
+    });
+  }
+
+  ouvrirSession() {
+    const montant = this.ouvertureMontant();
+    if (this.sessionEnCours() || montant === null || !Number.isInteger(montant) || montant < 0) return;
+    this.sessionEnCours.set(true);
+    this.pharma.ouvrirSessionCaisse(montant).subscribe({
+      next: (r) => {
+        this.sessionEnCours.set(false);
+        this.session.set(r.data ?? null);
+        this.clotureMontant.set(r.data?.montantTheoriqueGnf ?? montant);
+        this.toastr.success(this.i18n.t('PHARMACIEN.CAISSE.SESSION_OUVERTE'), this.i18n.t('COMMON.SUCCESS'));
+      },
+      error: (err) => {
+        this.sessionEnCours.set(false);
+        this.signaler(err, 'PHARMACIEN.CAISSE.ERR_SESSION');
+      },
+    });
+  }
+
+  cloturerSession() {
+    const session = this.session();
+    if (!session || !this.peutCloturer() || this.sessionEnCours()) return;
+    this.sessionEnCours.set(true);
+    this.pharma.cloturerSessionCaisse(session.id, {
+      montantCompteGnf: this.clotureMontant()!,
+      ...(this.motifEcart().trim() ? { motifEcart: this.motifEcart().trim() } : {}),
+    }).subscribe({
+      next: (r) => {
+        this.sessionEnCours.set(false);
+        this.session.set(r.data ?? null);
+        this.toastr.success(this.i18n.t('PHARMACIEN.CAISSE.SESSION_CLOTUREE'), this.i18n.t('COMMON.SUCCESS'));
+      },
+      error: (err) => {
+        this.sessionEnCours.set(false);
+        this.signaler(err, 'PHARMACIEN.CAISSE.ERR_SESSION');
       },
     });
   }
