@@ -320,6 +320,13 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
     if (dto.idPatient && dto.idPatient !== resultat.prise.idPatient) {
       throw new ValidationError("La carte d'assurance presentee n'appartient pas au patient selectionne");
     }
+    // La photo de la fiche est ce qui empeche une carte d'etre pretee : quand
+    // elle existe, la pharmacie doit l'avoir comparee a la personne presente.
+    if (resultat.prise.photoAComparer && dto.photoComparee !== true) {
+      throw new ValidationError(
+        "Comparez la photo de la carte avec la personne au comptoir, puis confirmez-le avant d'appliquer le tiers payant"
+      );
+    }
     prise = resultat.prise;
   }
   const idPatientVente = prise?.idPatient ?? dto.idPatient ?? null;
@@ -384,6 +391,7 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         montantPatientGnf: montantNetGnf - (prise?.montantAssureGnf ?? 0),
         idContratAssurance: prise?.idContratAssurance ?? null,
         idAdhesionAssurance: prise?.idAdhesionAssurance ?? null,
+        photoCompareeAuComptoir: Boolean(prise?.photoAComparer && dto.photoComparee),
         modePaiement: dto.modePaiement,
         numeroOperateur: dto.numeroOperateur?.trim() || null,
         // **Une vente mobile naît en attente.** Jusqu'au 2026-10-09 elle

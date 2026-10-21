@@ -1,8 +1,12 @@
-import { Router, Response } from 'express';
+import { NextFunction, Request, Router, Response } from 'express';
+import multer from 'multer';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as assurance from '../services/assurance.service';
+import * as personnes from '../services/personne-assuree.service';
+import { uploadPhotoAssure } from '../middlewares/upload.middleware';
+import { ValidationError } from '../utils/app-error';
 import {
   creerAgentAssureurSchema,
   creerAssureurSchema,
@@ -18,6 +22,10 @@ import {
   terminerAdhesionSchema,
   renouvelerContratSchema,
   creerReglePoliceSchema,
+  ajouterTravailleurSchema,
+  assurerPersonneSchema,
+  modifierPersonneAssureeSchema,
+  importerTravailleursSchema,
 } from '../validators/api.schemas';
 import type {
   AgentAssureurCreeView,
@@ -36,6 +44,9 @@ import type {
   ContratCollectifView,
   PatientAssureurRechercheView,
   RegleCouvertureView,
+  PersonneAssureeView,
+  PersonneEnregistreeView,
+  RapportImportTravailleursView,
 } from '@baobaoheath/shared-types';
 
 /**
@@ -52,6 +63,31 @@ import type {
 const router = Router();
 
 router.use(authenticate);
+
+/**
+ * Une photo d'identite : jamais mise en cache, ni par le navigateur ni par un
+ * intermediaire. Elle ne doit pas survivre a l'ecran qui l'a demandee.
+ */
+function envoyerPhoto(res: Response, image: Buffer) {
+  res.setHeader('Content-Type', 'image/webp');
+  res.setHeader('Cache-Control', 'no-store, private');
+  res.send(image);
+}
+
+/** Recoit la photo envoyee, et traduit les refus de multer en erreurs lisibles. */
+function recevoirPhoto(req: Request, res: Response, next: NextFunction) {
+  uploadPhotoAssure(req, res, (err: unknown) => {
+    if (err) {
+      next(new ValidationError(
+        err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
+          ? 'Image trop volumineuse (5 Mo maximum).'
+          : err instanceof Error ? err.message : 'Échec du téléversement.'
+      ));
+      return;
+    }
+    next();
+  });
+}
 
 // ── Le comptoir ──────────────────────────────────────────────────────
 
@@ -97,6 +133,20 @@ router.post(
 );
 
 /**
+ * La photo de la carte presentee, pour la comparer a la personne au comptoir.
+ * POST et non GET : le jeton de la carte ne doit pas apparaitre dans une URL,
+ * donc dans les journaux.
+ */
+router.post(
+  '/cartes/photo',
+  requireRole('PHARMACIEN', 'AGENT_ACCUEIL'),
+  validateBody(verifierCarteAssuranceSchema),
+  async (req: AuthRequest, res: Response) => {
+    envoyerPhoto(res, await personnes.photoPourComptoir(req.user!, req.body.jetonCarte));
+  }
+);
+
+/**
  * Chiffre une prise en charge **sans rien enregistrer**, pour que le comptoir
  * la montre avant le paiement : « un reste a charge sans explication se
  * conteste au comptoir » (point 5.4).
@@ -132,6 +182,16 @@ router.get('/mes-cartes', requireRole('PATIENT'), async (req: AuthRequest, res: 
   const data: CarteAssuranceView[] = await assurance.mesCartesAssurance(req.user!.userId);
   res.json({ success: true, data });
 });
+
+/** La photo de sa propre carte. */
+router.post(
+  '/mes-cartes/photo',
+  requireRole('PATIENT'),
+  validateBody(verifierCarteAssuranceSchema),
+  async (req: AuthRequest, res: Response) => {
+    envoyerPhoto(res, await personnes.photoPourPatient(req.user!.userId, req.body.jetonCarte));
+  }
+);
 
 // ── L'administration ─────────────────────────────────────────────────
 
@@ -369,6 +429,74 @@ router.post(
     res.status(201).json({ success: true, data, message: 'Regle de la police ajoutee' });
   }
 );
+
+// ── Les personnes assurees : fiche d'identite et photo ───────────────
+
+/** Ajouter un travailleur a un contrat d'entreprise : fiche, compte et adhesion. */
+router.post(
+  '/moi/contrats-collectifs/:id/travailleurs',
+  requireRole('ASSUREUR'),
+  validateBody(ajouterTravailleurSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: PersonneEnregistreeView = await personnes.ajouterTravailleur(
+      req.user!, req.params['id'] as string, req.body,
+    );
+    res.status(201).json({
+      success: true,
+      data,
+      message: `${data.personne.prenoms} ${data.personne.nom} ajoute au contrat`,
+    });
+  }
+);
+
+/** La liste du personnel en CSV : un rapport ligne par ligne. */
+router.post(
+  '/moi/contrats-collectifs/:id/import',
+  requireRole('ASSUREUR'),
+  validateBody(importerTravailleursSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: RapportImportTravailleursView = await personnes.importerTravailleurs(
+      req.user!, req.params['id'] as string, req.body.contenu,
+    );
+    res.json({ success: true, data });
+  }
+);
+
+/** Assurer une personne a titre individuel : fiche, compte et police. */
+router.post(
+  '/moi/personnes',
+  requireRole('ASSUREUR'),
+  validateBody(assurerPersonneSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: PersonneEnregistreeView = await personnes.assurerPersonne(req.user!, req.body);
+    res.status(201).json({ success: true, data, message: `Police ${data.contrat?.numeroPolice ?? ''} enregistree` });
+  }
+);
+
+router.get('/moi/personnes/:id', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const data: PersonneAssureeView = await personnes.obtenirPersonne(req.user!, req.params['id'] as string);
+  res.json({ success: true, data });
+});
+
+router.patch(
+  '/moi/personnes/:id',
+  requireRole('ASSUREUR'),
+  validateBody(modifierPersonneAssureeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: PersonneAssureeView = await personnes.modifierPersonne(req.user!, req.params['id'] as string, req.body);
+    res.json({ success: true, data, message: 'Fiche mise a jour' });
+  }
+);
+
+router.post('/moi/personnes/:id/photo', requireRole('ASSUREUR'), recevoirPhoto, async (req: AuthRequest, res: Response) => {
+  if (!req.file) throw new ValidationError('Aucune image reçue.');
+  const data: PersonneAssureeView = await personnes.enregistrerPhoto(req.user!, req.params['id'] as string, req.file.buffer);
+  res.json({ success: true, data, message: 'Photo enregistree' });
+});
+
+router.get('/moi/personnes/:id/photo', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  envoyerPhoto(res, await personnes.photoPourCompagnie(req.user!, req.params['id'] as string));
+});
 
 router.get('/moi/reglements', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
   const data: ReglementView[] = await assurance.mesReglements(req.user!);

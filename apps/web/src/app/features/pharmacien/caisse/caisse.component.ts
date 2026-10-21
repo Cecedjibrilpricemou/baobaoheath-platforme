@@ -13,7 +13,7 @@
 // ne notifie personne, et le total resterait fige. Le formulaire
 // d'approvisionnement avait affiche un total faux et un bouton mort pour
 // cette raison le 2026-09-30.
-import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -50,7 +50,7 @@ type LignePanier = {
   templateUrl: './caisse.component.html',
   styleUrl: './caisse.component.scss',
 })
-export class CaisseComponent implements OnInit {
+export class CaisseComponent implements OnInit, OnDestroy {
   private pharma = inject(PharmacienService);
   private toastr = inject(ToastrService);
   private i18n = inject(I18nService);
@@ -158,7 +158,7 @@ export class CaisseComponent implements OnInit {
     // Le tiers payant demande une carte reconnue eligible, et un calcul fait
     // sur le panier tel qu'il est : l'API refuserait ou recalculerait de toute
     // facon, autant ne pas afficher un reste a charge perime.
-    (!this.avecAssurance() || (this.peutAppliquerAssurance() && this.priseAJour()))
+    (!this.avecAssurance() || (this.peutAppliquerAssurance() && this.priseAJour() && this.identiteConfirmee()))
   );
 
   /** Ce que la caisse encaisse reellement du patient. */
@@ -174,6 +174,14 @@ export class CaisseComponent implements OnInit {
   jetonCarte = signal('');
   showScanner = signal(false);
   carte = signal<CarteAssuranceVerifieeView | null>(null);
+  /**
+   * La photo de la fiche de l'assure (URL d'objet). La comparer a la personne
+   * presente est ce qui empeche une carte d'etre pretee : l'API refuse le
+   * tiers payant sans cette confirmation.
+   */
+  photoCarte = signal<string | null>(null);
+  photoComparee = signal(false);
+  readonly identiteConfirmee = computed(() => !this.carte()?.photoAComparer || this.photoComparee());
   patient = signal<{ id: string; prenom: string; nom: string } | null>(null);
   prise = signal<PriseEnChargeView | null>(null);
   avecAssurance = signal(false);
@@ -308,6 +316,7 @@ export class CaisseComponent implements OnInit {
         this.carte.set(carte);
         // Le beneficiaire vient de la carte : la vente est rattachee a son dossier.
         this.patient.set(carte?.patient ?? null);
+        this.chargerPhotoCarte(carte);
         if (carte?.eligible) this.simuler();
       },
       error: (err) => {
@@ -319,7 +328,31 @@ export class CaisseComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.libererPhotoCarte();
+  }
+
+  private chargerPhotoCarte(carte: CarteAssuranceVerifieeView | null) {
+    this.libererPhotoCarte();
+    this.photoComparee.set(false);
+    if (!carte?.photoDisponible) return;
+    this.pharma.photoCarteAssurance(carte.jetonCarte).subscribe({
+      next: (image) => this.photoCarte.set(URL.createObjectURL(image)),
+      // Sans photo affichable, la confirmation reste impossible : le tiers
+      // payant aussi. On le dit plutot que de laisser un bouton grise muet.
+      error: () => this.toastr.error(this.i18n.t('PHARMACIEN.CAISSE.ERR_PHOTO'), this.i18n.t('COMMON.ERROR_TITLE')),
+    });
+  }
+
+  private libererPhotoCarte() {
+    const url = this.photoCarte();
+    if (url) URL.revokeObjectURL(url);
+    this.photoCarte.set(null);
+  }
+
   oublierCarte() {
+    this.libererPhotoCarte();
+    this.photoComparee.set(false);
     this.patient.set(null);
     this.jetonCarte.set('');
     this.carte.set(null);
@@ -390,7 +423,11 @@ export class CaisseComponent implements OnInit {
       ...(this.idOrdonnance().trim() ? { idOrdonnance: this.idOrdonnance().trim() } : {}),
       ...(this.patient() ? { idPatient: this.patient()!.id } : {}),
       ...(this.avecAssurance() && this.peutAppliquerAssurance() && this.carte()
-        ? { avecAssurance: true, jetonCarteAssurance: this.carte()!.jetonCarte }
+        ? {
+            avecAssurance: true,
+            jetonCarteAssurance: this.carte()!.jetonCarte,
+            ...(this.carte()!.photoAComparer ? { photoComparee: this.photoComparee() } : {}),
+          }
         : {}),
     };
 

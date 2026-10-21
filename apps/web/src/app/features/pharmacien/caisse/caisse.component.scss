@@ -212,9 +212,11 @@
 
   &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
 
+  // `--bb-success` plutot que l'accent : sur ce fond adouci, l'accent donnait
+  // 4,49:1 en clair, juste sous le seuil de 4,5:1.
   &__montant {
     font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
-    color: var(--cai-accent); white-space: nowrap;
+    color: var(--bb-success); white-space: nowrap;
     padding: 4px 12px; border-radius: 999px; background: var(--cai-accent-soft);
   }
 
@@ -349,6 +351,20 @@
     strong { color: var(--bb-text-primary); }
   }
   &__garanties { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+  // La photo de la fiche, assez grande pour reconnaitre un visage, avec la
+  // confirmation a cocher juste a cote.
+  &__identite {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 12px 14px; margin-bottom: 12px;
+    border: 1px solid var(--bb-warning-border); border-radius: var(--bb-radius-lg); background: var(--bb-warning-bg);
+  }
+  &__identite-texte { flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; }
+  &__photo {
+    width: 120px; height: 150px; flex: none; object-fit: cover;
+    border-radius: var(--bb-radius-md); border: 1px solid var(--bb-border); background: var(--bb-surface-2);
+  }
+  &__photo--attente { display: flex; align-items: center; justify-content: center; color: var(--bb-text-muted); }
   &__garantie {
     padding: 3px 10px; border-radius: var(--bb-radius-pill); font-size: 12.5px; font-weight: 700;
     background: var(--bb-success-bg); color: var(--bb-success); border: 1px solid var(--bb-success-border);

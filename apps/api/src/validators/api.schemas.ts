@@ -142,6 +142,7 @@ export const creerVenteSchema = z.object({
   // API l'a vu : les tests unitaires appellent le service, pas Zod.
   avecAssurance: z.boolean().optional(),
   jetonCarteAssurance: jetonCarte.optional(),
+  photoComparee: z.boolean().optional(),
 }).strict().superRefine((data, ctx) => {
   if (data.avecAssurance && !data.jetonCarteAssurance) {
     ctx.addIssue({
@@ -910,6 +911,68 @@ export const creerReglePoliceSchema = z.object({
   tauxPourcent: z.coerce.number().int().min(0).max(100).optional(),
   plafondLigneGnf: nonNegativeInt.max(1_000_000_000).optional(),
   dateEffet: dateAssurance.optional(),
+}).strict();
+
+// ── Fiches d'identite des personnes assurees ─────────────────────────
+
+const dateDuJourOuAvant = dateAssurance.refine((v) => Date.parse(v) <= Date.now(), 'La date ne peut pas etre dans le futur');
+
+const champsPersonneAssuree = {
+  nom: z.string().trim().min(1).max(80),
+  prenoms: z.string().trim().min(1).max(120),
+  sexe: z.enum(['M', 'F']),
+  dateNaissance: dateDuJourOuAvant.refine((v) => Date.parse(v) >= Date.parse('1900-01-01'), 'Date de naissance invalide'),
+  lieuNaissance: z.string().trim().min(2).max(120),
+  nationalite: z.string().trim().min(2).max(60),
+  typePiece: z.nativeEnum(TypePieceIdentite),
+  numeroPiece: z.string().trim().min(3).max(40),
+  dateDelivrancePiece: dateDuJourOuAvant.optional(),
+  dateExpirationPiece: dateAssurance.optional(),
+  adresse: z.string().trim().max(200).optional(),
+};
+
+const expirationApresDelivrance = (v: { dateDelivrancePiece?: string; dateExpirationPiece?: string }) =>
+  !v.dateDelivrancePiece || !v.dateExpirationPiece || Date.parse(v.dateExpirationPiece) > Date.parse(v.dateDelivrancePiece);
+const messageExpiration = {
+  message: 'La date d’expiration de la piece doit suivre sa date de delivrance.',
+  path: ['dateExpirationPiece'],
+};
+
+export const personneAssureeSchema = z.object({
+  ...champsPersonneAssuree,
+  telephone: phone,
+  prefecture: z.string().trim().min(2).max(80),
+}).strict().refine(expirationApresDelivrance, messageExpiration);
+
+export const modifierPersonneAssureeSchema = z.object(champsPersonneAssuree)
+  .partial().strict()
+  .refine((v) => Object.keys(v).length > 0, 'Aucune modification')
+  .refine(expirationApresDelivrance, messageExpiration);
+
+export const ajouterTravailleurSchema = z.object({
+  personne: personneAssureeSchema,
+  numeroAdherent: z.string().trim().min(2).max(80),
+  dateEffet: dateAssurance.optional(),
+  dateFin: dateAssurance.optional(),
+}).strict().refine(finApresDebut, messageFinApresDebut);
+
+export const assurerPersonneSchema = z.object({
+  personne: personneAssureeSchema,
+  police: z.object({
+    numeroPolice: z.string().trim().min(2).max(60),
+    tauxBasePourcent: z.coerce.number().int().min(0).max(100).optional(),
+    plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+    franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+    dateEffet: dateAssurance,
+    dateFin: dateAssurance.optional(),
+    carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+    periodeGraceJours: graceJours,
+  }).strict().refine(contratFinApresDebut, messageContratFinApresDebut),
+}).strict();
+
+/** La liste du personnel : un CSV entier, borne a un millier de lignes environ. */
+export const importerTravailleursSchema = z.object({
+  contenu: z.string().min(1).max(500_000),
 }).strict();
 
 // ── Referentiels importables (EF-12-03) ──────────────────────────────

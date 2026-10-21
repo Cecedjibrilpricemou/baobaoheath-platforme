@@ -57,6 +57,57 @@
     </section>
   }
 
+  <!-- ══ La fiche d'une personne, ouverte depuis une liste ══════════════ -->
+  @if (personneEnEdition(); as fiche) {
+    <section class="bb-ctr__panneau" aria-labelledby="ctr-fiche-titre">
+      <h2 id="ctr-fiche-titre" class="bb-ctr__titre">
+        {{ 'ASSUREUR.PERSONNE.FICHE_DE' | translate: { nom: fiche.prenoms + ' ' + fiche.nom } }}
+      </h2>
+      <p class="bb-ctr__aide">
+        {{ 'ASSUREUR.PERSONNE.TELEPHONE_FIXE' | translate: { telephone: fiche.telephone } }}
+      </p>
+      @if (fiche.pieceExpiree) {
+        <p class="bb-ctr__alerte" role="status">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.PIECE_EXPIREE_AIDE' | translate }}
+        </p>
+      }
+      @if (!fiche.photoDisponible) {
+        <p class="bb-ctr__alerte" role="status">
+          <i class="pi pi-camera" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.PHOTO_MANQUANTE_AIDE' | translate }}
+        </p>
+      }
+      <app-formulaire-personne [initial]="fiche" [photoExistante]="photoEdition()" />
+      <div class="bb-ctr__actions">
+        <button matButton="filled" type="button" [disabled]="!formulaire()?.valide() || enCours()" (click)="enregistrerFiche()">
+          {{ 'ASSUREUR.PERSONNE.ENREGISTRER_FICHE' | translate }}
+        </button>
+        <button matButton type="button" (click)="fermerFiche()">{{ 'COMMON.CANCEL' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  <!-- ══ Ce qui vient d'etre enregistre : le mot de passe ne sera plus montre ══ -->
+  @if (enregistrement(); as r) {
+    <section class="bb-ctr__panneau bb-ctr__panneau--succes" aria-labelledby="ctr-resultat-titre" role="status">
+      <h2 id="ctr-resultat-titre" class="bb-ctr__titre">
+        <i class="pi pi-check-circle" aria-hidden="true"></i>
+        {{ 'ASSUREUR.PERSONNE.ENREGISTREE' | translate: { nom: r.personne.prenoms + ' ' + r.personne.nom } }}
+      </h2>
+      @if (r.compteCree) {
+        <p class="bb-ctr__aide">{{ 'ASSUREUR.PERSONNE.COMPTE_CREE' | translate: { telephone: r.personne.telephone } }}</p>
+        <p class="bb-ctr__secret">
+          {{ 'ASSUREUR.PERSONNE.MOT_DE_PASSE' | translate }} : <strong>{{ r.motDePasseTemporaire }}</strong>
+        </p>
+        <p class="bb-ctr__aide">{{ 'ASSUREUR.PERSONNE.MOT_DE_PASSE_AIDE' | translate }}</p>
+      } @else {
+        <p class="bb-ctr__aide">{{ 'ASSUREUR.PERSONNE.COMPTE_RATTACHE' | translate: { telephone: r.personne.telephone } }}</p>
+      }
+      <div class="bb-ctr__actions">
+        <button matButton type="button" (click)="enregistrement.set(null)">{{ 'ASSUREUR.PERSONNE.COMPRIS' | translate }}</button>
+      </div>
+    </section>
+  }
+
   @if (onglet() === 'COLLECTIFS') {
     <!-- ══ Contrats d'entreprise ══════════════════════════════════════ -->
     <div class="bb-ctr__barre">
@@ -217,44 +268,106 @@
 
         <h3 class="bb-ctr__sous-titre">{{ 'ASSUREUR.CONTRATS.BENEFICIAIRES' | translate }}</h3>
         @if (c.statut === 'ACTIF') {
-          <div class="bb-ctr__ligne-form">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>{{ 'ASSUREUR.CONTRATS.TELEPHONE' | translate }}</mat-label>
-              <input matInput type="tel" inputmode="tel" maxlength="20" [(ngModel)]="telephone" (keyup.enter)="rechercher()" />
-            </mat-form-field>
-            <button matButton type="button" [disabled]="!telephone().trim() || enCours()" (click)="rechercher()">
-              <i class="pi pi-search" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.RECHERCHER' | translate }}
+          <div class="bb-ctr__actions">
+            <button matButton="filled" type="button" (click)="ouvrirAjoutTravailleur()">
+              <i class="pi pi-user-plus" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.AJOUTER_TRAVAILLEUR' | translate }}
+            </button>
+            <button matButton type="button" (click)="ouvrirImport()">
+              <i class="pi pi-upload" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.IMPORTER_LISTE' | translate }}
             </button>
           </div>
-          <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.RECHERCHE_AIDE' | translate }}</p>
-          @if (resultats().length > 1) {
-            <mat-radio-group class="bb-ctr__choix" [value]="patientChoisi()" (change)="patientChoisi.set($event.value)" [attr.aria-label]="'ASSUREUR.CONTRATS.CHOISIR_PERSONNE' | translate">
-              @for (p of resultats(); track p.id) {
-                <mat-radio-button [value]="p">{{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }} @if (p.anneeNaissance) { · {{ p.anneeNaissance }} }</mat-radio-button>
-              }
-            </mat-radio-group>
-          }
-          @if (patientChoisi(); as p) {
-            <p class="bb-ctr__personne"><i class="pi pi-user" aria-hidden="true"></i> {{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }}</p>
-            <div class="bb-ctr__grille">
-              <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                <mat-label>{{ 'ASSUREUR.CONTRATS.NUMERO_ADHERENT' | translate }} *</mat-label>
-                <input matInput type="text" maxlength="80" [(ngModel)]="numeroAdherent" />
-              </mat-form-field>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                <mat-label>{{ 'ASSUREUR.CONTRATS.DEBUT' | translate }}</mat-label>
-                <input matInput type="date" [(ngModel)]="debutAdhesion" />
-              </mat-form-field>
-              <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                <mat-label>{{ 'ASSUREUR.CONTRATS.FIN_ADHESION' | translate }}</mat-label>
-                <input matInput type="date" [(ngModel)]="finAdhesion" />
-              </mat-form-field>
+
+          @if (formTravailleur()) {
+            <div class="bb-ctr__panneau bb-ctr__panneau--imbrique" aria-labelledby="ctr-travailleur-titre">
+              <h4 id="ctr-travailleur-titre" class="bb-ctr__sous-titre">{{ 'ASSUREUR.PERSONNE.NOUVEAU_TRAVAILLEUR' | translate }}</h4>
+              <p class="bb-ctr__aide">{{ 'ASSUREUR.PERSONNE.NOUVEAU_TRAVAILLEUR_AIDE' | translate }}</p>
+              <app-formulaire-personne />
+              <h4 class="bb-ctr__sous-titre">{{ 'ASSUREUR.PERSONNE.ADHESION' | translate }}</h4>
+              <div class="bb-ctr__grille">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'ASSUREUR.CONTRATS.NUMERO_ADHERENT' | translate }} *</mat-label>
+                  <input matInput type="text" maxlength="80" [(ngModel)]="numeroAdherent" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'ASSUREUR.CONTRATS.DEBUT' | translate }}</mat-label>
+                  <input matInput type="date" [(ngModel)]="debutAdhesion" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'ASSUREUR.CONTRATS.FIN_ADHESION' | translate }}</mat-label>
+                  <input matInput type="date" [min]="debutAdhesion()" [(ngModel)]="finAdhesion" />
+                </mat-form-field>
+              </div>
+              <div class="bb-ctr__actions">
+                <button matButton="filled" type="button" [disabled]="!peutAjouterTravailleur() || enCours()" (click)="ajouterTravailleur()">
+                  {{ (enCours() ? 'COMMON.LOADING' : 'ASSUREUR.PERSONNE.ENREGISTRER_TRAVAILLEUR') | translate }}
+                </button>
+                <button matButton type="button" (click)="fermerFormulaires()">{{ 'COMMON.CANCEL' | translate }}</button>
+              </div>
             </div>
-            <div class="bb-ctr__actions">
-              <button matButton="filled" type="button" [disabled]="!peutAjouterAdhesion() || enCours()" (click)="ajouterAdhesion()">
-                {{ 'ASSUREUR.CONTRATS.AJOUTER_BENEFICIAIRE' | translate }}
-              </button>
-              <button matButton type="button" (click)="oublierPersonne()">{{ 'COMMON.CANCEL' | translate }}</button>
+          }
+
+          @if (formImport()) {
+            <div class="bb-ctr__panneau bb-ctr__panneau--imbrique" aria-labelledby="ctr-import-titre">
+              <h4 id="ctr-import-titre" class="bb-ctr__sous-titre">{{ 'ASSUREUR.PERSONNE.IMPORTER_LISTE' | translate }}</h4>
+              <p class="bb-ctr__aide">{{ 'ASSUREUR.PERSONNE.IMPORT_AIDE' | translate }}</p>
+              <div class="bb-ctr__actions">
+                <button matButton type="button" (click)="telechargerModele()">
+                  <i class="pi pi-download" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.TELECHARGER_MODELE' | translate }}
+                </button>
+                <label class="bb-ctr__fichier" [class.bb-ctr__fichier--occupe]="enCours()">
+                  <input type="file" accept=".csv,text/csv" [disabled]="enCours()" (change)="importerFichier($event)" />
+                  <span><i class="pi pi-upload" aria-hidden="true"></i>
+                    {{ (enCours() ? 'COMMON.LOADING' : 'ASSUREUR.PERSONNE.CHOISIR_FICHIER') | translate }}</span>
+                </label>
+                <button matButton type="button" (click)="fermerFormulaires()">{{ 'COMMON.CLOSE' | translate }}</button>
+              </div>
+
+              @if (rapportImport(); as rapport) {
+                <p class="bb-ctr__personne" role="status">
+                  {{ 'ASSUREUR.PERSONNE.RAPPORT_RESUME' | translate: { crees: rapport.crees, rattaches: rapport.rattaches, refuses: rapport.refuses } }}
+                </p>
+                @if (rapport.crees > 0) {
+                  <p class="bb-ctr__alerte">
+                    <i class="pi pi-key" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.RAPPORT_MOTS_DE_PASSE' | translate }}
+                  </p>
+                }
+                <div class="bb-ctr__actions">
+                  <button matButton type="button" (click)="telechargerRapport()">
+                    <i class="pi pi-download" aria-hidden="true"></i> {{ 'ASSUREUR.PERSONNE.TELECHARGER_RAPPORT' | translate }}
+                  </button>
+                </div>
+                <div class="bb-asr__table-enveloppe">
+                  <table class="bb-asr__table">
+                    <thead>
+                      <tr>
+                        <th class="bb-asr__nombre">{{ 'ASSUREUR.PERSONNE.COL_LIGNE' | translate }}</th>
+                        <th>{{ 'ASSUREUR.COL_ASSURE' | translate }}</th>
+                        <th>{{ 'ASSUREUR.PERSONNE.COL_RESULTAT' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (l of rapport.lignes; track l.numero) {
+                        <tr>
+                          <td class="bb-asr__nombre">{{ l.numero }}</td>
+                          <td class="bb-asr__cellule-principale">
+                            <strong>{{ l.nom ?? '—' }}</strong>
+                            @if (l.numeroAdherent) { <span>{{ l.numeroAdherent }}</span> }
+                          </td>
+                          <td>
+                            <span class="bb-asr__etat" [class.bb-asr__etat--off]="l.statut === 'REFUSE'">
+                              {{ 'ASSUREUR.PERSONNE.STATUT_IMPORT.' + l.statut | translate }}
+                            </span>
+                            @if (l.motif) { <span class="bb-asr__note">{{ l.motif }}</span> }
+                            @if (l.motDePasseTemporaire) {
+                              <span class="bb-asr__note">{{ 'ASSUREUR.PERSONNE.MOT_DE_PASSE' | translate }} : <strong>{{ l.motDePasseTemporaire }}</strong></span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
             </div>
           }
         } @else {
@@ -268,7 +381,9 @@
             <table class="bb-asr__table">
               <thead>
                 <tr>
+                  <th><span class="bb-ctr__masque">{{ 'ASSUREUR.PERSONNE.PHOTO' | translate }}</span></th>
                   <th>{{ 'ASSUREUR.COL_ASSURE' | translate }}</th>
+                  <th>{{ 'ASSUREUR.PERSONNE.PIECE' | translate }}</th>
                   <th>{{ 'ASSUREUR.CONTRATS.NUMERO_ADHERENT' | translate }}</th>
                   <th>{{ 'ASSUREUR.CONTRATS.PERIODE' | translate }}</th>
                   <th></th>
@@ -277,9 +392,25 @@
               <tbody>
                 @for (a of adhesions(); track a.id) {
                   <tr>
+                    <td>
+                      @if (a.personne && miniatures()[a.personne.id]; as image) {
+                        <img class="bb-ctr__miniature" [src]="image" [alt]="'ASSUREUR.PERSONNE.PHOTO_DE' | translate: { nom: a.patient.prenom + ' ' + a.patient.nom }" width="40" height="50" />
+                      } @else {
+                        <span class="bb-ctr__miniature bb-ctr__miniature--vide" aria-hidden="true"><i class="pi pi-user"></i></span>
+                      }
+                    </td>
                     <td class="bb-asr__cellule-principale">
                       <strong>{{ a.patient.prenom }} {{ a.patient.nom }}</strong>
                       @if (a.motifFin) { <span>{{ 'ASSUREUR.CONTRATS.MOTIF_FIN' | translate: { motif: a.motifFin } }}</span> }
+                    </td>
+                    <td>
+                      @if (a.personne; as fiche) {
+                        {{ 'HOPITAL.IDENTITES.PIECE_' + fiche.typePiece | translate }} · {{ fiche.numeroPiece }}
+                        @if (fiche.pieceExpiree) { <span class="bb-asr__etat bb-asr__etat--off">{{ 'ASSUREUR.PERSONNE.PIECE_EXPIREE' | translate }}</span> }
+                        @if (!fiche.photoDisponible) { <span class="bb-asr__etat bb-asr__etat--off">{{ 'ASSUREUR.PERSONNE.SANS_PHOTO' | translate }}</span> }
+                      } @else {
+                        <span class="bb-asr__note">{{ 'ASSUREUR.PERSONNE.SANS_FICHE' | translate }}</span>
+                      }
                     </td>
                     <td>
                       {{ a.numeroAdherent }}
@@ -289,7 +420,10 @@
                       {{ a.dateEffet | date: 'dd/MM/yyyy' : 'UTC' }} →
                       @if (a.dateFin) { {{ a.dateFin | date: 'dd/MM/yyyy' : 'UTC' }} } @else { {{ 'ASSUREUR.CONTRATS.FIN_DU_CONTRAT' | translate }} }
                     </td>
-                    <td>
+                    <td class="bb-ctr__cellule-actions">
+                      @if (a.personne) {
+                        <button matButton type="button" (click)="ouvrirFiche(a.personne.id)">{{ 'ASSUREUR.PERSONNE.FICHE' | translate }}</button>
+                      }
                       @if (a.statut === 'ACTIF' && !a.finEnregistreeLe) {
                         <button matButton type="button" (click)="demanderFin(a)">{{ 'ASSUREUR.CONTRATS.TERMINER' | translate }}</button>
                       }
@@ -332,7 +466,7 @@
     <div class="bb-ctr__barre">
       <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.INDIVIDUELS_AIDE' | translate }}</p>
       @if (!formPolice()) {
-        <button matButton="filled" type="button" (click)="formPolice.set(true)">
+        <button matButton="filled" type="button" (click)="ouvrirNouvellePolice()">
           <i class="pi pi-plus" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.NOUVELLE_POLICE' | translate }}
         </button>
       }
@@ -341,25 +475,9 @@
     @if (formPolice()) {
       <section class="bb-ctr__panneau" aria-labelledby="ctr-police-titre">
         <h2 id="ctr-police-titre" class="bb-ctr__titre">{{ 'ASSUREUR.CONTRATS.NOUVELLE_POLICE' | translate }}</h2>
-        <div class="bb-ctr__ligne-form">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>{{ 'ASSUREUR.CONTRATS.TELEPHONE' | translate }}</mat-label>
-            <input matInput type="tel" inputmode="tel" maxlength="20" [(ngModel)]="telephone" (keyup.enter)="rechercher()" />
-          </mat-form-field>
-          <button matButton type="button" [disabled]="!telephone().trim() || enCours()" (click)="rechercher()">
-            <i class="pi pi-search" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.RECHERCHER' | translate }}
-          </button>
-        </div>
-        <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.RECHERCHE_AIDE' | translate }}</p>
-        @if (resultats().length > 1) {
-          <mat-radio-group class="bb-ctr__choix" [value]="patientChoisi()" (change)="patientChoisi.set($event.value)" [attr.aria-label]="'ASSUREUR.CONTRATS.CHOISIR_PERSONNE' | translate">
-            @for (p of resultats(); track p.id) {
-              <mat-radio-button [value]="p">{{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }} @if (p.anneeNaissance) { · {{ p.anneeNaissance }} }</mat-radio-button>
-            }
-          </mat-radio-group>
-        }
-        @if (patientChoisi(); as p) {
-          <p class="bb-ctr__personne"><i class="pi pi-user" aria-hidden="true"></i> {{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }}</p>
+        <p class="bb-ctr__aide">{{ 'ASSUREUR.PERSONNE.NOUVELLE_PERSONNE_AIDE' | translate }}</p>
+        <app-formulaire-personne />
+        <h3 class="bb-ctr__sous-titre">{{ 'ASSUREUR.PERSONNE.POLICE' | translate }}</h3>
           <div class="bb-ctr__grille">
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-label>{{ 'ASSUREUR.CONTRATS.NUMERO_POLICE' | translate }} *</mat-label>
@@ -394,12 +512,11 @@
               <input matInput type="number" min="0" max="90" step="1" [(ngModel)]="gracePolice" />
             </mat-form-field>
           </div>
-        }
         <div class="bb-ctr__actions">
           <button matButton="filled" type="button" [disabled]="!peutCreerPolice() || enCours()" (click)="creerPolice()">
-            {{ 'ASSUREUR.CONTRATS.CREER' | translate }}
+            {{ (enCours() ? 'COMMON.LOADING' : 'ASSUREUR.CONTRATS.CREER') | translate }}
           </button>
-          <button matButton type="button" (click)="formPolice.set(false); oublierPersonne()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button matButton type="button" (click)="fermerFormulaires()">{{ 'COMMON.CANCEL' | translate }}</button>
         </div>
       </section>
     }
@@ -416,6 +533,7 @@
         <table class="bb-asr__table">
           <thead>
             <tr>
+              <th><span class="bb-ctr__masque">{{ 'ASSUREUR.PERSONNE.PHOTO' | translate }}</span></th>
               <th>{{ 'ASSUREUR.COL_ASSURE' | translate }}</th>
               <th>{{ 'ASSUREUR.COL_POLICE' | translate }}</th>
               <th>{{ 'ASSUREUR.CONTRATS.TAUX_PROPRES' | translate }}</th>
@@ -425,6 +543,13 @@
           <tbody>
             @for (p of polices(); track p.idContrat) {
               <tr>
+                <td>
+                  @if (p.personne && miniatures()[p.personne.id]; as image) {
+                    <img class="bb-ctr__miniature" [src]="image" [alt]="'ASSUREUR.PERSONNE.PHOTO_DE' | translate: { nom: p.patient.prenom + ' ' + p.patient.nom }" width="40" height="50" />
+                  } @else {
+                    <span class="bb-ctr__miniature bb-ctr__miniature--vide" aria-hidden="true"><i class="pi pi-user"></i></span>
+                  }
+                </td>
                 <td class="bb-asr__cellule-principale">
                   <strong>{{ p.patient.prenom }} {{ p.patient.nom }}</strong>
                   <span>{{ p.dateEffet | date: 'dd/MM/yyyy' : 'UTC' }} → @if (p.dateFin) { {{ p.dateFin | date: 'dd/MM/yyyy' : 'UTC' }} } @else { — }</span>
@@ -445,7 +570,10 @@
                     }
                   </div>
                 </td>
-                <td>
+                <td class="bb-ctr__cellule-actions">
+                  @if (p.personne) {
+                    <button matButton type="button" (click)="ouvrirFiche(p.personne.id)">{{ 'ASSUREUR.PERSONNE.FICHE' | translate }}</button>
+                  }
                   <button matButton type="button" (click)="ouvrirRegle('INDIVIDUELLE', p.idContrat, p.numeroPolice)">
                     <i class="pi pi-percentage" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.AJOUTER_TAUX' | translate }}
                   </button>

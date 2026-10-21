@@ -7,7 +7,7 @@
 // **Le QR ne porte que le jeton opaque** : ni nom, ni numero, ni donnee
 // medicale. Ce qui est imprime autour sert a lire la carte ; ce qui decide
 // du tiers payant, c'est la verification serveur au comptoir.
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import QRCode from 'qrcode';
@@ -36,7 +36,8 @@ const POLICE_TITRE = "'Sora', sans-serif";
 const POLICE_TEXTE = "'DM Sans', 'Segoe UI', sans-serif";
 
 /** Une carte, avec l'image de son QR une fois generee. */
-type CarteAffichee = CarteAssuranceView & { qr: string };
+/** Une carte, avec l'image de son QR et la photo du beneficiaire (URL d'objet). */
+type CarteAffichee = CarteAssuranceView & { qr: string; photo: string | null };
 
 @Component({
   selector: 'app-patient-cartes-assurance',
@@ -45,7 +46,7 @@ type CarteAffichee = CarteAssuranceView & { qr: string };
   templateUrl: './cartes-assurance.component.html',
   styleUrl: './cartes-assurance.component.scss',
 })
-export class CartesAssuranceComponent implements OnInit {
+export class CartesAssuranceComponent implements OnInit, OnDestroy {
   private patients = inject(PatientService);
   private i18n = inject(I18nService);
 
@@ -62,7 +63,8 @@ export class CartesAssuranceComponent implements OnInit {
         const qrs = await Promise.all(cartes.map((c) =>
           QRCode.toDataURL(c.jetonCarte, { width: 320, margin: 2, errorCorrectionLevel: 'Q' }).catch(() => '')
         ));
-        this.cartes.set(cartes.map((c, i) => ({ ...c, qr: qrs[i] ?? '' })));
+        this.cartes.set(cartes.map((c, i) => ({ ...c, qr: qrs[i] ?? '', photo: null })));
+        this.chargerPhotos(cartes);
         this.chargement.set(false);
       },
       error: (err) => {
@@ -70,6 +72,24 @@ export class CartesAssuranceComponent implements OnInit {
         this.erreur.set(err?.error?.error ?? this.i18n.t('PATIENT.CARTES.ERR_LOAD'));
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    for (const c of this.cartes()) if (c.photo) URL.revokeObjectURL(c.photo);
+  }
+
+  /** La photo de la fiche, quand la compagnie en a enregistre une. */
+  private chargerPhotos(cartes: CarteAssuranceView[]) {
+    for (const carte of cartes.filter((c) => c.photoDisponible)) {
+      this.patients.photoCarteAssurance(carte.jetonCarte).subscribe({
+        next: (image) => {
+          const url = URL.createObjectURL(image);
+          this.cartes.update((liste) => liste.map((c) => (c.jetonCarte === carte.jetonCarte ? { ...c, photo: url } : c)));
+        },
+        // Sans photo, la carte reste utilisable a l'ecran : rien a signaler.
+        error: () => undefined,
+      });
+    }
   }
 
   estUtilisable(c: CarteAssuranceView): boolean {
@@ -150,14 +170,24 @@ export class CartesAssuranceComponent implements OnInit {
     ];
     if (c.souscripteur) lignes.splice(1, 0, [this.i18n.t('PATIENT.CARTES.ENTREPRISE'), c.souscripteur]);
 
+    // La photo, a gauche comme sur une piece d'identite ; le texte se decale.
+    const photo = c.photo ? await this.charger(c.photo) : null;
+    const xTexte = photo ? 380 : 60;
+    if (photo) {
+      ctx.drawImage(photo, 60, 220, 280, 350);
+      ctx.strokeStyle = IMPRESSION.texteSecondaire;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(60, 220, 280, 350);
+    }
+
     let y = 260;
     for (const [libelle, valeur] of lignes) {
       ctx.fillStyle = IMPRESSION.texteSecondaire;
       ctx.font = `400 34px ${POLICE_TEXTE}`;
-      ctx.fillText(libelle, 60, y);
+      ctx.fillText(libelle, xTexte, y);
       ctx.fillStyle = IMPRESSION.texte;
       ctx.font = `700 46px ${POLICE_TEXTE}`;
-      ctx.fillText(valeur, 60, y + 52, 1000);
+      ctx.fillText(valeur, xTexte, y + 52, L - 560 - xTexte);
       y += 128;
     }
 

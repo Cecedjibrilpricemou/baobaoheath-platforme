@@ -376,6 +376,7 @@ model Utilisateur {
   ventesAnnulationAutorisee VenteComptoir[]          @relation("VentesAnnulationAutorisee")
   reglementsAssureurSaisis  ReglementAssureur[]      @relation("ReglementsAssureur")
   finsAdhesionEnregistrees  AdhesionAssurance[]      @relation("FinsAdhesion")
+  personnesAssureesSaisies  PersonneAssuree[]        @relation("PersonnesAssureesSaisies")
   controlesEligibilite      ControleEligibilite[]    @relation("ControlesEligibilite")
   syncEvents                SyncEvent[]
   syncMutations             SyncMutation[]
@@ -895,6 +896,7 @@ model PatientProfile {
   ventesComptoir       VenteComptoir[]
   contratsAssurance    ContratAssurance[]
   adhesionsAssurance   AdhesionAssurance[]
+  fichesAssurance      PersonneAssuree[]
   controlesEligibilite ControleEligibilite[]
   rendezVous           RendezVous[]
   consentements        ConsentementPatient[]
@@ -2340,6 +2342,10 @@ model VenteComptoir {
   montantAssureGnf  Int @default(0)
   montantPatientGnf Int @default(0)
 
+  /// La pharmacie a confirme avoir compare la photo de la fiche de l'assure
+  /// avec la personne au comptoir. Exige des que la fiche porte une photo.
+  photoCompareeAuComptoir Boolean @default(false)
+
   /// L'operation de la passerelle de paiement, quand la vente passe par elle.
   ///
   /// **C'est la cle stable.** On relit le statut par elle, jamais par le
@@ -2478,6 +2484,7 @@ model Assureur {
   regles             RegleCouverture[]
   reglements         ReglementAssureur[]
   conventions        StructureAssureur[]
+  personnesAssurees  PersonneAssuree[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2645,6 +2652,47 @@ model ContratCollectifAssurance {
   @@index([idEntreprise, statut])
   @@index([idAssureur, statut])
   @@map("contrats_collectifs_assurance")
+}
+
+/// La fiche d'identite d'une personne assuree, tenue par sa compagnie.
+///
+/// Elle reprend la piece d'identite et la photo : c'est ce qui permet a la
+/// pharmacie de reconnaitre le beneficiaire au comptoir, et a la compagnie
+/// d'ouvrir le tiers payant sans passage a l'accueil d'un hopital. Elle ne
+/// modifie pas le dossier medical du patient : son niveau d'identite reste
+/// celui que les soignants ont constate.
+model PersonneAssuree {
+  id                  String            @id @default(cuid())
+  nom                 String
+  prenoms             String
+  /// 'M' ou 'F', comme le dossier patient.
+  sexe                String
+  dateNaissance       DateTime          @db.Date
+  lieuNaissance       String
+  nationalite         String
+  typePiece           TypePieceIdentite
+  numeroPiece         String
+  dateDelivrancePiece DateTime?         @db.Date
+  dateExpirationPiece DateTime?         @db.Date
+  telephone           String
+  adresse             String?
+  /// Nom du fichier dans le stockage prive. **Jamais sous `uploads/`**, qui
+  /// est servi sans authentification.
+  photo               String?
+  creeLe              DateTime          @default(now())
+  modifieLe           DateTime          @updatedAt
+
+  idAssureur  String
+  assureur    Assureur       @relation(fields: [idAssureur], references: [id], onDelete: Restrict)
+  idPatient   String
+  patient     PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+  idSaisiePar String?
+  saisiePar   Utilisateur?   @relation("PersonnesAssureesSaisies", fields: [idSaisiePar], references: [id], onDelete: SetNull)
+
+  @@unique([idAssureur, idPatient])
+  @@unique([idAssureur, typePiece, numeroPiece])
+  @@index([idAssureur, nom])
+  @@map("personnes_assurees")
 }
 
 /// Adherence individuelle d'un beneficiaire a un contrat collectif.

@@ -37,6 +37,10 @@
         </header>
 
         <div class="bb-cartes__corps">
+          @if (c.photo) {
+            <img class="bb-cartes__photo" [src]="c.photo" width="96" height="120"
+                 [alt]="'PATIENT.CARTES.PHOTO_ALT' | translate: { nom: c.beneficiaire.prenom + ' ' + c.beneficiaire.nom }" />
+          }
           <dl class="bb-cartes__infos">
             <div><dt>{{ 'PATIENT.CARTES.BENEFICIAIRE' | translate }}</dt><dd>{{ c.beneficiaire.prenom }} {{ c.beneficiaire.nom }}</dd></div>
             <div>

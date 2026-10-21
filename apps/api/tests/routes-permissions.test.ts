@@ -348,6 +348,10 @@ describe('l assurance separe le comptoir de l administration', () => {
       ['post', '/moi/contrats-collectifs/:id/renouveler'],
       ['get', '/moi/contrats-collectifs/:id/adhesions'], ['post', '/moi/contrats-collectifs/:id/adhesions'],
       ['post', '/moi/adhesions/:id/fin'], ['post', '/moi/polices/regles'],
+      ['post', '/cartes/photo'], ['post', '/mes-cartes/photo'],
+      ['post', '/moi/contrats-collectifs/:id/travailleurs'], ['post', '/moi/contrats-collectifs/:id/import'],
+      ['post', '/moi/personnes'], ['get', '/moi/personnes/:id'], ['patch', '/moi/personnes/:id'],
+      ['post', '/moi/personnes/:id/photo'], ['get', '/moi/personnes/:id/photo'],
     ] as const) {
       expect(rolesPour(assurance, methode, chemin)).not.toBeNull();
     }
@@ -366,6 +370,12 @@ describe('le lot assurance garde chaque public a sa place', () => {
   // Ses cartes, le patient seul les lit : elles portent le jeton de son QR.
   it('reserve les cartes au patient connecte', () => {
     expect(rolesPour(assurance, 'get', '/mes-cartes')).toEqual(['PATIENT']);
+    expect(rolesPour(assurance, 'post', '/mes-cartes/photo')).toEqual(['PATIENT']);
+  });
+
+  // La photo d'un assure ne sort, au comptoir, que pour la carte presentee.
+  it('ouvre la photo de la carte au comptoir seulement', () => {
+    expect(rolesPour(assurance, 'post', '/cartes/photo')).toEqual(['PHARMACIEN', 'AGENT_ACCUEIL']);
   });
 
   // Contrats, adhesions et taux vivent dans l'espace de la compagnie.
@@ -379,6 +389,13 @@ describe('le lot assurance garde chaque public a sa place', () => {
     ['post', '/moi/contrats-collectifs/:id/adhesions'],
     ['post', '/moi/adhesions/:id/fin'],
     ['post', '/moi/polices/regles'],
+    ['post', '/moi/contrats-collectifs/:id/travailleurs'],
+    ['post', '/moi/contrats-collectifs/:id/import'],
+    ['post', '/moi/personnes'],
+    ['get', '/moi/personnes/:id'],
+    ['patch', '/moi/personnes/:id'],
+    ['post', '/moi/personnes/:id/photo'],
+    ['get', '/moi/personnes/:id/photo'],
   ])('%s %s est reservee a l assureur', (methode, chemin) => {
     expect(rolesPour(assurance, methode, chemin)).toEqual(['ASSUREUR']);
   });

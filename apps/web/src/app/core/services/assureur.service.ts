@@ -9,14 +9,17 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import type {
   AdhesionAssuranceView,
+  AjouterTravailleurDto,
+  AssurerPersonneDto,
+  ModifierPersonneAssureeDto,
+  PersonneAssureeView,
+  PersonneEnregistreeView,
+  RapportImportTravailleursView,
   AssureView,
   ContratAssuranceView,
   ContratCollectifView,
-  CreerAdhesionAssuranceDto,
   CreerContratCollectifDto,
-  CreerContratIndividuelDto,
   CreerReglePoliceDto,
-  PatientAssureurRechercheView,
   RegleCouvertureView,
   TerminerAdhesionDto,
   CreerReglementDto,
@@ -56,13 +59,43 @@ export class AssureurService {
 
   // ── Les contrats de la compagnie (lot assurance) ─────────────────
 
-  /** Retrouver la personne a rattacher, par son numero de telephone exact. */
-  rechercherPatient(telephone: string): Observable<ApiResponse<PatientAssureurRechercheView[]>> {
-    return this.api.get<ApiResponse<PatientAssureurRechercheView[]>>('/assurance/moi/patients', { telephone });
+  // ── Les personnes assurees : fiche d'identite et photo ───────────
+
+  /** Un travailleur : sa fiche, son compte patient si besoin, et son adhesion. */
+  ajouterTravailleur(idContrat: string, payload: AjouterTravailleurDto): Observable<ApiResponse<PersonneEnregistreeView>> {
+    return this.api.post<ApiResponse<PersonneEnregistreeView>>(
+      `/assurance/moi/contrats-collectifs/${idContrat}/travailleurs`, payload
+    );
   }
 
-  creerContratIndividuel(payload: CreerContratIndividuelDto): Observable<ApiResponse<ContratAssuranceView>> {
-    return this.api.post<ApiResponse<ContratAssuranceView>>('/assurance/moi/contrats', payload);
+  /** La liste du personnel en CSV : le rapport dit ce qu'il advient de chaque ligne. */
+  importerTravailleurs(idContrat: string, contenu: string): Observable<ApiResponse<RapportImportTravailleursView>> {
+    return this.api.post<ApiResponse<RapportImportTravailleursView>>(
+      `/assurance/moi/contrats-collectifs/${idContrat}/import`, { contenu }
+    );
+  }
+
+  /** Une personne assuree a titre individuel : fiche, compte et police. */
+  assurerPersonne(payload: AssurerPersonneDto): Observable<ApiResponse<PersonneEnregistreeView>> {
+    return this.api.post<ApiResponse<PersonneEnregistreeView>>('/assurance/moi/personnes', payload);
+  }
+
+  personne(idPersonne: string): Observable<ApiResponse<PersonneAssureeView>> {
+    return this.api.get<ApiResponse<PersonneAssureeView>>(`/assurance/moi/personnes/${idPersonne}`);
+  }
+
+  modifierPersonne(idPersonne: string, payload: ModifierPersonneAssureeDto): Observable<ApiResponse<PersonneAssureeView>> {
+    return this.api.patch<ApiResponse<PersonneAssureeView>>(`/assurance/moi/personnes/${idPersonne}`, payload);
+  }
+
+  envoyerPhoto(idPersonne: string, photo: File): Observable<ApiResponse<PersonneAssureeView>> {
+    const corps = new FormData();
+    corps.append('photo', photo);
+    return this.api.post<ApiResponse<PersonneAssureeView>>(`/assurance/moi/personnes/${idPersonne}/photo`, corps);
+  }
+
+  photo(idPersonne: string): Observable<Blob> {
+    return this.api.getBlob(`/assurance/moi/personnes/${idPersonne}/photo`);
   }
 
   contratsCollectifs(): Observable<ApiResponse<ContratCollectifView[]>> {
@@ -81,12 +114,6 @@ export class AssureurService {
 
   adhesions(idContrat: string): Observable<ApiResponse<AdhesionAssuranceView[]>> {
     return this.api.get<ApiResponse<AdhesionAssuranceView[]>>(`/assurance/moi/contrats-collectifs/${idContrat}/adhesions`);
-  }
-
-  ajouterAdhesion(idContrat: string, payload: CreerAdhesionAssuranceDto): Observable<ApiResponse<AdhesionAssuranceView>> {
-    return this.api.post<ApiResponse<AdhesionAssuranceView>>(
-      `/assurance/moi/contrats-collectifs/${idContrat}/adhesions`, payload
-    );
   }
 
   terminerAdhesion(idAdhesion: string, payload: TerminerAdhesionDto): Observable<ApiResponse<AdhesionAssuranceView>> {

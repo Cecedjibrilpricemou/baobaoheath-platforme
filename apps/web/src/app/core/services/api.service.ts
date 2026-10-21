@@ -49,6 +49,15 @@ export class ApiService {
         });
     }
 
+    /**
+     * Un fichier obtenu par POST : pour une photo d'assure, le jeton de la
+     * carte voyage dans le corps et non dans l'URL, qui finirait dans les
+     * journaux.
+     */
+    postBlob(endpoint: string, body: unknown): Observable<Blob> {
+        return this.http.post(`${this.baseUrl}${endpoint}`, body, { responseType: 'blob', withCredentials: true });
+    }
+
     post<T>(endpoint: string, body: unknown): Observable<T> {
         return this.http.post<T>(`${this.baseUrl}${endpoint}`, body, { withCredentials: true });
     }

@@ -5,7 +5,7 @@
   &__onglets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   &__onglet {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 8px 16px; border-radius: var(--bb-radius-pill); cursor: pointer;
+    min-height: 44px; padding: 8px 16px; border-radius: var(--bb-radius-pill); cursor: pointer;
     border: 1px solid var(--bb-border); background: var(--bb-surface-card);
     color: var(--bb-text-secondary); font-family: var(--bb-font-body); font-weight: 700; font-size: 14px;
     &:focus-visible { outline: 2px solid var(--asr-accent); outline-offset: 2px; }
@@ -38,7 +38,7 @@
   &__personne { margin: 4px 0 10px; font-weight: 700; color: var(--bb-text-primary); }
 
   &__grille {
-    display: grid; gap: 16px 14px; margin-bottom: 10px; align-items: center;
+    display: grid; gap: 16px 14px; margin-bottom: 10px; align-items: start;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
     mat-form-field { width: 100%; }
   }
@@ -49,7 +49,10 @@
   &__champ--large { grid-column: 1 / -1; }
   &__choix { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
 
-  &__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  &__actions {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;
+    > button { min-height: 44px; }
+  }
 
   &__pastilles { display: flex; flex-wrap: wrap; gap: 6px; }
   &__pastille {
@@ -63,4 +66,58 @@
   }
 
   &__ligne--active td { background: var(--asr-survol); }
+
+  // Un panneau dans le contrat ouvert (ajout, import) : en retrait, sans ombre.
+  &__panneau--imbrique { margin: 12px 0; background: var(--bb-surface-1); box-shadow: none; }
+  &__panneau--succes { background: var(--bb-success-bg); border-color: var(--bb-success-border); }
+
+  &__alerte {
+    display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; padding: 8px 12px;
+    border-radius: var(--bb-radius-md); font-size: 13px;
+    background: var(--bb-warning-bg); color: var(--bb-warning); border: 1px solid var(--bb-warning-border);
+  }
+
+  // Le mot de passe temporaire : lisible, en police mono, pour etre dicte.
+  &__secret {
+    margin: 0 0 8px; font-size: 15px; color: var(--bb-text-primary);
+    strong { font-family: var(--bb-font-mono); font-size: 18px; letter-spacing: 1px; }
+  }
+
+  // Le champ de fichier natif est cache ; son libelle sert de bouton.
+  &__fichier {
+    position: relative; display: inline-flex; align-items: center; gap: 6px;
+    min-height: 44px; padding: 8px 16px; border-radius: var(--bb-radius-pill); cursor: pointer;
+    border: 1px solid var(--asr-accent); background: var(--asr-accent-soft);
+    color: var(--bb-success); font-weight: 700; font-size: 14px;
+    input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    &:focus-within { outline: 2px solid var(--asr-accent); outline-offset: 2px; }
+  }
+  &__fichier--occupe { opacity: 0.7; cursor: progress; input { cursor: progress; } }
+
+  &__miniature {
+    display: block; width: 40px; height: 50px; border-radius: var(--bb-radius-sm);
+    object-fit: cover; border: 1px solid var(--bb-border); background: var(--bb-surface-2);
+  }
+  &__miniature--vide {
+    display: flex; align-items: center; justify-content: center; color: var(--bb-text-muted);
+  }
+
+  &__cellule-actions { white-space: nowrap; }
+
+  // Un titre de colonne pour les lecteurs d'ecran seulement.
+  &__masque {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  @media (max-width: 520px) {
+    &__onglets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    &__onglet { justify-content: center; padding-inline: 10px; }
+    &__panneau { padding: 14px; }
+    &__ligne-form {
+      align-items: stretch;
+      mat-form-field { max-width: none; }
+      > button { min-height: 44px; }
+    }
+  }
 }

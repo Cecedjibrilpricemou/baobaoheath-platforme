@@ -45,3 +45,17 @@ export const uploadLogo = multer({
 
 export const LOGOS_PUBLIC_PATH = '/uploads/logos';
 export { LOGOS_DIR };
+
+// Photo d'identite d'une personne assuree. En memoire : elle est recadree par
+// sharp puis ecrite dans le stockage prive (jamais sous `uploads/`, public).
+export const uploadPhotoAssure = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (!TYPES_IMAGE_ACCEPTES.includes(file.mimetype)) {
+      cb(new Error('Format non supporté — utilisez une image JPEG, PNG ou WebP.'));
+      return;
+    }
+    cb(null, true);
+  },
+}).single('photo');

@@ -8,16 +8,19 @@
 // Les taux propres a une police priment sur ceux de la compagnie : c'est ce
 // qui permet a deux entreprises d'avoir des pourcentages differents.
 //
+// Une personne s'ajoute par sa fiche d'identite (piece et photo) : son compte
+// patient est cree s'il n'existe pas, ou retrouve par son telephone. Pour une
+// entreprise, la liste du personnel peut aussi s'importer en CSV.
+//
 // Chaque champ est un signal : l'application est zoneless, et un `ngModel`
 // qui ecrirait dans un objet ordinaire ne notifierait personne.
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { ToastrService } from 'ngx-toastr';
 import type {
@@ -25,14 +28,18 @@ import type {
   AssureView,
   CategorieProduit,
   ContratCollectifView,
-  PatientAssureurRechercheView,
+  PersonneAssureeView,
+  PersonneEnregistreeView,
+  RapportImportTravailleursView,
   TypeCouverture,
 } from '@baobaoheath/shared-types';
+import { enCsv } from '@baobaoheath/shared-types';
 
 import { AssureurService } from '../../../core/services/assureur.service';
 import { CategorieProduitPipe } from '../../../shared/pipes/categorie-produit.pipe';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { FormulairePersonneComponent } from '../formulaire-personne/formulaire-personne.component';
 
 /** Les categories de l'enum Prisma, dans l'ordre ou on les rencontre. */
 const CATEGORIES: CategorieProduit[] = [
@@ -41,6 +48,22 @@ const CATEGORIES: CategorieProduit[] = [
 ];
 
 type Onglet = 'COLLECTIFS' | 'INDIVIDUELS';
+
+/** Les colonnes du modele d'import, dans l'ordre ou l'API les lit. */
+const COLONNES_MODELE = [
+  'nom', 'prenoms', 'sexe', 'date_naissance', 'lieu_naissance', 'nationalite', 'type_piece', 'numero_piece',
+  'date_delivrance', 'date_expiration', 'telephone', 'adresse', 'prefecture', 'numero_adherent', 'date_effet',
+];
+
+/** Propose un fichier au navigateur, sans passer par le serveur. */
+function telecharger(contenu: string, nom: string): void {
+  const url = URL.createObjectURL(new Blob([contenu], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nom;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 /** Un entier saisi, ou `undefined` si le champ est vide. */
 function entier(v: number | string | null | undefined): number | undefined {
@@ -54,12 +77,12 @@ function entier(v: number | string | null | undefined): number | undefined {
   standalone: true,
   imports: [
     DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
-    MatRadioModule, MatSelectModule, CategorieProduitPipe, TranslatePipe,
+    MatSelectModule, CategorieProduitPipe, TranslatePipe, FormulairePersonneComponent,
   ],
   templateUrl: './contrats.component.html',
   styleUrl: './contrats.component.scss',
 })
-export class AssureurContratsComponent implements OnInit {
+export class AssureurContratsComponent implements OnInit, OnDestroy {
   private service = inject(AssureurService);
   private toastr = inject(ToastrService);
   private i18n = inject(I18nService);
@@ -89,13 +112,26 @@ export class AssureurContratsComponent implements OnInit {
 
   nouvelleEcheance = signal('');
 
-  // ── Rattacher une personne (adhesion ou police individuelle) ────
-  telephone = signal('');
-  resultats = signal<PatientAssureurRechercheView[]>([]);
-  patientChoisi = signal<PatientAssureurRechercheView | null>(null);
+  // ── Ajouter une personne : fiche d'identite, photo, compte ──────
+  /** Le formulaire d'identite ouvert ; un seul a la fois. */
+  formulaire = viewChild(FormulairePersonneComponent);
+  formTravailleur = signal(false);
   numeroAdherent = signal('');
   debutAdhesion = signal('');
   finAdhesion = signal('');
+  /** Le dernier enregistrement : il porte le mot de passe temporaire, rendu une seule fois. */
+  enregistrement = signal<PersonneEnregistreeView | null>(null);
+
+  // ── Import de la liste du personnel ──────────────────────────────
+  formImport = signal(false);
+  rapportImport = signal<RapportImportTravailleursView | null>(null);
+
+  // ── Fiche ouverte pour mise a jour ───────────────────────────────
+  personneEnEdition = signal<PersonneAssureeView | null>(null);
+  photoEdition = signal<string | null>(null);
+
+  /** Les photos des listes, par fiche : des URL d'objet, liberees en sortant. */
+  miniatures = signal<Record<string, string>>({});
 
   // ── Fin d'adhesion ───────────────────────────────────────────────
   adhesionATerminer = signal<AdhesionAssuranceView | null>(null);
@@ -129,12 +165,13 @@ export class AssureurContratsComponent implements OnInit {
     && !!this.debutContrat() && !!this.finContrat() && this.finContrat() > this.debutContrat()
   );
 
-  readonly peutAjouterAdhesion = computed(() =>
-    !!this.patientChoisi() && this.numeroAdherent().trim().length >= 2
+  readonly peutAjouterTravailleur = computed(() =>
+    !!this.formulaire()?.valide() && this.numeroAdherent().trim().length >= 2
+    && (!this.finAdhesion() || !this.debutAdhesion() || this.finAdhesion() >= this.debutAdhesion())
   );
 
   readonly peutCreerPolice = computed(() =>
-    !!this.patientChoisi() && this.numeroPolice().trim().length >= 2 && this.tauxValide(this.tauxPolice())
+    !!this.formulaire()?.valide() && this.numeroPolice().trim().length >= 2 && this.tauxValide(this.tauxPolice())
     && !!this.debutPolice() && (!this.finPolice() || this.finPolice() > this.debutPolice())
   );
 
@@ -145,6 +182,11 @@ export class AssureurContratsComponent implements OnInit {
   ngOnInit(): void {
     this.chargerContrats();
     this.chargerPolices();
+  }
+
+  ngOnDestroy(): void {
+    for (const url of Object.values(this.miniatures())) URL.revokeObjectURL(url);
+    this.libererPhotoEdition();
   }
 
   private tauxValide(t: number | null): boolean {
@@ -174,8 +216,10 @@ export class AssureurContratsComponent implements OnInit {
     this.chargementPolices.set(true);
     this.service.mesAssures().subscribe({
       next: (r) => {
-        this.polices.set((r.data ?? []).filter((a) => a.typeCouverture === 'INDIVIDUELLE'));
+        const polices = (r.data ?? []).filter((a) => a.typeCouverture === 'INDIVIDUELLE');
+        this.polices.set(polices);
         this.chargementPolices.set(false);
+        this.chargerMiniatures(polices.map((p) => p.personne));
       },
       error: (err) => {
         this.chargementPolices.set(false);
@@ -186,8 +230,19 @@ export class AssureurContratsComponent implements OnInit {
 
   changerOnglet(o: Onglet) {
     this.onglet.set(o);
-    this.oublierPersonne();
+    this.fermerFormulaires();
     this.cibleRegle.set(null);
+  }
+
+  /** Ferme les formulaires de personne et d'import : un seul est ouvert a la fois. */
+  fermerFormulaires() {
+    this.formTravailleur.set(false);
+    this.formPolice.set(false);
+    this.formImport.set(false);
+    this.rapportImport.set(null);
+    this.numeroAdherent.set('');
+    this.debutAdhesion.set('');
+    this.finAdhesion.set('');
   }
 
   // ── Contrats collectifs ──────────────────────────────────────────
@@ -226,13 +281,20 @@ export class AssureurContratsComponent implements OnInit {
 
   ouvrir(c: ContratCollectifView) {
     this.selection.set(c);
-    this.oublierPersonne();
+    this.fermerFormulaires();
     this.cibleRegle.set(null);
     this.adhesionATerminer.set(null);
     this.nouvelleEcheance.set('');
-    this.adhesions.set([]);
-    this.service.adhesions(c.id).subscribe({
-      next: (r) => this.adhesions.set(r.data ?? []),
+    this.chargerAdhesions(c.id);
+  }
+
+  private chargerAdhesions(idContrat: string) {
+    this.service.adhesions(idContrat).subscribe({
+      next: (r) => {
+        const adhesions = r.data ?? [];
+        this.adhesions.set(adhesions);
+        this.chargerMiniatures(adhesions.map((a) => a.personne));
+      },
       error: (err) => this.signaler(err),
     });
   }
@@ -252,54 +314,181 @@ export class AssureurContratsComponent implements OnInit {
     });
   }
 
-  // ── Retrouver la personne, par son telephone exact ──────────────
+  // ── Ajouter un travailleur ou assurer une personne ───────────────
 
-  rechercher() {
-    const tel = this.telephone().trim();
-    if (!tel || this.enCours()) return;
-    this.enCours.set(true);
-    this.patientChoisi.set(null);
-    this.service.rechercherPatient(tel).subscribe({
-      next: (r) => {
-        this.enCours.set(false);
-        const trouves = r.data ?? [];
-        this.resultats.set(trouves);
-        if (trouves.length === 1) this.patientChoisi.set(trouves[0]!);
-        if (trouves.length === 0) this.toastr.info(this.i18n.t('ASSUREUR.CONTRATS.AUCUNE_PERSONNE'));
-      },
-      error: (err) => this.signaler(err),
-    });
+  ouvrirAjoutTravailleur() {
+    this.fermerFormulaires();
+    this.enregistrement.set(null);
+    this.formTravailleur.set(true);
   }
 
-  oublierPersonne() {
-    this.telephone.set('');
-    this.resultats.set([]);
-    this.patientChoisi.set(null);
-    this.numeroAdherent.set('');
-    this.debutAdhesion.set('');
-    this.finAdhesion.set('');
-  }
-
-  ajouterAdhesion() {
+  ajouterTravailleur() {
     const c = this.selection();
-    const p = this.patientChoisi();
-    if (!c || !p || !this.peutAjouterAdhesion() || this.enCours()) return;
+    const f = this.formulaire();
+    if (!c || !f || !this.peutAjouterTravailleur() || this.enCours()) return;
+    const photo = f.photo();
     this.enCours.set(true);
-    this.service.ajouterAdhesion(c.id, {
-      idPatient: p.id,
+    this.service.ajouterTravailleur(c.id, {
+      personne: f.donnees(),
       numeroAdherent: this.numeroAdherent().trim(),
       ...(this.debutAdhesion() ? { dateEffet: this.debutAdhesion() } : {}),
       ...(this.finAdhesion() ? { dateFin: this.finAdhesion() } : {}),
     }).subscribe({
+      next: (r) => this.envoyerPhotoPuis(r.data!.personne.id, photo, () => {
+        this.terminerEnregistrement(r.data!, r.message);
+        this.chargerAdhesions(c.id);
+        this.chargerContrats(c.id);
+      }),
+      error: (err) => this.signaler(err),
+    });
+  }
+
+  /**
+   * La photo part apres la fiche, qui doit exister pour la porter. Si elle
+   * echoue, la personne reste enregistree : on le dit, et la photo s'ajoute
+   * depuis sa fiche.
+   */
+  private envoyerPhotoPuis(idPersonne: string, photo: File | null, suite: () => void) {
+    if (!photo) {
+      suite();
+      return;
+    }
+    this.service.envoyerPhoto(idPersonne, photo).subscribe({
+      next: () => suite(),
+      error: () => {
+        this.toastr.warning(this.i18n.t('ASSUREUR.PERSONNE.PHOTO_NON_ENREGISTREE'), this.i18n.t('COMMON.ERROR_TITLE'));
+        suite();
+      },
+    });
+  }
+
+  private terminerEnregistrement(r: PersonneEnregistreeView, message?: string) {
+    this.enCours.set(false);
+    this.fermerFormulaires();
+    this.enregistrement.set(r);
+    this.toastr.success(message ?? '', this.i18n.t('COMMON.SUCCESS'));
+  }
+
+  // ── La liste du personnel en CSV ─────────────────────────────────
+
+  ouvrirImport() {
+    this.fermerFormulaires();
+    this.enregistrement.set(null);
+    this.formImport.set(true);
+  }
+
+  telechargerModele() {
+    telecharger(enCsv(COLONNES_MODELE, [[
+      'Camara', 'Fanta', 'F', '02/06/1988', 'Kindia', 'Guinéenne', 'CARTE_NATIONALE', 'GN-123456',
+      '15/01/2022', '15/01/2032', '620000000', 'Dixinn, Conakry', 'Conakry', 'EMP-001', '',
+    ]]), 'modele-travailleurs.csv');
+  }
+
+  async importerFichier(evenement: Event) {
+    const c = this.selection();
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    if (!c || !fichier || this.enCours()) return;
+    this.enCours.set(true);
+    this.rapportImport.set(null);
+    const contenu = await fichier.text();
+    this.service.importerTravailleurs(c.id, contenu).subscribe({
       next: (r) => {
         this.enCours.set(false);
-        this.oublierPersonne();
-        this.toastr.success(r.message ?? '', this.i18n.t('COMMON.SUCCESS'));
-        this.ouvrir(c);
+        this.rapportImport.set(r.data ?? null);
+        this.chargerAdhesions(c.id);
         this.chargerContrats(c.id);
       },
       error: (err) => this.signaler(err),
     });
+  }
+
+  /** Le rapport, avec les mots de passe temporaires a remettre : il ne sera plus rendu. */
+  telechargerRapport() {
+    const r = this.rapportImport();
+    if (!r) return;
+    telecharger(enCsv(
+      ['ligne', 'statut', 'nom', 'numero_adherent', 'mot_de_passe_temporaire', 'motif'],
+      r.lignes.map((l) => [l.numero, l.statut, l.nom, l.numeroAdherent, l.motDePasseTemporaire, l.motif]),
+    ), 'rapport-import-travailleurs.csv');
+  }
+
+  // ── La fiche d'une personne ──────────────────────────────────────
+
+  ouvrirFiche(idPersonne: string) {
+    this.fermerFormulaires();
+    this.enregistrement.set(null);
+    this.libererPhotoEdition();
+    this.service.personne(idPersonne).subscribe({
+      next: (r) => {
+        const fiche = r.data ?? null;
+        this.personneEnEdition.set(fiche);
+        if (fiche?.photoDisponible) {
+          this.service.photo(fiche.id).subscribe({
+            next: (image) => this.photoEdition.set(URL.createObjectURL(image)),
+            error: () => this.photoEdition.set(null),
+          });
+        }
+      },
+      error: (err) => this.signaler(err),
+    });
+  }
+
+  enregistrerFiche() {
+    const fiche = this.personneEnEdition();
+    const f = this.formulaire();
+    if (!fiche || !f || !f.valide() || this.enCours()) return;
+    const modifications = f.modifications();
+    const photo = f.photo();
+    const terminer = () => {
+      this.enCours.set(false);
+      this.oublierMiniature(fiche.id);
+      this.fermerFiche();
+      this.toastr.success(this.i18n.t('ASSUREUR.PERSONNE.FICHE_ENREGISTREE'), this.i18n.t('COMMON.SUCCESS'));
+      const c = this.selection();
+      if (c) this.chargerAdhesions(c.id);
+      this.chargerPolices();
+    };
+    this.enCours.set(true);
+    if (Object.keys(modifications).length === 0) {
+      this.envoyerPhotoPuis(fiche.id, photo, terminer);
+      return;
+    }
+    this.service.modifierPersonne(fiche.id, modifications).subscribe({
+      next: () => this.envoyerPhotoPuis(fiche.id, photo, terminer),
+      error: (err) => this.signaler(err),
+    });
+  }
+
+  fermerFiche() {
+    this.personneEnEdition.set(null);
+    this.libererPhotoEdition();
+  }
+
+  private libererPhotoEdition() {
+    const url = this.photoEdition();
+    if (url) URL.revokeObjectURL(url);
+    this.photoEdition.set(null);
+  }
+
+  /** Les photos des fiches de la liste, chargees une seule fois chacune. */
+  private chargerMiniatures(fiches: ({ id: string; photoDisponible: boolean } | null | undefined)[]) {
+    const deja = this.miniatures();
+    for (const f of fiches) {
+      if (!f?.photoDisponible || deja[f.id]) continue;
+      this.service.photo(f.id).subscribe({
+        next: (image) => this.miniatures.update((m) => ({ ...m, [f.id]: URL.createObjectURL(image) })),
+        error: () => undefined,
+      });
+    }
+  }
+
+  private oublierMiniature(idPersonne: string) {
+    const url = this.miniatures()[idPersonne];
+    if (!url) return;
+    URL.revokeObjectURL(url);
+    this.miniatures.update(({ [idPersonne]: _retiree, ...reste }) => reste);
   }
 
   demanderFin(a: AdhesionAssuranceView) {
@@ -330,30 +519,36 @@ export class AssureurContratsComponent implements OnInit {
 
   // ── Polices individuelles ────────────────────────────────────────
 
+  ouvrirNouvellePolice() {
+    this.fermerFormulaires();
+    this.enregistrement.set(null);
+    this.formPolice.set(true);
+  }
+
   creerPolice() {
-    const p = this.patientChoisi();
-    if (!p || !this.peutCreerPolice() || this.enCours()) return;
+    const f = this.formulaire();
+    if (!f || !this.peutCreerPolice() || this.enCours()) return;
+    const photo = f.photo();
     this.enCours.set(true);
-    this.service.creerContratIndividuel({
-      idPatient: p.id,
-      numeroPolice: this.numeroPolice().trim(),
-      tauxBasePourcent: entier(this.tauxPolice()),
-      plafondAnnuelGnf: entier(this.plafondPolice()),
-      franchiseGnf: entier(this.franchisePolice()),
-      dateEffet: this.debutPolice(),
-      ...(this.finPolice() ? { dateFin: this.finPolice() } : {}),
-      carenceJours: entier(this.carencePolice()),
-      periodeGraceJours: entier(this.gracePolice()),
+    this.service.assurerPersonne({
+      personne: f.donnees(),
+      police: {
+        numeroPolice: this.numeroPolice().trim(),
+        tauxBasePourcent: entier(this.tauxPolice()),
+        plafondAnnuelGnf: entier(this.plafondPolice()),
+        franchiseGnf: entier(this.franchisePolice()),
+        dateEffet: this.debutPolice(),
+        ...(this.finPolice() ? { dateFin: this.finPolice() } : {}),
+        carenceJours: entier(this.carencePolice()),
+        periodeGraceJours: entier(this.gracePolice()),
+      },
     }).subscribe({
-      next: (r) => {
-        this.enCours.set(false);
-        this.formPolice.set(false);
-        this.oublierPersonne();
+      next: (r) => this.envoyerPhotoPuis(r.data!.personne.id, photo, () => {
         this.numeroPolice.set(''); this.plafondPolice.set(null); this.franchisePolice.set(null);
         this.debutPolice.set(''); this.finPolice.set(''); this.carencePolice.set(null); this.gracePolice.set(null);
-        this.toastr.success(r.message ?? '', this.i18n.t('COMMON.SUCCESS'));
+        this.terminerEnregistrement(r.data!, r.message);
         this.chargerPolices();
-      },
+      }),
       error: (err) => this.signaler(err),
     });
   }

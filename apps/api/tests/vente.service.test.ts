@@ -723,6 +723,33 @@ describe('creerVente avec assurance', () => {
     }));
   });
 
+  // La photo est ce qui empeche une carte d'etre pretee.
+  it('refuse le tiers payant tant que la photo de la carte n a pas ete comparee', async () => {
+    chiffrerParCarte.mockResolvedValue(accepte({
+      photoAComparer: true, assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 2_160, montantPatientGnf: 240, notes: [], lignes: [],
+    }));
+    await expect(creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      avecAssurance: true, jetonCarteAssurance: JETON,
+    })).rejects.toThrow(/Comparez la photo/);
+    expect(prisma.venteComptoir.create).not.toHaveBeenCalled();
+  });
+
+  it('trace sur la vente que la photo a ete comparee', async () => {
+    chiffrerParCarte.mockResolvedValue(accepte({
+      photoAComparer: true, assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 2_160, montantPatientGnf: 240, notes: [], lignes: [],
+    }));
+    await creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      avecAssurance: true, jetonCarteAssurance: JETON, photoComparee: true,
+    });
+    expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ photoCompareeAuComptoir: true }),
+    }));
+  });
+
   it('rattache la vente a l adhesion quand la carte est celle d un contrat collectif', async () => {
     chiffrerParCarte.mockResolvedValue(accepte({
       typeCouverture: 'COLLECTIVE', idContrat: 'cc-1', idContratAssurance: null, idAdhesionAssurance: 'ad-1',

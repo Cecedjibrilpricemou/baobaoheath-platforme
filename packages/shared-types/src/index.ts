@@ -2393,6 +2393,11 @@ export interface CreerVenteDto {
   avecAssurance?: boolean;
   /** Jeton opaque encode dans le QR de la carte d'assurance presentee. */
   jetonCarteAssurance?: string;
+  /**
+   * La pharmacie confirme avoir compare la photo de la fiche avec la personne
+   * presente. Obligatoire quand la carte porte une photo.
+   */
+  photoComparee?: boolean;
 }
 
 export interface AnnulerVenteDto {
@@ -2670,6 +2675,8 @@ export interface CarteAssuranceView {
   /** L'entreprise qui a souscrit le contrat collectif. */
   souscripteur?: string | null;
   beneficiaire: { prenom: string; nom: string };
+  /** Vrai quand la fiche de la compagnie porte une photo du beneficiaire. */
+  photoDisponible: boolean;
 }
 
 /**
@@ -2678,6 +2685,11 @@ export interface CarteAssuranceView {
  */
 export interface CarteAssuranceVerifieeView extends CarteAssuranceView {
   idControle: string;
+  /**
+   * La pharmacie doit comparer la photo avec la personne au comptoir avant
+   * d'appliquer le tiers payant : la vente l'exige (`photoComparee`).
+   */
+  photoAComparer: boolean;
   eligible: boolean;
   /** Toujours renseigne quand `eligible` est faux. */
   motif?: string | null;
@@ -2746,6 +2758,8 @@ export interface AdhesionAssuranceView {
   motifFin?: string | null;
   finEnregistreeLe?: HorodatageApi | null;
   patient: { id: string; prenom: string; nom: string };
+  /** La fiche d'identite tenue par la compagnie, si elle existe. */
+  personne?: ResumePersonneAssureeView | null;
 }
 
 /**
@@ -2777,6 +2791,112 @@ export interface CreerReglePoliceDto extends CreerRegleCouvertureDto {
   typeCouverture: TypeCouverture;
   /** Contrat individuel ou contrat collectif, selon `typeCouverture`. */
   idContrat: string;
+}
+
+/**
+ * L'identite d'une personne assuree, telle que sa piece d'identite la porte.
+ * Saisie par la compagnie ; la photo s'ajoute ensuite (envoi de fichier).
+ */
+export interface PersonneAssureeDto {
+  nom: string;
+  prenoms: string;
+  sexe: 'M' | 'F';
+  dateNaissance: HorodatageApi;
+  lieuNaissance: string;
+  nationalite: string;
+  typePiece: TypePieceIdentite;
+  numeroPiece: string;
+  dateDelivrancePiece?: HorodatageApi;
+  dateExpirationPiece?: HorodatageApi;
+  /** Sert aussi d'identifiant de connexion au compte patient. */
+  telephone: string;
+  adresse?: string;
+  /** Prefecture de residence, requise par le dossier patient. */
+  prefecture: string;
+}
+
+/**
+ * PATCH /assurance/moi/personnes/{id} — mise a jour de la fiche (piece
+ * renouvelee, faute de saisie). Le telephone ne change pas ici : c'est
+ * l'identifiant de connexion du patient.
+ */
+export type ModifierPersonneAssureeDto = Partial<Omit<PersonneAssureeDto, 'telephone' | 'prefecture'>>;
+
+/** Ce que les listes montrent d'une fiche. */
+export interface ResumePersonneAssureeView {
+  id: string;
+  typePiece: TypePieceIdentite;
+  numeroPiece: string;
+  photoDisponible: boolean;
+  /** La piece a depasse sa date d'expiration : le tiers payant la refuse. */
+  pieceExpiree: boolean;
+}
+
+export interface PersonneAssureeView extends ResumePersonneAssureeView {
+  idPatient: string;
+  nom: string;
+  prenoms: string;
+  sexe: 'M' | 'F';
+  dateNaissance: HorodatageApi;
+  lieuNaissance: string;
+  nationalite: string;
+  dateDelivrancePiece?: HorodatageApi | null;
+  dateExpirationPiece?: HorodatageApi | null;
+  telephone: string;
+  adresse?: string | null;
+  creeLe: HorodatageApi;
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/travailleurs */
+export interface AjouterTravailleurDto {
+  personne: PersonneAssureeDto;
+  numeroAdherent: string;
+  dateEffet?: HorodatageApi;
+  dateFin?: HorodatageApi;
+}
+
+/** POST /assurance/moi/personnes — une personne et sa police individuelle. */
+export interface AssurerPersonneDto {
+  personne: PersonneAssureeDto;
+  police: Omit<CreerContratIndividuelDto, 'idPatient'>;
+}
+
+/**
+ * Le resultat d'un enregistrement. Quand le compte patient vient d'etre cree,
+ * le mot de passe temporaire n'est rendu **qu'une fois** : il est a remettre
+ * a la personne, qui devra le changer a sa premiere connexion.
+ */
+export interface PersonneEnregistreeView {
+  personne: PersonneAssureeView;
+  compteCree: boolean;
+  motDePasseTemporaire?: string | null;
+  adhesion?: AdhesionAssuranceView | null;
+  contrat?: ContratAssuranceView | null;
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/import — la liste du personnel en CSV. */
+export interface ImporterTravailleursDto {
+  contenu: string;
+}
+
+export type StatutLigneImportTravailleur = 'CREE' | 'RATTACHE' | 'REFUSE';
+
+export interface LigneImportTravailleurView {
+  /** Le rang dans le fichier de l'operateur, en-tete compris. */
+  numero: number;
+  statut: StatutLigneImportTravailleur;
+  nom?: string | null;
+  numeroAdherent?: string | null;
+  motif?: string | null;
+  /** Rendu une seule fois, pour un compte cree par l'import. */
+  motDePasseTemporaire?: string | null;
+}
+
+export interface RapportImportTravailleursView {
+  lignes: LigneImportTravailleurView[];
+  crees: number;
+  rattaches: number;
+  refuses: number;
 }
 
 /**
@@ -2864,6 +2984,8 @@ export interface AssureView {
   nombrePassages: number;
   /** Taux propres a la police individuelle ; vide pour une adhesion. */
   regles: RegleCouvertureView[];
+  /** La fiche d'identite tenue par la compagnie, si elle existe. */
+  personne?: ResumePersonneAssureeView | null;
 }
 
 /**

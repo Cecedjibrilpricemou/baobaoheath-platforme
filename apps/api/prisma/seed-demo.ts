@@ -37,6 +37,9 @@ export const DEMO = {
   hopital: { nom: 'Hopital Donka', type: TypeStructure.CHU, telephone: '+224620000100' },
   laboratoire: { nom: 'Laboratoire Cece', type: TypeStructure.LABORATOIRE, telephone: '+224620000200' },
   pharmacie: { nom: 'Pharmacie Pricemou', type: TypeStructure.PHARMACIE, telephone: '+224620000300' },
+  // Une pharmacie rattachee a l'hopital : elle herite des conventions que
+  // l'hopital declare avec les assureurs, et ne gere pas les siennes.
+  pharmacieHopital: { nom: 'Pharmacie de l Hopital Donka', type: TypeStructure.PHARMACIE, telephone: '+224620000400' },
 
   // Un compte par metier du parcours : chacun ouvre un espace different.
   accueil:    { telephone: '620100001', email: 'accueil.donka@demo.test',   prenom: 'Fatoumata', nom: 'Keita' },
@@ -46,6 +49,7 @@ export const DEMO = {
   // ete supprime le 2026-09-30 (addendum, point 4).
   laborantin2: { telephone: '620100004', email: 'bio.cece@demo.test',      prenom: 'Aminata',   nom: 'Cece' },
   pharmacien: { telephone: '620100005', email: 'pharma.pricemou@demo.test', prenom: 'Ousmane',   nom: 'Pricemou' },
+  pharmacienHopital: { telephone: '620100012', email: 'pharma.donka@demo.test', prenom: 'Kadiatou', nom: 'Barry' },
   adminHopital: { telephone: '620100006', email: 'admin.donka@demo.test',   prenom: 'Mariama',   nom: 'Sow' },
   // **L'administration nationale n'avait aucun compte.** Les assureurs, leurs
   // regles de couverture et les polices ne se saisissent que depuis ce role :
@@ -76,6 +80,15 @@ export const DEMO = {
     allergies: ['Amoxicilline'],
     maladiesChroniques: ['Asthme'],
   },
+
+  // Les beneficiaires a rattacher a un contrat d'entreprise depuis l'espace
+  // assureur (lot assurance). Leur identite est verifiee, sauf la derniere :
+  // elle sert a montrer que le tiers payant exige une identite verifiee.
+  employes: [
+    { telephone: '620100013', prenom: 'Fanta', nom: 'Camara', sexe: 'F', dateNaissance: new Date('1988-06-02'), qrCode: 'DEMO-QR-FANTA-0002', identiteVerifiee: true },
+    { telephone: '620100014', prenom: 'Ibrahima', nom: 'Sylla', sexe: 'M', dateNaissance: new Date('1979-11-23'), qrCode: 'DEMO-QR-IBRAHIMA-0003', identiteVerifiee: true },
+    { telephone: '620100015', prenom: 'Aissatou', nom: 'Bah', sexe: 'F', dateNaissance: new Date('1995-01-30'), qrCode: 'DEMO-QR-AISSATOU-0004', identiteVerifiee: false },
+  ],
 
   medicaments: [
     { libelle: 'Doliprane Pricemou 500mg', dci: 'Paracetamol',  nomCommercial: 'Doliprane Pricemou', forme: 'comprime', dosage: '500mg', prixUnitaireGnf: 1000, codeAtc: 'N02BE01' },
@@ -176,6 +189,17 @@ async function upsertUtilisateur(
   });
 }
 
+/** Une identite verifiee sur piece, telle que l'accueil l'enregistre. */
+function identiteVerifiee(numeroPiece: string) {
+  return {
+    niveauIdentite: 'VERIFIEE' as const,
+    typePiece: 'CARTE_NATIONALE' as const,
+    numeroPiece,
+    identiteVerifieeLe: new Date('2026-01-15'),
+    lieuNaissance: PREFECTURE,
+  };
+}
+
 async function main() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Refus : ce script ne doit pas tourner en production.');
@@ -188,7 +212,12 @@ async function main() {
   const hopital = await upsertStructure(DEMO.hopital, false);
   const laboratoire = await upsertStructure(DEMO.laboratoire, true);
   const pharmacie = await upsertStructure(DEMO.pharmacie, true);
-  console.log('1. Structures : Hopital Donka, Laboratoire Cece, Pharmacie Pricemou (partenaire)');
+  const pharmacieHopital = await upsertStructure(DEMO.pharmacieHopital, true);
+  await prisma.structureSante.update({
+    where: { id: pharmacieHopital.id },
+    data: { idStructureParente: hopital.id },
+  });
+  console.log('1. Structures : Hopital Donka et sa pharmacie, Laboratoire Cece, Pharmacie Pricemou (independante)');
 
   // ── 2. Les professionnels ───────────────────────────────────────
   await upsertUtilisateur(DEMO.adminHopital, Role.ADMIN_STRUCTURE, motDePasseHash, hopital.id);
@@ -197,7 +226,18 @@ async function main() {
   const medecin = await upsertUtilisateur(DEMO.medecin, Role.MEDECIN, motDePasseHash, hopital.id);
   await upsertUtilisateur(DEMO.technicien, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
   await upsertUtilisateur(DEMO.laborantin2, Role.TECHNICIEN_LABO, motDePasseHash, laboratoire.id);
-  await upsertUtilisateur(DEMO.pharmacien, Role.PHARMACIEN, motDePasseHash, pharmacie.id);
+  // **Le profil officinal est requis pour encaisser.** Sans lui, le compte
+  // ouvre l'espace pharmacien mais la caisse le refuse (« aucune fonction
+  // officinale rattachee »). Titulaire : il gere aussi les conventions d'une
+  // pharmacie independante.
+  for (const [compte, structure] of [[DEMO.pharmacien, pharmacie], [DEMO.pharmacienHopital, pharmacieHopital]] as const) {
+    const pharmacien = await upsertUtilisateur(compte, Role.PHARMACIEN, motDePasseHash, structure.id);
+    await prisma.pharmacienProfile.upsert({
+      where: { idUtilisateur: pharmacien.id },
+      update: { roleOfficine: 'TITULAIRE', estResponsable: true, idStructure: structure.id },
+      create: { idUtilisateur: pharmacien.id, roleOfficine: 'TITULAIRE', estResponsable: true, idStructure: structure.id },
+    });
+  }
 
   // Le profil medecin est requis pour que l'espace medecin s'ouvre.
   await prisma.medecinProfile.upsert({
@@ -231,6 +271,9 @@ async function main() {
     quartier: QUARTIER,
     allergies: [...DEMO.patient.allergies],
     maladiesChroniques: [...DEMO.patient.maladiesChroniques],
+    // Le tiers payant exige une identite verifiee (EF-01-10) : sans elle,
+    // toute carte d'assurance de la patiente serait refusee au comptoir.
+    ...identiteVerifiee('GN-DEMO-0001'),
   };
   const patientProfile = await prisma.patientProfile.upsert({
     where: { idUtilisateur: utilisateurPatient.id },
@@ -238,6 +281,22 @@ async function main() {
     create: { idUtilisateur: utilisateurPatient.id, qrCode: DEMO.patient.qrCode, ...donneesPatient },
   });
   console.log(`3. Patiente : Maomou Conde (${DEMO.patient.telephone}), allergique a l'amoxicilline`);
+
+  for (const [i, e] of DEMO.employes.entries()) {
+    const compte = await upsertUtilisateur(e, Role.PATIENT, motDePasseHash, null);
+    const donnees = {
+      dateNaissance: e.dateNaissance, sexe: e.sexe, prefecture: PREFECTURE, commune: COMMUNE, quartier: QUARTIER,
+      ...(e.identiteVerifiee
+        ? identiteVerifiee(`GN-DEMO-000${i + 2}`)
+        : { niveauIdentite: 'PROVISOIRE' as const, typePiece: null, numeroPiece: null, identiteVerifieeLe: null }),
+    };
+    await prisma.patientProfile.upsert({
+      where: { idUtilisateur: compte.id },
+      update: donnees,
+      create: { idUtilisateur: compte.id, qrCode: e.qrCode, ...donnees },
+    });
+  }
+  console.log(`   Beneficiaires a rattacher : ${DEMO.employes.map((e) => `${e.prenom} ${e.nom} (${e.telephone})`).join(', ')}`);
 
   // ── 4. Le catalogue et le stock ─────────────────────────────────
 
@@ -250,10 +309,16 @@ async function main() {
    * lot de plus a chaque passage ferait quitter la quantite du stock.
    */
   async function mettreEnStock(idProduit: string, cleLot: string, quantite = 500) {
+    for (const officine of [pharmacie, pharmacieHopital]) {
+      await mettreEnStockDans(officine.id, idProduit, cleLot, quantite);
+    }
+  }
+
+  async function mettreEnStockDans(idStructure: string, idProduit: string, cleLot: string, quantite: number) {
     const stock = await prisma.stock.upsert({
-      where: { idStructure_idMedicament: { idStructure: pharmacie.id, idMedicament: idProduit } },
+      where: { idStructure_idMedicament: { idStructure, idMedicament: idProduit } },
       update: {},
-      create: { idStructure: pharmacie.id, idMedicament: idProduit, quantite, unite: 'boite', seuilAlerte: 10 },
+      create: { idStructure, idMedicament: idProduit, quantite, unite: 'boite', seuilAlerte: 10 },
     });
 
     // Un stock qui porte deja une entree enregistree par facture n'est plus un
@@ -527,6 +592,9 @@ async function main() {
   console.log('6. Examens de laboratoire (codes LOINC)');
 
   await verifierInvariantDesLots();
+
+  console.log('   Convention : Pharmacie Pricemou seulement. L hopital n en a aucune : sa pharmacie');
+  console.log('   refuse donc le tiers payant tant que l admin de l hopital n a pas declare l assureur.');
 
   console.log(`\nMot de passe de tous les comptes : ${MOT_DE_PASSE}`);
   console.log(`Quartier commun : ${QUARTIER} (${COMMUNE}, ${PREFECTURE})`);

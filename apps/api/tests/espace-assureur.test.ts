@@ -25,6 +25,7 @@ jest.mock('../src/config/prisma', () => ({
     assureur: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn() },
     contratAssurance: { findMany: jest.fn(), count: jest.fn() },
     adhesionAssurance: { findMany: jest.fn() },
+    personneAssuree: { findMany: jest.fn() },
     venteComptoir: { groupBy: jest.fn() },
     reglementAssureur: { groupBy: jest.fn(), create: jest.fn(), findMany: jest.fn() },
     structureSante: { findMany: jest.fn(), findUnique: jest.fn() },
@@ -40,6 +41,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     assureur: { findUnique: M; findUniqueOrThrow: M };
     contratAssurance: { findMany: M; count: M };
     adhesionAssurance: { findMany: M };
+    personneAssuree: { findMany: M };
     venteComptoir: { groupBy: M };
     reglementAssureur: { groupBy: M; create: M; findMany: M };
     structureSante: { findMany: M; findUnique: M };
@@ -53,6 +55,7 @@ beforeEach(() => {
   prisma.utilisateur.findUnique.mockResolvedValue({ idStructure: 'str-sonag' });
   prisma.assureur.findUnique.mockResolvedValue({ id: 'ass-sonag' });
   prisma.adhesionAssurance.findMany.mockResolvedValue([]);
+  prisma.personneAssuree.findMany.mockResolvedValue([]);
 });
 
 describe('assureurDe', () => {
@@ -131,6 +134,19 @@ describe('mesAssures', () => {
         expect(select).not.toContain(champ);
       }
     }
+  });
+
+  it('joint a chaque assure le resume de sa fiche, et rien de plus', async () => {
+    prisma.personneAssuree.findMany.mockResolvedValue([{
+      id: 'pa-1', idPatient: 'p-1', typePiece: 'CARTE_NATIONALE', numeroPiece: 'GN1',
+      photo: 'pa-1-1.webp', dateExpirationPiece: null,
+    }]);
+    prisma.contratAssurance.findMany.mockResolvedValue([{ ...CONTRAT, idPatient: 'p-1' }]);
+    const [a] = await mesAssures(AGENT);
+    expect(a!.personne).toEqual({
+      id: 'pa-1', typePiece: 'CARTE_NATIONALE', numeroPiece: 'GN1', photoDisponible: true, pieceExpiree: false,
+    });
+    expect(prisma.personneAssuree.findMany.mock.calls[0]![0].where).toEqual({ idAssureur: 'ass-sonag', idPatient: { in: ['p-1'] } });
   });
 
   it('ne lit que les adhesions aux contrats collectifs de sa compagnie', async () => {

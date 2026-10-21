@@ -16,6 +16,7 @@ import {
   motifAdhesion,
   motifCouverture,
   motifDInegibilite,
+  motifIdentiteTiersPayant,
   rechercherPatientParTelephone,
   reglesApplicables,
   renouvelerContratCollectif,
@@ -43,6 +44,7 @@ jest.mock('../src/config/prisma', () => {
     contratCollectifAssurance: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     entrepriseAssuree: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn() },
     regleCouverturePolice: { create: jest.fn() },
+    personneAssuree: { findUnique: jest.fn(), findMany: jest.fn() },
     controleEligibilite: { create: jest.fn() },
     venteComptoir: { aggregate: jest.fn() },
     $transaction: jest.fn(),
@@ -109,6 +111,9 @@ beforeEach(() => {
   prisma.structureAssureur.findFirst.mockResolvedValue({ id: 'convention-1' });
   prisma.venteComptoir.aggregate.mockResolvedValue({ _sum: { montantAssureGnf: 0 } });
   prisma.controleEligibilite.create.mockResolvedValue({ id: 'ce-1' });
+  // Pas de fiche de la compagnie par defaut : l'identite vient du dossier.
+  prisma.personneAssuree.findUnique.mockResolvedValue(null);
+  prisma.personneAssuree.findMany.mockResolvedValue([]);
 });
 
 /** Le compte connecte est un pharmacien d'officine. */
@@ -184,6 +189,34 @@ describe('motifAdhesion', () => {
 
   it('refuse une adhesion pas encore en vigueur', () => {
     expect(motifAdhesion({ ...base, dateEffet: new Date('2026-11-01') }, LE_2_OCTOBRE)).toMatch(/pas encore/);
+  });
+});
+
+// ── L'identite qui engage l'assureur (decision du 2026-10-21) ────────
+
+describe('motifIdentiteTiersPayant', () => {
+  const fiche = { photo: 'p-1.webp', numeroPiece: 'GN-1', dateExpirationPiece: new Date('2030-01-01') };
+
+  it('accepte une identite verifiee a l accueil, meme sans fiche', () => {
+    expect(motifIdentiteTiersPayant('VERIFIEE', null, LE_2_OCTOBRE)).toBeNull();
+  });
+
+  it('accepte une identite provisoire quand la fiche de la compagnie porte piece et photo', () => {
+    expect(motifIdentiteTiersPayant('PROVISOIRE', fiche, LE_2_OCTOBRE)).toBeNull();
+  });
+
+  it('refuse une fiche sans photo : la pharmacie n aurait rien a comparer', () => {
+    expect(motifIdentiteTiersPayant('PROVISOIRE', { ...fiche, photo: null }, LE_2_OCTOBRE)).toMatch(/Photo manquante/);
+  });
+
+  it('refuse une piece expiree, mais la couvre jusqu au soir de sa date d expiration', () => {
+    const expireLe = { ...fiche, dateExpirationPiece: new Date('2026-10-02') };
+    expect(motifIdentiteTiersPayant('PROVISOIRE', expireLe, new Date('2026-10-02T18:00:00Z'))).toBeNull();
+    expect(motifIdentiteTiersPayant('PROVISOIRE', expireLe, new Date('2026-10-03T00:00:00Z'))).toMatch(/expiree/);
+  });
+
+  it('refuse une identite provisoire sans fiche', () => {
+    expect(motifIdentiteTiersPayant('PROVISOIRE', null, LE_2_OCTOBRE)).toMatch(/Identite provisoire/);
   });
 });
 
@@ -280,6 +313,26 @@ describe('verifierCarteAssurance', () => {
     expect(v.numeroAdherent).toBe('EMP-42');
     expect(v.garanties).toContainEqual({ categorie: 'MEDICAMENT', exclu: false, tauxPourcent: 90 });
     expect(v.idControle).toBe('ce-1');
+  });
+
+  it('accepte une identite provisoire portee par la fiche de la compagnie, et demande de comparer la photo', async () => {
+    prisma.adhesionAssurance.findUnique.mockResolvedValue({ ...ADHESION, idPatient: 'p-1', patient: { ...PATIENT, niveauIdentite: 'PROVISOIRE' } });
+    prisma.personneAssuree.findUnique.mockResolvedValue({ photo: 'p-1.webp', numeroPiece: 'GN-1', dateExpirationPiece: null });
+
+    const v = await verifierCarteAssurance(pharmacien, JETON_COLLECTIF, LE_2_OCTOBRE);
+    expect(v.eligible).toBe(true);
+    expect(v.photoAComparer).toBe(true);
+    expect(v.photoDisponible).toBe(true);
+    // La fiche cherchee est celle de la compagnie de la carte, pour ce patient.
+    expect(prisma.personneAssuree.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      where: { idAssureur_idPatient: { idAssureur: 'as-1', idPatient: 'p-1' } },
+    }));
+  });
+
+  it('ne demande pas de comparer une photo qui n existe pas', async () => {
+    prisma.adhesionAssurance.findUnique.mockResolvedValue(ADHESION);
+    const v = await verifierCarteAssurance(pharmacien, JETON_COLLECTIF, LE_2_OCTOBRE);
+    expect(v.photoAComparer).toBe(false);
   });
 
   it('enregistre le controle sur l adhesion, pas sur un contrat individuel', async () => {

@@ -150,11 +150,30 @@
           <i class="pi pi-times" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.OUBLIER' | translate }}
         </button>
       </div>
-      <!-- La carte peut avoir ete pretee : le nom affiche doit etre celui de
-           la personne presente. -->
-      <p class="bb-caisse__muted">
-        <i class="pi pi-id-card" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER_IDENTITE' | translate }}
-      </p>
+      <!-- La carte peut avoir ete pretee : la photo de la fiche se compare a
+           la personne presente, et la confirmation est exigee par l'API. -->
+      @if (carte()!.photoAComparer) {
+        <div class="bb-caisse__identite">
+          @if (photoCarte(); as image) {
+            <img class="bb-caisse__photo" [src]="image" width="120" height="150"
+                 [alt]="'PHARMACIEN.CAISSE.PHOTO_DE' | translate: { nom: carte()!.patient.prenom + ' ' + carte()!.patient.nom }" />
+          } @else {
+            <span class="bb-caisse__photo bb-caisse__photo--attente" aria-hidden="true"><i class="pi pi-spin pi-spinner"></i></span>
+          }
+          <div class="bb-caisse__identite-texte">
+            <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.COMPARER_PHOTO' | translate }}</p>
+            <label class="bb-caisse__bascule-label" for="c-photo">
+              <input id="c-photo" type="checkbox" [disabled]="!photoCarte()"
+                     [checked]="photoComparee()" (change)="photoComparee.set($any($event.target).checked)" />
+              {{ 'PHARMACIEN.CAISSE.PHOTO_COMPAREE' | translate }}
+            </label>
+          </div>
+        </div>
+      } @else {
+        <p class="bb-caisse__muted">
+          <i class="pi pi-id-card" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER_IDENTITE' | translate }}
+        </p>
+      }
 
       <div class="bb-caisse__carte">
         <span>

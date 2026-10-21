@@ -118,6 +118,10 @@ export class LoginComponent implements OnDestroy {
     const e = err as { status?: number; error?: { error?: string; message?: string } };
     // status 0 : la requete n'a jamais atteint le serveur (arrete, CORS, reseau).
     if (e?.status === 0) return this.i18nService.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE');
+    // 429 : le limiteur de connexions repond en texte brut, sans corps JSON.
+    // Sans ce cas, on retombait sur « identifiants incorrects » alors que le
+    // mot de passe etait juste : c'est arrive le 2026-10-21.
+    if (e?.status === 429) return this.i18nService.t('AUTH.LOGIN.ERR_TROP_DE_TENTATIVES');
     return e?.error?.error ?? e?.error?.message ?? this.i18nService.t(cleParDefaut);
   }
 

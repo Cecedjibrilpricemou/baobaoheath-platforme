@@ -6,6 +6,8 @@ node_modules
 
 # Fichiers uploadés par les utilisateurs (photos de profil, etc.)
 /uploads
+# Photos des pieces d'identite des assures : jamais dans le depot.
+/stockage-prive
 
 # Compile de prisma.config.ts. Prisma 7 le prefere au .ts et ne sait pas le
 # lire : commite, il fait echouer migrate, generate et diff.

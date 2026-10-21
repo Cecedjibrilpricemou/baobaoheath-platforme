@@ -22,6 +22,11 @@ export class PatientService {
     return this.api.get<ApiResponse<CarteAssuranceView[]>>('/assurance/mes-cartes');
   }
 
+  /** La photo d'une de ses cartes : le jeton voyage dans le corps, pas dans l'URL. */
+  photoCarteAssurance(jetonCarte: string): Observable<Blob> {
+    return this.api.postBlob('/assurance/mes-cartes/photo', { jetonCarte });
+  }
+
   // ── Prise de rendez-vous a distance (addendum, point 6) ──────────
   // Le patient demande depuis chez lui ; le medecin repond en fixant l'heure.
 

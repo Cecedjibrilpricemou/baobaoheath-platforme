@@ -281,6 +281,11 @@ export class PharmacienService {
     return this.api.post<ApiResponse<CarteAssuranceVerifieeView>>('/assurance/cartes/verifier', { jetonCarte });
   }
 
+  /** La photo de la carte verifiee, a comparer a la personne au comptoir. */
+  photoCarteAssurance(jetonCarte: string): Observable<Blob> {
+    return this.api.postBlob('/assurance/cartes/photo', { jetonCarte });
+  }
+
   /**
    * Chiffre la prise en charge **sans rien enregistrer**, pour la montrer
    * avant le paiement : un reste a charge sans explication se conteste au

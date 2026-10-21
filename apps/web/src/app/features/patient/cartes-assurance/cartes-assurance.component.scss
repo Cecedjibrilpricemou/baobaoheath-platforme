@@ -50,6 +50,10 @@
     dd { margin: 0; font-weight: 700; color: var(--bb-text-primary); overflow-wrap: anywhere; }
   }
   &__mono { font-family: var(--bb-font-mono); }
+  &__photo {
+    flex: none; width: 96px; height: 120px; object-fit: cover;
+    border-radius: var(--bb-radius-md); border: 1px solid var(--bb-border); background: var(--bb-surface-2);
+  }
 
   // Fond blanc force : un QR sur fond sombre se lit mal.
   &__qr {
