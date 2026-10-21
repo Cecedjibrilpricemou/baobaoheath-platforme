@@ -504,11 +504,19 @@ async function main() {
       data: {
         ...donneesContrat,
         numeroPolice: DEMO.assureur.numeroPolice,
+        // Le jeton du QR de la carte : aleatoire, comme en production.
+        jetonCarte: randomBytes(32).toString('base64url'),
         idAssureur: assureur.id,
         idPatient: patientProfile.id,
       },
     });
   }
+  // Sans convention, la pharmacie refuserait le tiers payant de la demo.
+  await prisma.structureAssureur.upsert({
+    where: { idStructure_idAssureur: { idStructure: pharmacie.id, idAssureur: assureur.id } },
+    create: { idStructure: pharmacie.id, idAssureur: assureur.id },
+    update: {},
+  });
   console.log(
     `5. Assurance : ${DEMO.assureur.nom} (${DEMO.assureur.code}), police ${DEMO.assureur.numeroPolice} ` +
       `a ${DEMO.assureur.tauxBasePourcent} %, ${DEMO.assureur.exclusions.length} categories exclues`

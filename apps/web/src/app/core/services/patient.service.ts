@@ -6,13 +6,21 @@ import type {
   FactureView,
   ModeRemise,
   PayerCommandeDto,
-  CreerDemandeRendezVousDto, DemandeRendezVousView } from '@baobaoheath/shared-types';
+  CreerDemandeRendezVousDto, DemandeRendezVousView, CarteAssuranceView } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
 import { Patient, PatientCreatePayload, PatientUpdatePayload, Consultation } from '../models/patient.model';
 import { ApiResponse, PaginatedData } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class PatientService {
+
+  /**
+   * Les cartes d'assurance du patient connecte (lot assurance). Le QR de
+   * chaque carte porte un jeton opaque ; c'est le comptoir qui le verifie.
+   */
+  mesCartesAssurance(): Observable<ApiResponse<CarteAssuranceView[]>> {
+    return this.api.get<ApiResponse<CarteAssuranceView[]>>('/assurance/mes-cartes');
+  }
 
   // ── Prise de rendez-vous a distance (addendum, point 6) ──────────
   // Le patient demande depuis chez lui ; le medecin repond en fixant l'heure.

@@ -6,6 +6,8 @@ import {
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
 const phone = z.string().trim().min(6).max(30);
 const id = z.string().trim().min(1);
+/** Jeton opaque d'une carte d'assurance, tel que lu dans son QR. */
+const jetonCarte = z.string().trim().min(20).max(128).regex(/^[A-Za-z0-9_-]+$/, 'Carte d’assurance illisible');
 const positiveInt = z.coerce.number().int().positive();
 const nonNegativeInt = z.coerce.number().int().min(0);
 
@@ -139,7 +141,16 @@ export const creerVenteSchema = z.object({
   // portent. C'est arrive le 2026-10-02, et seul le controle contre la vraie
   // API l'a vu : les tests unitaires appellent le service, pas Zod.
   avecAssurance: z.boolean().optional(),
-}).strict();
+  jetonCarteAssurance: jetonCarte.optional(),
+}).strict().superRefine((data, ctx) => {
+  if (data.avecAssurance && !data.jetonCarteAssurance) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['jetonCarteAssurance'],
+      message: 'Scannez la carte d’assurance pour appliquer le tiers payant.',
+    });
+  }
+});
 
 export const ouvrirSessionCaisseSchema = z.object({
   montantOuvertureGnf: nonNegativeInt.max(2_000_000_000),
@@ -294,6 +305,7 @@ export const createStructureSchema = z.object({
 
 export const createPharmacieSchema = z.object({
   nom: z.string().trim().min(2).max(160),
+  idStructureParente: id.optional(),
   prefecture: z.string().trim().min(1).max(80),
   adresse: z.string().trim().max(200).optional(),
   latitude: z.coerce.number().optional(),
@@ -781,7 +793,7 @@ export const verifierEligibiliteSchema = z.object({
 }).strict();
 
 export const simulerPriseEnChargeSchema = z.object({
-  idPatient: id,
+  jetonCarteAssurance: jetonCarte,
   lignes: z.array(z.object({
     idMedicament: id,
     libelle: z.string().trim().min(1).max(200),
@@ -821,6 +833,83 @@ export const creerContratAssuranceSchema = z.object({
   dateEffet: z.string().min(1),
   dateFin: z.string().optional(),
   carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+}).strict();
+
+export const verifierCarteAssuranceSchema = z.object({
+  jetonCarte,
+}).strict();
+
+const dateAssurance = z.string().min(1).refine((value) => !Number.isNaN(Date.parse(value)), 'Date invalide');
+
+const finApresDebut = (value: { dateEffet?: string; dateFin?: string }) =>
+  !value.dateFin || !value.dateEffet || Date.parse(value.dateFin) >= Date.parse(value.dateEffet);
+const messageFinApresDebut = {
+  message: 'La date de fin doit etre posterieure ou egale a la date d’effet.',
+  path: ['dateFin'],
+};
+const graceJours = z.coerce.number().int().min(0).max(90).optional();
+/** Un contrat dure au moins un jour : sa fin suit strictement son effet. */
+const contratFinApresDebut = (value: { dateEffet?: string; dateFin?: string }) =>
+  !value.dateFin || !value.dateEffet || Date.parse(value.dateFin) > Date.parse(value.dateEffet);
+const messageContratFinApresDebut = {
+  message: 'La date de fin doit etre posterieure a la date d’effet.',
+  path: ['dateFin'],
+};
+
+export const creerContratCollectifSchema = z.object({
+  entreprise: z.object({
+    raisonSociale: z.string().trim().min(2).max(160),
+    identifiantLegal: z.string().trim().min(2).max(80).optional(),
+    telephone: z.string().trim().max(40).optional(),
+    email: z.string().trim().email().max(120).optional(),
+  }).strict(),
+  numeroContrat: z.string().trim().min(2).max(80),
+  nomRegime: z.string().trim().min(2).max(120),
+  tauxBasePourcent: z.coerce.number().int().min(0).max(100),
+  plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: dateAssurance,
+  dateFin: dateAssurance,
+  carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+  periodeGraceJours: graceJours,
+}).strict().refine(contratFinApresDebut, messageContratFinApresDebut);
+
+export const creerContratIndividuelSchema = z.object({
+  idPatient: id,
+  numeroPolice: z.string().trim().min(2).max(60),
+  tauxBasePourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: dateAssurance,
+  dateFin: dateAssurance.optional(),
+  carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+  periodeGraceJours: graceJours,
+}).strict().refine(contratFinApresDebut, messageContratFinApresDebut);
+
+export const creerAdhesionAssuranceSchema = z.object({
+  idPatient: id,
+  numeroAdherent: z.string().trim().min(2).max(80),
+  dateEffet: dateAssurance.optional(),
+  dateFin: dateAssurance.optional(),
+}).strict().refine(finApresDebut, messageFinApresDebut);
+
+export const terminerAdhesionSchema = z.object({
+  motif: z.string().trim().min(5).max(500),
+  dateEffet: dateAssurance.optional(),
+}).strict();
+
+export const renouvelerContratSchema = z.object({
+  dateFin: dateAssurance,
+}).strict();
+
+export const creerReglePoliceSchema = z.object({
+  typeCouverture: z.enum(['INDIVIDUELLE', 'COLLECTIVE']),
+  idContrat: id,
+  categorie: categorieProduit,
+  exclu: z.boolean().optional(),
+  tauxPourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondLigneGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: dateAssurance.optional(),
 }).strict();
 
 // ── Referentiels importables (EF-12-03) ──────────────────────────────

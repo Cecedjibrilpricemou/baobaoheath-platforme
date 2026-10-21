@@ -12,14 +12,15 @@
 // La sortie de stock passe par `consommerLots` : au plus proche de la
 // peremption, lot perime refuse. Ce service ne la reecrit pas.
 import { randomUUID } from 'crypto';
-import { Prisma, StatutVente, TypeStructure } from '../config/generated/client/client';
+import { Prisma, StatutVente } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import * as chapchap from './chapchap.service';
 import { logger } from '../config/logger';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { estStructureOfficinale } from '../utils/officine.util';
 import { consommerLots, peremptionLaPlusProche } from './approvisionnement.service';
-import { chiffrer, type LigneAChiffrer } from './assurance.service';
+import { chiffrerParCarte, type LigneAChiffrer, type ResultatChiffrage } from './assurance.service';
 import { prochainNumero } from './numero.service';
 import { motifDeRefus, renouvellementsRestants } from './ordonnance.service';
 import { enregistrerMouvementStock } from './mouvement-stock.service';
@@ -48,6 +49,9 @@ const VENTE_INCLUDE = {
   patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
   ordonnance: { select: { numero: true } },
   contratAssurance: { select: { assureur: { select: { id: true, nom: true, code: true } } } },
+  adhesionAssurance: {
+    select: { contratCollectif: { select: { assureur: { select: { id: true, nom: true, code: true } } } } },
+  },
   lignes: {
     include: {
       medicament: {
@@ -60,6 +64,12 @@ const VENTE_INCLUDE = {
 
 type VenteAvecInclude = Prisma.VenteComptoirGetPayload<{ include: typeof VENTE_INCLUDE }>;
 
+/** L'assureur qui paie la part assuree : police individuelle ou contrat collectif. */
+function assureurDeLaVente(v: VenteAvecInclude): { id: string; nom: string; code: string } | null {
+  const a = v.contratAssurance?.assureur ?? v.adhesionAssurance?.contratCollectif.assureur;
+  return a ? { id: a.id, nom: a.nom, code: a.code } : null;
+}
+
 function versVue(v: VenteAvecInclude): VenteComptoirView {
   return {
     id: v.id,
@@ -70,13 +80,7 @@ function versVue(v: VenteAvecInclude): VenteComptoirView {
     montantNetGnf: v.montantNetGnf,
     montantAssureGnf: v.montantAssureGnf,
     montantPatientGnf: v.montantPatientGnf,
-    assureur: v.contratAssurance
-      ? {
-          id: v.contratAssurance.assureur.id,
-          nom: v.contratAssurance.assureur.nom,
-          code: v.contratAssurance.assureur.code,
-        }
-      : null,
+    assureur: assureurDeLaVente(v),
     modePaiement: v.modePaiement,
     numeroOperateur: v.numeroOperateur,
     // Le lien ne sert plus une fois la vente reglee : le rendre inviterait a
@@ -128,7 +132,7 @@ export async function officineDe(userId: string): Promise<string> {
     },
   });
   if (!u?.idStructure || !u.structure) throw new ForbiddenError('Aucune structure rattachee a votre compte');
-  if (u.structure.type !== TypeStructure.PHARMACIE) {
+  if (!estStructureOfficinale(u.structure.type)) {
     throw new ValidationError("La structure rattachee a votre compte n'est pas une pharmacie");
   }
   if (!u.pharmacienProfile) throw new ForbiddenError('Aucune fonction officinale rattachee a votre compte');
@@ -293,25 +297,32 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
 
   // ── Tiers payant (EF-09) ─────────────────────────────────────────
   //
-  // On ne couvre pas un passant anonyme : sans dossier, il n'y a pas de
-  // contrat a opposer. Et sans contrat utilisable, on refuse la vente plutot
-  // que d'encaisser le patient a son insu alors qu'il presente une carte.
-  let prise: Awaited<ReturnType<typeof chiffrer>> = null;
+  // Le tiers payant part de la carte scannee : c'est elle qui designe la
+  // couverture (police individuelle ou adhesion a un contrat collectif), et
+  // le serveur la reverifie ici, au moment d'encaisser. Sans couverture
+  // utilisable, on refuse la vente plutot que d'encaisser le patient a son
+  // insu alors qu'il presente une carte : il peut repasser en paiement direct.
+  let prise: Extract<ResultatChiffrage, { ok: true }>['prise'] | null = null;
   if (dto.avecAssurance) {
-    if (!dto.idPatient) {
-      throw new ValidationError("Le tiers payant demande un patient : un client de passage n'a pas de contrat");
+    if (!dto.jetonCarteAssurance) {
+      throw new ValidationError("Le tiers payant demande la carte d'assurance du patient : scannez-la");
     }
     const lignesAChiffrer: LigneAChiffrer[] = detail.map((l) => {
       const m = parProduit.get(l.idMedicament)!.medicament;
       return { idMedicament: l.idMedicament, libelle: m.libelle, categorie: m.categorie, montantGnf: l.montantGnf };
     });
-    prise = await chiffrer(dto.idPatient, lignesAChiffrer, montantNetGnf);
-    if (!prise) {
-      throw new ValidationError(
-        "Aucun contrat d'assurance utilisable pour ce patient : verifiez son eligibilite"
-      );
+    const resultat = await chiffrerParCarte(dto.jetonCarteAssurance, lignesAChiffrer, montantNetGnf, idStructure);
+    if (!resultat.ok) {
+      throw new ValidationError(`Tiers payant refuse : ${resultat.motif}. Encaissez en paiement direct si le patient le souhaite.`);
     }
+    // La carte designe le beneficiaire : une vente ne peut pas etre facturee
+    // a l'assureur d'une personne et rattachee au dossier d'une autre.
+    if (dto.idPatient && dto.idPatient !== resultat.prise.idPatient) {
+      throw new ValidationError("La carte d'assurance presentee n'appartient pas au patient selectionne");
+    }
+    prise = resultat.prise;
   }
+  const idPatientVente = prise?.idPatient ?? dto.idPatient ?? null;
 
   const couvertureParProduit = new Map(
     (prise?.lignes ?? []).map((l) => [l.idMedicament, l])
@@ -371,7 +382,8 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         montantNetGnf,
         montantAssureGnf: prise?.montantAssureGnf ?? 0,
         montantPatientGnf: montantNetGnf - (prise?.montantAssureGnf ?? 0),
-        idContratAssurance: prise?.idContrat ?? null,
+        idContratAssurance: prise?.idContratAssurance ?? null,
+        idAdhesionAssurance: prise?.idAdhesionAssurance ?? null,
         modePaiement: dto.modePaiement,
         numeroOperateur: dto.numeroOperateur?.trim() || null,
         // **Une vente mobile naît en attente.** Jusqu'au 2026-10-09 elle
@@ -384,7 +396,7 @@ export async function creerVente(user: JwtPayload, dto: CreerVenteDto): Promise<
         idOperation: operation?.operationId ?? null,
         urlPaiement: operation?.urlPaiement ?? null,
         statutOperateur: operation ? 'new' : null,
-        idPatient: dto.idPatient ?? null,
+        idPatient: idPatientVente,
         idOrdonnance: dto.idOrdonnance ?? null,
         idStructure,
         idSessionCaisse: session.id,

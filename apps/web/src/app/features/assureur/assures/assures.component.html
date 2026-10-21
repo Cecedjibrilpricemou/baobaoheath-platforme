@@ -48,7 +48,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (a of visibles(); track a.idContrat) {
+          @for (a of visibles(); track a.idAdhesion ?? a.idContrat) {
             <tr>
               <td class="bb-asr__cellule-principale">
                 <strong>{{ a.patient.prenom }} {{ a.patient.nom }}</strong>
@@ -64,6 +64,11 @@
               </td>
               <td>
                 {{ a.numeroPolice }}
+                @if (a.typeCouverture === 'COLLECTIVE') {
+                  <span class="bb-asr__note">
+                    {{ 'ASSUREUR.ADHERENT_DE' | translate: { numero: a.numeroAdherent ?? '', entreprise: a.souscripteur ?? '' } }}
+                  </span>
+                }
                 <span class="bb-asr__etat" [class.bb-asr__etat--off]="a.statut !== 'ACTIF'">
                   {{ libelleStatut(a.statut) }}
                 </span>

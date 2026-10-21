@@ -1358,6 +1358,7 @@ export interface StructureAdminView {
   id: string;
   nom: string;
   type: string;
+  idStructureParente?: string | null;
   prefecture: string;
   adresse?: string | null;
   latitude?: number | null;
@@ -2390,6 +2391,8 @@ export interface CreerVenteDto {
    * d'encaisser le patient a son insu.
    */
   avecAssurance?: boolean;
+  /** Jeton opaque encode dans le QR de la carte d'assurance presentee. */
+  jetonCarteAssurance?: string;
 }
 
 export interface AnnulerVenteDto {
@@ -2488,7 +2491,7 @@ export interface CloturerSessionCaisseDto {
 // ═══════════════════════════════════════════════════════════════════
 
 export type ModeEchangeAssureur = 'MANUEL' | 'PORTAIL' | 'API';
-export type StatutContrat = 'ACTIF' | 'SUSPENDU' | 'RESILIE';
+export type StatutContrat = 'ACTIF' | 'SUSPENDU' | 'RESILIE' | 'EXPIRE';
 
 export interface AssureurResumeView {
   id: string;
@@ -2533,7 +2536,10 @@ export interface CouvertureLigneView {
  * paiement. « Un reste a charge sans explication se conteste au comptoir. »
  */
 export interface PriseEnChargeView {
+  typeCouverture: TypeCouverture;
+  /** Contrat individuel, ou contrat collectif de l'adhesion. */
   idContrat: string;
+  idAdhesionAssurance?: string | null;
   assureur: AssureurResumeView;
   montantNetGnf: number;
   montantAssureGnf: number;
@@ -2563,6 +2569,15 @@ export interface AssureurView extends AssureurResumeView {
   modeEchange: ModeEchangeAssureur;
   nombreContrats: number;
   regles: RegleCouvertureView[];
+  /** Vrai quand la convention provient de l'hopital parent de la pharmacie. */
+  conventionHeritee?: boolean;
+}
+
+/** Catalogue disponible et capacite de gestion des conventions de la structure. */
+export interface CatalogueAssureursView {
+  assureurs: AssureurView[];
+  conventionsModifiables: boolean;
+  conventionsHeritees: boolean;
 }
 
 export interface RegleCouvertureView {
@@ -2604,6 +2619,7 @@ export interface CreerContratDto {
 export interface ContratAssuranceView {
   id: string;
   numeroPolice: string;
+  periodeGraceJours?: number;
   tauxBasePourcent: number;
   plafondAnnuelGnf: number;
   franchiseGnf: number;
@@ -2615,6 +2631,166 @@ export interface ContratAssuranceView {
   patient: { id: string; prenom: string; nom: string };
   /** Ce que l'assureur a deja pris cette annee sur ce contrat. */
   consommeAnneeGnf: number;
+}
+
+export type TypeCouverture = 'INDIVIDUELLE' | 'COLLECTIVE';
+
+/**
+ * Le resume d'une garantie, tel qu'il figure sur la carte : « Medicaments
+ * 80 % ». **Indicatif** : le montant exact se calcule a la caisse, sur le
+ * panier reel, apres franchise et plafonds.
+ */
+export interface GarantieCategorieView {
+  categorie: CategorieProduit;
+  exclu: boolean;
+  tauxPourcent: number;
+}
+
+/**
+ * GET /assurance/mes-cartes — une carte d'assurance du patient connecte.
+ *
+ * Le QR ne porte que `jetonCarte`, un jeton opaque : aucune donnee
+ * personnelle ni medicale. Une carte imprimee ne prouve rien a elle seule,
+ * c'est la verification serveur au comptoir qui confirme les droits.
+ */
+export interface CarteAssuranceView {
+  jetonCarte: string;
+  typeCouverture: TypeCouverture;
+  numeroPolice: string;
+  numeroAdherent: string;
+  /** Regime du contrat collectif ; absent pour une police individuelle. */
+  nomRegime?: string | null;
+  tauxBasePourcent: number;
+  garanties: GarantieCategorieView[];
+  dateEffet: HorodatageApi;
+  /** La fin effective : la plus proche entre l'adhesion et le contrat. */
+  dateFin?: HorodatageApi | null;
+  statut: StatutContrat;
+  assureur: AssureurResumeView;
+  /** L'entreprise qui a souscrit le contrat collectif. */
+  souscripteur?: string | null;
+  beneficiaire: { prenom: string; nom: string };
+}
+
+/**
+ * POST /assurance/cartes/verifier — le controle au comptoir, sur la carte
+ * scannee. La reponse est enregistree (`idControle`) : refus compris.
+ */
+export interface CarteAssuranceVerifieeView extends CarteAssuranceView {
+  idControle: string;
+  eligible: boolean;
+  /** Toujours renseigne quand `eligible` est faux. */
+  motif?: string | null;
+  patient: { id: string; prenom: string; nom: string };
+}
+
+/** POST /assurance/cartes/verifier */
+export interface VerifierCarteAssuranceDto {
+  jetonCarte: string;
+}
+
+/** POST /assurance/moi/contrats-collectifs — la compagnie se deduit du compte. */
+export interface CreerContratCollectifDto {
+  entreprise: {
+    raisonSociale: string;
+    identifiantLegal?: string;
+    telephone?: string;
+    email?: string;
+  };
+  numeroContrat: string;
+  nomRegime: string;
+  tauxBasePourcent: number;
+  plafondAnnuelGnf?: number;
+  franchiseGnf?: number;
+  dateEffet: HorodatageApi;
+  dateFin: HorodatageApi;
+  carenceJours?: number;
+  periodeGraceJours?: number;
+}
+
+export interface ContratCollectifView {
+  id: string;
+  numeroContrat: string;
+  nomRegime: string;
+  tauxBasePourcent: number;
+  /** Par beneficiaire et par annee civile. 0 = pas de plafond. */
+  plafondAnnuelGnf: number;
+  franchiseGnf: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  carenceJours: number;
+  periodeGraceJours: number;
+  /** EXPIRE des que la date de fin (grace comprise) est passee. */
+  statut: StatutContrat;
+  entreprise: { id: string; raisonSociale: string; identifiantLegal?: string | null };
+  nombreAdhesionsActives: number;
+  /** Les taux propres a ce contrat, qui priment sur ceux de la compagnie. */
+  regles: RegleCouvertureView[];
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/adhesions */
+export interface CreerAdhesionAssuranceDto {
+  idPatient: string;
+  numeroAdherent: string;
+  dateEffet?: HorodatageApi;
+  /** Absente : l'adhesion suit la fin du contrat collectif. */
+  dateFin?: HorodatageApi;
+}
+
+export interface AdhesionAssuranceView {
+  id: string;
+  numeroAdherent: string;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  statut: StatutContrat;
+  motifFin?: string | null;
+  finEnregistreeLe?: HorodatageApi | null;
+  patient: { id: string; prenom: string; nom: string };
+}
+
+/**
+ * POST /assurance/moi/adhesions/{id}/fin — fin d'une adhesion (depart de
+ * l'entreprise, perte d'eligibilite). L'auteur est le compte connecte.
+ */
+export interface TerminerAdhesionDto {
+  motif: string;
+  /** Absente : immediatement. Future : l'adhesion couvre jusqu'a cette date. */
+  dateEffet?: HorodatageApi;
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/renouveler — nouvelle echeance. */
+export interface RenouvelerContratDto {
+  dateFin: HorodatageApi;
+}
+
+/** POST /assurance/moi/contrats — police individuelle, saisie par la compagnie. */
+export type CreerContratIndividuelDto = Omit<CreerContratDto, 'idAssureur'> & {
+  periodeGraceJours?: number;
+};
+
+/**
+ * POST /assurance/moi/polices/regles — un taux, une exclusion ou un plafond
+ * propre a une police : c'est ainsi que deux entreprises ont des taux
+ * differents chez la meme compagnie.
+ */
+export interface CreerReglePoliceDto extends CreerRegleCouvertureDto {
+  typeCouverture: TypeCouverture;
+  /** Contrat individuel ou contrat collectif, selon `typeCouverture`. */
+  idContrat: string;
+}
+
+/**
+ * GET /assurance/moi/patients?telephone= — retrouver la personne a rattacher.
+ *
+ * **Recherche exacte par telephone**, jamais par nom : la compagnie retrouve
+ * la personne qu'elle assure, elle ne parcourt pas la population.
+ */
+export interface PatientAssureurRechercheView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephoneMasque: string;
+  anneeNaissance?: number | null;
 }
 
 
@@ -2668,7 +2844,12 @@ export interface MonAssureurView {
  * assure, il a besoin de retrouver la personne et de suivre son plafond.
  */
 export interface AssureView {
+  typeCouverture: TypeCouverture;
+  /** Police individuelle, ou contrat collectif de l'adhesion. */
   idContrat: string;
+  idAdhesion?: string | null;
+  numeroAdherent?: string | null;
+  souscripteur?: string | null;
   numeroPolice: string;
   statut: StatutContrat;
   tauxBasePourcent: number;
@@ -2681,6 +2862,8 @@ export interface AssureView {
   consommeAnneeGnf: number;
   /** Nombre de passages en pharmacie ayant donne lieu a prise en charge. */
   nombrePassages: number;
+  /** Taux propres a la police individuelle ; vide pour une adhesion. */
+  regles: RegleCouvertureView[];
 }
 
 /**

@@ -127,7 +127,12 @@ describe('pharmaciesDuQuartier', () => {
     await pharmaciesDuQuartier('Kipé');
 
     expect(prisma.structureSante.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { type: 'PHARMACIE', estActive: true, estPartenaire: true, quartier: 'Kipé' },
+      where: {
+        type: 'PHARMACIE',
+        estActive: true,
+        estPartenaire: true,
+        quartier: 'Kipé',
+      },
     }));
   });
 
@@ -136,6 +141,20 @@ describe('pharmaciesDuQuartier', () => {
   it('ne cherche nulle part quand le patient n a pas de quartier', async () => {
     expect(await pharmaciesDuQuartier(null)).toEqual([]);
     expect(prisma.structureSante.findMany).not.toHaveBeenCalled();
+  });
+
+  it('refuse la file pour un pharmacien rattache directement a un hopital', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      id: 'u-ph',
+      idStructure: 'chu-1',
+      structure: {
+        id: 'chu-1', nom: 'CHU', type: 'CHU', estPartenaire: true, quartier: 'Kipé',
+      },
+    });
+    prisma.commande.findMany.mockResolvedValue([]);
+
+    await expect(commandesDeLaPharmacie(PHARMACIEN)).rejects.toBeInstanceOf(ValidationError);
+    expect(prisma.commande.findMany).not.toHaveBeenCalled();
   });
 });
 

@@ -101,7 +101,6 @@ export class AgentsComponent implements OnInit {
     return [
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_OPTION_ASC'), value: 'ASC' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'), value: 'MEDECIN' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'), value: 'PHARMACIEN' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL'), value: 'AGENT_ACCUEIL' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'), value: 'TECHNICIEN_LABO' }
     ];

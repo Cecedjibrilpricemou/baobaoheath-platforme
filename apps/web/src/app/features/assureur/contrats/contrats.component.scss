@@ -1,0 +1,66 @@
+// Les contrats de la compagnie. Les tableaux et pastilles reprennent la
+// langue de l'espace assureur (styles/_assureur.scss) ; les champs sont ceux
+// de Material en « outline », comme dans l'administration de l'assurance.
+.bb-ctr {
+  &__onglets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  &__onglet {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--bb-radius-pill); cursor: pointer;
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
+    color: var(--bb-text-secondary); font-family: var(--bb-font-body); font-weight: 700; font-size: 14px;
+    &:focus-visible { outline: 2px solid var(--asr-accent); outline-offset: 2px; }
+  }
+  // L'etat choisi : fond d'accent adouci, bordure d'accent. Le texte prend
+  // `--bb-success` (vert fonce en clair, vert vif en sombre) : l'accent seul
+  // donnait 4,20:1 sur ce fond en clair, et du blanc sur l'accent tombait
+  // sous 4,5:1 en sombre. Mesure apres correction : voir la verification.
+  &__onglet--actif {
+    background: var(--asr-accent-soft); border-color: var(--asr-accent); color: var(--bb-success);
+  }
+
+  &__barre {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  &__panneau {
+    margin: 0 0 20px; padding: 16px 18px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); box-shadow: var(--bb-shadow-sm);
+  }
+  &__panneau--alerte {
+    margin-top: 14px; background: var(--bb-warning-bg); border-color: var(--bb-warning-border);
+  }
+
+  &__titre { margin: 0 0 6px; font-family: var(--bb-font-display); font-size: 17px; font-weight: 800; color: var(--bb-text-primary); }
+  &__sous-titre { margin: 18px 0 6px; font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800; color: var(--bb-text-primary); }
+  &__aide { margin: 0 0 10px; font-size: 13px; color: var(--bb-text-secondary); }
+  &__personne { margin: 4px 0 10px; font-weight: 700; color: var(--bb-text-primary); }
+
+  &__grille {
+    display: grid; gap: 16px 14px; margin-bottom: 10px; align-items: center;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+    mat-form-field { width: 100%; }
+  }
+  &__ligne-form {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px;
+    mat-form-field { flex: 1 1 220px; max-width: 320px; }
+  }
+  &__champ--large { grid-column: 1 / -1; }
+  &__choix { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+
+  &__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+
+  &__pastilles { display: flex; flex-wrap: wrap; gap: 6px; }
+  &__pastille {
+    padding: 3px 10px; border-radius: var(--bb-radius-pill); font-size: 12.5px; font-weight: 700;
+    background: var(--bb-success-bg); color: var(--bb-success); border: 1px solid var(--bb-success-border);
+  }
+  // Une exclusion se lit en toutes lettres (« exclu ») : pas besoin de barrer
+  // le texte, ce qui le rendait moins lisible.
+  &__pastille--exclue {
+    background: var(--bb-surface-2); color: var(--bb-text-secondary); border-color: var(--bb-border);
+  }
+
+  &__ligne--active td { background: var(--asr-survol); }
+}

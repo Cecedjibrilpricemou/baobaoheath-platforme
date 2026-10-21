@@ -44,9 +44,9 @@ jest.mock('../src/config/redis', () => ({ getRedis: () => null }));
 jest.mock('../src/services/numero.service', () => ({ prochainNumero: jest.fn() }));
 jest.mock('../src/services/parametres.service', () => ({ getValeursParametres: jest.fn() }));
 // Le chiffrage de l'assurance est teste pour lui-meme dans
-// assurance.service.test.ts : ici on verifie seulement comment la caisse s'en
-// sert, et ce qu'elle fige sur la vente.
-jest.mock('../src/services/assurance.service', () => ({ chiffrer: jest.fn() }));
+// assurance-cartes.service.test.ts : ici on verifie seulement comment la
+// caisse s'en sert, et ce qu'elle fige sur la vente.
+jest.mock('../src/services/assurance.service', () => ({ chiffrerParCarte: jest.fn() }));
 jest.mock('../src/utils/password.utils', () => ({ verifyPassword: jest.fn() }));
 
 type M = jest.Mock;
@@ -74,7 +74,16 @@ const { prochainNumero } = jest.requireMock('../src/services/numero.service') as
 const { getValeursParametres } = jest.requireMock('../src/services/parametres.service') as {
   getValeursParametres: M;
 };
-const { chiffrer } = jest.requireMock('../src/services/assurance.service') as { chiffrer: M };
+const { chiffrerParCarte } = jest.requireMock('../src/services/assurance.service') as { chiffrerParCarte: M };
+const JETON = 'J'.repeat(43);
+/** Une prise en charge acceptee, sur une police individuelle de p-1. */
+const accepte = (prise: Record<string, unknown>) => ({
+  ok: true,
+  prise: {
+    typeCouverture: 'INDIVIDUELLE', idContrat: 'ct-1', idContratAssurance: 'ct-1',
+    idAdhesionAssurance: null, idPatient: 'p-1', ...prise,
+  },
+});
 const { verifyPassword } = jest.requireMock('../src/utils/password.utils') as { verifyPassword: M };
 
 const pharmacien: JwtPayload = { userId: 'pharma-1', role: 'PHARMACIEN', sessionId: 's' } as JwtPayload;
@@ -145,7 +154,7 @@ beforeEach(() => {
   prisma.mouvementStock.create.mockResolvedValue({});
   prisma.stock.update.mockResolvedValue({});
   prisma.ligneVente.create.mockResolvedValue({});
-  chiffrer.mockResolvedValue(null);
+  chiffrerParCarte.mockResolvedValue({ ok: false, motif: 'Carte inconnue' });
 });
 
 // ── Fonctions pures ──────────────────────────────────────────────────
@@ -202,6 +211,19 @@ describe('creerVente', () => {
     prisma.utilisateur.findUnique.mockResolvedValue({ idStructure: 'struct-C', structure: { type: 'CENTRE_SANTE' } });
     await expect(creerVente(pharmacien, { lignes: [{ idMedicament: 'm-para', quantite: 1 }], modePaiement: 'ESPECES' }))
       .rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('refuse un compte rattache directement a un hopital', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      idStructure: 'struct-H',
+      structure: { type: 'CHU' },
+      pharmacienProfile: { roleOfficine: 'TITULAIRE' },
+    });
+
+    await expect(creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 1 }],
+      modePaiement: 'ESPECES',
+    })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it('refuse un paiement mobile sans numero d abonne', async () => {
@@ -642,63 +664,95 @@ describe('creerVente avec assurance', () => {
     prisma.stock.findMany.mockResolvedValue([STOCK_PARA]);
   });
 
-  // On ne couvre pas un passant : sans dossier, il n'y a pas de contrat a
-  // opposer a l'assureur.
-  it('refuse le tiers payant sans patient', async () => {
+  // La couverture se designe par la carte scannee : sans elle, il n'y a rien
+  // a opposer a l'assureur.
+  it('refuse le tiers payant sans carte d assurance', async () => {
     await expect(creerVente(pharmacien, {
-      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES', avecAssurance: true,
-    })).rejects.toThrow(/demande un patient/i);
-    expect(chiffrer).not.toHaveBeenCalled();
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true,
+    })).rejects.toThrow(/carte d'assurance/i);
+    expect(chiffrerParCarte).not.toHaveBeenCalled();
   });
 
   // Encaisser le patient a son insu alors qu'il presente une carte serait
   // pire qu'un refus : il croirait etre couvert.
-  it('refuse la vente quand aucun contrat n est utilisable', async () => {
-    chiffrer.mockResolvedValue(null);
+  it('refuse la vente quand la couverture n est pas utilisable, et dit pourquoi', async () => {
+    chiffrerParCarte.mockResolvedValue({ ok: false, motif: "Contrat collectif de l'entreprise expire" });
     await expect(creerVente(pharmacien, {
       lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
-      idPatient: 'p-1', avecAssurance: true,
-    })).rejects.toThrow(/Aucun contrat/i);
+      avecAssurance: true, jetonCarteAssurance: JETON,
+    })).rejects.toThrow(/Contrat collectif de l'entreprise expire/);
+    expect(prisma.venteComptoir.create).not.toHaveBeenCalled();
+  });
+
+  it('refuse une carte qui n appartient pas au patient selectionne', async () => {
+    chiffrerParCarte.mockResolvedValue(accepte({
+      idPatient: 'p-autre', assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 0, montantPatientGnf: 2_400, notes: [], lignes: [],
+    }));
+    await expect(creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true, jetonCarteAssurance: JETON,
+    })).rejects.toThrow(/n'appartient pas/);
+    expect(prisma.venteComptoir.create).not.toHaveBeenCalled();
   });
 
   it('fige la part de l assureur et celle du patient sur la vente', async () => {
-    chiffrer.mockResolvedValue({
-      idContrat: 'ct-1',
+    chiffrerParCarte.mockResolvedValue(accepte({
       assureur: { id: 'as-1', nom: 'Pricemou & Frere', code: 'PF' },
       montantAssureGnf: 1_920,
       montantPatientGnf: 480,
       notes: [],
       lignes: [{ idMedicament: 'm-para', libelle: 'Doliprane 500mg', montantGnf: 2_400, couvert: true, tauxAppliquePourcent: 80, montantAssureGnf: 1_920, motifExclusion: null }],
-    });
+    }));
 
     await creerVente(pharmacien, {
       lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
-      idPatient: 'p-1', avecAssurance: true,
+      avecAssurance: true, jetonCarteAssurance: JETON,
     });
 
     expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         idContratAssurance: 'ct-1',
+        idAdhesionAssurance: null,
+        // Le beneficiaire vient de la carte, meme si la caisse ne l'a pas saisi.
+        idPatient: 'p-1',
         montantAssureGnf: 1_920,
         montantPatientGnf: 480,
       }),
     }));
   });
 
+  it('rattache la vente a l adhesion quand la carte est celle d un contrat collectif', async () => {
+    chiffrerParCarte.mockResolvedValue(accepte({
+      typeCouverture: 'COLLECTIVE', idContrat: 'cc-1', idContratAssurance: null, idAdhesionAssurance: 'ad-1',
+      assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 2_160, montantPatientGnf: 240, notes: [], lignes: [],
+    }));
+
+    await creerVente(pharmacien, {
+      lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
+      idPatient: 'p-1', avecAssurance: true, jetonCarteAssurance: JETON,
+    });
+
+    expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ idContratAssurance: null, idAdhesionAssurance: 'ad-1', montantAssureGnf: 2_160 }),
+    }));
+  });
+
   // « Un reste a charge sans explication se conteste au comptoir. »
   it('fige le detail de couverture sur chaque ligne', async () => {
-    chiffrer.mockResolvedValue({
-      idContrat: 'ct-1',
+    chiffrerParCarte.mockResolvedValue(accepte({
       assureur: { id: 'as-1', nom: 'X', code: 'X' },
       montantAssureGnf: 0,
       montantPatientGnf: 2_400,
       notes: [],
       lignes: [{ idMedicament: 'm-para', libelle: 'Doliprane 500mg', montantGnf: 2_400, couvert: false, tauxAppliquePourcent: 0, montantAssureGnf: 0, motifExclusion: 'Categorie MEDICAMENT exclue par l assureur' }],
-    });
+    }));
 
     await creerVente(pharmacien, {
       lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
-      idPatient: 'p-1', avecAssurance: true,
+      avecAssurance: true, jetonCarteAssurance: JETON,
     });
 
     expect(prisma.ligneVente.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -711,19 +765,21 @@ describe('creerVente avec assurance', () => {
     }));
   });
 
-  it('chiffre sur le total a prix fixes', async () => {
-    chiffrer.mockResolvedValue({
-      idContrat: 'ct-1', assureur: { id: 'as-1', nom: 'X', code: 'X' },
-      montantAssureGnf: 0, montantPatientGnf: 2_000, notes: [], lignes: [],
-    });
+  it('chiffre sur le total a prix fixes, dans la pharmacie du vendeur', async () => {
+    chiffrerParCarte.mockResolvedValue(accepte({
+      assureur: { id: 'as-1', nom: 'X', code: 'X' },
+      montantAssureGnf: 0, montantPatientGnf: 2_400, notes: [], lignes: [],
+    }));
 
     await creerVente(pharmacien, {
       lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
-      idPatient: 'p-1', avecAssurance: true,
+      avecAssurance: true, jetonCarteAssurance: JETON,
     });
 
-    const [, , montantNet] = chiffrer.mock.calls[0] as [string, unknown, number];
+    const [jeton, , montantNet, idStructure] = chiffrerParCarte.mock.calls[0] as [string, unknown, number, string];
+    expect(jeton).toBe(JETON);
     expect(montantNet).toBe(2_400);
+    expect(idStructure).toBe('struct-P');
   });
 
   it('sans assurance, le patient paie tout et on ne chiffre rien', async () => {
@@ -731,10 +787,11 @@ describe('creerVente avec assurance', () => {
       lignes: [{ idMedicament: 'm-para', quantite: 2 }], modePaiement: 'ESPECES',
     });
 
-    expect(chiffrer).not.toHaveBeenCalled();
+    expect(chiffrerParCarte).not.toHaveBeenCalled();
     expect(prisma.venteComptoir.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         idContratAssurance: null,
+        idAdhesionAssurance: null,
         montantAssureGnf: 0,
         montantPatientGnf: 2_400,
       }),
@@ -755,17 +812,29 @@ describe('schema de creation de vente', () => {
   const { creerVenteSchema } = require('../src/validators/api.schemas');
   const minimal = { lignes: [{ idMedicament: 'm-1', quantite: 1 }], modePaiement: 'ESPECES' };
 
-  it.each(['numeroOperateur', 'idPatient', 'idOrdonnance', 'avecAssurance'])(
+  it.each(['numeroOperateur', 'idPatient', 'idOrdonnance', 'jetonCarteAssurance'])(
     'accepte le champ optionnel %s',
     (champ) => {
       const valeurs: Record<string, unknown> = {
         numeroOperateur: '620000000',
-        idPatient: 'p-1', idOrdonnance: 'or-1', avecAssurance: true,
+        idPatient: 'p-1', idOrdonnance: 'or-1', jetonCarteAssurance: 'J'.repeat(43),
       };
       const r = creerVenteSchema.safeParse({ ...minimal, [champ]: valeurs[champ] });
       expect({ champ, ok: r.success }).toEqual({ champ, ok: true });
     }
   );
+
+  it('accepte le tiers payant avec la carte scannee', () => {
+    expect(creerVenteSchema.safeParse({ ...minimal, avecAssurance: true, jetonCarteAssurance: 'J'.repeat(43) }).success).toBe(true);
+  });
+
+  it('refuse le tiers payant sans carte scannee', () => {
+    expect(creerVenteSchema.safeParse({ ...minimal, avecAssurance: true }).success).toBe(false);
+  });
+
+  it('refuse un jeton de carte qui n est pas un jeton opaque', () => {
+    expect(creerVenteSchema.safeParse({ ...minimal, jetonCarteAssurance: '{"idPatient":"p-1","x":"yyyyyyyy"}' }).success).toBe(false);
+  });
 
   it('refuse un champ inconnu : le schema reste strict', () => {
     expect(creerVenteSchema.safeParse({ ...minimal, inconnu: 1 }).success).toBe(false);

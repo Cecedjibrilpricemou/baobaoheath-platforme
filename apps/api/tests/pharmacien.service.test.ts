@@ -53,7 +53,7 @@ const { getValeursParametres } = jest.requireMock('../src/services/parametres.se
 const PHARMACIEN = {
   id: 'ph-u', idStructure: 'pharma-1',
   structure: { id: 'pharma-1', type: 'PHARMACIE', prefecture: 'Kindia' },
-  pharmacienProfile: {},
+  pharmacienProfile: { idStructure: 'pharma-1' },
 };
 const PARACETAMOL = { id: 'm-1', idStructure: null, dci: 'Paracetamol', nomCommercial: 'Doliprane', forme: 'cp', dosage: '500mg', prixUnitaireGnf: 1000, estReglemente: false, estActif: true };
 
@@ -139,6 +139,15 @@ describe('garde commune : le compte doit etre rattache a une pharmacie', () => {
 
   it('refuse une structure qui n est pas une pharmacie', async () => {
     prisma.utilisateur.findUnique.mockResolvedValue({ ...PHARMACIEN, structure: { ...PHARMACIEN.structure, type: 'CENTRE' } });
+    await expect(scanPatient('qr-1', 'ph-u')).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('refuse une structure hospitaliere, meme avec un profil pharmacien', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      ...PHARMACIEN,
+      structure: { ...PHARMACIEN.structure, type: 'HOPITAL_PREF' },
+    });
+
     await expect(scanPatient('qr-1', 'ph-u')).rejects.toBeInstanceOf(ValidationError);
   });
 });

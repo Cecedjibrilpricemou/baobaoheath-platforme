@@ -7,8 +7,9 @@ import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
 import { logger } from '../config/logger';
 import type { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { estStructureHospitaliere } from '../utils/officine.util';
 
-const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO];
+const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO];
 
 // ── Générer un mot de passe temporaire ───────────────────────────
 /**
@@ -104,11 +105,41 @@ export async function creerStructureAvecAdmin(dto: {
     };
 }
 
-export async function creerPharmacieAvecPharmacien(dto: {
+export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
     nom: string; prefecture: string;
+    idStructureParente?: string;
     adresse?: string; latitude?: number; longitude?: number; telephone?: string;
     pharmacien: { prenom: string; nom: string; telephone: string; email?: string; motDePasse?: string; };
 }) {
+    let idStructureParente: string | null = dto.idStructureParente ?? null;
+
+    if (auteur.role === Role.ADMIN_STRUCTURE) {
+        const admin = await prisma.utilisateur.findUnique({
+            where: { id: auteur.userId },
+            select: { idStructure: true, structure: { select: { type: true } } },
+        });
+        if (!admin?.idStructure || !admin.structure || !estStructureHospitaliere(admin.structure.type)) {
+            throw new ForbiddenError('Seul un administrateur hospitalier peut creer une pharmacie hospitaliere');
+        }
+        if (dto.idStructureParente && dto.idStructureParente !== admin.idStructure) {
+            throw new ForbiddenError('Vous ne pouvez creer une pharmacie que dans votre propre structure');
+        }
+        idStructureParente = admin.idStructure;
+    } else if (auteur.role === Role.SUPER_ADMIN) {
+        if (idStructureParente) {
+            const parent = await prisma.structureSante.findUnique({
+                where: { id: idStructureParente },
+                select: { id: true, type: true },
+            });
+            if (!parent) throw new NotFoundError('Structure hospitaliere parente introuvable');
+            if (!estStructureHospitaliere(parent.type)) {
+                throw new ValidationError('La structure parente doit etre un hopital ou une clinique');
+            }
+        }
+    } else {
+        throw new ForbiddenError('Vous ne pouvez pas creer une pharmacie');
+    }
+
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.pharmacien.telephone } });
     if (existingTel) throw new ConflictError('Ce numero de telephone est deja utilise');
 
@@ -126,6 +157,7 @@ export async function creerPharmacieAvecPharmacien(dto: {
             data: {
                 nom: dto.nom,
                 type: TypeStructure.PHARMACIE,
+                idStructureParente,
                 prefecture: dto.prefecture,
                 adresse: dto.adresse,
                 latitude: dto.latitude,
@@ -236,6 +268,21 @@ export async function getStructures() {
     });
 }
 
+export async function getPharmaciesStructure(adminId: string) {
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: adminId },
+        select: { idStructure: true, structure: { select: { type: true } } },
+    });
+    if (!admin?.idStructure || !admin.structure || !estStructureHospitaliere(admin.structure.type)) {
+        throw new ForbiddenError('La gestion des pharmacies est reservee aux structures hospitalieres');
+    }
+
+    return prisma.structureSante.findMany({
+        where: { idStructureParente: admin.idStructure, type: TypeStructure.PHARMACIE },
+        orderBy: { creeLe: 'desc' },
+    });
+}
+
 // ── SUPER_ADMIN : modifier une structure ──────────────────────────
 export async function modifierStructure(id: string, dto: {
     nom?: string; type?: string; prefecture?: string;
@@ -245,6 +292,22 @@ export async function modifierStructure(id: string, dto: {
     if (dto.type) {
         const typeValid = Object.values(TypeStructure).includes(dto.type as TypeStructure);
         if (!typeValid) throw new ValidationError(`Type invalide : ${dto.type}`);
+
+        const structure = await prisma.structureSante.findUnique({
+            where: { id },
+            select: {
+                idStructureParente: true,
+                _count: { select: { structuresEnfants: true } },
+            },
+        });
+        if (!structure) throw new NotFoundError('Structure introuvable');
+        const nouveauType = dto.type as TypeStructure;
+        if (structure.idStructureParente && nouveauType !== TypeStructure.PHARMACIE) {
+            throw new ValidationError('Une pharmacie hospitaliere doit rester de type PHARMACIE');
+        }
+        if (structure._count.structuresEnfants > 0 && !estStructureHospitaliere(nouveauType)) {
+            throw new ValidationError('Une structure parente de pharmacie doit rester hospitaliere');
+        }
     }
     const { type, ...rest } = dto;
     return prisma.structureSante.update({
@@ -300,6 +363,9 @@ export async function creerAgent(adminId: string, dto: {
         include: { structure: true }
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (dto.role === Role.PHARMACIEN) {
+        throw new ForbiddenError('Creez une pharmacie pour rattacher son administrateur pharmacien');
+    }
     if (admin.structure?.type === TypeStructure.PHARMACIE) {
         throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
     }

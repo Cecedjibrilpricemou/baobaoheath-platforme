@@ -8,6 +8,8 @@ const DATABASE_URL = process.env['E2E_DATABASE_URL'];
 
 if (!DATABASE_URL) throw new Error('E2E_DATABASE_URL is required for acceptance tests');
 
+process.env['E2E_API_URL'] = `http://localhost:${API_PORT}/api/v1`;
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 90_000,

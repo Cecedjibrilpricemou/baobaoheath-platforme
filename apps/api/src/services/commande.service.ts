@@ -18,12 +18,12 @@ import {
   Role,
   StatutCommande,
   StatutOrdonnance,
-  TypeStructure,
 } from '../config/generated/client/client';
 import type { CommandeView } from '@baobaoheath/shared-types';
 import { prisma } from '../config/prisma';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { estStructureOfficinale, filtreStructuresOfficinales } from '../utils/officine.util';
 import { prochainNumero } from './numero.service';
 import { notifierSansBloquer } from './notification.service';
 
@@ -135,7 +135,7 @@ export async function pharmaciesDuQuartier(quartier: string | null) {
   if (!quartier) return [];
   return prisma.structureSante.findMany({
     where: {
-      type: TypeStructure.PHARMACIE,
+      ...filtreStructuresOfficinales(),
       estActive: true,
       estPartenaire: true,
       quartier,
@@ -392,7 +392,7 @@ async function pharmacieDuPharmacien(userId: string) {
     include: { structure: true },
   });
   if (!utilisateur?.structure) throw new ForbiddenError('Compte sans structure assignee');
-  if (utilisateur.structure.type !== TypeStructure.PHARMACIE) {
+  if (!estStructureOfficinale(utilisateur.structure.type)) {
     throw new ValidationError("La structure assignee n est pas une pharmacie");
   }
   if (!utilisateur.structure.estPartenaire) {
@@ -568,10 +568,13 @@ export async function assertPeutLireCommande(user: JwtPayload, idCommande: strin
 
   const utilisateur = await prisma.utilisateur.findUnique({
     where: { id: user.userId },
-    select: { idStructure: true, structure: { select: { type: true, quartier: true, estPartenaire: true } } },
+    select: {
+      idStructure: true,
+      structure: { select: { type: true, quartier: true, estPartenaire: true } },
+    },
   });
   const structure = utilisateur?.structure;
-  if (structure?.type === TypeStructure.PHARMACIE) {
+  if (structure && estStructureOfficinale(structure.type)) {
     // Celle qui l'a prise, ou une partenaire du quartier encore sollicitee :
     // elle doit pouvoir lire ce qu'on lui demande de servir.
     if (utilisateur?.idStructure === commande.idPharmacie) return;

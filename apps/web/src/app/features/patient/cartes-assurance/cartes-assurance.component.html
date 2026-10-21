@@ -1,0 +1,90 @@
+<!-- features/patient/cartes-assurance -->
+<div class="bb-cartes">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-id-card" aria-hidden="true"></i> {{ 'PATIENT.CARTES.BADGE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PATIENT.CARTES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PATIENT.CARTES.SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-cartes__attente" role="status">{{ 'COMMON.LOADING' | translate }}</p>
+  }
+
+  @if (erreur()) {
+    <div class="bb-alert bb-alert--error" role="alert">
+      <i class="pi pi-exclamation-circle" aria-hidden="true"></i> <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  @if (!chargement() && cartes().length === 0 && !erreur()) {
+    <div class="bb-cartes__vide">
+      <i class="pi pi-id-card" aria-hidden="true"></i>
+      <p><strong>{{ 'PATIENT.CARTES.AUCUNE' | translate }}</strong></p>
+      <p>{{ 'PATIENT.CARTES.AUCUNE_AIDE' | translate }}</p>
+    </div>
+  }
+
+  <div class="bb-cartes__liste">
+    @for (c of cartes(); track c.jetonCarte) {
+      <article class="bb-cartes__carte" [class.bb-cartes__carte--inactive]="!estUtilisable(c)">
+        <header class="bb-cartes__entete">
+          <span class="bb-cartes__assureur">{{ c.assureur.nom }}</span>
+          <span class="bb-cartes__statut" [class.bb-cartes__statut--ok]="estUtilisable(c)">
+            {{ 'PATIENT.CARTES.STATUT.' + c.statut | translate }}
+          </span>
+        </header>
+
+        <div class="bb-cartes__corps">
+          <dl class="bb-cartes__infos">
+            <div><dt>{{ 'PATIENT.CARTES.BENEFICIAIRE' | translate }}</dt><dd>{{ c.beneficiaire.prenom }} {{ c.beneficiaire.nom }}</dd></div>
+            <div>
+              <dt>{{ 'PATIENT.CARTES.COUVERTURE' | translate }}</dt>
+              <dd>
+                @if (c.typeCouverture === 'COLLECTIVE') {
+                  {{ 'PATIENT.CARTES.COLLECTIVE' | translate: { entreprise: c.souscripteur ?? '' } }}
+                  @if (c.nomRegime) { · {{ c.nomRegime }} }
+                } @else {
+                  {{ 'PATIENT.CARTES.INDIVIDUELLE' | translate }}
+                }
+              </dd>
+            </div>
+            <div><dt>{{ 'PATIENT.CARTES.ADHERENT' | translate }}</dt><dd class="bb-cartes__mono">{{ c.numeroAdherent }}</dd></div>
+            <div><dt>{{ 'PATIENT.CARTES.POLICE' | translate }}</dt><dd class="bb-cartes__mono">{{ c.numeroPolice }}</dd></div>
+            <div>
+              <dt>{{ 'PATIENT.CARTES.VALIDITE' | translate }}</dt>
+              <dd>{{ c.dateEffet | date: 'dd/MM/yyyy' : 'UTC' }} → @if (c.dateFin) { {{ c.dateFin | date: 'dd/MM/yyyy' : 'UTC' }} } @else { — }</dd>
+            </div>
+          </dl>
+
+          @if (c.qr) {
+            <img class="bb-cartes__qr" [src]="c.qr" [alt]="'PATIENT.CARTES.QR_ALT' | translate" width="160" height="160" />
+          }
+        </div>
+
+        <!-- Ce que l'assureur prend, en pourcentage. Le montant exact depend du
+             panier : il est calcule a la caisse. -->
+        <div class="bb-cartes__garanties">
+          <span class="bb-cartes__garantie">{{ 'PATIENT.CARTES.TAUX_BASE' | translate }} {{ c.tauxBasePourcent }} %</span>
+          @for (g of c.garanties; track g.categorie) {
+            <span class="bb-cartes__garantie" [class.bb-cartes__garantie--exclue]="g.exclu">
+              {{ g.categorie | categorieProduit }} :
+              @if (g.exclu) { {{ 'PATIENT.CARTES.EXCLU' | translate }} } @else { {{ g.tauxPourcent }} % }
+            </span>
+          }
+        </div>
+        <p class="bb-cartes__mention">{{ 'PATIENT.CARTES.MENTION' | translate }}</p>
+
+        <footer class="bb-cartes__actions">
+          <button matButton type="button" [disabled]="!c.qr" (click)="telecharger(c)">
+            <i class="pi pi-download" aria-hidden="true"></i> {{ 'PATIENT.CARTES.TELECHARGER' | translate }}
+          </button>
+          <button matButton type="button" [disabled]="!c.qr" (click)="imprimer(c)">
+            <i class="pi pi-print" aria-hidden="true"></i> {{ 'PATIENT.CARTES.IMPRIMER' | translate }}
+          </button>
+        </footer>
+      </article>
+    }
+  </div>
+</div>

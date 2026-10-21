@@ -21,6 +21,7 @@ import { NotificationBellComponent } from '../notification-bell/notification-bel
 import { TopbarCrumbComponent } from '../topbar-crumb/topbar-crumb.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
 import { BrandComponent } from '../brand/brand.component';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-admin-structure-layout',
@@ -38,6 +39,7 @@ export class AdminStructureLayoutComponent {
   private authService   = inject(AuthService);
   readonly themeService = inject(ThemeService);
   readonly layout        = inject(LayoutService);
+  private readonly api = inject(ApiService);
   private i18nService   = inject(I18nService);
   private dialog        = inject(MatDialog);
 
@@ -45,11 +47,21 @@ export class AdminStructureLayoutComponent {
   doitChangerMotDePasse = this.authService.doitChangerMotDePasse;
   sidebarOpen           = signal(false);
   showProfil            = signal(false);
+  pharmaciesNavEnabled  = signal(false);
+  pharmaciesNavError    = signal(false);
 
   constructor(iconRegistry: MatIconRegistry) {
     // PrimeIcons est déjà embarqué localement : on l'expose comme font set
     // Material plutôt que d'ajouter Material Symbols (plusieurs Mo).
     iconRegistry.registerFontClassAlias('pi', 'pi');
+    this.api.get<{ data?: { structure?: { type?: string } | null } }>('/admin-structure/stats').subscribe({
+      next: response => {
+        this.pharmaciesNavEnabled.set(
+          ['HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'].includes(response.data?.structure?.type ?? ''),
+        );
+      },
+      error: () => this.pharmaciesNavError.set(true),
+    });
   }
 
   /**
@@ -84,9 +96,16 @@ export class AdminStructureLayoutComponent {
     return `${u.prenom?.charAt(0) ?? ''}${u.nom?.charAt(0) ?? ''}`.toUpperCase();
   }
 
-  navItems = [
-    { labelKey: 'ADMIN_STRUCTURE.NAV_DASHBOARD', icon: 'pi-home',  route: '/admin-structure/dashboard' },
-    { labelKey: 'ADMIN_STRUCTURE.NAV_AGENTS',    icon: 'pi-users', route: '/admin-structure/agents'    },
-    { labelKey: 'ADMIN_STRUCTURE.NAV_IDENTITES', icon: 'pi-id-card', route: '/admin-structure/identites' }
-  ];
+  get navItems() {
+    const items = [
+      { labelKey: 'ADMIN_STRUCTURE.NAV_DASHBOARD', icon: 'pi-home', route: '/admin-structure/dashboard' },
+      { labelKey: 'ADMIN_STRUCTURE.NAV_AGENTS', icon: 'pi-users', route: '/admin-structure/agents' },
+    ];
+    if (this.pharmaciesNavEnabled()) {
+      items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_PHARMACIES', icon: 'pi-building', route: '/admin-structure/pharmacies' });
+      items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_ASSURANCES', icon: 'pi-shield', route: '/admin-structure/assurances' });
+    }
+    items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_IDENTITES', icon: 'pi-id-card', route: '/admin-structure/identites' });
+    return items;
+  }
 }

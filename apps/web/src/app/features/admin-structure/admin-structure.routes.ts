@@ -18,6 +18,16 @@ export const ADMIN_STRUCTURE_ROUTES: Routes = [
         loadComponent: () =>
           import('./agents/agents.component').then(m => m.AgentsComponent)
       },
+      {
+        path: 'pharmacies',
+        loadComponent: () =>
+          import('./pharmacies/pharmacies.component').then(m => m.PharmaciesComponent)
+      },
+      {
+        path: 'assurances',
+        loadComponent: () =>
+          import('./assurances/assurances.component').then(m => m.AssurancesComponent)
+      },
       // L'ecran des identites, partage avec l'accueil (EF-01-04/05/06).
       //
       // **C'est ici que vit la fusion de dossiers**, reservee a ce role : un

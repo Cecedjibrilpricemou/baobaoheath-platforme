@@ -39,7 +39,8 @@ export class AssureurAssuresComponent implements OnInit {
     const q = this.recherche().trim().toLowerCase();
     if (!q) return this.assures();
     return this.assures().filter((a) =>
-      `${a.patient.prenom} ${a.patient.nom} ${a.numeroPolice}`.toLowerCase().includes(q));
+      `${a.patient.prenom} ${a.patient.nom} ${a.numeroPolice} ${a.numeroAdherent ?? ''} ${a.souscripteur ?? ''}`
+        .toLowerCase().includes(q));
   });
 
   /** Les colonnes du document imprime **et** du fichier : les memes.
@@ -47,6 +48,8 @@ export class AssureurAssuresComponent implements OnInit {
   readonly colonnes: ColonneExport<AssureView>[] = [
     { titre: 'EXPORT.COL.ASSURE', valeur: (a) => `${a.patient.prenom} ${a.patient.nom}` },
     { titre: 'EXPORT.COL.POLICE', valeur: (a) => a.numeroPolice },
+    { titre: 'EXPORT.COL.ENTREPRISE', valeur: (a) => a.souscripteur ?? '' },
+    { titre: 'EXPORT.COL.NUMERO_ADHERENT', valeur: (a) => a.numeroAdherent ?? '' },
     { titre: 'EXPORT.COL.STATUT', valeur: (a) => a.statut },
     { titre: 'EXPORT.COL.TAUX_POURCENT', valeur: (a) => a.tauxBasePourcent, nombre: true },
     { titre: 'EXPORT.COL.CONSOMME_ANNEE_GNF', valeur: (a) => a.consommeAnneeGnf, nombre: true },

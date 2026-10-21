@@ -23,6 +23,11 @@ export const ASSUREUR_ROUTES: Routes = [
           import('./assures/assures.component').then(m => m.AssureurAssuresComponent)
       },
       {
+        path: 'contrats',
+        loadComponent: () =>
+          import('./contrats/contrats.component').then(m => m.AssureurContratsComponent)
+      },
+      {
         path: 'pharmacies',
         loadComponent: () =>
           import('./pharmacies/pharmacies.component').then(m => m.AssureurPharmaciesComponent)

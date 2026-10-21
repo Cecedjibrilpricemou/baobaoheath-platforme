@@ -41,6 +41,11 @@ export const PATIENT_ROUTES: Routes = [
           import('./qr-code/qr-code.component').then(m => m.QrCodeComponent)
       },
       {
+        path: 'cartes-assurance',
+        loadComponent: () =>
+          import('./cartes-assurance/cartes-assurance.component').then(m => m.CartesAssuranceComponent)
+      },
+      {
         path: 'carnet-vaccinal',
         loadComponent: () =>
           import('./dossier/dossier').then(m => m.Dossier)

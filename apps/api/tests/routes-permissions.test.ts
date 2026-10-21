@@ -82,6 +82,17 @@ const comptes = require('../src/routes/compte.routes').default as { stack: Couch
 const rgpd = require('../src/routes/rgpd.routes').default as { stack: Couche[] };
 const privacy = require('../src/routes/privacy.routes').default as { stack: Couche[] };
 const identites = require('../src/routes/identite.routes').default as { stack: Couche[] };
+const adminStructure = require('../src/routes/admin-structure.routes').default as { stack: Couche[] };
+
+describe('creation des pharmacies hospitalieres', () => {
+  it('est ouverte a l administrateur de structure et au super-admin', () => {
+    expect(rolesPour(adminStructure, 'post', '/pharmacies')).toEqual(['SUPER_ADMIN', 'ADMIN_STRUCTURE']);
+  });
+
+  it('la liste des pharmacies hospitalieres est reservee a l administrateur de structure', () => {
+    expect(rolesPour(adminStructure, 'get', '/pharmacies')).toEqual(['ADMIN_STRUCTURE']);
+  });
+});
 
 describe('l accueil ne fait plus rien de medical (addendum, point 9)', () => {
   // Chacune de ces routes lui etait ouverte avant le 2026-09-28.
@@ -296,6 +307,20 @@ describe('l assurance separe le comptoir de l administration', () => {
     expect(rolesPour(assurance, methode, chemin)).toEqual(['ADMIN_NATIONAL', 'SUPER_ADMIN']);
   });
 
+  it.each([
+    ['get', '/assureurs/catalogue'],
+    ['post', '/assureurs/:id/convention'],
+    ['delete', '/assureurs/:id/convention'],
+  ])('%s %s est ouverte aux responsables d une structure officinale ou hospitaliere', (methode, chemin) => {
+    expect(rolesPour(assurance, methode, chemin)).toEqual(['ADMIN_STRUCTURE', 'PHARMACIEN']);
+  });
+
+  it('expose aux structures et pharmacies uniquement leurs assureurs conventionnes', () => {
+    const roles = rolesPour(assurance, 'get', '/assureurs');
+    expect(roles).toContain('ADMIN_STRUCTURE');
+    expect(roles).toContain('PHARMACIEN');
+  });
+
   // Un pharmacien qui pourrait creer un contrat pourrait s'assurer lui-meme.
   it.each(['PHARMACIEN', 'AGENT_ACCUEIL', 'MEDECIN', 'PATIENT', 'ADMIN_STRUCTURE'] as const)(
     'ferme la creation de contrat a %s',
@@ -309,15 +334,53 @@ describe('l assurance separe le comptoir de l administration', () => {
     expect(rolesPour(assurance, 'post', '/eligibilite')).not.toContain('PATIENT');
   });
 
-  it('les sept routes existent bien', () => {
+  it('les routes assurance existent bien', () => {
     for (const [methode, chemin] of [
       ['post', '/eligibilite'], ['get', '/patients/:id/eligibilite'],
       ['post', '/simulation'], ['get', '/patients/:id/contrats'],
       ['get', '/assureurs'], ['post', '/assureurs'],
       ['post', '/assureurs/:id/regles'], ['post', '/contrats'],
+      ['get', '/assureurs/catalogue'], ['post', '/assureurs/:id/convention'],
+      ['delete', '/assureurs/:id/convention'],
+      ['post', '/cartes/verifier'], ['get', '/mes-cartes'],
+      ['get', '/moi/patients'], ['post', '/moi/contrats'],
+      ['get', '/moi/contrats-collectifs'], ['post', '/moi/contrats-collectifs'],
+      ['post', '/moi/contrats-collectifs/:id/renouveler'],
+      ['get', '/moi/contrats-collectifs/:id/adhesions'], ['post', '/moi/contrats-collectifs/:id/adhesions'],
+      ['post', '/moi/adhesions/:id/fin'], ['post', '/moi/polices/regles'],
     ] as const) {
       expect(rolesPour(assurance, methode, chemin)).not.toBeNull();
     }
+  });
+});
+
+// ── Lot assurance : cartes, contrats collectifs, adhesions ───────────
+describe('le lot assurance garde chaque public a sa place', () => {
+  // La pharmacie verifie la carte presentee ; elle ne gere aucun contrat.
+  it('ouvre la verification de carte et la simulation au comptoir seulement', () => {
+    for (const chemin of ['/cartes/verifier', '/simulation']) {
+      expect(rolesPour(assurance, 'post', chemin)).toEqual(['PHARMACIEN', 'AGENT_ACCUEIL']);
+    }
+  });
+
+  // Ses cartes, le patient seul les lit : elles portent le jeton de son QR.
+  it('reserve les cartes au patient connecte', () => {
+    expect(rolesPour(assurance, 'get', '/mes-cartes')).toEqual(['PATIENT']);
+  });
+
+  // Contrats, adhesions et taux vivent dans l'espace de la compagnie.
+  it.each([
+    ['get', '/moi/patients'],
+    ['post', '/moi/contrats'],
+    ['get', '/moi/contrats-collectifs'],
+    ['post', '/moi/contrats-collectifs'],
+    ['post', '/moi/contrats-collectifs/:id/renouveler'],
+    ['get', '/moi/contrats-collectifs/:id/adhesions'],
+    ['post', '/moi/contrats-collectifs/:id/adhesions'],
+    ['post', '/moi/adhesions/:id/fin'],
+    ['post', '/moi/polices/regles'],
+  ])('%s %s est reservee a l assureur', (methode, chemin) => {
+    expect(rolesPour(assurance, methode, chemin)).toEqual(['ASSUREUR']);
   });
 });
 

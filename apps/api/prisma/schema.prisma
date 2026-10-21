@@ -158,6 +158,7 @@ enum StatutContrat {
   ACTIF
   SUSPENDU
   RESILIE
+  EXPIRE
 }
 
 /// ANNULEE ne sert pas a un retour client — EF-07-11 l'interdit — mais a
@@ -307,9 +308,9 @@ model Utilisateur {
   suspensionsPrononcees Utilisateur[] @relation("SuspensionsProoncees")
 
   /// Les identites de patients qu'il a verifiees (EF-01-04).
-  identitesVerifiees PatientProfile[] @relation("IdentitesVerifiees")
-  brisDeGlaceDeclares BrisDeGlace[] @relation("BrisDeGlaceDeclares")
-  brisDeGlaceRevus    BrisDeGlace[] @relation("BrisDeGlaceRevus")
+  identitesVerifiees  PatientProfile[] @relation("IdentitesVerifiees")
+  brisDeGlaceDeclares BrisDeGlace[]    @relation("BrisDeGlaceDeclares")
+  brisDeGlaceRevus    BrisDeGlace[]    @relation("BrisDeGlaceRevus")
   /// Numero d'inscription a l'ordre professionnel (EF-01-08).
   ///
   /// **Sur l'utilisateur, pas sur chaque profil.** Le numero vivait sur
@@ -321,16 +322,16 @@ model Utilisateur {
   /// numero au registre de l'ordre. Il n'y a pas d'API nationale a interroger ;
   /// c'est donc un acte humain, trace comme la verification d'identite
   /// (EF-01-04).
-  numeroOrdre       String?
-  ordreVerifieLe    DateTime?
-  idOrdreVerifiePar String?
-  ordreVerifiePar   Utilisateur?  @relation("OrdresVerifies", fields: [idOrdreVerifiePar], references: [id], onDelete: SetNull)
-  ordresVerifies    Utilisateur[] @relation("OrdresVerifies")
+  numeroOrdre         String?
+  ordreVerifieLe      DateTime?
+  idOrdreVerifiePar   String?
+  ordreVerifiePar     Utilisateur?     @relation("OrdresVerifies", fields: [idOrdreVerifiePar], references: [id], onDelete: SetNull)
+  ordresVerifies      Utilisateur[]    @relation("OrdresVerifies")
 
-  textesConsentementPublies TexteConsentement[] @relation("TextesConsentementPublies")
+  textesConsentementPublies TexteConsentement[]     @relation("TextesConsentementPublies")
   evenementsConsentement    EvenementConsentement[] @relation("EvenementsConsentement")
-  fusionsProoncees FusionDossier[] @relation("FusionsProoncees")
-  fusionsAnnulees  FusionDossier[] @relation("FusionsAnnulees")
+  fusionsProoncees          FusionDossier[]         @relation("FusionsProoncees")
+  fusionsAnnulees           FusionDossier[]         @relation("FusionsAnnulees")
 
   /// Les demandes RGPD qu'il a traitees (EF-12-09).
   demandesRgpdTraitees DemandeRgpd[] @relation("DemandesRgpdTraitees")
@@ -338,48 +339,49 @@ model Utilisateur {
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
-  patientProfile           PatientProfile?
-  ascProfile               AscProfile?
-  actesDelivrance          ActeDelivrance[] @relation("ActeDelivrancePharmacien")
-  medecinProfile           MedecinProfile?
-  pharmacienProfile        PharmacienProfile?
-  sessions                 Session[]
-  evenementsConnexion      EvenementConnexion[]
-  authOtps                 AuthOtp[]
-  motDePasseResets         MotDePasseReset[]
-  auditLogs                JournalAudit[]
-  messagesEnvoyes          Message[]                @relation("Expediteur")
-  messagesRecus            Message[]                @relation("Destinataire")
-  consultationsSigne       Consultation[]           @relation("MedecinValideur")
-  ordonnancesSigne         Ordonnance[]             @relation("MedecinSignataire")
-  vaccinsAdministres       Vaccination[]
-  referencementsValide     Referencement[]          @relation("MedecinValideurRef")
-  episodesOuverts          EpisodeSoins[]           @relation("EpisodeOuvertPar")
-  episodesResponsable      EpisodeSoins[]           @relation("EpisodeResponsable")
-  demandesPrescrites       DemandeAnalyse[]         @relation("Prescripteur")
-  demandesValidees         DemandeAnalyse[]         @relation("Valideur")
-  demandesLiberees         DemandeAnalyse[]         @relation("LibereParMedecin")
-  echantillonsPreleves     Echantillon[]            @relation("Preleveur")
-  resultatsSaisis          ResultatAnalyse[]        @relation("SaisiPar")
-  alertesCritiques         AlerteResultatCritique[] @relation("DestinataireAlerte")
-  alertesEscaladees        AlerteResultatCritique[] @relation("EscaladeVers")
-  rendezVousMedecin        RendezVous[]             @relation("RendezVousMedecin")
-  rendezVousPointes        RendezVous[]             @relation("PointageArrivee")
-  demandesRdvVisees        DemandeRendezVous[]      @relation("DemandesRendezVousMedecin")
-  demandesRdvTraitees      DemandeRendezVous[]      @relation("DemandesRendezVousTraitees")
-  approvisionnementsSaisis Approvisionnement[]      @relation("ApprovisionnementsSaisis")
-  ventesVendues            VenteComptoir[]          @relation("VentesVendeur")
-  sessionsCaisse           SessionCaisse[]
-  mouvementsStock          MouvementStock[]
-  ventesAnnulees           VenteComptoir[]          @relation("VentesAnnulees")
-  ventesAnnulationAutorisee VenteComptoir[]         @relation("VentesAnnulationAutorisee")
-  reglementsAssureurSaisis ReglementAssureur[]      @relation("ReglementsAssureur")
-  controlesEligibilite     ControleEligibilite[]    @relation("ControlesEligibilite")
-  syncEvents               SyncEvent[]
-  syncMutations            SyncMutation[]
-  consentementsDonnes      ConsentementPatient[]
-  ussdSessions             UssdSession[]
-  notifications            Notification[]
+  patientProfile            PatientProfile?
+  ascProfile                AscProfile?
+  actesDelivrance           ActeDelivrance[]         @relation("ActeDelivrancePharmacien")
+  medecinProfile            MedecinProfile?
+  pharmacienProfile         PharmacienProfile?
+  sessions                  Session[]
+  evenementsConnexion       EvenementConnexion[]
+  authOtps                  AuthOtp[]
+  motDePasseResets          MotDePasseReset[]
+  auditLogs                 JournalAudit[]
+  messagesEnvoyes           Message[]                @relation("Expediteur")
+  messagesRecus             Message[]                @relation("Destinataire")
+  consultationsSigne        Consultation[]           @relation("MedecinValideur")
+  ordonnancesSigne          Ordonnance[]             @relation("MedecinSignataire")
+  vaccinsAdministres        Vaccination[]
+  referencementsValide      Referencement[]          @relation("MedecinValideurRef")
+  episodesOuverts           EpisodeSoins[]           @relation("EpisodeOuvertPar")
+  episodesResponsable       EpisodeSoins[]           @relation("EpisodeResponsable")
+  demandesPrescrites        DemandeAnalyse[]         @relation("Prescripteur")
+  demandesValidees          DemandeAnalyse[]         @relation("Valideur")
+  demandesLiberees          DemandeAnalyse[]         @relation("LibereParMedecin")
+  echantillonsPreleves      Echantillon[]            @relation("Preleveur")
+  resultatsSaisis           ResultatAnalyse[]        @relation("SaisiPar")
+  alertesCritiques          AlerteResultatCritique[] @relation("DestinataireAlerte")
+  alertesEscaladees         AlerteResultatCritique[] @relation("EscaladeVers")
+  rendezVousMedecin         RendezVous[]             @relation("RendezVousMedecin")
+  rendezVousPointes         RendezVous[]             @relation("PointageArrivee")
+  demandesRdvVisees         DemandeRendezVous[]      @relation("DemandesRendezVousMedecin")
+  demandesRdvTraitees       DemandeRendezVous[]      @relation("DemandesRendezVousTraitees")
+  approvisionnementsSaisis  Approvisionnement[]      @relation("ApprovisionnementsSaisis")
+  ventesVendues             VenteComptoir[]          @relation("VentesVendeur")
+  sessionsCaisse            SessionCaisse[]
+  mouvementsStock           MouvementStock[]
+  ventesAnnulees            VenteComptoir[]          @relation("VentesAnnulees")
+  ventesAnnulationAutorisee VenteComptoir[]          @relation("VentesAnnulationAutorisee")
+  reglementsAssureurSaisis  ReglementAssureur[]      @relation("ReglementsAssureur")
+  finsAdhesionEnregistrees  AdhesionAssurance[]      @relation("FinsAdhesion")
+  controlesEligibilite      ControleEligibilite[]    @relation("ControlesEligibilite")
+  syncEvents                SyncEvent[]
+  syncMutations             SyncMutation[]
+  consentementsDonnes       ConsentementPatient[]
+  ussdSessions              UssdSession[]
+  notifications             Notification[]
 
   @@map("utilisateurs")
 }
@@ -402,12 +404,12 @@ model Session {
 /// sont pas supprimees a la deconnexion. Les identifiants inconnus ne sont
 /// conserves que sous forme de hash, jamais en clair.
 model EvenementConnexion {
-  id              String                  @id @default(cuid())
+  id              String                 @id @default(cuid())
   type            TypeEvenementConnexion
   ipAdresse       String?
   userAgent       String?
   identifiantHash String?
-  creeLe          DateTime                @default(now())
+  creeLe          DateTime               @default(now())
 
   idUtilisateur String?
   utilisateur   Utilisateur? @relation(fields: [idUtilisateur], references: [id], onDelete: SetNull)
@@ -718,13 +720,17 @@ model SyncMutation {
 // â”€â”€â”€ DOMAINE 2 â€” ACTEURS DE SANTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model StructureSante {
-  id         String        @id @default(cuid())
-  nom        String
-  type       TypeStructure
-  prefecture String
-  commune    String?
-  quartier   String?
-  adresse    String?
+  id                 String           @id @default(cuid())
+  nom                String
+  type               TypeStructure
+  /// Une pharmacie hospitaliere est une entite distincte de son hopital.
+  idStructureParente String?
+  structureParente   StructureSante?  @relation("StructureHierarchie", fields: [idStructureParente], references: [id], onDelete: Restrict)
+  structuresEnfants  StructureSante[] @relation("StructureHierarchie")
+  prefecture         String
+  commune            String?
+  quartier           String?
+  adresse            String?
 
   /// Partenaire conventionne : seules ces structures sont sollicitees pour une
   /// commande (EF-12-02). La gestion complete des conventions viendra avec
@@ -732,23 +738,24 @@ model StructureSante {
   estPartenaire    Boolean   @default(false)
   partenaireDepuis DateTime?
 
-  commandes            Commande[]            @relation("PharmacieCommande")
-  reponsesCommandes    ReponsePharmacie[]    @relation("ReponsesPharmacie")
-  ventesComptoir       VenteComptoir[]
-  sessionsCaisse       SessionCaisse[]
-  mouvementsStock      MouvementStock[]
+  commandes                Commande[]            @relation("PharmacieCommande")
+  reponsesCommandes        ReponsePharmacie[]    @relation("ReponsesPharmacie")
+  ventesComptoir           VenteComptoir[]
+  sessionsCaisse           SessionCaisse[]
+  mouvementsStock          MouvementStock[]
   medicamentsPersonnalises Medicament[]
-  assureur             Assureur?
-  reglementsRecus      ReglementAssureur[]
-  controlesEligibilite ControleEligibilite[]
-  latitude             Float?
-  longitude            Float?
-  telephone            String?
-  photoUrl             String?
-  estActive            Boolean               @default(true)
-  brisDeGlace BrisDeGlace[]
+  assureur                 Assureur?
+  conventionsAssurance     StructureAssureur[]
+  reglementsRecus          ReglementAssureur[]
+  controlesEligibilite     ControleEligibilite[]
+  latitude                 Float?
+  longitude                Float?
+  telephone                String?
+  photoUrl                 String?
+  estActive                Boolean               @default(true)
+  brisDeGlace              BrisDeGlace[]
 
-  creeLe               DateTime              @default(now())
+  creeLe DateTime @default(now())
 
   utilisateurs          Utilisateur[]
   ascProfiles           AscProfile[]
@@ -764,6 +771,7 @@ model StructureSante {
   episodes              EpisodeSoins[]
   demandesAnalyseRecues DemandeAnalyse[]    @relation("Laboratoire")
 
+  @@index([idStructureParente])
   @@map("structures")
 }
 
@@ -844,28 +852,28 @@ model PatientProfile {
   /// simplement ecarte des recherches, et les lectures suivent ce lien.
   ///
   /// `Restrict` : on ne supprime pas un dossier qui en absorbe un autre.
-  idFusionneDans String?
-  fusionneDans   PatientProfile?  @relation("FusionDeDossier", fields: [idFusionneDans], references: [id], onDelete: Restrict)
+  idFusionneDans   String?
+  fusionneDans     PatientProfile?  @relation("FusionDeDossier", fields: [idFusionneDans], references: [id], onDelete: Restrict)
   dossiersAbsorbes PatientProfile[] @relation("FusionDeDossier")
-  fusionneLe     DateTime?
+  fusionneLe       DateTime?
 
-  brisDeGlace BrisDeGlace[] @relation("BrisDeGlacePatient")
+  brisDeGlace            BrisDeGlace[]           @relation("BrisDeGlacePatient")
   evenementsConsentement EvenementConsentement[]
 
   fusionsPrincipal FusionDossier[] @relation("FusionPrincipal")
   fusionsAbsorbe   FusionDossier[] @relation("FusionAbsorbe")
   // Maille reelle du parcours commande/livraison : c'est dans son quartier que
   // le patient cherche une pharmacie, pas dans sa prefecture.
-  commune            String?
-  quartier           String?
-  village            String?
-  latitude           Float?
-  longitude          Float?
-  photoUrl           String?
-  urgenceNom         String?
-  urgenceTelephone   String?
-  creeLe             DateTime     @default(now())
-  modifieLe          DateTime     @updatedAt
+  commune          String?
+  quartier         String?
+  village          String?
+  latitude         Float?
+  longitude        Float?
+  photoUrl         String?
+  urgenceNom       String?
+  urgenceTelephone String?
+  creeLe           DateTime        @default(now())
+  modifieLe        DateTime        @updatedAt
 
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
@@ -886,6 +894,7 @@ model PatientProfile {
   factures             Facture[]
   ventesComptoir       VenteComptoir[]
   contratsAssurance    ContratAssurance[]
+  adhesionsAssurance   AdhesionAssurance[]
   controlesEligibilite ControleEligibilite[]
   rendezVous           RendezVous[]
   consentements        ConsentementPatient[]
@@ -933,7 +942,7 @@ model AscProfile {
 }
 
 model MedecinProfile {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   numeroCom  String?
   specialite String?
 
@@ -945,9 +954,9 @@ model MedecinProfile {
   ///
   /// Du texte libre, pas un plan ni une reservation de salles : les bureaux
   /// changent, et une table de salles a tenir a jour serait abandonnee.
-  bureau String?
-  photoUrl   String?
-  creeLe     DateTime @default(now())
+  bureau   String?
+  photoUrl String?
+  creeLe   DateTime @default(now())
 
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
@@ -960,13 +969,13 @@ model MedecinProfile {
 
 // â”€â”€ NOUVEAU : PharmacienProfile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model PharmacienProfile {
-  id             String   @id @default(cuid())
-  photoUrl       String?
-  estResponsable Boolean  @default(false)
-  roleOfficine   RoleOfficine @default(ADJOINT)
+  id                     String        @id @default(cuid())
+  photoUrl               String?
+  estResponsable         Boolean       @default(false)
+  roleOfficine           RoleOfficine  @default(ADJOINT)
   roleOfficineTemporaire RoleOfficine?
   roleOfficineExpireLe   DateTime?
-  creeLe         DateTime @default(now())
+  creeLe                 DateTime      @default(now())
 
   idUtilisateur String      @unique
   utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
@@ -1117,7 +1126,7 @@ model Medicament {
 
   lignesOrdonnance LigneOrdonnance[]
   lignesCommande   LigneCommande[]
-  actesDelivrance  ActeDelivrance[] @relation("ActeDelivranceMedicament")
+  actesDelivrance  ActeDelivrance[]  @relation("ActeDelivranceMedicament")
   stocks           Stock[]
   mouvementsStock  MouvementStock[]
   lignesVente      LigneVente[]
@@ -1233,7 +1242,7 @@ model LigneOrdonnance {
   ordonnance   Ordonnance @relation(fields: [idOrdonnance], references: [id], onDelete: Cascade)
 
   idMedicament String
-  medicament   Medicament @relation(fields: [idMedicament], references: [id])
+  medicament   Medicament       @relation(fields: [idMedicament], references: [id])
   actes        ActeDelivrance[]
 
   @@index([idOrdonnance])
@@ -1260,7 +1269,7 @@ model ActeDelivrance {
   type TypeActeDelivrance
 
   /// Zero pour un refus. Une contrainte le verifie.
-  quantite Int
+  quantite        Int
   /// Prix de l'officine, fige a l'acte — meme regle que partout ailleurs :
   /// prix national de reference plus la marge de l'officine.
   prixUnitaireGnf Int @default(0)
@@ -1494,7 +1503,7 @@ model Stock {
   /// et par officine, alors qu'un approvisionnement apporte des lots aux
   /// peremptions differentes. Le modele ecrasait l'une des deux dates, et le
   /// stock affichait une peremption fausse.
-  lots LotStock[]
+  lots            LotStock[]
   mouvementsStock MouvementStock[]
 
   @@unique([idAsc, idMedicament])
@@ -1565,7 +1574,6 @@ model LotStock {
   @@map("lots_stock")
 }
 
-
 model Facture {
   id                 String        @id @default(cuid())
   montantGnf         Int
@@ -1589,9 +1597,9 @@ model Facture {
   /// sans rappeler la passerelle a chaque affichage.
   statutOperateur String?
 
-  payeeLe            DateTime?
-  creeLe             DateTime      @default(now())
-  modifieLe          DateTime      @updatedAt
+  payeeLe   DateTime?
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -1724,7 +1732,7 @@ enum SensConsentement {
 model BrisDeGlace {
   id String @id @default(cuid())
 
-  motif      MotifBrisDeGlace
+  motif       MotifBrisDeGlace
   /// Ce que le soignant explique en toutes lettres. La liste fermee permet de
   /// compter ; cette phrase permet de juger.
   explication String
@@ -1739,7 +1747,7 @@ model BrisDeGlace {
   idStructure String?
   structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
 
-  ouvertLe  DateTime @default(now())
+  ouvertLe  DateTime  @default(now())
   /// Au-dela, l'acces se referme de lui-meme. Un bris de glace qui ne se
   /// refermerait pas serait une cle, pas une vitre brisee.
   expireLe  DateTime
@@ -1748,11 +1756,11 @@ model BrisDeGlace {
   refermeLe DateTime?
 
   // ── La revue, qui vient apres ───────────────────────────────────────
-  statutRevue  StatutRevueBrisDeGlace @default(A_REVOIR)
-  avisRevue    String?
-  idRevuPar    String?
-  revuPar      Utilisateur? @relation("BrisDeGlaceRevus", fields: [idRevuPar], references: [id], onDelete: SetNull)
-  revuLe       DateTime?
+  statutRevue StatutRevueBrisDeGlace @default(A_REVOIR)
+  avisRevue   String?
+  idRevuPar   String?
+  revuPar     Utilisateur?           @relation("BrisDeGlaceRevus", fields: [idRevuPar], references: [id], onDelete: SetNull)
+  revuLe      DateTime?
 
   /// Le patient a-t-il ete prevenu ? `null` : la notification a echoue, et
   /// cela se voit au lieu de se perdre.
@@ -2321,8 +2329,10 @@ model VenteComptoir {
 
   /// Tiers payant (EF-09). Sans contrat, l'assure paie tout : `montantAssureGnf`
   /// reste a 0 et `montantPatientGnf` egale le net.
-  idContratAssurance String?
-  contratAssurance   ContratAssurance? @relation(fields: [idContratAssurance], references: [id], onDelete: Restrict)
+  idContratAssurance  String?
+  contratAssurance    ContratAssurance?  @relation(fields: [idContratAssurance], references: [id], onDelete: Restrict)
+  idAdhesionAssurance String?
+  adhesionAssurance   AdhesionAssurance? @relation(fields: [idAdhesionAssurance], references: [id], onDelete: Restrict)
 
   /// Ce que l'assureur prend, et ce que le patient paie. Les deux sont
   /// stockes : recalculer la part de l'assureur a la lecture supposerait que
@@ -2351,11 +2361,11 @@ model VenteComptoir {
   /// « paye en Orange Money » n'est qu'une case cochee par un agent.
   referenceTransaction String?
 
-  annuleeLe       DateTime?
-  motifAnnulation String?
-  idAnnuleePar    String?
-  annuleePar      Utilisateur? @relation("VentesAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
-  idAutoriseePar  String?
+  annuleeLe              DateTime?
+  motifAnnulation        String?
+  idAnnuleePar           String?
+  annuleePar             Utilisateur? @relation("VentesAnnulees", fields: [idAnnuleePar], references: [id], onDelete: SetNull)
+  idAutoriseePar         String?
   annulationAutoriseePar Utilisateur? @relation("VentesAnnulationAutorisee", fields: [idAutoriseePar], references: [id], onDelete: SetNull)
 
   creeLe DateTime @default(now())
@@ -2365,6 +2375,7 @@ model VenteComptoir {
   @@index([idStructure, creeLe(sort: Desc)])
   @@index([idStructure, statut])
   @@index([idAutoriseePar])
+  @@index([idAdhesionAssurance])
   @@map("ventes_comptoir")
 }
 
@@ -2374,21 +2385,21 @@ model VenteComptoir {
 model SessionCaisse {
   id String @id @default(cuid())
 
-  statut                       StatutSessionCaisse @default(OUVERTE)
-  montantOuvertureGnf          Int
-  montantEspecesEncaisseGnf    Int?
-  montantOrangeMoneyGnf        Int?
-  montantMtnMomoGnf             Int?
-  montantTheoriqueGnf          Int?
-  montantCompteGnf             Int?
-  ecartGnf                     Int?
-  nombreVentesPayees           Int?
-  nombreVentesEnAttente        Int?
-  nombreVentesAnnulees         Int?
-  motifEcart                   String?
-  ouverteLe                    DateTime            @default(now())
-  clotureeLe                   DateTime?
-  version                      Int                 @default(0)
+  statut                    StatutSessionCaisse @default(OUVERTE)
+  montantOuvertureGnf       Int
+  montantEspecesEncaisseGnf Int?
+  montantOrangeMoneyGnf     Int?
+  montantMtnMomoGnf         Int?
+  montantTheoriqueGnf       Int?
+  montantCompteGnf          Int?
+  ecartGnf                  Int?
+  nombreVentesPayees        Int?
+  nombreVentesEnAttente     Int?
+  nombreVentesAnnulees      Int?
+  motifEcart                String?
+  ouverteLe                 DateTime            @default(now())
+  clotureeLe                DateTime?
+  version                   Int                 @default(0)
 
   idStructure String
   structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
@@ -2462,14 +2473,32 @@ model Assureur {
   idStructure String?         @unique
   structure   StructureSante? @relation(fields: [idStructure], references: [id], onDelete: SetNull)
 
-  contrats   ContratAssurance[]
-  regles     RegleCouverture[]
-  reglements ReglementAssureur[]
+  contrats           ContratAssurance[]
+  contratsCollectifs ContratCollectifAssurance[]
+  regles             RegleCouverture[]
+  reglements         ReglementAssureur[]
+  conventions        StructureAssureur[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
   @@map("assureurs")
+}
+
+/// Assure les conventions d'un hopital ou d'une pharmacie independante.
+/// Une pharmacie hospitaliere consomme les conventions de son parent sans
+/// dupliquer ces lignes.
+model StructureAssureur {
+  id          String         @id @default(cuid())
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Cascade)
+  idAssureur  String
+  assureur    Assureur       @relation(fields: [idAssureur], references: [id], onDelete: Cascade)
+  creeLe      DateTime       @default(now())
+
+  @@unique([idStructure, idAssureur])
+  @@index([idAssureur])
+  @@map("structures_assureurs")
 }
 
 /// Ce qu'un assureur a effectivement verse a une pharmacie (addendum, point 5.2).
@@ -2522,6 +2551,9 @@ model ContratAssurance {
   id           String @id @default(cuid())
   /// Le numero de police, tel qu'il figure sur la carte.
   numeroPolice String
+  /// Jeton opaque du QR de la carte. Genere par le service (32 octets
+  /// aleatoires) : un cuid serait en partie previsible.
+  jetonCarte   String @unique
 
   /// Taux de base, en pourcentage.
   ///
@@ -2544,6 +2576,10 @@ model ContratAssurance {
   /// C'est ce qui empeche de s'assurer la veille d'une depense connue.
   carenceJours Int @default(0)
 
+  /// Jours couverts apres la date de fin. 0 par defaut : la couverture
+  /// s'arrete a la date de fin, sauf si le contrat prevoit une grace.
+  periodeGraceJours Int @default(0)
+
   statut StatutContrat @default(ACTIF)
 
   idAssureur String
@@ -2552,8 +2588,9 @@ model ContratAssurance {
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
 
-  ventes    VenteComptoir[]
-  controles ControleEligibilite[]
+  ventes               VenteComptoir[]
+  controles            ControleEligibilite[]
+  reglesPersonnalisees RegleCouverturePolice[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2561,6 +2598,106 @@ model ContratAssurance {
   @@unique([idAssureur, numeroPolice])
   @@index([idPatient, statut])
   @@map("contrats_assurance")
+}
+
+/// Une entreprise souscriptrice d'un ou plusieurs contrats collectifs.
+model EntrepriseAssuree {
+  id               String   @id @default(cuid())
+  raisonSociale    String
+  identifiantLegal String?  @unique
+  telephone        String?
+  email            String?
+  estActive        Boolean  @default(true)
+  creeLe           DateTime @default(now())
+  modifieLe        DateTime @updatedAt
+
+  contrats ContratCollectifAssurance[]
+
+  @@index([raisonSociale])
+  @@map("entreprises_assurees")
+}
+
+/// Couverture collective souscrite par une entreprise aupres d'un assureur.
+model ContratCollectifAssurance {
+  id                String        @id @default(cuid())
+  numeroContrat     String
+  nomRegime         String
+  tauxBasePourcent  Int           @default(80)
+  plafondAnnuelGnf  Int           @default(0)
+  franchiseGnf      Int           @default(0)
+  dateEffet         DateTime
+  dateFin           DateTime?
+  carenceJours      Int           @default(0)
+  periodeGraceJours Int           @default(0)
+  statut            StatutContrat @default(ACTIF)
+  creeLe            DateTime      @default(now())
+  modifieLe         DateTime      @updatedAt
+
+  idEntreprise String
+  entreprise   EntrepriseAssuree @relation(fields: [idEntreprise], references: [id], onDelete: Restrict)
+  idAssureur   String
+  assureur     Assureur          @relation(fields: [idAssureur], references: [id], onDelete: Restrict)
+
+  adhesions AdhesionAssurance[]
+  regles    RegleCouverturePolice[]
+
+  @@unique([idAssureur, numeroContrat])
+  @@index([idEntreprise, statut])
+  @@index([idAssureur, statut])
+  @@map("contrats_collectifs_assurance")
+}
+
+/// Adherence individuelle d'un beneficiaire a un contrat collectif.
+model AdhesionAssurance {
+  id             String        @id @default(cuid())
+  numeroAdherent String
+  jetonCarte     String        @unique
+  dateEffet      DateTime
+  /// Null : l'adhesion suit la fin du contrat collectif.
+  dateFin        DateTime?
+  statut         StatutContrat @default(ACTIF)
+  creeLe         DateTime      @default(now())
+  modifieLe      DateTime      @updatedAt
+
+  /// Fin d'adhesion : pourquoi, quand elle a ete saisie et par qui.
+  motifFin            String?
+  finEnregistreeLe    DateTime?
+  idFinEnregistreePar String?
+  finEnregistreePar   Utilisateur? @relation("FinsAdhesion", fields: [idFinEnregistreePar], references: [id], onDelete: SetNull)
+
+  idContratCollectif String
+  contratCollectif   ContratCollectifAssurance @relation(fields: [idContratCollectif], references: [id], onDelete: Restrict)
+  idPatient          String
+  patient            PatientProfile            @relation(fields: [idPatient], references: [id], onDelete: Restrict)
+
+  ventes    VenteComptoir[]
+  controles ControleEligibilite[]
+
+  @@unique([idContratCollectif, numeroAdherent])
+  @@unique([idContratCollectif, idPatient])
+  @@index([idPatient, statut])
+  @@map("adhesions_assurance")
+}
+
+/// Derogations de taux/exclusion propres a une police, sans modifier les
+/// regles communes de l'assureur ni les autres entreprises assurees.
+model RegleCouverturePolice {
+  id              String           @id @default(cuid())
+  categorie       CategorieProduit
+  exclu           Boolean          @default(false)
+  tauxPourcent    Int?
+  plafondLigneGnf Int              @default(0)
+  dateEffet       DateTime         @default(now())
+  creeLe          DateTime         @default(now())
+
+  idContratAssurance String?
+  contratAssurance   ContratAssurance?          @relation(fields: [idContratAssurance], references: [id], onDelete: Cascade)
+  idContratCollectif String?
+  contratCollectif   ContratCollectifAssurance? @relation(fields: [idContratCollectif], references: [id], onDelete: Cascade)
+
+  @@index([idContratAssurance, categorie, dateEffet])
+  @@index([idContratCollectif, categorie, dateEffet])
+  @@map("regles_couverture_police")
 }
 
 /// Une regle de couverture par categorie de produit.
@@ -2614,8 +2751,10 @@ model ControleEligibilite {
   numeroPolice     String?
   tauxBasePourcent Int?
 
-  idContrat String?
-  contrat   ContratAssurance? @relation(fields: [idContrat], references: [id], onDelete: SetNull)
+  idContrat           String?
+  contrat             ContratAssurance?  @relation(fields: [idContrat], references: [id], onDelete: SetNull)
+  idAdhesionAssurance String?
+  adhesionAssurance   AdhesionAssurance? @relation(fields: [idAdhesionAssurance], references: [id], onDelete: SetNull)
 
   idPatient String
   patient   PatientProfile @relation(fields: [idPatient], references: [id], onDelete: Restrict)
@@ -2631,6 +2770,7 @@ model ControleEligibilite {
 
   @@index([idPatient, creeLe(sort: Desc)])
   @@index([idStructure, creeLe(sort: Desc)])
+  @@index([idAdhesionAssurance])
   @@map("controles_eligibilite")
 }
 
@@ -2644,23 +2784,23 @@ enum MouvementType {
 }
 
 model MouvementStock {
-  id           String        @id @default(cuid())
-  type         MouvementType
-  quantite     Int
-  reference    String?
-  motif        String?
-  creeLe       DateTime @default(now())
+  id        String        @id @default(cuid())
+  type      MouvementType
+  quantite  Int
+  reference String?
+  motif     String?
+  creeLe    DateTime      @default(now())
 
-  idStructure  String
-  structure    StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
-  idMedicament String?
-  medicament   Medicament?    @relation(fields: [idMedicament], references: [id], onDelete: Restrict)
-  idStock      String?
-  stock        Stock?         @relation(fields: [idStock], references: [id], onDelete: SetNull)
-  idLot        String?
-  lot          LotStock?      @relation(fields: [idLot], references: [id], onDelete: SetNull)
+  idStructure   String
+  structure     StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
+  idMedicament  String?
+  medicament    Medicament?    @relation(fields: [idMedicament], references: [id], onDelete: Restrict)
+  idStock       String?
+  stock         Stock?         @relation(fields: [idStock], references: [id], onDelete: SetNull)
+  idLot         String?
+  lot           LotStock?      @relation(fields: [idLot], references: [id], onDelete: SetNull)
   idUtilisateur String
-  utilisateur  Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+  utilisateur   Utilisateur    @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
 
   @@index([idStructure, creeLe(sort: Desc)])
   @@index([idStructure, idMedicament, creeLe(sort: Desc)])

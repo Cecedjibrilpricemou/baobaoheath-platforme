@@ -11,11 +11,13 @@ import { ApiService } from './api.service';
 import { UtilisateurAdmin, DashboardStatsGlobal } from '../models/admin.model';
 import type {
   AssureurView,
+  CatalogueAssureursView,
   ContratAssuranceView,
   CreerAssureurDto,
   CreerContratDto,
   CreerRegleCouvertureDto,
   CreationStructureView,
+  CreationPharmacieView,
   PatientContratRechercheView,
   IdentitePlateformeView,
   ParametresSystemeView,
@@ -59,6 +61,14 @@ export class AdminService {
     return this.api.post<ApiResponse<unknown>>('/admin-structure/pharmacies', payload);
   }
 
+  getPharmaciesHospitalieres(): Observable<ApiResponse<StructureAdminView[]>> {
+    return this.api.get<ApiResponse<StructureAdminView[]>>('/admin-structure/pharmacies');
+  }
+
+  creerPharmacieHospitaliere(payload: Record<string, unknown>): Observable<ApiResponse<CreationPharmacieView>> {
+    return this.api.post<ApiResponse<CreationPharmacieView>>('/admin-structure/pharmacies', payload);
+  }
+
   deleteStructure(id: string): Observable<ApiResponse<void>> {
     return this.api.delete<ApiResponse<void>>(`/admin-structure/structures/${id}`);
   }
@@ -80,6 +90,18 @@ export class AdminService {
 
   getAssureurs(): Observable<ApiResponse<AssureurView[]>> {
     return this.api.get<ApiResponse<AssureurView[]>>('/assurance/assureurs');
+  }
+
+  getAssureursCatalogue(): Observable<ApiResponse<CatalogueAssureursView>> {
+    return this.api.get<ApiResponse<CatalogueAssureursView>>('/assurance/assureurs/catalogue');
+  }
+
+  activerConventionAssureur(idAssureur: string): Observable<ApiResponse<void>> {
+    return this.api.post<ApiResponse<void>>(`/assurance/assureurs/${idAssureur}/convention`, {});
+  }
+
+  retirerConventionAssureur(idAssureur: string): Observable<ApiResponse<void>> {
+    return this.api.delete<ApiResponse<void>>(`/assurance/assureurs/${idAssureur}/convention`);
   }
 
   creerAssureur(payload: CreerAssureurDto): Observable<ApiResponse<AssureurView>> {

@@ -14,17 +14,21 @@
 // la partie que l'on ne peut pas se permettre d'avoir fausse : elle est
 // testee pour elle-meme.
 import { CategorieProduit, ModeEchangeAssureur, NiveauIdentite, Prisma, StatutContrat, TypeStructure } from '../config/generated/client/client';
+import { randomBytes } from 'node:crypto';
 import { prisma } from '../config/prisma';
 import { filtreRecherchePatient } from './hopital.service';
+import { normaliserTelephone } from './doublon.service';
 import { genererMotDePasseTemp } from './admin-structure.service';
 import { hashPassword } from '../utils/password.utils';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { logger } from '../config/logger';
+import { estStructureHospitaliere, estStructureOfficinale } from '../utils/officine.util';
 import type {
   AgentAssureurCreeView,
   AssureView,
   AssureurView,
+  CatalogueAssureursView,
   CreerReglementDto,
   MonAssureurView,
   PatientContratRechercheView,
@@ -35,8 +39,23 @@ import type {
   CouvertureLigneView,
   CreerAssureurDto,
   CreerContratDto,
+  CreerContratCollectifDto,
+  CreerContratIndividuelDto,
+  CreerAdhesionAssuranceDto,
+  CreerReglePoliceDto,
+  AdhesionAssuranceView,
+  AssureurResumeView,
+  CarteAssuranceView,
+  CarteAssuranceVerifieeView,
+  ContratCollectifView,
   CreerRegleCouvertureDto,
+  GarantieCategorieView,
+  PatientAssureurRechercheView,
   PriseEnChargeView,
+  RegleCouvertureView,
+  RenouvelerContratDto,
+  TerminerAdhesionDto,
+  TypeCouverture,
 } from '@baobaoheath/shared-types';
 
 /** Une ligne a chiffrer, telle que la caisse la connait. */
@@ -244,7 +263,13 @@ export function calculerPriseEnCharge(
  * motif que le comptoir lira au patient, et qui sera oppose a l'assureur.
  */
 export function motifDInegibilite(
-  contrat: { statut: StatutContrat; dateEffet: Date; dateFin: Date | null; carenceJours: number },
+  contrat: {
+    statut: StatutContrat;
+    dateEffet: Date;
+    dateFin: Date | null;
+    carenceJours: number;
+    periodeGraceJours?: number;
+  },
   date: Date,
   // **Sans valeur par defaut, volontairement.** Un `= VERIFIEE` laissait tout
   // appelant qui l'oubliait contourner le verrou en silence — et le compte de
@@ -268,8 +293,11 @@ export function motifDInegibilite(
 
   if (contrat.statut === StatutContrat.RESILIE) return 'Contrat resilie';
   if (contrat.statut === StatutContrat.SUSPENDU) return 'Contrat suspendu';
+  if (contrat.statut === StatutContrat.EXPIRE) return 'Contrat expire';
   if (date < contrat.dateEffet) return "Contrat pas encore en vigueur";
-  if (contrat.dateFin && date > contrat.dateFin) return 'Contrat expire';
+  if (contrat.dateFin && date >= finDeCouverture(contrat.dateFin, contrat.periodeGraceJours ?? 0)) {
+    return 'Contrat expire';
+  }
 
   if (contrat.carenceJours > 0) {
     const finCarence = new Date(contrat.dateEffet.getTime() + contrat.carenceJours * 86_400_000);
@@ -280,14 +308,140 @@ export function motifDInegibilite(
   return null;
 }
 
+const UN_JOUR_MS = 86_400_000;
+
+/**
+ * L'instant ou une couverture cesse, borne exclue.
+ *
+ * **Le jour de fin est couvert en entier** : une police « valable jusqu'au
+ * 31 decembre » couvre l'achat du 31 a 18 h. S'y ajoutent les jours de grace,
+ * seulement si le contrat en prevoit (0 par defaut). Le calcul est en UTC,
+ * qui est l'heure legale de la Guinee.
+ */
+export function finDeCouverture(dateFin: Date, periodeGraceJours = 0): Date {
+  const debutDuJour = Date.UTC(dateFin.getUTCFullYear(), dateFin.getUTCMonth(), dateFin.getUTCDate());
+  return new Date(debutDuJour + (1 + periodeGraceJours) * UN_JOUR_MS);
+}
+
+/**
+ * Le statut a afficher : un contrat ACTIF dont l'echeance est passee est
+ * EXPIRE, sans attendre qu'une tache le reecrive. Le controle au comptoir ne
+ * depend donc d'aucun traitement de nuit.
+ */
+export function statutEffectif(
+  statut: StatutContrat,
+  dateFin: Date | null,
+  periodeGraceJours: number,
+  date: Date
+): StatutContrat {
+  if (statut === StatutContrat.ACTIF && dateFin && date >= finDeCouverture(dateFin, periodeGraceJours)) {
+    return StatutContrat.EXPIRE;
+  }
+  return statut;
+}
+
+/**
+ * Pourquoi l'adhesion d'un beneficiaire ne couvre pas. `null` = elle couvre.
+ *
+ * Le motif de fin saisi par l'assureur (depart, licenciement...) n'est **pas**
+ * repris : la pharmacie n'a besoin que de savoir que l'adhesion est terminee.
+ * Pas de grace non plus : elle releve du contrat, pas du depart d'un salarie.
+ */
+export function motifAdhesion(
+  adhesion: { statut: StatutContrat; dateEffet: Date; dateFin: Date | null },
+  date: Date
+): string | null {
+  if (adhesion.statut === StatutContrat.RESILIE) return 'Adhesion du beneficiaire terminee';
+  if (adhesion.statut === StatutContrat.SUSPENDU) return 'Adhesion du beneficiaire suspendue';
+  if (adhesion.statut === StatutContrat.EXPIRE) return 'Adhesion du beneficiaire expiree';
+  if (date < adhesion.dateEffet) return 'Adhesion du beneficiaire pas encore en vigueur';
+  if (adhesion.dateFin && date >= finDeCouverture(adhesion.dateFin)) {
+    return `Adhesion du beneficiaire terminee le ${adhesion.dateFin.toISOString().slice(0, 10)}`;
+  }
+  return null;
+}
+
+/**
+ * Les regles qui s'appliquent a une police : les siennes d'abord, celles de
+ * la compagnie pour les categories qu'elle ne regle pas.
+ *
+ * C'est ce qui permet a deux entreprises d'avoir des taux differents chez le
+ * meme assureur. Une categorie reglee par la police ecarte **toutes** les
+ * regles de la compagnie pour cette categorie : sinon une regle compagnie plus
+ * recente reprendrait la main sur le taux negocie.
+ */
+export function reglesApplicables(
+  reglesCompagnie: ReglePourCalcul[],
+  reglesPolice: ReglePourCalcul[],
+  date: Date
+): ReglePourCalcul[] {
+  const propres = new Set(reglesPolice.filter((r) => r.dateEffet <= date).map((r) => r.categorie));
+  return [...reglesPolice, ...reglesCompagnie.filter((r) => !propres.has(r.categorie))];
+}
+
+/**
+ * Le resume des garanties imprime sur la carte : une ligne par categorie qui
+ * a une regle en vigueur. Les autres prennent le taux de base, affiche a part.
+ */
+export function resumeGaranties(
+  tauxBasePourcent: number,
+  regles: ReglePourCalcul[],
+  date: Date
+): GarantieCategorieView[] {
+  const categories = [...new Set(regles.map((r) => r.categorie))].sort();
+  return categories.flatMap((categorie) => {
+    const r = regleEnVigueur(regles, categorie, date);
+    if (!r) return [];
+    return [{ categorie, exclu: r.exclu, tauxPourcent: r.exclu ? 0 : (r.tauxPourcent ?? tauxBasePourcent) }];
+  });
+}
+
 /** La structure du demandeur, et son type. */
-async function structureDe(userId: string): Promise<{ idStructure: string; type: TypeStructure }> {
+type StructureAssurance = {
+  idStructure: string;
+  type: TypeStructure;
+  idStructureParente: string | null;
+  roleOfficine: string | null;
+};
+
+async function structureDe(userId: string): Promise<StructureAssurance> {
   const u = await prisma.utilisateur.findUnique({
     where: { id: userId },
-    select: { idStructure: true, structure: { select: { type: true } } },
+    select: {
+      idStructure: true,
+      structure: { select: { type: true, idStructureParente: true } },
+      pharmacienProfile: { select: { roleOfficine: true } },
+    },
   });
   if (!u?.idStructure || !u.structure) throw new ForbiddenError('Aucune structure rattachee a votre compte');
-  return { idStructure: u.idStructure, type: u.structure.type };
+  return {
+    idStructure: u.idStructure,
+    type: u.structure.type,
+    idStructureParente: u.structure.idStructureParente,
+    roleOfficine: u.pharmacienProfile?.roleOfficine ?? null,
+  };
+}
+
+function structuresAvecConventions(structure: StructureAssurance): string[] {
+  if (!estStructureOfficinale(structure.type)) return [];
+  return structure.idStructureParente
+    ? [structure.idStructure, structure.idStructureParente]
+    : [structure.idStructure];
+}
+
+async function assureurConventionne(idStructure: string, idAssureur: string): Promise<boolean> {
+  const structure = await prisma.structureSante.findUnique({
+    where: { id: idStructure },
+    select: { id: true, type: true, idStructureParente: true },
+  });
+  if (!structure || !estStructureOfficinale(structure.type)) return false;
+  const idStructures = structure.idStructureParente
+    ? [structure.id, structure.idStructureParente]
+    : [structure.id];
+  return Boolean(await prisma.structureAssureur.findFirst({
+    where: { idAssureur, idStructure: { in: idStructures } },
+    select: { id: true },
+  }));
 }
 
 /**
@@ -301,7 +455,8 @@ export async function verifierEligibilite(
   idPatient: string,
   maintenant = new Date()
 ): Promise<ControleEligibiliteView> {
-  const { idStructure } = await structureDe(user.userId);
+  const structureCompte = await structureDe(user.userId);
+  const { idStructure } = structureCompte;
 
   const patient = await prisma.patientProfile.findUnique({
     where: { id: idPatient },
@@ -331,6 +486,9 @@ export async function verifierEligibilite(
     motif = `Assureur ${contrat.assureur.nom} inactif sur la plateforme`;
   } else {
     motif = motifDInegibilite(contrat, maintenant, patient.niveauIdentite);
+    if (!motif && !(await assureurConventionne(idStructure, contrat.idAssureur))) {
+      motif = `L'assureur ${contrat.assureur.nom} n'est pas conventionne avec cette pharmacie`;
+    }
     eligible = motif === null;
   }
 
@@ -367,23 +525,340 @@ export async function historiqueEligibilite(user: JwtPayload, idPatient: string)
     include: {
       patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
       contrat: { include: { assureur: { select: { id: true, nom: true, code: true } } } },
+      adhesionAssurance: {
+        select: { contratCollectif: { select: { assureur: { select: { id: true, nom: true, code: true } } } } },
+      },
     },
     orderBy: { creeLe: 'desc' },
     take: 50,
   });
 
-  return traces.map((t) => ({
-    id: t.id,
-    eligible: t.eligible,
-    motif: t.motif,
-    numeroPolice: t.numeroPolice,
-    tauxBasePourcent: t.tauxBasePourcent,
-    creeLe: t.creeLe.toISOString(),
-    patient: { id: t.patient.id, prenom: t.patient.utilisateur.prenom, nom: t.patient.utilisateur.nom },
-    assureur: t.contrat
-      ? { id: t.contrat.assureur.id, nom: t.contrat.assureur.nom, code: t.contrat.assureur.code }
-      : null,
-  }));
+  return traces.map((t) => {
+    const assureur = t.contrat?.assureur ?? t.adhesionAssurance?.contratCollectif.assureur ?? null;
+    return {
+      id: t.id,
+      eligible: t.eligible,
+      motif: t.motif,
+      numeroPolice: t.numeroPolice,
+      tauxBasePourcent: t.tauxBasePourcent,
+      creeLe: t.creeLe.toISOString(),
+      patient: { id: t.patient.id, prenom: t.patient.utilisateur.prenom, nom: t.patient.utilisateur.nom },
+      assureur: assureur ? { id: assureur.id, nom: assureur.nom, code: assureur.code } : null,
+    };
+  });
+}
+
+// ── La carte d'assurance ─────────────────────────────────────────────
+//
+// Le QR de la carte ne porte qu'un jeton opaque. Tout ce qui decide du tiers
+// payant est relu ici, au moment du scan : une carte imprimee ou une capture
+// d'ecran ne prouve pas qu'une couverture est encore active.
+
+const REGLE_SELECT = {
+  categorie: true, exclu: true, tauxPourcent: true, plafondLigneGnf: true, dateEffet: true,
+} as const;
+
+const ASSUREUR_CARTE_SELECT = {
+  id: true, nom: true, code: true, estActif: true,
+  regles: { select: REGLE_SELECT },
+} as const;
+
+// Le niveau d'identite est lu a chaque fois : sans lui, le verrou
+// d'identito-vigilance se contournerait en passant directement a la caisse.
+const PATIENT_CARTE_SELECT = {
+  id: true, niveauIdentite: true,
+  utilisateur: { select: { prenom: true, nom: true } },
+} as const;
+
+const CONTRAT_CARTE_INCLUDE = {
+  assureur: { select: ASSUREUR_CARTE_SELECT },
+  patient: { select: PATIENT_CARTE_SELECT },
+  reglesPersonnalisees: { select: REGLE_SELECT },
+} satisfies Prisma.ContratAssuranceInclude;
+
+const ADHESION_CARTE_INCLUDE = {
+  contratCollectif: {
+    include: {
+      assureur: { select: ASSUREUR_CARTE_SELECT },
+      entreprise: { select: { raisonSociale: true } },
+      regles: { select: REGLE_SELECT },
+    },
+  },
+  patient: { select: PATIENT_CARTE_SELECT },
+} satisfies Prisma.AdhesionAssuranceInclude;
+
+type ContratCarte = Prisma.ContratAssuranceGetPayload<{ include: typeof CONTRAT_CARTE_INCLUDE }>;
+type AdhesionCarte = Prisma.AdhesionAssuranceGetPayload<{ include: typeof ADHESION_CARTE_INCLUDE }>;
+
+/** Une couverture, qu'elle vienne d'une police individuelle ou d'une adhesion. */
+type Couverture = {
+  jetonCarte: string;
+  typeCouverture: TypeCouverture;
+  /** Police individuelle, ou contrat collectif de l'adhesion. */
+  idContrat: string;
+  idContratAssurance: string | null;
+  idAdhesionAssurance: string | null;
+  numeroPolice: string;
+  numeroAdherent: string;
+  nomRegime: string | null;
+  souscripteur: string | null;
+  conditions: ContratPourCalcul;
+  contrat: {
+    statut: StatutContrat; dateEffet: Date; dateFin: Date | null;
+    carenceJours: number; periodeGraceJours: number;
+  };
+  adhesion: { statut: StatutContrat; dateEffet: Date; dateFin: Date | null } | null;
+  assureur: { id: string; nom: string; code: string; estActif: boolean; regles: ReglePourCalcul[] };
+  reglesPolice: ReglePourCalcul[];
+  patient: { id: string; niveauIdentite: NiveauIdentite; prenom: string; nom: string };
+};
+
+function depuisContrat(c: ContratCarte): Couverture {
+  return {
+    jetonCarte: c.jetonCarte,
+    typeCouverture: 'INDIVIDUELLE',
+    idContrat: c.id,
+    idContratAssurance: c.id,
+    idAdhesionAssurance: null,
+    numeroPolice: c.numeroPolice,
+    numeroAdherent: c.numeroPolice,
+    nomRegime: null,
+    souscripteur: null,
+    conditions: {
+      id: c.id, tauxBasePourcent: c.tauxBasePourcent,
+      plafondAnnuelGnf: c.plafondAnnuelGnf, franchiseGnf: c.franchiseGnf,
+    },
+    contrat: c,
+    adhesion: null,
+    assureur: c.assureur,
+    reglesPolice: c.reglesPersonnalisees,
+    patient: {
+      id: c.patient.id, niveauIdentite: c.patient.niveauIdentite,
+      prenom: c.patient.utilisateur.prenom, nom: c.patient.utilisateur.nom,
+    },
+  };
+}
+
+function depuisAdhesion(a: AdhesionCarte): Couverture {
+  const g = a.contratCollectif;
+  return {
+    jetonCarte: a.jetonCarte,
+    typeCouverture: 'COLLECTIVE',
+    idContrat: g.id,
+    idContratAssurance: null,
+    idAdhesionAssurance: a.id,
+    numeroPolice: g.numeroContrat,
+    numeroAdherent: a.numeroAdherent,
+    nomRegime: g.nomRegime,
+    souscripteur: g.entreprise.raisonSociale,
+    // Le plafond annuel d'un contrat collectif vaut par beneficiaire : la
+    // consommation est comptee sur l'adhesion (voir `chiffrerParCarte`).
+    conditions: {
+      id: g.id, tauxBasePourcent: g.tauxBasePourcent,
+      plafondAnnuelGnf: g.plafondAnnuelGnf, franchiseGnf: g.franchiseGnf,
+    },
+    contrat: g,
+    adhesion: a,
+    assureur: g.assureur,
+    reglesPolice: g.regles,
+    patient: {
+      id: a.patient.id, niveauIdentite: a.patient.niveauIdentite,
+      prenom: a.patient.utilisateur.prenom, nom: a.patient.utilisateur.nom,
+    },
+  };
+}
+
+async function couvertureParJeton(jetonCarte: string): Promise<Couverture | null> {
+  const [contrat, adhesion] = await Promise.all([
+    prisma.contratAssurance.findUnique({ where: { jetonCarte }, include: CONTRAT_CARTE_INCLUDE }),
+    prisma.adhesionAssurance.findUnique({ where: { jetonCarte }, include: ADHESION_CARTE_INCLUDE }),
+  ]);
+  if (contrat) return depuisContrat(contrat);
+  if (adhesion) return depuisAdhesion(adhesion);
+  return null;
+}
+
+/**
+ * Pourquoi une couverture ne joue pas a cette date. `null` = elle joue.
+ *
+ * Trois niveaux, chacun avec son cycle de vie : la compagnie, le contrat
+ * (individuel ou collectif de l'entreprise), puis l'adhesion du beneficiaire.
+ */
+export function motifCouverture(
+  c: Pick<Couverture, 'typeCouverture' | 'assureur' | 'contrat' | 'adhesion' | 'patient'>,
+  date: Date
+): string | null {
+  if (!c.assureur.estActif) return `Assureur ${c.assureur.nom} inactif sur la plateforme`;
+  const motifContrat = motifDInegibilite(c.contrat, date, c.patient.niveauIdentite);
+  if (motifContrat) {
+    return c.typeCouverture === 'COLLECTIVE'
+      ? motifContrat.replace(/^Contrat/, "Contrat collectif de l'entreprise")
+      : motifContrat;
+  }
+  return c.adhesion ? motifAdhesion(c.adhesion, date) : null;
+}
+
+/** La fin effective : la plus proche entre l'adhesion et son contrat. */
+function dateFinEffective(c: Couverture): Date | null {
+  const fins = [c.adhesion?.dateFin, c.contrat.dateFin].filter((d): d is Date => d instanceof Date);
+  return fins.length ? new Date(Math.min(...fins.map((d) => d.getTime()))) : null;
+}
+
+function statutCarte(c: Couverture, date: Date): StatutContrat {
+  if (c.adhesion) {
+    const statutAdhesion = statutEffectif(c.adhesion.statut, c.adhesion.dateFin, 0, date);
+    if (statutAdhesion !== StatutContrat.ACTIF) return statutAdhesion;
+  }
+  return statutEffectif(c.contrat.statut, c.contrat.dateFin, c.contrat.periodeGraceJours, date);
+}
+
+function versCarteView(c: Couverture, date: Date): CarteAssuranceView {
+  return {
+    jetonCarte: c.jetonCarte,
+    typeCouverture: c.typeCouverture,
+    numeroPolice: c.numeroPolice,
+    numeroAdherent: c.numeroAdherent,
+    nomRegime: c.nomRegime,
+    tauxBasePourcent: c.conditions.tauxBasePourcent,
+    garanties: resumeGaranties(
+      c.conditions.tauxBasePourcent,
+      reglesApplicables(c.assureur.regles, c.reglesPolice, date),
+      date
+    ),
+    dateEffet: (c.adhesion?.dateEffet ?? c.contrat.dateEffet).toISOString(),
+    dateFin: dateFinEffective(c)?.toISOString() ?? null,
+    statut: statutCarte(c, date),
+    assureur: { id: c.assureur.id, nom: c.assureur.nom, code: c.assureur.code },
+    souscripteur: c.souscripteur,
+    beneficiaire: { prenom: c.patient.prenom, nom: c.patient.nom },
+  };
+}
+
+function motifSansConvention(nomAssureur: string): string {
+  return `L'assureur ${nomAssureur} n'est pas conventionne avec cette pharmacie`;
+}
+
+/**
+ * Controle au comptoir, sur la carte scannee (lot assurance, point 4).
+ *
+ * La pharmacie ne recherche que la couverture de ce beneficiaire : elle ne
+ * consulte jamais la liste des assures. La reponse est enregistree, refus
+ * compris — c'est elle qui sera opposable si l'assureur conteste.
+ */
+export async function verifierCarteAssurance(
+  user: JwtPayload,
+  jetonCarte: string,
+  maintenant = new Date()
+): Promise<CarteAssuranceVerifieeView> {
+  const { idStructure } = await structureDe(user.userId);
+  const c = await couvertureParJeton(jetonCarte);
+  if (!c) {
+    // Pas de trace en base : sans carte, il n'y a pas de patient a y rattacher.
+    logger.warn('[ASSURANCE] carte inconnue presentee au comptoir', { idStructure, parQui: user.userId });
+    throw new NotFoundError("Carte d'assurance inconnue ou remplacee : le tiers payant ne peut pas etre applique");
+  }
+
+  let motif = motifCouverture(c, maintenant);
+  if (!motif && !(await assureurConventionne(idStructure, c.assureur.id))) {
+    motif = motifSansConvention(c.assureur.nom);
+  }
+  const eligible = motif === null;
+
+  const trace = await prisma.controleEligibilite.create({
+    data: {
+      eligible,
+      motif,
+      numeroPolice: c.numeroPolice,
+      tauxBasePourcent: eligible ? c.conditions.tauxBasePourcent : null,
+      idContrat: c.idContratAssurance,
+      idAdhesionAssurance: c.idAdhesionAssurance,
+      idPatient: c.patient.id,
+      idStructure,
+      idControlePar: user.userId,
+    },
+    select: { id: true },
+  });
+
+  return {
+    ...versCarteView(c, maintenant),
+    idControle: trace.id,
+    eligible,
+    motif,
+    patient: { id: c.patient.id, prenom: c.patient.prenom, nom: c.patient.nom },
+  };
+}
+
+/** Le resultat d'un chiffrage : la prise en charge, ou le motif du refus. */
+export type ResultatChiffrage =
+  | {
+      ok: true;
+      prise: PriseEnCharge & {
+        typeCouverture: TypeCouverture;
+        idContrat: string;
+        idContratAssurance: string | null;
+        idAdhesionAssurance: string | null;
+        idPatient: string;
+        assureur: AssureurResumeView;
+      };
+    }
+  | { ok: false; motif: string };
+
+/**
+ * Le chiffrage complet a partir de la carte : relit la couverture, ses
+ * regles, ce qui a deja ete consomme cette annee, puis delegue au calcul pur.
+ *
+ * Un refus rend son motif, en clair : l'appelant decide s'il refuse la vente
+ * ou s'il encaisse en paiement direct (EF-09-09).
+ */
+export async function chiffrerParCarte(
+  jetonCarte: string,
+  lignes: LigneAChiffrer[],
+  montantNetGnf: number,
+  idStructure: string,
+  maintenant = new Date()
+): Promise<ResultatChiffrage> {
+  const c = await couvertureParJeton(jetonCarte);
+  if (!c) return { ok: false, motif: "Carte d'assurance inconnue ou remplacee" };
+
+  const motif = motifCouverture(c, maintenant);
+  if (motif) return { ok: false, motif };
+  if (!(await assureurConventionne(idStructure, c.assureur.id))) {
+    return { ok: false, motif: motifSansConvention(c.assureur.nom) };
+  }
+
+  // Ce que l'assureur a deja pris cette annee pour ce beneficiaire : sur sa
+  // police individuelle, ou sur son adhesion au contrat collectif. Les ventes
+  // annulees ne comptent pas.
+  const debutAnnee = new Date(maintenant.getFullYear(), 0, 1);
+  const parBeneficiaire: Prisma.VenteComptoirWhereInput = c.idAdhesionAssurance
+    ? { idAdhesionAssurance: c.idAdhesionAssurance }
+    : { idContratAssurance: c.idContratAssurance };
+  const consomme = await prisma.venteComptoir.aggregate({
+    where: { ...parBeneficiaire, statut: 'PAYEE', creeLe: { gte: debutAnnee } },
+    _sum: { montantAssureGnf: true },
+  });
+
+  const prise = calculerPriseEnCharge(
+    lignes,
+    c.conditions,
+    reglesApplicables(c.assureur.regles, c.reglesPolice, maintenant),
+    consomme._sum.montantAssureGnf ?? 0,
+    montantNetGnf,
+    maintenant
+  );
+
+  return {
+    ok: true,
+    prise: {
+      ...prise,
+      typeCouverture: c.typeCouverture,
+      idContrat: c.idContrat,
+      idContratAssurance: c.idContratAssurance,
+      idAdhesionAssurance: c.idAdhesionAssurance,
+      idPatient: c.patient.id,
+      assureur: { id: c.assureur.id, nom: c.assureur.nom, code: c.assureur.code },
+    },
+  };
 }
 
 /**
@@ -392,78 +867,25 @@ export async function historiqueEligibilite(user: JwtPayload, idPatient: string)
  */
 export async function simulerPriseEnCharge(
   user: JwtPayload,
-  idPatient: string,
+  jetonCarte: string,
   lignes: LigneAChiffrer[],
   montantNetGnf: number,
   maintenant = new Date()
 ): Promise<PriseEnChargeView> {
-  await structureDe(user.userId);
-  const prise = await chiffrer(idPatient, lignes, montantNetGnf, maintenant);
-  if (!prise) throw new ValidationError("Ce patient n'a pas de contrat d'assurance utilisable");
+  const { idStructure } = await structureDe(user.userId);
+  const resultat = await chiffrerParCarte(jetonCarte, lignes, montantNetGnf, idStructure, maintenant);
+  if (!resultat.ok) throw new ValidationError(`Tiers payant refuse : ${resultat.motif}`);
+  const p = resultat.prise;
   return {
-    idContrat: prise.idContrat,
-    assureur: prise.assureur,
+    typeCouverture: p.typeCouverture,
+    idContrat: p.idContrat,
+    idAdhesionAssurance: p.idAdhesionAssurance,
+    assureur: p.assureur,
     montantNetGnf,
-    montantAssureGnf: prise.montantAssureGnf,
-    montantPatientGnf: prise.montantPatientGnf,
-    notes: prise.notes,
-    lignes: prise.lignes.map(({ idMedicament, ...reste }) => ({ idMedicament, ...reste })),
-  };
-}
-
-/**
- * Le chiffrage complet : lit le contrat, ses regles, ce qui a deja ete
- * consomme cette annee, puis delegue au calcul pur. Rend `null` quand le
- * patient n'a pas de contrat exploitable — l'appelant decide alors s'il
- * refuse ou s'il encaisse en paiement direct (EF-09-09).
- */
-export async function chiffrer(
-  idPatient: string,
-  lignes: LigneAChiffrer[],
-  montantNetGnf: number,
-  maintenant = new Date()
-): Promise<(PriseEnCharge & { idContrat: string; assureur: { id: string; nom: string; code: string } }) | null> {
-  const contrat = await prisma.contratAssurance.findFirst({
-    where: { idPatient, statut: StatutContrat.ACTIF },
-    include: {
-      assureur: {
-        select: {
-          id: true, nom: true, code: true, estActif: true,
-          regles: { select: { categorie: true, exclu: true, tauxPourcent: true, plafondLigneGnf: true, dateEffet: true } },
-        },
-      },
-      // Le niveau d'identite est lu ici aussi, et pas seulement a la
-      // verification d'eligibilite : sans cela le verrou se contournerait en
-      // passant directement a l'encaissement.
-      patient: { select: { niveauIdentite: true } },
-    },
-    orderBy: { dateEffet: 'desc' },
-  });
-  if (!contrat || !contrat.assureur.estActif) return null;
-  if (motifDInegibilite(contrat, maintenant, contrat.patient.niveauIdentite) !== null) return null;
-
-  // Ce que l'assureur a deja pris cette annee sur ce contrat. Les ventes
-  // annulees ne comptent pas : une erreur de caisse corrigee ne doit pas
-  // entamer le plafond du patient.
-  const debutAnnee = new Date(maintenant.getFullYear(), 0, 1);
-  const consomme = await prisma.venteComptoir.aggregate({
-    where: { idContratAssurance: contrat.id, statut: 'PAYEE', creeLe: { gte: debutAnnee } },
-    _sum: { montantAssureGnf: true },
-  });
-
-  const prise = calculerPriseEnCharge(
-    lignes,
-    contrat,
-    contrat.assureur.regles,
-    consomme._sum.montantAssureGnf ?? 0,
-    montantNetGnf,
-    maintenant
-  );
-
-  return {
-    ...prise,
-    idContrat: contrat.id,
-    assureur: { id: contrat.assureur.id, nom: contrat.assureur.nom, code: contrat.assureur.code },
+    montantAssureGnf: p.montantAssureGnf,
+    montantPatientGnf: p.montantPatientGnf,
+    notes: p.notes,
+    lignes: p.lignes,
   };
 }
 
@@ -542,6 +964,92 @@ export async function listerAssureurs(): Promise<AssureurView[]> {
   return assureurs.map(versAssureurView);
 }
 
+/** Assureurs utilisables dans la structure : ceux de l'hopital parent sont herites. */
+export async function conventionsDeLaStructure(user: JwtPayload): Promise<AssureurView[]> {
+  const structure = await structureDe(user.userId);
+  const idsStructure = estStructureHospitaliere(structure.type)
+    ? [structure.idStructure]
+    : structuresAvecConventions(structure);
+  if (idsStructure.length === 0) return [];
+
+  const lignes = await prisma.structureAssureur.findMany({
+    where: { idStructure: { in: idsStructure } },
+    include: {
+      assureur: { include: ASSUREUR_INCLUDE },
+      structure: { select: { id: true } },
+    },
+    orderBy: { assureur: { nom: 'asc' } },
+  });
+  const uniques = new Map<string, (typeof lignes)[number]>();
+  for (const ligne of lignes) {
+    if (!ligne.assureur.estActif) continue;
+    const precedente = uniques.get(ligne.idAssureur);
+    if (!precedente || ligne.idStructure === structure.idStructure) {
+      uniques.set(ligne.idAssureur, ligne);
+    }
+  }
+  return [...uniques.values()].map((ligne) => ({
+    ...versAssureurView(ligne.assureur),
+    conventionHeritee: ligne.idStructure !== structure.idStructure,
+  }));
+}
+
+/** Catalogue non nominatif : il ne contient aucune police ni donnée patient. */
+export async function catalogueAssureurs(): Promise<AssureurView[]> {
+  return (await listerAssureurs()).filter((assureur) => assureur.estActif);
+}
+
+async function structureAdministrable(user: JwtPayload): Promise<StructureAssurance> {
+  const structure = await structureDe(user.userId);
+  if (user.role === 'ADMIN_STRUCTURE' && estStructureHospitaliere(structure.type)) return structure;
+  if (
+    user.role === 'PHARMACIEN'
+    && structure.roleOfficine === 'TITULAIRE'
+    && estStructureOfficinale(structure.type)
+    && !structure.idStructureParente
+  ) {
+    return structure;
+  }
+  throw new ForbiddenError('La gestion des conventions est reservee a votre hopital ou a une pharmacie independante');
+}
+
+export async function configurationCatalogueAssureurs(user: JwtPayload): Promise<CatalogueAssureursView> {
+  const structure = await structureDe(user.userId);
+  const conventionsModifiables = (user.role === 'ADMIN_STRUCTURE' && estStructureHospitaliere(structure.type))
+    || (
+      user.role === 'PHARMACIEN'
+      && structure.roleOfficine === 'TITULAIRE'
+      && estStructureOfficinale(structure.type)
+      && !structure.idStructureParente
+    );
+  return {
+    assureurs: await catalogueAssureurs(),
+    conventionsModifiables,
+    conventionsHeritees: estStructureOfficinale(structure.type) && Boolean(structure.idStructureParente),
+  };
+}
+
+export async function ajouterConventionAssureur(user: JwtPayload, idAssureur: string): Promise<void> {
+  const structure = await structureAdministrable(user);
+  const assureur = await prisma.assureur.findUnique({
+    where: { id: idAssureur },
+    select: { id: true, estActif: true },
+  });
+  if (!assureur || !assureur.estActif) throw new NotFoundError('Assureur actif introuvable');
+  await prisma.structureAssureur.upsert({
+    where: { idStructure_idAssureur: { idStructure: structure.idStructure, idAssureur } },
+    create: { idStructure: structure.idStructure, idAssureur },
+    update: {},
+  });
+}
+
+export async function retirerConventionAssureur(user: JwtPayload, idAssureur: string): Promise<void> {
+  const structure = await structureAdministrable(user);
+  await prisma.structureAssureur.deleteMany({
+    where: { idStructure: structure.idStructure, idAssureur },
+  });
+}
+
 /**
  * Ajoute une regle de couverture.
  *
@@ -559,13 +1067,7 @@ export async function ajouterRegle(
   });
   if (!assureur) throw new NotFoundError('Assureur non trouve');
 
-  const exclu = dto.exclu ?? false;
-  if (exclu && dto.tauxPourcent !== undefined) {
-    throw new ValidationError("Une categorie exclue n'a pas de taux : choisissez l'un ou l'autre");
-  }
-  if (!exclu && dto.tauxPourcent === undefined && (dto.plafondLigneGnf ?? 0) === 0) {
-    throw new ValidationError('Une regle doit porter une exclusion, un taux ou un plafond');
-  }
+  const { exclu } = validerRegle(dto);
 
   await prisma.regleCouverture.create({
     data: {
@@ -585,7 +1087,9 @@ export async function ajouterRegle(
   return versAssureurView(apres);
 }
 
-export async function creerContrat(dto: CreerContratDto): Promise<ContratAssuranceView> {
+export async function creerContrat(
+  dto: CreerContratDto & { periodeGraceJours?: number }
+): Promise<ContratAssuranceView> {
   const [assureur, patient] = await Promise.all([
     prisma.assureur.findUnique({ where: { id: dto.idAssureur }, select: { id: true, nom: true, code: true } }),
     prisma.patientProfile.findUnique({
@@ -619,6 +1123,8 @@ export async function creerContrat(dto: CreerContratDto): Promise<ContratAssuran
       dateEffet,
       dateFin,
       carenceJours: dto.carenceJours ?? 0,
+      periodeGraceJours: dto.periodeGraceJours ?? 0,
+      jetonCarte: nouveauJetonCarte(),
       idAssureur: dto.idAssureur,
       idPatient: dto.idPatient,
     },
@@ -627,6 +1133,7 @@ export async function creerContrat(dto: CreerContratDto): Promise<ContratAssuran
   return {
     id: cree.id,
     numeroPolice: cree.numeroPolice,
+    periodeGraceJours: cree.periodeGraceJours,
     tauxBasePourcent: cree.tauxBasePourcent,
     plafondAnnuelGnf: cree.plafondAnnuelGnf,
     franchiseGnf: cree.franchiseGnf,
@@ -674,6 +1181,465 @@ export async function contratsDuPatient(
       patient: { id: c.patient.id, prenom: c.patient.utilisateur.prenom, nom: c.patient.utilisateur.nom },
       consommeAnneeGnf: consomme._sum.montantAssureGnf ?? 0,
     };
+  }));
+}
+
+/**
+ * Les cartes d'assurance du patient connecte (lot assurance, point 3) : une
+ * par police individuelle et une par adhesion a un contrat collectif.
+ *
+ * Les cartes utilisables d'abord. Les anciennes restent visibles avec leur
+ * statut : le patient comprend ainsi pourquoi une carte ne passe plus.
+ */
+export async function mesCartesAssurance(userId: string, maintenant = new Date()): Promise<CarteAssuranceView[]> {
+  const patient = await prisma.patientProfile.findUnique({
+    where: { idUtilisateur: userId },
+    select: { id: true },
+  });
+  if (!patient) throw new NotFoundError('Dossier patient non trouve');
+
+  const [contrats, adhesions] = await Promise.all([
+    prisma.contratAssurance.findMany({
+      where: { idPatient: patient.id },
+      include: CONTRAT_CARTE_INCLUDE,
+      orderBy: { dateEffet: 'desc' },
+    }),
+    prisma.adhesionAssurance.findMany({
+      where: { idPatient: patient.id },
+      include: ADHESION_CARTE_INCLUDE,
+      orderBy: { dateEffet: 'desc' },
+    }),
+  ]);
+
+  return [...contrats.map(depuisContrat), ...adhesions.map(depuisAdhesion)]
+    .map((c) => versCarteView(c, maintenant))
+    .sort((a, b) =>
+      Number(b.statut === StatutContrat.ACTIF) - Number(a.statut === StatutContrat.ACTIF)
+      || new Date(b.dateEffet).getTime() - new Date(a.dateEffet).getTime()
+    );
+}
+
+// ── L'assureur gere ses contrats (lot assurance, points 2, 5 et 8) ───
+//
+// **La compagnie se deduit toujours du compte connecte** (`assureurDe`),
+// jamais d'un identifiant envoye : sinon un agent agirait sur les contrats
+// d'un concurrent en changeant un chiffre dans la requete.
+
+/** 32 octets aleatoires : un jeton de carte qu'on ne devine pas. */
+function nouveauJetonCarte(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+function versRegleView(r: {
+  id: string; categorie: CategorieProduit; exclu: boolean;
+  tauxPourcent: number | null; plafondLigneGnf: number; dateEffet: Date;
+}): RegleCouvertureView {
+  return {
+    id: r.id, categorie: r.categorie, exclu: r.exclu,
+    tauxPourcent: r.tauxPourcent, plafondLigneGnf: r.plafondLigneGnf,
+    dateEffet: r.dateEffet.toISOString(),
+  };
+}
+
+function dateValide(valeur: string, libelle: string): Date {
+  const d = new Date(valeur);
+  if (Number.isNaN(d.getTime())) throw new ValidationError(`${libelle} invalide`);
+  return d;
+}
+
+function debutDuJour(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+/** Une adhesion compte comme active tant que son statut l'est et que sa fin n'est pas passee. */
+function filtreAdhesionsActives(maintenant: Date): Prisma.AdhesionAssuranceWhereInput {
+  return {
+    statut: StatutContrat.ACTIF,
+    OR: [{ dateFin: null }, { dateFin: { gte: debutDuJour(maintenant) } }],
+  };
+}
+
+function contratCollectifInclude(maintenant: Date) {
+  return {
+    entreprise: { select: { id: true, raisonSociale: true, identifiantLegal: true } },
+    regles: { orderBy: [{ categorie: 'asc' }, { dateEffet: 'desc' }] },
+    _count: { select: { adhesions: { where: filtreAdhesionsActives(maintenant) } } },
+  } satisfies Prisma.ContratCollectifAssuranceInclude;
+}
+
+type ContratCollectifDetail = Prisma.ContratCollectifAssuranceGetPayload<{
+  include: ReturnType<typeof contratCollectifInclude>;
+}>;
+
+function versContratCollectifView(c: ContratCollectifDetail, maintenant: Date): ContratCollectifView {
+  return {
+    id: c.id,
+    numeroContrat: c.numeroContrat,
+    nomRegime: c.nomRegime,
+    tauxBasePourcent: c.tauxBasePourcent,
+    plafondAnnuelGnf: c.plafondAnnuelGnf,
+    franchiseGnf: c.franchiseGnf,
+    dateEffet: c.dateEffet.toISOString(),
+    dateFin: c.dateFin?.toISOString() ?? null,
+    carenceJours: c.carenceJours,
+    periodeGraceJours: c.periodeGraceJours,
+    statut: statutEffectif(c.statut, c.dateFin, c.periodeGraceJours, maintenant),
+    entreprise: c.entreprise,
+    nombreAdhesionsActives: c._count.adhesions,
+    regles: c.regles.map(versRegleView),
+  };
+}
+
+export async function listerContratsCollectifs(
+  user: JwtPayload,
+  maintenant = new Date()
+): Promise<ContratCollectifView[]> {
+  const { id: idAssureur } = await assureurDe(user);
+  const contrats = await prisma.contratCollectifAssurance.findMany({
+    where: { idAssureur },
+    include: contratCollectifInclude(maintenant),
+    orderBy: [{ dateEffet: 'desc' }, { numeroContrat: 'asc' }],
+  });
+  return contrats.map((c) => versContratCollectifView(c, maintenant));
+}
+
+export async function creerContratCollectif(
+  user: JwtPayload,
+  dto: CreerContratCollectifDto,
+  maintenant = new Date()
+): Promise<ContratCollectifView> {
+  const { id: idAssureur } = await assureurDe(user);
+  const dateEffet = dateValide(dto.dateEffet as string, "Date d'effet");
+  const dateFin = dateValide(dto.dateFin as string, 'Date de fin');
+  if (dateFin <= dateEffet) throw new ValidationError("La date de fin doit etre posterieure a la date d'effet");
+
+  const numeroContrat = dto.numeroContrat.trim();
+  const doublon = await prisma.contratCollectifAssurance.findFirst({
+    where: { idAssureur, numeroContrat },
+    select: { id: true },
+  });
+  if (doublon) throw new ConflictError(`Le contrat ${numeroContrat} existe deja dans votre compagnie`);
+
+  const identifiantLegal = dto.entreprise.identifiantLegal?.trim() || null;
+  const cree = await prisma.$transaction(async (tx) => {
+    // **Une entreprise deja connue n'est pas modifiee ici** : sa fiche est
+    // partagee entre compagnies, et l'une ne doit pas renommer celle de l'autre.
+    const existante = identifiantLegal
+      ? await tx.entrepriseAssuree.findUnique({ where: { identifiantLegal }, select: { id: true, estActive: true } })
+      : null;
+    if (existante && !existante.estActive) throw new ValidationError('Cette entreprise est desactivee sur la plateforme');
+    const idEntreprise = existante?.id ?? (await tx.entrepriseAssuree.create({
+      data: {
+        raisonSociale: dto.entreprise.raisonSociale.trim(),
+        identifiantLegal,
+        telephone: dto.entreprise.telephone?.trim() || null,
+        email: dto.entreprise.email?.trim() || null,
+      },
+      select: { id: true },
+    })).id;
+
+    return tx.contratCollectifAssurance.create({
+      data: {
+        numeroContrat,
+        nomRegime: dto.nomRegime.trim(),
+        tauxBasePourcent: dto.tauxBasePourcent,
+        plafondAnnuelGnf: dto.plafondAnnuelGnf ?? 0,
+        franchiseGnf: dto.franchiseGnf ?? 0,
+        dateEffet,
+        dateFin,
+        carenceJours: dto.carenceJours ?? 0,
+        periodeGraceJours: dto.periodeGraceJours ?? 0,
+        idEntreprise,
+        idAssureur,
+      },
+      include: contratCollectifInclude(maintenant),
+    });
+  });
+
+  logger.info('[ASSURANCE] contrat collectif cree', { idAssureur, idContrat: cree.id, parQui: user.userId });
+  return versContratCollectifView(cree, maintenant);
+}
+
+/**
+ * Renouveler un contrat collectif : enregistrer sa nouvelle echeance.
+ *
+ * Sans renouvellement, le contrat expire seul a sa date de fin. Les adhesions
+ * sans date de fin propre suivent le contrat : elles n'ont pas a etre
+ * ressaisies, et les cartes des beneficiaires restent les memes.
+ */
+export async function renouvelerContratCollectif(
+  user: JwtPayload,
+  idContrat: string,
+  dto: RenouvelerContratDto,
+  maintenant = new Date()
+): Promise<ContratCollectifView> {
+  const { id: idAssureur } = await assureurDe(user);
+  const contrat = await prisma.contratCollectifAssurance.findFirst({
+    where: { id: idContrat, idAssureur },
+    select: { id: true, statut: true, dateEffet: true, dateFin: true },
+  });
+  if (!contrat) throw new NotFoundError('Contrat collectif non trouve dans votre compagnie');
+  if (contrat.statut === StatutContrat.RESILIE || contrat.statut === StatutContrat.SUSPENDU) {
+    throw new ValidationError('Un contrat resilie ou suspendu ne se renouvelle pas');
+  }
+  const nouvelleFin = dateValide(dto.dateFin as string, 'Date de fin');
+  if (nouvelleFin <= contrat.dateEffet || (contrat.dateFin && nouvelleFin <= contrat.dateFin)) {
+    throw new ValidationError("La nouvelle echeance doit etre posterieure a l'echeance actuelle");
+  }
+
+  const maj = await prisma.contratCollectifAssurance.update({
+    where: { id: contrat.id },
+    data: { dateFin: nouvelleFin, statut: StatutContrat.ACTIF },
+    include: contratCollectifInclude(maintenant),
+  });
+  logger.info('[ASSURANCE] contrat collectif renouvele', {
+    idAssureur, idContrat: contrat.id,
+    ancienneFin: contrat.dateFin?.toISOString() ?? null,
+    nouvelleFin: nouvelleFin.toISOString(),
+    parQui: user.userId,
+  });
+  return versContratCollectifView(maj, maintenant);
+}
+
+const ADHESION_VIEW_INCLUDE = {
+  patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
+} satisfies Prisma.AdhesionAssuranceInclude;
+
+function versAdhesionView(
+  a: Prisma.AdhesionAssuranceGetPayload<{ include: typeof ADHESION_VIEW_INCLUDE }>,
+  maintenant: Date
+): AdhesionAssuranceView {
+  return {
+    id: a.id,
+    numeroAdherent: a.numeroAdherent,
+    dateEffet: a.dateEffet.toISOString(),
+    dateFin: a.dateFin?.toISOString() ?? null,
+    statut: statutEffectif(a.statut, a.dateFin, 0, maintenant),
+    motifFin: a.motifFin,
+    finEnregistreeLe: a.finEnregistreeLe?.toISOString() ?? null,
+    patient: { id: a.patient.id, prenom: a.patient.utilisateur.prenom, nom: a.patient.utilisateur.nom },
+  };
+}
+
+export async function listerAdhesions(
+  user: JwtPayload,
+  idContrat: string,
+  maintenant = new Date()
+): Promise<AdhesionAssuranceView[]> {
+  const { id: idAssureur } = await assureurDe(user);
+  const contrat = await prisma.contratCollectifAssurance.findFirst({
+    where: { id: idContrat, idAssureur },
+    select: { id: true },
+  });
+  if (!contrat) throw new NotFoundError('Contrat collectif non trouve dans votre compagnie');
+
+  const adhesions = await prisma.adhesionAssurance.findMany({
+    where: { idContratCollectif: contrat.id },
+    include: ADHESION_VIEW_INCLUDE,
+    orderBy: [{ statut: 'asc' }, { creeLe: 'desc' }],
+  });
+  return adhesions.map((a) => versAdhesionView(a, maintenant));
+}
+
+/**
+ * Rattacher un beneficiaire (employe, ou ayant droit si le contrat le prevoit)
+ * a un contrat collectif. Il recoit sa propre adhesion et sa propre carte.
+ */
+export async function ajouterAdhesion(
+  user: JwtPayload,
+  idContrat: string,
+  dto: CreerAdhesionAssuranceDto,
+  maintenant = new Date()
+): Promise<AdhesionAssuranceView> {
+  const { id: idAssureur } = await assureurDe(user);
+  const contrat = await prisma.contratCollectifAssurance.findFirst({
+    where: { id: idContrat, idAssureur },
+    select: { id: true, statut: true, dateEffet: true, dateFin: true, periodeGraceJours: true },
+  });
+  if (!contrat) throw new NotFoundError('Contrat collectif non trouve dans votre compagnie');
+  if (statutEffectif(contrat.statut, contrat.dateFin, contrat.periodeGraceJours, maintenant) !== StatutContrat.ACTIF) {
+    throw new ValidationError("Impossible d'ajouter un beneficiaire a un contrat inactif ou expire");
+  }
+
+  const patient = await prisma.patientProfile.findUnique({
+    where: { id: dto.idPatient },
+    select: { id: true },
+  });
+  if (!patient) throw new NotFoundError('Patient non trouve');
+
+  const dateEffet = dto.dateEffet ? dateValide(dto.dateEffet as string, "Date d'effet") : maintenant;
+  const dateFin = dto.dateFin ? dateValide(dto.dateFin as string, 'Date de fin') : null;
+  if (debutDuJour(dateEffet) < debutDuJour(contrat.dateEffet)) {
+    throw new ValidationError("L'adhesion ne peut pas commencer avant le contrat collectif");
+  }
+  if (contrat.dateFin && (dateEffet >= finDeCouverture(contrat.dateFin) || (dateFin && dateFin > contrat.dateFin))) {
+    throw new ValidationError("Les dates de l'adhesion doivent rester dans la periode du contrat collectif");
+  }
+  if (dateFin && dateFin < dateEffet) {
+    throw new ValidationError("La date de fin doit etre posterieure ou egale a la date d'effet");
+  }
+
+  const numeroAdherent = dto.numeroAdherent.trim();
+  const doublon = await prisma.adhesionAssurance.findFirst({
+    where: { idContratCollectif: contrat.id, OR: [{ idPatient: patient.id }, { numeroAdherent }] },
+    select: { idPatient: true },
+  });
+  if (doublon) {
+    throw new ConflictError(doublon.idPatient === patient.id
+      ? 'Cette personne est deja adherente de ce contrat'
+      : `Le numero d'adherent ${numeroAdherent} est deja attribue dans ce contrat`);
+  }
+
+  const cree = await prisma.adhesionAssurance.create({
+    data: {
+      idContratCollectif: contrat.id,
+      idPatient: patient.id,
+      numeroAdherent,
+      dateEffet,
+      dateFin,
+      jetonCarte: nouveauJetonCarte(),
+    },
+    include: ADHESION_VIEW_INCLUDE,
+  });
+  logger.info('[ASSURANCE] adhesion ajoutee', { idAssureur, idAdhesion: cree.id, parQui: user.userId });
+  return versAdhesionView(cree, maintenant);
+}
+
+/**
+ * Enregistrer la fin d'une adhesion : depart de l'entreprise, perte
+ * d'eligibilite. Date d'effet, motif et auteur sont conserves.
+ *
+ * Une fin immediate (ou passee) resilie aussitot. Une fin future laisse le
+ * beneficiaire couvert jusqu'a ce jour inclus.
+ */
+export async function terminerAdhesion(
+  user: JwtPayload,
+  idAdhesion: string,
+  dto: TerminerAdhesionDto,
+  maintenant = new Date()
+): Promise<AdhesionAssuranceView> {
+  const { id: idAssureur } = await assureurDe(user);
+  const adhesion = await prisma.adhesionAssurance.findFirst({
+    where: { id: idAdhesion, contratCollectif: { idAssureur } },
+    select: { id: true, statut: true, dateEffet: true, dateFin: true, finEnregistreeLe: true },
+  });
+  if (!adhesion) throw new NotFoundError('Adhesion non trouvee dans votre compagnie');
+  if (adhesion.statut !== StatutContrat.ACTIF || adhesion.finEnregistreeLe) {
+    throw new ConflictError('La fin de cette adhesion est deja enregistree');
+  }
+
+  const effet = dto.dateEffet ? dateValide(dto.dateEffet as string, "Date d'effet") : maintenant;
+  if (debutDuJour(effet) < debutDuJour(adhesion.dateEffet)) {
+    throw new ValidationError("La fin ne peut pas preceder le debut de l'adhesion");
+  }
+  // Repousser la fin prevue prolongerait une couverture : ce n'est pas une fin.
+  if (adhesion.dateFin && effet > adhesion.dateFin) {
+    throw new ValidationError(
+      `Cette adhesion se termine deja le ${adhesion.dateFin.toISOString().slice(0, 10)}`
+    );
+  }
+
+  const immediate = effet <= maintenant;
+  const maj = await prisma.adhesionAssurance.update({
+    where: { id: adhesion.id },
+    data: {
+      statut: immediate ? StatutContrat.RESILIE : StatutContrat.ACTIF,
+      dateFin: effet,
+      motifFin: dto.motif.trim(),
+      finEnregistreeLe: maintenant,
+      idFinEnregistreePar: user.userId,
+    },
+    include: ADHESION_VIEW_INCLUDE,
+  });
+  logger.info('[ASSURANCE] fin d adhesion enregistree', {
+    idAssureur, idAdhesion: adhesion.id, effet: effet.toISOString(), immediate, parQui: user.userId,
+  });
+  return versAdhesionView(maj, maintenant);
+}
+
+/** Une police individuelle, saisie par la compagnie elle-meme. */
+export async function creerContratIndividuel(
+  user: JwtPayload,
+  dto: CreerContratIndividuelDto
+): Promise<ContratAssuranceView> {
+  const { id: idAssureur } = await assureurDe(user);
+  return creerContrat({ ...dto, idAssureur });
+}
+
+/** Les controles communs a une regle de compagnie et a une regle de police. */
+function validerRegle(dto: CreerRegleCouvertureDto): { exclu: boolean } {
+  const exclu = dto.exclu ?? false;
+  if (exclu && dto.tauxPourcent !== undefined) {
+    throw new ValidationError("Une categorie exclue n'a pas de taux : choisissez l'un ou l'autre");
+  }
+  if (!exclu && dto.tauxPourcent === undefined && (dto.plafondLigneGnf ?? 0) === 0) {
+    throw new ValidationError('Une regle doit porter une exclusion, un taux ou un plafond');
+  }
+  return { exclu };
+}
+
+/**
+ * Un taux, une exclusion ou un plafond propre a une police. Il prime sur la
+ * regle de la compagnie pour cette categorie, sans toucher aux autres polices.
+ *
+ * Comme pour les regles de compagnie, on n'ecrase rien : la date d'effet
+ * decide, et une vente deja enregistree garde les montants figes a sa date.
+ */
+export async function ajouterReglePolice(user: JwtPayload, dto: CreerReglePoliceDto): Promise<RegleCouvertureView> {
+  const { id: idAssureur } = await assureurDe(user);
+  const individuelle = dto.typeCouverture === 'INDIVIDUELLE';
+  const police = individuelle
+    ? await prisma.contratAssurance.findFirst({ where: { id: dto.idContrat, idAssureur }, select: { id: true } })
+    : await prisma.contratCollectifAssurance.findFirst({ where: { id: dto.idContrat, idAssureur }, select: { id: true } });
+  if (!police) throw new NotFoundError('Police non trouvee dans votre compagnie');
+
+  const { exclu } = validerRegle(dto);
+  const regle = await prisma.regleCouverturePolice.create({
+    data: {
+      categorie: dto.categorie,
+      exclu,
+      tauxPourcent: exclu ? null : dto.tauxPourcent ?? null,
+      plafondLigneGnf: dto.plafondLigneGnf ?? 0,
+      dateEffet: dto.dateEffet ? dateValide(dto.dateEffet as string, "Date d'effet") : new Date(),
+      idContratAssurance: individuelle ? police.id : null,
+      idContratCollectif: individuelle ? null : police.id,
+    },
+  });
+  logger.info('[ASSURANCE] regle de police ajoutee', { idAssureur, idPolice: police.id, parQui: user.userId });
+  return versRegleView(regle);
+}
+
+/**
+ * Retrouver la personne a rattacher, **par son numero de telephone exact**.
+ *
+ * Jamais par nom : la compagnie retrouve la personne qu'elle assure (le
+ * numero figure sur le bulletin d'adhesion), elle ne parcourt pas la
+ * population. Rien de medical ne sort d'ici.
+ */
+export async function rechercherPatientParTelephone(
+  user: JwtPayload,
+  telephone: string
+): Promise<PatientAssureurRechercheView[]> {
+  await assureurDe(user);
+  const chiffres = normaliserTelephone(telephone);
+  if (chiffres.length !== 9) {
+    throw new ValidationError('Saisissez le numero de telephone complet du beneficiaire (9 chiffres)');
+  }
+
+  const patients = await prisma.patientProfile.findMany({
+    where: { utilisateur: { telephone: { endsWith: chiffres } } },
+    select: {
+      id: true, dateNaissance: true,
+      utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+    },
+    take: 3,
+  });
+  return patients.map((p) => ({
+    id: p.id,
+    prenom: p.utilisateur.prenom,
+    nom: p.utilisateur.nom,
+    telephoneMasque: p.utilisateur.telephone.replace(/.(?=.{3})/g, String.fromCharCode(8226)),
+    anneeNaissance: p.dateNaissance ? p.dateNaissance.getUTCFullYear() : null,
   }));
 }
 
@@ -795,41 +1761,76 @@ export async function monAssureur(user: JwtPayload): Promise<MonAssureurView> {
  * la connait deja par son contrat. Son telephone, son adresse et sa date de
  * naissance, non — ils ne servent a rien ici.
  */
-export async function mesAssures(user: JwtPayload): Promise<AssureView[]> {
+export async function mesAssures(user: JwtPayload, maintenant = new Date()): Promise<AssureView[]> {
   const { id } = await assureurDe(user);
-  const debutAnnee = new Date(new Date().getFullYear(), 0, 1);
+  const debutAnnee = new Date(maintenant.getFullYear(), 0, 1);
 
-  const contrats = await prisma.contratAssurance.findMany({
-    where: { idAssureur: id },
-    select: {
-      id: true, numeroPolice: true, statut: true, tauxBasePourcent: true,
-      plafondAnnuelGnf: true, franchiseGnf: true, dateEffet: true, dateFin: true,
-      patient: { select: { utilisateur: { select: { prenom: true, nom: true } } } },
-    },
-    orderBy: [{ statut: 'asc' }, { dateEffet: 'desc' }],
-  });
-  if (contrats.length === 0) return [];
+  const [contrats, adhesions] = await Promise.all([
+    prisma.contratAssurance.findMany({
+      where: { idAssureur: id },
+      select: {
+        id: true, numeroPolice: true, statut: true, tauxBasePourcent: true,
+        plafondAnnuelGnf: true, franchiseGnf: true, dateEffet: true, dateFin: true, periodeGraceJours: true,
+        patient: { select: { utilisateur: { select: { prenom: true, nom: true } } } },
+        reglesPersonnalisees: { orderBy: [{ categorie: 'asc' }, { dateEffet: 'desc' }] },
+      },
+      orderBy: [{ statut: 'asc' }, { dateEffet: 'desc' }],
+    }),
+    prisma.adhesionAssurance.findMany({
+      where: { contratCollectif: { idAssureur: id } },
+      select: {
+        id: true, numeroAdherent: true, statut: true, dateEffet: true, dateFin: true,
+        contratCollectif: {
+          select: {
+            id: true, numeroContrat: true, statut: true, tauxBasePourcent: true,
+            plafondAnnuelGnf: true, franchiseGnf: true, dateFin: true, periodeGraceJours: true,
+            entreprise: { select: { raisonSociale: true } },
+          },
+        },
+        patient: { select: { utilisateur: { select: { prenom: true, nom: true } } } },
+      },
+      orderBy: [{ statut: 'asc' }, { dateEffet: 'desc' }],
+    }),
+  ]);
+  if (contrats.length === 0 && adhesions.length === 0) return [];
 
-  // Une seule agregation groupee plutot qu'une requete par contrat : une
-  // compagnie peut avoir des milliers d'assures.
-  const consommations = await prisma.venteComptoir.groupBy({
-    by: ['idContratAssurance'],
-    where: {
-      idContratAssurance: { in: contrats.map((c) => c.id) },
-      statut: 'PAYEE',
-      creeLe: { gte: debutAnnee },
-    },
-    _sum: { montantAssureGnf: true },
-    _count: { _all: true },
-  });
-  const parContrat = new Map(consommations.map((c) => [c.idContratAssurance, c]));
+  // Une agregation groupee par niveau plutot qu'une requete par assure : une
+  // compagnie peut en avoir des milliers.
+  const [consoContrats, consoAdhesions] = await Promise.all([
+    contrats.length === 0 ? [] : prisma.venteComptoir.groupBy({
+      by: ['idContratAssurance'],
+      where: {
+        idContratAssurance: { in: contrats.map((c) => c.id) },
+        statut: 'PAYEE',
+        creeLe: { gte: debutAnnee },
+      },
+      _sum: { montantAssureGnf: true },
+      _count: { _all: true },
+    }),
+    adhesions.length === 0 ? [] : prisma.venteComptoir.groupBy({
+      by: ['idAdhesionAssurance'],
+      where: {
+        idAdhesionAssurance: { in: adhesions.map((a) => a.id) },
+        statut: 'PAYEE',
+        creeLe: { gte: debutAnnee },
+      },
+      _sum: { montantAssureGnf: true },
+      _count: { _all: true },
+    }),
+  ]);
+  const parContrat = new Map(consoContrats.map((c) => [c.idContratAssurance, c]));
+  const parAdhesion = new Map(consoAdhesions.map((c) => [c.idAdhesionAssurance, c]));
 
-  return contrats.map((c) => {
+  const individuels = contrats.map((c): AssureView => {
     const conso = parContrat.get(c.id);
     return {
+      typeCouverture: 'INDIVIDUELLE',
       idContrat: c.id,
+      idAdhesion: null,
+      numeroAdherent: null,
+      souscripteur: null,
       numeroPolice: c.numeroPolice,
-      statut: c.statut,
+      statut: statutEffectif(c.statut, c.dateFin, c.periodeGraceJours, maintenant),
       tauxBasePourcent: c.tauxBasePourcent,
       plafondAnnuelGnf: c.plafondAnnuelGnf,
       franchiseGnf: c.franchiseGnf,
@@ -838,8 +1839,39 @@ export async function mesAssures(user: JwtPayload): Promise<AssureView[]> {
       patient: { prenom: c.patient.utilisateur.prenom, nom: c.patient.utilisateur.nom },
       consommeAnneeGnf: conso?._sum.montantAssureGnf ?? 0,
       nombrePassages: conso?._count._all ?? 0,
+      regles: c.reglesPersonnalisees.map(versRegleView),
     };
   });
+
+  const collectifs = adhesions.map((a): AssureView => {
+    const g = a.contratCollectif;
+    const conso = parAdhesion.get(a.id);
+    const statutAdhesion = statutEffectif(a.statut, a.dateFin, 0, maintenant);
+    const fins = [a.dateFin, g.dateFin].filter((d): d is Date => d instanceof Date);
+    return {
+      typeCouverture: 'COLLECTIVE',
+      idContrat: g.id,
+      idAdhesion: a.id,
+      numeroAdherent: a.numeroAdherent,
+      souscripteur: g.entreprise.raisonSociale,
+      numeroPolice: g.numeroContrat,
+      statut: statutAdhesion !== StatutContrat.ACTIF
+        ? statutAdhesion
+        : statutEffectif(g.statut, g.dateFin, g.periodeGraceJours, maintenant),
+      tauxBasePourcent: g.tauxBasePourcent,
+      plafondAnnuelGnf: g.plafondAnnuelGnf,
+      franchiseGnf: g.franchiseGnf,
+      dateEffet: a.dateEffet,
+      dateFin: fins.length ? new Date(Math.min(...fins.map((d) => d.getTime()))) : null,
+      patient: { prenom: a.patient.utilisateur.prenom, nom: a.patient.utilisateur.nom },
+      consommeAnneeGnf: conso?._sum.montantAssureGnf ?? 0,
+      nombrePassages: conso?._count._all ?? 0,
+      // Les taux d'un contrat collectif se lisent sur le contrat, pas par assure.
+      regles: [],
+    };
+  });
+
+  return [...individuels, ...collectifs];
 }
 
 /**
@@ -855,7 +1887,15 @@ export async function mesPharmacies(user: JwtPayload): Promise<SituationPharmaci
 
   const ventes = await prisma.venteComptoir.groupBy({
     by: ['idStructure'],
-    where: { contratAssurance: { idAssureur: id }, statut: 'PAYEE' },
+    // Polices individuelles et adhesions aux contrats collectifs : la
+    // compagnie doit les deux a l'officine.
+    where: {
+      OR: [
+        { contratAssurance: { idAssureur: id } },
+        { adhesionAssurance: { contratCollectif: { idAssureur: id } } },
+      ],
+      statut: 'PAYEE',
+    },
     _sum: { montantAssureGnf: true, montantNetGnf: true },
     _count: { _all: true },
   });
@@ -919,11 +1959,14 @@ export async function enregistrerReglement(
 
   const structure = await prisma.structureSante.findUnique({
     where: { id: dto.idStructure },
-    select: { id: true, nom: true, type: true },
+    select: {
+      id: true,
+      nom: true,
+      type: true,
+    },
   });
-  // On regle une officine, pas un hopital : l'erreur de destinataire est
-  // silencieuse autrement, et fausse la situation des deux cotes.
-  if (!structure || structure.type !== TypeStructure.PHARMACIE) {
+  // Les reglements sont attaches a la pharmacie, pas a son hopital parent.
+  if (!structure || !estStructureOfficinale(structure.type)) {
     throw new NotFoundError('Pharmacie introuvable');
   }
 

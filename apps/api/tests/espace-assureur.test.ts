@@ -24,6 +24,7 @@ jest.mock('../src/config/prisma', () => ({
     utilisateur: { findUnique: jest.fn() },
     assureur: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn() },
     contratAssurance: { findMany: jest.fn(), count: jest.fn() },
+    adhesionAssurance: { findMany: jest.fn() },
     venteComptoir: { groupBy: jest.fn() },
     reglementAssureur: { groupBy: jest.fn(), create: jest.fn(), findMany: jest.fn() },
     structureSante: { findMany: jest.fn(), findUnique: jest.fn() },
@@ -38,6 +39,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     utilisateur: { findUnique: M };
     assureur: { findUnique: M; findUniqueOrThrow: M };
     contratAssurance: { findMany: M; count: M };
+    adhesionAssurance: { findMany: M };
     venteComptoir: { groupBy: M };
     reglementAssureur: { groupBy: M; create: M; findMany: M };
     structureSante: { findMany: M; findUnique: M };
@@ -50,6 +52,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   prisma.utilisateur.findUnique.mockResolvedValue({ idStructure: 'str-sonag' });
   prisma.assureur.findUnique.mockResolvedValue({ id: 'ass-sonag' });
+  prisma.adhesionAssurance.findMany.mockResolvedValue([]);
 });
 
 describe('assureurDe', () => {
@@ -81,7 +84,20 @@ describe('mesAssures', () => {
   const CONTRAT = {
     id: 'c-1', numeroPolice: 'SON-1', statut: 'ACTIF', tauxBasePourcent: 80,
     plafondAnnuelGnf: 0, franchiseGnf: 0, dateEffet: new Date('2026-01-01'), dateFin: null,
+    periodeGraceJours: 0, reglesPersonnalisees: [],
     patient: { utilisateur: { prenom: 'Maomou', nom: 'Conde' } },
+  };
+
+  /** Un employe couvert par le contrat collectif de son entreprise. */
+  const ADHESION = {
+    id: 'ad-1', numeroAdherent: 'EMP-42', statut: 'ACTIF',
+    dateEffet: new Date('2026-02-01'), dateFin: null,
+    contratCollectif: {
+      id: 'cc-1', numeroContrat: 'COL-1', statut: 'ACTIF', tauxBasePourcent: 90,
+      plafondAnnuelGnf: 500000, franchiseGnf: 0, dateFin: new Date('2099-12-31'), periodeGraceJours: 0,
+      entreprise: { raisonSociale: 'Mines de Boke' },
+    },
+    patient: { utilisateur: { prenom: 'Fanta', nom: 'Camara' } },
   };
 
   beforeEach(() => {
@@ -106,10 +122,47 @@ describe('mesAssures', () => {
 
   it("ne demande ni telephone, ni date de naissance, ni adresse", async () => {
     await mesAssures(AGENT);
-    const select = JSON.stringify(prisma.contratAssurance.findMany.mock.calls[0]![0].select);
-    for (const champ of ['telephone', 'dateNaissance', 'prefecture', 'email', 'qrCode']) {
-      expect(select).not.toContain(champ);
+    const selects = [
+      JSON.stringify(prisma.contratAssurance.findMany.mock.calls[0]![0].select),
+      JSON.stringify(prisma.adhesionAssurance.findMany.mock.calls[0]![0].select),
+    ];
+    for (const select of selects) {
+      for (const champ of ['telephone', 'dateNaissance', 'prefecture', 'email', 'qrCode', 'jetonCarte', 'motifFin']) {
+        expect(select).not.toContain(champ);
+      }
     }
+  });
+
+  it('ne lit que les adhesions aux contrats collectifs de sa compagnie', async () => {
+    await mesAssures(AGENT);
+    expect(prisma.adhesionAssurance.findMany.mock.calls[0]![0].where)
+      .toEqual({ contratCollectif: { idAssureur: 'ass-sonag' } });
+  });
+
+  it('liste les employes couverts par un contrat collectif, avec leur entreprise', async () => {
+    prisma.adhesionAssurance.findMany.mockResolvedValue([ADHESION]);
+    prisma.venteComptoir.groupBy
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ idAdhesionAssurance: 'ad-1', _sum: { montantAssureGnf: 45000 }, _count: { _all: 2 } }]);
+
+    const assures = await mesAssures(AGENT);
+    const employe = assures.find((a) => a.typeCouverture === 'COLLECTIVE');
+    expect(employe).toMatchObject({
+      idContrat: 'cc-1', idAdhesion: 'ad-1', numeroAdherent: 'EMP-42', souscripteur: 'Mines de Boke',
+      statut: 'ACTIF', consommeAnneeGnf: 45000, nombrePassages: 2,
+      patient: { prenom: 'Fanta', nom: 'Camara' },
+    });
+  });
+
+  // Le plafond d'un contrat collectif vaut par beneficiaire : la consommation
+  // se lit adhesion par adhesion, pas sur le contrat de l'entreprise.
+  it('agrege la consommation des employes par adhesion', async () => {
+    prisma.adhesionAssurance.findMany.mockResolvedValue([ADHESION]);
+    await mesAssures(AGENT);
+    const parAdhesion = prisma.venteComptoir.groupBy.mock.calls
+      .map((c) => c[0] as { by: string[]; where: Record<string, unknown> })
+      .find((a) => a.by[0] === 'idAdhesionAssurance');
+    expect(parAdhesion?.where).toMatchObject({ idAdhesionAssurance: { in: ['ad-1'] }, statut: 'PAYEE' });
   });
 
   it("ne demande aucune ligne de vente ni ordonnance", async () => {
@@ -170,8 +223,14 @@ describe('mesPharmacies (point 5.2)', () => {
 
   it('ne compte que les ventes couvertes par sa propre compagnie', async () => {
     await mesPharmacies(AGENT);
-    expect(prisma.venteComptoir.groupBy.mock.calls[0]![0].where)
-      .toMatchObject({ contratAssurance: { idAssureur: 'ass-sonag' }, statut: 'PAYEE' });
+    // Polices individuelles et contrats collectifs : la compagnie doit les deux.
+    expect(prisma.venteComptoir.groupBy.mock.calls[0]![0].where).toEqual({
+      OR: [
+        { contratAssurance: { idAssureur: 'ass-sonag' } },
+        { adhesionAssurance: { contratCollectif: { idAssureur: 'ass-sonag' } } },
+      ],
+      statut: 'PAYEE',
+    });
     expect(prisma.reglementAssureur.groupBy.mock.calls[0]![0].where)
       .toEqual({ idAssureur: 'ass-sonag' });
   });
@@ -243,7 +302,9 @@ describe('enregistrerReglement', () => {
   };
 
   beforeEach(() => {
-    prisma.structureSante.findUnique.mockResolvedValue({ id: 's-1', nom: 'Pharmacie Pricemou', type: 'PHARMACIE' });
+    prisma.structureSante.findUnique.mockResolvedValue({
+      id: 's-1', nom: 'Pharmacie Pricemou', type: 'PHARMACIE', pharmacienProfiles: [],
+    });
     prisma.reglementAssureur.create.mockResolvedValue({
       id: 'r-1', montantGnf: 500000, periodeDebut: new Date('2026-09-01'),
       periodeFin: new Date('2026-09-30'), reference: 'VIR-42', creeLe: new Date(),
@@ -261,10 +322,20 @@ describe('enregistrerReglement', () => {
   // On regle une officine, pas un hopital : l'erreur de destinataire fausse
   // la situation des deux cotes, sans rien dire.
   it("refuse une structure qui n'est pas une pharmacie", async () => {
-    prisma.structureSante.findUnique.mockResolvedValue({ id: 's-9', nom: 'Hopital Donka', type: 'CHU' });
+    prisma.structureSante.findUnique.mockResolvedValue({
+      id: 's-9', nom: 'Hopital Donka', type: 'CHU', pharmacienProfiles: [],
+    });
     await expect(enregistrerReglement(AGENT, { ...DTO, idStructure: 's-9' }))
       .rejects.toBeInstanceOf(NotFoundError);
     expect(prisma.reglementAssureur.create).not.toHaveBeenCalled();
+  });
+
+  it('refuse un versement directement rattache a un hopital', async () => {
+    prisma.structureSante.findUnique.mockResolvedValue({
+      id: 'chu-1', nom: 'CHU Donka', type: 'CHU', pharmacienProfiles: [{ id: 'profile-ph' }],
+    });
+
+    await expect(enregistrerReglement(AGENT, DTO)).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('refuse une periode a l envers', async () => {

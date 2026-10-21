@@ -7,6 +7,7 @@ import { Role, StatutOrdonnance, TypeActeDelivrance, TypeStructure } from '../co
 import { notifierSansBloquer } from './notification.service';
 import { hashPassword } from '../utils/password.utils';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { estStructureOfficinale, filtreStructuresOfficinales } from '../utils/officine.util';
 import { getValeursParametres } from './parametres.service';
 import {
   contientProduitReglemente,
@@ -52,7 +53,7 @@ async function getPharmacienAvecStructure(pharmacienId: string) {
   if (!pharmacien?.idStructure || !pharmacien.structure) {
     throw new ForbiddenError('Pharmacien sans structure assignee');
   }
-  if (pharmacien.structure.type !== TypeStructure.PHARMACIE) {
+  if (!estStructureOfficinale(pharmacien.structure.type)) {
     throw new ValidationError('La structure assignee n est pas une pharmacie');
   }
 
@@ -1224,7 +1225,7 @@ export async function getJournalConnexions(pharmacienId: string, page = 1, limit
 
 export async function trouverPharmaciesProches(prefecture: string) {
   return prisma.structureSante.findMany({
-    where: { type: TypeStructure.PHARMACIE, prefecture, estActive: true },
+    where: { ...filtreStructuresOfficinales(), prefecture, estActive: true },
     select: { id: true, nom: true, adresse: true, telephone: true, latitude: true, longitude: true },
   });
 }

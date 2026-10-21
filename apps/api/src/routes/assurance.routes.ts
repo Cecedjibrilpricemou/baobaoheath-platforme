@@ -11,6 +11,13 @@ import {
   creerRegleCouvertureSchema,
   simulerPriseEnChargeSchema,
   verifierEligibiliteSchema,
+  verifierCarteAssuranceSchema,
+  creerContratCollectifSchema,
+  creerContratIndividuelSchema,
+  creerAdhesionAssuranceSchema,
+  terminerAdhesionSchema,
+  renouvelerContratSchema,
+  creerReglePoliceSchema,
 } from '../validators/api.schemas';
 import type {
   AgentAssureurCreeView,
@@ -23,6 +30,12 @@ import type {
   ContratAssuranceView,
   ControleEligibiliteView,
   PriseEnChargeView,
+  AdhesionAssuranceView,
+  CarteAssuranceView,
+  CarteAssuranceVerifieeView,
+  ContratCollectifView,
+  PatientAssureurRechercheView,
+  RegleCouvertureView,
 } from '@baobaoheath/shared-types';
 
 /**
@@ -69,6 +82,21 @@ router.get(
 );
 
 /**
+ * Controle sur la carte d'assurance scannee : la pharmacie ne recherche que
+ * la couverture du beneficiaire present, jamais la liste des assures. La
+ * reponse est enregistree, refus compris.
+ */
+router.post(
+  '/cartes/verifier',
+  requireRole('PHARMACIEN', 'AGENT_ACCUEIL'),
+  validateBody(verifierCarteAssuranceSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: CarteAssuranceVerifieeView = await assurance.verifierCarteAssurance(req.user!, req.body.jetonCarte);
+    res.status(201).json({ success: true, data });
+  }
+);
+
+/**
  * Chiffre une prise en charge **sans rien enregistrer**, pour que le comptoir
  * la montre avant le paiement : « un reste a charge sans explication se
  * conteste au comptoir » (point 5.4).
@@ -80,7 +108,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const data: PriseEnChargeView = await assurance.simulerPriseEnCharge(
       req.user!,
-      req.body.idPatient,
+      req.body.jetonCarteAssurance,
       req.body.lignes,
       req.body.montantNetGnf
     );
@@ -97,14 +125,51 @@ router.get(
   }
 );
 
+// ── Le patient ───────────────────────────────────────────────────────
+
+/** Les cartes d'assurance du patient connecte, a afficher, telecharger ou imprimer. */
+router.get('/mes-cartes', requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const data: CarteAssuranceView[] = await assurance.mesCartesAssurance(req.user!.userId);
+  res.json({ success: true, data });
+});
+
 // ── L'administration ─────────────────────────────────────────────────
 
 router.get(
   '/assureurs',
-  requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN', 'PHARMACIEN'),
-  async (_req: AuthRequest, res: Response) => {
-    const data: AssureurView[] = await assurance.listerAssureurs();
+  requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN', 'PHARMACIEN', 'ADMIN_STRUCTURE'),
+  async (req: AuthRequest, res: Response) => {
+    const data: AssureurView[] = ['PHARMACIEN', 'ADMIN_STRUCTURE'].includes(req.user!.role)
+      ? await assurance.conventionsDeLaStructure(req.user!)
+      : await assurance.listerAssureurs();
     res.json({ success: true, data });
+  }
+);
+
+router.get(
+  '/assureurs/catalogue',
+  requireRole('ADMIN_STRUCTURE', 'PHARMACIEN'),
+  async (req: AuthRequest, res: Response) => {
+    const data = await assurance.configurationCatalogueAssureurs(req.user!);
+    res.json({ success: true, data });
+  }
+);
+
+router.post(
+  '/assureurs/:id/convention',
+  requireRole('ADMIN_STRUCTURE', 'PHARMACIEN'),
+  async (req: AuthRequest, res: Response) => {
+    await assurance.ajouterConventionAssureur(req.user!, req.params['id'] as string);
+    res.status(201).json({ success: true, message: 'Convention assureur activee pour la structure' });
+  }
+);
+
+router.delete(
+  '/assureurs/:id/convention',
+  requireRole('ADMIN_STRUCTURE', 'PHARMACIEN'),
+  async (req: AuthRequest, res: Response) => {
+    await assurance.retirerConventionAssureur(req.user!, req.params['id'] as string);
+    res.json({ success: true, message: 'Convention assureur retiree de la structure' });
   }
 );
 
@@ -213,6 +278,97 @@ router.get('/moi/pharmacies', requireRole('ASSUREUR'), async (req: AuthRequest, 
   const data: SituationPharmacieView[] = await assurance.mesPharmacies(req.user!);
   res.json({ success: true, data });
 });
+
+// ── Les contrats de la compagnie (lot assurance) ──────────────────────
+
+/** Retrouver la personne a rattacher, par son telephone exact uniquement. */
+router.get('/moi/patients', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const telephone = typeof req.query['telephone'] === 'string' ? req.query['telephone'] : '';
+  const data: PatientAssureurRechercheView[] = await assurance.rechercherPatientParTelephone(req.user!, telephone);
+  res.json({ success: true, data });
+});
+
+router.post(
+  '/moi/contrats',
+  requireRole('ASSUREUR'),
+  validateBody(creerContratIndividuelSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: ContratAssuranceView = await assurance.creerContratIndividuel(req.user!, req.body);
+    res.status(201).json({ success: true, data, message: `Police ${data.numeroPolice} enregistree` });
+  }
+);
+
+router.get('/moi/contrats-collectifs', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
+  const data: ContratCollectifView[] = await assurance.listerContratsCollectifs(req.user!);
+  res.json({ success: true, data });
+});
+
+router.post(
+  '/moi/contrats-collectifs',
+  requireRole('ASSUREUR'),
+  validateBody(creerContratCollectifSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: ContratCollectifView = await assurance.creerContratCollectif(req.user!, req.body);
+    res.status(201).json({ success: true, data, message: `Contrat ${data.numeroContrat} enregistre` });
+  }
+);
+
+router.post(
+  '/moi/contrats-collectifs/:id/renouveler',
+  requireRole('ASSUREUR'),
+  validateBody(renouvelerContratSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: ContratCollectifView = await assurance.renouvelerContratCollectif(
+      req.user!, req.params['id'] as string, req.body,
+    );
+    res.json({ success: true, data, message: `Contrat ${data.numeroContrat} renouvele` });
+  }
+);
+
+router.get(
+  '/moi/contrats-collectifs/:id/adhesions',
+  requireRole('ASSUREUR'),
+  async (req: AuthRequest, res: Response) => {
+    const data: AdhesionAssuranceView[] = await assurance.listerAdhesions(req.user!, req.params['id'] as string);
+    res.json({ success: true, data });
+  }
+);
+
+router.post(
+  '/moi/contrats-collectifs/:id/adhesions',
+  requireRole('ASSUREUR'),
+  validateBody(creerAdhesionAssuranceSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: AdhesionAssuranceView = await assurance.ajouterAdhesion(
+      req.user!, req.params['id'] as string, req.body,
+    );
+    res.status(201).json({ success: true, data, message: `Beneficiaire ${data.patient.prenom} ${data.patient.nom} ajoute` });
+  }
+);
+
+/** Fin d'une adhesion : date d'effet, motif et auteur sont conserves. */
+router.post(
+  '/moi/adhesions/:id/fin',
+  requireRole('ASSUREUR'),
+  validateBody(terminerAdhesionSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: AdhesionAssuranceView = await assurance.terminerAdhesion(
+      req.user!, req.params['id'] as string, req.body,
+    );
+    res.json({ success: true, data, message: "Fin d'adhesion enregistree" });
+  }
+);
+
+/** Un taux, une exclusion ou un plafond propre a une police. */
+router.post(
+  '/moi/polices/regles',
+  requireRole('ASSUREUR'),
+  validateBody(creerReglePoliceSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data: RegleCouvertureView = await assurance.ajouterReglePolice(req.user!, req.body);
+    res.status(201).json({ success: true, data, message: 'Regle de la police ajoutee' });
+  }
+);
 
 router.get('/moi/reglements', requireRole('ASSUREUR'), async (req: AuthRequest, res: Response) => {
   const data: ReglementView[] = await assurance.mesReglements(req.user!);

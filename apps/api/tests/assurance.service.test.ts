@@ -8,7 +8,6 @@
 // **« un assure a 100 % paie quand meme son lait infantile »**.
 import {
   calculerPriseEnCharge,
-  chiffrer,
   motifDInegibilite,
   regleEnVigueur,
   repartir,
@@ -22,6 +21,8 @@ import { ForbiddenError, NotFoundError } from '../src/utils/app-error';
 jest.mock('../src/config/prisma', () => ({
   prisma: {
     utilisateur: { findUnique: jest.fn() },
+    structureSante: { findUnique: jest.fn() },
+    structureAssureur: { findFirst: jest.fn() },
     patientProfile: { findUnique: jest.fn() },
     contratAssurance: { findFirst: jest.fn() },
     controleEligibilite: { create: jest.fn(), findMany: jest.fn() },
@@ -34,6 +35,8 @@ type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
     utilisateur: { findUnique: M };
+    structureSante: { findUnique: M };
+    structureAssureur: { findFirst: M };
     patientProfile: { findUnique: M };
     contratAssurance: { findFirst: M };
     controleEligibilite: { create: M; findMany: M };
@@ -143,6 +146,10 @@ describe('verifierEligibilite', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     prisma.utilisateur.findUnique.mockResolvedValue({ idStructure: 'struct-P', structure: { type: 'PHARMACIE' } });
+    prisma.structureSante.findUnique.mockResolvedValue({
+      id: 'struct-P', type: 'PHARMACIE', idStructureParente: null,
+    });
+    prisma.structureAssureur.findFirst.mockResolvedValue({ id: 'convention-1' });
     prisma.patientProfile.findUnique.mockResolvedValue({
       id: 'p-1', utilisateur: { prenom: 'Maomou', nom: 'Conde' },
     });
@@ -190,6 +197,19 @@ describe('verifierEligibilite', () => {
     expect(r.numeroPolice).toBe('PF-00042');
     expect(r.tauxBasePourcent).toBe(80);
     expect(r.assureur?.code).toBe('PF');
+  });
+
+  it('refuse une police assureur sans convention dans la pharmacie', async () => {
+    prisma.contratAssurance.findFirst.mockResolvedValue({
+      id: 'ct-1', idAssureur: 'as-1', numeroPolice: 'PF-00042', tauxBasePourcent: 80, statut: 'ACTIF',
+      dateEffet: new Date('2026-01-01'), dateFin: null, carenceJours: 0,
+      assureur: { id: 'as-1', nom: 'Pricemou & Frere', code: 'PF', estActif: true },
+    });
+    prisma.structureAssureur.findFirst.mockResolvedValue(null);
+
+    const r = await verifierEligibilite(pharmacien, 'p-1', LE_2_OCTOBRE);
+    expect(r.eligible).toBe(false);
+    expect(r.motif).toMatch(/pas conventionne/);
   });
 
   // La reponse doit etre opposable : elle est donc enregistree, refus compris.
@@ -409,62 +429,6 @@ describe('calculerPriseEnCharge', () => {
 
 // ── Le verrou tient aussi au chiffrage (EF-01-10) ───────────────────
 //
-// `verifierEligibilite` et `chiffrer` lisent tous deux le niveau d'identite.
-// Si seul le premier le faisait, le verrou se contournerait en passant
-// directement a l'encaissement : la caisse appelle `chiffrer`, pas
-// `verifierEligibilite`.
-//
-// Un commentaire dans le code l'affirmait sans que rien ne l'eprouve — un
-// sabotage remplacant le niveau lu par « VERIFIEE » en dur ne faisait echouer
-// aucun test. Ces cas comblent ce trou.
-describe('chiffrer : le verrou d identito-vigilance', () => {
-  const CONTRAT = {
-    id: 'c1',
-    statut: 'ACTIF' as const,
-    dateEffet: new Date('2026-01-01'),
-    dateFin: null,
-    carenceJours: 0,
-    tauxBasePourcent: 80,
-    franchiseGnf: 0,
-    plafondAnnuelGnf: null,
-    assureur: { id: 'a1', nom: 'Assureur', code: 'ASS', estActif: true, regles: [] },
-    patient: { niveauIdentite: 'VERIFIEE' as const },
-  };
-  const LIGNES: LigneAChiffrer[] = [
-    { idMedicament: 'm1', libelle: 'Paracetamol', categorie: 'MEDICAMENT', montantGnf: 10_000 },
-  ];
-
-  // Le `resetAllMocks` de ce fichier vit dans un autre describe : sans celui-ci,
-  // les appels s accumulent d un cas a l autre et `mock.calls[0]` designe la
-  // requete d un test precedent.
-  beforeEach(() => {
-    jest.resetAllMocks();
-    prisma.venteComptoir.aggregate.mockResolvedValue({ _sum: { montantAssureGnf: 0 } });
-  });
-
-  it('chiffre normalement pour une identite verifiee', async () => {
-    prisma.contratAssurance.findFirst.mockResolvedValue(CONTRAT);
-    const r = await chiffrer('p1', LIGNES, 10_000, new Date('2026-10-02'));
-    expect(r).not.toBeNull();
-  });
-
-  // Le point du bloc : la caisse ne doit rien pouvoir faire payer a un
-  // assureur sur une identite declaree.
-  it('ne chiffre rien pour une identite provisoire', async () => {
-    prisma.contratAssurance.findFirst.mockResolvedValue({
-      ...CONTRAT, patient: { niveauIdentite: 'PROVISOIRE' as const },
-    });
-    const r = await chiffrer('p1', LIGNES, 10_000, new Date('2026-10-02'));
-    expect(r).toBeNull();
-  });
-
-  // Et il lit bien le niveau depuis la base, plutot que de le supposer.
-  it('demande le niveau d identite dans sa requete', async () => {
-    prisma.contratAssurance.findFirst.mockResolvedValue(CONTRAT);
-    await chiffrer('p1', LIGNES, 10_000, new Date('2026-10-02'));
-    const [args] = prisma.contratAssurance.findFirst.mock.calls[0] as [
-      { include: { patient: { select: { niveauIdentite: boolean } } } }
-    ];
-    expect(args.include.patient.select.niveauIdentite).toBe(true);
-  });
-});
+// Le chiffrage a la caisse part desormais de la carte scannee : ses tests,
+// dont la lecture du niveau d'identite en base, vivent dans
+// assurance-cartes.service.test.ts.

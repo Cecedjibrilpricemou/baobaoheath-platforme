@@ -122,47 +122,82 @@
     <!-- ── Tiers payant (EF-09) ──────────────────────────────────── -->
     <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.ASSURANCE' | translate }}</h2>
 
-    @if (!patient()) {
+    @if (!carte()) {
       <div class="bb-caisse__qr">
         <div class="bb-caisse__qr-champ">
-          <label class="bb-caisse__label" for="c-qr">{{ 'PHARMACIEN.CAISSE.QR_PATIENT' | translate }}</label>
-          <input id="c-qr" class="bb-caisse__champ" type="text" maxlength="80"
-                 [(ngModel)]="qrPatient" (keyup.enter)="scannerPatient()" />
+          <label class="bb-caisse__label" for="c-carte">{{ 'PHARMACIEN.CAISSE.CARTE_ASSURANCE' | translate }}</label>
+          <!-- Une douchette qui emule un clavier tape le jeton ici, puis Entree. -->
+          <input id="c-carte" class="bb-caisse__champ" type="text" maxlength="128" autocomplete="off"
+                 [(ngModel)]="jetonCarte" (keyup.enter)="verifierCarte()" />
         </div>
-        <button matButton type="button" [disabled]="enCoursAssurance() || !qrPatient().trim()" (click)="scannerPatient()">
-          <i class="pi pi-qrcode" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.RECONNAITRE' | translate }}
+        <button matButton type="button" [disabled]="enCoursAssurance()" (click)="showScanner.set(true)">
+          <i class="pi pi-camera" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.SCANNER_CARTE' | translate }}
+        </button>
+        <button matButton type="button" [disabled]="enCoursAssurance() || !jetonCarte().trim()" (click)="verifierCarte()">
+          <i class="pi pi-shield" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER_CARTE' | translate }}
         </button>
       </div>
-      <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.SANS_PATIENT' | translate }}</p>
+      @if (showScanner()) {
+        <app-qr-scanner (detecte)="onCarteScannee($event)" (ferme)="showScanner.set(false)" />
+      }
+      <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.SANS_CARTE' | translate }}</p>
     } @else {
       <div class="bb-caisse__patient">
         <span class="bb-caisse__patient-nom">
-          <i class="pi pi-user" aria-hidden="true"></i> {{ patient()!.prenom }} {{ patient()!.nom }}
+          <i class="pi pi-user" aria-hidden="true"></i> {{ carte()!.patient.prenom }} {{ carte()!.patient.nom }}
         </span>
-        @if (!eligibilite()) {
-          <button matButton type="button" [disabled]="enCoursAssurance()" (click)="verifierEligibilite()">
-            <i class="pi pi-shield" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER' | translate }}
-          </button>
-        }
-        <button class="bb-caisse__annuler" type="button" (click)="oublierPatient()">
+        <button class="bb-caisse__annuler" type="button" (click)="oublierCarte()">
           <i class="pi pi-times" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.OUBLIER' | translate }}
         </button>
       </div>
+      <!-- La carte peut avoir ete pretee : le nom affiche doit etre celui de
+           la personne presente. -->
+      <p class="bb-caisse__muted">
+        <i class="pi pi-id-card" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER_IDENTITE' | translate }}
+      </p>
 
-      @if (eligibilite()) {
-        @if (eligibilite()!.eligible) {
-          <p class="bb-caisse__avis bb-caisse__avis--ok">
-            <i class="pi pi-check-circle" aria-hidden="true"></i>
-            {{ 'PHARMACIEN.CAISSE.ELIGIBLE' | translate: { assureur: eligibilite()!.assureur?.nom ?? '', police: eligibilite()!.numeroPolice ?? '', taux: eligibilite()!.tauxBasePourcent ?? 0 } }}
-          </p>
-        } @else {
-          <!-- Un refus n'est pas une erreur : il porte son motif, et c'est ce
-               que le comptoir explique au patient. -->
-          <p class="bb-caisse__avis bb-caisse__avis--danger">
-            <i class="pi pi-times-circle" aria-hidden="true"></i>
-            {{ 'PHARMACIEN.CAISSE.NON_ELIGIBLE' | translate }} — {{ eligibilite()!.motif }}
-          </p>
-        }
+      <div class="bb-caisse__carte">
+        <span>
+          <strong>{{ carte()!.assureur.nom }}</strong> —
+          @if (carte()!.typeCouverture === 'COLLECTIVE') {
+            {{ 'PHARMACIEN.CAISSE.COUVERTURE_COLLECTIVE' | translate: { entreprise: carte()!.souscripteur ?? '' } }}
+          } @else {
+            {{ 'PHARMACIEN.CAISSE.COUVERTURE_INDIVIDUELLE' | translate }}
+          }
+        </span>
+        <span>{{ 'PHARMACIEN.CAISSE.ADHERENT' | translate }} : {{ carte()!.numeroAdherent }} · {{ 'PHARMACIEN.CAISSE.POLICE' | translate }} : {{ carte()!.numeroPolice }}</span>
+        <span>
+          {{ 'PHARMACIEN.CAISSE.VALIDITE' | translate }} : {{ carte()!.dateEffet | date: 'dd/MM/yyyy' }}
+          → @if (carte()!.dateFin) { {{ carte()!.dateFin | date: 'dd/MM/yyyy' }} } @else { — }
+        </span>
+        <!-- Ce que l'assureur prend, en pourcentage : le montant exact se
+             calcule plus bas, sur le panier reel. -->
+        <div class="bb-caisse__garanties">
+          @for (g of carte()!.garanties; track g.categorie) {
+            <span class="bb-caisse__garantie" [class.bb-caisse__garantie--exclue]="g.exclu">
+              {{ g.categorie | categorieProduit }} :
+              @if (g.exclu) { {{ 'PHARMACIEN.CAISSE.EXCLU' | translate }} } @else { {{ g.tauxPourcent }} % }
+            </span>
+          }
+          <span class="bb-caisse__garantie">
+            {{ 'PHARMACIEN.CAISSE.TAUX_BASE' | translate }} : {{ carte()!.tauxBasePourcent }} %
+          </span>
+        </div>
+      </div>
+
+      @if (carte()!.eligible) {
+        <p class="bb-caisse__avis bb-caisse__avis--ok">
+          <i class="pi pi-check-circle" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.CARTE_VALIDE' | translate }}
+        </p>
+      } @else {
+        <!-- Un refus n'est pas une erreur : il porte son motif, et c'est ce
+             que le comptoir explique au patient. La vente peut continuer en
+             paiement normal. -->
+        <p class="bb-caisse__avis bb-caisse__avis--danger">
+          <i class="pi pi-times-circle" aria-hidden="true"></i>
+          {{ 'PHARMACIEN.CAISSE.NON_ELIGIBLE' | translate }} — {{ carte()!.motif }}.
+          {{ 'PHARMACIEN.CAISSE.PAIEMENT_DIRECT_POSSIBLE' | translate }}
+        </p>
       }
 
       @if (peutAppliquerAssurance()) {
@@ -175,11 +210,16 @@
             <i class="pi pi-refresh" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.RECALCULER' | translate }}
           </button>
         </div>
+        @if (avecAssurance() && prise() && !priseAJour()) {
+          <p class="bb-caisse__avis bb-caisse__avis--danger">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.PRISE_PERIMEE' | translate }}
+          </p>
+        }
       }
 
       <!-- Le detail ligne par ligne, montre AVANT le paiement : un reste a
            charge sans explication se conteste au comptoir (point 5.4). -->
-      @if (prise()) {
+      @if (prise() && priseAJour()) {
         <div class="bb-caisse__prise">
           @for (l of prise()!.lignes; track l.idMedicament) {
             <div class="bb-caisse__prise-ligne" [class.bb-caisse__prise-ligne--exclue]="!l.couvert">
@@ -234,7 +274,7 @@
         <span class="bb-caisse__total-ligne">
           {{ 'PHARMACIEN.CAISSE.BRUT' | translate }} : <strong>{{ montantBrut() | number }} GNF</strong>
         </span>
-        @if (avecAssurance() && prise()) {
+        @if (avecAssurance() && priseAJour()) {
           <span class="bb-caisse__total-ligne bb-caisse__total-ligne--assureur">
             {{ 'PHARMACIEN.CAISSE.PART_ASSUREUR' | translate }} : <strong>− {{ prise()!.montantAssureGnf | number }} GNF</strong>
           </span>

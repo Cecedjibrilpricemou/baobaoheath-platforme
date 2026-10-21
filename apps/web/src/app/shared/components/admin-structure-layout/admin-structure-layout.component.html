@@ -30,6 +30,9 @@
         </a>
       }
     </mat-nav-list>
+    @if (pharmaciesNavError()) {
+      <p class="bb-nav__section" role="status">{{ 'ADMIN_STRUCTURE.NAV_LOAD_ERROR' | translate }}</p>
+    }
 
     <div class="bb-nav__footer">
       <p class="bb-nav__section">{{ 'COMMON.GENERAL' | translate }}</p>

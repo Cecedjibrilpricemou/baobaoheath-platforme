@@ -51,6 +51,15 @@ router.get('/agents', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, r
   }
 });
 
+router.get('/pharmacies', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const data: StructureAdminView[] = await service.getPharmaciesStructure(req.user!.userId);
+    res.json({ success: true, data });
+  } catch (e: unknown) {
+    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
 router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentStructureSchema), async (req: AuthRequest, res: Response) => {
   try {
     const data: CreationAgentView = await service.creerAgent(req.user!.userId, req.body);
@@ -121,9 +130,9 @@ router.post('/structures', requireRole('SUPER_ADMIN'), validateBody(createStruct
   }
 });
 
-router.post('/pharmacies', requireRole('SUPER_ADMIN'), validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
+router.post('/pharmacies', requireRole('SUPER_ADMIN', 'ADMIN_STRUCTURE'), validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.body);
+    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.user!, req.body);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });

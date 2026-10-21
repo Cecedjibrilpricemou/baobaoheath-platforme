@@ -10,7 +10,7 @@ import type {
   CreateProduitOfficineDto,
   UpdateProduitOfficineDto,
   CategorieProduit,
-  ControleEligibiliteView,
+  CarteAssuranceVerifieeView,
   PriseEnChargeView,
   ApprovisionnementView,
   CreerVenteDto,
@@ -273,11 +273,12 @@ export class PharmacienService {
   // ── Assurance et tiers payant (EF-09, addendum point 5) ──────────────
 
   /**
-   * Controle d'eligibilite. La reponse est enregistree cote API : c'est elle
-   * qui justifiera le tiers payant si l'assureur le conteste.
+   * Controle sur la carte d'assurance scannee : seule la couverture de ce
+   * beneficiaire est recherchee. La reponse est enregistree cote API, refus
+   * compris : c'est elle qui justifiera le tiers payant.
    */
-  verifierEligibilite(idPatient: string): Observable<ApiResponse<ControleEligibiliteView>> {
-    return this.api.post<ApiResponse<ControleEligibiliteView>>('/assurance/eligibilite', { idPatient });
+  verifierCarteAssurance(jetonCarte: string): Observable<ApiResponse<CarteAssuranceVerifieeView>> {
+    return this.api.post<ApiResponse<CarteAssuranceVerifieeView>>('/assurance/cartes/verifier', { jetonCarte });
   }
 
   /**
@@ -286,12 +287,12 @@ export class PharmacienService {
    * comptoir.
    */
   simulerPriseEnCharge(
-    idPatient: string,
+    jetonCarteAssurance: string,
     lignes: { idMedicament: string; libelle: string; categorie: CategorieProduit; montantGnf: number }[],
     montantNetGnf: number
   ): Observable<ApiResponse<PriseEnChargeView>> {
     return this.api.post<ApiResponse<PriseEnChargeView>>('/assurance/simulation', {
-      idPatient, lignes, montantNetGnf,
+      jetonCarteAssurance, lignes, montantNetGnf,
     });
   }
 

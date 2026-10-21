@@ -1,0 +1,460 @@
+<div class="bb-asr bb-ctr">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-briefcase" aria-hidden="true"></i> {{ 'ASSUREUR.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ASSUREUR.CONTRATS.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ASSUREUR.CONTRATS.SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  <div class="bb-ctr__onglets" role="tablist">
+    <button type="button" role="tab" class="bb-ctr__onglet" [class.bb-ctr__onglet--actif]="onglet() === 'COLLECTIFS'"
+            [attr.aria-selected]="onglet() === 'COLLECTIFS'" (click)="changerOnglet('COLLECTIFS')">
+      <i class="pi pi-building" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.ONGLET_COLLECTIFS' | translate }}
+    </button>
+    <button type="button" role="tab" class="bb-ctr__onglet" [class.bb-ctr__onglet--actif]="onglet() === 'INDIVIDUELS'"
+            [attr.aria-selected]="onglet() === 'INDIVIDUELS'" (click)="changerOnglet('INDIVIDUELS')">
+      <i class="pi pi-user" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.ONGLET_INDIVIDUELS' | translate }}
+    </button>
+  </div>
+
+  <!-- ══ La fiche « taux propre a une police », commune aux deux onglets ══ -->
+  @if (cibleRegle()) {
+    <section class="bb-ctr__panneau" aria-labelledby="ctr-regle-titre">
+      <h2 id="ctr-regle-titre" class="bb-ctr__titre">
+        {{ 'ASSUREUR.CONTRATS.REGLE_TITRE' | translate: { police: cibleRegle()!.libelle } }}
+      </h2>
+      <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.REGLE_AIDE' | translate }}</p>
+      <div class="bb-ctr__grille">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASSUREUR.CONTRATS.CATEGORIE' | translate }}</mat-label>
+          <mat-select [(ngModel)]="categorieRegle">
+            @for (cat of categories; track cat) { <mat-option [value]="cat">{{ cat | categorieProduit }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-checkbox class="bb-ctr__case" [checked]="exclusionRegle()" (change)="exclusionRegle.set($event.checked)">{{ 'ASSUREUR.CONTRATS.EXCLURE' | translate }}</mat-checkbox>
+        @if (!exclusionRegle()) {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.TAUX' | translate }}</mat-label>
+            <input matInput type="number" min="0" max="100" step="1" [(ngModel)]="tauxRegle" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.PLAFOND_LIGNE' | translate }}</mat-label>
+            <input matInput type="number" min="0" step="500" [(ngModel)]="plafondLigneRegle" />
+          </mat-form-field>
+        }
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'ASSUREUR.CONTRATS.DATE_EFFET' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="dateEffetRegle" />
+        </mat-form-field>
+      </div>
+      <div class="bb-ctr__actions">
+        <button matButton="filled" type="button" [disabled]="!peutAjouterRegle() || enCours()" (click)="ajouterRegle()">
+          {{ 'ASSUREUR.CONTRATS.ENREGISTRER_REGLE' | translate }}
+        </button>
+        <button matButton type="button" (click)="cibleRegle.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  @if (onglet() === 'COLLECTIFS') {
+    <!-- ══ Contrats d'entreprise ══════════════════════════════════════ -->
+    <div class="bb-ctr__barre">
+      <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.COLLECTIFS_AIDE' | translate }}</p>
+      @if (!formContrat()) {
+        <button matButton="filled" type="button" (click)="formContrat.set(true)">
+          <i class="pi pi-plus" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.NOUVEAU_CONTRAT' | translate }}
+        </button>
+      }
+    </div>
+
+    @if (formContrat()) {
+      <section class="bb-ctr__panneau" aria-labelledby="ctr-nouveau-titre">
+        <h2 id="ctr-nouveau-titre" class="bb-ctr__titre">{{ 'ASSUREUR.CONTRATS.NOUVEAU_CONTRAT' | translate }}</h2>
+        <div class="bb-ctr__grille">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.ENTREPRISE' | translate }} *</mat-label>
+            <input matInput type="text" maxlength="160" [(ngModel)]="raisonSociale" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.IDENTIFIANT_LEGAL' | translate }}</mat-label>
+            <input matInput type="text" maxlength="80" [(ngModel)]="identifiantLegal" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.NUMERO_CONTRAT' | translate }} *</mat-label>
+            <input matInput type="text" maxlength="80" [(ngModel)]="numeroContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.REGIME' | translate }} *</mat-label>
+            <input matInput type="text" maxlength="120" [(ngModel)]="nomRegime" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.TAUX_BASE' | translate }} *</mat-label>
+            <input matInput type="number" min="0" max="100" step="1" [(ngModel)]="tauxContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.PLAFOND_ANNUEL' | translate }}</mat-label>
+            <input matInput type="number" min="0" step="1000" [(ngModel)]="plafondContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.FRANCHISE' | translate }}</mat-label>
+            <input matInput type="number" min="0" step="500" [(ngModel)]="franchiseContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.DEBUT' | translate }} *</mat-label>
+            <input matInput type="date" [(ngModel)]="debutContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.FIN' | translate }} *</mat-label>
+            <input matInput type="date" [min]="debutContrat()" [(ngModel)]="finContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.CARENCE' | translate }}</mat-label>
+            <input matInput type="number" min="0" max="365" step="1" [(ngModel)]="carenceContrat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.GRACE' | translate }}</mat-label>
+            <input matInput type="number" min="0" max="90" step="1" [(ngModel)]="graceContrat" />
+          </mat-form-field>
+        </div>
+        <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.GRACE_AIDE' | translate }}</p>
+        <div class="bb-ctr__actions">
+          <button matButton="filled" type="button" [disabled]="!peutCreerContrat() || enCours()" (click)="creerContrat()">
+            {{ 'ASSUREUR.CONTRATS.CREER' | translate }}
+          </button>
+          <button matButton type="button" (click)="formContrat.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
+        </div>
+      </section>
+    }
+
+    @if (chargementContrats()) {
+      <p class="bb-asr__attente">{{ 'COMMON.LOADING' | translate }}</p>
+    } @else if (contrats().length === 0) {
+      <div class="bb-asr__vide">
+        <i class="pi pi-building" aria-hidden="true"></i>
+        <p class="bb-asr__vide-titre">{{ 'ASSUREUR.CONTRATS.AUCUN_CONTRAT' | translate }}</p>
+      </div>
+    } @else {
+      <div class="bb-asr__table-enveloppe">
+        <table class="bb-asr__table">
+          <thead>
+            <tr>
+              <th>{{ 'ASSUREUR.CONTRATS.ENTREPRISE' | translate }}</th>
+              <th>{{ 'ASSUREUR.CONTRATS.NUMERO_CONTRAT' | translate }}</th>
+              <th class="bb-asr__nombre">{{ 'ASSUREUR.CONTRATS.TAUX_BASE' | translate }}</th>
+              <th class="bb-asr__nombre">{{ 'ASSUREUR.CONTRATS.BENEFICIAIRES' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of contrats(); track c.id) {
+              <tr [class.bb-ctr__ligne--active]="selection()?.id === c.id">
+                <td class="bb-asr__cellule-principale">
+                  <strong>{{ c.entreprise.raisonSociale }}</strong>
+                  <span>{{ c.nomRegime }} · {{ c.dateEffet | date: 'dd/MM/yyyy' : 'UTC' }} → {{ c.dateFin | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+                </td>
+                <td>
+                  {{ c.numeroContrat }}
+                  <span class="bb-asr__etat" [class.bb-asr__etat--off]="c.statut !== 'ACTIF'">{{ libelleStatut(c.statut) }}</span>
+                </td>
+                <td class="bb-asr__nombre">{{ c.tauxBasePourcent }} %</td>
+                <td class="bb-asr__nombre">{{ c.nombreAdhesionsActives }}</td>
+                <td><button matButton type="button" (click)="ouvrir(c)">{{ 'ASSUREUR.CONTRATS.GERER' | translate }}</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- ══ Le contrat ouvert : taux, echeance, beneficiaires ═══════════ -->
+    @if (selection(); as c) {
+      <section class="bb-ctr__panneau" aria-labelledby="ctr-detail-titre">
+        <h2 id="ctr-detail-titre" class="bb-ctr__titre">{{ c.entreprise.raisonSociale }} — {{ c.numeroContrat }}</h2>
+        <p class="bb-ctr__aide">
+          {{ 'ASSUREUR.CONTRATS.CONDITIONS' | translate: {
+            taux: c.tauxBasePourcent,
+            plafond: c.plafondAnnuelGnf > 0 ? montant(c.plafondAnnuelGnf) + ' GNF' : ('ASSUREUR.SANS_PLAFOND' | translate),
+            franchise: montant(c.franchiseGnf),
+            grace: c.periodeGraceJours
+          } }}
+        </p>
+
+        <h3 class="bb-ctr__sous-titre">{{ 'ASSUREUR.CONTRATS.TAUX_PROPRES' | translate }}</h3>
+        @if (c.regles.length === 0) {
+          <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.AUCUN_TAUX_PROPRE' | translate }}</p>
+        } @else {
+          <div class="bb-ctr__pastilles">
+            @for (r of c.regles; track r.id) {
+              <span class="bb-ctr__pastille" [class.bb-ctr__pastille--exclue]="r.exclu">
+                {{ r.categorie | categorieProduit }} :
+                @if (r.exclu) { {{ 'ASSUREUR.CONTRATS.EXCLU' | translate }} } @else { {{ r.tauxPourcent ?? c.tauxBasePourcent }} % }
+                @if (r.plafondLigneGnf > 0) { · {{ 'ASSUREUR.CONTRATS.PLAFOND_LIGNE_COURT' | translate: { montant: montant(r.plafondLigneGnf) } }} }
+                · {{ 'ASSUREUR.CONTRATS.DEPUIS' | translate: { date: (r.dateEffet | date: 'dd/MM/yyyy' : 'UTC') ?? '' } }}
+              </span>
+            }
+          </div>
+        }
+        <div class="bb-ctr__actions">
+          <button matButton type="button" (click)="ouvrirRegle('COLLECTIVE', c.id, c.numeroContrat)">
+            <i class="pi pi-percentage" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.AJOUTER_TAUX' | translate }}
+          </button>
+        </div>
+
+        @if (c.statut !== 'RESILIE' && c.statut !== 'SUSPENDU') {
+          <h3 class="bb-ctr__sous-titre">{{ 'ASSUREUR.CONTRATS.RENOUVELER' | translate }}</h3>
+          <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.RENOUVELER_AIDE' | translate }}</p>
+          <div class="bb-ctr__ligne-form">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.NOUVELLE_ECHEANCE' | translate }}</mat-label>
+              <input matInput type="date" [(ngModel)]="nouvelleEcheance" />
+            </mat-form-field>
+            <button matButton type="button" [disabled]="!nouvelleEcheance() || enCours()" (click)="renouveler()">
+              {{ 'ASSUREUR.CONTRATS.RENOUVELER' | translate }}
+            </button>
+          </div>
+        }
+
+        <h3 class="bb-ctr__sous-titre">{{ 'ASSUREUR.CONTRATS.BENEFICIAIRES' | translate }}</h3>
+        @if (c.statut === 'ACTIF') {
+          <div class="bb-ctr__ligne-form">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.TELEPHONE' | translate }}</mat-label>
+              <input matInput type="tel" inputmode="tel" maxlength="20" [(ngModel)]="telephone" (keyup.enter)="rechercher()" />
+            </mat-form-field>
+            <button matButton type="button" [disabled]="!telephone().trim() || enCours()" (click)="rechercher()">
+              <i class="pi pi-search" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.RECHERCHER' | translate }}
+            </button>
+          </div>
+          <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.RECHERCHE_AIDE' | translate }}</p>
+          @if (resultats().length > 1) {
+            <mat-radio-group class="bb-ctr__choix" [value]="patientChoisi()" (change)="patientChoisi.set($event.value)" [attr.aria-label]="'ASSUREUR.CONTRATS.CHOISIR_PERSONNE' | translate">
+              @for (p of resultats(); track p.id) {
+                <mat-radio-button [value]="p">{{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }} @if (p.anneeNaissance) { · {{ p.anneeNaissance }} }</mat-radio-button>
+              }
+            </mat-radio-group>
+          }
+          @if (patientChoisi(); as p) {
+            <p class="bb-ctr__personne"><i class="pi pi-user" aria-hidden="true"></i> {{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }}</p>
+            <div class="bb-ctr__grille">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ 'ASSUREUR.CONTRATS.NUMERO_ADHERENT' | translate }} *</mat-label>
+                <input matInput type="text" maxlength="80" [(ngModel)]="numeroAdherent" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ 'ASSUREUR.CONTRATS.DEBUT' | translate }}</mat-label>
+                <input matInput type="date" [(ngModel)]="debutAdhesion" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ 'ASSUREUR.CONTRATS.FIN_ADHESION' | translate }}</mat-label>
+                <input matInput type="date" [(ngModel)]="finAdhesion" />
+              </mat-form-field>
+            </div>
+            <div class="bb-ctr__actions">
+              <button matButton="filled" type="button" [disabled]="!peutAjouterAdhesion() || enCours()" (click)="ajouterAdhesion()">
+                {{ 'ASSUREUR.CONTRATS.AJOUTER_BENEFICIAIRE' | translate }}
+              </button>
+              <button matButton type="button" (click)="oublierPersonne()">{{ 'COMMON.CANCEL' | translate }}</button>
+            </div>
+          }
+        } @else {
+          <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.CONTRAT_INACTIF' | translate }}</p>
+        }
+
+        @if (adhesions().length === 0) {
+          <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.AUCUN_BENEFICIAIRE' | translate }}</p>
+        } @else {
+          <div class="bb-asr__table-enveloppe">
+            <table class="bb-asr__table">
+              <thead>
+                <tr>
+                  <th>{{ 'ASSUREUR.COL_ASSURE' | translate }}</th>
+                  <th>{{ 'ASSUREUR.CONTRATS.NUMERO_ADHERENT' | translate }}</th>
+                  <th>{{ 'ASSUREUR.CONTRATS.PERIODE' | translate }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of adhesions(); track a.id) {
+                  <tr>
+                    <td class="bb-asr__cellule-principale">
+                      <strong>{{ a.patient.prenom }} {{ a.patient.nom }}</strong>
+                      @if (a.motifFin) { <span>{{ 'ASSUREUR.CONTRATS.MOTIF_FIN' | translate: { motif: a.motifFin } }}</span> }
+                    </td>
+                    <td>
+                      {{ a.numeroAdherent }}
+                      <span class="bb-asr__etat" [class.bb-asr__etat--off]="a.statut !== 'ACTIF'">{{ libelleStatut(a.statut) }}</span>
+                    </td>
+                    <td>
+                      {{ a.dateEffet | date: 'dd/MM/yyyy' : 'UTC' }} →
+                      @if (a.dateFin) { {{ a.dateFin | date: 'dd/MM/yyyy' : 'UTC' }} } @else { {{ 'ASSUREUR.CONTRATS.FIN_DU_CONTRAT' | translate }} }
+                    </td>
+                    <td>
+                      @if (a.statut === 'ACTIF' && !a.finEnregistreeLe) {
+                        <button matButton type="button" (click)="demanderFin(a)">{{ 'ASSUREUR.CONTRATS.TERMINER' | translate }}</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (adhesionATerminer(); as a) {
+          <div class="bb-ctr__panneau bb-ctr__panneau--alerte" role="dialog" aria-labelledby="ctr-fin-titre">
+            <h3 id="ctr-fin-titre" class="bb-ctr__sous-titre">
+              {{ 'ASSUREUR.CONTRATS.TERMINER_TITRE' | translate: { nom: a.patient.prenom + ' ' + a.patient.nom } }}
+            </h3>
+            <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.TERMINER_AIDE' | translate }}</p>
+            <div class="bb-ctr__grille">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-ctr__champ--large">
+                <mat-label>{{ 'ASSUREUR.CONTRATS.MOTIF' | translate }} *</mat-label>
+                <input matInput type="text" maxlength="500" [(ngModel)]="motifFin" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ 'ASSUREUR.CONTRATS.DATE_EFFET' | translate }}</mat-label>
+                <input matInput type="date" [(ngModel)]="dateFinAdhesion" />
+              </mat-form-field>
+            </div>
+            <div class="bb-ctr__actions">
+              <button matButton="filled" type="button" [disabled]="motifFin().trim().length < 5 || enCours()" (click)="confirmerFin()">
+                {{ 'ASSUREUR.CONTRATS.CONFIRMER_FIN' | translate }}
+              </button>
+              <button matButton type="button" (click)="adhesionATerminer.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <!-- ══ Polices individuelles ══════════════════════════════════════ -->
+    <div class="bb-ctr__barre">
+      <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.INDIVIDUELS_AIDE' | translate }}</p>
+      @if (!formPolice()) {
+        <button matButton="filled" type="button" (click)="formPolice.set(true)">
+          <i class="pi pi-plus" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.NOUVELLE_POLICE' | translate }}
+        </button>
+      }
+    </div>
+
+    @if (formPolice()) {
+      <section class="bb-ctr__panneau" aria-labelledby="ctr-police-titre">
+        <h2 id="ctr-police-titre" class="bb-ctr__titre">{{ 'ASSUREUR.CONTRATS.NOUVELLE_POLICE' | translate }}</h2>
+        <div class="bb-ctr__ligne-form">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ASSUREUR.CONTRATS.TELEPHONE' | translate }}</mat-label>
+            <input matInput type="tel" inputmode="tel" maxlength="20" [(ngModel)]="telephone" (keyup.enter)="rechercher()" />
+          </mat-form-field>
+          <button matButton type="button" [disabled]="!telephone().trim() || enCours()" (click)="rechercher()">
+            <i class="pi pi-search" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.RECHERCHER' | translate }}
+          </button>
+        </div>
+        <p class="bb-ctr__aide">{{ 'ASSUREUR.CONTRATS.RECHERCHE_AIDE' | translate }}</p>
+        @if (resultats().length > 1) {
+          <mat-radio-group class="bb-ctr__choix" [value]="patientChoisi()" (change)="patientChoisi.set($event.value)" [attr.aria-label]="'ASSUREUR.CONTRATS.CHOISIR_PERSONNE' | translate">
+            @for (p of resultats(); track p.id) {
+              <mat-radio-button [value]="p">{{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }} @if (p.anneeNaissance) { · {{ p.anneeNaissance }} }</mat-radio-button>
+            }
+          </mat-radio-group>
+        }
+        @if (patientChoisi(); as p) {
+          <p class="bb-ctr__personne"><i class="pi pi-user" aria-hidden="true"></i> {{ p.prenom }} {{ p.nom }} · {{ p.telephoneMasque }}</p>
+          <div class="bb-ctr__grille">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.NUMERO_POLICE' | translate }} *</mat-label>
+              <input matInput type="text" maxlength="60" [(ngModel)]="numeroPolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.TAUX_BASE' | translate }} *</mat-label>
+              <input matInput type="number" min="0" max="100" step="1" [(ngModel)]="tauxPolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.PLAFOND_ANNUEL' | translate }}</mat-label>
+              <input matInput type="number" min="0" step="1000" [(ngModel)]="plafondPolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.FRANCHISE' | translate }}</mat-label>
+              <input matInput type="number" min="0" step="500" [(ngModel)]="franchisePolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.DEBUT' | translate }} *</mat-label>
+              <input matInput type="date" [(ngModel)]="debutPolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.FIN' | translate }}</mat-label>
+              <input matInput type="date" [min]="debutPolice()" [(ngModel)]="finPolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.CARENCE' | translate }}</mat-label>
+              <input matInput type="number" min="0" max="365" step="1" [(ngModel)]="carencePolice" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'ASSUREUR.CONTRATS.GRACE' | translate }}</mat-label>
+              <input matInput type="number" min="0" max="90" step="1" [(ngModel)]="gracePolice" />
+            </mat-form-field>
+          </div>
+        }
+        <div class="bb-ctr__actions">
+          <button matButton="filled" type="button" [disabled]="!peutCreerPolice() || enCours()" (click)="creerPolice()">
+            {{ 'ASSUREUR.CONTRATS.CREER' | translate }}
+          </button>
+          <button matButton type="button" (click)="formPolice.set(false); oublierPersonne()">{{ 'COMMON.CANCEL' | translate }}</button>
+        </div>
+      </section>
+    }
+
+    @if (chargementPolices()) {
+      <p class="bb-asr__attente">{{ 'COMMON.LOADING' | translate }}</p>
+    } @else if (polices().length === 0) {
+      <div class="bb-asr__vide">
+        <i class="pi pi-user" aria-hidden="true"></i>
+        <p class="bb-asr__vide-titre">{{ 'ASSUREUR.CONTRATS.AUCUNE_POLICE' | translate }}</p>
+      </div>
+    } @else {
+      <div class="bb-asr__table-enveloppe">
+        <table class="bb-asr__table">
+          <thead>
+            <tr>
+              <th>{{ 'ASSUREUR.COL_ASSURE' | translate }}</th>
+              <th>{{ 'ASSUREUR.COL_POLICE' | translate }}</th>
+              <th>{{ 'ASSUREUR.CONTRATS.TAUX_PROPRES' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of polices(); track p.idContrat) {
+              <tr>
+                <td class="bb-asr__cellule-principale">
+                  <strong>{{ p.patient.prenom }} {{ p.patient.nom }}</strong>
+                  <span>{{ p.dateEffet | date: 'dd/MM/yyyy' : 'UTC' }} → @if (p.dateFin) { {{ p.dateFin | date: 'dd/MM/yyyy' : 'UTC' }} } @else { — }</span>
+                </td>
+                <td>
+                  {{ p.numeroPolice }} · {{ p.tauxBasePourcent }} %
+                  <span class="bb-asr__etat" [class.bb-asr__etat--off]="p.statut !== 'ACTIF'">{{ libelleStatut(p.statut) }}</span>
+                </td>
+                <td>
+                  <div class="bb-ctr__pastilles">
+                    @for (r of p.regles; track r.id) {
+                      <span class="bb-ctr__pastille" [class.bb-ctr__pastille--exclue]="r.exclu">
+                        {{ r.categorie | categorieProduit }} :
+                        @if (r.exclu) { {{ 'ASSUREUR.CONTRATS.EXCLU' | translate }} } @else { {{ r.tauxPourcent ?? p.tauxBasePourcent }} % }
+                      </span>
+                    } @empty {
+                      <span class="bb-asr__note">{{ 'ASSUREUR.CONTRATS.REGLES_COMPAGNIE' | translate }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <button matButton type="button" (click)="ouvrirRegle('INDIVIDUELLE', p.idContrat, p.numeroPolice)">
+                    <i class="pi pi-percentage" aria-hidden="true"></i> {{ 'ASSUREUR.CONTRATS.AJOUTER_TAUX' | translate }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

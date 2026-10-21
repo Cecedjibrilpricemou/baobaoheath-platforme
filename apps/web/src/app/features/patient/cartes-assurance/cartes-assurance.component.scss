@@ -1,0 +1,71 @@
+// Les cartes d'assurance du patient : lisibles d'un coup d'oeil au comptoir,
+// le QR assez grand pour etre scanne a bout de bras.
+.bb-cartes {
+  &__attente { color: var(--bb-text-secondary); }
+
+  &__vide {
+    text-align: center; padding: 40px 16px; color: var(--bb-text-secondary);
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border-light);
+    border-radius: var(--bb-radius-xl);
+    i { font-size: 32px; margin-bottom: 8px; }
+    strong { color: var(--bb-text-primary); }
+  }
+
+  &__liste {
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  }
+
+  &__carte {
+    display: flex; flex-direction: column; gap: 12px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); box-shadow: var(--bb-shadow-sm);
+    padding: 0 0 14px; overflow: hidden;
+  }
+  // Une carte inutilisable se distingue par son en-tete neutre, pas par une
+  // transparence : l'opacite baissait le contraste de tout son texte.
+  &__carte--inactive .bb-cartes__entete { background: var(--bb-surface-2); color: var(--bb-text-primary); }
+
+  &__entete {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 14px 18px; background: var(--bb-primary); color: var(--bb-text-inverse);
+  }
+  &__assureur { font-family: var(--bb-font-display); font-weight: 800; font-size: 17px; }
+  // Fonds pleins : une pastille translucide sur le vert faisait chuter le
+  // contraste du texte sous 4,5:1.
+  &__statut {
+    font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-surface-2); color: var(--bb-text-secondary); border: 1px solid var(--bb-border);
+  }
+  &__statut--ok { background: var(--bb-success-bg); color: var(--bb-success); border-color: var(--bb-success-border); }
+
+  &__corps {
+    display: flex; gap: 16px; padding: 0 18px; align-items: flex-start;
+    @media (max-width: 480px) { flex-direction: column-reverse; align-items: center; }
+  }
+
+  &__infos {
+    flex: 1; margin: 0; display: grid; gap: 8px;
+    dt { font-size: 12.5px; color: var(--bb-text-secondary); }
+    dd { margin: 0; font-weight: 700; color: var(--bb-text-primary); overflow-wrap: anywhere; }
+  }
+  &__mono { font-family: var(--bb-font-mono); }
+
+  // Fond blanc force : un QR sur fond sombre se lit mal.
+  &__qr {
+    flex: none; width: 160px; height: 160px; padding: 6px;
+    background: #fff; border-radius: var(--bb-radius-md);
+  }
+
+  &__garanties { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px; }
+  &__garantie {
+    padding: 3px 10px; border-radius: var(--bb-radius-pill); font-size: 12.5px; font-weight: 700;
+    background: var(--bb-success-bg); color: var(--bb-success); border: 1px solid var(--bb-success-border);
+  }
+  // « non couvert » est ecrit en toutes lettres : inutile de barrer le texte.
+  &__garantie--exclue { background: var(--bb-surface-2); color: var(--bb-text-secondary); border-color: var(--bb-border); }
+
+  &__mention { margin: 0; padding: 0 18px; font-size: 12.5px; color: var(--bb-text-secondary); }
+
+  &__actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px; }
+}
