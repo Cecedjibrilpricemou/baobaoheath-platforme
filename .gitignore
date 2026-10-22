@@ -29,3 +29,5 @@ apps/api/.env
 apps/web/test-results
 apps/web/playwright-report
 apps/web/blob-report
+# Identifiants : jamais dans l'historique d'un depot public.
+docs/COMPTES-TEST.md
