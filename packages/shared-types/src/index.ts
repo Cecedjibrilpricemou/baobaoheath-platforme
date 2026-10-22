@@ -2361,8 +2361,13 @@ export interface VenteComptoirView {
    * abouti. Sans elle, « paye en Orange Money » n'est qu'une case cochee.
    */
   referenceTransaction?: string | null;
-  /** Session de caisse associee, absente sur les ventes historiques. */
-  idSessionCaisse?: string | null;
+  /**
+   * La session de caisse de cette vente. **Toujours presente** : la colonne
+   * est `NOT NULL` depuis la migration du 22/10/2026, et le service refuse
+   * une vente sans session ouverte. Les deux ventes d'essai anterieures aux
+   * sessions ont ete supprimees plutot que rattachees a une session inventee.
+   */
+  idSessionCaisse: string;
 
   lignes: LigneVenteView[];
 }

@@ -2323,8 +2323,14 @@ model VenteComptoir {
   idStructure String
   structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Restrict)
 
-  idSessionCaisse String?
-  sessionCaisse   SessionCaisse? @relation(fields: [idSessionCaisse], references: [id], onDelete: Restrict)
+  /// **Toute vente appartient a une session de caisse.** Le service l'exige
+  /// deja ; la contrainte le rend structurel. Les deux ventes d'essai
+  /// anterieures aux sessions ont ete supprimees plutot que rattachees a une
+  /// session fabriquee : une session de caisse nomme un responsable, et en
+  /// inventer une ferait dire au registre qu'un agent a ouvert une caisse
+  /// qu'il n'a jamais ouverte.
+  idSessionCaisse String
+  sessionCaisse   SessionCaisse @relation(fields: [idSessionCaisse], references: [id], onDelete: Restrict)
 
   idVendeur String
   vendeur   Utilisateur @relation("VentesVendeur", fields: [idVendeur], references: [id], onDelete: Restrict)
