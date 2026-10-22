@@ -15,6 +15,7 @@ import {
   modifierPersonne,
   photoPourPatient,
 } from '../src/services/personne-assuree.service';
+import { ENCRYPTED_FIELDS } from '../src/config/prisma-encryption.extension';
 import { Prisma } from '../src/config/generated/client/client';
 import { JwtPayload } from '../src/types/auth.types';
 import { ConflictError, NotFoundError, ValidationError } from '../src/utils/app-error';
@@ -158,6 +159,10 @@ describe('ajouterTravailleur : la fiche et l adhesion', () => {
     expect(prisma.personneAssuree.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ numeroPiece: 'GN123456', telephone: '620100013', idAssureur: 'as-1', idSaisiePar: 'agent-1' }),
     }));
+    expect(ENCRYPTED_FIELDS.PersonneAssuree).toEqual({
+      scalar: ['lieuNaissance', 'nationalite', 'adresse'],
+      array: [],
+    });
   });
 
   it('donne au travailleur sa propre carte, liee a sa fiche', async () => {
