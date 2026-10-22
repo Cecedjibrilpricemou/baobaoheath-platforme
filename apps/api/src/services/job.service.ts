@@ -82,8 +82,8 @@ export function startBackgroundJobs() {
   runAlertes();
   runUssdCleanup();
   runCritiques();
-  setInterval(runCritiques, 5 * 60 * 1000);
-  setInterval(runRappels, 60 * 60 * 1000);
-  setInterval(runAlertes, 6 * 60 * 60 * 1000);
-  setInterval(runUssdCleanup, 10 * 60 * 1000);
+  setInterval(runCritiques, 5 * 60 * 1000).unref();
+  setInterval(runRappels, 60 * 60 * 1000).unref();
+  setInterval(runAlertes, 6 * 60 * 60 * 1000).unref();
+  setInterval(runUssdCleanup, 10 * 60 * 1000).unref();
 }
