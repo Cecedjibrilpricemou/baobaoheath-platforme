@@ -1283,6 +1283,7 @@
       "LIST_TITLE": "Ordonnances à délivrer ({{count}})",
       "EMPTY_ALL_DELIVERED": "Toutes les ordonnances de ce patient ont été délivrées avec succès.",
       "ALLERGY_RISK": "Risque d'allergie",
+      "REGLEMENTE": "Produit réglementé — contrôlez l'identité du patient.",
       "QTY_LABEL": "Qté : {{qty}} boîtes",
       "VALID_UNTIL": "Valable jusqu'au {{date}}",
       "VERIFY_TITLE": "Verifier une ordonnance",

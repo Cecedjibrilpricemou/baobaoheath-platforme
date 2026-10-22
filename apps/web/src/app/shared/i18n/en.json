@@ -1759,6 +1759,7 @@
       "LIST_TITLE": "Prescriptions to dispense ({{count}})",
       "EMPTY_ALL_DELIVERED": "All of this patient's prescriptions have been dispensed successfully.",
       "ALLERGY_RISK": "Allergy risk",
+      "REGLEMENTE": "Controlled product - check the patient's identity.",
       "QTY_LABEL": "Qty: {{qty}} boxes",
       "VALID_UNTIL": "Valid until {{date}}",
       "VERIFY_TITLE": "Verify a prescription",
