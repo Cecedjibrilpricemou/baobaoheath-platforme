@@ -153,6 +153,7 @@
       "OTP_EXPIRES_IN": "Expires in",
       "OTP_EXPIRED_MSG": "Code expired — click \"Resend code\" to receive a new one.",
       "CHANGE_PWD_REQUIRED": "Your temporary password must be changed. Go to your profile to update it.",
+      "ERR_SPACE_NOT_ACCESSIBLE": "Your workspace is not available yet. You will be signed out. Please contact your administrator.",
       "ERR_SERVEUR_INJOIGNABLE": "Server unreachable. Check that the API is running, then try again.",
       "ERR_TROP_DE_TENTATIVES": "Too many sign-in attempts. Wait 15 minutes before trying again."
     },

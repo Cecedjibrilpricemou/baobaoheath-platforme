@@ -94,7 +94,7 @@ export class LoginComponent implements OnDestroy {
           this.startOtpTimer(response.expiresInMinutes ?? 10);
         } else {
           const role = this.authService.userRole();
-          if (role) this.redirectAfterLogin(role);
+          this.redirectAfterLogin(role);
         }
       },
       error: (err) => {
@@ -136,7 +136,7 @@ export class LoginComponent implements OnDestroy {
       next: (user) => {
         this.isLoading.set(false);
         this.clearOtpTimer();
-        if (user && user.role) this.redirectAfterLogin(user.role);
+        this.redirectAfterLogin(user?.role);
       },
       error: (err) => {
         this.isLoading.set(false);
@@ -255,21 +255,7 @@ export class LoginComponent implements OnDestroy {
     this.otpTimerActive = false;
   }
 
-  private redirectAfterLogin(role: string) {
-    if (this.authService.doitChangerMotDePasse()) {
-      this.toastr.warning(
-        this.i18nService.t('AUTH.LOGIN.CHANGE_PWD_REQUIRED'),
-        'Action requise',
-        { timeOut: 7000 }
-      );
-    }
-
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    if (returnUrl && !returnUrl.startsWith('/auth')) {
-      this.router.navigateByUrl(returnUrl);
-      return;
-    }
-
+  private redirectAfterLogin(role: string | null | undefined) {
     const redirectMap: Record<string, string> = {
       PATIENT:          '/patient/dashboard',
       ASC:              '/asc/consultations',
@@ -284,6 +270,31 @@ export class LoginComponent implements OnDestroy {
       ADMIN_NATIONAL:   '/admin/analytics',
       SUPER_ADMIN:      '/admin/analytics'
     };
-    this.router.navigate([redirectMap[role] ?? '/auth/login']);
+    const destination = role ? redirectMap[role] : undefined;
+    if (!destination) {
+      this.toastr.error(
+        this.i18nService.t('AUTH.LOGIN.ERR_SPACE_NOT_ACCESSIBLE'),
+        this.i18nService.t('COMMON.ERROR_TITLE'),
+        { timeOut: 8000 }
+      );
+      this.authService.logout();
+      return;
+    }
+
+    if (this.authService.doitChangerMotDePasse()) {
+      this.toastr.warning(
+        this.i18nService.t('AUTH.LOGIN.CHANGE_PWD_REQUIRED'),
+        'Action requise',
+        { timeOut: 7000 }
+      );
+    }
+
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl && !returnUrl.startsWith('/auth')) {
+      this.router.navigateByUrl(returnUrl);
+      return;
+    }
+
+    this.router.navigate([destination]);
   }
 }

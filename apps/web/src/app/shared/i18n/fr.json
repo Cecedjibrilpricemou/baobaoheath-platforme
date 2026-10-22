@@ -153,6 +153,7 @@
       "OTP_EXPIRES_IN": "Expire dans",
       "OTP_EXPIRED_MSG": "Code expiré — cliquez sur « Renvoyer le code » pour recevoir un nouveau code.",
       "CHANGE_PWD_REQUIRED": "Votre mot de passe temporaire doit être changé. Accédez à votre profil pour le modifier.",
+      "ERR_SPACE_NOT_ACCESSIBLE": "Votre espace n'est pas encore accessible. Votre session va être fermée. Veuillez contacter l'administrateur.",
       "ERR_SERVEUR_INJOIGNABLE": "Serveur injoignable. Vérifiez que l'API est démarrée, puis réessayez.",
       "ERR_TROP_DE_TENTATIVES": "Trop de tentatives de connexion. Patientez 15 minutes avant de réessayer."
     },
