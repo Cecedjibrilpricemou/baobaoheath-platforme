@@ -161,12 +161,18 @@ for (const [, detail] of concernes) {
   }
 }
 
+const aujourdHui = new Date().toISOString().slice(0, 10);
+const exceptionsExpirees = [];
+
 console.log('-- Audit de securite ---------------------------------------');
 console.log(
   `   avis high/critical : ${concernes.length}   |   couverts par exception : ${blanchis.size}`
 );
 
 for (const e of EXCEPTIONS) {
+  const echu = e.reexamen < aujourdHui;
+  if (echu) exceptionsExpirees.push(e);
+
   if (!rencontres.has(e.ghsa)) {
     console.log(
       `   [!] exception obsolete : ${e.ghsa} (${e.paquet}) n'apparait plus dans l'audit.` +
@@ -174,11 +180,18 @@ for (const e of EXCEPTIONS) {
     );
     continue;
   }
-  const echu = new Date(e.reexamen) < new Date();
   console.log(
     `   ${echu ? '[!]' : ' - '} ${e.ghsa} (${e.paquet}) reexamen ${e.reexamen}` +
       (echu ? '  DEPASSE, a reevaluer' : '')
   );
+}
+
+if (exceptionsExpirees.length > 0) {
+  console.error('\n   Exceptions depassees : la CI est bloquee jusqu a leur reevaluation :');
+  for (const e of exceptionsExpirees) {
+    console.error(`\n   * ${e.ghsa} (${e.paquet}), reexamen depasse depuis ${e.reexamen}`);
+  }
+  process.exit(1);
 }
 
 if (restants.length === 0) {
