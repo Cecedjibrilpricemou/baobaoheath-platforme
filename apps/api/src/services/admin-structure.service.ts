@@ -5,12 +5,21 @@ import { hashPassword } from '../utils/password.utils';
 import { Role, TypeStructure } from '../config/generated/client/client';
 import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
 import { logger } from '../config/logger';
-import { ConflictError, ForbiddenError, ValidationError } from '../utils/app-error';
+import type { JwtPayload } from '../types/auth.types';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { estStructureHospitaliere } from '../utils/officine.util';
 
-const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.PHARMACIEN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO, Role.BIOLOGISTE];
+const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO];
 
 // ── Générer un mot de passe temporaire ───────────────────────────
-function genererMotDePasseTemp(): string {
+/**
+ * Mot de passe temporaire d'un compte professionnel.
+ *
+ * **Different de celui remis au comptoir a un patient** : celui-la est dicte a
+ * voix haute dans un hall bruyant, celui-ci se lit sur un ecran ou dans un
+ * courriel. Sans O/0 ni I/l malgre tout : ils se confondent a l'ecrit aussi.
+ */
+export function genererMotDePasseTemp(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     const bytes = randomBytes(5);
     let pwd = 'BaoBao@';
@@ -96,11 +105,41 @@ export async function creerStructureAvecAdmin(dto: {
     };
 }
 
-export async function creerPharmacieAvecPharmacien(dto: {
+export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
     nom: string; prefecture: string;
+    idStructureParente?: string;
     adresse?: string; latitude?: number; longitude?: number; telephone?: string;
     pharmacien: { prenom: string; nom: string; telephone: string; email?: string; motDePasse?: string; };
 }) {
+    let idStructureParente: string | null = dto.idStructureParente ?? null;
+
+    if (auteur.role === Role.ADMIN_STRUCTURE) {
+        const admin = await prisma.utilisateur.findUnique({
+            where: { id: auteur.userId },
+            select: { idStructure: true, structure: { select: { type: true } } },
+        });
+        if (!admin?.idStructure || !admin.structure || !estStructureHospitaliere(admin.structure.type)) {
+            throw new ForbiddenError('Seul un administrateur hospitalier peut creer une pharmacie hospitaliere');
+        }
+        if (dto.idStructureParente && dto.idStructureParente !== admin.idStructure) {
+            throw new ForbiddenError('Vous ne pouvez creer une pharmacie que dans votre propre structure');
+        }
+        idStructureParente = admin.idStructure;
+    } else if (auteur.role === Role.SUPER_ADMIN) {
+        if (idStructureParente) {
+            const parent = await prisma.structureSante.findUnique({
+                where: { id: idStructureParente },
+                select: { id: true, type: true },
+            });
+            if (!parent) throw new NotFoundError('Structure hospitaliere parente introuvable');
+            if (!estStructureHospitaliere(parent.type)) {
+                throw new ValidationError('La structure parente doit etre un hopital ou une clinique');
+            }
+        }
+    } else {
+        throw new ForbiddenError('Vous ne pouvez pas creer une pharmacie');
+    }
+
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.pharmacien.telephone } });
     if (existingTel) throw new ConflictError('Ce numero de telephone est deja utilise');
 
@@ -118,6 +157,7 @@ export async function creerPharmacieAvecPharmacien(dto: {
             data: {
                 nom: dto.nom,
                 type: TypeStructure.PHARMACIE,
+                idStructureParente,
                 prefecture: dto.prefecture,
                 adresse: dto.adresse,
                 latitude: dto.latitude,
@@ -144,7 +184,8 @@ export async function creerPharmacieAvecPharmacien(dto: {
             data: {
                 idUtilisateur: pharmacien.id,
                 idStructure: structure.id,
-                estResponsable: true
+                estResponsable: true,
+                roleOfficine: 'TITULAIRE'
             }
         });
 
@@ -191,9 +232,23 @@ export async function creerPharmacieAvecPharmacien(dto: {
  *  - elle joint le nom et le telephone de l'administrateur de chaque
  *    structure, qui n'ont rien a faire sur un endpoint public.
  */
+/**
+ * Les structures ou l'on peut etre recu en consultation.
+ *
+ * **Une pharmacie, un laboratoire et une compagnie d'assurance n'en sont
+ * pas.** Ce sont des structures de la plateforme, actives, et la liste les
+ * renvoyait donc au patient : son ecran de demande de rendez-vous proposait
+ * « Pharmacie Pricemou » et « Pricemou & Frere Assurances » comme lieux de
+ * consultation. On ne prend pas rendez-vous chez un pharmacien.
+ *
+ * Le pendant de `TYPES_LABO` dans `hopital.service` : qui peut recevoir une
+ * demande d'analyse se dit de la meme facon.
+ */
+const TYPES_DE_SOIN = ['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'] as const;
+
 export async function getStructuresPubliques() {
     return prisma.structureSante.findMany({
-        where: { estActive: true },
+        where: { estActive: true, type: { in: [...TYPES_DE_SOIN] } },
         orderBy: { nom: 'asc' },
         select: {
             id: true,
@@ -210,13 +265,21 @@ export async function getStructuresPubliques() {
 export async function getStructures() {
     return prisma.structureSante.findMany({
         orderBy: { creeLe: 'desc' },
-        include: {
-            _count: { select: { utilisateurs: true } },
-            utilisateurs: {
-                where: { role: Role.ADMIN_STRUCTURE },
-                select: { prenom: true, nom: true, telephone: true }
-            }
-        }
+    });
+}
+
+export async function getPharmaciesStructure(adminId: string) {
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: adminId },
+        select: { idStructure: true, structure: { select: { type: true } } },
+    });
+    if (!admin?.idStructure || !admin.structure || !estStructureHospitaliere(admin.structure.type)) {
+        throw new ForbiddenError('La gestion des pharmacies est reservee aux structures hospitalieres');
+    }
+
+    return prisma.structureSante.findMany({
+        where: { idStructureParente: admin.idStructure, type: TypeStructure.PHARMACIE },
+        orderBy: { creeLe: 'desc' },
     });
 }
 
@@ -229,6 +292,22 @@ export async function modifierStructure(id: string, dto: {
     if (dto.type) {
         const typeValid = Object.values(TypeStructure).includes(dto.type as TypeStructure);
         if (!typeValid) throw new ValidationError(`Type invalide : ${dto.type}`);
+
+        const structure = await prisma.structureSante.findUnique({
+            where: { id },
+            select: {
+                idStructureParente: true,
+                _count: { select: { structuresEnfants: true } },
+            },
+        });
+        if (!structure) throw new NotFoundError('Structure introuvable');
+        const nouveauType = dto.type as TypeStructure;
+        if (structure.idStructureParente && nouveauType !== TypeStructure.PHARMACIE) {
+            throw new ValidationError('Une pharmacie hospitaliere doit rester de type PHARMACIE');
+        }
+        if (structure._count.structuresEnfants > 0 && !estStructureHospitaliere(nouveauType)) {
+            throw new ValidationError('Une structure parente de pharmacie doit rester hospitaliere');
+        }
     }
     const { type, ...rest } = dto;
     return prisma.structureSante.update({
@@ -251,24 +330,45 @@ export async function getAgentsStructure(adminId: string) {
         where: { id: adminId }, include: { structure: true }
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (admin.structure?.type === TypeStructure.PHARMACIE) {
+        throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
+    }
 
-    return prisma.utilisateur.findMany({
+    const agents = await prisma.utilisateur.findMany({
         where: { idStructure: admin.idStructure, role: { in: ROLES_AUTORISES }, estActif: true },
-        select: { id: true, telephone: true, email: true, prenom: true, nom: true, role: true, creeLe: true, derniereConnexion: true },
+        select: {
+            id: true, telephone: true, email: true, prenom: true, nom: true, role: true,
+            creeLe: true, derniereConnexion: true,
+            // Le bureau n'existe que pour un medecin, et il est souvent nul.
+            medecinProfile: { select: { bureau: true } },
+        },
         orderBy: { creeLe: 'desc' }
     });
+
+    return agents.map(({ medecinProfile, ...a }) => ({
+        ...a,
+        bureau: medecinProfile?.bureau ?? null,
+    }));
 }
 
 // ── ADMIN_STRUCTURE : créer un agent avec MDP temporaire ─────────
 export async function creerAgent(adminId: string, dto: {
     telephone: string; email?: string; motDePasse?: string;
     prenom: string; nom: string; role: Role;
+    /** Facultatif, et seulement pour un medecin. */
+    bureau?: string;
 }) {
     const admin = await prisma.utilisateur.findUnique({
         where: { id: adminId },
         include: { structure: true }
     });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (dto.role === Role.PHARMACIEN) {
+        throw new ForbiddenError('Creez une pharmacie pour rattacher son administrateur pharmacien');
+    }
+    if (admin.structure?.type === TypeStructure.PHARMACIE) {
+        throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
+    }
 
     if (!ROLES_AUTORISES.includes(dto.role)) {
         throw new ForbiddenError(`Vous ne pouvez pas créer un compte de type ${dto.role}`);
@@ -300,7 +400,14 @@ export async function creerAgent(adminId: string, dto: {
             await tx.ascProfile.create({ data: { idUtilisateur: u.id, idStructure: admin.idStructure } });
         }
         if (dto.role === Role.MEDECIN) {
-            await tx.medecinProfile.create({ data: { idUtilisateur: u.id, idStructure: admin.idStructure } });
+            await tx.medecinProfile.create({
+                data: {
+                    idUtilisateur: u.id,
+                    idStructure: admin.idStructure,
+                    // Facultatif : sans numerotation de bureaux, l'agent accompagne.
+                    bureau: dto.bureau?.trim() || null,
+                },
+            });
         }
         if (dto.role === Role.PHARMACIEN) {
             await tx.pharmacienProfile.create({ data: { idUtilisateur: u.id, idStructure: admin.idStructure } });
@@ -333,8 +440,14 @@ export async function creerAgent(adminId: string, dto: {
 
 // ── ADMIN_STRUCTURE : désactiver un agent ────────────────────────
 export async function desactiverAgent(adminId: string, agentId: string) {
-    const admin = await prisma.utilisateur.findUnique({ where: { id: adminId } });
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: adminId },
+        include: { structure: true },
+    });
     if (!admin?.idStructure) throw new ForbiddenError('Aucune structure assignée');
+    if (admin.structure?.type === TypeStructure.PHARMACIE) {
+        throw new ForbiddenError('La gestion des comptes de pharmacie est réservée au pharmacien titulaire');
+    }
 
     const agent = await prisma.utilisateur.findUnique({ where: { id: agentId } });
     if (!agent || agent.idStructure !== admin.idStructure) {
@@ -361,4 +474,57 @@ export async function getStatsStructure(adminId: string) {
     ]);
 
     return { structure, totalAgents, totalConsultations, totalPatients };
+}
+
+/**
+ * Definir — ou effacer — le bureau d'un medecin (EF-03).
+ *
+ * **Un bureau change** : un medecin demenage, un service est redecoupe.
+ * Figer la valeur a la creation du compte aurait rendu le champ faux au bout
+ * de quelques mois, et un bureau faux est pire que pas de bureau : le patient
+ * y va.
+ *
+ * `null` efface : c'est le cas de l'hopital qui ne numerote pas ses bureaux et
+ * ou l'agent accompagne le patient a pied.
+ */
+export async function definirBureau(
+    auteur: JwtPayload,
+    idAgent: string,
+    bureau: string | null,
+): Promise<{ id: string; nomComplet: string; bureau: string | null }> {
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: auteur.userId },
+        select: { idStructure: true },
+    });
+    if (!admin?.idStructure) throw new ForbiddenError('Aucune structure rattachee a ce compte');
+
+    // Un administrateur ne touche qu'aux medecins de sa structure.
+    //
+    // **L'appartenance se lit sur le compte, pas sur le profil.** Les deux
+    // portent un `idStructure`, et ils divergent : `creerAgent` renseigne les
+    // deux, mais tout ce qui cree un medecin autrement — le jeu de
+    // demonstration, les jeux de test — ne remplit que le compte. La liste des
+    // agents, l'orientation et `structureDe()` lisent tous le compte ; se
+    // fonder sur le profil faisait echouer le garde sur des medecins
+    // parfaitement legitimes.
+    const medecin = await prisma.utilisateur.findFirst({
+        where: { id: idAgent, role: Role.MEDECIN, idStructure: admin.idStructure },
+        select: { prenom: true, nom: true, medecinProfile: { select: { id: true } } },
+    });
+    if (!medecin) throw new NotFoundError('Medecin introuvable dans cette structure');
+
+    // Un medecin sans profil n'a nulle part ou poser son bureau. Le cas
+    // n'arrive que sur des comptes anciens, et le signaler vaut mieux que de
+    // laisser l'agent cliquer sans effet.
+    const profil = medecin.medecinProfile;
+    if (!profil) throw new NotFoundError('Ce compte medecin n a pas de profil ou enregistrer un bureau');
+
+    const valeur = bureau?.trim() || null;
+    await prisma.medecinProfile.update({ where: { id: profil.id }, data: { bureau: valeur } });
+
+    return {
+        id: idAgent,
+        nomComplet: `${medecin.prenom} ${medecin.nom}`,
+        bureau: valeur,
+    };
 }

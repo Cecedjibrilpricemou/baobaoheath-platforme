@@ -1,0 +1,89 @@
+// features/hopital/demandes — la file d'orientation de l'accueil.
+
+// ✦ Refonte UI : accent de l'espace (vert vif en sombre) et encart visible
+// en sombre (--bb-surface-1 y vaut la couleur de la carte).
+:host {
+  display: block;
+  --hdem-accent: var(--bb-primary);
+  --hdem-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --hdem-encart: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --hdem-accent: var(--bb-bright);
+  --hdem-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  --hdem-encart: color-mix(in srgb, #fff 5%, var(--bb-surface-card));
+}
+
+.bb-hdem {
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 920px;
+  margin: 0 auto;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--hdem-accent); background: var(--hdem-accent-soft);
+    }
+    p { margin: 0; font-weight: 600; }
+  }
+
+  &__card {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--hdem-accent);
+    border-radius: var(--bb-radius-xl); padding: 1.2rem 1.35rem;
+    margin-bottom: 14px; box-shadow: var(--bb-shadow-sm);
+    transition: box-shadow var(--bb-transition);
+    &:hover { box-shadow: var(--bb-shadow-hover); }
+  }
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+
+  &__patient {
+    display: block; margin-bottom: 2px;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__attente {
+    font-size: 12px; color: var(--bb-text-muted); text-align: right;
+    strong {
+      display: inline-block; padding: 1px 8px; border-radius: 999px;
+      color: var(--bb-warning); background: var(--bb-warning-bg); font-weight: 700;
+    }
+  }
+
+  // ✦ Refonte UI : le motif du patient en citation
+  &__motif {
+    margin: 0 0 14px; padding: 12px 14px;
+    border-radius: var(--bb-radius);
+    border-left: 3px solid var(--hdem-accent);
+    background: var(--hdem-encart);
+    font-size: 13.5px; color: var(--bb-text-primary);
+    white-space: pre-wrap; line-height: 1.6;
+  }
+
+  &__actions {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding-top: 12px; border-top: 1px solid var(--bb-border-light);
+  }
+
+  &__select { min-width: 240px; flex: 1; @media (max-width: 600px) { min-width: 0; flex-basis: 100%; } }
+
+  app-export-liste { display: block; margin-bottom: 4px; }
+}
+
+// ✦ Refonte UI : couleur sombre codee en dur retiree — --bb-warning est
+// redefini en sombre (styles.scss).

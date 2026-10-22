@@ -6,7 +6,6 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { StructurePubliqueView } from '@baobaoheath/shared-types';
-import { ThemeService } from '../../shared/services/theme.service';
 import { I18nService } from '../../shared/services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { ApiService } from '../../core/services/api.service';
@@ -14,6 +13,7 @@ import { PlateformeService } from '../../shared/services/plateforme.service';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { ContactComponent } from './components/contact/contact.component';
 import { BrandComponent } from '../../shared/components/brand/brand.component';
+import { PublicNavComponent } from '../../shared/components/public-nav/public-nav.component';
 
 interface PublicStats {
   patients: number;
@@ -35,12 +35,11 @@ const ICONES_TYPE: Record<string, string> = {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [BrandComponent, RouterLink, CommonModule, FormsModule, TranslatePipe, HowItWorksComponent, ContactComponent],
+  imports: [BrandComponent, PublicNavComponent, RouterLink, CommonModule, FormsModule, TranslatePipe, HowItWorksComponent, ContactComponent],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss'
 })
 export class LandingComponent implements OnInit {
-  readonly themeService = inject(ThemeService);
   readonly plateforme   = inject(PlateformeService);
   private i18nService  = inject(I18nService);
   private api          = inject(ApiService);
@@ -48,13 +47,24 @@ export class LandingComponent implements OnInit {
   // ── Chiffres de la plateforme (GET /stats/public) ───────────────────
   private platformStats = signal<PublicStats | null>(null);
 
+  /**
+   * **Le bandeau disparait tant qu'il n'a pas de chiffres.**
+   *
+   * Il affichait quatre tirets quand l'API ne repondait pas — et c'est ce que
+   * voyait un visiteur arrivant pendant une coupure, ou sur un reseau trop
+   * lent pour que l'appel aboutisse. Une bande verte de tirets donne l'air
+   * casse ; la page se lit tres bien sans elle.
+   */
+  readonly chiffresDisponibles = computed(() => this.platformStats() !== null);
+
   readonly stats = computed(() => {
     const s = this.platformStats();
+    if (!s) return [];
     return [
-      { icon: 'pi-users',      value: s ? this.formatCount(s.patients) : '—',      labelKey: 'LANDING.STAT_PATIENTS' },
-      { icon: 'pi-heart-fill', value: s ? this.formatCount(s.consultations) : '—', labelKey: 'LANDING.STAT_CONSULTATIONS' },
-      { icon: 'pi-id-card',    value: s ? this.formatCount(s.asc) : '—',           labelKey: 'LANDING.STAT_ASC' },
-      { icon: 'pi-building',   value: s ? s.structures.toString() : '—',          labelKey: 'LANDING.STAT_STRUCTURES' },
+      { icon: 'pi-users',      value: this.formatCount(s.patients),      labelKey: 'LANDING.STAT_PATIENTS' },
+      { icon: 'pi-heart-fill', value: this.formatCount(s.consultations), labelKey: 'LANDING.STAT_CONSULTATIONS' },
+      { icon: 'pi-id-card',    value: this.formatCount(s.asc),           labelKey: 'LANDING.STAT_ASC' },
+      { icon: 'pi-building',   value: s.structures.toString(),           labelKey: 'LANDING.STAT_STRUCTURES' },
     ];
   });
 
@@ -93,7 +103,7 @@ export class LandingComponent implements OnInit {
 
   private chargerStats(): void {
     this.api.get<{ success: boolean; data: PublicStats }>('/stats/public').subscribe({
-      next: (r) => { if (r.success && r.data) this.platformStats.set(r.data); },
+      next: (r) => { if (r.success && LandingComponent.statsValides(r.data)) this.platformStats.set(r.data); },
       error: () => { /* les tirets restent */ }
     });
   }
@@ -103,6 +113,19 @@ export class LandingComponent implements OnInit {
       next: (r) => { this.structures.set(r.data ?? []); this.isLoadingStructures.set(false); },
       error: () => { this.isLoadingStructures.set(false); }
     });
+  }
+
+  /**
+   * Une reponse qui n'a pas la forme attendue (liste vide, champ manquant)
+   * faisait planter le calcul des chiffres, et l'accueil ne se rafraichissait
+   * plus. On ne retient que des chiffres : sinon le bandeau reste masque,
+   * comme en cas d'erreur.
+   */
+  private static statsValides(d: unknown): d is PublicStats {
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return false;
+    const s = d as Record<string, unknown>;
+    return ['patients', 'consultations', 'asc', 'structures']
+      .every(k => typeof s[k] === 'number' && Number.isFinite(s[k]));
   }
 
   private formatCount(n: number): string {
@@ -117,8 +140,4 @@ export class LandingComponent implements OnInit {
   libelleType(type: string): string {
     return this.i18nService.t(`LANDING.STRUCT_TYPE_${type}`);
   }
-
-  // ── Navbar ────────────────────────────────────────────────────────
-  toggleTheme() { this.themeService.toggle(); }
-  toggleLang()  { this.i18nService.toggle(); }
 }

@@ -68,7 +68,7 @@ export const routes: Routes = [
   {
     path: 'laboratoire',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['TECHNICIEN_LABO', 'BIOLOGISTE'] },
+    data: { roles: ['TECHNICIEN_LABO'] },
     loadChildren: () =>
       import('./features/laboratoire/laboratoire.routes').then(m => m.LABORATOIRE_ROUTES)
   },
@@ -84,11 +84,55 @@ export const routes: Routes = [
 
   // ── Module Admin ────────────────────────────────────────────────────
   {
+    // La compagnie d'assurance se connecte elle-meme (addendum, point 5.2).
+    // Elle ne partage son espace avec personne : ni l'administration, qui
+    // saisit les assureurs, ni le comptoir, qui chiffre les prises en charge.
+    path: 'assureur',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ASSUREUR'] },
+    loadChildren: () =>
+      import('./features/assureur/assureur.routes').then(m => m.ASSUREUR_ROUTES)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
     loadChildren: () =>
       import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
+  },
+
+  // ── Pages publiques d'information (sans authentification) ───────────
+  {
+    path: 'confidentialite',
+    data: { doc: 'PRIVACY' },
+    loadComponent: () =>
+      import('./features/public/legal/legal.component').then(m => m.LegalComponent)
+  },
+  {
+    path: 'conditions-utilisation',
+    data: { doc: 'TERMS' },
+    loadComponent: () =>
+      import('./features/public/legal/legal.component').then(m => m.LegalComponent)
+  },
+  {
+    path: 'securite',
+    loadComponent: () =>
+      import('./features/public/securite/securite.component').then(m => m.SecuriteComponent)
+  },
+  {
+    path: 'professionnels',
+    loadComponent: () =>
+      import('./features/public/professionnels/professionnels.component').then(m => m.ProfessionnelsComponent)
+  },
+  {
+    path: 'a-propos',
+    loadComponent: () =>
+      import('./features/public/a-propos/a-propos.component').then(m => m.AProposComponent)
+  },
+  {
+    path: 'faq',
+    loadComponent: () =>
+      import('./features/public/faq/faq.component').then(m => m.FaqComponent)
   },
 
   // ── Unauthorized ────────────────────────────────────────────────────
@@ -99,6 +143,10 @@ export const routes: Routes = [
         .then(m => m.UnauthorizedComponent)
   },
 
-  // ── Wildcard ────────────────────────────────────────────────────────
-  { path: '**', redirectTo: '' }
+  // ── Page introuvable ────────────────────────────────────────────────
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./features/public/not-found/not-found.component').then(m => m.NotFoundComponent)
+  }
 ];

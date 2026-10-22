@@ -1,0 +1,131 @@
+// features/pharmacien/peremptions — ce qui approche de sa date.
+
+// ✦ Refonte UI : accent de l'espace pharmacien (vert vif en sombre).
+:host {
+  display: block;
+  --per-accent: var(--bb-primary);
+  --per-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --per-accent: var(--bb-bright);
+  --per-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
+.bb-per {
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 920px;
+  margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  // ✦ Refonte UI : le choix de l'horizon dans un bandeau, au-dessus de la liste
+  &__horizon {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin: 14px 0 20px; padding: 10px 10px 10px 18px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-pill); box-shadow: var(--bb-shadow-sm);
+
+    .bb-pills { margin: 0; border: 0; padding: 0; background: transparent; }
+
+    @media (max-width: 600px) {
+      border-radius: var(--bb-radius-xl); padding: 12px;
+      .bb-pills { width: 100%; }
+      .bb-pill { flex: 1 1 auto; padding-inline: 10px; }
+    }
+  }
+
+  &__horizon-label {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--bb-text-secondary);
+  }
+
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--per-accent); background: var(--per-accent-soft);
+    }
+    p { margin: 0; font-weight: 600; }
+  }
+
+  // ✦ Refonte UI : titres de section en display, trait d'accent
+  &__section {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 26px 0 12px;
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--bb-warning); flex-shrink: 0;
+    }
+
+    &--danger { color: var(--bb-danger); &::before { background: var(--bb-danger); } }
+    i { font-size: 15px; }
+  }
+
+  // ✦ Refonte UI : une carte par lot, la date a droite dans une pastille.
+  &__carte {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--bb-warning);
+    border-radius: var(--bb-radius-lg); padding: 0.95rem 1.2rem;
+    margin-bottom: 10px; box-shadow: var(--bb-shadow-sm);
+    transition: transform var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { transform: translateY(-1px); box-shadow: var(--bb-shadow-hover); }
+
+    // Un lot périmé n'est pas à surveiller : il est à retirer.
+    &--perime {
+      border-color: var(--bb-danger-border); border-left-color: var(--bb-danger);
+      background: linear-gradient(90deg, var(--bb-danger-bg), transparent 55%), var(--bb-surface-card);
+    }
+  }
+
+  &__corps { flex: 1; min-width: 200px; }
+
+  &__nom {
+    display: block; margin-bottom: 2px;
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__droite {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    @media (max-width: 600px) { flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
+  }
+
+  &__date {
+    display: block;
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__delai {
+    display: inline-block;
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    color: var(--bb-warning); background: var(--bb-warning-bg);
+    border: 1px solid var(--bb-warning-border);
+
+    &--perime { color: var(--bb-danger); background: var(--bb-danger-bg); border-color: var(--bb-danger-border); }
+  }
+
+  app-export-liste { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-per__carte { transition: none; &:hover { transform: none; } }
+}
+
+// ✦ Refonte UI : couleurs sombres codees en dur retirees — les tokens
+// --bb-warning et --bb-danger sont redefinis en sombre (styles.scss).

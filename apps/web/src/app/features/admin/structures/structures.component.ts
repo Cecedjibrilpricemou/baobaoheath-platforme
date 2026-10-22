@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastrService } from 'ngx-toastr';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { CreationPharmacieView, CreationStructureView, StructureAdminView } from '@baobaoheath/shared-types';
@@ -25,7 +26,7 @@ interface MotDePasseAffiche {
   selector: 'app-structures',
   standalone: true,
   imports: [
-    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './structures.component.html',
   styleUrl: './structures.component.scss'
 })
@@ -63,6 +64,17 @@ export class StructuresComponent implements OnInit {
   }
 
   prefectures = ['Conakry','Kindia','Boké','Mamou','Labé','Faranah','Kankan','Nzérékoré','Coyah','Dubréka','Forécariah','Fria','Télimélé','Pita','Dalaba','Tougué','Dinguiraye','Kouroussa','Siguiri','Mandiana','Kérouané','Macenta','Guékédou','Kissidougou','Beyla','Lola','Yomou'].map(p => ({ label: p, value: p }));
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<StructureAdminView>[] = [
+    { titre: 'EXPORT.COL.NOM', valeur: (s) => s.nom },
+    { titre: 'EXPORT.COL.TYPE', valeur: (s) => s.type },
+    { titre: 'EXPORT.COL.PREFECTURE', valeur: (s) => s.prefecture },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (s) => s.telephone },
+    { titre: 'EXPORT.COL.ETAT', valeur: (s) => (s.estActive ? 'Active' : 'Inactive') },
+    { titre: 'EXPORT.COL.CREEE_LE', valeur: (s) => new Date(s.creeLe) },
+  ];
 
   ngOnInit() { this.loadStructures(); }
 
@@ -217,9 +229,4 @@ export class StructuresComponent implements OnInit {
     return this.typeOptions.find(t => t.value === type)?.label ?? type;
   }
 
-  getAdmin(s: StructureAdminView): string {
-    if (!s.utilisateurs?.length) return 'Aucun responsable';
-    const a = s.utilisateurs[0];
-    return `${a.prenom} ${a.nom} — ${a.telephone}`;
-  }
 }

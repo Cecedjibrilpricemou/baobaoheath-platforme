@@ -1,0 +1,321 @@
+// L'espace de la compagnie d'assurance (EF-09, addendum point 5.2).
+//
+// Trois écrans qui parlent la même langue : des montants alignés, des
+// pastilles pour les taux, et le reste dû qui se détache — c'est le chiffre
+// qu'on vient chercher.
+.bb-asr {
+  // ✦ Refonte UI : accent de l'espace — vert de marque en clair, vert vif
+  // en sombre (--bb-primary y tombe sous 4,5:1 sur les cartes).
+  --asr-accent: var(--bb-primary);
+  --asr-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --asr-survol: var(--bb-surface-1);
+  font-variant-numeric: tabular-nums;
+
+  // ── L'en-tête de compagnie ────────────────────────────────────
+  // ✦ Refonte UI : l'en-tete de compagnie dans un bandeau
+  &__entete {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 20px; padding: 14px 18px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); box-shadow: var(--bb-shadow-sm);
+  }
+
+  // Le code figure sur la carte de l'assuré : il se lit en monospace, comme
+  // un identifiant, pas comme un nom.
+  &__code {
+    font-family: var(--bb-font-mono); font-size: 13px; font-weight: 700;
+    padding: 4px 10px; border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-2); color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border-light);
+  }
+
+  &__nom {
+    font-family: var(--bb-font-display); font-size: 18px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0; letter-spacing: -0.2px;
+  }
+
+  &__mode {
+    font-size: 12.5px; color: var(--bb-text-secondary);
+    margin-left: auto; padding: 3px 10px; border-radius: 999px; background: var(--bb-surface-2);
+    @media (max-width: 640px) { margin-left: 0; }
+  }
+
+  // ── Les chiffres clés ─────────────────────────────────────────
+  &__chiffres {
+    display: grid; gap: 14px; margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  // ✦ Refonte UI : compteurs en relief, survol discret
+  &__chiffre {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl);
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 4px;
+    box-shadow: var(--bb-shadow-sm);
+    transition: transform var(--bb-transition-slow), box-shadow var(--bb-transition-slow);
+    &:hover { transform: translateY(-2px); box-shadow: var(--bb-shadow-hover); }
+    @media (prefers-reduced-motion: reduce) { transition: none; &:hover { transform: none; } }
+
+    // Le reste dû est ce qu'on vient chercher : il ne se cherche pas.
+    &--saillant {
+      border-color: color-mix(in srgb, var(--asr-accent) 40%, var(--bb-border-light));
+      background:
+        radial-gradient(120% 140% at 100% 0%, var(--asr-accent-soft), transparent 60%),
+        var(--bb-surface-card);
+      .bb-asr__chiffre-valeur { color: var(--asr-accent); }
+    }
+
+    // Une avance n'est pas une dette : elle ne doit pas se lire comme telle.
+    &--avance {
+      border-color: var(--bb-info-border);
+      box-shadow: none;
+      .bb-asr__chiffre-valeur { color: var(--bb-info); }
+    }
+  }
+
+  &__chiffre-valeur {
+    font-family: var(--bb-font-display); font-size: 26px; font-weight: 800;
+    color: var(--bb-text-primary); letter-spacing: -0.8px; line-height: 1.1;
+  }
+
+  &__chiffre-libelle {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--bb-text-secondary);
+  }
+
+  &__chiffre-note { font-size: 12px; color: var(--bb-text-muted); }
+
+  // ── Cartes et sections ────────────────────────────────────────
+  // ✦ Refonte UI : cartes en relief, titres avec trait d'accent
+  &__carte {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl);
+    padding: 22px; margin-bottom: 24px;
+    box-shadow: var(--bb-shadow-sm);
+    @media (max-width: 640px) { padding: 16px; }
+  }
+
+  &__carte-titre {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    letter-spacing: -.2px; color: var(--bb-text-primary); margin: 0 0 4px;
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--asr-accent); flex-shrink: 0;
+    }
+  }
+
+  &__carte-aide,
+  &__attente,
+  &__vide-ligne { font-size: 13px; color: var(--bb-text-muted); margin: 0 0 12px; }
+
+  &__alerte {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: var(--bb-radius);
+    font-size: 13.5px; margin-bottom: 18px; border: 1px solid transparent;
+
+    &--erreur { background: var(--bb-danger-bg); border-color: var(--bb-danger-border); color: var(--bb-danger); }
+    &--info   { background: var(--bb-info-bg);   border-color: var(--bb-info-border);   color: var(--bb-info); }
+    i { flex-shrink: 0; }
+  }
+
+  // ── Règles de couverture ──────────────────────────────────────
+  &__regles { list-style: none; margin: 0; padding: 0; }
+
+  &__regle {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+    padding: 11px 0; font-size: 13.5px;
+    border-bottom: 1px solid var(--bb-border-light);
+    &:last-child { border-bottom: none; }
+  }
+
+  &__regle-cat { font-weight: 700; color: var(--bb-text-primary); min-width: 150px; }
+
+  &__note { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__note--fin { margin-left: auto; }
+
+  // ✦ Refonte UI : un taux ou « exclue » n'est pas un identifiant :
+  // police d'affichage, chiffres tabulaires (et non la pile monospace).
+  &__pastille {
+    font-family: var(--bb-font-display); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700;
+    padding: 2px 10px; border-radius: var(--bb-radius-pill); // ✦ Refonte UI
+    background: var(--bb-info-bg); color: var(--bb-info);
+    border: 1px solid var(--bb-info-border);
+
+    // Une exclusion n'est pas un taux : elle se voit sans être lue.
+    &--exclu {
+      background: var(--bb-danger-bg); color: var(--bb-danger);
+      border-color: var(--bb-danger-border);
+    }
+  }
+
+  // ── Tableaux ──────────────────────────────────────────────────
+  //
+  // Un vrai tableau, pas des cartes : on compare des montants entre officines,
+  // et comparer suppose des colonnes alignées.
+  // ✦ Refonte UI : tableau en carte, en-tete teinte
+  &__table-enveloppe {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl);
+    box-shadow: var(--bb-shadow-sm);
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%; border-collapse: collapse; font-size: 13.5px;
+    th, td { padding: 12px 16px; text-align: left; white-space: nowrap; }
+
+    th {
+      font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: var(--bb-text-secondary); border-bottom: 1px solid var(--bb-border);
+      background: var(--bb-surface-2);
+    }
+
+    tbody tr { border-bottom: 1px solid var(--bb-border-light); }
+    tbody tr:last-child { border-bottom: none; }
+    // ✦ Refonte UI : la note (« avance de … ») passe sous le montant — sur
+    // une seule ligne, la colonne poussait le bouton de versement hors cadre.
+    .bb-asr__note { display: block; margin-top: 2px; }
+    td:last-child { width: 1%; }
+
+    tbody tr { transition: background var(--bb-transition); }
+    tbody tr:hover { background: var(--asr-survol); }
+
+    // Les montants se comparent de droite à gauche, chiffre par chiffre.
+    .bb-asr__nombre {
+      text-align: right; font-variant-numeric: tabular-nums; // ✦ Refonte UI : montants en chiffres tabulaires, pas en monospace
+    }
+  }
+
+  &__cellule-principale {
+    white-space: normal;
+    strong { font-family: var(--bb-font-display); font-weight: 700; color: var(--bb-text-primary); }
+    span { display: block; font-size: 12px; color: var(--bb-text-muted); margin-top: 2px; }
+  }
+
+  &__du { font-weight: 700; color: var(--bb-text-primary); }
+  &__du--avance { color: var(--bb-info); }
+  &__du--solde { color: var(--bb-text-muted); font-weight: 400; }
+
+  &__etat {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-success-bg); color: var(--bb-success);
+    border: 1px solid var(--bb-success-border);
+    &--off { background: var(--bb-surface-2); color: var(--bb-text-muted); border-color: var(--bb-border); }
+  }
+
+  // ── Boutons et formulaires ────────────────────────────────────
+  // ✦ Refonte UI : boutons pilule de 40px, comme les boutons Material
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 40px;
+    padding: 9px 18px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+    i { font-size: 11px; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+  }
+
+  &__recherche {
+    max-width: 380px; width: 100%; display: block; margin-bottom: 16px;
+    .mat-mdc-form-field { --mat-form-field-outlined-container-shape: 28px; } // ✦ Refonte UI
+  }
+
+  // ── La modale de versement ────────────────────────────────────
+  //
+  // `flex-start` plutôt que `center` : centré dans un conteneur qui défile,
+  // le haut de la boîte se retrouve coupé dès qu'elle dépasse l'écran.
+  // La barre latérale peint au-dessus du contenu quel que soit le z-index :
+  // on décale le voile de sa largeur au lieu de lutter.
+  &__voile {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgb(0 0 0 / 55%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+
+    @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  }
+
+  &__modale {
+    margin: auto; width: 100%; max-width: 520px;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); // ✦ Refonte UI
+    animation: bb-asr-pop 0.3s var(--bb-ease) both;
+    @media (prefers-reduced-motion: reduce) { animation: none; }
+    box-shadow: var(--bb-shadow-lg);
+    padding: 24px;
+  }
+
+  &__modale-titre {
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__grille {
+    display: grid; gap: 14px 12px; margin-top: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    // `mat-form-field` ne réserve pas la place de son `mat-hint`.
+    mat-form-field { width: 100%; margin-bottom: 6px; }
+  }
+
+  &__actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 18px; flex-wrap: wrap;
+  }
+
+  // ── État vide ─────────────────────────────────────────────────
+  // ✦ Refonte UI : etat vide sur carte, pastille d'icone
+  &__vide {
+    text-align: center; padding: 40px 20px;
+    background: var(--bb-surface-card);
+    border: 1px dashed var(--bb-border); border-radius: var(--bb-radius-xl);
+
+    // `> i` et non `i` : une règle sur tous les icônes descendants grossirait
+    // aussi ceux des boutons placés à l'intérieur.
+    > i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;
+      color: var(--asr-accent); background: var(--asr-accent-soft);
+    }
+  }
+
+  &__vide-titre {
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__vide-aide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+
+  @media (max-width: 640px) {
+    &__chiffre { padding: 14px; }
+    &__regle-cat { min-width: 0; }
+    &__note--fin { margin-left: 0; }
+  }
+}
+
+// ✦ Refonte UI : en sombre, l'accent passe au vert vif et le survol des
+// lignes reste visible (--bb-surface-1 y vaut la couleur de la carte).
+[data-theme='dark'] .bb-asr {
+  --asr-accent: var(--bb-bright);
+  --asr-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  --asr-survol: color-mix(in srgb, #fff 4%, var(--bb-surface-card));
+}
+
+@keyframes bb-asr-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}

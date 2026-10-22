@@ -1,0 +1,468 @@
+<div class="bb-caisse">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shopping-cart" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.CAISSE.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.CAISSE.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  <section class="bb-caisse__carte bb-caisse__session">
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.SESSION' | translate }}</h2>
+    @if (session(); as s) {
+      <p class="bb-caisse__muted">
+        {{ s.utilisateur.prenom }} {{ s.utilisateur.nom }} · {{ s.ouverteLe | date:'dd/MM/yyyy HH:mm' }}
+        · {{ (s.statut === 'OUVERTE' ? 'PHARMACIEN.CAISSE.SESSION_ACTIVE' : 'PHARMACIEN.CAISSE.SESSION_FERMEE') | translate }}
+      </p>
+      <div class="bb-caisse__session-chiffres">
+        <span>{{ 'PHARMACIEN.CAISSE.FOND_OUVERTURE' | translate }} : <strong>{{ s.montantOuvertureGnf | number }} GNF</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.ESPECES_ENCAISSEES' | translate }} : <strong>{{ s.montantEspecesEncaisseGnf | number }} GNF</strong></span>
+        <span>{{ 'PAIEMENT.MODE.ORANGE_MONEY' | translate }} : <strong>{{ s.montantOrangeMoneyGnf | number }} GNF</strong></span>
+        <span>{{ 'PAIEMENT.MODE.MTN_MOMO' | translate }} : <strong>{{ s.montantMtnMomoGnf | number }} GNF</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.THEORIQUE' | translate }} : <strong>{{ s.montantTheoriqueGnf | number }} GNF</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.VENTES_PAYEES' | translate }} : <strong>{{ s.nombreVentesPayees }}</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.VENTES_ATTENTE' | translate }} : <strong>{{ s.nombreVentesEnAttente }}</strong></span>
+        <span>{{ 'PHARMACIEN.CAISSE.VENTES_ANNULEES' | translate }} : <strong>{{ s.nombreVentesAnnulees }}</strong></span>
+        @if (s.statut === 'CLOTUREE') {
+          <span>{{ 'PHARMACIEN.CAISSE.COMPTE' | translate }} : <strong>{{ s.montantCompteGnf | number }} GNF</strong></span>
+          <span>{{ 'PHARMACIEN.CAISSE.ECART' | translate }} : <strong>{{ s.ecartGnf | number }} GNF</strong></span>
+        }
+      </div>
+    }
+
+    @if (caisseOuverte()) {
+      <div class="bb-caisse__session-form">
+        <label class="bb-caisse__label" for="caisse-compte">{{ 'PHARMACIEN.CAISSE.COMPTE' | translate }} (GNF)</label>
+        <input id="caisse-compte" class="bb-caisse__champ" type="number" min="0" step="1"
+               [value]="clotureMontant() ?? ''"
+               (input)="clotureMontant.set($any($event.target).value === '' ? null : +$any($event.target).value)" />
+        @if (clotureMontant() !== session()!.montantTheoriqueGnf) {
+          <label class="bb-caisse__label" for="caisse-ecart">{{ 'PHARMACIEN.CAISSE.MOTIF_ECART' | translate }}</label>
+          <textarea id="caisse-ecart" class="bb-caisse__champ" rows="2" maxlength="500"
+                    [value]="motifEcart()"
+                    (input)="motifEcart.set($any($event.target).value)"></textarea>
+        }
+        <button matButton type="button" [disabled]="sessionEnCours() || !peutCloturer()" (click)="cloturerSession()">
+          {{ (sessionEnCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.CLOTURER') | translate }}
+        </button>
+      </div>
+    } @else {
+      <div class="bb-caisse__session-form">
+        <label class="bb-caisse__label" for="caisse-fond">{{ 'PHARMACIEN.CAISSE.FOND_OUVERTURE' | translate }} (GNF)</label>
+        <input id="caisse-fond" class="bb-caisse__champ" type="number" min="0" step="1"
+               [value]="ouvertureMontant() ?? ''"
+               (input)="ouvertureMontant.set($any($event.target).value === '' ? null : +$any($event.target).value)" />
+        <button matButton="filled" type="button" [disabled]="sessionEnCours() || ouvertureMontant() === null || ouvertureMontant()! < 0"
+                (click)="ouvrirSession()">
+          {{ (sessionEnCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.OUVRIR') | translate }}
+        </button>
+      </div>
+    }
+  </section>
+
+  <!-- ── Le panier ─────────────────────────────────────────────────── -->
+  <section class="bb-caisse__carte">
+    <fieldset class="bb-caisse__fieldset" [disabled]="!caisseOuverte()">
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PANIER' | translate }}</h2>
+
+    @for (l of lignes(); track $index) {
+      <div class="bb-caisse__ligne">
+        <div class="bb-caisse__ligne-produit">
+          <label class="bb-caisse__label-mini" [attr.for]="'c-med-' + $index">{{ 'PHARMACIEN.CAISSE.PRODUIT' | translate }}</label>
+          <select [id]="'c-med-' + $index" class="bb-caisse__champ" [(ngModel)]="l.idMedicament">
+            <option value="">—</option>
+            @for (s of stocks(); track s.medicament.id) {
+              <option [value]="s.medicament.id">{{ libelleProduit(s) }} — {{ s.quantite }} {{ s.unite }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="bb-caisse__ligne-champ">
+          <label class="bb-caisse__label-mini" [attr.for]="'c-qte-' + $index">{{ 'PHARMACIEN.CAISSE.QUANTITE' | translate }}</label>
+          <input [id]="'c-qte-' + $index" class="bb-caisse__champ" type="number" min="1" [(ngModel)]="l.quantite" />
+        </div>
+
+        <div class="bb-caisse__ligne-champ bb-caisse__ligne-champ--lecture">
+          <span class="bb-caisse__label-mini">{{ 'PHARMACIEN.CAISSE.PRIX_UNITAIRE' | translate }}</span>
+          <span class="bb-caisse__valeur">{{ prixDe(l.idMedicament()) | number }} GNF</span>
+        </div>
+
+        <div class="bb-caisse__ligne-champ bb-caisse__ligne-champ--lecture">
+          <span class="bb-caisse__label-mini">{{ 'PHARMACIEN.CAISSE.SOUS_TOTAL' | translate }}</span>
+          <span class="bb-caisse__valeur">{{ prixDe(l.idMedicament()) * (l.quantite() ?? 0) | number }} GNF</span>
+        </div>
+
+        <button class="bb-caisse__retirer" type="button" [disabled]="lignes().length === 1"
+                [attr.aria-label]="'PHARMACIEN.CAISSE.RETIRER' | translate"
+                (click)="retirerLigne($index)">
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      </div>
+    }
+
+    <button matButton type="button" (click)="ajouterLigne()">
+      <i class="pi pi-plus" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.AJOUTER' | translate }}
+    </button>
+
+    <!-- Dit avant d'encaisser, pas apres le refus de l'API (EF-05-12). -->
+    @if (exigentOrdonnance().length) {
+      <p class="bb-caisse__avis bb-caisse__avis--exige">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.CAISSE.ORDONNANCE_EXIGEE' | translate: { produits: exigentOrdonnance().join(', ') } }}
+      </p>
+    }
+
+    @if (depassements().length) {
+      <p class="bb-caisse__avis bb-caisse__avis--danger">
+        <i class="pi pi-ban" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.CAISSE.STOCK_INSUFFISANT' | translate: { produits: depassements().join(', ') } }}
+      </p>
+    }
+
+    <!-- ── Tiers payant (EF-09) ──────────────────────────────────── -->
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.ASSURANCE' | translate }}</h2>
+
+    @if (!carte()) {
+      <div class="bb-caisse__qr">
+        <div class="bb-caisse__qr-champ">
+          <label class="bb-caisse__label" for="c-carte">{{ 'PHARMACIEN.CAISSE.CARTE_ASSURANCE' | translate }}</label>
+          <!-- Une douchette qui emule un clavier tape le jeton ici, puis Entree. -->
+          <input id="c-carte" class="bb-caisse__champ" type="text" maxlength="128" autocomplete="off"
+                 [(ngModel)]="jetonCarte" (keyup.enter)="verifierCarte()" />
+        </div>
+        <button matButton type="button" [disabled]="enCoursAssurance()" (click)="showScanner.set(true)">
+          <i class="pi pi-camera" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.SCANNER_CARTE' | translate }}
+        </button>
+        <button matButton type="button" [disabled]="enCoursAssurance() || !jetonCarte().trim()" (click)="verifierCarte()">
+          <i class="pi pi-shield" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER_CARTE' | translate }}
+        </button>
+      </div>
+      @if (showScanner()) {
+        <app-qr-scanner (detecte)="onCarteScannee($event)" (ferme)="showScanner.set(false)" />
+      }
+      <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.SANS_CARTE' | translate }}</p>
+    } @else {
+      <div class="bb-caisse__patient">
+        <span class="bb-caisse__patient-nom">
+          <i class="pi pi-user" aria-hidden="true"></i> {{ carte()!.patient.prenom }} {{ carte()!.patient.nom }}
+        </span>
+        <button class="bb-caisse__annuler" type="button" (click)="oublierCarte()">
+          <i class="pi pi-times" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.OUBLIER' | translate }}
+        </button>
+      </div>
+      <!-- La carte peut avoir ete pretee : la photo de la fiche se compare a
+           la personne presente, et la confirmation est exigee par l'API. -->
+      @if (carte()!.photoAComparer) {
+        <div class="bb-caisse__identite">
+          @if (photoCarte(); as image) {
+            <img class="bb-caisse__photo" [src]="image" width="120" height="150"
+                 [alt]="'PHARMACIEN.CAISSE.PHOTO_DE' | translate: { nom: carte()!.patient.prenom + ' ' + carte()!.patient.nom }" />
+          } @else {
+            <span class="bb-caisse__photo bb-caisse__photo--attente" aria-hidden="true"><i class="pi pi-spin pi-spinner"></i></span>
+          }
+          <div class="bb-caisse__identite-texte">
+            <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.COMPARER_PHOTO' | translate }}</p>
+            <label class="bb-caisse__bascule-label" for="c-photo">
+              <input id="c-photo" type="checkbox" [disabled]="!photoCarte()"
+                     [checked]="photoComparee()" (change)="photoComparee.set($any($event.target).checked)" />
+              {{ 'PHARMACIEN.CAISSE.PHOTO_COMPAREE' | translate }}
+            </label>
+          </div>
+        </div>
+      } @else {
+        <p class="bb-caisse__muted">
+          <i class="pi pi-id-card" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.VERIFIER_IDENTITE' | translate }}
+        </p>
+      }
+
+      <div class="bb-caisse__carte">
+        <span>
+          <strong>{{ carte()!.assureur.nom }}</strong> —
+          @if (carte()!.typeCouverture === 'COLLECTIVE') {
+            {{ 'PHARMACIEN.CAISSE.COUVERTURE_COLLECTIVE' | translate: { entreprise: carte()!.souscripteur ?? '' } }}
+          } @else {
+            {{ 'PHARMACIEN.CAISSE.COUVERTURE_INDIVIDUELLE' | translate }}
+          }
+        </span>
+        <span>{{ 'PHARMACIEN.CAISSE.ADHERENT' | translate }} : {{ carte()!.numeroAdherent }} · {{ 'PHARMACIEN.CAISSE.POLICE' | translate }} : {{ carte()!.numeroPolice }}</span>
+        <span>
+          {{ 'PHARMACIEN.CAISSE.VALIDITE' | translate }} : {{ carte()!.dateEffet | date: 'dd/MM/yyyy' }}
+          → @if (carte()!.dateFin) { {{ carte()!.dateFin | date: 'dd/MM/yyyy' }} } @else { — }
+        </span>
+        <!-- Ce que l'assureur prend, en pourcentage : le montant exact se
+             calcule plus bas, sur le panier reel. -->
+        <div class="bb-caisse__garanties">
+          @for (g of carte()!.garanties; track g.categorie) {
+            <span class="bb-caisse__garantie" [class.bb-caisse__garantie--exclue]="g.exclu">
+              {{ g.categorie | categorieProduit }} :
+              @if (g.exclu) { {{ 'PHARMACIEN.CAISSE.EXCLU' | translate }} } @else { {{ g.tauxPourcent }} % }
+            </span>
+          }
+          <span class="bb-caisse__garantie">
+            {{ 'PHARMACIEN.CAISSE.TAUX_BASE' | translate }} : {{ carte()!.tauxBasePourcent }} %
+          </span>
+        </div>
+      </div>
+
+      @if (carte()!.eligible) {
+        <p class="bb-caisse__avis bb-caisse__avis--ok">
+          <i class="pi pi-check-circle" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.CARTE_VALIDE' | translate }}
+        </p>
+      } @else {
+        <!-- Un refus n'est pas une erreur : il porte son motif, et c'est ce
+             que le comptoir explique au patient. La vente peut continuer en
+             paiement normal. -->
+        <p class="bb-caisse__avis bb-caisse__avis--danger">
+          <i class="pi pi-times-circle" aria-hidden="true"></i>
+          {{ 'PHARMACIEN.CAISSE.NON_ELIGIBLE' | translate }} — {{ carte()!.motif }}.
+          {{ 'PHARMACIEN.CAISSE.PAIEMENT_DIRECT_POSSIBLE' | translate }}
+        </p>
+      }
+
+      @if (peutAppliquerAssurance()) {
+        <div class="bb-caisse__bascule">
+          <label class="bb-caisse__bascule-label" for="c-assurance">
+            <input id="c-assurance" type="checkbox" [(ngModel)]="avecAssurance" />
+            {{ 'PHARMACIEN.CAISSE.APPLIQUER' | translate }}
+          </label>
+          <button matButton type="button" [disabled]="enCoursAssurance()" (click)="simuler()">
+            <i class="pi pi-refresh" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.RECALCULER' | translate }}
+          </button>
+        </div>
+        @if (avecAssurance() && prise() && !priseAJour()) {
+          <p class="bb-caisse__avis bb-caisse__avis--danger">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.PRISE_PERIMEE' | translate }}
+          </p>
+        }
+      }
+
+      <!-- Le detail ligne par ligne, montre AVANT le paiement : un reste a
+           charge sans explication se conteste au comptoir (point 5.4). -->
+      @if (prise() && priseAJour()) {
+        <div class="bb-caisse__prise">
+          @for (l of prise()!.lignes; track l.idMedicament) {
+            <div class="bb-caisse__prise-ligne" [class.bb-caisse__prise-ligne--exclue]="!l.couvert">
+              <span class="bb-caisse__prise-nom">{{ l.libelle }}</span>
+              <span class="bb-caisse__prise-taux">
+                @if (l.couvert) {
+                  {{ l.tauxAppliquePourcent }} %
+                } @else {
+                  {{ 'PHARMACIEN.CAISSE.NON_COUVERT' | translate }}
+                }
+              </span>
+              <span class="bb-caisse__prise-motif">{{ l.motifExclusion }}</span>
+              <span class="bb-caisse__prise-montant">{{ l.montantAssureGnf | number }} GNF</span>
+            </div>
+          }
+          @for (n of prise()!.notes; track n) {
+            <p class="bb-caisse__prise-note"><i class="pi pi-info-circle" aria-hidden="true"></i> {{ n }}</p>
+          }
+        </div>
+      }
+    }
+
+    <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PAIEMENT' | translate }}</h2>
+
+    <div class="bb-caisse__grille">
+      <div>
+        <label class="bb-caisse__label" for="c-mode">{{ 'PHARMACIEN.CAISSE.MODE' | translate }}</label>
+        <select id="c-mode" class="bb-caisse__champ" [(ngModel)]="modePaiement">
+          @for (m of modes; track m) {
+            <option [value]="m">{{ 'PAIEMENT.MODE.' + m | translate }}</option>
+          }
+        </select>
+      </div>
+
+      @if (modePaiement() !== 'ESPECES') {
+        <div>
+          <label class="bb-caisse__label" for="c-numero">{{ 'PHARMACIEN.CAISSE.NUMERO' | translate }} *</label>
+          <input id="c-numero" class="bb-caisse__champ" type="tel" maxlength="40" [(ngModel)]="numeroOperateur" />
+        </div>
+      }
+
+      <div>
+        <label class="bb-caisse__label" for="c-ordo">
+          {{ 'PHARMACIEN.CAISSE.ORDONNANCE' | translate }}@if (exigentOrdonnance().length) { * }
+        </label>
+        <input id="c-ordo" class="bb-caisse__champ" type="text" maxlength="60" [(ngModel)]="idOrdonnance" />
+      </div>
+    </div>
+
+    <div class="bb-caisse__pied">
+      <div class="bb-caisse__totaux">
+        <span class="bb-caisse__total-ligne">
+          {{ 'PHARMACIEN.CAISSE.BRUT' | translate }} : <strong>{{ montantBrut() | number }} GNF</strong>
+        </span>
+        @if (avecAssurance() && priseAJour()) {
+          <span class="bb-caisse__total-ligne bb-caisse__total-ligne--assureur">
+            {{ 'PHARMACIEN.CAISSE.PART_ASSUREUR' | translate }} : <strong>− {{ prise()!.montantAssureGnf | number }} GNF</strong>
+          </span>
+        }
+        <span class="bb-caisse__total">
+          {{ 'PHARMACIEN.CAISSE.NET' | translate }} : <strong>{{ aEncaisser() | number }} GNF</strong>
+        </span>
+      </div>
+      <button matButton="filled" type="button" [disabled]="enCours() || !peutEncaisser()" (click)="encaisser()">
+        {{ (enCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.ENCAISSER') | translate }}
+      </button>
+    </div>
+    </fieldset>
+  </section>
+
+  <!-- ── Les ventes du jour ────────────────────────────────────────── -->
+  <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.DERNIERES' | translate }}</h2>
+
+  <app-export-liste
+    [titre]="'EXPORT.DOC.VENTES_COMPTOIR'"
+    [colonnes]="colonnes"
+    [lignes]="ventes()"
+    [nomFichier]="'ventes-comptoir'" />
+
+  @if (isLoading()) {
+    <p class="bb-caisse__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (ventes().length === 0) {
+    <p class="bb-caisse__muted">{{ 'PHARMACIEN.CAISSE.AUCUNE' | translate }}</p>
+  } @else {
+    @for (v of ventes(); track v.id) {
+      <article class="bb-caisse__vente" [class.bb-caisse__vente--annulee]="v.statut === 'ANNULEE'"
+               [class.bb-caisse__vente--attente]="v.statut === 'EN_ATTENTE'">
+        <div class="bb-caisse__vente-head">
+          <div>
+            <span class="bb-caisse__numero">{{ v.numero }}</span>
+            <span class="bb-caisse__meta">
+              {{ v.creeLe | date:'dd/MM/yyyy HH:mm' }}
+              · {{ 'PAIEMENT.MODE.' + v.modePaiement | translate }}
+              · {{ v.vendeur.prenom }} {{ v.vendeur.nom }}
+              @if (v.numeroOrdonnance) { · {{ v.numeroOrdonnance }} }
+            </span>
+          </div>
+          <div class="bb-caisse__vente-droite">
+            <span class="bb-caisse__montant">{{ v.montantNetGnf | number }} GNF</span>
+            @if (v.montantAssureGnf > 0) {
+              <span class="bb-caisse__badge-assure">
+                {{ 'PHARMACIEN.CAISSE.ASSURE_BADGE' | translate: { montant: (v.montantAssureGnf | number) ?? '', assureur: v.assureur?.code ?? '' } }}
+              </span>
+            }
+            <!-- Une vente en attente ressemblait a une vente reglee : meme
+                 montant, meme bouton. Le pharmacien pouvait la croire payee. -->
+            @if (v.statut === 'EN_ATTENTE') {
+              <span class="bb-caisse__badge-attente">{{ 'PHARMACIEN.CAISSE.ATTENTE_BADGE' | translate }}</span>
+            }
+            @if (v.statut === 'ANNULEE') {
+              <span class="bb-caisse__badge-annulee">{{ 'PHARMACIEN.CAISSE.ANNULEE_BADGE' | translate }}</span>
+            } @else {
+              <button class="bb-caisse__annuler" type="button" (click)="annuler(v)">
+                <i class="pi pi-undo" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.ANNULER' | translate }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @for (l of v.lignes; track l.id) {
+          <div class="bb-caisse__vente-ligne">
+            <span class="bb-caisse__vente-nom">{{ l.medicament.libelle }}</span>
+            <span class="bb-caisse__vente-cat">{{ l.medicament.categorie | categorieProduit }}</span>
+            <span class="bb-caisse__vente-qte">{{ l.quantite }} × {{ l.prixUnitaireGnf | number }}</span>
+            <span class="bb-caisse__vente-montant">{{ l.montantGnf | number }} GNF</span>
+          </div>
+        }
+
+        @if (v.statut === 'ANNULEE' && v.motifAnnulation) {
+          <p class="bb-caisse__motif">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            {{ 'PHARMACIEN.CAISSE.MOTIF' | translate }} : {{ v.motifAnnulation }}
+          </p>
+        }
+        @if (v.annulation?.par; as auteur) {
+          <p class="bb-caisse__motif">
+            {{ 'PHARMACIEN.CAISSE.ANNULATION_PAR' | translate }} {{ auteur.prenom }} {{ auteur.nom }}
+            @if (v.annulation?.autoriseePar; as titulaire) {
+              · {{ 'PHARMACIEN.CAISSE.AUTORISEE_PAR' | translate }} {{ titulaire.prenom }} {{ titulaire.nom }}
+            }
+          </p>
+        }
+      </article>
+    }
+  }
+</div>
+
+<!-- ── En attente du paiement mobile ─────────────────────────────────────
+     La vente existe, les lots sont sortis, mais rien n'est encaisse : les
+     medicaments ne se remettent qu'une fois le paiement confirme. -->
+@if (attente(); as v) {
+  <div class="bb-caisse__voile" role="dialog" aria-modal="true">
+    <section class="bb-caisse__attente">
+      <h2 class="bb-caisse__attente-titre">{{ 'PHARMACIEN.CAISSE.ATTENTE_TITRE' | translate }}</h2>
+      <p class="bb-caisse__attente-somme">{{ montantAPayer() | number:'1.0-0' }} GNF</p>
+      <p class="bb-caisse__attente-aide">{{ 'PHARMACIEN.CAISSE.ATTENTE_AIDE' | translate }}</p>
+
+      @if (qrImage()) {
+        <img class="bb-caisse__qr" [src]="qrImage()" alt="" />
+      }
+
+      <!-- Le lien en clair aussi : un ecran sale, un telephone sans camera,
+           et le QR ne sert plus a rien. -->
+      <p class="bb-caisse__attente-lien">
+        {{ 'PHARMACIEN.CAISSE.ATTENTE_LIEN' | translate }}
+        <code>{{ v.urlPaiement }}</code>
+      </p>
+
+      <p class="bb-caisse__attente-rappel">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'PHARMACIEN.CAISSE.ATTENTE_RAPPEL' | translate }}
+      </p>
+
+      <div class="bb-caisse__attente-actions">
+        <button class="bb-caisse__btn bb-caisse__btn--plat" type="button" (click)="abandonnerAttente()">
+          {{ 'PHARMACIEN.CAISSE.ABANDONNER' | translate }}
+        </button>
+        <button class="bb-caisse__btn" type="button"
+                (click)="verifierPaiement()" [disabled]="verifieEnCours()">
+          <i class="pi pi-refresh" aria-hidden="true"></i>
+          {{ (verifieEnCours() ? 'PHARMACIEN.CAISSE.VERIFICATION' : 'PHARMACIEN.CAISSE.VERIFIER') | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (annulationVente(); as vente) {
+  <div class="bb-caisse__annulation-voile" role="presentation" (click)="fermerAnnulation()">
+    <section class="bb-caisse__annulation" role="dialog" aria-modal="true"
+             aria-labelledby="annulation-titre" (click)="$event.stopPropagation()">
+      <h2 id="annulation-titre">{{ 'PHARMACIEN.CAISSE.ANNULATION_TITRE' | translate }}</h2>
+      <p>{{ vente.numero }} · {{ 'PHARMACIEN.CAISSE.ANNULATION_AIDE' | translate }}</p>
+
+      <label class="bb-caisse__label" for="motif-annulation">{{ 'PHARMACIEN.CAISSE.MOTIF' | translate }}</label>
+      <textarea id="motif-annulation" class="bb-caisse__champ" rows="3" maxlength="500"
+                [value]="motifAnnulation()"
+                (input)="motifAnnulation.set($any($event.target).value)"></textarea>
+
+      @if (validationTitulaireRequise()) {
+        <p class="bb-caisse__avis bb-caisse__avis--exige">
+          <i class="pi pi-lock" aria-hidden="true"></i>
+          {{ 'PHARMACIEN.CAISSE.AUTH_TITULAIRE_AIDE' | translate }}
+        </p>
+        <label class="bb-caisse__label" for="telephone-titulaire">{{ 'PHARMACIEN.CAISSE.TELEPHONE_TITULAIRE' | translate }}</label>
+        <input id="telephone-titulaire" class="bb-caisse__champ" type="tel" autocomplete="username"
+               [value]="telephoneTitulaire()"
+               (input)="telephoneTitulaire.set($any($event.target).value)" />
+        <label class="bb-caisse__label" for="mot-de-passe-titulaire">{{ 'PHARMACIEN.CAISSE.MOT_DE_PASSE_TITULAIRE' | translate }}</label>
+        <input id="mot-de-passe-titulaire" class="bb-caisse__champ" type="password" autocomplete="current-password"
+               [value]="motDePasseTitulaire()"
+               (input)="motDePasseTitulaire.set($any($event.target).value)" />
+      }
+
+      <div class="bb-caisse__annulation-actions">
+        <button class="bb-caisse__btn bb-caisse__btn--plat" type="button"
+                [disabled]="annulationEnCours()" (click)="fermerAnnulation()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-caisse__btn" type="button"
+                [disabled]="annulationEnCours()" (click)="confirmerAnnulation()">
+          {{ (annulationEnCours() ? 'COMMON.LOADING' : 'PHARMACIEN.CAISSE.ANNULER') | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

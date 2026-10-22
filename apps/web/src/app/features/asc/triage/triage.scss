@@ -1,294 +1,388 @@
+// features/asc/triage/triage.scss
+
+// ✦ Refonte UI : ce fichier s'appuyait sur les variables du theme PrimeNG
+// (--surface-card, --surface-ground, --surface-border, --text-color,
+// --text-color-secondary), qui n'existent plus depuis le retrait de
+// PrimeNG : la carte de l'assistant n'avait ni fond ni bordure, les traits
+// des etapes etaient invisibles. Tout est remappe sur les tokens bb-*.
+// Code mort supprime : .triage-header, .header-icon, .header-content.
+:host {
+  display: block;
+  --tri-accent: var(--bb-primary);
+  --tri-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --tri-accent: var(--bb-bright);
+  --tri-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
 .triage-page {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  max-width: 800px;
+  max-width: 820px;
   margin: 0 auto;
 }
 
-.triage-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: var(--surface-card);
-  padding: 32px;
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-
-  .header-icon {
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, var(--bb-primary), var(--bb-bright));
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    i {
-      font-size: 32px;
-      color: white;
-    }
-  }
-
-  .header-content h1 {
-    margin: 0 0 8px 0;
-    color: var(--text-color);
-  }
-
-  .header-content p {
-    margin: 0;
-    color: var(--text-color-secondary);
-  }
-}
-
+// ── ÉTAPES ────────────────────────────────────────────────────────
 .wizard-steps {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 0 20px;
+  margin-bottom: 20px;
+  padding: 0 8px;
 
   .step {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    opacity: 0.5;
-    transition: all 0.3s;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 72px;
+    text-align: center;
+    transition: opacity var(--bb-transition-slow);
 
     .step-circle {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: var(--surface-card);
-      border: 2px solid var(--surface-border);
+      background: var(--bb-surface-card);
+      border: 2px solid var(--bb-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
-      color: var(--text-color-secondary);
-      font-size: 18px;
+      font-family: var(--bb-font-display);
+      font-weight: 800;
+      color: var(--bb-text-muted);
+      font-size: 16px;
+      transition: background var(--bb-transition-slow), border-color var(--bb-transition-slow), color var(--bb-transition-slow), box-shadow var(--bb-transition-slow);
+
+      i { font-size: 16px; }
     }
 
     span {
-      font-weight: 500;
+      font-family: var(--bb-font-display);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--bb-text-muted);
     }
 
     &.active {
-      opacity: 1;
       .step-circle {
         border-color: var(--bb-primary);
         background: var(--bb-primary);
-        color: white;
-        box-shadow: 0 4px 15px rgba(45, 125, 70, 0.3);
+        color: #fff;
+        box-shadow: 0 0 0 5px var(--tri-accent-soft);
       }
-      span { color: var(--bb-primary); }
+      span { color: var(--tri-accent); }
     }
 
     &.completed {
-      opacity: 1;
       .step-circle {
-        border-color: var(--bb-primary);
-        color: var(--bb-primary);
+        border-color: var(--tri-accent);
+        background: var(--tri-accent-soft);
+        color: var(--tri-accent);
       }
+      span { color: var(--bb-text-secondary); }
     }
   }
 
+  // Rail entre deux etapes, aligne sur le centre des cercles
   .step-line {
     flex: 1;
     height: 2px;
-    background: var(--surface-border);
-    margin: 0 16px;
-    margin-bottom: 24px;
+    margin: 21px 8px 0;
+    background: var(--bb-border);
+    border-radius: 2px;
+  }
+
+  // La ligne qui suit une etape terminee passe a la couleur d'accent
+  .step.completed + .step-line { background: var(--tri-accent); }
+
+  @media (max-width: 480px) {
+    padding: 0;
+    .step { min-width: 60px; .step-circle { width: 38px; height: 38px; font-size: 14px; } span { font-size: 11px; } }
+    .step-line { margin-top: 18px; }
   }
 }
 
+// ── CARTE DE L'ASSISTANT ──────────────────────────────────────────
 .section-card {
-  background: var(--surface-card);
-  color: var(--text-color);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  min-height: 400px;
+  background: var(--bb-surface-card);
+  color: var(--bb-text-primary);
+  border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-xl);
+  padding: 1.75rem;
+  box-shadow: var(--bb-shadow);
+  min-height: 360px;
+
+  @media (max-width: 600px) { padding: 1.125rem; min-height: 0; }
 }
 
 .step-panel {
-  animation: fadeIn 0.4s ease;
+  animation: bb-tri-in 0.35s var(--bb-ease) both;
 
-  h2 { margin-top: 0; color: var(--text-color); }
-  
-  .text-secondary { color: var(--text-color-secondary); }
+  h2 {
+    margin: 0 0 4px;
+    font-family: var(--bb-font-display);
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--bb-text-primary);
+  }
+
+  .text-secondary { color: var(--bb-text-secondary); font-size: 14px; margin: 0; }
 
   .search-box {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 24px;
+    gap: 10px;
+    margin-top: 20px;
 
     .bb-search { flex: 1 1 260px; }
+
+    @media (max-width: 600px) { > button { flex: 1 1 auto; } }
   }
 
   .patient-card {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 20px;
-    background: var(--surface-ground);
-    border: 1px solid var(--surface-border);
-    border-radius: 16px;
-    transition: all 0.2s;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bb-surface-1);
+    border: 1.5px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+    transition: border-color var(--bb-transition), transform var(--bb-transition-slow), box-shadow var(--bb-transition-slow), background var(--bb-transition);
 
     &.selectable {
       cursor: pointer;
       &:hover {
-        border-color: var(--bb-primary);
-        transform: translateY(-2px);
+        border-color: var(--bb-success-border);
+        transform: translateY(-1px);
+        box-shadow: var(--bb-shadow-hover);
       }
     }
 
-    &.selected {
-      border-color: var(--bb-primary);
-      background: color-mix(in srgb, var(--bb-primary) 10%, transparent);
-      box-shadow: 0 0 0 1px var(--bb-primary);
+    &.selected, &.selected:hover {
+      border-color: var(--tri-accent);
+      background: var(--bb-success-bg);
+      box-shadow: 0 0 0 3px var(--tri-accent-soft);
+      transform: none;
     }
 
     .patient-avatar {
-      width: 48px;
-      height: 48px;
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: var(--bb-primary);
-      color: white;
+      background: linear-gradient(135deg, var(--bb-bright), var(--bb-mid));
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
+      font-family: var(--bb-font-display);
+      font-weight: 800;
+      text-transform: uppercase;
     }
 
     .patient-info {
       flex: 1;
-      h3 { margin: 0 0 4px 0; color: var(--text-color); }
-      p { margin: 0; font-size: 14px; color: var(--text-color-secondary); }
+      min-width: 0;
+      h3 { margin: 0 0 2px; font-family: var(--bb-font-display); font-size: 15px; font-weight: 700; color: var(--bb-text-primary); }
+      p { margin: 0; font-size: 13px; color: var(--bb-text-secondary); }
     }
+
+    // Coche de selection (style inline du template : on l'accorde au mode sombre)
+    > .pi-check-circle { color: var(--tri-accent) !important; font-size: 22px; }
   }
 
   .step-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 16px;
-    margin-top: 40px;
-    border-top: 1px solid var(--surface-border);
-    padding-top: 24px;
+    gap: 10px;
+    margin-top: 28px;
+    border-top: 1px solid var(--bb-border-light);
+    padding-top: 20px;
+
+    @media (max-width: 480px) {
+      flex-direction: column-reverse;
+      > * { width: 100%; }
+    }
   }
 }
 
 .form-grid {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 
   .field label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--bb-text-secondary);
   }
 }
 
-/* IA PANEL */
+// ── ANALYSE IA ────────────────────────────────────────────────────
 .ia-panel {
   text-align: center;
 }
 
 .ia-loading {
-  padding: 60px 0;
+  position: relative;
+  padding: 48px 0 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
 
+  // ✦ Refonte UI : l'anneau etait positionne par rapport a la page (aucun
+  // parent positionne) ; il pulse desormais autour de l'icone.
   .pulse-ring {
     position: absolute;
-    width: 120px;
-    height: 120px;
+    top: 40px;
+    left: 50%;
+    width: 88px;
+    height: 88px;
+    margin-left: -44px;
     border-radius: 50%;
-    border: 2px solid var(--bb-primary);
-    animation: pulse 1.5s infinite;
+    border: 2px solid var(--tri-accent);
+    animation: bb-tri-pulse 1.6s var(--bb-ease) infinite;
   }
 
   .ia-icon {
-    font-size: 48px;
-    color: var(--bb-primary);
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: var(--tri-accent);
+    background: var(--tri-accent-soft);
     position: relative;
     z-index: 2;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
+
+  mat-progress-bar { max-width: 360px; border-radius: var(--bb-radius-pill); overflow: hidden; }
 }
 
 .ia-result {
   text-align: left;
 
+  // ✦ Refonte UI : resultat du triage — les degrades code en dur (#ef4444,
+  // #10b981…) devenaient criards en sombre et le texte blanc illisible sur
+  // l'orange. Carte teintee par la gravite, score dans un anneau colore :
+  // lisible dans les deux modes, et la couleur reste le premier signal.
   .result-header {
+    --tri-sev: var(--tri-accent);
+    --tri-sev-bg: var(--bb-success-bg);
+    --tri-sev-border: var(--bb-success-border);
+
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding: 32px;
-    border-radius: 20px;
-    color: white;
-    margin-bottom: 32px;
+    gap: 20px;
+    padding: 20px 22px;
+    border-radius: var(--bb-radius-xl);
+    margin-bottom: 20px;
+    background: var(--tri-sev-bg);
+    border: 1px solid var(--tri-sev-border);
+    border-left: 6px solid var(--tri-sev);
+    color: var(--bb-text-primary);
+    animation: bb-tri-in 0.4s var(--bb-ease) both;
 
-    &.bg-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
-    &.bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    &.bg-green { background: linear-gradient(135deg, #10b981, #059669); }
+    &.bg-red    { --tri-sev: var(--bb-danger);  --tri-sev-bg: var(--bb-danger-bg);  --tri-sev-border: var(--bb-danger-border); }
+    &.bg-orange { --tri-sev: var(--bb-warning); --tri-sev-bg: var(--bb-warning-bg); --tri-sev-border: var(--bb-warning-border); }
+    &.bg-green  { --tri-sev: var(--tri-accent); --tri-sev-bg: var(--bb-success-bg); --tri-sev-border: var(--bb-success-border); }
 
     .score-circle {
-      width: 80px;
-      height: 80px;
+      width: 84px;
+      height: 84px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: rgba(255,255,255,0.2);
+      background: var(--bb-surface-card);
+      border: 5px solid var(--tri-sev);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      
-      span { font-size: 28px; font-weight: bold; line-height: 1; }
-      small { font-size: 12px; opacity: 0.8; }
+      color: var(--tri-sev);
+
+      span { font-family: var(--bb-font-display); font-size: 28px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+      small { font-size: 11px; font-weight: 700; color: var(--bb-text-muted); }
     }
 
-    .gravity-text h3 { margin: 0 0 4px 0; font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
-    .gravity-text h2 { margin: 0; font-size: 28px; }
+    .gravity-text h3 {
+      margin: 0 0 4px;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--bb-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .gravity-text h2 {
+      margin: 0;
+      font-family: var(--bb-font-display);
+      font-size: clamp(20px, 3vw, 26px);
+      font-weight: 800;
+      color: var(--tri-sev);
+    }
+
+    @media (max-width: 480px) {
+      gap: 14px; padding: 16px;
+      .score-circle { width: 68px; height: 68px; border-width: 4px; span { font-size: 22px; } }
+    }
   }
 
   .recommendations {
-    background: var(--surface-ground);
-    padding: 24px;
-    border-radius: 16px;
-    color: var(--text-color);
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border-light);
+    padding: 18px 20px;
+    border-radius: var(--bb-radius-lg);
+    color: var(--bb-text-primary);
 
-    h3 { margin-top: 0; color: var(--text-color); display: flex; align-items: center; gap: 8px; }
-    
+    h3 {
+      margin: 0 0 12px;
+      font-family: var(--bb-font-display);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--bb-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      i { color: var(--tri-accent); }
+    }
+
     ul {
       list-style: none;
       padding: 0;
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
 
       li {
         display: flex;
         align-items: flex-start;
-        gap: 12px;
-        i { color: var(--bb-primary); margin-top: 4px; }
+        gap: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+        i { color: var(--tri-accent); margin-top: 3px; flex-shrink: 0; }
       }
     }
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes bb-tri-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }
 
-@keyframes pulse {
-  0% { transform: scale(0.5); opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
+@keyframes bb-tri-pulse {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
+
 // Champs Material occupant toute la largeur de leur colonne
 .field__full { width: 100%; }

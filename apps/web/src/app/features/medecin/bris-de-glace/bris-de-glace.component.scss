@@ -1,0 +1,197 @@
+// L'accès d'urgence (EF-02-06).
+//
+// L'écran doit se lire comme un geste grave, pas comme un formulaire de plus :
+// l'avis est en tête, et le bouton porte la couleur d'alerte.
+
+// ✦ Refonte UI : meme largeur de lecture que les autres ecrans du medecin.
+.bb-bris { max-width: 920px; margin: 0 auto; padding-bottom: 2rem; }
+
+// ✦ Refonte UI : l'avis devient un vrai bandeau d'alerte (pastille d'icone,
+// tokens ambres) — c'est la premiere chose a lire.
+.bris-avis {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--bb-radius-lg);
+  border: 1px solid var(--bb-warning-border);
+  border-left: 4px solid var(--bb-warning);
+  background: var(--bb-warning-bg);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--bb-text-primary);
+
+  mat-icon {
+    font-size: 16px; width: 34px; height: 34px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    color: var(--bb-warning);
+    background: color-mix(in srgb, var(--bb-warning) 16%, transparent);
+  }
+  p { margin: 0; font-weight: 600; }
+  p + p { margin-top: 0.45rem; font-weight: 400; color: var(--bb-text-secondary); }
+}
+
+.bris-form {
+  padding: 1.4rem 1.5rem;
+  border-radius: var(--bb-radius-xl);
+  border-top: 4px solid var(--bb-danger);
+  @media (max-width: 600px) { padding: 1.1rem; }
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.4rem 0.9rem;
+    // ✦ Refonte UI : sur mobile, l'aide du premier champ tient sur deux
+    // lignes et touchait le champ suivant (mat-hint ne reserve pas sa place).
+    @media (max-width: 600px) { grid-template-columns: minmax(0, 1fr); row-gap: 1.6rem; }
+  }
+
+  // `mat-form-field` ne réserve pas la place de son `mat-hint` : sans cette
+  // marge, le bouton se superpose à l'aide du champ.
+  &__explication { width: 100%; margin-top: 0.5rem; margin-bottom: 1.3rem; }
+
+  // `mat-card` est un `flex-direction: column` : ses enfants s'étirent. On
+  // règle l'alignement avec `align-self`, pas avec `width`.
+  &__action { align-self: flex-start; @media (max-width: 600px) { align-self: stretch; } }
+}
+
+.bris-succes,
+.bris-erreur {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.9rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--bb-radius);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.bris-succes {
+  background: var(--bb-success-bg); border-color: var(--bb-success-border);
+  color: var(--bb-success);
+}
+
+.bris-erreur {
+  background: var(--bb-danger-bg); border-color: var(--bb-danger-border);
+  color: var(--bb-danger);
+}
+
+// ✦ Refonte UI : titre de section en display, trait d'accent
+.bris-titre {
+  display: flex; align-items: center; gap: 10px;
+  margin: 2rem 0 0.85rem;
+  font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+  letter-spacing: -.2px; color: var(--bb-text-primary);
+
+  &::before {
+    content: ''; width: 4px; height: 18px; border-radius: 4px;
+    background: var(--bb-warning); flex-shrink: 0;
+  }
+}
+
+.bris-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.bris-ligne {
+  border: 1px solid var(--bb-border-light);
+  border-left: 4px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  padding: 1rem 1.15rem;
+  background: var(--bb-surface-card);
+  box-shadow: var(--bb-shadow-sm);
+
+  // Un accès encore ouvert se voit avant d'être lu : c'est celui qu'on peut
+  // refermer, et celui qui court.
+  &--ouvert {
+    border-color: var(--bb-warning-border);
+    border-left-color: var(--bb-warning);
+    background: linear-gradient(90deg, var(--bb-warning-bg), transparent 50%), var(--bb-surface-card);
+  }
+
+  &__tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  &__nom { font-family: var(--bb-font-display); font-weight: 800; font-size: 15px; color: var(--bb-text-primary); }
+
+  &__etat {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--bb-surface-2);
+    color: var(--bb-text-secondary);
+
+    &--ouvert {
+      background: var(--bb-warning-bg);
+      color: var(--bb-warning);
+    }
+  }
+
+  &__heure { font-size: 12px; font-weight: 600; color: var(--bb-text-secondary); margin-left: auto; }
+
+  &__motif { margin: 0.55rem 0 0; font-size: 13px; line-height: 1.6; color: var(--bb-text-primary); }
+
+  &__alerte {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.55rem 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--bb-warning);
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  }
+
+  &__pied {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--bb-border-light);
+  }
+
+  &__meta { font-size: 12px; color: var(--bb-text-muted); }
+}
+
+// ✦ Refonte UI : etat vide sur carte, pastille d'icone
+.bb-empty {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.25rem 1rem;
+  border: 1px dashed var(--bb-border);
+  border-radius: var(--bb-radius-xl);
+  background: var(--bb-surface-card);
+  color: var(--bb-text-secondary);
+
+  mat-icon {
+    font-size: 22px; width: 56px; height: 56px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    color: var(--bb-text-muted); background: var(--bb-surface-2);
+  }
+  p { font-size: 0.875rem; font-weight: 600; margin: 0; }
+}

@@ -9,6 +9,7 @@
 //   npx tsx prisma/backfill-encryption.ts                 # dry run
 //   npx tsx prisma/backfill-encryption.ts --apply          # write changes
 //   npx tsx prisma/backfill-encryption.ts --apply --batch-size=500
+//   npx tsx prisma/backfill-encryption.ts --model=PersonneAssuree --apply
 //
 // Recommended: run during low-traffic hours. Rows written by the live app
 // concurrently with this script are not protected against being raced — the
@@ -25,6 +26,10 @@ import { encryptArray, encryptField } from '../src/utils/encryption.utils';
 const ENC_PREFIX = 'enc:v1:';
 const APPLY = process.argv.includes('--apply');
 const BATCH_SIZE = Number(process.argv.find((a) => a.startsWith('--batch-size='))?.split('=')[1]) || 200;
+const MODEL_FILTER = process.argv.find((a) => a.startsWith('--model='))?.split('=')[1];
+if (MODEL_FILTER && !Object.prototype.hasOwnProperty.call(ENCRYPTED_FIELDS, MODEL_FILTER)) {
+  throw new Error(`Unknown encrypted model: ${MODEL_FILTER}`);
+}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -110,14 +115,17 @@ async function backfillModel(modelName: string, map: FieldMap): Promise<Totals> 
 }
 
 async function main() {
-  console.log(`Encryption backfill — mode: ${APPLY ? 'APPLY (writing to DB)' : 'DRY RUN (no writes)'}`);
+  console.log(
+    `Encryption backfill${MODEL_FILTER ? ` — model: ${MODEL_FILTER}` : ''} — mode: ${APPLY ? 'APPLY (writing to DB)' : 'DRY RUN (no writes)'}`
+  );
   if (!APPLY) {
     console.log('Pass --apply to write changes. Safe to re-run; already-encrypted rows are skipped.\n');
   }
 
   const grand: Totals = { scanned: 0, updated: 0, fieldsEncrypted: 0 };
 
-  for (const [modelName, map] of Object.entries(ENCRYPTED_FIELDS)) {
+  const models = Object.entries(ENCRYPTED_FIELDS).filter(([modelName]) => !MODEL_FILTER || modelName === MODEL_FILTER);
+  for (const [modelName, map] of models) {
     const totals = await backfillModel(modelName, map);
     grand.scanned += totals.scanned;
     grand.updated += totals.updated;

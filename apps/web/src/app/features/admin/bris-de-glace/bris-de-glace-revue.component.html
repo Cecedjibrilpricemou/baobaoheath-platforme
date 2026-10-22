@@ -1,0 +1,149 @@
+<div class="bb-revue">
+
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag">
+        <i class="pi pi-shield" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}
+      </span>
+      <h1 class="bb-page-head__title">{{ 'BRIS_DE_GLACE.REVUE_TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'BRIS_DE_GLACE.REVUE_SOUS_TITRE' | translate }}</p>
+    </div>
+  </header>
+
+  <!-- Ce que relire ne veut pas dire. Le laisser croire ferait hésiter. -->
+  <div class="revue-avis" role="note">
+    <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+    <span>{{ 'BRIS_DE_GLACE.REVUE_AVIS' | translate }}</span>
+  </div>
+
+  <mat-card class="revue-filtre">
+    <mat-slide-toggle [checked]="aRevoirSeulement()"
+                      (change)="basculerFiltre($event.checked)">
+      {{ 'BRIS_DE_GLACE.REVUE_FILTRE' | translate }}
+    </mat-slide-toggle>
+  </mat-card>
+
+  @if (succes()) {
+    <div class="revue-succes" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+  @if (erreur() && !cible()) {
+    <div class="revue-erreur" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  @if (chargement()) {
+    <div class="bb-empty" role="status">
+      <mat-spinner diameter="28"></mat-spinner>
+      <p>{{ 'COMMON.LOADING' | translate }}</p>
+    </div>
+  } @else if (acces().length === 0) {
+    <div class="bb-empty">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <p>{{ 'BRIS_DE_GLACE.REVUE_AUCUN' | translate }}</p>
+    </div>
+  } @else {
+    <ul class="revue-liste">
+      @for (b of acces(); track b.id) {
+        <li class="revue-ligne" [class.revue-ligne--a-revoir]="b.statutRevue === 'A_REVOIR'">
+          <div class="revue-ligne__tete">
+            <span class="revue-ligne__nom">{{ b.patient.nomComplet }}</span>
+            <span class="revue-ligne__etat"
+                  [class.revue-ligne__etat--a-revoir]="b.statutRevue === 'A_REVOIR'"
+                  [class.revue-ligne__etat--injustifie]="b.statutRevue === 'INJUSTIFIE'">
+              {{ 'BRIS_DE_GLACE.REVUE_' + b.statutRevue | translate }}
+            </span>
+            <span class="revue-ligne__duree">{{ duree(b) }}</span>
+          </div>
+
+          <div class="revue-ligne__qui">
+            {{ 'BRIS_DE_GLACE.PAR' | translate:{ qui: b.auteur.nomComplet, role: b.auteur.role } }}
+            @if (b.structure) { {{ 'BRIS_DE_GLACE.DANS' | translate:{ structure: b.structure } }} }
+            · {{ b.ouvertLe | date:'dd/MM/yyyy HH:mm' }}
+          </div>
+
+          <!-- Le motif déclaré, mot pour mot. C'est lui qu'on relit, et il ne
+               peut pas avoir été réécrit : la base le refuse. -->
+          <p class="revue-ligne__motif">
+            <strong>{{ 'BRIS_DE_GLACE.MOTIF_' + b.motif | translate }}</strong>
+            — « {{ b.explication }} »
+          </p>
+
+          <!-- Un bris de glace dont le patient n'a pas été prévenu n'est qu'à
+               moitié déclaré : c'est au relecteur de le voir. -->
+          @if (!b.notifieLe) {
+            <p class="revue-ligne__alerte">
+              <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+              {{ 'BRIS_DE_GLACE.NON_NOTIFIE' | translate }}
+            </p>
+          }
+
+          <div class="revue-ligne__pied">
+            @if (b.statutRevue === 'A_REVOIR') {
+              <button mat-flat-button color="primary" (click)="ouvrir(b)">
+                {{ 'BRIS_DE_GLACE.REVUE_ACTION' | translate }}
+              </button>
+            } @else {
+              <span class="revue-ligne__avis">
+                « {{ b.avisRevue }} » —
+                {{ 'BRIS_DE_GLACE.REVUE_PAR' | translate:{
+                      qui: b.revuPar ?? '—', date: (b.revuLe | date:'dd/MM/yyyy') ?? '' } }}
+              </span>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  <!-- La relecture. Un avis écrit est exigé, même pour dire que l'accès était
+       fondé : une case cochée ne prouve pas qu'on a regardé. -->
+  @if (cible(); as b) {
+    <div class="revue-boite" role="dialog" aria-modal="true">
+      <mat-card class="revue-boite__carte">
+        <h2>{{ 'BRIS_DE_GLACE.REVUE_BOITE' | translate:{ qui: b.auteur.nomComplet } }}</h2>
+
+        <p class="revue-ligne__motif">
+          <strong>{{ 'BRIS_DE_GLACE.MOTIF_' + b.motif | translate }}</strong>
+          — « {{ b.explication }} »
+        </p>
+        <p class="revue-ligne__qui">
+          {{ b.patient.nomComplet }} · {{ b.ouvertLe | date:'dd/MM/yyyy HH:mm' }}
+          · {{ duree(b) }}
+        </p>
+
+        <mat-form-field appearance="outline" class="revue-boite__avis">
+          <mat-label>{{ 'BRIS_DE_GLACE.REVUE_AVIS_LABEL' | translate }}</mat-label>
+          <textarea matInput rows="3" [ngModel]="avis()"
+                    (ngModelChange)="avis.set($event)"></textarea>
+          <mat-hint>{{ 'BRIS_DE_GLACE.REVUE_AVIS_AIDE' | translate }}</mat-hint>
+        </mat-form-field>
+
+        @if (erreur()) {
+          <div class="revue-erreur" role="alert">
+            <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+            <span>{{ erreur() }}</span>
+          </div>
+        }
+
+        <div class="revue-boite__actions">
+          <button mat-stroked-button (click)="fermer()" [disabled]="enCours()">
+            {{ 'BRIS_DE_GLACE.ANNULER' | translate }}
+          </button>
+          <button mat-stroked-button color="warn" (click)="juger('INJUSTIFIE')"
+                  [disabled]="!peutEnregistrer()">
+            {{ 'BRIS_DE_GLACE.REVUE_JUGER_NON_FONDE' | translate }}
+          </button>
+          <button mat-flat-button color="primary" (click)="juger('JUSTIFIE')"
+                  [disabled]="!peutEnregistrer()">
+            {{ 'BRIS_DE_GLACE.REVUE_JUGER_FONDE' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  }
+</div>

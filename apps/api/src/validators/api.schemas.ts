@@ -1,8 +1,13 @@
 import { z } from 'zod';
+import {
+  CategorieProduit, ConsentScope, MotifBrisDeGlace, NiveauIdentite, Role, StatutDemandeRgpd, TypeDemandeRgpd, TypePieceIdentite,
+} from '../config/generated/client/client';
 
 const optionalEmail = z.string().email().optional().or(z.literal('').transform(() => undefined));
 const phone = z.string().trim().min(6).max(30);
 const id = z.string().trim().min(1);
+/** Jeton opaque d'une carte d'assurance, tel que lu dans son QR. */
+const jetonCarte = z.string().trim().min(20).max(128).regex(/^[A-Za-z0-9_-]+$/, 'Carte d’assurance illisible');
 const positiveInt = z.coerce.number().int().positive();
 const nonNegativeInt = z.coerce.number().int().min(0);
 
@@ -17,6 +22,7 @@ export const registerSchema = z.object({
   motDePasse: z.string().min(6).max(128),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
+  roleOfficine: z.enum(['ADJOINT', 'PREPARATEUR', 'CAISSIER']).default('ADJOINT'),
 }).strict();
 
 export const loginSchema = z.object({
@@ -85,7 +91,144 @@ export const updateStructurePrefereeSchema = z.object({
   idStructure: id.nullable().optional(),
 }).strict();
 
-export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO', 'BIOLOGISTE']);
+/**
+ * Liberation des resultats au patient (addendum du 2026-09-28). Le commentaire
+ * est facultatif : un bilan sans particularite n'appelle pas d'explication, et
+ * en exiger une produirait des « RAS » systematiques qui n'apprennent rien.
+ */
+/**
+ * Le medecin fixe le creneau (addendum du 2026-09-28, point 3). L'accueil ne
+ * propose plus d'heure : `orientationSchema` a perdu son `prevuLe`.
+ */
+/**
+ * Prise de rendez-vous a distance (addendum du 2026-09-28, point 6). Le motif
+ * est libre : c'est le patient qui l'ecrit, avec ses mots.
+ */
+/**
+ * Facture d'approvisionnement (addendum du 2026-09-28, point 1.3). Chaque
+ * ligne devient un lot : c'est la que la date de peremption se pose, et non
+ * plus sur le stock.
+ */
+export const creerApprovisionnementSchema = z.object({
+  fournisseur: z.string().trim().min(2).max(200),
+  dateFacture: z.string().min(1),
+  numeroFacture: z.string().trim().max(100).optional(),
+  justificatifUrl: z.string().trim().max(500).optional(),
+  lignes: z.array(z.object({
+    idMedicament: id,
+    quantite: positiveInt.max(100000),
+    numeroLot: z.string().trim().max(100).optional(),
+    datePeremption: z.string().optional(),
+    prixAchatGnf: nonNegativeInt.optional(),
+    unite: z.string().trim().max(40).optional(),
+  })).min(1).max(200),
+}).strict();
+
+// ── Vente au comptoir (addendum, point 1.1) ──────────────────────────
+//
+// Les prix sont fixes : le schema strict rejette tout champ de remise.
+export const creerVenteSchema = z.object({
+  lignes: z.array(z.object({
+    idMedicament: id,
+    quantite: positiveInt.max(10000),
+  })).min(1).max(100),
+  modePaiement: z.enum(['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO']),
+  numeroOperateur: z.string().trim().max(40).optional(),
+  idPatient: id.optional(),
+  idOrdonnance: id.optional(),
+  // Tiers payant (EF-09). Le schema etant `.strict()`, oublier ce champ ici
+  // fait rejeter la requete en 400 alors que le contrat et le service le
+  // portent. C'est arrive le 2026-10-02, et seul le controle contre la vraie
+  // API l'a vu : les tests unitaires appellent le service, pas Zod.
+  avecAssurance: z.boolean().optional(),
+  jetonCarteAssurance: jetonCarte.optional(),
+  photoComparee: z.boolean().optional(),
+}).strict().superRefine((data, ctx) => {
+  if (data.avecAssurance && !data.jetonCarteAssurance) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['jetonCarteAssurance'],
+      message: 'Scannez la carte d’assurance pour appliquer le tiers payant.',
+    });
+  }
+});
+
+export const ouvrirSessionCaisseSchema = z.object({
+  montantOuvertureGnf: nonNegativeInt.max(2_000_000_000),
+}).strict();
+
+export const cloturerSessionCaisseSchema = z.object({
+  montantCompteGnf: nonNegativeInt.max(2_000_000_000),
+  motifEcart: z.string().trim().min(5).max(500).optional(),
+}).strict();
+
+export const rapportCaisseQuerySchema = z.object({
+  periode: z.enum(['JOUR', 'MOIS', 'ANNEE']).default('JOUR'),
+  date: z.string().date().optional(),
+}).strict();
+
+export const annulerVenteSchema = z.object({
+  motif: z.string().trim().min(5).max(500),
+  autorisationTitulaire: z.object({
+    telephone: z.string().trim().min(6).max(30),
+    motDePasse: z.string().min(1).max(256),
+  }).strict().optional(),
+}).strict();
+
+const categorieProduitOfficineSchema = z.nativeEnum(CategorieProduit).refine(
+  (categorie) => categorie !== CategorieProduit.MEDICAMENT,
+  'Une officine ne peut creer localement que des produits non medicamenteux',
+);
+
+export const creerProduitOfficineSchema = z.object({
+  libelle: z.string().trim().min(2).max(160),
+  categorie: categorieProduitOfficineSchema,
+  prixUnitaireGnf: positiveInt.max(2_000_000_000),
+  seuilAlerte: z.coerce.number().int().min(0).max(100000).default(10),
+  unite: z.string().trim().min(1).max(40).default('unite'),
+}).strict();
+
+export const modifierProduitOfficineSchema = z.object({
+  libelle: z.string().trim().min(2).max(160).optional(),
+  categorie: categorieProduitOfficineSchema.optional(),
+  prixUnitaireGnf: positiveInt.max(2_000_000_000).optional(),
+  seuilAlerte: z.coerce.number().int().min(0).max(100000).optional(),
+  unite: z.string().trim().min(1).max(40).optional(),
+}).strict().refine((dto) => Object.keys(dto).length > 0, 'Au moins un champ doit etre modifie');
+
+export const creerDemandeRendezVousSchema = z.object({
+  motif: z.string().trim().min(5).max(1000),
+  idStructure: id.optional(),
+  idMedecin: id.optional(),
+}).strict();
+
+export const accepterDemandeRendezVousSchema = z.object({
+  prevuLe: z.string().min(1),
+}).strict();
+
+/** Un refus sans explication est un mur : le motif est obligatoire. */
+export const refuserDemandeRendezVousSchema = z.object({
+  motif: z.string().trim().min(5).max(500),
+}).strict();
+
+export const orienterDemandeRendezVousSchema = z.object({
+  idMedecin: id,
+}).strict();
+
+export const fixerRendezVousSchema = z.object({
+  prevuLe: z.string().min(1),
+  motif: z.string().trim().max(500).optional(),
+});
+
+export const statutRendezVousSchema = z.object({
+  statut: z.enum(['EN_CONSULTATION', 'TERMINE', 'ABSENT']),
+});
+
+export const libererResultatsSchema = z.object({
+  commentaire: z.string().trim().max(2000).optional(),
+});
+
+export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECIN', 'PHARMACIEN', 'AGENT_ACCUEIL', 'TECHNICIEN_LABO']);
 
 export const createAgentStructureSchema = z.object({
   telephone: phone,
@@ -94,6 +237,55 @@ export const createAgentStructureSchema = z.object({
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
   role: roleAgentStructureSchema,
+  // Ou le patient devra se rendre. **Facultatif** : beaucoup d'hopitaux ne
+  // numerotent pas leurs bureaux, et l'agent accompagne a pied. Ignore pour
+  // les roles autres que MEDECIN.
+  bureau: z.string().trim().min(1).max(120).optional(),
+}).strict();
+
+// --- Creation d'un patient au comptoir (EF-03-01) -------------------
+//
+// Pas de mot de passe : il est genere et remis au patient. Pas d'antecedents
+// non plus — au comptoir on enregistre une identite, le reste se recueille en
+// consultation.
+export const creerPatientComptoirSchema = z.object({
+  telephone: phone,
+  prenom: z.string().trim().min(1).max(80),
+  nom: z.string().trim().min(1).max(80),
+  dateNaissance: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide'),
+  sexe: z.enum(['M', 'F']),
+  prefecture: z.string().trim().min(1).max(80),
+  sousPrefecture: z.string().trim().max(80).optional(),
+  email: optionalEmail,
+}).strict();
+
+// --- Le compte par lequel un assureur se connecte (addendum, point 5.2) ---
+export const creerAgentAssureurSchema = z.object({
+  prenom: z.string().trim().min(1).max(80),
+  nom: z.string().trim().min(1).max(80),
+  telephone: phone,
+  email: optionalEmail,
+  prefecture: z.string().trim().max(80).optional(),
+}).strict();
+
+// --- Un versement de la compagnie a une officine (addendum, point 5.2) ---
+//
+// Pas d'`idAssureur` : il se deduit de la structure de l'agent connecte.
+// L'accepter en entree laisserait un agent regler au nom d'un concurrent.
+export const creerReglementSchema = z.object({
+  idStructure: z.string().min(1, 'Choisissez une pharmacie'),
+  montantGnf: z.number().int().positive('Le montant verse doit etre positif'),
+  periodeDebut: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide'),
+  periodeFin: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Date invalide'),
+  reference: z.string().trim().max(120).optional(),
+}).strict().refine((d) => new Date(d.periodeFin) >= new Date(d.periodeDebut), {
+  message: 'La fin de periode precede son debut',
+  path: ['periodeFin'],
+});
+
+/** Un bureau change : un medecin demenage, un service est redecoupe. */
+export const definirBureauSchema = z.object({
+  bureau: z.string().trim().min(1).max(120).nullable(),
 }).strict();
 
 export const createStructureSchema = z.object({
@@ -114,6 +306,7 @@ export const createStructureSchema = z.object({
 
 export const createPharmacieSchema = z.object({
   nom: z.string().trim().min(2).max(160),
+  idStructureParente: id.optional(),
   prefecture: z.string().trim().min(1).max(80),
   adresse: z.string().trim().max(200).optional(),
   latitude: z.coerce.number().optional(),
@@ -142,6 +335,19 @@ export const createAgentPharmacieSchema = z.object({
   nom: z.string().trim().min(1).max(80),
 }).strict();
 
+export const permissionTemporaireAgentSchema = z.object({
+  roleOfficine: z.enum(['ADJOINT', 'PREPARATEUR', 'CAISSIER']),
+  expireLe: z.string().datetime(),
+}).strict();
+
+export const etatAgentSchema = z.object({
+  estActif: z.boolean(),
+}).strict();
+
+export const roleAgentSchema = z.object({
+  roleOfficine: z.enum(['ADJOINT', 'PREPARATEUR', 'CAISSIER']),
+}).strict();
+
 export const reapprovisionnerStockSchema = z.object({
   idMedicament: id,
   quantiteAjoutee: positiveInt,
@@ -150,9 +356,36 @@ export const reapprovisionnerStockSchema = z.object({
   margeGnf: nonNegativeInt.optional(),
 }).strict();
 
+export const ajusterLotStockSchema = z.object({
+  quantiteComptee: nonNegativeInt,
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+export const mouvementsStockQuerySchema = z.object({
+  limite: z.coerce.number().int().positive().max(200).default(100),
+}).strict();
+
 export const delivrerOrdonnanceSchema = z.object({
   modePaiement: z.enum(['ESPECES', 'ORANGE_MONEY', 'MTN_MOMO']).optional(),
   quantiteDelivree: z.coerce.number().int().positive().optional(),
+}).strict();
+
+/**
+ * Substituer un produit (EF-07-04).
+ *
+ * Le motif n'est pas facultatif : c'est le prescripteur qui le lira, et une
+ * substitution muette est une modification de traitement decidee par
+ * quelqu'un qui n'a pas vu le patient.
+ */
+export const substituerLigneSchema = z.object({
+  idMedicamentDelivre: id,
+  quantiteDelivree: z.coerce.number().int().positive().optional(),
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+/** Refuser une ligne (EF-07-05). Rien ne sort du stock, et on dit pourquoi. */
+export const refuserLigneSchema = z.object({
+  motif: z.string().trim().min(5).max(300),
 }).strict();
 
 // EF-07-01. Le service compare en majuscules : la casse saisie au comptoir ne
@@ -183,6 +416,43 @@ export const retirerPriseEnChargeSchema = z.object({
 
 export const choisirModeRemiseSchema = z.object({
   mode: z.enum(['RETRAIT_PHARMACIE', 'LIVRAISON']),
+}).strict();
+
+export const annulerCommandeSchema = z.object({
+  // Le meme minimum que la retractation : le patient attend une explication,
+  // et la base l'exige aussi.
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+/**
+ * Payer le panier d'une commande.
+ *
+ * **Aucun montant.** Il est fige en base au chiffrage ; un montant qui vient
+ * du navigateur est un montant qu'on peut baisser.
+ */
+/** Le numero de recu du comptoir : ce qui permet de rapprocher la caisse. */
+export const encaisserCommandeSchema = z.object({
+  referenceOperateur: z.string().trim().min(3).max(120),
+}).strict();
+
+export const payerCommandeSchema = z.object({
+  // Les memes trois valeurs que `initierPaiementSchema`, parce que c'est
+  // l'enum `ModePaiement` de la base. Une premiere version en inventait
+  // sept — carte, virement, deux operateurs qui n'existent pas ici — et le
+  // schema aurait accepte des valeurs que Prisma aurait refusees.
+  modePaiement: z.enum(['ORANGE_MONEY', 'MTN_MOMO', 'ESPECES']),
+  numeroOperateur: z.string().trim().min(6).max(30).optional(),
+}).strict();
+
+/**
+ * Ouvrir la consultation d'une visite.
+ *
+ * **Aucun patient dans le corps** : il vient de l'episode. Le redemander
+ * ouvrirait la porte a une consultation rattachee a une visite qui parle
+ * d'autre chose. Le motif est optionnel et vaut par defaut celui de la visite.
+ */
+export const ouvrirConsultationSchema = z.object({
+  motifPrincipal: z.string().trim().min(2).max(500).optional(),
 }).strict();
 
 export const createConsultationSchema = z.object({
@@ -330,9 +600,19 @@ export const sendSmsMasseSchema = z.object({
   message: z.string().trim().min(1).max(480),
 }).strict();
 
+/**
+ * Valider et signer une consultation.
+ *
+ * **`idOrdonnances` manquait ici alors que le service le lit** pour signer les
+ * ordonnances choisies. Le schema etant `.strict()`, la cle faisait rejeter
+ * tout le corps : l'ecran de validation du medecin recevait 400 a chaque
+ * tentative, et c'est le seul qu'il ait. `ValiderConsultationDto`
+ * (shared-types) decrivait le bon contrat depuis le debut.
+ */
 export const validerConsultationSchema = z.object({
   notesMedecin: z.string().trim().max(3000).optional(),
   tarifGnf: z.coerce.number().int().min(0).max(10_000_000).optional(),
+  idOrdonnances: z.array(z.string().trim().min(1).max(60)).max(40).optional(),
 }).strict();
 
 // `motifRefus` : nom du champ dans RepondreReferencementDto (shared-types) et
@@ -393,6 +673,25 @@ export const updateParametresSystemeSchema = z.object({
     frequenceMinutes: z.coerce.number().int().min(1).max(1440),
     ussdTimeoutSecondes: z.coerce.number().int().min(30).max(3600),
   }).partial().strict().optional(),
+
+  // Ces deux sections manquaient. Le schema etant `.strict()`, l'onglet
+  // « Ordonnances » de l'ecran d'administration envoyait un corps rejete en
+  // 400 : il s'affichait, son bouton repondait, et rien ne s'enregistrait.
+  // Constate le 2026-10-02 en ajoutant la section « pharmacie ».
+  prescription: z.object({
+    dureeValiditeJours: z.coerce.number().int().min(1).max(365),
+    longueurCodeVerification: z.coerce.number().int().min(4).max(12),
+    signatureObligatoire: z.boolean(),
+    dureeValiditeReglementeJours: z.coerce.number().int().min(1).max(365),
+    renouvellementsMax: z.coerce.number().int().min(0).max(24),
+  }).partial().strict().optional(),
+
+  pharmacie: z.object({
+    categoriesExigeantOrdonnance: z.array(z.enum([
+      'MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE',
+      'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',
+    ])).max(8),
+  }).partial().strict().optional(),
 }).strict();
 
 // ─── P1 Hopital : episodes de soins et demandes d'analyse (EF-03) ────────────
@@ -414,10 +713,12 @@ export const updateEpisodeSchema = z.object({
   statut: z.enum(['OUVERT', 'EN_COURS']).optional(),
 }).strict();
 
+// `prevuLe` a ete retire le 2026-09-30 : l'accueil oriente, le medecin fixe
+// le creneau (addendum, point 3). `.strict()` fait donc echouer un ancien
+// appel qui enverrait encore une date, plutot que de l'ignorer en silence.
 export const orientationSchema = z.object({
   service: texteLibre(120).optional(),
   idMedecin: id.optional(),
-  prevuLe: z.string().datetime({ offset: true }).optional(),
   motif: texteLibre(300).optional(),
 }).strict().refine((v) => v.idMedecin || v.service, { message: 'Indiquez un medecin ou un service' });
 
@@ -480,3 +781,385 @@ export const evolutionQuerySchema = z.object({
 export const notificationsQuerySchema = paginationQuerySchema.extend({
   lu: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
 });
+
+// ── Assurance et tiers payant (EF-09, addendum point 5) ──────────────
+
+const categorieProduit = z.enum([
+  'MEDICAMENT', 'LAIT_INFANTILE', 'COMPLEMENT_ALIMENTAIRE', 'COSMETIQUE',
+  'HYGIENE', 'PARAPHARMACIE', 'DISPOSITIF_MEDICAL', 'AUTRE',
+]);
+
+export const verifierEligibiliteSchema = z.object({
+  idPatient: id,
+}).strict();
+
+export const simulerPriseEnChargeSchema = z.object({
+  jetonCarteAssurance: jetonCarte,
+  lignes: z.array(z.object({
+    idMedicament: id,
+    libelle: z.string().trim().min(1).max(200),
+    categorie: categorieProduit,
+    montantGnf: nonNegativeInt.max(1_000_000_000),
+  })).min(1).max(100),
+  montantNetGnf: nonNegativeInt.max(1_000_000_000),
+}).strict();
+
+export const creerAssureurSchema = z.object({
+  nom: z.string().trim().min(2).max(120),
+  // Le code figure sur la carte de l'assure : court, sans espace, lisible.
+  code: z.string().trim().min(2).max(16).regex(/^[A-Za-z0-9-]+$/, 'Lettres, chiffres et tirets uniquement'),
+  telephone: z.string().trim().max(40).optional(),
+  email: z.string().trim().email().max(120).optional(),
+  modeEchange: z.enum(['MANUEL', 'PORTAIL', 'API']).optional(),
+  idStructure: id.optional(),
+}).strict();
+
+// `exclu` et `tauxPourcent` ensemble seraient contradictoires ; le service le
+// refuse, et une contrainte SQL le refuse aussi.
+export const creerRegleCouvertureSchema = z.object({
+  categorie: categorieProduit,
+  exclu: z.boolean().optional(),
+  tauxPourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondLigneGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: z.string().optional(),
+}).strict();
+
+export const creerContratAssuranceSchema = z.object({
+  idAssureur: id,
+  idPatient: id,
+  numeroPolice: z.string().trim().min(2).max(60),
+  tauxBasePourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: z.string().min(1),
+  dateFin: z.string().optional(),
+  carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+}).strict();
+
+export const verifierCarteAssuranceSchema = z.object({
+  jetonCarte,
+}).strict();
+
+const dateAssurance = z.string().min(1).refine((value) => !Number.isNaN(Date.parse(value)), 'Date invalide');
+
+const finApresDebut = (value: { dateEffet?: string; dateFin?: string }) =>
+  !value.dateFin || !value.dateEffet || Date.parse(value.dateFin) >= Date.parse(value.dateEffet);
+const messageFinApresDebut = {
+  message: 'La date de fin doit etre posterieure ou egale a la date d’effet.',
+  path: ['dateFin'],
+};
+const graceJours = z.coerce.number().int().min(0).max(90).optional();
+/** Un contrat dure au moins un jour : sa fin suit strictement son effet. */
+const contratFinApresDebut = (value: { dateEffet?: string; dateFin?: string }) =>
+  !value.dateFin || !value.dateEffet || Date.parse(value.dateFin) > Date.parse(value.dateEffet);
+const messageContratFinApresDebut = {
+  message: 'La date de fin doit etre posterieure a la date d’effet.',
+  path: ['dateFin'],
+};
+
+export const creerContratCollectifSchema = z.object({
+  entreprise: z.object({
+    raisonSociale: z.string().trim().min(2).max(160),
+    identifiantLegal: z.string().trim().min(2).max(80).optional(),
+    telephone: z.string().trim().max(40).optional(),
+    email: z.string().trim().email().max(120).optional(),
+  }).strict(),
+  numeroContrat: z.string().trim().min(2).max(80),
+  nomRegime: z.string().trim().min(2).max(120),
+  tauxBasePourcent: z.coerce.number().int().min(0).max(100),
+  plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: dateAssurance,
+  dateFin: dateAssurance,
+  carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+  periodeGraceJours: graceJours,
+}).strict().refine(contratFinApresDebut, messageContratFinApresDebut);
+
+export const creerContratIndividuelSchema = z.object({
+  idPatient: id,
+  numeroPolice: z.string().trim().min(2).max(60),
+  tauxBasePourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: dateAssurance,
+  dateFin: dateAssurance.optional(),
+  carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+  periodeGraceJours: graceJours,
+}).strict().refine(contratFinApresDebut, messageContratFinApresDebut);
+
+export const creerAdhesionAssuranceSchema = z.object({
+  idPatient: id,
+  numeroAdherent: z.string().trim().min(2).max(80),
+  dateEffet: dateAssurance.optional(),
+  dateFin: dateAssurance.optional(),
+}).strict().refine(finApresDebut, messageFinApresDebut);
+
+export const terminerAdhesionSchema = z.object({
+  motif: z.string().trim().min(5).max(500),
+  dateEffet: dateAssurance.optional(),
+}).strict();
+
+export const renouvelerContratSchema = z.object({
+  dateFin: dateAssurance,
+}).strict();
+
+export const creerReglePoliceSchema = z.object({
+  typeCouverture: z.enum(['INDIVIDUELLE', 'COLLECTIVE']),
+  idContrat: id,
+  categorie: categorieProduit,
+  exclu: z.boolean().optional(),
+  tauxPourcent: z.coerce.number().int().min(0).max(100).optional(),
+  plafondLigneGnf: nonNegativeInt.max(1_000_000_000).optional(),
+  dateEffet: dateAssurance.optional(),
+}).strict();
+
+// ── Fiches d'identite des personnes assurees ─────────────────────────
+
+const dateDuJourOuAvant = dateAssurance.refine((v) => Date.parse(v) <= Date.now(), 'La date ne peut pas etre dans le futur');
+
+const champsPersonneAssuree = {
+  nom: z.string().trim().min(1).max(80),
+  prenoms: z.string().trim().min(1).max(120),
+  sexe: z.enum(['M', 'F']),
+  dateNaissance: dateDuJourOuAvant.refine((v) => Date.parse(v) >= Date.parse('1900-01-01'), 'Date de naissance invalide'),
+  lieuNaissance: z.string().trim().min(2).max(120),
+  nationalite: z.string().trim().min(2).max(60),
+  typePiece: z.nativeEnum(TypePieceIdentite),
+  numeroPiece: z.string().trim().min(3).max(40),
+  dateDelivrancePiece: dateDuJourOuAvant.optional(),
+  dateExpirationPiece: dateAssurance.optional(),
+  adresse: z.string().trim().max(200).optional(),
+};
+
+const expirationApresDelivrance = (v: { dateDelivrancePiece?: string; dateExpirationPiece?: string }) =>
+  !v.dateDelivrancePiece || !v.dateExpirationPiece || Date.parse(v.dateExpirationPiece) > Date.parse(v.dateDelivrancePiece);
+const messageExpiration = {
+  message: 'La date d’expiration de la piece doit suivre sa date de delivrance.',
+  path: ['dateExpirationPiece'],
+};
+
+export const personneAssureeSchema = z.object({
+  ...champsPersonneAssuree,
+  telephone: phone,
+  prefecture: z.string().trim().min(2).max(80),
+}).strict().refine(expirationApresDelivrance, messageExpiration);
+
+export const modifierPersonneAssureeSchema = z.object(champsPersonneAssuree)
+  .partial().strict()
+  .refine((v) => Object.keys(v).length > 0, 'Aucune modification')
+  .refine(expirationApresDelivrance, messageExpiration);
+
+export const ajouterTravailleurSchema = z.object({
+  personne: personneAssureeSchema,
+  numeroAdherent: z.string().trim().min(2).max(80),
+  dateEffet: dateAssurance.optional(),
+  dateFin: dateAssurance.optional(),
+}).strict().refine(finApresDebut, messageFinApresDebut);
+
+export const assurerPersonneSchema = z.object({
+  personne: personneAssureeSchema,
+  police: z.object({
+    numeroPolice: z.string().trim().min(2).max(60),
+    tauxBasePourcent: z.coerce.number().int().min(0).max(100).optional(),
+    plafondAnnuelGnf: nonNegativeInt.max(1_000_000_000).optional(),
+    franchiseGnf: nonNegativeInt.max(1_000_000_000).optional(),
+    dateEffet: dateAssurance,
+    dateFin: dateAssurance.optional(),
+    carenceJours: z.coerce.number().int().min(0).max(365).optional(),
+    periodeGraceJours: graceJours,
+  }).strict().refine(contratFinApresDebut, messageContratFinApresDebut),
+}).strict();
+
+/** La liste du personnel : un CSV entier, borne a un millier de lignes environ. */
+export const importerTravailleursSchema = z.object({
+  contenu: z.string().min(1).max(500_000),
+}).strict();
+
+// ── Referentiels importables (EF-12-03) ──────────────────────────────
+//
+// Le contenu est un CSV entier : la borne haute est volontairement large
+// (2 Mo), un referentiel national comptant des milliers de lignes. Au-dela,
+// c'est un envoi de fichier qu'il faudra, pas un corps JSON.
+// --- Journal d audit : recherche et export (EF-12-05) ---------------
+//
+// Les criteres arrivent en chaine de requete. Le schema reste `.strict()` :
+// un critere mal orthographe doit se voir, pas s ignorer en silence et rendre
+// un resultat trop large a une enquete.
+//
+// La liste des roles vient de l enumere Prisma plutot que d une copie : une
+// copie se serait desynchronisee au premier role ajoute, et le filtre aurait
+// refuse un role parfaitement valide.
+//
+// Il s applique a `req.query` via `validateQuery`, donc **toutes les valeurs
+// arrivent en chaines** : les booleens sont lus depuis « true »/« false » et
+// les nombres sont convertis. Une premiere version recopiait les criteres a
+// la main dans le routeur, ce qui ecartait les cles inconnues avant que Zod
+// ne les voie : `.strict()` ne servait a rien, et `echecSeulement` mal
+// orthographie passait en silence avec un resultat trop large. Verifie contre
+// l API reelle.
+const booleenDeRequete = z
+  .enum(['true', 'false'])
+  .transform((v) => v === 'true')
+  .optional();
+
+// --- Identito-vigilance (EF-01-04/10) -------------------------------
+//
+// Le numero de piece et le lieu de naissance sont exiges : ce sont eux que la
+// contrainte SQL reclame pour une identite verifiee. Les redire ici permet de
+// refuser tot, avec un message utile, plutot que de laisser remonter une
+// violation de contrainte.
+export const verifierIdentiteSchema = z.object({
+  typePiece: z.nativeEnum(TypePieceIdentite),
+  numeroPiece: z.string().trim().min(3).max(60),
+  lieuNaissance: z.string().trim().min(2).max(120),
+  nomMere: z.string().trim().min(2).max(120).optional(),
+  remplacerPiece: z.boolean().optional(),
+}).strict();
+
+export const noterTraitsSchema = z.object({
+  lieuNaissance: z.string().trim().min(2).max(120).optional(),
+  nomMere: z.string().trim().min(2).max(120).optional(),
+}).strict();
+
+export const filtreIdentitesSchema = z.object({
+  q: z.string().trim().min(1).max(100).optional(),
+  niveau: z.nativeEnum(NiveauIdentite).optional(),
+}).strict();
+
+// --- Numero d'ordre professionnel (EF-01-08) ------------------------
+export const verifierOrdreSchema = z.object({
+  numeroOrdre: z.string().trim().min(3, {
+    message: "Saisissez le numero tel qu'il figure au registre de l'ordre.",
+  }).max(60),
+}).strict();
+
+// --- Bris de glace (EF-02-06) ---------------------------------------
+//
+// Les bornes sont celles de la base (`bris_de_glace_*`). Le message est en
+// francais et dit quoi faire : celui qui le lit a souvent un patient devant
+// lui.
+const EXPLICATION_BRIS =
+  "Expliquez la situation en une phrase : c'est elle qui sera relue, et c'est elle qui vous protège.";
+
+export const declarerBrisDeGlaceSchema = z.object({
+  idPatient: z.string().trim().min(1, { message: 'Indiquez le dossier concerne.' }),
+  motif: z.nativeEnum(MotifBrisDeGlace),
+  explication: z.string().trim().min(20, { message: EXPLICATION_BRIS }).max(2000),
+}).strict();
+
+export const reviserBrisDeGlaceSchema = z.object({
+  statut: z.enum(['JUSTIFIE', 'INJUSTIFIE']),
+  avis: z.string().trim().min(20, {
+    message: "Dites en une phrase pourquoi l'accès était fondé ou ne l'était pas.",
+  }).max(2000),
+}).strict();
+
+export const filtreBrisDeGlaceSchema = z.object({
+  idPatient: z.string().trim().min(1).optional(),
+  aRevoirSeulement: z.enum(['true', 'false']).optional(),
+}).strict();
+
+// --- Textes de consentement (EF-02-01) ------------------------------
+//
+// Les bornes sont les memes qu'en base (`textes_consentement_*`) : refuser
+// tot, avec un message utile, plutot que de laisser remonter une violation de
+// contrainte. Un texte qui n'explique rien ne recueille pas un consentement
+// eclaire — d'ou les 40 caracteres.
+export const publierTexteConsentementSchema = z.object({
+  scope: z.nativeEnum(ConsentScope),
+  langue: z.string().trim().regex(/^[a-z]{2}$/, {
+    message: 'La langue est un code de deux lettres minuscules : fr, en, pu, ml.',
+  }),
+  titre: z.string().trim().min(3).max(200),
+  corps: z.string().trim().min(40, {
+    message: "Le texte doit dire a quoi la personne s'engage : quarante caracteres au moins.",
+  }).max(20000),
+}).strict();
+
+export const filtreTextesConsentementSchema = z.object({
+  scope: z.nativeEnum(ConsentScope).optional(),
+}).strict();
+
+// --- Fusion de dossiers patients (EF-01-06) -------------------------
+//
+// Le motif est exige et sa longueur minimale est la meme qu'en base
+// (`fusions_dossier_motif_dit_quelque_chose`) : le schema refuse tot, avec un
+// message utile, plutot que de laisser remonter une violation de contrainte.
+//
+// **Le message est en francais et dit quoi faire.** Sans lui, Zod repondait
+// « Too small: expected string to have >=10 characters » — l'agent lisait de
+// l'anglais technique, et la phrase ecrite pour lui dans le service n'etait
+// jamais atteinte, puisque la validation refuse avant. Vu en appelant la vraie
+// route le 2026-10-04.
+const MOTIF_FUSION =
+  "Dites en une phrase sur quoi vous vous fondez : c'est ce qui permettra de contester la fusion plus tard.";
+
+export const fusionnerSchema = z.object({
+  idAbsorbe: z.string().trim().min(1, { message: 'Indiquez le dossier a absorber.' }),
+  motif: z.string().trim().min(10, { message: MOTIF_FUSION }).max(2000),
+}).strict();
+
+export const annulerFusionSchema = z.object({
+  motifAnnulation: z.string().trim().min(10, {
+    message: "Dites en une phrase pourquoi cette fusion est annulee : c'est ce qui restera au dossier.",
+  }).max(2000),
+}).strict();
+
+// --- Demandes d exercice de droits (EF-12-09) -----------------------
+//
+// La precision est obligatoire pour une rectification : sans elle, on ne sait
+// pas quoi corriger. Le service le verifie aussi, parce qu un schema ne peut
+// pas exprimer cette dependance sans devenir illisible.
+export const deposerDemandeRgpdSchema = z.object({
+  type: z.nativeEnum(TypeDemandeRgpd),
+  precision: z.string().trim().min(1).max(2000).optional(),
+}).strict();
+
+// La reponse fait au moins dix caracteres : un refus qu on ne motive pas n est
+// pas contestable. La meme regle vit dans le service et dans une contrainte
+// SQL, pour qu elle ne depende d aucun des trois seul.
+export const repondreDemandeRgpdSchema = z.object({
+  satisfaite: z.boolean(),
+  reponse: z.string().trim().min(10).max(4000),
+}).strict();
+
+export const filtreDemandesRgpdSchema = z.object({
+  statut: z.nativeEnum(StatutDemandeRgpd).optional(),
+  type: z.nativeEnum(TypeDemandeRgpd).optional(),
+}).strict();
+
+// --- Suspension de compte (EF-12-01) --------------------------------
+//
+// Le motif est long d au moins dix caracteres : « non » ou « rgpd » ne disent
+// rien, et une suspension qu on ne peut pas expliquer ne peut pas etre
+// contestee. La meme regle vit dans le service et dans une contrainte SQL,
+// pour qu elle ne depende d aucune des trois seules.
+export const suspendreCompteSchema = z.object({
+  motif: z.string().trim().min(10).max(500),
+}).strict();
+
+export const filtreComptesSchema = z.object({
+  q: z.string().trim().min(1).max(100).optional(),
+  role: z.nativeEnum(Role).optional(),
+  actifs: booleenDeRequete,
+  page: positiveInt.optional(),
+  limit: positiveInt.max(100).optional(),
+}).strict();
+
+export const filtreJournalSchema = z.object({
+  du: z.string().trim().min(1).optional(),
+  au: z.string().trim().min(1).optional(),
+  idUtilisateur: id.optional(),
+  idPatient: id.optional(),
+  role: z.nativeEnum(Role).optional(),
+  ressource: z.string().trim().min(1).max(60).optional(),
+  echecsSeulement: booleenDeRequete,
+  parTiers: booleenDeRequete,
+  page: positiveInt.optional(),
+  limit: positiveInt.max(200).optional(),
+}).strict();
+
+export const importerReferentielSchema = z.object({
+  contenu: z.string().min(1).max(2_000_000),
+  simulation: z.boolean().optional(),
+}).strict();

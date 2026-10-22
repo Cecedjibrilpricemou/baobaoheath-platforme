@@ -10,7 +10,8 @@ import { VaccinationService } from '../../../core/services/vaccination.service';
 import { PaiementService } from '../../../core/services/paiement.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-import { Patient, Vaccination as ApiVaccination, Paiement } from '../../../core/models/patient.model';
+import { Patient, Vaccination as ApiVaccination } from '../../../core/models/patient.model';
+import type { FactureView } from '@baobaoheath/shared-types';
 import type { HorodatageApi } from '@baobaoheath/shared-types';
 
 // Interface alignée sur les champs utilisés dans le template HTML
@@ -51,7 +52,7 @@ export class DashboardComponent implements OnInit {
   patientProfil      = signal<Patient | null>(null);
   consultations      = signal<Consultation[]>([]); 
   vaccinations       = signal<DashboardVaccination[]>([]);
-  factures           = signal<Paiement[]>([]);
+  factures           = signal<FactureView[]>([]);
   isLoading          = signal(true);
   errorMessage       = signal('');
   totalConsultations = signal(0);  

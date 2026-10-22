@@ -4,28 +4,33 @@
 import { Router, Response } from 'express';
 
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
-import { requireRole } from '../middlewares/rbac.middleware';
+import { requireOfficineRole, requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import * as commande from '../services/commande.service';
+import * as paiement from '../services/paiement.service';
 import {
+  annulerCommandeSchema,
   choisirModeRemiseSchema,
+  encaisserCommandeSchema,
   lancerRechercheSchema,
+  payerCommandeSchema,
   repondreDisponibiliteSchema,
   retirerPriseEnChargeSchema,
 } from '../validators/api.schemas';
 
 const router = Router();
+const requirePersonnelClinique = requireOfficineRole('TITULAIRE', 'ADJOINT', 'PREPARATEUR');
 
 router.use(authenticate);
 
 /**
- * Lance la recherche d'une pharmacie pour une ordonnance signee. Ouvert au
- * prescripteur et a l'accueil : ce sont eux qui cloturent le passage a
- * l'hopital.
+ * Lance la recherche d'une pharmacie pour une ordonnance signee. Reserve aux
+ * prescripteurs : l'accueil en a ete retire le 2026-09-28 (addendum, point 9 —
+ * « ni prescription, ni ordonnance, ni produit »).
  */
 router.post(
   '/',
-  requireRole('MEDECIN', 'ASC', 'ASC_SUPERVISOR', 'AGENT_ACCUEIL'),
+  requireRole('MEDECIN', 'ASC', 'ASC_SUPERVISOR'),
   validateBody(lancerRechercheSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.lancerRecherchePharmacie(req.body.idOrdonnance);
@@ -34,7 +39,7 @@ router.post(
 );
 
 /** La file du comptoir : les appels du quartier, et ce que la pharmacie a pris. */
-router.get('/pharmacie', requireRole('PHARMACIEN'), async (req: AuthRequest, res: Response) => {
+router.get('/pharmacie', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
   const data = await commande.commandesDeLaPharmacie(req.user!);
   res.json({ success: true, data });
 });
@@ -46,6 +51,7 @@ router.get('/pharmacie', requireRole('PHARMACIEN'), async (req: AuthRequest, res
 router.post(
   '/:id/disponibilite',
   requireRole('PHARMACIEN'),
+  requirePersonnelClinique,
   validateBody(repondreDisponibiliteSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.repondreDisponibilite(
@@ -61,6 +67,7 @@ router.post(
 router.post(
   '/:id/retirer',
   requireRole('PHARMACIEN'),
+  requirePersonnelClinique,
   validateBody(retirerPriseEnChargeSchema),
   async (req: AuthRequest, res: Response) => {
     const data = await commande.retirerPriseEnCharge(req.user!, String(req.params.id), req.body.motif);
@@ -79,8 +86,111 @@ router.post(
   }
 );
 
+// ── La machine a etats : qui fait avancer quoi ───────────────────────
+//
+// **Chaque geste a son acteur, et un seul.** L'officine chiffre, prepare et
+// remet ; le patient paie et peut renoncer. Les gardes de role le disent au
+// niveau de la route, et le service verifie en plus que la commande est bien
+// celle de cette officine — une garde de role dit « un pharmacien », pas
+// « ce pharmacien-la ».
+
+/** L'officine chiffre le panier aux prix de son comptoir (EF-07-02). */
+router.post('/:id/chiffrer', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
+  const data = await commande.chiffrerCommande(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/**
+ * Le patient paie son panier.
+ *
+ * Le montant n'est pas dans le corps : il est fige en base au chiffrage.
+ * C'est la facture qui est rendue, avec son lien de paiement — et c'est le
+ * rappel de la passerelle qui fera avancer la commande, pas cet appel.
+ */
+router.post(
+  '/:id/payer',
+  requireRole('PATIENT'),
+  validateBody(payerCommandeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data = await paiement.initierPaiementCommande(
+      req.user!.userId, String(req.params.id), req.body,
+    );
+    res.json({ success: true, data });
+  }
+);
+
+/**
+ * L'officine encaisse le panier au comptoir.
+ *
+ * Les especes ne passent par aucune passerelle : le pharmacien recoit
+ * l'argent et le declare. La reference est son numero de recu — ce qui
+ * permet de rapprocher la caisse plus tard.
+ */
+router.post(
+  '/:id/encaisser',
+  requireRole('PHARMACIEN'),
+  requirePersonnelClinique,
+  validateBody(encaisserCommandeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data = await paiement.encaisserCommandeAuComptoir(
+      req.user!, String(req.params.id), req.body.referenceOperateur,
+    );
+    res.json({ success: true, data });
+  }
+);
+
+/** L'officine commence a preparer. */
+router.post('/:id/preparer', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
+  const data = await commande.marquerEnPreparation(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/** Le sachet est pret. C'est le mode de remise choisi qui decide de la suite. */
+router.post('/:id/prete', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
+  const data = await commande.marquerPrete(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/** L'officine remet les produits — au patient, ou au motard. */
+router.post('/:id/remettre', requireRole('PHARMACIEN'), requirePersonnelClinique, async (req: AuthRequest, res: Response) => {
+  const data = await commande.confirmerRemise(req.user!, String(req.params.id));
+  res.json({ success: true, data });
+});
+
+/**
+ * Annuler, avec un motif.
+ *
+ * Ouvert aux deux : le patient renonce, l'officine decouvre une rupture. Le
+ * service verifie que l'appelant a bien affaire a cette commande.
+ */
+router.post(
+  '/:id/annuler',
+  requireRole('PATIENT', 'PHARMACIEN'),
+  validateBody(annulerCommandeSchema),
+  async (req: AuthRequest, res: Response) => {
+    const data = await commande.annulerCommande(req.user!, String(req.params.id), req.body.motif);
+    res.json({ success: true, data });
+  }
+);
+
+/** Les commandes du patient connecte : c'est lui qui choisit son mode de remise. */
+router.get('/mes-commandes', requireRole('PATIENT'), async (req: AuthRequest, res: Response) => {
+  const data = await commande.mesCommandes(req.user!);
+  res.json({ success: true, data });
+});
+
+/**
+ * Lire une commande.
+ *
+ * **Cette route n'avait aucun controle** : n'importe quel compte connecte
+ * pouvait lire la commande d'un inconnu, avec son nom et ses medicaments.
+ * Quatre lectures sont legitimes — le patient, la pharmacie concernee, le
+ * prescripteur, l'administration.
+ */
 router.get('/:id', async (req: AuthRequest, res: Response) => {
-  const data = await commande.getCommande(String(req.params.id));
+  const id = String(req.params.id);
+  await commande.assertPeutLireCommande(req.user!, id);
+  const data = await commande.getCommande(id);
   res.json({ success: true, data });
 });
 

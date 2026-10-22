@@ -1,6 +1,6 @@
 // src/routes/laboratoire.routes.ts
 // P2 — Laboratoire (EF-04) : file des demandes, prelevement, resultats,
-// validation du biologiste, compte rendu. Reserve au personnel du laboratoire.
+// validation par le laborantin, compte rendu. Reserve au personnel du laboratoire.
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
@@ -13,12 +13,20 @@ import {
   saisirResultatsSchema,
   validerResultatsSchema,
 } from '../validators/api.schemas';
-import type { DemandeAnalyseView, TableauDeBordLaboView } from '@baobaoheath/shared-types';
+import type { DemandeAnalyseView, ScanLaboratoireView, TableauDeBordLaboView } from '@baobaoheath/shared-types';
 
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRole('TECHNICIEN_LABO', 'BIOLOGISTE', 'ADMIN_STRUCTURE'));
+router.use(requireRole('TECHNICIEN_LABO', 'ADMIN_STRUCTURE'));
+
+// ── Scan du QR patient au comptoir ───────────────────────────────────
+// Même geste que côté pharmacie, fenêtre différente : le laborantin voit ce
+// qui reste à faire pour ce patient dans SON laboratoire, et rien d'autre.
+router.get('/scan/:qrCode', async (req: AuthRequest, res: Response) => {
+  const data: ScanLaboratoireView = await labo.scanPatient(req.user!, req.params['qrCode'] as string);
+  res.json({ success: true, data });
+});
 
 router.get('/tableau-de-bord', async (req: AuthRequest, res: Response) => {
   const data: TableauDeBordLaboView = await labo.tableauDeBord(req.user!);
@@ -59,8 +67,11 @@ router.put('/demandes/:id/resultats', validateBody(saisirResultatsSchema), async
   res.json({ success: true, data });
 });
 
-// ── Validation nominative du biologiste (EF-04-05) ────────────────────
-router.post('/demandes/:id/valider', requireRole('BIOLOGISTE'), validateBody(validerResultatsSchema), async (req: AuthRequest, res: Response) => {
+// ── Validation nominative du laborantin (EF-04-05) ────────────────────
+// Le role BIOLOGISTE a ete supprime le 2026-09-30 (addendum, point 4) : il
+// n'y a pas de biologiste dans ces laboratoires. La validation reste
+// bloquante et nominative — quelqu'un continue de signer.
+router.post('/demandes/:id/valider', requireRole('TECHNICIEN_LABO'), validateBody(validerResultatsSchema), async (req: AuthRequest, res: Response) => {
   const data = await labo.validerResultats(req.user!, req.params['id'] as string, req.body);
   res.json({ success: true, data });
 });

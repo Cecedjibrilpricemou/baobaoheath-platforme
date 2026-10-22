@@ -52,7 +52,15 @@ export class MedecinLayoutComponent {
     iconRegistry.registerFontClassAlias('pi', 'pi');
   }
 
-  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  /**
+   * Sur mobile la barre s'ouvre par-dessus ; sur grand écran elle est ancrée,
+   * et le même bouton la replie sur ses icônes. Un seul bouton, deux gestes
+   * selon la place disponible.
+   */
+  toggleSidebar() {
+    if (this.layout.estMobile()) this.sidebarOpen.update(v => !v);
+    else this.layout.basculerRepli();
+  }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.themeService.toggle(); }
   toggleLang()     { this.i18nService.toggle(); }
@@ -79,6 +87,11 @@ export class MedecinLayoutComponent {
   navItems = [
     { labelKey: 'MEDECIN.NAV_DASHBOARD',    icon: 'pi-home',         route: '/medecin/dashboard'     },
     { labelKey: 'MEDECIN.NAV_CONSULTATIONS', icon: 'pi-check-circle', route: '/medecin/consultations' },
+    { labelKey: 'MEDECIN.NAV_DEMANDES',      icon: 'pi-inbox',        route: '/medecin/demandes'      },
+    { labelKey: 'MEDECIN.NAV_AGENDA',        icon: 'pi-calendar',     route: '/medecin/agenda'        },
+    { labelKey: 'MEDECIN.NAV_BRIS',          icon: 'pi-unlock',       route: '/medecin/bris-de-glace' },
+    { labelKey: 'MEDECIN.NAV_ORIENTATIONS',  icon: 'pi-directions',   route: '/medecin/orientations'  },
+    { labelKey: 'MEDECIN.NAV_RESULTATS',    icon: 'pi-inbox',        route: '/medecin/resultats'     },
     { labelKey: 'MEDECIN.NAV_REFERENCEMENTS', icon: 'pi-send',        route: '/medecin/referencements' },
     { labelKey: 'MEDECIN.NAV_MESSAGERIE',    icon: 'pi-comments',     route: '/medecin/messagerie'    }
   ];

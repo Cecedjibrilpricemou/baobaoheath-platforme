@@ -1,0 +1,118 @@
+:host {
+  display: block;
+  --agent-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --agent-accent: var(--bb-bright);
+}
+
+.bb-agents {
+  max-width: 1080px;
+  margin: 0 auto;
+
+  &__form, &__card {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+    box-shadow: var(--bb-shadow-sm);
+  }
+
+  &__form {
+    padding: 20px;
+    h2 { margin: 0 0 16px; font: 800 17px var(--bb-font-display); color: var(--bb-text-primary); }
+  }
+
+  &__fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    label, .bb-agents__temporary label { display: grid; gap: 6px; }
+    span { color: var(--bb-text-secondary); font-size: 12px; font-weight: 650; }
+    input, select {
+      min-height: 42px;
+      padding: 9px 11px;
+      color: var(--bb-text-primary);
+      background: var(--bb-surface);
+      border: 1px solid var(--bb-border);
+      border-radius: var(--bb-radius-md);
+      font: inherit;
+    }
+  }
+
+  &__primary, &__secondary {
+    border-radius: var(--bb-radius-md);
+    font: 700 13px var(--bb-font-body);
+    cursor: pointer;
+  }
+
+  &__primary {
+    margin-top: 16px;
+    padding: 10px 16px;
+    color: var(--bb-on-primary);
+    background: var(--agent-accent);
+    border: 0;
+    &:disabled { opacity: .55; cursor: default; }
+  }
+
+  &__list-title { margin: 28px 0 12px; color: var(--bb-text-primary); font: 800 17px var(--bb-font-display); }
+  &__message { color: var(--bb-text-secondary); padding: 12px 2px; &--error { color: var(--bb-danger); } }
+
+  &__list { display: grid; gap: 12px; }
+  &__card { padding: 16px; }
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    h3 { margin: 0; color: var(--bb-text-primary); font-size: 15px; }
+    p { margin: 4px 0 0; color: var(--bb-text-secondary); font-size: 12px; }
+  }
+  &__role, &__status {
+    padding: 5px 9px;
+    border-radius: var(--bb-radius-pill);
+    color: var(--agent-accent);
+    background: color-mix(in srgb, var(--agent-accent) 12%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  &__status { margin-left: auto; color: var(--bb-success); background: color-mix(in srgb, var(--bb-success) 12%, transparent); &--off { color: var(--bb-danger); background: color-mix(in srgb, var(--bb-danger) 12%, transparent); } }
+  &__actions { margin-top: 12px; }
+  &__secondary {
+    padding: 8px 11px;
+    color: var(--bb-text-primary);
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border);
+  }
+  &__temporary {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--bb-border-light);
+    label { display: grid; gap: 5px; }
+    label span, &__grant { color: var(--bb-text-secondary); font-size: 11px; }
+    select, input { min-height: 38px; padding: 7px 9px; color: var(--bb-text-primary); background: var(--bb-surface); border: 1px solid var(--bb-border); border-radius: var(--bb-radius-md); font: inherit; }
+  }
+  &__grant { color: var(--bb-warning); font-size: 12px; }
+  &__link { border: 0; padding: 6px; color: var(--bb-danger); background: transparent; font: 700 12px var(--bb-font-body); cursor: pointer; }
+  &__password {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 14px;
+    color: var(--bb-text-primary);
+    background: color-mix(in srgb, var(--bb-success) 10%, var(--bb-surface-card));
+    border: 1px solid color-mix(in srgb, var(--bb-success) 35%, var(--bb-border));
+    border-radius: var(--bb-radius-lg);
+    code { padding: 5px 8px; background: var(--bb-surface-card); border-radius: var(--bb-radius-sm); }
+    span { color: var(--bb-text-secondary); font-size: 12px; }
+    button { margin-left: auto; border: 0; color: var(--bb-text-primary); background: transparent; cursor: pointer; }
+  }
+
+  @media (max-width: 760px) { &__fields { grid-template-columns: 1fr; } }
+}

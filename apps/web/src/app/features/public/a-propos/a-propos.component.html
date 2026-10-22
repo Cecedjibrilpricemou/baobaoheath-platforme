@@ -1,0 +1,51 @@
+<!-- features/public/a-propos/a-propos.component.html -->
+<app-public-shell>
+
+  <header class="pub-hero">
+    <span class="pub-tag">{{ 'PUBLIC.ABOUT.TAG' | translate }}</span>
+    <h1 class="pub-hero__title">{{ 'PUBLIC.ABOUT.TITLE_A' | translate }} <span class="pub-hero__accent">{{ 'PUBLIC.ABOUT.TITLE_B' | translate }}</span></h1>
+    <p class="pub-hero__lead">{{ 'PUBLIC.ABOUT.LEAD' | translate: params() }}</p>
+  </header>
+
+  <section class="pub-section">
+    <div class="pub-story">
+      <div class="pub-story__block">
+        <span class="pub-story__label">{{ 'PUBLIC.ABOUT.PROBLEM_LABEL' | translate }}</span>
+        <p class="pub-story__text">{{ 'PUBLIC.ABOUT.PROBLEM' | translate }}</p>
+      </div>
+      <div class="pub-story__block pub-story__block--accent">
+        <span class="pub-story__label">{{ 'PUBLIC.ABOUT.MISSION_LABEL' | translate }}</span>
+        <p class="pub-story__text">{{ 'PUBLIC.ABOUT.MISSION' | translate: params() }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pub-section">
+    <div class="pub-section__head">
+      <h2 class="pub-section__title">{{ 'PUBLIC.ABOUT.VALUES_TITLE' | translate }}</h2>
+    </div>
+    <div class="pub-grid pub-grid--4">
+      @for (v of valeurs; track v.cle) {
+        <article class="pub-card">
+          <span class="pub-card__icon" aria-hidden="true"><i [class]="'pi ' + v.icone"></i></span>
+          <h3 class="pub-card__title">{{ 'PUBLIC.ABOUT.' + v.cle + '.TITLE' | translate }}</h3>
+          <p class="pub-card__text">{{ 'PUBLIC.ABOUT.' + v.cle + '.TEXT' | translate }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="pub-section">
+    <div class="pub-panel">
+      <div class="pub-panel__text">
+        <h2 class="pub-panel__title">{{ 'PUBLIC.ABOUT.PANEL_TITLE' | translate }}</h2>
+        <p class="pub-panel__sub">{{ 'PUBLIC.ABOUT.PANEL_TEXT' | translate }}</p>
+      </div>
+      <div class="pub-panel__actions">
+        <a routerLink="/auth/register" class="pub-btn pub-btn--white">{{ 'LANDING.CTA_PRIMARY' | translate }} <i class="pi pi-arrow-right" aria-hidden="true"></i></a>
+        <a routerLink="/professionnels" class="pub-btn pub-btn--ghost-white">{{ 'PUBLIC.LINK_PROS' | translate }}</a>
+      </div>
+    </div>
+  </section>
+
+</app-public-shell>

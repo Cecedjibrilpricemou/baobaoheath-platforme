@@ -67,6 +67,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "acceptance": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.acceptance.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -82,6 +93,9 @@
             },
             "development": {
               "buildTarget": "baobaoheath-web:build:development"
+            },
+            "acceptance": {
+              "buildTarget": "baobaoheath-web:build:acceptance"
             }
           },
           "defaultConfiguration": "development"

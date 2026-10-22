@@ -1,5 +1,5 @@
-import { randomBytes, randomInt, randomUUID, createHash } from 'crypto';
-import { Role } from '../config/generated/client/client';
+import { randomBytes, randomInt, randomUUID, createHash, createHmac } from 'crypto';
+import { Role, TypeEvenementConnexion } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { ForgotPasswordDto, LoginDto, LoginResult, RegisterDto, ResetPasswordDto, TokenPair, VerifyLoginOtpDto } from '../types/auth.types';
@@ -20,26 +20,75 @@ const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const OTP_TTL_MINUTES = 10;
 const OTP_MAX_ATTEMPTS = 5;
 
+export interface ContexteConnexion {
+  ipAdresse?: string | null;
+  userAgent?: string | null;
+}
+
+type UtilisateurConnexion = { id: string; idStructure?: string | null };
+
+async function enregistrerEvenementConnexion(
+  type: TypeEvenementConnexion,
+  contexte: ContexteConnexion,
+  utilisateur?: UtilisateurConnexion,
+  identifiant?: string,
+): Promise<void> {
+  await prisma.evenementConnexion.create({
+    data: {
+      type,
+      ipAdresse: contexte.ipAdresse?.slice(0, 100) ?? null,
+      userAgent: contexte.userAgent?.slice(0, 1000) ?? null,
+      identifiantHash: !utilisateur && identifiant
+        ? createHmac('sha256', env.JWT_SECRET)
+          .update('connection-identifier-v1:')
+          .update(identifiant.trim().toLowerCase())
+          .digest('hex')
+        : null,
+      idUtilisateur: utilisateur?.id ?? null,
+      idStructure: utilisateur?.idStructure ?? null,
+    },
+  });
+}
+
 function canUseDevOtpFallback(): boolean {
   return process.env.NODE_ENV !== 'production' && process.env.EMAIL_OTP_DEV_FALLBACK !== 'false';
 }
 
-async function createSessionTokens(utilisateur: { id: string; role: Role }): Promise<TokenPair> {
+async function createSessionTokens(
+  utilisateur: { id: string; role: Role; idStructure?: string | null },
+  contexte: ContexteConnexion = {},
+): Promise<TokenPair> {
   const sessionId = randomUUID();
   const tokenPair = generateTokenPair({ userId: utilisateur.id, role: utilisateur.role, sessionId });
 
-  await prisma.session.create({
-    data: {
-      id: sessionId,
-      refreshToken: tokenPair.refreshToken,
-      expireLe: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
-      idUtilisateur: utilisateur.id,
-    },
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.session.create({
+      data: {
+        id: sessionId,
+        refreshToken: tokenPair.refreshToken,
+        expireLe: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        idUtilisateur: utilisateur.id,
+        ipAdresse: contexte.ipAdresse ?? null,
+        userAgent: contexte.userAgent?.slice(0, 1000) ?? null,
+      },
+    });
 
-  await prisma.utilisateur.update({
-    where: { id: utilisateur.id },
-    data: { derniereConnexion: new Date() },
+    await tx.utilisateur.update({
+      where: { id: utilisateur.id },
+      data: { derniereConnexion: new Date() },
+    });
+
+    if (utilisateur.idStructure) {
+      await tx.evenementConnexion.create({
+        data: {
+          type: TypeEvenementConnexion.CONNEXION_REUSSIE,
+          ipAdresse: contexte.ipAdresse?.slice(0, 100) ?? null,
+          userAgent: contexte.userAgent?.slice(0, 1000) ?? null,
+          idUtilisateur: utilisateur.id,
+          idStructure: utilisateur.idStructure,
+        },
+      });
+    }
   });
 
   return tokenPair;
@@ -89,7 +138,7 @@ export async function register(dto: RegisterDto): Promise<TokenPair> {
   return createSessionTokens(utilisateur);
 }
 
-export async function login(dto: LoginDto): Promise<LoginResult> {
+export async function login(dto: LoginDto, contexte: ContexteConnexion = {}): Promise<LoginResult> {
   const identifiant = dto.identifiant.trim();
   const isEmail = identifiant.includes('@');
 
@@ -97,20 +146,48 @@ export async function login(dto: LoginDto): Promise<LoginResult> {
     where: isEmail ? { email: identifiant.toLowerCase() } : { telephone: identifiant },
   });
 
-  if (!utilisateur || !utilisateur.estActif) throw new UnauthorizedError('Identifiants invalides');
+  if (!utilisateur || !utilisateur.estActif) {
+    await enregistrerEvenementConnexion(
+      TypeEvenementConnexion.ECHEC_AUTHENTIFICATION,
+      contexte,
+      utilisateur ?? undefined,
+      identifiant,
+    );
+    throw new UnauthorizedError('Identifiants invalides');
+  }
 
   const valid = await verifyPassword(dto.motDePasse, utilisateur.motDePasseHash);
-  if (!valid) throw new UnauthorizedError('Identifiants invalides');
+  if (!valid) {
+    await enregistrerEvenementConnexion(
+      TypeEvenementConnexion.ECHEC_AUTHENTIFICATION,
+      contexte,
+      utilisateur,
+      identifiant,
+    );
+    throw new UnauthorizedError('Identifiants invalides');
+  }
 
   if (utilisateur.role === Role.PATIENT) {
-    return createSessionTokens(utilisateur);
+    return createSessionTokens(utilisateur, contexte);
   }
 
   if (!isEmail) {
+    await enregistrerEvenementConnexion(
+      TypeEvenementConnexion.ECHEC_AUTHENTIFICATION,
+      contexte,
+      utilisateur,
+      identifiant,
+    );
     throw new ValidationError('Les utilisateurs du systeme doivent se connecter avec leur email professionnel');
   }
 
   if (!utilisateur.email) {
+    await enregistrerEvenementConnexion(
+      TypeEvenementConnexion.ECHEC_AUTHENTIFICATION,
+      contexte,
+      utilisateur,
+      identifiant,
+    );
     throw new ValidationError('Aucune adresse email n est associee a ce compte. Contactez un administrateur');
   }
 
@@ -172,13 +249,22 @@ export async function login(dto: LoginDto): Promise<LoginResult> {
   };
 }
 
-export async function verifyLoginOtp(dto: VerifyLoginOtpDto): Promise<TokenPair> {
+export async function verifyLoginOtp(
+  dto: VerifyLoginOtpDto,
+  contexte: ContexteConnexion = {},
+): Promise<TokenPair> {
   const email = dto.email.trim().toLowerCase();
   const utilisateur = await prisma.utilisateur.findUnique({
     where: { email },
   });
 
   if (!utilisateur || !utilisateur.estActif) {
+    await enregistrerEvenementConnexion(
+      TypeEvenementConnexion.ECHEC_CODE,
+      contexte,
+      utilisateur ?? undefined,
+      email,
+    );
     throw new NotFoundError('Compte introuvable ou desactive');
   }
 
@@ -209,6 +295,12 @@ export async function verifyLoginOtp(dto: VerifyLoginOtpDto): Promise<TokenPair>
 
   const isValid = await verifyPassword(dto.code, otp.codeHash);
   if (!isValid) {
+    await enregistrerEvenementConnexion(
+      TypeEvenementConnexion.ECHEC_CODE,
+      contexte,
+      utilisateur,
+      email,
+    );
     const nextAttempts = otp.tentatives + 1;
     await prisma.authOtp.update({
       where: { id: otp.id },
@@ -231,11 +323,32 @@ export async function verifyLoginOtp(dto: VerifyLoginOtpDto): Promise<TokenPair>
     data: { utiliseLe: new Date() },
   });
 
-  return createSessionTokens(utilisateur);
+  return createSessionTokens(utilisateur, contexte);
 }
 
-export async function logout(sessionId: string): Promise<void> {
-  await prisma.session.deleteMany({ where: { id: sessionId } });
+export async function logout(
+  sessionId: string,
+  userId?: string,
+  contexte: ContexteConnexion = {},
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const session = await tx.session.findUnique({
+      where: { id: sessionId },
+      include: { utilisateur: { select: { id: true, idStructure: true } } },
+    });
+    if (session && (!userId || session.idUtilisateur === userId) && session.utilisateur.idStructure) {
+      await tx.evenementConnexion.create({
+        data: {
+          type: TypeEvenementConnexion.DECONNEXION,
+          ipAdresse: contexte.ipAdresse?.slice(0, 100) ?? null,
+          userAgent: contexte.userAgent?.slice(0, 1000) ?? null,
+          idUtilisateur: session.utilisateur.id,
+          idStructure: session.utilisateur.idStructure,
+        },
+      });
+    }
+    await tx.session.deleteMany({ where: { id: sessionId } });
+  });
 }
 
 export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
@@ -260,6 +373,8 @@ export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
       refreshToken: tokenPair.refreshToken,
       expireLe: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       idUtilisateur: session.utilisateur.id,
+      ipAdresse: session.ipAdresse,
+      userAgent: session.userAgent,
     },
   });
 
@@ -276,6 +391,7 @@ export async function getMe(userId: string) {
       prenom: true,
       nom: true,
       role: true,
+      pharmacienProfile: { select: { roleOfficine: true } },
       langue: true,
       photoUrl: true,
       estActif: true,
@@ -285,7 +401,11 @@ export async function getMe(userId: string) {
     },
   });
   if (!utilisateur) throw new NotFoundError('Utilisateur non trouve');
-  return utilisateur;
+  const { pharmacienProfile, ...profil } = utilisateur;
+  return {
+    ...profil,
+    roleOfficine: pharmacienProfile?.roleOfficine ?? null,
+  };
 }
 
 export async function changerMotDePasse(userId: string, dto: {

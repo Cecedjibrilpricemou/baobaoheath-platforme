@@ -1,0 +1,590 @@
+// L'écran de paiement du patient (EF-08).
+//
+// Une facture à régler doit se distinguer d'une facture réglée au premier
+// coup d'œil : c'est la seule question qu'on se pose en arrivant ici.
+.bb-pay {
+
+  &__sec { margin-bottom: 28px; }
+
+  &__sec-titre {
+    display: flex; align-items: baseline; justify-content: flex-start; // ✦ Refonte UI (le total se cale a droite)
+    flex-wrap: wrap; gap: 10px;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    letter-spacing: -.2px; color: var(--bb-text-primary); margin: 0 0 12px;
+    // ✦ Refonte UI : trait d'accent, comme les autres titres de section
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--bb-cmd-accent); align-self: center; margin-right: -2px;
+    }
+  }
+
+  &__total {
+    // ✦ Refonte UI : un montant n'est pas un identifiant — chiffres
+    // tabulaires en police d'affichage plutot qu'en monospace.
+    font-family: var(--bb-font-display); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 800;
+    color: var(--bb-cmd-accent); margin-left: auto;
+  }
+
+  &__attente { font-size: 13px; color: var(--bb-text-muted); }
+
+  // ── Une facture ───────────────────────────────────────────────
+  // ✦ Refonte UI : cartes en relief, liseré de 4px
+  &__carte {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--bb-cmd-accent);
+    border-radius: var(--bb-radius-xl);
+    padding: 18px 20px; margin-bottom: 14px;
+    box-shadow: var(--bb-shadow-sm);
+
+    // Un essai qui a mal tourné se signale, sans crier sur une simple attente.
+    &--alerte { border-left-color: var(--bb-danger); }
+
+    // Réglée : plus rien à faire, elle s'efface du regard.
+    // (En sombre, --bb-surface-1 vaut la carte : teinte melangee a la place.)
+    &--reglee {
+      border-left-color: var(--bb-success);
+      background: color-mix(in srgb, var(--bb-success) 5%, var(--bb-surface-card));
+      box-shadow: none;
+    }
+  }
+
+  &__ligne {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+  }
+
+  &__motif {
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 2px;
+  }
+
+  &__date { font-size: 12.5px; color: var(--bb-text-muted); margin: 0; }
+
+  &__somme {
+    // ✦ Refonte UI : un montant n'est pas un identifiant — chiffres
+    // tabulaires en police d'affichage plutot qu'en monospace.
+    font-family: var(--bb-font-display); font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary); white-space: nowrap;
+    &--reglee { color: var(--bb-text-muted); font-weight: 600; }
+  }
+
+  // La référence de l'opérateur : la preuve, si le paiement est contesté.
+  &__preuve {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin: 10px 0 0; padding-top: 10px;
+    border-top: 1px dashed var(--bb-border);
+    font-size: 12.5px; color: var(--bb-text-muted);
+
+    i { color: var(--bb-success); }
+    code {
+      font-family: var(--bb-font-mono); font-size: 12px;
+      padding: 2px 7px; border-radius: var(--bb-radius-sm);
+      background: var(--bb-surface-2); color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border-light);
+      word-break: break-all;
+    }
+  }
+
+  &__note {
+    font-size: 12.5px; color: var(--bb-text-muted); margin: 10px 0 0;
+    display: flex; align-items: flex-start; gap: 7px;
+
+    &--info {
+      padding: 10px 12px; border-radius: var(--bb-radius);
+      background: var(--bb-info-bg); color: var(--bb-info);
+      border: 1px solid var(--bb-info-border);
+    }
+    i { flex-shrink: 0; margin-top: 1px; }
+  }
+
+  // ── Actions ───────────────────────────────────────────────────
+  &__actions {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;
+  }
+
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--bb-radius-pill); min-height: 42px; // ✦ Refonte UI
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+    i { font-size: 12px; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+  }
+
+  // ── Le choix du moyen ─────────────────────────────────────────
+  //
+  // `flex-start` plutôt que `center` : centrée dans un conteneur qui défile,
+  // la boîte se fait couper en haut dès qu'elle dépasse l'écran. La barre
+  // latérale peint au-dessus du contenu quel que soit le z-index, d'où le
+  // décalage de sa largeur.
+  &__voile {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgb(0 0 0 / 55%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+
+    @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  }
+
+  &__modale {
+    margin: auto; width: 100%; max-width: 440px;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); // ✦ Refonte UI
+    animation: bb-cmd-pop 0.3s var(--bb-ease) both;
+    @media (prefers-reduced-motion: reduce) { animation: none; }
+    box-shadow: var(--bb-shadow-lg);
+    padding: 24px;
+  }
+
+  &__modale-titre {
+    font-family: var(--bb-font-display); font-size: 17px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 6px;
+  }
+
+  // `mat-form-field` ne réserve pas la place de son `mat-hint` : sans cette
+  // marge, l'aide chevauche le champ suivant.
+  &__champ { width: 100%; display: block; margin: 14px 0 8px; }
+
+  &__modale-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 20px; flex-wrap: wrap;
+  }
+
+  // ── Rien à payer ──────────────────────────────────────────────
+  // ✦ Refonte UI : etat vide sur carte, pastille d'icone
+  &__vide {
+    text-align: center; padding: 40px 20px;
+    background: var(--bb-surface-card);
+    border: 1px dashed var(--bb-border); border-radius: var(--bb-radius-xl);
+
+    // `> i` et non `i` : une règle sur tous les icônes descendants grossirait
+    // aussi ceux des boutons placés à l'intérieur.
+    > i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;
+      color: var(--bb-success); background: var(--bb-success-bg);
+    }
+  }
+
+  &__vide-titre {
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__vide-aide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+}
+
+// L'attente de paiement au comptoir (EF-08).
+//
+// Le pharmacien tourne l'ecran vers le client : le QR doit etre grand, et le
+// montant lisible a un metre.
+.bb-caisse {
+
+  &__voile {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgb(0 0 0 / 60%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+
+    // La barre laterale peint au-dessus du contenu quel que soit le z-index :
+    // on decale le voile de sa largeur plutot que de lutter.
+    @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  }
+
+  &__attente {
+    margin: auto; width: 100%; max-width: 480px; text-align: center;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); // ✦ Refonte UI
+    animation: bb-cmd-pop 0.3s var(--bb-ease) both;
+    box-shadow: var(--bb-shadow-lg);
+    padding: 28px 24px;
+  }
+
+  &__attente-titre {
+    font-family: var(--bb-font-display); font-size: 17px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  // Lisible a un metre : c'est le chiffre que le client verifie.
+  // ✦ Refonte UI : --bb-font-mono n'est defini nulle part ; chiffres
+  // tabulaires en police d'affichage, accent lisible en sombre.
+  &__attente-somme {
+    font-family: var(--bb-font-display); font-size: 34px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--bb-cmd-accent); margin: 0 0 10px; letter-spacing: -1px;
+  }
+
+  &__attente-aide { font-size: 13.5px; color: var(--bb-text-muted); margin: 0 0 18px; }
+
+  // Fond blanc impose : un QR sur fond sombre ne se scanne pas.
+  // ✦ Refonte UI : limite a l'image — la rangee de saisie du QR patient
+  // porte la meme classe et prenait ce fond blanc (libelle invisible en
+  // sombre, 1,18:1).
+  @at-root img#{&}__qr {
+    width: 240px; height: 240px; display: block; margin: 0 auto 16px;
+    background: #fff; padding: 10px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border-light);
+  }
+
+  &__attente-lien {
+    font-size: 12px; color: var(--bb-text-muted); margin: 0 0 16px;
+    code {
+      display: block; margin-top: 4px; word-break: break-all;
+      font-family: var(--bb-font-mono); font-size: 11.5px;
+      color: var(--bb-text-primary);
+    }
+  }
+
+  &__attente-rappel {
+    display: flex; align-items: flex-start; gap: 8px; text-align: left;
+    padding: 11px 13px; border-radius: var(--bb-radius);
+    background: var(--bb-danger-bg); color: var(--bb-danger);
+    border: 1px solid var(--bb-danger-border);
+    font-size: 13px; margin: 0 0 18px;
+    i { flex-shrink: 0; margin-top: 2px; }
+  }
+
+  &__attente-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: var(--bb-radius-pill); min-height: 42px; // ✦ Refonte UI
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+  }
+}
+
+// Une vente en attente de paiement ne doit pas ressembler a une vente reglee :
+// meme montant, meme bouton, et le pharmacien la croit payee.
+.bb-caisse {
+  &__vente--attente { border-left-color: var(--bb-warning, #b7791f); }
+
+  &__badge-attente {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-danger-bg); color: var(--bb-danger);
+    border: 1px solid var(--bb-danger-border); white-space: nowrap;
+  }
+}
+
+// ✦ Refonte UI : accent des ecrans de commande et de caisse — vert de
+// marque en clair, vert vif en sombre (--bb-primary y tombe sous 4,5:1).
+.bb-cmd, .bb-caisse, .bb-pay {
+  --bb-cmd-accent: var(--bb-primary);
+  --bb-cmd-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+[data-theme='dark'] :is(.bb-cmd, .bb-caisse, .bb-pay) {
+  --bb-cmd-accent: var(--bb-bright);
+  --bb-cmd-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
+@keyframes bb-cmd-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-cmd__modale, .bb-caisse__attente, .bb-pay__modale { animation: none; }
+}
+
+// La file des commandes du quartier (P6 / EF-07).
+//
+// Un appel en cours et une commande deja prise ne se lisent pas de la meme
+// facon : l'un demande une decision tout de suite, l'autre une preparation.
+.bb-cmd {
+
+  &__sec { margin-bottom: 28px; }
+
+  // ✦ Refonte UI : titres de section en display, trait d'accent
+  &__sec-titre {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    letter-spacing: -.2px; color: var(--bb-text-primary); margin: 0 0 4px;
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--bb-cmd-accent); flex-shrink: 0;
+    }
+  }
+
+  &__compteur {
+    font-family: var(--bb-font-display); font-size: 12px; font-weight: 800;
+    min-width: 24px; padding: 2px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-cmd-accent-soft); color: var(--bb-cmd-accent); text-align: center;
+  }
+
+  &__sec-aide,
+  &__attente { font-size: 13px; color: var(--bb-text-muted); margin: 0 0 14px; }
+
+  // ✦ Refonte UI : cartes en relief, liseré de 4px, survol discret
+  &__carte {
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--bb-border);
+    border-radius: var(--bb-radius-xl);
+    padding: 18px 20px; margin-bottom: 14px;
+    box-shadow: var(--bb-shadow-sm);
+    transition: box-shadow var(--bb-transition), transform var(--bb-transition);
+    &:hover { box-shadow: var(--bb-shadow-hover); transform: translateY(-1px); }
+
+    // Un appel demande une reponse maintenant : il se voit.
+    &--appel {
+      border-left-color: var(--bb-cmd-accent);
+      background: linear-gradient(90deg, var(--bb-cmd-accent-soft), transparent 45%), var(--bb-surface-card);
+    }
+    // Une commande prise est un travail a faire, pas une decision a prendre.
+    // (En sombre, --bb-surface-1 vaut la carte : teinte melangee a la place.)
+    &--mienne { border-left-color: var(--bb-success); background: color-mix(in srgb, var(--bb-success) 5%, var(--bb-surface-card)); }
+
+    @media (prefers-reduced-motion: reduce) { transition: none; &:hover { transform: none; } }
+  }
+
+  &__entete {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+
+  &__patient {
+    font-family: var(--bb-font-display); font-size: 15px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 2px;
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); margin: 0; }
+
+  &__boites {
+    font-family: var(--bb-font-display); // ✦ Refonte UI : mono non defini font-size: 12.5px; font-weight: 700;
+    padding: 4px 10px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-surface-2); color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border-light); white-space: nowrap;
+  }
+
+  // La liste exacte : c'est sur elle que l'officine s'engage.
+  &__lignes { list-style: none; margin: 0; padding: 0; }
+
+  // ✦ Refonte UI : colonnes fixes — quantites et prix s'alignent d'une
+  // ligne a l'autre (ils suivaient la longueur du libelle).
+  &__ligne {
+    display: grid; grid-template-columns: minmax(0, 1fr) 3rem minmax(6.5rem, max-content);
+    align-items: baseline;
+    gap: 12px; padding: 8px 0; font-size: 13.5px;
+    @media (max-width: 600px) {
+      grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px;
+      .bb-cmd__prix { grid-column: 1 / -1; text-align: left; }
+    }
+    border-bottom: 1px solid var(--bb-border-light);
+    &:last-child { border-bottom: none; }
+  }
+
+  &__produit { color: var(--bb-text-primary); }
+  &__dosage { color: var(--bb-text-muted); font-size: 12.5px; margin-left: 5px; }
+  &__qte { font-family: var(--bb-font-display); font-weight: 800; white-space: nowrap; text-align: right; }
+
+  &__note {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-size: 12.5px; color: var(--bb-text-muted); margin: 12px 0 0;
+    i { flex-shrink: 0; margin-top: 2px; }
+  }
+
+  &__actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 14px; flex-wrap: wrap;
+  }
+
+  &__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--bb-radius);
+    background: var(--bb-primary); color: #fff; border: none;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all var(--bb-transition);
+    &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+    i { font-size: 12px; }
+
+    &--plat {
+      background: transparent; color: var(--bb-text-primary);
+      border: 1px solid var(--bb-border);
+      &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+    }
+
+    &--danger {
+      background: var(--bb-danger);
+      &:hover:not(:disabled) { background: var(--bb-danger); filter: brightness(.92); }
+    }
+  }
+
+  // ✦ Refonte UI : etat vide sur carte, pastille d'icone
+  &__vide {
+    text-align: center; padding: 36px 20px;
+    background: var(--bb-surface-card);
+    border: 1px dashed var(--bb-border); border-radius: var(--bb-radius-xl);
+    > i {
+      width: 56px; height: 56px; border-radius: 50%; font-size: 22px;
+      display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;
+      color: var(--bb-cmd-accent); background: var(--bb-cmd-accent-soft);
+    }
+  }
+
+  &__vide-titre {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 0 0 4px;
+  }
+
+  &__vide-aide { font-size: 13px; color: var(--bb-text-muted); margin: 0; }
+
+  // Centrée dans un conteneur qui défile, la boîte se fait couper en haut ;
+  // la barre latérale peint au-dessus quel que soit le z-index.
+  &__voile {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgb(0 0 0 / 55%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+    @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  }
+
+  &__modale {
+    margin: auto; width: 100%; max-width: 460px;
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); // ✦ Refonte UI
+    animation: bb-cmd-pop 0.3s var(--bb-ease) both;
+    box-shadow: var(--bb-shadow-lg);
+    padding: 24px;
+  }
+
+  &__modale-titre {
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary); margin: 0 0 8px;
+  }
+
+  &__modale-texte { font-size: 13.5px; color: var(--bb-text-muted); margin: 0; }
+
+  // ── La machine a etats, au comptoir (P6 / EF-07-02) ───────────────
+  //
+  // **L'etat se lit avant les produits.** Un pharmacien qui ouvre sa file
+  // cherche d'abord ce qu'il a a faire — chiffrer, preparer, remettre — et
+  // le detail du sachet ensuite.
+  // ✦ Refonte UI : l'etat en pastille, accent lisible en sombre
+  &__etat {
+    display: inline-block;
+    font-family: var(--bb-font-display); font-size: 12px; font-weight: 700;
+    color: var(--bb-cmd-accent); margin: 6px 0 0;
+    padding: 2px 10px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-cmd-accent-soft);
+  }
+
+  // Le prix d'une ligne reste discret : la somme est ce qui compte, et
+  // l'aligner a droite permet de la verifier d'un coup d'oeil.
+  &__prix {
+    font-family: var(--bb-font-display); // ✦ Refonte UI : mono non defini font-size: 12.5px;
+    color: var(--bb-text-muted); white-space: nowrap; text-align: right;
+  }
+
+  &__total {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin: 10px 0 0; padding-top: 10px;
+    border-top: 1px dashed var(--bb-border);
+    font-size: 13px; color: var(--bb-text-muted);
+
+    strong {
+      font-family: var(--bb-font-display); font-size: 18px; font-weight: 800; // ✦ Refonte UI
+      color: var(--bb-text-primary);
+    }
+  }
+
+  &__label {
+    display: block; margin: 14px 0 6px;
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700;
+    color: var(--bb-text-primary);
+  }
+
+  &__select {
+    width: 100%; box-sizing: border-box; min-height: 44px; // ✦ Refonte UI
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-primary); font-family: inherit; font-size: 13.5px;
+    &:focus { outline: 2px solid var(--bb-primary); outline-offset: 1px; }
+  }
+
+  &__motif {
+    width: 100%; box-sizing: border-box; min-height: 44px; // ✦ Refonte UI resize: vertical;
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    color: var(--bb-text-primary); font-family: inherit; font-size: 13.5px;
+    &:focus { outline: 2px solid var(--bb-primary); outline-offset: 1px; }
+  }
+
+  // Ce qui est derriere nous : lisible, mais sans le poids d'une carte.
+  &__closes { list-style: none; margin: 0; padding: 0; }
+
+  &__close {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 9px 0; border-bottom: 1px solid var(--bb-border-light);
+    font-size: 13px; color: var(--bb-text-primary);
+    &:last-child { border-bottom: none; }
+  }
+}
+
+// Le choix du mode de remise, cote patient (P6 / EF-07).
+//
+// **Le retrait n'est pas un repli** : les deux options ont exactement le meme
+// poids visuel, et aucune n'est preselectionnee.
+.bb-cmd {
+  &__question {
+    font-family: var(--bb-font-display); font-size: 14px; font-weight: 700;
+    color: var(--bb-text-primary); margin: 16px 0 10px;
+  }
+
+  &__choix {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  &__option {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+    padding: 16px; text-align: left;
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-lg);
+    cursor: pointer; transition: all var(--bb-transition);
+
+    &:hover:not(:disabled) {
+      border-color: var(--bb-primary);
+      background: var(--bb-surface-2);
+      transform: translateY(-1px);
+    }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+
+    i { font-size: 20px; color: var(--bb-primary); margin-bottom: 4px; }
+  }
+
+  &__option-titre {
+    font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 700;
+    color: var(--bb-text-primary);
+  }
+
+  &__option-aide { font-size: 12.5px; color: var(--bb-text-muted); }
+}
+
+// ✦ Refonte UI : en sombre, --bb-danger s'eclaircit (#F87171) : le blanc n'y
+// tient plus (2,77:1). Libelle vert profond, comme les autres aplats vifs.
+[data-theme='dark'] .bb-cmd__btn--danger { color: var(--bb-deep); }

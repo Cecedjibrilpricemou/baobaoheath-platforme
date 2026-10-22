@@ -1,0 +1,70 @@
+<section class="bb-connexions">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.CONNEXIONS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.CONNEXIONS.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <p class="bb-connexions__message">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (erreur()) {
+    <p class="bb-connexions__message bb-connexions__message--error" role="alert">
+      {{ 'PHARMACIEN.CONNEXIONS.ERROR' | translate }}
+    </p>
+  } @else if (journal(); as resultat) {
+    @if (resultat.items.length === 0) {
+      <div class="bb-connexions__empty">
+        <i class="pi pi-shield" aria-hidden="true"></i>
+        <p>{{ 'PHARMACIEN.CONNEXIONS.EMPTY' | translate }}</p>
+      </div>
+    } @else {
+      <div class="bb-connexions__table-wrap">
+        <table class="bb-connexions__table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'PHARMACIEN.CONNEXIONS.DATE' | translate }}</th>
+              <th scope="col">{{ 'PHARMACIEN.CONNEXIONS.USER' | translate }}</th>
+              <th scope="col">{{ 'PHARMACIEN.CONNEXIONS.EVENT' | translate }}</th>
+              <th scope="col">{{ 'PHARMACIEN.CONNEXIONS.IP' | translate }}</th>
+              <th scope="col">{{ 'PHARMACIEN.CONNEXIONS.DEVICE' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of resultat.items; track event.id) {
+              <tr>
+                <td>{{ event.creeLe | date:'short' }}</td>
+                <td>
+                  @if (event.utilisateur; as utilisateur) {
+                    <strong>{{ utilisateur.prenom }} {{ utilisateur.nom }}</strong>
+                    @if (utilisateur.email) { <small>{{ utilisateur.email }}</small> }
+                  } @else {
+                    <span>{{ 'PHARMACIEN.CONNEXIONS.UNKNOWN_USER' | translate }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="bb-connexions__event" [class.bb-connexions__event--failure]="event.type.startsWith('ECHEC')">
+                    {{ ('PHARMACIEN.CONNEXIONS.TYPES.' + event.type) | translate }}
+                  </span>
+                </td>
+                <td>{{ event.ipAdresse || '—' }}</td>
+                <td class="bb-connexions__device" [title]="event.userAgent || ''">{{ event.userAgent || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <nav class="bb-connexions__pager" [attr.aria-label]="'PHARMACIEN.CONNEXIONS.PAGINATION' | translate">
+        <button type="button" (click)="charger(resultat.page - 1)" [disabled]="resultat.page <= 1">
+          {{ 'PHARMACIEN.CONNEXIONS.PREVIOUS' | translate }}
+        </button>
+        <span>{{ 'PHARMACIEN.CONNEXIONS.PAGE' | translate:{ page: resultat.page, total: resultat.totalPages } }}</span>
+        <button type="button" (click)="charger(resultat.page + 1)" [disabled]="resultat.page >= resultat.totalPages">
+          {{ 'PHARMACIEN.CONNEXIONS.NEXT' | translate }}
+        </button>
+      </nav>
+    }
+  }
+</section>

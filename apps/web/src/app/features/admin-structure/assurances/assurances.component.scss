@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+.bb-agents__list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bb-agents__item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--bb-border, #dce3eb);
+  border-radius: 10px;
+  background: var(--bb-surface, #fff);
+}
+
+.bb-agents__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bb-agents__name,
+.bb-agents__contact {
+  margin: 0;
+}
+
+.bb-assurances__note {
+  margin-top: 1rem;
+}

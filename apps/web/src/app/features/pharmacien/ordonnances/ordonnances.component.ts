@@ -9,6 +9,7 @@ import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
+import { MedicamentInfo } from '../../../core/models/pharmacien.model';
 import type {
   HorodatageApi,
   LigneDelivranceView,
@@ -75,6 +76,15 @@ export class OrdonnancesComponent implements OnInit {
   isVerifiant = signal(false);
   verification = signal<VerificationOrdonnanceView | null>(null);
 
+  /**
+   * Le catalogue, pour proposer un equivalent (EF-07-04).
+   *
+   * Charge une fois a l'ouverture de l'ecran : une substitution se decide au
+   * comptoir, devant le patient, et attendre un aller-retour reseau a ce
+   * moment-la se paie en file d'attente.
+   */
+  medicaments = signal<MedicamentInfo[]>([]);
+
   verifier() {
     const numero = this.numeroSaisi.trim();
     const code = this.codeSaisi.trim();
@@ -112,6 +122,13 @@ export class OrdonnancesComponent implements OnInit {
   fermerVerification() { this.verification.set(null); }
 
   ngOnInit() {
+    this.pharmacienService.getMedicaments().subscribe({
+      next: (r) => this.medicaments.set(r.data ?? []),
+      // Sans catalogue la substitution n'est pas proposable, mais le reste de
+      // l'ecran fonctionne : on ne bloque pas un comptoir pour autant.
+      error: () => this.medicaments.set([]),
+    });
+
     const nav = this.router.getCurrentNavigation();
     const state = nav?.extras?.state as { scanResult?: { patient?: PatientScanView; ordonnances?: OrdonnanceDelivranceView[] } } | undefined;
 
@@ -150,15 +167,25 @@ export class OrdonnancesComponent implements OnInit {
     return [...groupes.values()];
   }
 
-  scan() {
+  /**
+   * Relire les ordonnances du patient.
+   *
+   * `conserver` garde l'affichage courant pendant l'aller-retour. **Sans lui,
+   * l'ecran se vide une fraction de seconde** — et le message de confirmation
+   * d'une substitution ou d'un refus, qui vit dans ce bloc, disparaissait
+   * avec : le pharmacien ne voyait jamais que son geste avait ete enregistre.
+   */
+  scan(conserver = false) {
     if (!this.qrCode.trim()) {
       this.errorMessage.set(this.i18n.t('PHARMACIEN.ORDONNANCES.ERR_QR_REQUIRED'));
       return;
     }
     this.isScanning.set(true);
     this.errorMessage.set('');
-    this.patient.set(null);
-    this.ordonnances.set([]);
+    if (!conserver) {
+      this.patient.set(null);
+      this.ordonnances.set([]);
+    }
 
     this.pharmacienService.scanQrCode(this.qrCode.trim()).subscribe({
       next: (response) => {
@@ -206,12 +233,105 @@ export class OrdonnancesComponent implements OnInit {
 
   selectionner(ordonnance: OrdonnanceDelivranceView, ligne: LigneDelivranceView) {
     this.selected.set({ ordonnance, ligne });
-    this.quantiteDelivree = ligne.quantite;
+    this.geste.set('DELIVRER');
+    this.motif.set('');
+    this.idSubstitut.set('');
+    // Ce qu'il reste, pas ce qui est prescrit : la ligne a pu etre entamee
+    // dans une autre officine.
+    this.quantiteDelivree = this.resteAServir(ligne);
     this.modePaiement = 'ESPECES';
     this.errorMessage.set('');
   }
 
-  annuler() { this.selected.set(null); this.errorMessage.set(''); }
+  annuler() {
+    this.selected.set(null);
+    this.geste.set('DELIVRER');
+    this.motif.set('');
+    this.idSubstitut.set('');
+    this.errorMessage.set('');
+  }
+
+  // ── Trois gestes au comptoir (EF-07-03/04/05) ──────────────────────
+  //
+  // **Un seul panneau, trois gestes.** L'officine choisit ce qu'elle fait de
+  // la ligne : remettre ce qui est prescrit, remettre autre chose, ou ne rien
+  // remettre. Les deux derniers exigent un motif — c'est le prescripteur et
+  // le patient qui le liront.
+
+  geste = signal<'DELIVRER' | 'SUBSTITUER' | 'REFUSER'>('DELIVRER');
+  motif = signal('');
+  idSubstitut = signal('');
+
+  choisirGeste(g: 'DELIVRER' | 'SUBSTITUER' | 'REFUSER') {
+    this.geste.set(g);
+    this.errorMessage.set('');
+  }
+
+  /** Le motif est exige par l'ecran, par l'API et par la base. */
+  motifSuffisant(): boolean {
+    return this.motif().trim().length >= 5;
+  }
+
+  peutValider(): boolean {
+    const sel = this.selected();
+    if (!sel || this.isDelivering() || sel.ligne.alerteAllergie) return false;
+    if (this.geste() === 'DELIVRER') return true;
+    if (!this.motifSuffisant()) return false;
+    return this.geste() === 'REFUSER' || this.idSubstitut().length > 0;
+  }
+
+  /** Ce qu'il reste a servir sur la ligne choisie : la borne de la saisie. */
+  resteAServir(ligne: LigneDelivranceView): number {
+    return ligne.resteAServir ?? ligne.quantite;
+  }
+
+  valider() {
+    const sel = this.selected();
+    if (!sel || !this.peutValider()) return;
+    if (this.geste() === 'DELIVRER') { this.delivrer(); return; }
+
+    this.isDelivering.set(true);
+    this.errorMessage.set('');
+    const motif = this.motif().trim();
+
+    const appel = this.geste() === 'SUBSTITUER'
+      ? this.pharmacienService.substituerLigne(sel.ligne.id, {
+          idMedicamentDelivre: this.idSubstitut(),
+          quantiteDelivree: this.quantiteDelivree,
+          motif,
+        })
+      : this.pharmacienService.refuserLigne(sel.ligne.id, motif);
+
+    appel.subscribe({
+      next: () => {
+        this.isDelivering.set(false);
+        const clef = this.geste() === 'SUBSTITUER'
+          ? 'PHARMACIEN.ORDONNANCES.SUBSTITUE_OK'
+          : 'PHARMACIEN.ORDONNANCES.REFUSE_OK';
+        this.annuler();
+        this.successMessage.set(this.i18n.t(clef));
+        setTimeout(() => this.successMessage.set(''), 5000);
+        this.relire();
+      },
+      error: (err) => {
+        this.isDelivering.set(false);
+        this.errorMessage.set(err?.error?.error ?? this.i18n.t('COMMON.ERROR_GENERIC'));
+      },
+    });
+  }
+
+  /**
+   * Relire depuis le serveur plutot que de corriger la liste a la main.
+   *
+   * **L'ecran retirait la ligne apres chaque delivrance**, quelle que soit la
+   * quantite : trois boites remises sur dix, et la ligne disparaissait alors
+   * qu'il en restait sept. Le serveur sait ce qui reste ; le recalculer ici
+   * serait une occasion de divergence de plus.
+   */
+  private relire() {
+    if (this.qrCode.trim()) this.scan(true);
+    this.chargerEnAttente();
+  }
 
   isRenouvelant = signal('');
 
@@ -256,14 +376,11 @@ export class OrdonnancesComponent implements OnInit {
         this.isDelivering.set(false);
         this.selected.set(null);
 
-        // La ligne quitte l'ordonnance ; l'ordonnance disparait quand elle n'a
-        // plus rien a delivrer.
-        this.ordonnances.update(list => list
-          .map(ord => ord.id === ordonnance.id
-            ? { ...ord, lignes: ord.lignes.filter(l => l.id !== ligne.id) }
-            : ord)
-          .filter(ord => ord.lignes.length > 0));
-        this.enAttente.update(list => list.filter(ord => ord.id !== ordonnance.id));
+        // **On relit, on ne corrige pas la liste a la main.** La version
+        // precedente retirait la ligne apres chaque delivrance, quelle que
+        // soit la quantite : trois boites remises sur dix, et la ligne
+        // disparaissait alors qu'il en restait sept a servir.
+        this.relire();
 
         const responseData = response?.data as { montantGnf?: number };
         this.successMessage.set(this.i18n.t('PHARMACIEN.ORDONNANCES.SUCCESS_DELIVERED', { amount: this.formatMontant(responseData?.montantGnf ?? 0) }));

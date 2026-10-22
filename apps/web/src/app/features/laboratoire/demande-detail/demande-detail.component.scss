@@ -21,7 +21,8 @@
     }
     &--done:not(:last-child)::after { background: var(--bb-primary); }
     &--done { color: var(--bb-text-secondary); .labo-etapes__dot { background: var(--bb-primary); color: #fff; border-color: var(--bb-primary); } }
-    &--now  { color: var(--bb-primary); .labo-etapes__dot { border-color: var(--bb-primary); color: var(--bb-primary); box-shadow: 0 0 0 4px rgba(45, 125, 70, .16); } .labo-etapes__label { font-weight: 800; } }
+    // ✦ Refonte UI : rgba code en dur → token ; l'etape en cours pulse
+    &--now  { color: var(--bb-primary); .labo-etapes__dot { border-color: var(--bb-primary); color: var(--bb-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-primary) 16%, transparent); animation: bb-labo-pulse 2s var(--bb-ease) infinite; } .labo-etapes__label { font-weight: 800; } }
   }
 
   &__dot {
@@ -43,17 +44,35 @@
 .labo-ech-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--bb-radius-pill);
   background: var(--bb-surface-1); border: 1px solid var(--bb-border-light); font-size: 12.5px; color: var(--bb-text-secondary);
-  strong { font-family: monospace; color: var(--bb-text-primary); letter-spacing: .04em; }
+  strong { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--bb-text-primary); letter-spacing: .04em; }
   i { color: var(--bb-primary); }
 }
 
 // ── Tableau des resultats ────────────────────────────────────────────
 .labo-resultats {
   display: flex; flex-direction: column; gap: 6px; overflow-x: auto;
+  // ✦ Refonte UI : sur mobile et tablette le tableau (760px mini) defile
+  // horizontalement, mais rien ne l'indiquait : la colonne de saisie
+  // paraissait coupee. Barre de defilement visible, et un fondu sur le bord
+  // droit tant qu'il reste des colonnes a voir (navigateurs qui gerent les
+  // animations liees au defilement ; ailleurs, la barre suffit).
+  scrollbar-width: thin;
+  scrollbar-color: var(--bb-border-strong) transparent;
+  padding-bottom: 6px;
+
+  @media (max-width: 1100px) {
+    @supports (animation-timeline: scroll()) {
+      mask-image: linear-gradient(90deg, #000 calc(100% - var(--labo-fade)), transparent);
+      animation: bb-labo-fade linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
 
   &__head, &__row {
     display: grid; grid-template-columns: minmax(200px, 1.6fr) minmax(110px, .9fr) 70px minmax(90px, .8fr) 110px minmax(160px, 1.2fr);
-    gap: 10px; align-items: center; min-width: 760px;
+    // ✦ Refonte UI : colonnes mini (780px) + 5 gouttieres (50px) : avec 760px
+    // la derniere colonne sortait du fond colore de la ligne.
+    gap: 10px; align-items: center; min-width: 830px;
   }
   &__head {
     padding: 4px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-muted);
@@ -61,23 +80,44 @@
   &__row {
     padding: 10px 12px; border-radius: 14px; background: var(--bb-surface-1); border: 1px solid var(--bb-border-light);
     font-size: 13.5px; color: var(--bb-text-primary);
-    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); }
-    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg); }
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    // ✦ Refonte UI : barre laterale de gravite (lisible meme sans la couleur)
+    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); box-shadow: inset 4px 0 0 var(--bb-warning); }
+    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg);  box-shadow: inset 4px 0 0 var(--bb-danger); }
   }
-  &__examen { display: flex; flex-direction: column; gap: 2px; strong { font-size: 13.5px; } small { font-size: 11.5px; color: var(--bb-text-muted); font-family: monospace; } }
+  &__examen { display: flex; flex-direction: column; gap: 2px; strong { font-size: 13.5px; } small { font-size: 11.5px; color: var(--bb-text-muted); font-family: ui-monospace, Menlo, Consolas, monospace; } }
   &__ref { font-size: 12.5px; color: var(--bb-text-secondary); }
 
   &__input, &__select {
     width: 100%; padding: 8px 10px; border-radius: 10px; font-size: 13.5px; font-family: inherit;
-    border: 1px solid var(--bb-border); background: var(--bb-surface-card); color: var(--bb-text-primary);
+    border: 1px solid var(--bb-border-strong); background: var(--bb-surface-card); color: var(--bb-text-primary);
+    font-variant-numeric: tabular-nums;
     transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
-    &:focus { outline: none; border-color: var(--bb-primary); box-shadow: 0 0 0 3px rgba(45, 125, 70, .16); }
+    &:hover { border-color: var(--bb-text-secondary); }
+    // ✦ Refonte UI : anneau de focus commun (rgba code en dur auparavant)
+    &:focus { outline: none; border-color: var(--bb-primary); box-shadow: var(--bb-focus-ring); }
   }
   &__select { margin-top: 6px; font-size: 12px; }
 }
 
 :host-context([data-theme="dark"]) {
-  .labo-resultats__row--anormal  { background: rgba(245, 158, 11, .10); }
-  .labo-resultats__row--critique { background: rgba(239, 68, 68, .12); }
-  .labo-etapes__item--now .labo-etapes__dot { box-shadow: 0 0 0 4px rgba(62, 187, 112, .18); }
+  .labo-resultats__row--anormal  { background: color-mix(in srgb, var(--bb-warning) 10%, transparent); }
+  .labo-resultats__row--critique { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); }
+  // ✦ Refonte UI : frise en vert vif en sombre (le vert de marque s'y perdait)
+  .labo-etapes__item--now { color: var(--bb-bright); .labo-etapes__dot { border-color: var(--bb-bright); color: var(--bb-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-bright) 18%, transparent); } }
+  .labo-etapes__item--done .labo-etapes__dot { background: var(--bb-bright); border-color: var(--bb-bright); color: var(--bb-deep); }
+  .labo-etapes__item--done:not(:last-child)::after { background: var(--bb-bright); }
+  .labo-echantillons__num, .labo-ech-chip i { color: var(--bb-bright); }
+}
+
+@keyframes bb-labo-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bb-bright) 18%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--bb-bright) 8%, transparent); }
+}
+
+// Le fondu disparait quand on arrive au bout du tableau
+@property --labo-fade { syntax: '<length>'; inherits: false; initial-value: 0px; } // sans defilement actif : aucun fondu
+@keyframes bb-labo-fade {
+  0%, 92% { --labo-fade: 32px; }
+  100%    { --labo-fade: 0px; }
 }

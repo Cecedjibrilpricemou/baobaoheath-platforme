@@ -1,4 +1,12 @@
 import { getIdentitePlateforme } from './parametres.service';
+import {
+    motInterditDans,
+    messageDemarche,
+    messageEcheance,
+    messageRendezVous,
+    messageStockCritique,
+    neutraliser,
+} from './message-sortant.service';
 import { randomBytes } from 'crypto';
 import { Prisma } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
@@ -151,8 +159,13 @@ async function mockSendSms(
     telephone: string,
     message: string
 ): Promise<{ messageId: string; statut: string }> {
+    // **Le point de sortie unique de tout SMS**, donc le bon endroit pour le
+    // controle de neutralite (EF-11-02). Le poser a chaque appel aurait laisse
+    // passer le prochain site ajoute ; ici, un appel oublie ne peut pas fuir.
+    const neutre = neutraliser(message);
+
     await new Promise((r) => setTimeout(r, 300));
-    logger.debug(`[SMS MOCK] -> ${telephone}: ${message}`);
+    logger.debug(`[SMS MOCK] -> ${telephone}: ${neutre}`);
     return {
         messageId: `AT-${Date.now()}-${randomBytes(2).readUInt16BE(0)}`,
         statut: 'ENVOYE',
@@ -165,17 +178,46 @@ async function mockSendSms(
  * Aucune information medicale dans le message (EF-11-02).
  */
 export async function envoyerSmsSimule(telephone: string, message: string): Promise<void> {
+    // Le controle de neutralite est **hors** du try : son refus doit remonter.
+    // A l'interieur, le catch ci-dessous — qui existe pour qu'une panne
+    // d'operateur ne fasse pas echouer un parcours de soin — l'avalerait en
+    // simple avertissement, et le garde-fou ne garderait plus rien hors
+    // production (EF-11-02).
+    const neutre = neutraliser(message);
     try {
-        await mockSendSms(telephone, message);
+        await mockSendSms(telephone, neutre);
     } catch (e: unknown) {
         logger.warn('[SMS] envoi echoue', { telephone, erreur: e instanceof Error ? e.message : String(e) });
     }
 }
 
 // ─── Envoyer un SMS ───────────────────────────────────────
+//
+// Ici le message est **tape par un administrateur**. Un contenu medical est
+// donc une erreur de saisie, pas une faute de programmation : elle merite un
+// 400 qui explique la regle, pas une erreur serveur. Le filet de
+// `mockSendSms` leverait bien, mais en 500 — et l'administrateur ne saurait
+// pas quoi corriger.
 export async function envoyerSms(dto: SendSmsDto) {
+    refuserSiNonNeutre(dto.message);
     const result = await mockSendSms(dto.telephone, dto.message);
     return result;
+}
+
+/**
+ * Pour les messages saisis a la main : refuse en 400 avec le mot fautif.
+ *
+ * EF-11-02 ne distingue pas l'origine du message — un SMS reste un SMS. Mais
+ * la facon de le refuser change : ce qu'un humain a tape, on le lui explique.
+ */
+function refuserSiNonNeutre(message: string): void {
+    const interdit = motInterditDans(message);
+    if (interdit) {
+        throw new ValidationError(
+            `Un message sortant ne peut pas contenir « ${interdit} » : aucun contenu medical ne doit ` +
+                `partir par SMS (EF-11-02). Invitez le destinataire a consulter son espace.`
+        );
+    }
 }
 
 // ─── Envoyer rappel de rendez-vous ───────────────────────
@@ -207,7 +249,7 @@ export async function envoyerRappelRendezVous(idRendezVous: string) {
     });
 
     const { nomCourt } = await getIdentitePlateforme();
-    const message = `${nomCourt}: Bonjour ${utilisateur.prenom}, rappel de votre rendez-vous le ${dateFormatee}. Répondez STOP pour annuler.`;
+    const message = messageRendezVous(nomCourt, dateFormatee);
 
     const result = await mockSendSms(utilisateur.telephone, message);
 
@@ -240,7 +282,10 @@ export async function envoyerAlerteStock(idStock: string) {
     }
 
     const { nomCourt } = await getIdentitePlateforme();
-    const message = `${nomCourt} ALERTE: Stock critique — ${stock.medicament.dci} (${stock.quantite} ${stock.unite} restants, seuil: ${stock.seuilAlerte}). Veuillez renouveler votre stock.`;
+    // EF-11-02 : le produit n'est pas nomme. Ce n'est pas une donnee de
+    // patient, mais la regle vaut pour tout message sortant, et l'agent se
+    // connecte de toute facon pour reapprovisionner.
+    const message = messageStockCritique(nomCourt);
 
     if (!stock.asc) {
         throw new ValidationError('Ce stock n est pas rattache a un ASC');
@@ -280,10 +325,7 @@ export async function envoyerNotificationReferencement(
     const structure = ref.structureCible.nom;
 
     const { nomCourt } = await getIdentitePlateforme();
-    const message =
-        statut === 'ACCEPTE'
-            ? `${nomCourt}: Bonjour ${utilisateur.prenom}, votre transfert vers ${structure} a été ACCEPTÉ. Présentez-vous avec votre QR Code.`
-            : `${nomCourt}: Bonjour ${utilisateur.prenom}, votre transfert vers ${structure} a été refusé. Contactez votre ASC pour plus d'informations.`;
+    const message = messageDemarche(nomCourt, statut === 'ACCEPTE', structure);
 
     return mockSendSms(utilisateur.telephone, message);
 }
@@ -307,15 +349,23 @@ export async function envoyerRappelVaccination(idVaccination: string) {
         throw new NotFoundError('Vaccination non trouvée');
     }
 
+    // Sans date de rappel, il n'y a rien a rappeler. L'ancien message
+    // interpolait `undefined` et partait quand meme : « est due le undefined ».
+    if (!vaccination.dateProchaineD) {
+        throw new ValidationError("Cette vaccination n'a pas de date de rappel");
+    }
+
     const { utilisateur } = vaccination.patient;
-    const dateFormatee = vaccination.dateProchaineD?.toLocaleDateString('fr-FR', {
+    const dateFormatee = vaccination.dateProchaineD.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
     });
 
     const { nomCourt } = await getIdentitePlateforme();
-    const message = `${nomCourt}: Bonjour ${utilisateur.prenom}, rappel — votre vaccination ${vaccination.vaccinNom} est due le ${dateFormatee}. Contactez votre ASC.`;
+    // EF-11-02 : annoncer le vaccin reviendrait a annoncer un statut
+    // vaccinal par SMS. L'echeance suffit a declencher l'action.
+    const message = messageEcheance(nomCourt, dateFormatee);
 
     return mockSendSms(utilisateur.telephone, message);
 }
@@ -325,6 +375,11 @@ export async function envoyerSmsMasse(
     prefecture: string,
     message: string
 ) {
+    // Saisi a la main, et destine a toute une prefecture : la verification
+    // vient avant la requete, pour ne pas charger des milliers de patients
+    // avant de refuser.
+    refuserSiNonNeutre(message);
+
     const patients = await prisma.patientProfile.findMany({
         where: { prefecture },
         include: {
@@ -334,6 +389,10 @@ export async function envoyerSmsMasse(
         },
     });
 
+    // Le message vient de l'appelant (alerte epidemique saisie a la main) :
+    // il n'y a pas de constructeur a imposer. Le filet de `mockSendSms` le
+    // controle quand meme, et un envoi de masse non neutre echoue hors
+    // production plutot que de partir a toute une prefecture.
     const resultats = await Promise.allSettled(
         patients.map((p) =>
             mockSendSms(p.utilisateur.telephone, message)

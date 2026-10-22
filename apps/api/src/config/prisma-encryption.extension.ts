@@ -19,6 +19,7 @@ export const ENCRYPTED_FIELDS: Record<string, FieldMap> = {
   Ordonnance: { scalar: ['posologie', 'instructions'], array: [] },
   Vaccination: { scalar: ['reaction'], array: [] },
   Message: { scalar: ['contenu'], array: [] },
+  PersonneAssuree: { scalar: ['lieuNaissance', 'nationalite', 'adresse'], array: [] },
 };
 
 function encryptDataObject(data: unknown, map: FieldMap): void {

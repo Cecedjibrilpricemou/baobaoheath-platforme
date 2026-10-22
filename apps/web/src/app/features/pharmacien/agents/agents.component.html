@@ -1,0 +1,123 @@
+<section class="bb-agents">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-users" aria-hidden="true"></i> {{ 'PHARMACIEN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'PHARMACIEN.AGENTS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'PHARMACIEN.AGENTS.SUB' | translate }}</p>
+    </div>
+  </header>
+
+  @if (motDePasseTemporaire()) {
+    <aside class="bb-agents__password" role="status">
+      <strong>{{ 'PHARMACIEN.AGENTS.TEMP_PASSWORD' | translate }}</strong>
+      <code>{{ motDePasseTemporaire() }}</code>
+      <span>{{ 'PHARMACIEN.AGENTS.TEMP_PASSWORD_HINT' | translate }}</span>
+      <button type="button" (click)="motDePasseTemporaire.set('')">{{ 'COMMON.CLOSE' | translate }}</button>
+    </aside>
+  }
+
+  <form class="bb-agents__form" (ngSubmit)="creer()">
+    <h2>{{ 'PHARMACIEN.AGENTS.CREATE_TITLE' | translate }}</h2>
+    <div class="bb-agents__fields">
+      <label>
+        <span>{{ 'PHARMACIEN.AGENTS.FIRST_NAME' | translate }}</span>
+        <input name="prenom" required maxlength="80" [(ngModel)]="nouveau.prenom" />
+      </label>
+      <label>
+        <span>{{ 'PHARMACIEN.AGENTS.LAST_NAME' | translate }}</span>
+        <input name="nom" required maxlength="80" [(ngModel)]="nouveau.nom" />
+      </label>
+      <label>
+        <span>{{ 'PHARMACIEN.AGENTS.PHONE' | translate }}</span>
+        <input name="telephone" type="tel" required [(ngModel)]="nouveau.telephone" />
+      </label>
+      <label>
+        <span>{{ 'PHARMACIEN.AGENTS.EMAIL' | translate }}</span>
+        <input name="email" type="email" [(ngModel)]="nouveau.email" />
+      </label>
+      <label>
+        <span>{{ 'PHARMACIEN.AGENTS.ROLE' | translate }}</span>
+        <select name="roleOfficine" [(ngModel)]="nouveau.roleOfficine">
+          @for (role of roles; track role) {
+            <option [value]="role">{{ roleLabel(role) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <button class="bb-agents__primary" type="submit" [disabled]="isSaving()">
+      {{ (isSaving() ? 'COMMON.SAVING' : 'PHARMACIEN.AGENTS.CREATE') | translate }}
+    </button>
+  </form>
+
+  <h2 class="bb-agents__list-title">{{ 'PHARMACIEN.AGENTS.LIST_TITLE' | translate }}</h2>
+  @if (isLoading()) {
+    <p class="bb-agents__message">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (error()) {
+    <p class="bb-agents__message bb-agents__message--error" role="alert">{{ 'PHARMACIEN.AGENTS.LOAD_ERROR' | translate }}</p>
+  } @else if (agents().length === 0) {
+    <p class="bb-agents__message">{{ 'PHARMACIEN.AGENTS.EMPTY' | translate }}</p>
+  } @else {
+    <div class="bb-agents__list">
+      @for (agent of agents(); track agent.id) {
+        <article class="bb-agents__card">
+          <div class="bb-agents__identity">
+            <div>
+              <h3>{{ agent.prenom }} {{ agent.nom }}</h3>
+              <p>{{ agent.email || agent.telephone }}</p>
+            </div>
+            <span class="bb-agents__role">{{ roleLabel(agent.pharmacienProfile?.roleOfficine || 'ADJOINT') }}</span>
+            <span class="bb-agents__status" [class.bb-agents__status--off]="!agent.estActif">
+              {{ (agent.estActif ? 'PHARMACIEN.AGENTS.ACTIVE' : 'PHARMACIEN.AGENTS.SUSPENDED') | translate }}
+            </span>
+          </div>
+
+          <div class="bb-agents__actions">
+            <button type="button" class="bb-agents__secondary" (click)="changerEtat(agent)">
+              {{ (agent.estActif ? 'PHARMACIEN.AGENTS.SUSPEND' : 'PHARMACIEN.AGENTS.REACTIVATE') | translate }}
+            </button>
+          </div>
+
+          <div class="bb-agents__temporary">
+            <label>
+              <span>{{ 'PHARMACIEN.AGENTS.ROLE' | translate }}</span>
+              <select [name]="'permanent-role-' + agent.id" [(ngModel)]="rolesPermanents[agent.id]">
+                @for (role of roles; track role) {
+                  <option [value]="role">{{ roleLabel(role) }}</option>
+                }
+              </select>
+            </label>
+            <button type="button" class="bb-agents__secondary" (click)="changerRole(agent)">
+              {{ 'PHARMACIEN.AGENTS.SAVE_ROLE' | translate }}
+            </button>
+          </div>
+
+          <div class="bb-agents__temporary">
+            <label>
+              <span>{{ 'PHARMACIEN.AGENTS.TEMP_ROLE' | translate }}</span>
+              <select [name]="'role-' + agent.id" [(ngModel)]="rolesTemporaires[agent.id]">
+                @for (role of roles; track role) {
+                  <option [value]="role">{{ roleLabel(role) }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>{{ 'PHARMACIEN.AGENTS.EXPIRES' | translate }}</span>
+              <input [name]="'expiry-' + agent.id" type="datetime-local" [(ngModel)]="expirations[agent.id]" />
+            </label>
+            <button type="button" class="bb-agents__secondary" (click)="accorderPermission(agent)">
+              {{ 'PHARMACIEN.AGENTS.GRANT' | translate }}
+            </button>
+            @if (agent.pharmacienProfile?.roleOfficineTemporaire) {
+              <span class="bb-agents__grant">
+                {{ 'PHARMACIEN.AGENTS.GRANTED_UNTIL' | translate:{ role: roleLabel(agent.pharmacienProfile!.roleOfficineTemporaire!), date: permissionDate(agent) } }}
+              </span>
+              <button type="button" class="bb-agents__link" (click)="revoquerPermission(agent)">
+                {{ 'PHARMACIEN.AGENTS.REVOKE' | translate }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

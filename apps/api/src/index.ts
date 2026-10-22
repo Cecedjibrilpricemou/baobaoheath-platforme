@@ -16,6 +16,7 @@ import medicamentRoutes from './routes/medicament.routes';
 import ascRoutes from './routes/asc.routes';
 import medecinRoutes from './routes/medecin.routes';
 import paiementRoutes from './routes/paiement.routes';
+import webhookChapChapRoutes from './routes/webhook-chapchap.routes';
 import vaccinationRoutes from './routes/vaccination.routes';
 import notificationRoutes from './routes/notification.routes';
 import analyticsRoutes from './routes/analytics.routes';
@@ -25,6 +26,8 @@ import syncRoutes from './routes/sync.routes';
 import fhirRoutes from './routes/fhir.routes';
 import triageRoutes from './routes/triage.routes';
 import privacyRoutes from './routes/privacy.routes';
+import consentementRoutes from './routes/consentement.routes';
+import brisDeGlaceRoutes from './routes/bris-de-glace.routes';
 import ussdRoutes from './routes/ussd.routes';
 import statsRoutes from './routes/stats.routes';
 import uploadRoutes from './routes/upload.routes';
@@ -32,6 +35,12 @@ import parametresRoutes from './routes/parametres.routes';
 import hopitalRoutes from './routes/hopital.routes';
 import laboratoireRoutes from './routes/laboratoire.routes';
 import resultatsRoutes from './routes/resultats.routes';
+import assuranceRoutes from './routes/assurance.routes';
+import referentielRoutes from './routes/referentiel.routes';
+import journalRoutes from './routes/journal.routes';
+import compteRoutes from './routes/compte.routes';
+import rgpdRoutes from './routes/rgpd.routes';
+import identiteRoutes from './routes/identite.routes';
 import { setupSwagger } from './config/swagger';
 import { getIdentitePlateforme } from './services/parametres.service';
 import { logger } from './config/logger';
@@ -100,10 +109,25 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  // Le front tourne sur une autre origine que l'API : sans cette ligne, un
+  // `fetch` ne voit **aucun** en-tete hors de la liste sure du navigateur, et
+  // un telechargement lance en XHR perd le nom du fichier propose par le
+  // serveur (export du journal d'audit, comptes rendus). Constate le
+  // 2026-10-03 : `Content-Disposition` arrivait a `null` cote navigateur
+  // alors que le serveur l'envoyait correctement.
+  exposedHeaders: ['Content-Disposition'],
 };
 app.use(cors(corsOptions));
 app.use(requestContextMiddleware);
 app.use(cookieParser());
+
+// Les rappels de la passerelle de paiement, **avant l'analyseur JSON global**.
+// Leur signature porte sur les octets exacts du corps : laisser `express.json()`
+// le remplacer par un objet rendrait la verification impossible, puisque
+// re-serialiser produit d'autres octets. Cette route lit le corps brut
+// elle-meme.
+app.use('/api/v1/webhooks', webhookChapChapRoutes);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -165,6 +189,7 @@ const ROUTES_SENSIBLES = [
   '/api/v1/auth/forgot-password',
   '/api/v1/auth/reset-password',
   '/api/v1/auth/change-password',
+  '/api/v1/pharmacien/ventes/:id/annuler',
 ];
 for (const route of ROUTES_SENSIBLES) {
   app.use(route, authLimiter);
@@ -188,6 +213,8 @@ app.use('/api/v1/sync', syncRoutes);
 app.use('/api/v1/fhir', fhirRoutes);
 app.use('/api/v1/triage', triageRoutes);
 app.use('/api/v1/privacy', privacyRoutes);
+app.use('/api/v1/textes-consentement', consentementRoutes);
+app.use('/api/v1/bris-de-glace', brisDeGlaceRoutes);
 app.use('/api/v1/ussd', ussdRoutes);
 app.use('/api/v1/stats', statsRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
@@ -195,6 +222,12 @@ app.use('/api/v1/parametres', parametresRoutes);
 app.use('/api/v1/hopital', hopitalRoutes);
 app.use('/api/v1/laboratoire', laboratoireRoutes);
 app.use('/api/v1/resultats', resultatsRoutes);
+app.use('/api/v1/assurance', assuranceRoutes);
+app.use('/api/v1/referentiels', referentielRoutes);
+app.use('/api/v1/journal', journalRoutes);
+app.use('/api/v1/comptes', compteRoutes);
+app.use('/api/v1/demandes-rgpd', rgpdRoutes);
+app.use('/api/v1/identites', identiteRoutes);
 
 // Route 404
 app.use((_req: Request, res: Response) => {

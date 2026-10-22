@@ -1,34 +1,77 @@
 // features/patient/ordonnances — meme grammaire visuelle que « Mes resultats ».
+
+// ✦ Refonte UI : accent propre a l'ecran (vert vif en mode sombre, ou le
+// vert de marque manque de contraste sur les cartes).
+:host {
+  display: block;
+  --pord-accent: var(--bb-primary);
+  --pord-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --pord-accent: var(--bb-bright);
+  --pord-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
 .bb-pord {
-  padding: 1.75rem;
+  // ✦ Refonte UI : plus de double padding (la coquille fournit la goutiere)
   max-width: 820px;
   margin: 0 auto;
 
+  // ✦ Refonte UI : titre de section avec filet, pour scander « A retirer »
+  // et « Historique ».
   &__section {
+    display: flex; align-items: center; gap: 12px;
     font-family: var(--bb-font-display);
-    font-size: 14px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--bb-text-secondary);
-    margin: 22px 0 10px;
+    font-size: 12px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--bb-text-secondary);
+    margin: 28px 0 12px;
+
+    &::after { content: ''; flex: 1; height: 1px; background: var(--bb-border); }
+    &:first-of-type { margin-top: 8px; }
   }
 
-  &__empty { color: var(--bb-text-secondary); font-size: 13.5px; }
+  // ✦ Refonte UI : ce paragraphe ne sert qu'au chargement ; on l'habille en
+  // bloc pulse plutot qu'en texte nu.
+  &__empty {
+    color: var(--bb-text-muted); font-size: 13.5px; text-align: center;
+    padding: 40px 24px; border-radius: var(--bb-radius-xl);
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    animation: bb-pord-pulse 1.4s ease-in-out infinite alternate;
+  }
 
   &__empty-state {
     display: flex; flex-direction: column; align-items: center; gap: 14px;
-    padding: 46px 24px; text-align: center;
+    padding: 52px 24px; text-align: center;
     background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
     border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
-    i { font-size: 30px; color: var(--bb-text-muted); }
+    i {
+      font-size: 26px; color: var(--pord-accent);
+      width: 64px; height: 64px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--pord-accent-soft);
+    }
+    p { margin: 0; font-size: 14px; max-width: 320px; line-height: 1.55; }
   }
 
   &__card {
-    background: var(--bb-surface-card); border: 1px solid var(--bb-border);
-    border-radius: var(--bb-radius-xl); padding: 1.1rem 1.25rem;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); padding: 1.25rem 1.375rem;
     margin-bottom: 14px; box-shadow: var(--bb-shadow-sm);
+    transition: box-shadow var(--bb-transition-slow), border-color var(--bb-transition);
+    &:hover { box-shadow: var(--bb-shadow); }
+
+    @media (max-width: 600px) { padding: 1rem; }
 
     // Une ordonnance servie ou perimee reste consultable, mais ne doit pas
     // attirer l'oeil autant qu'une ordonnance a retirer.
-    &--inactive { opacity: .72; }
+    // ✦ Refonte UI : plus d'opacite globale (texte sous le seuil AA) — la
+    // carte s'efface par sa surface et son ombre, le texte reste lisible.
+    &--inactive {
+      background: var(--bb-surface-1); box-shadow: none;
+      &:hover { box-shadow: none; }
+      .bb-pord__numero { color: var(--bb-text-secondary); }
+    }
   }
 
   &__head {
@@ -38,81 +81,124 @@
 
   &__numero {
     display: block;
-    font-family: var(--bb-font-display); font-size: 15px; font-weight: 800;
-    letter-spacing: .5px; color: var(--bb-text-primary);
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    letter-spacing: .5px; color: var(--bb-text-primary); font-variant-numeric: tabular-nums;
   }
 
   &__date { font-size: 12px; color: var(--bb-text-muted); }
 
-  &__meta { font-size: 12.5px; color: var(--bb-text-secondary); margin: 8px 0 12px; }
+  // ✦ Refonte UI : le template demande `bb-badge--muted`, qui n'existait
+  // pas : le badge « Entierement retiree » n'avait aucun style.
+  .bb-badge--muted {
+    background: var(--bb-surface-2); color: var(--bb-text-secondary); border-color: var(--bb-border);
+  }
+
+  &__meta {
+    font-size: 12.5px; color: var(--bb-text-secondary); margin: 10px 0 14px; line-height: 1.55;
+    padding-bottom: 12px; border-bottom: 1px solid var(--bb-border-light);
+  }
 
   &__reglemente {
     display: flex; align-items: center; gap: 8px; margin: 0 0 12px;
-    padding: 8px 12px; border-radius: var(--bb-radius);
+    padding: 9px 12px; border-radius: var(--bb-radius);
     background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
-    color: var(--bb-warning); font-size: 12px; font-weight: 600;
+    color: var(--bb-warning); font-size: 12.5px; font-weight: 600;
   }
 
   &__meds {
     list-style: none; margin: 0; padding: 0;
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 6px;
 
+    // ✦ Refonte UI : chaque medicament porte une puce d'accent ; le libelle
+    // passe a la ligne proprement sur mobile.
     li {
-      display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
-      padding: 9px 12px; border-radius: var(--bb-radius);
-      background: var(--bb-surface-1); font-size: 13px;
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px;
+      padding: 10px 12px 10px 28px; border-radius: var(--bb-radius); position: relative;
+      background: var(--bb-surface-1); border: 1px solid var(--bb-border-light); font-size: 13.5px;
 
+      &::before {
+        content: ''; position: absolute; left: 12px; top: 17px;
+        width: 7px; height: 7px; border-radius: 50%; background: var(--pord-accent);
+      }
+
+      strong { color: var(--bb-text-primary); }
       span { font-size: 12.5px; color: var(--bb-text-secondary); }
+
+      // Ligne deja retiree : barree et puce neutre
+      &.bb-pord__med--delivree {
+        strong { text-decoration: line-through; text-decoration-color: var(--bb-text-muted); color: var(--bb-text-muted); }
+        &::before { background: var(--bb-border-strong); }
+      }
     }
   }
 
-  &__med--delivree strong { text-decoration: line-through; opacity: .7; }
+  &__card--inactive &__meds li { background: var(--bb-surface-card); }
 
-  &__retire {
-    margin-left: auto; font-size: 11.5px; font-weight: 700;
-    color: var(--bb-success);
+  &__meds li &__retire, &__retire {
+    margin-left: auto; color: var(--bb-success); font-size: 11.5px; font-weight: 700;
+    display: inline-flex; align-items: center;
     i { font-size: 11px; margin-right: 4px; }
   }
 
+  // ✦ Refonte UI : le code de retrait — ce que le patient montre au
+  // comptoir. Carte teintee, chiffres en grand et en chasse fixe.
   &__code {
     display: flex; align-items: center; justify-content: space-between;
     gap: 14px; flex-wrap: wrap;
-    margin-top: 14px; padding: 12px 14px;
-    border: 2px dashed var(--bb-primary); border-radius: var(--bb-radius-lg);
-    background: var(--bb-success-bg);
+    margin-top: 16px; padding: 14px 16px;
+    border: 2px dashed color-mix(in srgb, var(--pord-accent) 60%, transparent);
+    border-radius: var(--bb-radius-lg);
+    background: var(--pord-accent-soft);
   }
 
   &__code-lab {
-    display: block; font-size: 10.5px; text-transform: uppercase;
-    letter-spacing: .08em; color: var(--bb-text-secondary);
+    display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--bb-text-secondary); margin-bottom: 2px;
   }
 
   &__code-val {
-    font-family: "Courier New", monospace; font-size: 22px; font-weight: 700;
-    letter-spacing: .16em; color: var(--bb-text-primary);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: clamp(20px, 4vw, 24px); font-weight: 700;
+    letter-spacing: .2em; color: var(--bb-text-primary);
+    font-variant-numeric: tabular-nums;
   }
 
   &__code-btn {
     display: inline-flex; align-items: center; gap: 7px;
-    padding: 8px 14px; border-radius: var(--bb-radius);
-    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
-    color: var(--bb-text-secondary); font-size: 12.5px; font-weight: 600;
-    cursor: pointer; transition: all var(--bb-transition);
-    &:hover { color: var(--bb-text-primary); border-color: var(--bb-border-hover); }
+    padding: 9px 16px; border-radius: var(--bb-radius-pill);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
+    color: var(--bb-text-primary); font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700;
+    cursor: pointer;
+    // ✦ Refonte UI : --bb-border-hover n'existait pas (survol sans effet)
+    transition: border-color var(--bb-transition), color var(--bb-transition), transform var(--bb-transition);
+    &:hover { color: var(--pord-accent); border-color: var(--pord-accent); }
+    &:active { transform: scale(0.97); }
+    i { color: var(--pord-accent); }
   }
 
-  &__code-aide { font-size: 11.5px; color: var(--bb-text-muted); margin: 7px 0 0; }
+  &__code-aide {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 12px; color: var(--bb-text-muted); margin: 8px 2px 0; line-height: 1.5;
+  }
 
   &__actions { display: flex; justify-content: flex-end; margin-top: 14px; }
 
   &__print {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 9px 16px; border-radius: var(--bb-radius);
-    border: 1px solid var(--bb-border); background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
     color: var(--bb-text-secondary); font-family: var(--bb-font-display);
     font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: all var(--bb-transition);
-    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); border-color: var(--bb-border-hover); }
-    i { color: var(--bb-primary); }
+    transition: background var(--bb-transition), color var(--bb-transition), border-color var(--bb-transition), transform var(--bb-transition);
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); border-color: var(--bb-border-strong); transform: translateY(-1px); }
+    &:active { transform: scale(0.98); }
+    i { color: var(--pord-accent); }
+
+    @media (max-width: 480px) { width: 100%; justify-content: center; }
   }
+}
+
+@keyframes bb-pord-pulse {
+  from { opacity: 1; }
+  to   { opacity: .55; }
 }

@@ -1,0 +1,228 @@
+<div class="bb-journal">
+
+  <!-- L'en-tete commun du projet (.bb-page-head, styles/_shell.scss), comme
+       les autres ecrans d'administration. -->
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.JOURNAL.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.JOURNAL.SUBTITLE' | translate }}</p>
+    </div>
+  </header>
+  <app-export-liste
+    [titre]="'EXPORT.DOC.JOURNAL_AUDIT'"
+    [sousTitre]="'EXPORT.SOUS.PAGE_SUR' | translate: { page: page(), pages: totalPages(), total: total() }"
+    [colonnes]="colonnes"
+    [lignes]="lignes()"
+    [nomFichier]="'journal-audit'" />
+
+
+  <!-- On le dit a l'operateur plutot que de le lui cacher : consulter ce
+       journal laisse une trace, au meme titre que les acces qu'il montre. -->
+  <div class="journal-avis" role="note">
+    <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+    <span>{{ 'ADMIN.JOURNAL.SELF_AUDITED' | translate }}</span>
+  </div>
+
+  <!-- Les anomalies (EF-12-06). Des signaux a examiner, pas des verdicts :
+       l'encart le dit, et chaque ligne mene au detail plus bas. -->
+  @if (anomaliesChargees() && anomalies().length > 0) {
+    <mat-card class="journal-anomalies" [class.journal-anomalies--alerte]="alertes() > 0">
+      <div class="journal-anomalies__tete">
+        <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+        <h2>{{ 'ADMIN.JOURNAL.ANOMALIES_TITLE' | translate:{ n: anomalies().length } }}</h2>
+      </div>
+      <p class="journal-anomalies__avis">{{ 'ADMIN.JOURNAL.ANOMALIES_NOTE' | translate }}</p>
+
+      <ul class="journal-anomalies__liste">
+        @for (a of anomalies(); track a.type + a.idUtilisateur) {
+          <li>
+            <span class="journal-anomalies__rang"
+                  [class.journal-anomalies__rang--alerte]="a.gravite === 'ALERTE'">
+              {{ 'ADMIN.JOURNAL.GRAVITE_' + a.gravite | translate }}
+            </span>
+            <span class="journal-anomalies__texte">
+              {{ 'ADMIN.JOURNAL.ANOMALIE_' + a.type | translate:{
+                   acteur: a.acteur, role: ('ROLE.' + a.role | translate),
+                   mesure: a.mesure, seuil: a.seuil } }}
+              @if (!a.acteurActif) {
+                <em class="journal-anomalies__deja">{{ 'ADMIN.JOURNAL.ALREADY_CLOSED' | translate }}</em>
+              }
+            </span>
+            <button mat-stroked-button (click)="enqueterSur(a)">
+              {{ 'ADMIN.JOURNAL.INVESTIGATE' | translate }}
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (seuils(); as s) {
+        <!-- Les seuils ne sont pas calibres sur du trafic reel : on les montre
+             plutot que de les cacher. -->
+        <p class="journal-anomalies__seuils">
+          {{ 'ADMIN.JOURNAL.THRESHOLDS' | translate:{
+               refus: s.refusRepetes, dossiers: s.dossiersDistincts,
+               adresses: s.adressesDistinctes, heures: s.fenetreHeures } }}
+        </p>
+      }
+    </mat-card>
+  }
+
+  <mat-card class="journal-filtres">
+    <div class="journal-filtres__grille">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.JOURNAL.FROM' | translate }}</mat-label>
+        <input matInput type="date" [ngModel]="du()" (ngModelChange)="du.set($event)" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.JOURNAL.TO' | translate }}</mat-label>
+        <input matInput type="date" [ngModel]="au()" (ngModelChange)="au.set($event)" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.JOURNAL.ROLE' | translate }}</mat-label>
+        <mat-select [ngModel]="role()" (ngModelChange)="role.set($event)">
+          <mat-option value="">{{ 'ADMIN.JOURNAL.ALL_ROLES' | translate }}</mat-option>
+          @for (r of roles; track r) {
+            <mat-option [value]="r">{{ 'ROLE.' + r | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.JOURNAL.RESOURCE' | translate }}</mat-label>
+        <input matInput [ngModel]="ressource()" (ngModelChange)="ressource.set($event)"
+               placeholder="patients, consultations, laboratoire…" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.JOURNAL.PATIENT_ID' | translate }}</mat-label>
+        <input matInput [ngModel]="idPatient()" (ngModelChange)="idPatient.set($event)" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ADMIN.JOURNAL.ACTOR_ID' | translate }}</mat-label>
+        <input matInput [ngModel]="idUtilisateur()" (ngModelChange)="idUtilisateur.set($event)" />
+      </mat-form-field>
+    </div>
+
+    <div class="journal-filtres__cases">
+      <mat-checkbox [ngModel]="echecsSeulement()" (ngModelChange)="echecsSeulement.set($event)">
+        {{ 'ADMIN.JOURNAL.FAILURES_ONLY' | translate }}
+      </mat-checkbox>
+
+      <!-- Sans patient, « par un tiers » ne veut rien dire : tiers de qui ? -->
+      <mat-checkbox [ngModel]="parTiers()" (ngModelChange)="parTiers.set($event)"
+                    [disabled]="!parTiersPossible()">
+        {{ 'ADMIN.JOURNAL.THIRD_PARTY_ONLY' | translate }}
+      </mat-checkbox>
+    </div>
+
+    <div class="journal-filtres__actions">
+      <button mat-flat-button color="primary" (click)="rechercher()" [disabled]="chargement()">
+        <mat-icon fontSet="pi" fontIcon="pi-search" aria-hidden="true"></mat-icon>
+        {{ 'ADMIN.JOURNAL.SEARCH' | translate }}
+      </button>
+      <button mat-stroked-button (click)="reinitialiser()" [disabled]="chargement()">
+        {{ 'ADMIN.JOURNAL.RESET' | translate }}
+      </button>
+      <span class="journal-filtres__espace"></span>
+      <button mat-stroked-button (click)="exporter()"
+              [disabled]="exportEnCours() || chargement() || total() === 0">
+        <mat-icon fontSet="pi" fontIcon="pi-download" aria-hidden="true"></mat-icon>
+        {{ 'ADMIN.JOURNAL.EXPORT' | translate }}
+      </button>
+    </div>
+
+    <!-- Prevenir avant le clic vaut mieux qu'un refus apres coup. -->
+    @if (exportTropLarge()) {
+      <p class="journal-avertissement">
+        {{ 'ADMIN.JOURNAL.EXPORT_TOO_LARGE' | translate:{ total: total(), max: maxExport() } }}
+      </p>
+    }
+  </mat-card>
+
+  @if (erreur()) {
+    <div class="journal-erreur" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  <mat-card class="journal-resultats">
+    <div class="journal-resultats__tete">
+      <h2>{{ 'ADMIN.JOURNAL.RESULTS' | translate }}</h2>
+      @if (!chargement()) {
+        <span class="journal-resultats__compte">{{ total() }}</span>
+      }
+    </div>
+
+    @if (chargement()) {
+      <div class="bb-empty" role="status">
+        <mat-spinner diameter="28"></mat-spinner>
+        <p>{{ 'COMMON.LOADING' | translate }}</p>
+      </div>
+    } @else if (lignes().length === 0) {
+      <div class="bb-empty">
+        <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
+        <p>{{ 'ADMIN.JOURNAL.EMPTY' | translate }}</p>
+      </div>
+    } @else {
+      <div class="journal-table-wrap">
+        <table class="journal-table">
+          <thead>
+            <tr>
+              <th>{{ 'ADMIN.JOURNAL.WHEN' | translate }}</th>
+              <th>{{ 'ADMIN.JOURNAL.WHO' | translate }}</th>
+              <th>{{ 'ADMIN.JOURNAL.WHAT' | translate }}</th>
+              <th>{{ 'ADMIN.JOURNAL.PATIENT' | translate }}</th>
+              <th>{{ 'ADMIN.JOURNAL.RESULT' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lignes(); track l.id) {
+              <tr [class.journal-table__row--refus]="l.statutHttp !== null && l.statutHttp >= 400">
+                <td class="journal-table__date">{{ l.creeLe | date:'short' }}</td>
+                <td>
+                  <span class="journal-table__who">{{ l.acteur.prenom }} {{ l.acteur.nom }}</span>
+                  <span class="journal-table__role">{{ 'ROLE.' + l.acteur.role | translate }}</span>
+                </td>
+                <!-- Le libelle est redige ; la trace technique reste en
+                     infobulle, pour une enquete ou un signalement. -->
+                <td>
+                  <span [title]="l.action + ' · ' + l.ressource">{{ libelle(l) }}</span>
+                </td>
+                <td>
+                  @if (l.patientConcerne) {
+                    <span class="journal-table__who">{{ l.patientConcerne }}</span>
+                  } @else {
+                    <span class="journal-table__aucun" [title]="'ADMIN.JOURNAL.NO_PATIENT_HINT' | translate">—</span>
+                  }
+                </td>
+                <td>
+                  <span class="journal-table__statut"
+                        [class.journal-table__statut--refus]="l.statutHttp !== null && l.statutHttp >= 400">
+                    {{ l.statutHttp ?? '—' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPages() > 1) {
+        <div class="journal-pagination">
+          <button mat-stroked-button (click)="rechercher(page() - 1)" [disabled]="page() <= 1">
+            {{ 'ADMIN.JOURNAL.PREVIOUS' | translate }}
+          </button>
+          <span>{{ 'ADMIN.JOURNAL.PAGE_OF' | translate:{ page: page(), total: totalPages() } }}</span>
+          <button mat-stroked-button (click)="rechercher(page() + 1)" [disabled]="page() >= totalPages()">
+            {{ 'ADMIN.JOURNAL.NEXT' | translate }}
+          </button>
+        </div>
+      }
+    }
+  </mat-card>
+</div>

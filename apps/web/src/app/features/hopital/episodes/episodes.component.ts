@@ -10,6 +10,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import type { EpisodeSoinsResumeView, StatutEpisode } from '@baobaoheath/shared-types';
 import { HopitalService } from '../../../core/services/hopital.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { statutEpisodeClasse } from '../hopital.utils';
@@ -19,7 +20,7 @@ type Filtre = 'TOUS' | StatutEpisode;
 @Component({
   selector: 'app-hopital-episodes',
   standalone: true,
-  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, ExportListeComponent],
   templateUrl: './episodes.component.html',
 })
 export class EpisodesComponent implements OnInit {
@@ -36,6 +37,20 @@ export class EpisodesComponent implements OnInit {
   limit     = 20;
   total     = signal(0);
   items     = signal<EpisodeSoinsResumeView[]>([]);
+
+  readonly colonnes: ColonneExport<EpisodeSoinsResumeView>[] = [
+    { titre: 'EXPORT.COL.NUMERO', valeur: (e) => e.numero },
+    { titre: 'EXPORT.COL.PATIENT', valeur: (e) => e.patient.prenom + ' ' + e.patient.nom },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (e) => e.patient.telephone },
+    { titre: 'EXPORT.COL.MOTIF', valeur: (e) => e.motif },
+    { titre: 'EXPORT.COL.SERVICE', valeur: (e) => e.service },
+    { titre: 'EXPORT.COL.STATUT', valeur: (e) => e.statut },
+    { titre: 'EXPORT.COL.OUVERT_LE', valeur: (e) => new Date(e.ouvertLe) },
+    { titre: 'EXPORT.COL.CLOS_LE', valeur: (e) => (e.closLe ? new Date(e.closLe) : null) },
+    { titre: 'EXPORT.COL.RESPONSABLE', valeur: (e) => (e.responsable ? e.responsable.prenom + ' ' + e.responsable.nom : '') },
+    { titre: 'EXPORT.COL.CONSULTATIONS', valeur: (e) => e.nbConsultations, nombre: true },
+    { titre: 'EXPORT.COL.ANALYSES', valeur: (e) => e.nbDemandesAnalyse, nombre: true },
+  ];
   isLoading = signal(true);
 
   private terme$ = new Subject<string>();

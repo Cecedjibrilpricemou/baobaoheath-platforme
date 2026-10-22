@@ -1,3 +1,5 @@
+export { SEPARATEUR_CSV, BOM_UTF8, champCsv, enCsv } from './csv';
+
 // ─── Common API wrapper types ──────────────────────────────────────────────────
 export interface PaginationMeta {
   total: number;
@@ -31,12 +33,16 @@ export type Role =
   | 'PHARMACIEN'
   | 'AGENT_ACCUEIL'
   | 'TECHNICIEN_LABO'
-  | 'BIOLOGISTE'
   | 'LIVREUR'
+  /** Agent d'un assureur : il se connecte lui-meme, et ne lit aucun dossier medical. */
+  | 'ASSUREUR'
   | 'ADMIN_STRUCTURE'
   | 'ADMIN_REGIONAL'
   | 'ADMIN_NATIONAL'
   | 'SUPER_ADMIN';
+
+/** Responsabilites d'un utilisateur au sein de son officine. */
+export type RoleOfficine = 'TITULAIRE' | 'ADJOINT' | 'PREPARATEUR' | 'CAISSIER';
 
 export type EncounterStatus =
   | 'PLANIFIEE'
@@ -71,7 +77,9 @@ export type TypeStructure =
   | 'CHU'
   | 'CLINIQUE'
   | 'PHARMACIE'
-  | 'LABORATOIRE';
+  | 'LABORATOIRE'
+  // Un assureur : ses agents se connectent comme les autres (EF-09).
+  | 'ASSURANCE';
 
 /**
  * Partage par l'ordonnance (le document) et par ses lignes. Une ligne ne prend
@@ -119,12 +127,121 @@ export type TypeNotification =
   | 'ESCALADE_CRITIQUE'
   | 'COMMANDE_A_SERVIR'
   | 'COMMANDE_PRISE_EN_CHARGE'
-  | 'COMMANDE_SANS_PHARMACIE';
+  | 'COMMANDE_SANS_PHARMACIE'
+  | 'COMMANDE_A_PAYER'
+  | 'COMMANDE_PAYEE'
+  | 'COMMANDE_PRETE'
+  | 'COMMANDE_REMISE'
+  | 'COMMANDE_ANNULEE'
+  | 'ORDONNANCE_SUBSTITUTION'
+  | 'ORDONNANCE_LIGNE_REFUSEE';
 
 /** Statut d'une commande pharmacie (EF-07). */
+// ═══════════════════════════════════════════════════════════════════
+// P6 / EF-07 — La commande en pharmacie
+//
+// **Ce que la pharmacie voit du patient : son nom, et les produits.** Elle va
+// les lui delivrer, elle a besoin des deux. Rien d'autre du dossier ne sort :
+// ni diagnostic, ni motif de consultation, ni antecedent. Un pharmacien n'a
+// pas a savoir pourquoi on soigne quelqu'un pour lui remettre une boite.
+//
+// L'API rendait jusqu'ici l'objet Prisma complet — ordonnance, consultation,
+// patient imbriques. Cette vue est le contrat, et elle dit ou s'arrete le
+// partage.
+// ═══════════════════════════════════════════════════════════════════
+
+export interface LigneCommandeView {
+  id: string;
+  libelle: string;
+  dosage?: string | null;
+  forme?: string | null;
+  quantite: number;
+  /** Ce que le medecin a ecrit sur la facon de prendre le produit. */
+  posologie?: string | null;
+
+  /**
+   * Le prix de cette officine, **fige au chiffrage**.
+   *
+   * Absent tant que la commande n'est pas chiffree : avant, il n'y a qu'une
+   * prescription, et annoncer un prix tire du catalogue national serait
+   * annoncer un prix que personne ne tiendra. Prix de reference plus la
+   * marge de l'officine, exactement la regle du comptoir.
+   */
+  prixUnitaireGnf?: number | null;
+  /** `quantite * prixUnitaireGnf`, figee elle aussi. */
+  montantGnf?: number | null;
+}
+
+/** Ce qu'une pharmacie sollicitee a repondu. */
+export interface ReponsePharmacieView {
+  idStructure: string;
+  nom: string;
+  aTousLesProduits: boolean;
+  repondueLe: HorodatageApi;
+}
+
+export interface CommandeView {
+  id: string;
+  statut: StatutCommande;
+  /** Le quartier ou l'appel a ete lance. */
+  quartierRecherche?: string | null;
+  modeRemise?: ModeRemise | null;
+  creeLe: HorodatageApi;
+
+  numeroOrdonnance: string;
+  patient: { id: string; prenom: string; nom: string };
+  lignes: LigneCommandeView[];
+
+  /** La pharmacie qui a pris la commande, le cas echeant. */
+  pharmacie?: { id: string; nom: string; quartier?: string | null } | null;
+
+  /**
+   * Les reponses deja recues.
+   *
+   * Utile au comptoir : savoir que trois officines ont dit « non » avant soi
+   * change la facon dont on regarde sa propre disponibilite.
+   */
+  reponses: ReponsePharmacieView[];
+
+  /** Vrai quand **cette** pharmacie l'a prise : l'API le calcule pour elle. */
+  estLaMienne?: boolean;
+
+  /**
+   * Le total du panier, nul tant qu'il n'est pas chiffre.
+   *
+   * Redondant avec la somme des lignes, et garde par un declencheur
+   * differe cote base : l'ecran n'a pas a recalculer un total pour
+   * l'afficher, et les deux ne peuvent pas se contredire.
+   */
+  montantTotalGnf?: number | null;
+  chiffreeLe?: HorodatageApi | null;
+  preteLe?: HorodatageApi | null;
+  remiseLe?: HorodatageApi | null;
+  clotureeLe?: HorodatageApi | null;
+  motifAnnulation?: string | null;
+}
+
+/**
+ * Ou en est une commande.
+ *
+ * Le tronc commun va de l'appel au quartier jusqu'a la preparation, puis
+ * deux sorties selon le mode de remise choisi par le patient.
+ *
+ * `PRETE_POUR_LIVRAISON` est le **point de jonction avec P8** : la course,
+ * l'enchere des motards et le suivi commencent la. Les etats propres a la
+ * livraison n'existent pas encore — un etat qu'aucun code ne pose ne se
+ * verifie pas.
+ */
 export type StatutCommande =
   | 'RECHERCHE_PHARMACIE'
   | 'PRISE_EN_CHARGE'
+  | 'A_PAYER'
+  | 'PAYEE'
+  | 'EN_PREPARATION'
+  | 'PRETE_POUR_RETRAIT'
+  | 'PRETE_POUR_LIVRAISON'
+  | 'RETIREE'
+  | 'CLOTUREE'
   | 'SANS_PHARMACIE'
   | 'ANNULEE';
 
@@ -188,6 +305,7 @@ export interface UserDto {
   nom: string;
   prenom: string;
   role: Role;
+  roleOfficine?: RoleOfficine | null;
   langue: string;
   photoUrl?: string;
   estActif: boolean;
@@ -256,12 +374,26 @@ export interface VitalsDto {
   glycemie?: number;
 }
 
+/**
+ * La severite d'un diagnostic.
+ *
+ * **Nommee parce que le front l'avait recopiee de travers** : son selecteur
+ * proposait `LEGERE` et `MODEREE`, et le serveur rejetait le diagnostic en
+ * 400. Un type nomme fait echouer la compilation au lieu de laisser la faute
+ * se decouvrir a l'usage.
+ */
+export type SeveriteDiagnostic = 'LEGER' | 'MODERE' | 'SEVERE' | 'CRITIQUE';
+
+export type TypeDiagnostic = 'PRINCIPAL' | 'DIFFERENTIEL' | 'SECONDAIRE';
+
+export type SourceDiagnostic = 'IA_LOCALE' | 'IA_CLAUDE' | 'MEDECIN' | 'ASC';
+
 export interface DiagnosticDto {
   libelle: string;
   codeIcd11?: string;
-  typeDiagnostic?: 'PRINCIPAL' | 'DIFFERENTIEL' | 'SECONDAIRE';
-  severite?: 'LEGER' | 'MODERE' | 'SEVERE' | 'CRITIQUE';
-  source: 'IA_LOCALE' | 'IA_CLAUDE' | 'MEDECIN' | 'ASC';
+  typeDiagnostic?: TypeDiagnostic;
+  severite?: SeveriteDiagnostic;
+  source: SourceDiagnostic;
 }
 
 export interface OrdonnanceDto {
@@ -332,8 +464,83 @@ export interface InitierPaiementDto {
   numeroOperateur?: string;
 }
 
+/**
+ * Payer le panier d'une commande de pharmacie.
+ *
+ * **Aucun montant.** Il est fige en base au chiffrage par l'officine, et le
+ * client n'a pas a le proposer : un montant qui vient du navigateur est un
+ * montant qu'on peut baisser. Le paiement d'une consultation, lui, accepte
+ * encore un montant propose — plafonne — pour les cas ou aucun tarif n'est
+ * enregistre.
+ */
+export interface PayerCommandeDto {
+  modePaiement: ModePaiement;
+  numeroOperateur?: string;
+}
+
 export interface ConfirmerPaiementDto {
   referenceOperateur: string;
+}
+
+/**
+ * Une facture telle que le patient la voit (EF-08).
+ *
+ * **Le front la typait jusqu'ici avec `montant`, `devise` et `methode`, qui
+ * n'existent nulle part cote API** : il lisait des champs absents et affichait
+ * du vide. Cette vue est le contrat, et elle porte les noms reels.
+ */
+export interface FactureView {
+  id: string;
+  /** La consultation reglee : c'est par elle qu'on rouvre un paiement. */
+  idConsultation?: string | null;
+  montantGnf: number;
+  statut: InvoiceStatus;
+  modePaiement?: ModePaiement | null;
+  numeroOperateur?: string | null;
+  /** La reference rendue par la passerelle : c'est la preuve du paiement. */
+  referenceOperateur?: string | null;
+  /**
+   * Le lien de paiement de la passerelle. Present tant que la facture n'est
+   * pas reglee : le patient peut y revenir sans qu'on recree une operation.
+   */
+  urlPaiement?: string | null;
+  /**
+   * Le dernier etat connu cote passerelle : `new`, `pending`, `success`,
+   * `canceled`, `failed`, `error`, `expired`.
+   *
+   * Il existe pour que l'ecran dise ce qui s'est passe — « votre dernier
+   * paiement a echoue » — sans rappeler la passerelle a chaque affichage.
+   */
+  statutOperateur?: string | null;
+  payeeLe?: HorodatageApi | null;
+  creeLe: HorodatageApi;
+  consultation?: {
+    motifPrincipal?: string | null;
+    consulteeLE?: HorodatageApi | null;
+  } | null;
+}
+
+/**
+ * GET /paiements/a-regler — ce que le patient doit encore.
+ *
+ * **Une consultation tarifee n'a pas forcement de facture.** Rien ne facture
+ * automatiquement : la facture naît au moment ou le paiement s'ouvre. Une
+ * liste batie sur les seules factures laisserait donc invisible tout ce qui
+ * n'a jamais ete paye — c'est-a-dire precisement ce qu'on vient regarder.
+ */
+export interface ADeReglerView {
+  idConsultation: string;
+  motif?: string | null;
+  consulteeLE?: HorodatageApi | null;
+  montantGnf: number;
+  /** Absente tant que le paiement n'a jamais ete ouvert. */
+  facture?: FactureView | null;
+}
+
+/** GET /paiements/historique */
+export interface PageFacturesView {
+  data: FactureView[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
 export interface PaiementFilters {
@@ -466,8 +673,10 @@ export interface VerifierOrdonnanceDto {
 }
 
 export interface ValiderConsultationDto {
-  notesMedecin: string;
+  /** Facultatif : le serveur ne l'a jamais exige. */
+  notesMedecin?: string;
   idOrdonnances?: string[];
+  tarifGnf?: number;
 }
 
 export interface RepondreReferencementDto {
@@ -518,7 +727,17 @@ export type NiveauInteraction =
   | 'ASSOCIATION_DECONSEILLEE'
   | 'CONTRE_INDICATION';
 
-export type TypeAlertePrescription = 'ALLERGIE' | 'INTERACTION' | 'CONTRE_INDICATION';
+/**
+ * `RESULTATS_EN_ATTENTE` : des analyses ont ete demandees et ne sont pas
+ * revenues. **C'est un avertissement, pas un verrou** — on prescrit parfois
+ * un antipyretique tout de suite et on ajuste quand les resultats arrivent.
+ * Son niveau reste `PRECAUTION`, donc il n'exige aucun motif.
+ */
+export type TypeAlertePrescription =
+  | 'ALLERGIE'
+  | 'INTERACTION'
+  | 'CONTRE_INDICATION'
+  | 'RESULTATS_EN_ATTENTE';
 
 /**
  * Une raison de ne pas prescrire ce medicament a ce patient. L'alerte ne
@@ -563,7 +782,7 @@ export interface LigneOrdonnanceView {
   dureeJours: number;
   quantite?: number | null;
   instructions?: string | null;
-  medicament?: { id: string; dci: string; nomCommercial?: string | null; forme: string; dosage: string; estReglemente?: boolean };
+  medicament?: { id: string; libelle: string; dci?: string | null; nomCommercial?: string | null; forme?: string | null; dosage?: string | null; estReglemente?: boolean };
   /** Ce qui a ete montre au prescripteur au moment de la prescription. */
   alertes?: AlertePrescriptionView[] | null;
   motifDepassement?: string | null;
@@ -782,18 +1001,56 @@ export interface ConsultationDetailView {
 }
 
 // ─── Catalogues (listes deroulantes) ──────────────────────────────────────────
+
+/**
+ * Ce que le catalogue peut contenir, en liste fermee (decision du 2026-10-01).
+ * Porte les exclusions d'assurance. Seul `MEDICAMENT` se prescrit.
+ */
+export type CategorieProduit =
+  | 'MEDICAMENT'
+  | 'LAIT_INFANTILE'
+  | 'COMPLEMENT_ALIMENTAIRE'
+  | 'COSMETIQUE'
+  | 'HYGIENE'
+  | 'PARAPHARMACIE'
+  | 'DISPOSITIF_MEDICAL'
+  | 'AUTRE';
+
 export interface MedicamentView {
   id: string;
-  dci: string;
+  /** Le nom a afficher, quelle que soit la categorie. Toujours present. */
+  libelle: string;
+  categorie: CategorieProduit;
+  /**
+   * DCI, forme et dosage n'existent que pour un medicament : un lait infantile
+   * n'en a pas. La contrainte SQL `medicaments_medicament_complet` garantit
+   * qu'un `MEDICAMENT` les porte toutes les trois.
+   */
+  dci?: string | null;
   nomCommercial?: string | null;
-  forme: string;
-  dosage: string;
+  forme?: string | null;
+  dosage?: string | null;
   /**
    * EF-05-12 : circuit reglemente (stupefiant, psychotrope). L'ecran de
    * prescription le signale avant la saisie ; l'API applique la regle de toute
    * facon.
    */
   estReglemente?: boolean;
+}
+
+/**
+ * Ce qu'il faut d'un produit du catalogue pour l'afficher dans une liste.
+ * Remplace deux formes en ligne identiques, qui annonçaient `dci` et `dosage`
+ * obligatoires alors qu'un article non medicamenteux n'en a pas.
+ */
+export interface ProduitResumeView {
+  id: string;
+  libelle: string;
+  categorie: CategorieProduit;
+  dci?: string | null;
+  nomCommercial?: string | null;
+  dosage?: string | null;
+  forme?: string | null;
 }
 
 export interface StructureView {
@@ -811,9 +1068,15 @@ export interface StockAscView {
   quantite: number;
   seuilAlerte: number;
   unite: string;
-  datePeremption?: HorodatageApi | null;
+  /**
+   * La peremption la plus proche parmi les lots encore en stock, puisque la
+   * sortie se fait au plus proche de la date. `Stock.datePeremption` a disparu
+   * le 2026-09-30 ; ce contrat l'annoncait encore, et les deux ecrans de stock
+   * affichaient donc une date que l'API n'envoyait plus.
+   */
+  peremptionLaPlusProche?: HorodatageApi | null;
   enAlerte: boolean;
-  medicament: MedicamentView & { categorie?: string | null };
+  medicament: MedicamentView & { classeTherapeutique?: string | null };
 }
 
 // ─── Planning (rendez-vous d'un agent) ────────────────────────────────────────
@@ -884,9 +1147,22 @@ export interface MessageView {
 // ─── Espace pharmacien ────────────────────────────────────────────────────────
 // Medicament + tarif : le catalogue porte un prix national de reference.
 export interface MedicamentTarifeView extends MedicamentView {
-  categorie?: string | null;
+  /** Classe therapeutique en texte libre (« Antalgique »). Autre axe que `categorie`. */
+  classeTherapeutique?: string | null;
   prixUnitaireGnf: number;
+  /** Indique un produit cree et gere par l'officine connectee. */
+  estPropreOfficine?: boolean;
 }
+
+export interface CreateProduitOfficineDto {
+  libelle: string;
+  categorie: Exclude<CategorieProduit, 'MEDICAMENT'>;
+  prixUnitaireGnf: number;
+  seuilAlerte?: number;
+  unite?: string;
+}
+
+export type UpdateProduitOfficineDto = Partial<CreateProduitOfficineDto>;
 
 /** Une ligne de l'ordonnance au comptoir : c'est l'unite de delivrance. */
 export interface LigneDelivranceView {
@@ -900,7 +1176,24 @@ export interface LigneDelivranceView {
   medicament: MedicamentTarifeView;
   /** EF-05-12 : circuit reglemente, signale ligne par ligne au comptoir. */
   estReglemente: boolean;
-  /** Calcule par l'API : quantite x prix unitaire. */
+
+  /**
+   * Ce qui a deja ete remis sur cette ligne, substitutions comprises (P6-b).
+   *
+   * Une ligne peut avoir ete entamee dans une autre officine : la quantite
+   * prescrite ne dit pas ce qu'il reste a servir.
+   */
+  quantiteServie: number;
+  /** `quantite - quantiteServie`, jamais negatif. */
+  resteAServir: number;
+
+  /**
+   * Calcule par l'API : **ce qui reste a servir** x prix unitaire.
+   *
+   * Et non la quantite prescrite : une ligne entamee ailleurs se facturait en
+   * entier, et le comptoir annoncait le prix des dix boites alors que trois
+   * etaient deja parties.
+   */
   prixTotalGnf: number;
   /** Calcule par l'API : le principe actif figure dans les allergies du patient. */
   alerteAllergie: boolean;
@@ -958,6 +1251,12 @@ export interface OrdonnanceEnAttenteView {
 }
 
 export interface PatientScanView {
+  /**
+   * L'identifiant du dossier. Necessaire au comptoir pour le tiers payant :
+   * sans lui, un pharmacien pouvait scanner un patient sans pouvoir ensuite
+   * controler son eligibilite.
+   */
+  id: string;
   prenom: string;
   nom: string;
   dateNaissance: string;
@@ -978,9 +1277,43 @@ export interface StockPharmacieView {
   quantite: number;
   seuilAlerte: number;
   unite: string;
-  datePeremption?: HorodatageApi | null;
+  /**
+   * La peremption la plus proche parmi les lots encore en stock, puisque la
+   * sortie se fait au plus proche de la date. `Stock.datePeremption` a disparu
+   * le 2026-09-30 ; ce contrat l'annoncait encore, et les deux ecrans de stock
+   * affichaient donc une date que l'API n'envoyait plus.
+   */
+  peremptionLaPlusProche?: HorodatageApi | null;
   margeGnf: number;
   medicament: MedicamentTarifeView;
+}
+
+export type MouvementStockType = 'ENTREE' | 'SORTIE' | 'AJUSTEMENT' | 'CORRECTION';
+
+/** Mouvement signe dans le registre immuable de l'officine. */
+export interface MouvementStockView {
+  id: string;
+  type: MouvementStockType;
+  quantite: number;
+  reference: string | null;
+  motif: string | null;
+  creeLe: HorodatageApi;
+  medicament: { id: string; libelle: string } | null;
+  lot: { id: string; numeroLot: string | null } | null;
+  utilisateur: { id: string; prenom: string; nom: string };
+}
+
+export interface AjusterLotStockDto {
+  quantiteComptee: number;
+  motif: string;
+}
+
+export interface AjustementLotStockView {
+  idLot: string;
+  quantiteAvant: number;
+  quantiteComptee: number;
+  variation: number;
+  idMouvement: string | null;
 }
 
 // ─── Vaccinations ─────────────────────────────────────────────────────────────
@@ -1018,14 +1351,14 @@ export interface StructurePubliqueView {
 }
 
 /**
- * GET /admin-structure/structures — vue super-admin : toutes les structures,
- * desactivees comprises, avec le nombre d'utilisateurs rattaches et les
- * administrateurs de la structure.
+ * GET /admin-structure/structures — vue super-admin : metadonnees des
+ * structures, desactivees comprises. Les comptes rattaches restent prives.
  */
 export interface StructureAdminView {
   id: string;
   nom: string;
   type: string;
+  idStructureParente?: string | null;
   prefecture: string;
   adresse?: string | null;
   latitude?: number | null;
@@ -1034,8 +1367,6 @@ export interface StructureAdminView {
   photoUrl?: string | null;
   estActive: boolean;
   creeLe: HorodatageApi;
-  _count?: { utilisateurs: number };
-  utilisateurs?: { prenom: string; nom: string; telephone: string }[];
 }
 
 /** Compte cree en meme temps qu'une structure ou une pharmacie. */
@@ -1082,6 +1413,18 @@ export interface AgentStructureView {
   role: Role;
   creeLe: HorodatageApi;
   derniereConnexion?: HorodatageApi | null;
+  /**
+   * Ou le patient doit se rendre, pour un medecin : « Batiment B, bureau 12 ».
+   *
+   * **Facultatif** : beaucoup d hopitaux ne numerotent pas leurs bureaux et
+   * l agent accompagne le patient a pied. `null` ne s affiche pas.
+   */
+  bureau?: string | null;
+}
+
+/** PUT /admin-structure/agents/:id/bureau — un bureau change, un medecin demenage. */
+export interface DefinirBureauDto {
+  bureau: string | null;
 }
 
 /**
@@ -1144,18 +1487,11 @@ export interface ReferencementATraiterView {
 
 // ─── Confidentialite patient ─────────────────────────────────────────────────
 
-/** GET/PUT /privacy/me/consents — ligne de la table consentements_patient. */
-export interface ConsentementView {
-  id: string;
-  scope: ConsentScope;
-  actif: boolean;
-  donneLe: HorodatageApi;
-  retireLe: HorodatageApi | null;
-  source: string;
-  commentaire: string | null;
-  idPatient: string;
-  idUtilisateur: string;
-}
+// `ConsentementView` vivait ici : c etait la ligne brute de la table. Elle est
+// remplacee par la vue versionnee plus bas (EF-02-01), qui porte en plus le
+// texte reellement presente et dit si l accord a seulement ete presume. Garder
+// les deux aurait fait coexister deux notions de « consentement », dont une
+// qui ne sait pas a quoi la personne a dit oui.
 
 /** PUT /privacy/me/consents */
 export interface SetConsentementDto {
@@ -1166,11 +1502,46 @@ export interface SetConsentementDto {
 }
 
 /** GET /privacy/me/audit-logs — acces journalises au dossier du patient. */
+/**
+ * Une ligne du journal des acces au dossier, telle que le patient la lit
+ * (EF-02-08).
+ */
 export interface AccesDossierView {
   id: string;
+  /**
+   * Le motif de route enregistre (`GET /:id`). Conserve pour une enquete ou
+   * un signalement : c'est la trace technique. **Ne pas l'afficher seul** —
+   * un patient ne lit pas « GET /:id ». Voir `libelle`.
+   */
   action: string;
   ressource: string;
   idRessource: string | null;
+  /**
+   * La meme chose en mots de patient, sous forme de **cles de traduction** :
+   * la phrase, et l'objet qu'elle designe.
+   *
+   * L'API ne rend pas de texte. L'application est bilingue — le selecteur de
+   * langue est a l'ecran — et une phrase francaise figee s'afficherait telle
+   * quelle a un patient ayant choisi l'anglais. La formulation vit donc dans
+   * `apps/web/src/app/shared/i18n/{fr,en}.json`, comme tout le reste de
+   * l'interface.
+   *
+   * La phrase attend un parametre `objet`, a remplacer par la traduction de
+   * `libelleObjet`. Ce dernier est vide pour les phrases qui se suffisent a
+   * elles-memes, comme le scan d'un code au comptoir.
+   */
+  libelle: string;
+  libelleObjet: string;
+  /**
+   * `true` quand c'est le patient lui-meme qui a agi.
+   *
+   * Sans cette distinction, ses propres consultations noient celles des
+   * tiers : dans la base de demonstration, elles representaient 273 lignes
+   * sur 850.
+   */
+  parMoi: boolean;
+  /** Le code HTTP rendu. Un refus (>= 400) est une tentative, pas un acces. */
+  statutHttp: number | null;
   creeLe: HorodatageApi;
   utilisateur: {
     id: string;
@@ -1309,6 +1680,20 @@ export interface ParametresPrescriptionView {
   renouvellementsMax: number;
 }
 
+/** Regles du comptoir d'officine (addendum du 2026-09-28, point 1.1). */
+export interface ParametresPharmacieView {
+  /**
+   * Categories soumises a ordonnance **en plus** des produits reglementes,
+   * qui le sont toujours (EF-05-12).
+   *
+   * La question E de l'addendum — « la vente sans ordonnance est-elle
+   * autorisee pour tous les produits ? » — n'est pas tranchee. La reponse
+   * s'administre donc ici, comme les decisions D1 a D10, plutot que de vivre
+   * en constante dans le code.
+   */
+  categoriesExigeantOrdonnance: CategorieProduit[];
+}
+
 export interface ParametresSystemeValeurs {
   identite: ParametresIdentiteView;
   facturation: ParametresFacturationView;
@@ -1316,6 +1701,7 @@ export interface ParametresSystemeValeurs {
   alertes: ParametresAlertesView;
   sync: ParametresSyncView;
   prescription: ParametresPrescriptionView;
+  pharmacie: ParametresPharmacieView;
 }
 
 /** GET/PUT /admin-structure/parametres */
@@ -1332,6 +1718,7 @@ export interface UpdateParametresSystemeDto {
   alertes?: Partial<ParametresAlertesView>;
   sync?: Partial<ParametresSyncView>;
   prescription?: Partial<ParametresPrescriptionView>;
+  pharmacie?: Partial<ParametresPharmacieView>;
 }
 
 /** POST /admin-structure/parametres/logo — reponse. */
@@ -1343,6 +1730,250 @@ export interface LogoPlateformeView {
 // P1 — Hopital : episode de soins et demande d'analyse (EF-03)
 // Routes /hopital/* (AGENT_ACCUEIL, MEDECIN, ADMIN_STRUCTURE) et /patients/me/episodes.
 // ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /medecin/orientations — un patient que l'accueil a oriente vers ce
+ * medecin (EF-03-05).
+ *
+ * L'orientation posait `EpisodeSoins.idResponsable` et creait un rendez-vous,
+ * mais rien dans l'espace medecin ne lisait l'un ni l'autre : le patient
+ * etait oriente vers quelqu'un qui ne le voyait jamais arriver.
+ */
+export interface OrientationMedecinView {
+  idEpisode: string;
+  numeroEpisode: string;
+  statutEpisode: StatutEpisode;
+  motif: string;
+  service?: string | null;
+  ouvertLe: HorodatageApi;
+  /** Moment ou l'orientation a ete posee. */
+  orienteLe: HorodatageApi;
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  structure: { id: string; nom: string };
+  /** Present seulement si l'accueil a propose une date. */
+  rendezVous?: {
+    id: string;
+    prevuLe: HorodatageApi;
+    statut: string;
+    motif?: string | null;
+  } | null;
+}
+
+/**
+ * POST /medecin/resultats/:idDemande/liberer — le medecin rend les resultats
+ * visibles au patient (addendum du 2026-09-28).
+ *
+ * Le commentaire est la « traduction » : un resultat est ecrit pour un soignant,
+ * et le patient qui le lit seul ne sait pas s'il doit s'inquieter.
+ */
+export interface LibererResultatsDto {
+  commentaire?: string;
+}
+
+/**
+ * GET /laboratoire/scan/:qrCode — ce que voit le laborantin qui scanne un
+ * patient au comptoir.
+ *
+ * Volontairement etroit : l'identite minimale et les demandes encore a traiter
+ * dans SON laboratoire. Un QR est un identifiant, pas une cle du dossier
+ * medical — le pharmacien qui scanne le meme code voit des ordonnances et
+ * aucune analyse.
+ */
+export interface ScanLaboratoireView {
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  demandes: {
+    id: string;
+    numero: string;
+    statut: StatutDemandeAnalyse;
+    urgence: Urgence;
+    creeLe: HorodatageApi;
+    consignesPatient?: string | null;
+    examens: string[];
+    /** Au moins un examen exige d'etre a jeun : a savoir avant de prelever. */
+    aJeun: boolean;
+  }[];
+  totalDemandes: number;
+}
+
+/** Un lot recu : une quantite, une date de peremption, une origine. */
+export interface LotStockView {
+  id: string;
+  numeroLot?: string | null;
+  /** Ce qui reste de ce lot. */
+  quantite: number;
+  quantiteRecue: number;
+  datePeremption?: HorodatageApi | null;
+  prixAchatGnf: number;
+  medicament: ProduitResumeView;
+}
+
+/** POST /pharmacien/approvisionnements — une ligne de la facture. */
+export interface LigneApprovisionnementDto {
+  idMedicament: string;
+  quantite: number;
+  numeroLot?: string;
+  datePeremption?: HorodatageApi;
+  prixAchatGnf?: number;
+  unite?: string;
+}
+
+export interface CreerApprovisionnementDto {
+  fournisseur: string;
+  dateFacture: HorodatageApi;
+  numeroFacture?: string;
+  /** Photo ou scan de la facture : la piece qui justifie l'entree. */
+  justificatifUrl?: string;
+  lignes: LigneApprovisionnementDto[];
+}
+
+export interface ApprovisionnementView {
+  id: string;
+  numero: string;
+  numeroFacture?: string | null;
+  fournisseur: string;
+  dateFacture: HorodatageApi;
+  justificatifUrl?: string | null;
+  montantTotalGnf: number;
+  creeLe: HorodatageApi;
+  saisiPar: { id: string; prenom: string; nom: string };
+  lots: LotStockView[];
+}
+
+/** GET /pharmacien/peremptions — ce qui approche de sa date, ou l'a depassee. */
+export interface PeremptionProcheView {
+  idLot: string;
+  numeroLot?: string | null;
+  quantite: number;
+  datePeremption: HorodatageApi;
+  /** Negatif quand la date est passee. */
+  joursRestants: number;
+  perime: boolean;
+  unite: string;
+  medicament: ProduitResumeView;
+}
+
+/** Ou en est la demande qu'un patient a faite depuis chez lui. */
+export type StatutDemandeRendezVous = 'EN_ATTENTE' | 'ACCEPTEE' | 'REFUSEE' | 'ANNULEE';
+
+/** POST /patients/me/demandes-rendez-vous — le patient demande depuis chez lui. */
+export interface CreerDemandeRendezVousDto {
+  motif: string;
+  /** A defaut, l'etablissement prefere du dossier. */
+  idStructure?: string;
+  /** S'il connait un medecin ; sinon l'accueil oriente la demande. */
+  idMedecin?: string;
+}
+
+/** POST /medecin/demandes/:id/accepter — accepter, c'est fixer l'heure. */
+export interface AccepterDemandeRendezVousDto {
+  prevuLe: HorodatageApi;
+}
+
+export interface DemandeRendezVousView {
+  id: string;
+  motif: string;
+  statut: StatutDemandeRendezVous;
+  creeLe: HorodatageApi;
+  traiteeLe?: HorodatageApi | null;
+  motifRefus?: string | null;
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  structure: { id: string; nom: string; prefecture: string };
+  /**
+   * `bureau` : ou le patient devra se rendre le jour du rendez-vous. Souvent
+   * `null` — tous les hopitaux ne numerotent pas leurs bureaux, et l agent
+   * d accueil accompagne a pied.
+   */
+  medecin?: { id: string; prenom: string; nom: string; bureau?: string | null } | null;
+  /** Rempli a l'acceptation : la demande est devenue une visite. */
+  idEpisode?: string | null;
+  numeroEpisode?: string | null;
+}
+
+/** Le cycle d'un rendez-vous, de la prise au depart du patient. */
+export type StatutRendezVous =
+  | 'PLANIFIE'
+  | 'PRESENT'
+  | 'EN_CONSULTATION'
+  | 'TERMINE'
+  | 'ABSENT'
+  | 'ANNULE';
+
+/** POST /medecin/orientations/:idEpisode/rendez-vous — le medecin pose le creneau. */
+export interface FixerRendezVousDto {
+  prevuLe: HorodatageApi;
+  motif?: string;
+}
+
+/** GET /medecin/rendez-vous — l'agenda, par ordre chronologique. */
+export interface RendezVousMedecinView {
+  id: string;
+  prevuLe: HorodatageApi;
+  statut: StatutRendezVous;
+  motif?: string | null;
+  /** Moment ou l'assistante a pointe l'arrivee ; absent tant qu'il n'est pas la. */
+  arriveeLe?: HorodatageApi | null;
+  patient: {
+    id: string;
+    prenom: string;
+    nom: string;
+    dateNaissance: HorodatageApi;
+    sexe: string;
+    telephone: string;
+  };
+  idEpisode?: string | null;
+  numeroEpisode?: string | null;
+}
+
+/** GET /hopital/presences — les patients attendus aujourd'hui, vus de l'accueil. */
+export interface PresenceDuJourView {
+  idRendezVous: string;
+  prevuLe: HorodatageApi;
+  statut: StatutRendezVous;
+  arriveeLe?: HorodatageApi | null;
+  patient: { id: string; prenom: string; nom: string; telephone: string };
+  /**
+   * `bureau` est ce que l agent lit au patient apres l avoir pointe. Souvent
+   * `null` : beaucoup d hopitaux ne numerotent pas leurs bureaux, et l agent
+   * accompagne a pied. Dans ce cas l ecran n affiche rien.
+   */
+  medecin?: { id: string; prenom: string; nom: string; bureau?: string | null } | null;
+  idEpisode?: string | null;
+}
+
+/** GET /medecin/resultats — la file des resultats qu'un medecin doit liberer. */
+export interface ResultatALibererView {
+  idDemande: string;
+  numero: string;
+  /** Validation par le laboratoire : c'est de ce moment que date l'attente du patient. */
+  valideeLe: HorodatageApi;
+  idEpisode: string;
+  nbExamens: number;
+  contientCritique: boolean;
+  contientAnormal: boolean;
+  patient: { id: string; prenom: string; nom: string };
+  laboratoire: { id: string; nom: string };
+}
 
 /** GET /hopital/patients/recherche — identite minimale pour l'identito-vigilance (EF-03-01). */
 export interface PatientRechercheView {
@@ -1357,6 +1988,17 @@ export interface PatientRechercheView {
   /** Un episode ouvert existe deja dans la structure de l'agent. */
   episodeOuvert: { id: string; numero: string } | null;
 }
+
+/**
+ * GET /assurance/patients/recherche — trouver la personne a qui rattacher une
+ * police.
+ *
+ * **L'episode de soins n'a pas de sens ici** : l'administration nationale
+ * n'appartient a aucune structure, et une police se rattache a une personne,
+ * pas a un passage. Le reste de l'identite est le meme, numero masque
+ * compris : il faut distinguer deux Camara, pas appeler le patient.
+ */
+export type PatientContratRechercheView = Omit<PatientRechercheView, 'episodeOuvert'>;
 
 export interface PersonneRefView {
   id: string;
@@ -1448,7 +2090,16 @@ export interface DemandeAnalyseView {
   preleveeLe: HorodatageApi | null;
   valideeLe: HorodatageApi | null;
   valideur: PersonneRefView | null;
-  commentaireBiologiste: string | null;
+  commentaireLaboratoire: string | null;
+  /**
+   * Traduction en langage clair, ecrite par le medecin quand il a libere les
+   * resultats (addendum du 2026-09-28). C'est elle qui donne son sens au
+   * chiffre : sans elle, le patient lit « Hemoglobine 6 g/dL » sans savoir
+   * s'il doit s'inquieter.
+   */
+  commentaireMedecin: string | null;
+  /** Renseigne des qu'un medecin a libere : le patient peut voir ses resultats. */
+  libereePar?: { id: string; prenom: string; nom: string } | null;
   /** Null tant que les resultats ne sont pas diffuses au patient (EF-04-09). */
   diffuseePatientLe: HorodatageApi | null;
   echantillons: EchantillonView[];
@@ -1548,7 +2199,7 @@ export interface EpisodePatientView {
 
 // ═══════════════════════════════════════════════════════════════════
 // P2 — Laboratoire (EF-04)
-// Routes /laboratoire/* (TECHNICIEN_LABO, BIOLOGISTE, ADMIN_STRUCTURE),
+// Routes /laboratoire/* (TECHNICIEN_LABO, ADMIN_STRUCTURE),
 // /resultats/* (prescripteurs) et /patients/me/resultats/*.
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1629,4 +2280,1351 @@ export interface ExamenSuiviView {
   libelle: string;
   unite: string | null;
   nbPoints: number;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// P6 — Vente au comptoir et tableau de bord d'officine
+// Routes /pharmacien/ventes et /pharmacien/tableau-de-bord (PHARMACIEN).
+// Addendum du 2026-09-28, points 1.1 et 1.2.
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Une vente au comptoir est payee sur place : il n'y a pas d'etat « en
+ * attente ». `ANNULEE` ne sert pas a un retour client — EF-07-11 l'interdit —
+ * mais a corriger une erreur de saisie, et elle remet les lots consommes.
+ */
+/**
+ * `EN_ATTENTE` : la vente existe, les lots sont reserves, le paiement mobile
+ * n'a pas encore abouti. Les medicaments ne se remettent pas avant.
+ *
+ * Tout ce qui compte de l'argent filtre sur `PAYEE` et ignore donc une vente
+ * en attente : consommation de l'assureur, chiffre d'affaires du jour.
+ */
+export type StatutVente = 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE';
+
+export interface LigneVenteView {
+  id: string;
+  quantite: number;
+  /** Prix figes a la vente : tarif de reference plus la marge de l'officine. */
+  prixUnitaireGnf: number;
+  montantGnf: number;
+  medicament: ProduitResumeView;
+  /** Couverture figee a la vente (addendum, point 5.4). */
+  couvert: boolean;
+  tauxAppliquePourcent: number;
+  montantAssureGnf: number;
+  motifExclusion?: string | null;
+}
+
+export interface VenteComptoirView {
+  id: string;
+  numero: string;
+  statut: StatutVente;
+  montantBrutGnf: number;
+  /** Champ historique conservé en lecture ; les nouvelles ventes ont toujours une valeur nulle. */
+  remiseGnf: number;
+  montantNetGnf: number;
+  /** Tiers payant : 0 sans contrat, l'assure payant alors tout. */
+  montantAssureGnf: number;
+  montantPatientGnf: number;
+  assureur?: AssureurResumeView | null;
+  modePaiement: ModePaiement;
+  numeroOperateur?: string | null;
+  creeLe: HorodatageApi;
+  annuleeLe?: HorodatageApi | null;
+  motifAnnulation?: string | null;
+  /** Personne ayant exécuté l'annulation et titulaire qui l'a autorisée, le cas échéant. */
+  annulation?: {
+    par: { id: string; prenom: string; nom: string } | null;
+    autoriseePar: { id: string; prenom: string; nom: string } | null;
+  } | null;
+  vendeur: { id: string; prenom: string; nom: string };
+  /** Absent pour un client de passage, qui n'a pas de dossier. */
+  patient?: { id: string; prenom: string; nom: string } | null;
+  /** Renseigne quand la vente sert une ordonnance. */
+  numeroOrdonnance?: string | null;
+
+  /**
+   * Le lien de paiement de la passerelle, affiche en QR au comptoir.
+   *
+   * Le client le scanne avec son propre telephone : la caisse n'a pas a
+   * manipuler son compte, et il tape son code chez lui.
+   */
+  urlPaiement?: string | null;
+
+  /** Le dernier etat connu cote passerelle (`new`, `pending`, `success`...). */
+  statutOperateur?: string | null;
+
+  /**
+   * **La preuve.** La reference rendue par l'operateur une fois le paiement
+   * abouti. Sans elle, « paye en Orange Money » n'est qu'une case cochee.
+   */
+  referenceTransaction?: string | null;
+  /** Session de caisse associee, absente sur les ventes historiques. */
+  idSessionCaisse?: string | null;
+
+  lignes: LigneVenteView[];
+}
+
+/** POST /pharmacien/ventes — une ligne du panier. */
+export interface LigneVenteDto {
+  idMedicament: string;
+  quantite: number;
+}
+
+export interface CreerVenteDto {
+  lignes: LigneVenteDto[];
+  modePaiement: ModePaiement;
+  /** Numero mobile money, hors paiement en especes. */
+  numeroOperateur?: string;
+  /** Facultatif : un passant n'a pas de dossier. */
+  idPatient?: string;
+  /**
+   * Obligatoire si le panier contient un produit reglemente, ou d'une
+   * categorie que les parametres soumettent a ordonnance.
+   */
+  idOrdonnance?: string;
+  /**
+   * Appliquer le tiers payant. Suppose `idPatient` : on ne couvre pas un
+   * passant anonyme. Sans contrat utilisable, la vente est refusee plutot que
+   * d'encaisser le patient a son insu.
+   */
+  avecAssurance?: boolean;
+  /** Jeton opaque encode dans le QR de la carte d'assurance presentee. */
+  jetonCarteAssurance?: string;
+  /**
+   * La pharmacie confirme avoir compare la photo de la fiche avec la personne
+   * presente. Obligatoire quand la carte porte une photo.
+   */
+  photoComparee?: boolean;
+}
+
+export interface AnnulerVenteDto {
+  /** Motif obligatoire : une annulation sans raison n'est pas tracable. */
+  motif: string;
+  /** Revalidation du titulaire requise lorsqu'un opérateur demande l'annulation. */
+  autorisationTitulaire?: {
+    telephone: string;
+    motDePasse: string;
+  };
+}
+
+/** Une ligne du classement des produits les plus vendus. */
+export interface ProduitVenduView {
+  medicament: ProduitResumeView;
+  quantite: number;
+  montantGnf: number;
+}
+
+/** Un produit dont le stock est au seuil d'alerte ou en dessous. */
+export interface RuptureStockView {
+  medicament: ProduitResumeView;
+  quantite: number;
+  seuilAlerte: number;
+  unite: string;
+}
+
+/** GET /pharmacien/tableau-de-bord. */
+export interface TableauDeBordOfficineView {
+  /** Le jour couvert par les chiffres « du jour », au fuseau du serveur. */
+  jour: HorodatageApi;
+  chiffreDuJourGnf: number;
+  nombreVentesDuJour: number;
+  panierMoyenGnf: number;
+  /** Ce que la caisse a encaisse, par moyen de paiement, sur le jour. */
+  encaissementsParMode: { modePaiement: ModePaiement; montantGnf: number; nombre: number }[];
+  /** Classement sur les 30 derniers jours, ventes annulees exclues. */
+  produitsLesPlusVendus: ProduitVenduView[];
+  ruptures: RuptureStockView[];
+  /** Nombre de lots qui approchent de leur date, ou l'ont depassee. */
+  lotsAPerimer: number;
+}
+
+export type StatutSessionCaisse = 'OUVERTE' | 'CLOTUREE';
+
+export interface SessionCaisseView {
+  id: string;
+  statut: StatutSessionCaisse;
+  montantOuvertureGnf: number;
+  montantEspecesEncaisseGnf: number;
+  montantOrangeMoneyGnf: number;
+  montantMtnMomoGnf: number;
+  montantTheoriqueGnf: number;
+  montantCompteGnf: number | null;
+  ecartGnf: number | null;
+  motifEcart: string | null;
+  nombreVentesPayees: number;
+  nombreVentesEnAttente: number;
+  nombreVentesAnnulees: number;
+  ouverteLe: HorodatageApi;
+  clotureeLe: HorodatageApi | null;
+  utilisateur: { id: string; prenom: string; nom: string };
+}
+
+export interface RapportCaisseView {
+  periode: 'JOUR' | 'MOIS' | 'ANNEE';
+  dateDebut: HorodatageApi;
+  dateFin: HorodatageApi;
+  chiffreAffairesGnf: number;
+  nombreVentesPayees: number;
+  nombreVentesEnAttente: number;
+  nombreVentesAnnulees: number;
+  encaissementsParMode: { modePaiement: ModePaiement; montantGnf: number; nombre: number }[];
+  parUtilisateur: {
+    utilisateur: { id: string; prenom: string; nom: string };
+    chiffreAffairesGnf: number;
+    nombreVentesPayees: number;
+  }[];
+  sessions: SessionCaisseView[];
+}
+
+export interface OuvrirSessionCaisseDto {
+  montantOuvertureGnf: number;
+}
+
+export interface CloturerSessionCaisseDto {
+  montantCompteGnf: number;
+  motifEcart?: string;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// P10 — Assurance et tiers payant (EF-09)
+// Routes /assurance/* et /pharmacien/ventes (part assureur).
+// Addendum du 2026-09-28, point 5.
+// ═══════════════════════════════════════════════════════════════════
+
+export type ModeEchangeAssureur = 'MANUEL' | 'PORTAIL' | 'API';
+export type StatutContrat = 'ACTIF' | 'SUSPENDU' | 'RESILIE' | 'EXPIRE';
+
+export interface AssureurResumeView {
+  id: string;
+  nom: string;
+  /** Code court, celui qui figure sur la carte de l'assure. */
+  code: string;
+}
+
+/**
+ * GET/POST /assurance/eligibilite — le controle au comptoir.
+ *
+ * La reponse est **figee en base** : c'est elle qui justifiera le tiers
+ * payant si l'assureur le conteste. Un refus porte toujours son motif, sans
+ * quoi le comptoir n'aurait rien a expliquer au patient.
+ */
+export interface ControleEligibiliteView {
+  id: string;
+  eligible: boolean;
+  /** Toujours renseigne quand `eligible` est faux. */
+  motif?: string | null;
+  numeroPolice?: string | null;
+  tauxBasePourcent?: number | null;
+  creeLe: HorodatageApi;
+  patient: { id: string; prenom: string; nom: string };
+  assureur?: AssureurResumeView | null;
+}
+
+/** Le detail de la couverture pour une ligne (addendum, point 5.4). */
+export interface CouvertureLigneView {
+  libelle: string;
+  /** Montant de la ligne avant remise de caisse. */
+  montantGnf: number;
+  couvert: boolean;
+  tauxAppliquePourcent: number;
+  montantAssureGnf: number;
+  /** Pourquoi la ligne n'est pas prise : exclusion, ou taux nul. */
+  motifExclusion?: string | null;
+}
+
+/**
+ * POST /assurance/simulation — ce que l'assureur prendrait, **avant**
+ * paiement. « Un reste a charge sans explication se conteste au comptoir. »
+ */
+export interface PriseEnChargeView {
+  typeCouverture: TypeCouverture;
+  /** Contrat individuel, ou contrat collectif de l'adhesion. */
+  idContrat: string;
+  idAdhesionAssurance?: string | null;
+  assureur: AssureurResumeView;
+  montantNetGnf: number;
+  montantAssureGnf: number;
+  montantPatientGnf: number;
+  /**
+   * Ce qui a rabote la part de l'assureur : franchise, plafond par ligne,
+   * plafond annuel. Affiche tel quel, pour que le reste a charge s'explique.
+   */
+  notes: string[];
+  lignes: (CouvertureLigneView & { idMedicament: string })[];
+}
+
+/** POST /assurance/assureurs — creation par l'administration. */
+export interface CreerAssureurDto {
+  nom: string;
+  code: string;
+  telephone?: string;
+  email?: string;
+  modeEchange?: ModeEchangeAssureur;
+  idStructure?: string;
+}
+
+export interface AssureurView extends AssureurResumeView {
+  telephone?: string | null;
+  email?: string | null;
+  estActif: boolean;
+  modeEchange: ModeEchangeAssureur;
+  nombreContrats: number;
+  regles: RegleCouvertureView[];
+  /** Vrai quand la convention provient de l'hopital parent de la pharmacie. */
+  conventionHeritee?: boolean;
+}
+
+/** Catalogue disponible et capacite de gestion des conventions de la structure. */
+export interface CatalogueAssureursView {
+  assureurs: AssureurView[];
+  conventionsModifiables: boolean;
+  conventionsHeritees: boolean;
+}
+
+export interface RegleCouvertureView {
+  id: string;
+  categorie: CategorieProduit;
+  exclu: boolean;
+  /** Null : le taux de base du contrat s'applique. */
+  tauxPourcent?: number | null;
+  plafondLigneGnf: number;
+  dateEffet: HorodatageApi;
+}
+
+/**
+ * POST /assurance/assureurs/{id}/regles — une regle de couverture.
+ *
+ * Une categorie exclue n'a pas de taux : porter les deux serait
+ * contradictoire, et une contrainte SQL le refuse.
+ */
+export interface CreerRegleCouvertureDto {
+  categorie: CategorieProduit;
+  exclu?: boolean;
+  tauxPourcent?: number;
+  plafondLigneGnf?: number;
+  dateEffet?: HorodatageApi;
+}
+
+export interface CreerContratDto {
+  idAssureur: string;
+  idPatient: string;
+  numeroPolice: string;
+  tauxBasePourcent?: number;
+  plafondAnnuelGnf?: number;
+  franchiseGnf?: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi;
+  carenceJours?: number;
+}
+
+export interface ContratAssuranceView {
+  id: string;
+  numeroPolice: string;
+  periodeGraceJours?: number;
+  tauxBasePourcent: number;
+  plafondAnnuelGnf: number;
+  franchiseGnf: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  carenceJours: number;
+  statut: StatutContrat;
+  assureur: AssureurResumeView;
+  patient: { id: string; prenom: string; nom: string };
+  /** Ce que l'assureur a deja pris cette annee sur ce contrat. */
+  consommeAnneeGnf: number;
+}
+
+export type TypeCouverture = 'INDIVIDUELLE' | 'COLLECTIVE';
+
+/**
+ * Le resume d'une garantie, tel qu'il figure sur la carte : « Medicaments
+ * 80 % ». **Indicatif** : le montant exact se calcule a la caisse, sur le
+ * panier reel, apres franchise et plafonds.
+ */
+export interface GarantieCategorieView {
+  categorie: CategorieProduit;
+  exclu: boolean;
+  tauxPourcent: number;
+}
+
+/**
+ * GET /assurance/mes-cartes — une carte d'assurance du patient connecte.
+ *
+ * Le QR ne porte que `jetonCarte`, un jeton opaque : aucune donnee
+ * personnelle ni medicale. Une carte imprimee ne prouve rien a elle seule,
+ * c'est la verification serveur au comptoir qui confirme les droits.
+ */
+export interface CarteAssuranceView {
+  jetonCarte: string;
+  typeCouverture: TypeCouverture;
+  numeroPolice: string;
+  numeroAdherent: string;
+  /** Regime du contrat collectif ; absent pour une police individuelle. */
+  nomRegime?: string | null;
+  tauxBasePourcent: number;
+  garanties: GarantieCategorieView[];
+  dateEffet: HorodatageApi;
+  /** La fin effective : la plus proche entre l'adhesion et le contrat. */
+  dateFin?: HorodatageApi | null;
+  statut: StatutContrat;
+  assureur: AssureurResumeView;
+  /** L'entreprise qui a souscrit le contrat collectif. */
+  souscripteur?: string | null;
+  beneficiaire: { prenom: string; nom: string };
+  /** Vrai quand la fiche de la compagnie porte une photo du beneficiaire. */
+  photoDisponible: boolean;
+}
+
+/**
+ * POST /assurance/cartes/verifier — le controle au comptoir, sur la carte
+ * scannee. La reponse est enregistree (`idControle`) : refus compris.
+ */
+export interface CarteAssuranceVerifieeView extends CarteAssuranceView {
+  idControle: string;
+  /**
+   * La pharmacie doit comparer la photo avec la personne au comptoir avant
+   * d'appliquer le tiers payant : la vente l'exige (`photoComparee`).
+   */
+  photoAComparer: boolean;
+  eligible: boolean;
+  /** Toujours renseigne quand `eligible` est faux. */
+  motif?: string | null;
+  patient: { id: string; prenom: string; nom: string };
+}
+
+/** POST /assurance/cartes/verifier */
+export interface VerifierCarteAssuranceDto {
+  jetonCarte: string;
+}
+
+/** POST /assurance/moi/contrats-collectifs — la compagnie se deduit du compte. */
+export interface CreerContratCollectifDto {
+  entreprise: {
+    raisonSociale: string;
+    identifiantLegal?: string;
+    telephone?: string;
+    email?: string;
+  };
+  numeroContrat: string;
+  nomRegime: string;
+  tauxBasePourcent: number;
+  plafondAnnuelGnf?: number;
+  franchiseGnf?: number;
+  dateEffet: HorodatageApi;
+  dateFin: HorodatageApi;
+  carenceJours?: number;
+  periodeGraceJours?: number;
+}
+
+export interface ContratCollectifView {
+  id: string;
+  numeroContrat: string;
+  nomRegime: string;
+  tauxBasePourcent: number;
+  /** Par beneficiaire et par annee civile. 0 = pas de plafond. */
+  plafondAnnuelGnf: number;
+  franchiseGnf: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  carenceJours: number;
+  periodeGraceJours: number;
+  /** EXPIRE des que la date de fin (grace comprise) est passee. */
+  statut: StatutContrat;
+  entreprise: { id: string; raisonSociale: string; identifiantLegal?: string | null };
+  nombreAdhesionsActives: number;
+  /** Les taux propres a ce contrat, qui priment sur ceux de la compagnie. */
+  regles: RegleCouvertureView[];
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/adhesions */
+export interface CreerAdhesionAssuranceDto {
+  idPatient: string;
+  numeroAdherent: string;
+  dateEffet?: HorodatageApi;
+  /** Absente : l'adhesion suit la fin du contrat collectif. */
+  dateFin?: HorodatageApi;
+}
+
+export interface AdhesionAssuranceView {
+  id: string;
+  numeroAdherent: string;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  statut: StatutContrat;
+  motifFin?: string | null;
+  finEnregistreeLe?: HorodatageApi | null;
+  patient: { id: string; prenom: string; nom: string };
+  /** La fiche d'identite tenue par la compagnie, si elle existe. */
+  personne?: ResumePersonneAssureeView | null;
+}
+
+/**
+ * POST /assurance/moi/adhesions/{id}/fin — fin d'une adhesion (depart de
+ * l'entreprise, perte d'eligibilite). L'auteur est le compte connecte.
+ */
+export interface TerminerAdhesionDto {
+  motif: string;
+  /** Absente : immediatement. Future : l'adhesion couvre jusqu'a cette date. */
+  dateEffet?: HorodatageApi;
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/renouveler — nouvelle echeance. */
+export interface RenouvelerContratDto {
+  dateFin: HorodatageApi;
+}
+
+/** POST /assurance/moi/contrats — police individuelle, saisie par la compagnie. */
+export type CreerContratIndividuelDto = Omit<CreerContratDto, 'idAssureur'> & {
+  periodeGraceJours?: number;
+};
+
+/**
+ * POST /assurance/moi/polices/regles — un taux, une exclusion ou un plafond
+ * propre a une police : c'est ainsi que deux entreprises ont des taux
+ * differents chez la meme compagnie.
+ */
+export interface CreerReglePoliceDto extends CreerRegleCouvertureDto {
+  typeCouverture: TypeCouverture;
+  /** Contrat individuel ou contrat collectif, selon `typeCouverture`. */
+  idContrat: string;
+}
+
+/**
+ * L'identite d'une personne assuree, telle que sa piece d'identite la porte.
+ * Saisie par la compagnie ; la photo s'ajoute ensuite (envoi de fichier).
+ */
+export interface PersonneAssureeDto {
+  nom: string;
+  prenoms: string;
+  sexe: 'M' | 'F';
+  dateNaissance: HorodatageApi;
+  lieuNaissance: string;
+  nationalite: string;
+  typePiece: TypePieceIdentite;
+  numeroPiece: string;
+  dateDelivrancePiece?: HorodatageApi;
+  dateExpirationPiece?: HorodatageApi;
+  /** Sert aussi d'identifiant de connexion au compte patient. */
+  telephone: string;
+  adresse?: string;
+  /** Prefecture de residence, requise par le dossier patient. */
+  prefecture: string;
+}
+
+/**
+ * PATCH /assurance/moi/personnes/{id} — mise a jour de la fiche (piece
+ * renouvelee, faute de saisie). Le telephone ne change pas ici : c'est
+ * l'identifiant de connexion du patient.
+ */
+export type ModifierPersonneAssureeDto = Partial<Omit<PersonneAssureeDto, 'telephone' | 'prefecture'>>;
+
+/** Ce que les listes montrent d'une fiche. */
+export interface ResumePersonneAssureeView {
+  id: string;
+  typePiece: TypePieceIdentite;
+  numeroPiece: string;
+  photoDisponible: boolean;
+  /** La piece a depasse sa date d'expiration : le tiers payant la refuse. */
+  pieceExpiree: boolean;
+}
+
+export interface PersonneAssureeView extends ResumePersonneAssureeView {
+  idPatient: string;
+  nom: string;
+  prenoms: string;
+  sexe: 'M' | 'F';
+  dateNaissance: HorodatageApi;
+  lieuNaissance: string;
+  nationalite: string;
+  dateDelivrancePiece?: HorodatageApi | null;
+  dateExpirationPiece?: HorodatageApi | null;
+  telephone: string;
+  adresse?: string | null;
+  creeLe: HorodatageApi;
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/travailleurs */
+export interface AjouterTravailleurDto {
+  personne: PersonneAssureeDto;
+  numeroAdherent: string;
+  dateEffet?: HorodatageApi;
+  dateFin?: HorodatageApi;
+}
+
+/** POST /assurance/moi/personnes — une personne et sa police individuelle. */
+export interface AssurerPersonneDto {
+  personne: PersonneAssureeDto;
+  police: Omit<CreerContratIndividuelDto, 'idPatient'>;
+}
+
+/**
+ * Le resultat d'un enregistrement. Quand le compte patient vient d'etre cree,
+ * le mot de passe temporaire n'est rendu **qu'une fois** : il est a remettre
+ * a la personne, qui devra le changer a sa premiere connexion.
+ */
+export interface PersonneEnregistreeView {
+  personne: PersonneAssureeView;
+  compteCree: boolean;
+  motDePasseTemporaire?: string | null;
+  adhesion?: AdhesionAssuranceView | null;
+  contrat?: ContratAssuranceView | null;
+}
+
+/** POST /assurance/moi/contrats-collectifs/{id}/import — la liste du personnel en CSV. */
+export interface ImporterTravailleursDto {
+  contenu: string;
+}
+
+export type StatutLigneImportTravailleur = 'CREE' | 'RATTACHE' | 'REFUSE';
+
+export interface LigneImportTravailleurView {
+  /** Le rang dans le fichier de l'operateur, en-tete compris. */
+  numero: number;
+  statut: StatutLigneImportTravailleur;
+  nom?: string | null;
+  numeroAdherent?: string | null;
+  motif?: string | null;
+  /** Rendu une seule fois, pour un compte cree par l'import. */
+  motDePasseTemporaire?: string | null;
+}
+
+export interface RapportImportTravailleursView {
+  lignes: LigneImportTravailleurView[];
+  crees: number;
+  rattaches: number;
+  refuses: number;
+}
+
+/**
+ * GET /assurance/moi/patients?telephone= — retrouver la personne a rattacher.
+ *
+ * **Recherche exacte par telephone**, jamais par nom : la compagnie retrouve
+ * la personne qu'elle assure, elle ne parcourt pas la population.
+ */
+export interface PatientAssureurRechercheView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephoneMasque: string;
+  anneeNaissance?: number | null;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// EF-09 — L'espace de l'assureur (addendum du 2026-09-28, point 5.2)
+//
+// **Rien de medical ne traverse cette frontiere.** L'assureur voit qui est
+// assure chez lui, ce que sa compagnie a pris en charge et dans quelles
+// pharmacies — jamais un produit delivre, une ordonnance ni un diagnostic. Un
+// assureur qui lirait ce qu'on soigne pourrait refuser un contrat dessus.
+//
+// C'est pourquoi tout est agrege : des montants et des comptes, pas des
+// lignes de vente. Le decompte detaille, s'il devient necessaire, releve de
+// l'echange conventionne avec la compagnie (EF-09-02), pas de cet ecran.
+// ═══════════════════════════════════════════════════════════════════
+
+/** POST /assurance/assureurs/{id}/agents — le compte par lequel l'assureur se connecte. */
+export interface CreerAgentAssureurDto {
+  prenom: string;
+  nom: string;
+  telephone: string;
+  email?: string;
+  /** Siege de la compagnie, si sa structure reste a creer. */
+  prefecture?: string;
+}
+
+export interface AgentAssureurCreeView {
+  agent: { id: string; prenom: string; nom: string; telephone: string };
+  assureur: { id: string; nom: string; code: string };
+  /** Rendu une seule fois, a remettre. Le compte devra le changer. */
+  motDePasseTemporaire: string;
+}
+
+/** GET /assurance/moi — l'assureur de l'agent connecte. */
+export interface MonAssureurView {
+  id: string;
+  nom: string;
+  code: string;
+  estActif: boolean;
+  modeEchange: ModeEchangeAssureur;
+  regles: RegleCouvertureView[];
+  /** Nombre de polices, tous statuts confondus. */
+  nombreContrats: number;
+  nombreContratsActifs: number;
+}
+
+/**
+ * GET /assurance/moi/assures — un assure de la compagnie.
+ *
+ * L'identite et le contrat, rien de plus : l'assureur sait deja qui il
+ * assure, il a besoin de retrouver la personne et de suivre son plafond.
+ */
+export interface AssureView {
+  typeCouverture: TypeCouverture;
+  /** Police individuelle, ou contrat collectif de l'adhesion. */
+  idContrat: string;
+  idAdhesion?: string | null;
+  numeroAdherent?: string | null;
+  souscripteur?: string | null;
+  numeroPolice: string;
+  statut: StatutContrat;
+  tauxBasePourcent: number;
+  plafondAnnuelGnf: number;
+  franchiseGnf: number;
+  dateEffet: HorodatageApi;
+  dateFin?: HorodatageApi | null;
+  patient: { prenom: string; nom: string };
+  /** Ce que la compagnie a pris en charge cette annee sur cette police. */
+  consommeAnneeGnf: number;
+  /** Nombre de passages en pharmacie ayant donne lieu a prise en charge. */
+  nombrePassages: number;
+  /** Taux propres a la police individuelle ; vide pour une adhesion. */
+  regles: RegleCouvertureView[];
+  /** La fiche d'identite tenue par la compagnie, si elle existe. */
+  personne?: ResumePersonneAssureeView | null;
+}
+
+/**
+ * GET /assurance/moi/pharmacies — la situation par officine (point 5.2).
+ *
+ * « Ce qui a ete delivre, ce qui lui est facture, ce qui est paye, ce qui
+ * reste du, et les ecarts. »
+ */
+export interface SituationPharmacieView {
+  idStructure: string;
+  nom: string;
+  prefecture: string;
+  /** Nombre de ventes prises en charge, et leur montant total encaisse. */
+  nombreVentes: number;
+  montantDelivreGnf: number;
+  /** La part de la compagnie : ce qu'elle doit a cette officine. */
+  montantFactureGnf: number;
+  /** Ce qu'elle a verse, d'apres les reglements saisis. */
+  montantPayeGnf: number;
+  /**
+   * `facture - paye`. Negatif quand la compagnie a verse plus que du : c'est
+   * un ecart aussi, et le masquer le rendrait introuvable.
+   */
+  resteDuGnf: number;
+  /** Le dernier versement connu, pour savoir si le suivi est a jour. */
+  dernierReglementLe?: HorodatageApi | null;
+}
+
+/** POST /assurance/moi/reglements — un versement a une officine. */
+export interface CreerReglementDto {
+  idStructure: string;
+  montantGnf: number;
+  periodeDebut: HorodatageApi;
+  periodeFin: HorodatageApi;
+  reference?: string;
+}
+
+export interface ReglementView {
+  id: string;
+  montantGnf: number;
+  periodeDebut: HorodatageApi;
+  periodeFin: HorodatageApi;
+  reference?: string | null;
+  structure: { id: string; nom: string };
+  saisiPar: { prenom: string; nom: string };
+  creeLe: HorodatageApi;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// P11 — Referentiels importables (EF-12-03)
+// Routes /referentiels/* (ADMIN_NATIONAL, SUPER_ADMIN).
+// ═══════════════════════════════════════════════════════════════════
+
+export type TypeReferentiel = 'examens' | 'interactions' | 'medicaments';
+
+export type StatutLigneImport = 'CREEE' | 'MISE_A_JOUR' | 'REFUSEE';
+
+/** Le verdict d'une ligne. Aucune n'est passee sous silence. */
+export interface LigneImportView {
+  /** Le numero dans le fichier de l'operateur : la ligne 1 est l'en-tete. */
+  ligne: number;
+  /** De quoi reconnaitre la ligne : code LOINC, paire de DCI, libelle. */
+  cle: string;
+  statut: StatutLigneImport;
+  /** Toujours renseigne quand la ligne est refusee. */
+  motif?: string | null;
+}
+
+/**
+ * POST /referentiels/{type}/import.
+ *
+ * « Un import qui echoue en silence sur trois lignes est pire que pas
+ * d'import » : chaque ligne a son verdict, et `simulation` permet de tout
+ * valider avant d'ecrire quoi que ce soit.
+ *
+ * Les lignes valides sont appliquees meme si d'autres sont refusees :
+ * rejeter deux mille bonnes lignes pour trois mauvaises serait pire.
+ */
+export interface RapportImportView {
+  type: TypeReferentiel;
+  simulation: boolean;
+  total: number;
+  creees: number;
+  misesAJour: number;
+  refusees: number;
+  lignes: LigneImportView[];
+}
+
+export interface ImporterReferentielDto {
+  /** Le contenu du fichier CSV, tel quel. Le BOM d'Excel est tolere. */
+  contenu: string;
+  /** Valider sans rien ecrire. */
+  simulation?: boolean;
+}
+
+/** GET /referentiels/{type}/colonnes — ce qu'un operateur doit preparer. */
+export interface ColonnesReferentielView {
+  type: TypeReferentiel;
+  obligatoires: string[];
+  facultatives: string[];
+}
+
+// --- Journal d audit : recherche et export (EF-12-05) -----------------------
+
+/**
+ * Les criteres d une recherche dans le journal d audit.
+ *
+ * Sans `du`, la recherche ne remonte pas au-dela de 30 jours : une requete
+ * sans critere ne doit pas balayer la table entiere.
+ */
+export interface FiltreJournalDto {
+  /** Borne basse, ISO. Par defaut : il y a 30 jours. */
+  du?: string;
+  /** Borne haute, ISO. Une date seule vaut la fin de la journee. */
+  au?: string;
+  /** L auteur de l action. */
+  idUtilisateur?: string;
+  /** Le patient dont le dossier a ete touche. */
+  idPatient?: string;
+  /** Le role de l auteur. */
+  role?: Role;
+  /** Le premier segment de l URL : patients, consultations, laboratoire... */
+  ressource?: string;
+  /** Ne garder que les refus (code HTTP >= 400) : une tentative, pas un acces. */
+  echecsSeulement?: boolean;
+  /** Avec `idPatient` : exclure les acces du patient a son propre dossier. */
+  parTiers?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+/** Une ligne du journal, telle qu une enquete la lit. */
+export interface LigneJournalView {
+  id: string;
+  creeLe: HorodatageApi;
+  /** La trace technique : le motif de route. */
+  action: string;
+  ressource: string;
+  idRessource: string | null;
+  /** Cles d i18n, comme pour le journal du patient. */
+  libelle: string;
+  libelleObjet: string;
+  statutHttp: number | null;
+  ipAdresse: string | null;
+  idUtilisateur: string;
+  acteur: { prenom: string; nom: string; role: string };
+  idPatientConcerne: string | null;
+  /** Nom du patient, ou null quand l action ne concernait aucun dossier. */
+  patientConcerne: string | null;
+}
+
+export interface PageJournalView {
+  lignes: LigneJournalView[];
+  meta: PaginationMeta;
+  /**
+   * Au-dela de ce nombre, l export est refuse plutot que tronque : un export
+   * d audit ampute sans le dire est pire qu un export absent.
+   */
+  maxExport: number;
+}
+
+// --- Suspension de compte (EF-12-01) ---------------------------------------
+
+/** Ce qui a ferme un compte, quand la fermeture est documentee. */
+export interface SuspensionDetail {
+  suspenduLe: HorodatageApi;
+  motif: string;
+  /** Null si l auteur de la decision a depuis ete supprime. */
+  parQui: string | null;
+}
+
+export interface CompteView {
+  id: string;
+  prenom: string;
+  nom: string;
+  email: string | null;
+  telephone: string;
+  role: Role;
+  estActif: boolean;
+  structure: string | null;
+  derniereConnexion: HorodatageApi | null;
+  suspension: SuspensionDetail | null;
+  /**
+   * Compte ferme sans date ni motif : il vient de l ancienne voie, reservee a
+   * l admin de structure. On le dit plutot que de laisser croire a une
+   * suspension documentee.
+   */
+  fermeSansMotif: boolean;
+}
+
+/** Le resultat d une suspension ou d une reactivation. */
+export interface SuspensionView {
+  id: string;
+  nomComplet: string;
+  estActif: boolean;
+  motif: string | null;
+  /** Ce qui a reellement ete coupe : la mesure est dite « immediate ». */
+  sessionsFermees: number;
+  socketsFermes: number;
+}
+
+export interface SuspendreCompteDto {
+  motif: string;
+}
+
+// --- Detection d anomalies d acces (EF-12-06) ------------------------------
+
+export type TypeAnomalie = 'REFUS_REPETES' | 'VOLUME_DOSSIERS' | 'ADRESSES_MULTIPLES';
+
+/**
+ * Les seuils de detection.
+ *
+ * **Ce sont des points de depart, pas des verites.** Ils n ont pas ete
+ * calibres sur du trafic reel, et devront probablement varier selon le role :
+ * un comptoir de pharmacie et un medecin n ont pas le meme volume normal.
+ */
+export interface SeuilsAnomalies {
+  /** Refus d acces (401 ou 403) par le meme compte sur la fenetre. */
+  refusRepetes: number;
+  /** Dossiers distincts touches par le meme compte sur la fenetre. */
+  dossiersDistincts: number;
+  /** Adresses IP distinctes pour le meme compte sur la fenetre. */
+  adressesDistinctes: number;
+  fenetreHeures: number;
+}
+
+/**
+ * Un signal a examiner — **pas un verdict**.
+ *
+ * Un soignant de garde consulte beaucoup de dossiers la nuit sans rien faire
+ * de mal. Ce que porte cette vue sert a aller voir le detail dans le journal,
+ * pas a decider seul.
+ */
+export interface AnomalieView {
+  type: TypeAnomalie;
+  /** `ALERTE` au-dela du triple du seuil ; `ADRESSES_MULTIPLES` reste toujours un signal. */
+  gravite: 'SIGNAL' | 'ALERTE';
+  idUtilisateur: string;
+  acteur: string;
+  role: Role | null;
+  /** Faux si le compte est deja ferme : inutile de proposer de le suspendre. */
+  acteurActif: boolean;
+  /** Ce qui a ete mesure, et ce qui etait attendu. */
+  mesure: number;
+  seuil: number;
+  depuis: HorodatageApi;
+}
+
+// --- Demandes d exercice de droits (EF-12-09) ------------------------------
+
+export type TypeDemandeRgpd =
+  | 'ACCES'
+  | 'RECTIFICATION'
+  | 'EFFACEMENT'
+  | 'PORTABILITE'
+  | 'OPPOSITION'
+  | 'LIMITATION';
+
+export type StatutDemandeRgpd = 'RECUE' | 'EN_COURS' | 'SATISFAITE' | 'REFUSEE';
+
+/**
+ * Une demande et ce qu elle est devenue.
+ *
+ * **L effacement d un dossier de soins n est pas une suppression.** Des
+ * obligations de conservation s y opposent, et le journal d audit doit
+ * survivre. Une demande d effacement se traite par une anonymisation de l
+ * identite, ou se refuse avec son motif — jamais en silence.
+ */
+export interface DemandeRgpdView {
+  id: string;
+  type: TypeDemandeRgpd;
+  statut: StatutDemandeRgpd;
+  /** Ce que le patient demande, dans ses mots. */
+  precision: string | null;
+  creeLe: HorodatageApi;
+  dateLimite: HorodatageApi;
+  /** Null quand la demande est close : son delai ne court plus. */
+  joursRestants: number | null;
+  enRetard: boolean;
+  /** La reponse ecrite. Toujours presente des que la demande est close. */
+  reponse: string | null;
+  traiteLe: HorodatageApi | null;
+  /** Null si l agent qui a traite a depuis quitte la plateforme. */
+  traitePar: string | null;
+  demandeur: string;
+}
+
+export interface FileDemandesView {
+  demandes: DemandeRgpdView[];
+  ouvertes: number;
+  enRetard: number;
+  /** Le delai de reponse applique, en jours. */
+  delaiJours: number;
+}
+
+export interface DeposerDemandeRgpdDto {
+  type: TypeDemandeRgpd;
+  /** Obligatoire pour une rectification : sans cela on ne sait pas quoi corriger. */
+  precision?: string;
+}
+
+export interface RepondreDemandeRgpdDto {
+  satisfaite: boolean;
+  reponse: string;
+}
+
+// --- Identito-vigilance (EF-01-04/10) --------------------------------------
+
+export type NiveauIdentite = 'PROVISOIRE' | 'VERIFIEE';
+
+export type TypePieceIdentite =
+  | 'CARTE_NATIONALE'
+  | 'PASSEPORT'
+  | 'ACTE_NAISSANCE'
+  | 'CARTE_CONSULAIRE'
+  | 'PERMIS_CONDUIRE'
+  | 'AUTRE';
+
+/**
+ * L identite d un patient, telle qu un agent d accueil la voit.
+ *
+ * **Le niveau ne conditionne pas les soins.** Un patient provisoire est
+ * consulte, suivi et prescrit normalement. Il ne verrouille que ce qui engage
+ * un tiers : le tiers payant, et plus tard les produits reglementes.
+ */
+export interface IdentitePatientView {
+  id: string;
+  nomComplet: string;
+  telephone: string;
+  dateNaissance: HorodatageApi;
+  sexe: string;
+  prefecture: string;
+  /** Trait distinctif. Figure sur toutes les pieces. */
+  lieuNaissance: string | null;
+  /** Trait distinctif le plus discriminant quand les noms se repetent. */
+  nomMere: string | null;
+  niveauIdentite: NiveauIdentite;
+  typePiece: TypePieceIdentite | null;
+  /**
+   * Le numero de la piece, **masque** : il sert a prouver qu une piece a ete
+   * vue, pas a etre recopie. L afficher en entier sur un ecran de comptoir,
+   * devant la file d attente, serait une fuite gratuite.
+   */
+  numeroPieceMasque: string | null;
+  verifieeLe: HorodatageApi | null;
+  /** Null si l agent qui a verifie a depuis quitte la plateforme. */
+  verifieePar: string | null;
+  /** Les traits qui manquent encore, pour que l ecran sache quoi demander. */
+  traitsManquants: string[];
+}
+
+export interface VerifierIdentiteDto {
+  typePiece: TypePieceIdentite;
+  numeroPiece: string;
+  /** Exige : il figure sur la piece que l agent a en main. */
+  lieuNaissance: string;
+  /** Facultatif : absent d un passeport. */
+  nomMere?: string;
+  /** Confirmer le remplacement d une piece deja enregistree. */
+  remplacerPiece?: boolean;
+}
+
+export interface NoterTraitsDto {
+  lieuNaissance?: string;
+  nomMere?: string;
+}
+
+// --- Bris de glace (EF-02-06) ----------------------------------------------
+
+/**
+ * Pourquoi la vitre a ete brisee.
+ *
+ * Liste **fermee** : on ne peut ni juger ni compter des motifs ecrits comme
+ * chacun veut. Le texte libre vient en plus, pas a la place.
+ */
+export type MotifBrisDeGlace =
+  /** Pronostic vital engage, decision immediate. */
+  | 'URGENCE_VITALE'
+  /** Le patient ne peut pas consentir : inconscient, confus, trop jeune. */
+  | 'PATIENT_HORS_ETAT'
+  /** Le patient est adresse par une autre structure et son dossier y vit. */
+  | 'CONTINUITE_DES_SOINS'
+  /** Suspicion d interaction ou d allergie a verifier avant de prescrire. */
+  | 'VERIFICATION_AVANT_PRESCRIPTION'
+  | 'AUTRE';
+
+export type StatutRevueBrisDeGlace = 'A_REVOIR' | 'JUSTIFIE' | 'INJUSTIFIE';
+
+export type MotifRefusBrisDeGlace =
+  | 'PATIENT_INTROUVABLE'
+  /** Seuls les roles qui donnent des soins peuvent briser la glace. */
+  | 'ROLE_NON_AUTORISE'
+  /** Son propre dossier est deja ouvert : le declarer serait une fausse urgence. */
+  | 'SON_PROPRE_DOSSIER'
+  | 'EXPLICATION_TROP_COURTE'
+  | 'BRIS_INTROUVABLE'
+  | 'PAS_VOTRE_ACCES'
+  | 'DEJA_REFERME'
+  /** Un garde-fou qu on s applique a soi-meme n en est pas un. */
+  | 'PAS_SON_PROPRE_ACCES'
+  | 'DEJA_REVU'
+  | 'AVIS_TROP_COURT';
+
+/**
+ * Un acces en urgence, tel qu il se lit.
+ *
+ * **Ce n est pas un passe-partout** : un motif est exige, l acces expire, le
+ * patient est prevenu, et l administration repasse derriere.
+ */
+export interface BrisDeGlaceView {
+  id: string;
+  motif: MotifBrisDeGlace;
+  /** Ce que le soignant a explique en toutes lettres. Ne se reecrit pas. */
+  explication: string;
+  ouvertLe: HorodatageApi;
+  expireLe: HorodatageApi;
+  refermeLe: HorodatageApi | null;
+  /** Encore ouvert : ni referme, ni expire. */
+  ouvert: boolean;
+  statutRevue: StatutRevueBrisDeGlace;
+  avisRevue: string | null;
+  revuLe: HorodatageApi | null;
+  revuPar: string | null;
+  /**
+   * `null` : **le patient n a pas pu etre prevenu.** La declaration tient
+   * quand meme — il y a un patient au bout — mais le manque se voit.
+   */
+  notifieLe: HorodatageApi | null;
+  patient: { id: string; nomComplet: string };
+  auteur: { id: string; nomComplet: string; role: string };
+  structure: string | null;
+}
+
+export interface DeclarerBrisDeGlaceDto {
+  idPatient: string;
+  motif: MotifBrisDeGlace;
+  explication: string;
+}
+
+export interface ReviserBrisDeGlaceDto {
+  statut: 'JUSTIFIE' | 'INJUSTIFIE';
+  avis: string;
+}
+
+// --- Consentement versionne (EF-02-01/03/07) -------------------------------
+
+/**
+ * Un texte de consentement, dans une version et une langue.
+ *
+ * **Un consentement ne vaut que pour ce qui a ete explique.** Garder le texte
+ * exact qui etait a l ecran est ce qui permet de prouver ce qui a ete accepte,
+ * et de le remontrer a l interesse.
+ */
+export interface TexteConsentementView {
+  id: string;
+  scope: ConsentScope;
+  langue: string;
+  version: number;
+  titre: string;
+  corps: string;
+  publieLe: HorodatageApi | null;
+  /**
+   * Le texte n existe pas dans la langue du patient et lui est montre dans
+   * une autre. **Le taire ferait passer pour eclaire un consentement qui ne
+   * l est pas.**
+   */
+  dansUneAutreLangue: boolean;
+}
+
+/**
+ * Ou en est le consentement par rapport au texte en vigueur.
+ *
+ * `JAMAIS_RECUEILLI` est le cas le plus important : l accord a ete pose sans
+ * que personne ne voie rien — par le systeme a la creation du dossier, ou
+ * avant le versionnage. Ce n est pas un consentement.
+ */
+export type EtatTexteConsentement = 'A_JOUR' | 'TEXTE_PLUS_RECENT' | 'JAMAIS_RECUEILLI';
+
+export interface ConsentementView {
+  scope: ConsentScope;
+  actif: boolean;
+  /** `false` : la question ne lui a jamais ete posee. */
+  repondu: boolean;
+  donneLe: HorodatageApi | null;
+  retireLe: HorodatageApi | null;
+  source: string | null;
+  /** Le texte accepte, tel qu il etait — pas celui d aujourd hui. */
+  texteAccepte: TexteConsentementView | null;
+  texteEnVigueur: TexteConsentementView | null;
+  etat: EtatTexteConsentement;
+}
+
+export type SensConsentement = 'ACCORDE' | 'RETIRE';
+
+/** Une ligne de l historique, qui ne s efface jamais. */
+export interface EvenementConsentementView {
+  id: string;
+  scope: ConsentScope;
+  sens: SensConsentement;
+  source: string;
+  commentaire: string | null;
+  creeLe: HorodatageApi;
+  versionTexte: number | null;
+  langueTexte: string | null;
+  titreTexte: string | null;
+  parQui: string;
+}
+
+export interface EnregistrerConsentementDto {
+  scope: ConsentScope;
+  accorde: boolean;
+  commentaire?: string;
+}
+
+export interface PublierTexteConsentementDto {
+  scope: ConsentScope;
+  langue: string;
+  titre: string;
+  corps: string;
+}
+
+// --- Fusion de dossiers patients (EF-01-06) --------------------------------
+
+/**
+ * Pourquoi une fusion a ete refusee.
+ *
+ * Chacun de ces refus protege d un melange de dossiers medicaux : c est la
+ * faute la plus grave que ce produit puisse commettre.
+ */
+export type MotifRefusFusion =
+  | 'DOSSIER_INTROUVABLE'
+  | 'MEME_DOSSIER'
+  | 'MOTIF_TROP_COURT'
+  /** L un des deux dossiers est deja fusionne : il n y a pas de chaine. */
+  | 'DEJA_FUSIONNE'
+  /**
+   * Les deux identites sont verifiees, sur **deux pieces differentes**. Ou
+   * bien ce sont deux personnes, ou bien l une des verifications est fausse.
+   * Une machine ne peut pas trancher : un agent doit reprendre la piece.
+   */
+  | 'DEUX_PIECES_DIFFERENTES'
+  | 'FUSION_INTROUVABLE'
+  | 'DEJA_ANNULEE';
+
+export type OperationFusion = 'DEPLACEMENT' | 'RESTRICTION_CONSENTEMENT';
+
+/** Ce qu une fusion a deplace, resume par table. */
+export interface LigneFusionView {
+  tableCible: string;
+  operation: OperationFusion;
+  nombre: number;
+}
+
+/**
+ * Une fusion de dossiers, telle qu un agent la lit.
+ *
+ * **Le dossier absorbe n est jamais supprime** : il garde son identifiant et
+ * son code QR, et la fusion peut etre defaite.
+ */
+export interface FusionView {
+  id: string;
+  motif: string;
+  statut: 'ACTIVE' | 'ANNULEE';
+  fusionneLe: HorodatageApi;
+  fusionnePar: string;
+  motifAnnulation: string | null;
+  annuleeLe: HorodatageApi | null;
+  annuleePar: string | null;
+  principal: { id: string; nomComplet: string };
+  absorbe: { id: string; nomComplet: string };
+  /** Resume de ce qui a bouge. C est cela qui rend la reversibilite credible. */
+  lignes: LigneFusionView[];
+}
+
+export interface FusionnerDto {
+  idAbsorbe: string;
+  motif: string;
+}
+
+export interface AnnulerFusionDto {
+  motifAnnulation: string;
+}
+
+// --- Detection de doublons (EF-01-05) --------------------------------------
+
+/** Ce qui a fait ressembler deux dossiers. */
+export type TraitConcordant =
+  | 'NOM_IDENTIQUE'
+  | 'NOM_PROCHE'
+  /**
+   * Le meme nom ecrit autrement : « Conde » et « Konde », « Diallo » et
+   * « Dialo ». Les noms sont transcrits a l oreille et varient d un guichet a
+   * l autre ; c est ainsi que naissent la plupart des doublons.
+   */
+  | 'NOM_VARIANTE' 
+  | 'MERE_IDENTIQUE'
+  | 'LIEU_IDENTIQUE'
+  | 'DATE_IDENTIQUE'
+  /**
+   * Meme date, mais une date par defaut — le 1er janvier, saisi quand on
+   * ignore le jour. Elle n apprend presque rien : 9 patients sur 10 la
+   * portaient dans la base du 2026-10-04.
+   */
+  | 'DATE_PAR_DEFAUT'
+  | 'TELEPHONE_IDENTIQUE'
+  /**
+   * Les traits concordent, mais **pas le nom**. C est la signature de deux
+   * freres : meme mere, meme lieu, meme telephone familial, et pour des
+   * jumeaux meme date. Le score est alors borne sous le seuil « probable » —
+   * fusionner deux freres melangerait leurs dossiers medicaux.
+   */
+  | 'SANS_CONCORDANCE_DE_NOM'
+  /**
+   * Le nom concorde, mais ecrit autrement. « Aissatou » et « Aissata » :
+   * variante d ecriture, ou deux soeurs ? La machine ne peut pas trancher, et
+   * personne ne le peut sans regarder le dossier. Le cas remonte en tete de
+   * liste, jamais annonce comme probable.
+   */
+  | 'ORTHOGRAPHE_A_CONFIRMER';
+
+/**
+ * Un dossier qui pourrait etre la meme personne.
+ *
+ * **Ce n est pas un verdict.** Un agent decide ; aucune fusion n est
+ * automatique. Fusionner deux personnes distinctes melange leurs dossiers
+ * medicaux, ce qui est bien plus dangereux que de laisser un doublon.
+ */
+export interface CandidatDoublonView {
+  id: string;
+  nomComplet: string;
+  telephone: string;
+  dateNaissance: HorodatageApi;
+  lieuNaissance: string | null;
+  nomMere: string | null;
+  prefecture: string;
+  niveauIdentite: NiveauIdentite;
+  /** Somme des traits concordants. Un ordre de grandeur, pas une probabilite. */
+  score: number;
+  /** Au-dela du seuil : a regarder en priorite. En deca : un doute a lever. */
+  probable: boolean;
+  traits: TraitConcordant[];
 }

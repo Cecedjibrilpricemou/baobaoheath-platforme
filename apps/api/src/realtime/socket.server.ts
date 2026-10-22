@@ -71,3 +71,33 @@ export function initSocketServer(httpServer: HttpServer): SocketIoServer {
 export function emitToUser(userId: string, event: string, payload: unknown): void {
   io?.to(userRoom(userId)).emit(event, payload);
 }
+
+/**
+ * Ferme toutes les connexions temps reel d'un utilisateur (EF-12-01).
+ *
+ * **Le trou que cette fonction comble.** Un socket n'est authentifie qu'une
+ * fois, a la poignee de main (`io.use` ci-dessus) ; rien ne le revalide
+ * ensuite. Un compte suspendu continuait donc de recevoir les notifications
+ * de ses patients jusqu'a ce qu'il ferme lui-meme son navigateur — alors que
+ * la moindre requete HTTP, elle, lui etait refusee dans la seconde. Constate
+ * le 2026-10-03 en lisant le serveur de sockets.
+ *
+ * On previent avant de couper : sans cela le navigateur se contente de
+ * reessayer, et l'utilisateur voit une application qui clignote sans
+ * comprendre pourquoi.
+ *
+ * Rend le nombre de sockets fermes — zero si la personne n'etait pas
+ * connectee, ce qui n'est pas une erreur.
+ */
+export async function deconnecterUtilisateur(userId: string, motif: string): Promise<number> {
+  if (!io) return 0;
+  const sockets = await io.in(userRoom(userId)).fetchSockets();
+  for (const socket of sockets) {
+    socket.emit('session:revoquee', { motif });
+    socket.disconnect(true);
+  }
+  if (sockets.length > 0) {
+    logger.info('[WS] sockets fermes apres suspension', { userId, nombre: sockets.length });
+  }
+  return sockets.length;
+}

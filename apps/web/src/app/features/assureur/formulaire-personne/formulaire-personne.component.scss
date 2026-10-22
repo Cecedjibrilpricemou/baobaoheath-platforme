@@ -1,0 +1,36 @@
+// La fiche d'identite : la photo a gauche, comme sur une piece, les champs a
+// droite. Sur mobile, la photo passe au-dessus.
+.bb-fp {
+  display: grid; grid-template-columns: 170px 1fr; gap: 18px; align-items: start;
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+
+  &__photo { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  &__image, &__sans-photo {
+    width: 120px; height: 150px; border-radius: var(--bb-radius-md);
+    border: 1px solid var(--bb-border); object-fit: cover; background: var(--bb-surface-2);
+  }
+  &__sans-photo {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--bb-text-muted); font-size: 40px;
+  }
+
+  // Le champ de fichier natif est cache ; son libelle sert de bouton, qui
+  // reste atteignable au clavier par le champ lui-meme.
+  &__choisir {
+    position: relative; display: inline-flex; align-items: center; gap: 6px;
+    min-height: 44px; padding: 8px 14px; border-radius: var(--bb-radius-pill); cursor: pointer;
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
+    color: var(--bb-text-primary); font-weight: 700; font-size: 13.5px;
+    input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    &:focus-within { outline: 2px solid var(--bb-primary); outline-offset: 2px; }
+  }
+  &__aide { margin: 0; font-size: 12.5px; color: var(--bb-text-secondary); }
+  &__erreur { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--bb-danger); }
+
+  &__grille {
+    display: grid; gap: 16px 14px; align-items: start;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+    mat-form-field { width: 100%; }
+  }
+  &__large { grid-column: 1 / -1; }
+}

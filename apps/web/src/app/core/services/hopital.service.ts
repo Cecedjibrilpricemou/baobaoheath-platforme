@@ -6,6 +6,15 @@ import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
+  DemandeRendezVousView,
+  AnnulerFusionDto,
+  CandidatDoublonView,
+  FusionnerDto,
+  FusionView,
+  IdentitePatientView,
+  NiveauIdentite,
+  VerifierIdentiteDto,
+  PresenceDuJourView,
   CreateDemandeAnalyseDto,
   CreateEpisodeDto,
   DemandeAnalyseView,
@@ -65,8 +74,38 @@ export class HopitalService {
     return this.api.post<ApiResponse<EpisodeSoinsView>>(`/hopital/episodes/${id}/annuler`, {});
   }
 
+  /** Demandes a distance que personne ne vise : l'accueil les oriente. */
+  demandesAOrienter(): Observable<ApiResponse<DemandeRendezVousView[]>> {
+    return this.api.get<ApiResponse<DemandeRendezVousView[]>>('/hopital/demandes');
+  }
+
+  orienterDemande(id: string, idMedecin: string): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>(`/hopital/demandes/${id}/orienter`, { idMedecin });
+  }
+
+  /** Les patients attendus aujourd'hui (addendum, point 2). */
+  presencesDuJour(jour?: string): Observable<ApiResponse<PresenceDuJourView[]>> {
+    return this.api.get<ApiResponse<PresenceDuJourView[]>>('/hopital/presences', jour ? { jour } : undefined);
+  }
+
+  /** L'assistante pointe l'arrivee : c'est la que l'attente commence. */
+  pointerPresence(idRendezVous: string): Observable<ApiResponse<PresenceDuJourView>> {
+    return this.api.post<ApiResponse<PresenceDuJourView>>(`/hopital/rendez-vous/${idRendezVous}/presence`, {});
+  }
+
   orienter(id: string, dto: OrientationDto): Observable<ApiResponse<EpisodeSoinsView>> {
     return this.api.post<ApiResponse<EpisodeSoinsView>>(`/hopital/episodes/${id}/orientation`, dto);
+  }
+
+  /**
+   * Ouvrir la consultation de cette visite.
+   *
+   * Le patient et le motif viennent de l'episode : rien a envoyer. Si une
+   * consultation y est deja ouverte, l'API rend celle-la plutot que d'en
+   * creer une seconde.
+   */
+  ouvrirConsultation(idEpisode: string): Observable<ApiResponse<{ id: string }>> {
+    return this.api.post<ApiResponse<{ id: string }>>(`/hopital/episodes/${idEpisode}/consultation`, {});
   }
 
   creerDemandeAnalyse(idEpisode: string, dto: CreateDemandeAnalyseDto): Observable<ApiResponse<DemandeAnalyseView>> {
@@ -98,5 +137,73 @@ export class HopitalService {
   // ── Patient ──────────────────────────────────────────────────────
   mesEpisodes(): Observable<ApiResponse<EpisodePatientView[]>> {
     return this.api.get<ApiResponse<EpisodePatientView[]>>('/patients/me/episodes');
+  }
+
+  /**
+   * Creer le dossier d'un patient au comptoir (EF-03-01).
+   *
+   * **L'accueil ne part plus sur la page publique d'inscription** : elle est
+   * faite pour quelqu'un qui s'inscrit seul chez lui, et l'agent y perdait
+   * l'admission en cours.
+   *
+   * Le mot de passe temporaire n'est rendu qu'une fois, pour etre remis.
+   */
+  creerPatientAuComptoir(dto: {
+    telephone: string; prenom: string; nom: string;
+    dateNaissance: string; sexe: 'M' | 'F';
+    prefecture: string; sousPrefecture?: string; email?: string;
+  }): Observable<ApiResponse<{
+    patient: { id: string; prenom: string; nom: string };
+    motDePasseTemporaire: string;
+  }>> {
+    return this.api.post<ApiResponse<{
+      patient: { id: string; prenom: string; nom: string };
+      motDePasseTemporaire: string;
+    }>>('/hopital/patients', dto);
+  }
+
+  // --- Identito-vigilance (EF-01-04/10) ---------------------------------
+  //
+  // Verifier une identite ouvre le tiers payant. Cela ne conditionne pas les
+  // soins : un patient a l'identite provisoire est recu et suivi normalement.
+
+  identites(filtres: { q?: string; niveau?: NiveauIdentite }): Observable<ApiResponse<IdentitePatientView[]>> {
+    const params: Record<string, string> = {};
+    if (filtres.q) params['q'] = filtres.q;
+    if (filtres.niveau) params['niveau'] = filtres.niveau;
+    return this.api.get<ApiResponse<IdentitePatientView[]>>('/identites', params);
+  }
+
+  verifierIdentite(id: string, dto: VerifierIdentiteDto): Observable<ApiResponse<IdentitePatientView>> {
+    return this.api.post<ApiResponse<IdentitePatientView>>(`/identites/${id}/verifier`, dto);
+  }
+
+  /**
+   * Les dossiers qui pourraient etre la meme personne (EF-01-05).
+   *
+   * **Appele a la demande, pas pour chaque ligne.** Dix lignes affichees
+   * feraient dix requetes a l'ouverture de l'ecran, dont neuf pour rien.
+   */
+  doublons(id: string): Observable<ApiResponse<CandidatDoublonView[]>> {
+    return this.api.get<ApiResponse<CandidatDoublonView[]>>(`/identites/${id}/doublons`);
+  }
+
+  // --- Fusion de dossiers (EF-01-06) ------------------------------------
+  //
+  // **Reservee a ADMIN_STRUCTURE** cote API. L'ecran ne montre le bouton qu'a
+  // ce role : proposer une action qu'on n'a pas le droit de faire est une
+  // facon de mentir a l'utilisateur.
+
+  /** `id` est le dossier **qui survit**. */
+  fusionner(id: string, dto: FusionnerDto): Observable<ApiResponse<FusionView>> {
+    return this.api.post<ApiResponse<FusionView>>(`/identites/${id}/fusionner`, dto);
+  }
+
+  annulerFusion(idFusion: string, dto: AnnulerFusionDto): Observable<ApiResponse<FusionView>> {
+    return this.api.post<ApiResponse<FusionView>>(`/identites/fusions/${idFusion}/annuler`, dto);
+  }
+
+  fusions(id: string): Observable<ApiResponse<FusionView[]>> {
+    return this.api.get<ApiResponse<FusionView[]>>(`/identites/${id}/fusions`);
   }
 }

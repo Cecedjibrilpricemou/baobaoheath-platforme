@@ -27,6 +27,8 @@ export class AuthShellComponent {
   large = input(false);
 
   readonly points = ['AUTH.VISUAL.POINT_1', 'AUTH.VISUAL.POINT_2', 'AUTH.VISUAL.POINT_3'];
+  /** Une icone par point, dans le meme ordre. Decoratif : `aria-hidden` sur le panneau. */
+  readonly icones = ['pi pi-folder-open', 'pi pi-shield', 'pi pi-wifi'];
 
   toggleTheme() { this.themeService.toggle(); }
   toggleLang()  { this.i18nService.toggle(); }

@@ -20,6 +20,7 @@ import type {
 } from '@baobaoheath/shared-types';
 import {
   createAgentStructureSchema,
+  definirBureauSchema,
   createPharmacieSchema,
   createStructureSchema,
   updateParametresSystemeSchema,
@@ -50,6 +51,15 @@ router.get('/agents', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, r
   }
 });
 
+router.get('/pharmacies', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const data: StructureAdminView[] = await service.getPharmaciesStructure(req.user!.userId);
+    res.json({ success: true, data });
+  } catch (e: unknown) {
+    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
 router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentStructureSchema), async (req: AuthRequest, res: Response) => {
   try {
     const data: CreationAgentView = await service.creerAgent(req.user!.userId, req.body);
@@ -57,6 +67,31 @@ router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentS
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
   }
+});
+
+/**
+ * Definir — ou effacer — le bureau d'un medecin.
+ *
+ * **Un bureau change** : un medecin demenage, un service est redecoupe. Figer
+ * la valeur a la creation du compte l'aurait rendue fausse en quelques mois,
+ * et un bureau faux est pire que pas de bureau : le patient y va.
+ *
+ * `null` efface, pour l'hopital qui ne numerote pas ses bureaux et ou l'agent
+ * accompagne le patient a pied.
+ */
+router.put('/agents/:id/bureau', requireRole('ADMIN_STRUCTURE'), validateBody(definirBureauSchema), async (req: AuthRequest, res: Response) => {
+  const data = await service.definirBureau(
+    req.user!,
+    req.params['id'] as string,
+    (req.body as { bureau: string | null }).bureau,
+  );
+  res.json({
+    success: true,
+    data,
+    message: data.bureau
+      ? `Bureau de ${data.nomComplet} : ${data.bureau}.`
+      : `Bureau de ${data.nomComplet} effacé. L'accueil accompagnera le patient.`,
+  });
 });
 
 router.put('/agents/:id/desactiver', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
@@ -95,9 +130,9 @@ router.post('/structures', requireRole('SUPER_ADMIN'), validateBody(createStruct
   }
 });
 
-router.post('/pharmacies', requireRole('SUPER_ADMIN'), validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
+router.post('/pharmacies', requireRole('SUPER_ADMIN', 'ADMIN_STRUCTURE'), validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.body);
+    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.user!, req.body);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });

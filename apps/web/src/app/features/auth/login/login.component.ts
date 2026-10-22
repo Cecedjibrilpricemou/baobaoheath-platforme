@@ -94,17 +94,35 @@ export class LoginComponent implements OnDestroy {
           this.startOtpTimer(response.expiresInMinutes ?? 10);
         } else {
           const role = this.authService.userRole();
-          if (role) this.redirectAfterLogin(role);
+          this.redirectAfterLogin(role);
         }
       },
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_CREDENTIALS'),
+          this.messageErreur(err, 'AUTH.LOGIN.ERR_CREDENTIALS'),
           this.i18nService.t('AUTH.LOGIN.ERR_LOGIN_TITLE')
         );
       }
     });
+  }
+
+  /**
+   * Un serveur injoignable n'est pas un mauvais mot de passe.
+   *
+   * Sans cette distinction, une API arretee produisait « identifiants
+   * incorrects » : la reponse n'ayant pas de corps JSON, on retombait sur le
+   * message par defaut. Le message envoyait chercher l'erreur du mauvais cote.
+   */
+  private messageErreur(err: unknown, cleParDefaut: string): string {
+    const e = err as { status?: number; error?: { error?: string; message?: string } };
+    // status 0 : la requete n'a jamais atteint le serveur (arrete, CORS, reseau).
+    if (e?.status === 0) return this.i18nService.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE');
+    // 429 : le limiteur de connexions repond en texte brut, sans corps JSON.
+    // Sans ce cas, on retombait sur « identifiants incorrects » alors que le
+    // mot de passe etait juste : c'est arrive le 2026-10-21.
+    if (e?.status === 429) return this.i18nService.t('AUTH.LOGIN.ERR_TROP_DE_TENTATIVES');
+    return e?.error?.error ?? e?.error?.message ?? this.i18nService.t(cleParDefaut);
   }
 
   verifyOtp() {
@@ -118,12 +136,12 @@ export class LoginComponent implements OnDestroy {
       next: (user) => {
         this.isLoading.set(false);
         this.clearOtpTimer();
-        if (user && user.role) this.redirectAfterLogin(user.role);
+        this.redirectAfterLogin(user?.role);
       },
       error: (err) => {
         this.isLoading.set(false);
         this.toastr.error(
-          err?.error?.error ?? err?.error?.message ?? this.i18nService.t('AUTH.LOGIN.ERR_OTP_INCORRECT'),
+          this.messageErreur(err, 'AUTH.LOGIN.ERR_OTP_INCORRECT'),
           this.i18nService.t('AUTH.LOGIN.ERR_OTP_VERIFY_TITLE')
         );
         this.otpCode = '';
@@ -149,7 +167,7 @@ export class LoginComponent implements OnDestroy {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.toastr.error(err?.error?.error ?? this.i18nService.t('AUTH.LOGIN.ERR_OTP_RESEND'), this.i18nService.t('AUTH.LOGIN.ERR_TITLE'));
+        this.toastr.error(this.messageErreur(err, 'AUTH.LOGIN.ERR_OTP_RESEND'), this.i18nService.t('AUTH.LOGIN.ERR_TITLE'));
       }
     });
   }
@@ -237,7 +255,32 @@ export class LoginComponent implements OnDestroy {
     this.otpTimerActive = false;
   }
 
-  private redirectAfterLogin(role: string) {
+  private redirectAfterLogin(role: string | null | undefined) {
+    const redirectMap: Record<string, string> = {
+      PATIENT:          '/patient/dashboard',
+      ASC:              '/asc/consultations',
+      ASC_SUPERVISOR:   '/asc/consultations',
+      MEDECIN:          '/medecin/dashboard',
+      PHARMACIEN:       '/pharmacien/ordonnances',
+      AGENT_ACCUEIL:    '/hopital/tableau-de-bord',
+      TECHNICIEN_LABO:  '/laboratoire/tableau-de-bord',
+      ASSUREUR:        '/assureur/tableau-de-bord',
+      ADMIN_STRUCTURE:  '/admin-structure/dashboard',
+      ADMIN_REGIONAL:   '/admin/analytics',
+      ADMIN_NATIONAL:   '/admin/analytics',
+      SUPER_ADMIN:      '/admin/analytics'
+    };
+    const destination = role ? redirectMap[role] : undefined;
+    if (!destination) {
+      this.toastr.error(
+        this.i18nService.t('AUTH.LOGIN.ERR_SPACE_NOT_ACCESSIBLE'),
+        this.i18nService.t('COMMON.ERROR_TITLE'),
+        { timeOut: 8000 }
+      );
+      this.authService.logout();
+      return;
+    }
+
     if (this.authService.doitChangerMotDePasse()) {
       this.toastr.warning(
         this.i18nService.t('AUTH.LOGIN.CHANGE_PWD_REQUIRED'),
@@ -252,20 +295,6 @@ export class LoginComponent implements OnDestroy {
       return;
     }
 
-    const redirectMap: Record<string, string> = {
-      PATIENT:          '/patient/dashboard',
-      ASC:              '/asc/consultations',
-      ASC_SUPERVISOR:   '/asc/consultations',
-      MEDECIN:          '/medecin/dashboard',
-      PHARMACIEN:       '/pharmacien/ordonnances',
-      AGENT_ACCUEIL:    '/hopital/tableau-de-bord',
-      TECHNICIEN_LABO:  '/laboratoire/tableau-de-bord',
-      BIOLOGISTE:       '/laboratoire/tableau-de-bord',
-      ADMIN_STRUCTURE:  '/admin-structure/dashboard',
-      ADMIN_REGIONAL:   '/admin/analytics',
-      ADMIN_NATIONAL:   '/admin/analytics',
-      SUPER_ADMIN:      '/admin/analytics'
-    };
-    this.router.navigate([redirectMap[role] ?? '/auth/login']);
+    this.router.navigate([destination]);
   }
 }

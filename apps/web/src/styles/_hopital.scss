@@ -41,9 +41,11 @@
   &__label { font-size: 12.5px; color: var(--bb-text-muted); }
 
   // Premiere carte : pleine, vert de marque (comme le bandeau des chiffres de la landing).
+  // ✦ Refonte UI : tokens de marque au lieu des hex codes en dur
   &--primary {
-    background: linear-gradient(135deg, #2D7D46, #1A5C35); border-color: transparent; color: #fff;
-    .bb-hop-stat__icon, .bb-stat__icon { background: rgba(255, 255, 255, .18); color: #fff; }
+    background: linear-gradient(135deg, var(--bb-primary), var(--bb-mid)); border-color: transparent; color: #fff;
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--bb-mid) 90%, transparent);
+    .bb-hop-stat__icon, .bb-stat__icon { background: color-mix(in srgb, #fff 18%, transparent); color: #fff; }
     .bb-hop-stat__value, .bb-hop-stat__label, .bb-stat__value, .bb-stat__label { color: #fff; }
     .bb-hop-stat__label, .bb-stat__label { opacity: .9; }
   }
@@ -65,7 +67,8 @@
   font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; color: var(--bb-text-secondary);
   transition: background var(--bb-transition), color var(--bb-transition);
   &:hover { color: var(--bb-primary); }
-  &--active { background: var(--bb-primary); color: #fff; box-shadow: 0 6px 16px rgba(45, 125, 70, .22); &:hover { color: #fff; } }
+  &--active { background: var(--bb-primary); color: #fff; box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent); &:hover { color: #fff; } }
+  &:active { transform: scale(0.97); }
 }
 
 // ── Barre d'outils (recherche + actions) ───────────────────────────
@@ -90,11 +93,22 @@
     font-family: var(--bb-font-display); font-size: 14px; font-weight: 800;
   }
   &__body { flex: 1; min-width: 0; }
+  // ✦ Refonte UI : une ligne porteuse d'actions passe a la ligne quand la
+  // place manque. Avant, les actions (flex-shrink: 0) gardaient toute leur
+  // largeur : le texte s'ecrasait sur ~60px et le bouton « Accuser »
+  // sortait de l'ecran (resultats critiques sur mobile et tablette).
+  &:has(> .bb-hop-item__actions) {
+    flex-wrap: wrap;
+    > .bb-hop-item__body { flex: 1 1 260px; }
+  }
   &__title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--bb-font-display); font-size: 14.5px; font-weight: 800; color: var(--bb-text-primary); margin: 0 0 2px; }
   &__num { font-family: var(--bb-font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--bb-text-muted); }
   &__sub { font-size: 13px; color: var(--bb-text-secondary); margin: 0; }
   &__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--bb-text-muted); margin: 4px 0 0; i { margin-right: 4px; } }
-  &__actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  &__actions {
+    display: flex; gap: 8px; flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end;
+    @media (max-width: 600px) { flex-basis: 100%; > * { flex: 1 1 auto; } }
+  }
   > .pi-chevron-right { color: var(--bb-text-muted); }
 }
 
@@ -102,30 +116,58 @@
 .bb-empty, .bb-hop-empty {
   text-align: center; padding: 2.5rem 1rem; color: var(--bb-text-muted);
   border: 1px dashed var(--bb-border); border-radius: 20px; background: var(--bb-surface-card);
-  i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
+  // `> i` et non `i` : la regle visait **toutes** les icones descendantes, y
+  // compris celle d'un bouton place dans l'etat vide — 28px, en bloc, elle
+  // poussait le libelle hors du bouton. Vu a l'oeil sur une capture ; la
+  // boite du bouton, elle, tenait dans la carte.
+  > i { font-size: 28px; color: var(--bb-primary); opacity: .6; display: block; margin-bottom: 10px; }
   p { margin: 0 0 4px; font-family: var(--bb-font-display); font-weight: 700; color: var(--bb-text-primary); }
   span { font-size: 13px; }
 }
 
 // ── Detail : entete, grille d'infos, sections ──────────────────────
+// ✦ Refonte UI : lien de retour sans soulignement navigateur (c'est un <a>),
+// zone de clic elargie, fleche qui recule au survol.
 .bb-hop-back {
-  display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; padding: 0;
-  font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700; color: var(--bb-text-muted); margin-bottom: 10px;
-  &:hover { color: var(--bb-primary); }
+  display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer;
+  padding: 4px 8px; margin: -4px -8px 10px; border-radius: var(--bb-radius-sm); text-decoration: none;
+  font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700; color: var(--bb-text-muted);
+  transition: color var(--bb-transition), background var(--bb-transition);
+  &:hover { color: var(--bb-primary); background: var(--bb-success-bg); }
+  &:hover .pi-arrow-left { transform: translateX(-2px); }
+  &:hover .pi-arrow-right { transform: translateX(2px); }
+  i { transition: transform var(--bb-transition); }
 }
 .bb-hop-info {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 20px;
   &__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-muted); margin-bottom: 3px; }
-  &__value { font-size: 14px; color: var(--bb-text-primary); font-weight: 600; }
+  &__value { font-size: 14px; color: var(--bb-text-primary); font-weight: 600; overflow-wrap: anywhere; }
+
+  // Deux colonnes sur telephone (une seule laissait une longue liste)
+  @media (max-width: 480px) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 }
 .bb-hop-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.bb-hop-sections { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; @media (min-width: 1100px) { grid-template-columns: 1.4fr 1fr; } }
+// ✦ Refonte UI : colonnes en minmax(0, …) — avec 1fr, un libelle long (badge
+// de statut) elargissait la colonne et les sous-cartes sortaient de leur
+// carte (parcours patient, episodes, sur tablette et mobile).
+.bb-hop-sections {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin-top: 1rem;
+  > * { min-width: 0; }
+  @media (min-width: 1100px) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+}
 
 // Sous-carte (demande d'analyse, rendez-vous)
 .bb-hop-sub {
   border: 1px solid var(--bb-border-light); border-radius: 14px; padding: 0.875rem 1rem; background: var(--bb-surface-1);
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition-slow);
+  &:hover { border-color: var(--bb-border); box-shadow: var(--bb-shadow-xs); }
   & + & { margin-top: 10px; }
-  &__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  &__head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+    // ✦ Refonte UI : un statut long passe a la ligne au lieu de deborder
+    > span:not([class]) { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+    .bb-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  }
   &__num { font-family: var(--bb-font-display); font-size: 13px; font-weight: 800; color: var(--bb-text-primary); }
   &__line { font-size: 13px; color: var(--bb-text-secondary); margin: 2px 0; }
   &__tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
@@ -137,9 +179,13 @@
 .bb-hop-panel {
   margin-top: 1rem; border: 1.5px solid var(--bb-success-border); border-radius: 20px; padding: 1.25rem 1.375rem;
   background: var(--bb-surface-card); box-shadow: var(--bb-shadow);
+  animation: bb-hop-drop .3s var(--bb-ease) both;
   &__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
   &__full { grid-column: 1 / -1; }
-  &__footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  &__footer {
+    display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;
+    @media (max-width: 420px) { flex-direction: column-reverse; > * { width: 100%; } }
+  }
   .form-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bb-text-secondary); margin-bottom: 6px; }
   .form-hint { display: block; font-size: 12px; color: var(--bb-text-muted); margin: 4px 0 12px; }
   .form-field-wrap { margin-bottom: 12px; }
@@ -151,12 +197,13 @@
   &__cat { font-family: var(--bb-font-display); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--bb-primary); padding: 10px 10px 4px; }
   &__row {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer;
+    transition: background var(--bb-transition);
     &:hover { background: var(--bb-surface-card); }
-    &--on { background: var(--bb-success-bg); }
-    input { accent-color: var(--bb-primary); width: 16px; height: 16px; }
+    &--on { background: var(--bb-success-bg); box-shadow: inset 3px 0 0 var(--bb-primary); }
+    input { accent-color: var(--bb-primary); width: 18px; height: 18px; flex-shrink: 0; }
   }
   &__lib { flex: 1; font-size: 13.5px; color: var(--bb-text-primary); }
-  &__code { font-size: 11px; color: var(--bb-text-muted); font-family: monospace; }
+  &__code { font-size: 11px; color: var(--bb-text-muted); font-family: ui-monospace, Menlo, Consolas, monospace; }
   &__flag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: var(--bb-radius-pill); background: var(--bb-warning-bg); color: var(--bb-warning); }
 }
 .bb-hop-selected { font-size: 12.5px; color: var(--bb-primary); font-weight: 700; margin: 8px 0 12px; }
@@ -176,22 +223,28 @@
 }
 
 // ── Mode sombre ─────────────────────────────────────────────────────
+// ✦ Refonte UI : vert profond du mode sombre derive des tokens (plus de
+// #17422A / #0F2E1C ni de rgba codes en dur).
 [data-theme='dark'] {
-  .bb-hop-stat--primary, .bb-stat--primary { background: linear-gradient(135deg, #17422A, #0F2E1C); }
+  .bb-hop-stat--primary, .bb-stat--primary { background: linear-gradient(135deg, color-mix(in srgb, var(--bb-mid) 80%, #000), var(--bb-deep)); }
   .bb-hop-pill--active, .bb-pill--active { box-shadow: none; }
   .bb-hop-examens__cat, .bb-hop-selected, .bb-hop-card__title i, .bb-card__title i { color: var(--bb-bright); }
-  .bb-hop-item__avatar, .bb-hop-stat__icon, .bb-stat__icon { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
-  .bb-parcours__etape--done { color: var(--bb-bright); background: rgba(62, 187, 112, .14); }
+  .bb-hop-item__avatar, .bb-hop-stat__icon, .bb-stat__icon { color: var(--bb-bright); background: color-mix(in srgb, var(--bb-bright) 14%, transparent); }
+  .bb-parcours__etape--done { color: var(--bb-bright); background: color-mix(in srgb, var(--bb-bright) 14%, transparent); }
+  .bb-hop-back:hover { color: var(--bb-bright); }
+  .bb-hop-examens__row--on { box-shadow: inset 3px 0 0 var(--bb-bright); }
 }
 
 // ── Resultats d'analyse vus par le prescripteur et le patient (P2) ──────
 .bb-resultats {
   display: flex; flex-direction: column; gap: 6px; margin: 8px 0;
+  font-variant-numeric: tabular-nums;
   &__row {
     display: grid; grid-template-columns: minmax(140px, 1.5fr) minmax(90px, .8fr) minmax(80px, .8fr) auto; gap: 8px; align-items: center;
     padding: 8px 12px; border-radius: 12px; background: var(--bb-surface-1); border: 1px solid var(--bb-border-light); font-size: 13px;
-    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); }
-    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg); }
+    // ✦ Refonte UI : barre laterale de gravite — lisible meme sans couleur
+    &--anormal  { border-color: var(--bb-warning-border); background: var(--bb-warning-bg); box-shadow: inset 4px 0 0 var(--bb-warning); }
+    &--critique { border-color: var(--bb-danger-border);  background: var(--bb-danger-bg);  box-shadow: inset 4px 0 0 var(--bb-danger); }
     @media (max-width: 560px) { grid-template-columns: 1fr 1fr; }
   }
   &__lib { color: var(--bb-text-primary); font-weight: 600; }
@@ -199,6 +252,296 @@
   &__ref { font-size: 12px; color: var(--bb-text-secondary); }
 }
 [data-theme="dark"] .bb-resultats {
-  &__row--anormal  { background: rgba(245, 158, 11, .10); }
-  &__row--critique { background: rgba(239, 68, 68, .12); }
+  &__row--anormal  { background: color-mix(in srgb, var(--bb-warning) 10%, transparent); }
+  &__row--critique { background: color-mix(in srgb, var(--bb-danger) 12%, transparent); }
 }
+
+@keyframes bb-hop-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+// ── L'explication du médecin, avant les chiffres (addendum du 2026-09-28) ──
+// Elle passe avant la valeur brute parce que c'est elle que le patient doit
+// lire en premier : « Hémoglobine 6 g/dL » ne lui dit rien tout seul.
+// Ces règles sont ici et non dans un .scss de composant : `parcours.component`
+// n'a pas de `styleUrl`, ses styles viennent de cette feuille globale.
+.bb-explication {
+  margin: 10px 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-info-bg);
+  border: 1px solid var(--bb-info-border);
+  border-left: 3px solid var(--bb-info);
+
+  &__titre {
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    font-size: 12.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    color: var(--bb-info);
+    i { font-size: 12px; }
+  }
+
+  &__texte {
+    margin: 7px 0 0;
+    font-size: 13.5px; line-height: 1.6;
+    color: var(--bb-text-primary);
+    white-space: pre-wrap;
+  }
+}
+
+// En sombre, `--bb-info` (#1E40AF) sur #0A0F2D serait illisible. Feuille
+// globale : pas de `:host-context` ici, l'attribut est porté par <html>.
+[data-theme='dark'] .bb-explication {
+  border-left-color: #60A5FA;
+  .bb-explication__titre { color: #60A5FA; }
+}
+
+// ── Panneau du scan patient au comptoir du laboratoire (2026-09-29) ──
+// Volontairement sobre : il montre ce qui reste a faire, pas un dossier.
+.bb-scan {
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-xl); padding: 1rem 1.15rem; margin-bottom: 14px;
+  box-shadow: var(--bb-shadow-sm);
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  &__patient {
+    display: block; font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; color: var(--bb-text-primary);
+  }
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+  &__vide { margin: 0; font-size: 13px; color: var(--bb-text-secondary); }
+
+  &__demande {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 12px; margin-top: 8px; text-decoration: none;
+    border-radius: var(--bb-radius); border: 1px solid var(--bb-border-light);
+    background: var(--bb-surface-1); color: var(--bb-text-primary);
+    &:hover { border-color: var(--bb-primary); }
+  }
+  &__num { font-family: var(--bb-font-display); font-weight: 800; font-size: 13px; }
+  &__examens { font-size: 12.5px; color: var(--bb-text-secondary); flex-basis: 100%; }
+
+  // Un examen a jeun se signale : le laborantin doit le savoir avant de prelever.
+  &__jeune {
+    padding: 3px 9px; border-radius: var(--bb-radius-pill);
+    background: var(--bb-warning-bg); border: 1px solid var(--bb-warning-border);
+    color: var(--bb-warning); font-size: 11.5px; font-weight: 700;
+  }
+}
+
+[data-theme='dark'] .bb-scan {
+  &__demande { background: rgba(255, 255, 255, .04); }
+  &__jeune { color: #FBBF24; }
+}
+
+// ── Note explicative dans un panneau (2026-09-30) ────────────────────
+// Posee la ou un champ vient de disparaitre : sans elle, l'agent se demande
+// ou est passee la date du rendez-vous.
+.bb-hop-note {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 0; padding: 11px 13px;
+  border-radius: var(--bb-radius);
+  background: var(--bb-info-bg); border: 1px solid var(--bb-info-border);
+  font-size: 13px; line-height: 1.55; color: var(--bb-text-primary);
+
+  i { font-size: 14px; color: var(--bb-info); flex-shrink: 0; margin-top: 2px; }
+}
+
+// En sombre, --bb-info (#1E40AF) sur #0A0F2D serait illisible.
+[data-theme='dark'] .bb-hop-note i { color: #60A5FA; }
+
+// ── Creer le dossier au comptoir (EF-03-01) ──────────────────────────
+//
+// Le design suit l'espace de l'accueil — mêmes cartes, même grille — et non la
+// page publique d'inscription, qui s'adresse à quelqu'un seul chez lui.
+
+.bb-adm-cta {
+  // Un `div`, pas un `p` : `.bb-hop-empty p` impose une marge et une graisse
+  // qui ecrasaient le bouton contre le texte.
+  margin-top: 18px;
+}
+
+// Ce qui est exige se voit, comme sur le formulaire public.
+.bb-req { color: var(--bb-danger); font-weight: 700; }
+
+.bb-adm-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+
+  // **Le modal se centre dans la zone de travail, pas dans la fenêtre.**
+  //
+  // La barre latérale est un panneau Material : elle vit dans son propre
+  // contexte d'empilement et peint par-dessus quoi qu'on mette ici — un
+  // `z-index` plus haut n'y change rien, essayé. Plutôt que de déplacer le
+  // modal dans le `body` (CDK Overlay, du câblage pour un formulaire), on
+  // décale le voile de la largeur de la barre : elle reste visible, l'agent
+  // garde ses repères, et la boîte est entière.
+  //
+  // Sous 768px la barre se superpose au lieu d'être ancrée : le décalage
+  // disparaît avec elle.
+  @media (min-width: 769px) { left: var(--bb-sidebar-width); }
+  display: flex;
+  // **`flex-start`, pas `center`.** Centrer dans un conteneur qui défile rogne
+  // le haut dès que la boîte dépasse la hauteur de l'écran : le titre passait
+  // sous le bord. `margin: auto` sur l'enfant centre quand ça tient, et ne
+  // coupe rien quand ça ne tient pas.
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+  background: rgba(8, 24, 16, .55);
+  backdrop-filter: blur(3px);
+  animation: bb-adm-voile-entre .18s ease-out;
+}
+
+@keyframes bb-adm-voile-entre { from { opacity: 0 } to { opacity: 1 } }
+
+.bb-adm-neuf {
+  width: min(760px, 100%);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  animation: bb-adm-boite-entre .22s cubic-bezier(.2, .8, .3, 1);
+
+  // ── L'en-tête, séparé du formulaire ───────────────────────────────
+  &__tete {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 1.35rem 1.5rem 1.15rem;
+    border-bottom: 1px solid var(--bb-border);
+    background: var(--bb-surface-1);
+  }
+
+  &__icone {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    i { font-size: 19px; }
+  }
+
+  &__titre {
+    margin: 0 0 .2rem;
+    font-family: var(--bb-font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -.4px;
+    color: var(--bb-text-primary);
+  }
+
+  &__sub {
+    margin: 0;
+    font-size: .8125rem;
+    line-height: 1.5;
+    color: var(--bb-text-muted);
+  }
+
+  &__fermer {
+    margin-left: auto;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--bb-text-muted);
+    cursor: pointer;
+    transition: background var(--bb-transition), color var(--bb-transition);
+
+    &:hover { background: var(--bb-surface-2); color: var(--bb-text-primary); }
+  }
+
+  &__corps { padding: 1.35rem 1.5rem; }
+
+  &__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: .75rem 1rem;
+
+    @media (max-width: 620px) { grid-template-columns: 1fr; }
+  }
+
+  // Le pied se détache : on sait où est l'action, même après avoir fait
+  // défiler un formulaire de huit champs.
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .7rem;
+    padding: 1rem 1.5rem 1.15rem;
+    border-top: 1px solid var(--bb-border);
+    background: var(--bb-surface-1);
+  }
+}
+
+@keyframes bb-adm-boite-entre {
+  from { opacity: 0; transform: translateY(10px) scale(.985) }
+  to   { opacity: 1; transform: none }
+}
+
+// Ce qui est exigé se voit, comme sur le formulaire public.
+.bb-req { color: var(--bb-danger); font-weight: 700; }
+
+.bb-adm-mdp {
+  width: min(440px, 100%);
+  margin: auto;
+  padding: 1.6rem 1.6rem 1.35rem;
+  text-align: center;
+  animation: bb-adm-boite-entre .22s cubic-bezier(.2, .8, .3, 1);
+
+  &__icone {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto .9rem;
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--bb-primary) 14%, transparent);
+    color: var(--bb-primary);
+
+    i { font-size: 22px; }
+  }
+
+  // Lu à voix haute au comptoir, parfois dans le bruit : gros, espacé, et en
+  // chasse fixe pour qu'un 1 ne se confonde pas avec un l.
+  &__code {
+    margin: 1.1rem 0;
+    padding: .95rem 1rem;
+    border-radius: var(--bb-radius);
+    border: 1px dashed color-mix(in srgb, var(--bb-primary) 45%, var(--bb-border));
+    background: var(--bb-surface-1);
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: var(--bb-text-primary);
+    user-select: all;
+  }
+
+  &__dit {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    margin: 0 0 1.2rem;
+    text-align: left;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--bb-warning);
+
+    i { font-size: 15px; flex: none; margin-top: 1px; }
+  }
+}
+

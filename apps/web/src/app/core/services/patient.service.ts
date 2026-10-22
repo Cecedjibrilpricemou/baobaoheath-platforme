@@ -1,12 +1,47 @@
 // core/services/patient.service.ts
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import type {
+  CommandeView,
+  FactureView,
+  ModeRemise,
+  PayerCommandeDto,
+  CreerDemandeRendezVousDto, DemandeRendezVousView, CarteAssuranceView } from '@baobaoheath/shared-types';
 import { ApiService } from './api.service';
 import { Patient, PatientCreatePayload, PatientUpdatePayload, Consultation } from '../models/patient.model';
 import { ApiResponse, PaginatedData } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class PatientService {
+
+  /**
+   * Les cartes d'assurance du patient connecte (lot assurance). Le QR de
+   * chaque carte porte un jeton opaque ; c'est le comptoir qui le verifie.
+   */
+  mesCartesAssurance(): Observable<ApiResponse<CarteAssuranceView[]>> {
+    return this.api.get<ApiResponse<CarteAssuranceView[]>>('/assurance/mes-cartes');
+  }
+
+  /** La photo d'une de ses cartes : le jeton voyage dans le corps, pas dans l'URL. */
+  photoCarteAssurance(jetonCarte: string): Observable<Blob> {
+    return this.api.postBlob('/assurance/mes-cartes/photo', { jetonCarte });
+  }
+
+  // ── Prise de rendez-vous a distance (addendum, point 6) ──────────
+  // Le patient demande depuis chez lui ; le medecin repond en fixant l'heure.
+
+  mesDemandesRendezVous(): Observable<ApiResponse<DemandeRendezVousView[]>> {
+    return this.api.get<ApiResponse<DemandeRendezVousView[]>>('/patients/me/demandes-rendez-vous');
+  }
+
+  creerDemandeRendezVous(dto: CreerDemandeRendezVousDto): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>('/patients/me/demandes-rendez-vous', dto);
+  }
+
+  annulerDemandeRendezVous(id: string): Observable<ApiResponse<DemandeRendezVousView>> {
+    return this.api.post<ApiResponse<DemandeRendezVousView>>(`/patients/me/demandes-rendez-vous/${id}/annuler`, {});
+  }
+
   private api = inject(ApiService);
 
   createPatient(payload: PatientCreatePayload): Observable<ApiResponse<{ patient: Patient }>> {
@@ -48,5 +83,40 @@ export class PatientService {
 
   getPatientById(id: string): Observable<ApiResponse<Patient>> {
     return this.api.get<ApiResponse<Patient>>(`/patients/${id}`);
+  }
+
+  // --- P6 / EF-07 : la commande en pharmacie ---------------------------
+
+  /**
+   * Les commandes du patient.
+   *
+   * Il n'avait aucun moyen de les voir : l'appel partait, une pharmacie
+   * prenait, et c'est pourtant à lui de dire comment être servi.
+   */
+  mesCommandes(): Observable<ApiResponse<CommandeView[]>> {
+    return this.api.get<ApiResponse<CommandeView[]>>('/commandes/mes-commandes');
+  }
+
+  /** Retrait ou livraison. **Le retrait n'est pas un repli.** */
+  choisirModeRemise(idCommande: string, mode: ModeRemise): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/mode-remise`, { mode });
+  }
+
+  /**
+   * Payer le panier de la commande.
+   *
+   * **Aucun montant n'est envoyé.** Il est figé en base au chiffrage par
+   * l'officine ; un montant qui part du navigateur est un montant qu'on peut
+   * baisser. Ce qui revient est la facture, avec son lien de paiement — et
+   * c'est le rappel de la passerelle qui fera avancer la commande, pas cet
+   * appel.
+   */
+  payerCommande(idCommande: string, dto: PayerCommandeDto): Observable<ApiResponse<FactureView>> {
+    return this.api.post<ApiResponse<FactureView>>(`/commandes/${idCommande}/payer`, dto);
+  }
+
+  /** Renoncer, avec un motif. */
+  annulerCommande(idCommande: string, motif: string): Observable<ApiResponse<CommandeView>> {
+    return this.api.post<ApiResponse<CommandeView>>(`/commandes/${idCommande}/annuler`, { motif });
   }
 }

@@ -1,8 +1,17 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
+import { AuthRequest } from '../middlewares/auth.middleware';
+import * as demandeRdv from '../services/demande-rendez-vous.service';
+import type { DemandeRendezVousView } from '@baobaoheath/shared-types';
 import {
   getDashboardStatsController,
   getConsultationsAValiderController,
   validerConsultationController,
+  getOrientationsController,
+  fixerRendezVousController,
+  getAgendaController,
+  changerStatutRendezVousController,
+  getResultatsALibererController,
+  libererResultatsController,
   getReferencementsController,
   repondreReferencementController,
   sendMessageController,
@@ -13,6 +22,11 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import {
   validerConsultationSchema,
+  accepterDemandeRendezVousSchema,
+  fixerRendezVousSchema,
+  refuserDemandeRendezVousSchema,
+  libererResultatsSchema,
+  statutRendezVousSchema,
   repondreReferencementSchema,
   sendMessageSchema,
 } from '../validators/api.schemas';
@@ -30,7 +44,40 @@ router.get('/dashboard', getDashboardStatsController);
 router.get('/consultations', getConsultationsAValiderController);
 router.put('/consultations/:id/valider', validateBody(validerConsultationSchema), validerConsultationController);
 
+// ─── Demandes de rendez-vous a distance (addendum, point 6) ───
+// Accepter, c'est fixer l'heure — et c'est ce geste qui ouvre la visite.
+router.get('/demandes', requireRole('MEDECIN'), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView[] = await demandeRdv.mesDemandesRecues(req.user!.userId);
+  res.json({ success: true, data });
+});
+
+router.post('/demandes/:id/accepter', requireRole('MEDECIN'), validateBody(accepterDemandeRendezVousSchema), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView = await demandeRdv.accepterDemande(req.user!.userId, req.params['id'] as string, req.body);
+  res.json({ success: true, data, message: 'Rendez-vous fixe : le patient est prevenu' });
+});
+
+router.post('/demandes/:id/refuser', requireRole('MEDECIN'), validateBody(refuserDemandeRendezVousSchema), async (req: AuthRequest, res: Response) => {
+  const data: DemandeRendezVousView = await demandeRdv.refuserDemande(req.user!.userId, req.params['id'] as string, req.body.motif);
+  res.json({ success: true, data });
+});
+
+// ─── Rendez-vous ──────────────────────────────────────────
+// Addendum du 2026-09-28 : c'est le médecin qui fixe le créneau, pas l'accueil.
+router.post('/orientations/:idEpisode/rendez-vous', requireRole('MEDECIN'), validateBody(fixerRendezVousSchema), fixerRendezVousController);
+router.get('/rendez-vous', requireRole('MEDECIN'), getAgendaController);
+router.patch('/rendez-vous/:id/statut', requireRole('MEDECIN'), validateBody(statutRendezVousSchema), changerStatutRendezVousController);
+
+// ─── Résultats d'analyse à libérer ────────────────────────
+// Addendum du 2026-09-28 : le patient ne voit un résultat qu'après qu'un
+// médecin l'a libéré, avec la possibilité d'y joindre une explication en
+// langage clair. `requireRole('MEDECIN')` est explicite ici : le routeur laisse
+// aussi passer les administrateurs, qui n'ont rien à libérer.
+router.get('/resultats', requireRole('MEDECIN'), getResultatsALibererController);
+router.post('/resultats/:id/liberer', requireRole('MEDECIN'), validateBody(libererResultatsSchema), libererResultatsController);
+
 // ─── Référencements ───────────────────────────────────────
+// EF-03-05 : les patients que l'accueil a orientes vers ce medecin.
+router.get('/orientations', getOrientationsController);
 router.get('/referencements', getReferencementsController);
 router.put('/referencements/:id/repondre', validateBody(repondreReferencementSchema), repondreReferencementController);
 

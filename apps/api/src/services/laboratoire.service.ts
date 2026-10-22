@@ -1,10 +1,16 @@
 // src/services/laboratoire.service.ts
 // P2 — Laboratoire (EF-04) : file des demandes, prelevement et echantillons,
-// saisie ou import des resultats, validation nominative du biologiste,
+// saisie ou import des resultats, validation nominative du laborantin,
 // resultats critiques (alerte, accuse de lecture, escalade), diffusion au
 // patient et courbes d'evolution.
 import { InterpretationResultat, Prisma, StatutDemandeAnalyse } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import {
+  messagePatientInformation,
+  messageProfessionnelIntervention,
+  messageProfessionnelUrgent,
+  messageRendezVous,
+} from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { buildPatientWhereForUser } from './access-control.service';
@@ -26,15 +32,25 @@ import type {
   EnregistrerPrelevementDto,
   EvolutionResultatView,
   ExamenSuiviView,
+  LibererResultatsDto,
   PlanifierPrelevementDto,
+  ResultatALibererView,
+  ScanLaboratoireView,
   SaisirResultatsDto,
   TableauDeBordLaboView,
   ValiderResultatsDto,
 } from '@baobaoheath/shared-types';
 
-// Delais du circuit critique (EF-04-08, EF-04-09), en minutes.
+// Delais du circuit critique (EF-04-08), en minutes.
 const ESCALADE_APRES_MIN = Number(process.env.LABO_ESCALADE_MINUTES ?? 30);
-const DIFFUSION_PATIENT_APRES_MIN = Number(process.env.LABO_DIFFUSION_PATIENT_MINUTES ?? 24 * 60);
+
+// Garde-fou de la liberation (addendum du 2026-09-28). Le patient ne voit ses
+// resultats que si un medecin les libere : sans relance ni escalade, un medecin
+// absent le laisserait sans reponse indefiniment. On remue le medecin, puis
+// l'administrateur de sa structure — jamais le patient, ce qui reviendrait a
+// retablir la diffusion automatique qu'on vient precisement de supprimer.
+const RELANCE_LIBERATION_APRES_MIN = Number(process.env.LABO_RELANCE_LIBERATION_MINUTES ?? 12 * 60);
+const ESCALADE_LIBERATION_APRES_MIN = Number(process.env.LABO_ESCALADE_LIBERATION_MINUTES ?? 48 * 60);
 
 // Tri de la file : urgence d'abord (ordre de declaration de l'enum en base :
 // ROUTINE < URGENT < URGENCE_VITALE), puis la plus ancienne (EF-04-01).
@@ -108,6 +124,72 @@ export async function fileDesDemandes(
   return { items: items.map(versDemandeView), total, page: opts.page, limit: opts.limit };
 }
 
+/**
+ * Scan du QR patient au comptoir du laboratoire.
+ *
+ * Le patient arrive avec son code ; le laborantin le scanne et voit ce qu'il y
+ * a a faire pour lui, sans chercher dans la file ni lui demander son nom.
+ *
+ * **Le scan ouvre une fenetre, pas le dossier.** On rend l'identite minimale et
+ * les demandes encore a traiter *dans ce laboratoire* — ni les resultats
+ * valides, ni les ordonnances, ni l'historique. Un QR est un identifiant, pas
+ * une cle du dossier medical : le pharmacien qui scanne le meme code voit des
+ * ordonnances et aucune analyse, et c'est voulu.
+ */
+export async function scanPatient(user: JwtPayload, qrCode: string): Promise<ScanLaboratoireView> {
+  const idLaboratoire = await laboratoireDe(user);
+
+  const patient = await prisma.patientProfile.findUnique({
+    where: { qrCode },
+    select: {
+      id: true, dateNaissance: true, sexe: true,
+      utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+    },
+  });
+  if (!patient) throw new NotFoundError('Patient non trouve');
+
+  const demandes = await prisma.demandeAnalyse.findMany({
+    where: {
+      idPatient: patient.id,
+      idLaboratoire,
+      // Ce qui reste a faire. Une demande validee est close pour le laboratoire,
+      // et l'afficher ici ferait croire qu'il y a encore un geste a poser.
+      statut: { in: ['TRANSMISE', 'RECUE', 'PRELEVEE', 'EN_ANALYSE'] },
+    },
+    select: {
+      id: true, numero: true, statut: true, urgence: true,
+      consignesPatient: true, creeLe: true,
+      lignes: { select: { examen: { select: { libelle: true, aJeun: true } } } },
+    },
+    // L'urgence d'abord, puis la plus ancienne : le meme ordre que la file.
+    orderBy: [{ urgence: 'desc' }, { creeLe: 'asc' }],
+    take: 20,
+  });
+
+  return {
+    patient: {
+      id: patient.id,
+      prenom: patient.utilisateur.prenom,
+      nom: patient.utilisateur.nom,
+      dateNaissance: patient.dateNaissance.toISOString(),
+      sexe: patient.sexe,
+      telephone: patient.utilisateur.telephone,
+    },
+    demandes: demandes.map((d) => ({
+      id: d.id,
+      numero: d.numero,
+      statut: d.statut,
+      urgence: d.urgence,
+      creeLe: d.creeLe.toISOString(),
+      consignesPatient: d.consignesPatient,
+      examens: d.lignes.map((l) => l.examen.libelle),
+      // Le laborantin doit le savoir avant de prelever.
+      aJeun: d.lignes.some((l) => l.examen.aJeun),
+    })),
+    totalDemandes: demandes.length,
+  };
+}
+
 export async function getDemande(user: JwtPayload, idDemande: string): Promise<DemandeAnalyseView> {
   return versDemandeView(await demandeDuLabo(user, idDemande));
 }
@@ -145,7 +227,9 @@ export async function planifierPrelevement(user: JwtPayload, idDemande: string, 
       metadonnees: { idDemande: d.id, idEpisode: d.idEpisode },
     });
     const { nomCourt } = await getIdentitePlateforme();
-    await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: prelevement prevu ${ou}${quand}. Details dans votre espace.`);
+    // EF-11-02 : un rendez-vous, sans dire pour quoi. La date et le lieu
+    // restent, le patient devant pouvoir se presenter.
+    await envoyerSmsSimule(patientUser.telephone, messageRendezVous(nomCourt, quand.trim(), ou.trim() || undefined));
   }
   return versDemandeView(maj);
 }
@@ -236,7 +320,10 @@ export async function saisirResultats(user: JwtPayload, idDemande: string, dto: 
 
 // ── EF-04-05 : validation nominative, bloquante avant diffusion ────────
 export async function validerResultats(user: JwtPayload, idDemande: string, dto: ValiderResultatsDto): Promise<DemandeAnalyseView> {
-  if (user.role !== 'BIOLOGISTE') throw new ForbiddenError('Seul un biologiste peut valider des resultats');
+  // Le role BIOLOGISTE a ete supprime (addendum du 2026-09-28, point 4) :
+  // il n'y a pas de biologiste dans ces laboratoires. La validation reste
+  // nominative et bloquante — c'est le laborantin qui signe.
+  if (user.role !== 'TECHNICIEN_LABO') throw new ForbiddenError('Seul un laborantin peut valider des resultats');
   const d = await demandeDuLabo(user, idDemande);
   exigerStatut(d, ['EN_ANALYSE'], 'valider');
   const manquantes = d.lignes.filter((l) => !l.resultat);
@@ -252,9 +339,10 @@ export async function validerResultats(user: JwtPayload, idDemande: string, dto:
     return tx.demandeAnalyse.update({
       where: { id: d.id },
       data: {
-        statut: 'VALIDEE', valideeLe: maintenant, idValideur: user.userId, commentaireBiologiste: dto.commentaire ?? null,
-        // Sans resultat critique, le patient est informe aussitot (EF-04-09).
-        diffuseePatientLe: critiques.length ? null : maintenant,
+        statut: 'VALIDEE', valideeLe: maintenant, idValideur: user.userId, commentaireLaboratoire: dto.commentaire ?? null,
+        // `diffuseePatientLe` reste volontairement vide : la validation du
+        // laboratoire ne rend plus rien visible au patient. Il faut qu'un
+        // medecin libere (addendum du 2026-09-28).
       },
       include: DEMANDE_INCLUDE,
     });
@@ -272,19 +360,24 @@ export async function validerResultats(user: JwtPayload, idDemande: string, dto:
         lienAction: '/hopital/alertes',
         metadonnees: { idDemande: d.id, idEpisode: d.idEpisode, critique: true },
       });
-      await envoyerSmsSimule(prescripteur.telephone, `${nomCourt}: RESULTAT CRITIQUE demande ${d.numero}. Connectez-vous pour accuser lecture.`);
+      // EF-11-02 : meme vers un professionnel, un SMS s'affiche sur un ecran
+      // verrouille. Le numero de demande est opaque et suffit a retrouver le
+      // dossier ; l'urgence passe, la nature du resultat non.
+      await envoyerSmsSimule(prescripteur.telephone, messageProfessionnelUrgent(nomCourt, d.numero));
     } else {
       await notifierSansBloquer({
         idUtilisateur: prescripteur.id,
         type: 'RESULTATS_DISPONIBLES',
-        titre: 'Resultats valides',
-        contenu: `Les resultats de la demande ${d.numero} (${d.patient.utilisateur.prenom} ${d.patient.utilisateur.nom}) sont disponibles.`,
-        lienAction: `/hopital/episodes/${d.idEpisode}`,
+        titre: 'Resultats a liberer',
+        // Le patient attend ce geste : tant que personne ne libere, il ne voit rien.
+        contenu: `Les resultats de la demande ${d.numero} (${d.patient.utilisateur.prenom} ${d.patient.utilisateur.nom}) sont valides. Le patient ne les verra qu'apres votre liberation.`,
+        lienAction: '/medecin/resultats',
         metadonnees: { idDemande: d.id, idEpisode: d.idEpisode },
       });
     }
   }
-  if (!critiques.length) await informerPatient(d.idPatient, d.id, d.numero, d.idEpisode);
+  // Le patient n'est plus informe ici : c'est la liberation par le medecin qui
+  // le previendra, avec l'explication qui va avec.
   return versDemandeView(maj);
 }
 
@@ -301,15 +394,88 @@ async function informerPatient(idPatient: string, idDemande: string, numero: str
     metadonnees: { idDemande, idEpisode },
   });
   const { nomCourt } = await getIdentitePlateforme();
-  await envoyerSmsSimule(patientUser.telephone, `${nomCourt}: vos resultats d'analyses sont disponibles dans votre espace.`);
+  // EF-11-02 : le patient apprend qu'une information l'attend, pas laquelle.
+  await envoyerSmsSimule(patientUser.telephone, messagePatientInformation(nomCourt));
 }
 
-async function diffuserSiPossible(idDemande: string): Promise<boolean> {
-  const d = await prisma.demandeAnalyse.findUnique({ where: { id: idDemande }, select: { id: true, numero: true, idPatient: true, idEpisode: true, statut: true, diffuseePatientLe: true, _count: { select: { alertesCritiques: { where: { accuseeLe: null } } } } } });
-  if (!d || d.statut !== 'VALIDEE' || d.diffuseePatientLe || d._count.alertesCritiques > 0) return false;
-  await prisma.demandeAnalyse.update({ where: { id: d.id }, data: { diffuseePatientLe: new Date() } });
+// ── Liberation des resultats par le medecin (addendum du 2026-09-28) ───
+//
+// Un resultat d'analyse est ecrit pour un soignant : « TSH 0,21 mUI/L, hors
+// bornes ». Le patient qui lit cela seul ne sait pas s'il doit s'inquieter.
+// C'est pourquoi la visibilite n'est plus un effet de la validation ni du temps
+// qui passe, mais un geste de medecin, auquel il peut joindre une explication.
+
+/** File « a liberer » d'un medecin : ses demandes validees que le patient ne voit pas encore. */
+export async function mesResultatsALiberer(user: JwtPayload): Promise<ResultatALibererView[]> {
+  const rows = await prisma.demandeAnalyse.findMany({
+    where: {
+      statut: 'VALIDEE',
+      diffuseePatientLe: null,
+      // Le prescripteur, ou le medecin responsable de l'episode : les deux
+      // suivent ce patient.
+      OR: [{ idPrescripteur: user.userId }, { episode: { idResponsable: user.userId } }],
+    },
+    select: {
+      id: true, numero: true, valideeLe: true, idEpisode: true,
+      patient: { select: { id: true, utilisateur: { select: { prenom: true, nom: true } } } },
+      laboratoire: { select: { id: true, nom: true } },
+      lignes: { select: { resultat: { select: { interpretation: true } } } },
+    },
+    // Le plus ancien d'abord : c'est celui dont le patient attend depuis le plus longtemps.
+    orderBy: { valideeLe: 'asc' },
+    take: 100,
+  });
+
+  return rows.map((d) => ({
+    idDemande: d.id,
+    numero: d.numero,
+    valideeLe: (d.valideeLe ?? new Date()).toISOString(),
+    idEpisode: d.idEpisode,
+    nbExamens: d.lignes.length,
+    contientCritique: d.lignes.some((l) => l.resultat?.interpretation === 'CRITIQUE'),
+    contientAnormal: d.lignes.some((l) => l.resultat?.interpretation === 'ANORMAL'),
+    patient: { id: d.patient.id, prenom: d.patient.utilisateur.prenom, nom: d.patient.utilisateur.nom },
+    laboratoire: d.laboratoire,
+  }));
+}
+
+export async function libererResultats(user: JwtPayload, idDemande: string, dto: LibererResultatsDto): Promise<DemandeAnalyseView> {
+  if (user.role !== 'MEDECIN') throw new ForbiddenError('Seul un medecin peut liberer des resultats');
+
+  const d = await prisma.demandeAnalyse.findUnique({
+    where: { id: idDemande },
+    select: { id: true, numero: true, statut: true, diffuseePatientLe: true, idPrescripteur: true, idPatient: true, idEpisode: true, episode: { select: { idResponsable: true } } },
+  });
+  if (!d) throw new NotFoundError('Demande introuvable');
+  if (d.idPrescripteur !== user.userId && d.episode.idResponsable !== user.userId) {
+    throw new ForbiddenError('Vous ne suivez pas ce patient');
+  }
+  if (d.statut !== 'VALIDEE') throw new ConflictError('Les resultats ne sont pas encore valides par le laboratoire');
+  if (d.diffuseePatientLe) throw new ConflictError('Ces resultats sont deja accessibles au patient');
+
+  const maintenant = new Date();
+  const commentaire = dto.commentaire?.trim() || null;
+
+  await prisma.$transaction(async (tx) => {
+    // Attribution atomique : deux medecins qui liberent en meme temps donnent un
+    // gagnant et un perdant, jamais deux notifications au patient.
+    const prise = await tx.demandeAnalyse.updateMany({
+      where: { id: d.id, statut: 'VALIDEE', diffuseePatientLe: null },
+      data: { diffuseePatientLe: maintenant, idLiberePar: user.userId, commentaireMedecin: commentaire },
+    });
+    if (prise.count === 0) throw new ConflictError('Ces resultats viennent d etre liberes');
+
+    // Liberer, c'est avoir lu. Exiger en plus un accuse separe ferait tourner
+    // l'escalade critique contre un medecin qui a deja fait le travail.
+    await tx.alerteResultatCritique.updateMany({
+      where: { idDemande: d.id, accuseeLe: null },
+      data: { accuseeLe: maintenant },
+    });
+  });
+
   await informerPatient(d.idPatient, d.id, d.numero, d.idEpisode);
-  return true;
+  const maj = await prisma.demandeAnalyse.findUniqueOrThrow({ where: { id: d.id }, include: DEMANDE_INCLUDE });
+  return versDemandeView(maj);
 }
 
 // ── EF-04-08 : accuse de lecture du prescripteur ───────────────────────
@@ -328,12 +494,14 @@ export async function accuserAlerte(user: JwtPayload, idAlerte: string): Promise
   if (!a) throw new NotFoundError('Alerte introuvable');
   if (a.accuseeLe) return versAlerteView(a);
   const maj = await prisma.alerteResultatCritique.update({ where: { id: a.id }, data: { accuseeLe: new Date() }, include: ALERTE_INCLUDE });
-  await diffuserSiPossible(a.idDemande);
+  // L'accuse de lecture ne diffuse plus rien au patient : il dit que le
+  // soignant a vu l'alerte, pas qu'il a explique le resultat. La visibilite
+  // passe par `libererResultats` (addendum du 2026-09-28).
   return versAlerteView(maj);
 }
 
-// ── Job : escalade des alertes non accusees, diffusion differee ────────
-export async function traiterAlertesCritiques(maintenant = new Date()): Promise<{ escaladees: number; diffusees: number }> {
+// ── Job : escalade des alertes non accusees, relance des liberations ───
+export async function traiterAlertesCritiques(maintenant = new Date()): Promise<{ escaladees: number; relancees: number; escaladesLiberation: number }> {
   const limiteEscalade = new Date(maintenant.getTime() - ESCALADE_APRES_MIN * 60_000);
   const aEscalader = await prisma.alerteResultatCritique.findMany({
     where: { accuseeLe: null, escaladeeLe: null, creeLe: { lt: limiteEscalade } },
@@ -359,17 +527,76 @@ export async function traiterAlertesCritiques(maintenant = new Date()): Promise<
       lienAction: '/hopital/alertes',
       metadonnees: { idAlerte: a.id, idDemande: a.idDemande, critique: true },
     });
-    await envoyerSmsSimule(admin.telephone, `${nomCourt}: resultat critique sans accuse (demande ${a.demande.numero}). Intervention requise.`);
+    await envoyerSmsSimule(admin.telephone, messageProfessionnelIntervention(nomCourt, a.demande.numero));
   }
 
-  // Diffusion differee (EF-04-09) : passe le delai, le patient est informe meme sans accuse.
-  const limiteDiffusion = new Date(maintenant.getTime() - DIFFUSION_PATIENT_APRES_MIN * 60_000);
-  const enAttente = await prisma.demandeAnalyse.findMany({ where: { statut: 'VALIDEE', diffuseePatientLe: null, valideeLe: { lt: limiteDiffusion } }, select: { id: true, numero: true, idPatient: true, idEpisode: true } });
+  // Garde-fou de la liberation (addendum du 2026-09-28). Aucune branche de ce
+  // bloc ne touche `diffuseePatientLe` : on ne rend jamais un resultat visible
+  // sans qu'un medecin l'ait libere, sans quoi on aurait reintroduit la
+  // diffusion automatique par la fenetre.
+  const relancees = await relancerLiberations(maintenant);
+  const escaladesLiberation = await escaladerLiberations(maintenant);
+  return { escaladees, relancees, escaladesLiberation };
+}
+
+/** Premier rappel au medecin : ses resultats valides attendent d'etre liberes. */
+async function relancerLiberations(maintenant: Date): Promise<number> {
+  const limite = new Date(maintenant.getTime() - RELANCE_LIBERATION_APRES_MIN * 60_000);
+  const enAttente = await prisma.demandeAnalyse.findMany({
+    where: { statut: 'VALIDEE', diffuseePatientLe: null, relanceLiberationLe: null, valideeLe: { lt: limite } },
+    select: { id: true, numero: true, idPrescripteur: true, idEpisode: true, episode: { select: { idResponsable: true } } },
+    take: 200,
+  });
+
   for (const d of enAttente) {
-    await prisma.demandeAnalyse.update({ where: { id: d.id }, data: { diffuseePatientLe: maintenant } });
-    await informerPatient(d.idPatient, d.id, d.numero, d.idEpisode);
+    await prisma.demandeAnalyse.update({ where: { id: d.id }, data: { relanceLiberationLe: maintenant } });
+    // Le responsable de l'episode d'abord : c'est lui qui suit le patient
+    // aujourd'hui, le prescripteur a pu passer la main.
+    const idMedecin = d.episode.idResponsable ?? d.idPrescripteur;
+    await notifierSansBloquer({
+      idUtilisateur: idMedecin,
+      type: 'RESULTATS_DISPONIBLES',
+      titre: 'Des resultats attendent votre liberation',
+      contenu: `Les resultats de la demande ${d.numero} sont valides depuis plus de ${Math.round(RELANCE_LIBERATION_APRES_MIN / 60)} h. Le patient ne les verra pas tant que vous ne les aurez pas liberes.`,
+      lienAction: '/medecin/resultats',
+      metadonnees: { idDemande: d.id, idEpisode: d.idEpisode },
+    });
   }
-  return { escaladees, diffusees: enAttente.length };
+  return enAttente.length;
+}
+
+/** Second temps : l'administrateur de la structure est prevenu, pas le patient. */
+async function escaladerLiberations(maintenant: Date): Promise<number> {
+  const limite = new Date(maintenant.getTime() - ESCALADE_LIBERATION_APRES_MIN * 60_000);
+  const enAttente = await prisma.demandeAnalyse.findMany({
+    where: { statut: 'VALIDEE', diffuseePatientLe: null, escaladeLiberationLe: null, valideeLe: { lt: limite } },
+    select: {
+      id: true, numero: true, idEpisode: true,
+      episode: { select: { idStructure: true } },
+      prescripteur: { select: { prenom: true, nom: true } },
+    },
+    take: 200,
+  });
+
+  const { nomCourt } = await getIdentitePlateforme();
+  for (const d of enAttente) {
+    await prisma.demandeAnalyse.update({ where: { id: d.id }, data: { escaladeLiberationLe: maintenant } });
+    const admin = await prisma.utilisateur.findFirst({
+      where: { idStructure: d.episode.idStructure, role: 'ADMIN_STRUCTURE', estActif: true },
+      select: { id: true, telephone: true },
+    });
+    if (!admin) continue;
+    await notifierSansBloquer({
+      idUtilisateur: admin.id,
+      type: 'ESCALADE_CRITIQUE',
+      titre: 'Resultats non liberes au patient',
+      contenu: `Les resultats de la demande ${d.numero} (prescrits par ${d.prescripteur.prenom} ${d.prescripteur.nom}) sont valides depuis plus de ${Math.round(ESCALADE_LIBERATION_APRES_MIN / 60)} h et n'ont pas ete liberes. Le patient attend.`,
+      lienAction: '/hopital/alertes',
+      metadonnees: { idDemande: d.id, idEpisode: d.idEpisode },
+    });
+    await envoyerSmsSimule(admin.telephone, messageProfessionnelIntervention(nomCourt, d.numero));
+  }
+  return enAttente.length;
 }
 
 // ── Tableau de bord du laboratoire ─────────────────────────────────────
@@ -470,8 +697,8 @@ ${valide ? '' : '<div class="filigrane">NON VALIDE</div>'}
 <ul>${echantillons || '<li>—</li>'}</ul>
 <h2>Resultats</h2>
 <table><thead><tr><th>Examen</th><th>Resultat</th><th>Unite</th><th>Reference</th><th>Lecture</th><th>Commentaire</th></tr></thead><tbody>${lignes}</tbody></table>
-${d.commentaireBiologiste ? `<h2>Conclusion du biologiste</h2><p>${echapper(d.commentaireBiologiste)}</p>` : ''}
-<div class="sign"><div>${valide && d.valideur ? `Valide par ${echapper(d.valideur.prenom)} ${echapper(d.valideur.nom)}<br><small>Biologiste · ${date(d.valideeLe)}</small>` : 'Validation biologiste en attente'}</div></div>
+${d.commentaireLaboratoire ? `<h2>Conclusion du laboratoire</h2><p>${echapper(d.commentaireLaboratoire)}</p>` : ''}
+<div class="sign"><div>${valide && d.valideur ? `Valide par ${echapper(d.valideur.prenom)} ${echapper(d.valideur.nom)}<br><small>Laboratoire · ${date(d.valideeLe)}</small>` : 'Validation du laboratoire en attente'}</div></div>
 <footer><span>${echapper(identite.copyright)}</span><span>${[identite.telephone, identite.emailContact].filter(Boolean).map(echapper).join(' · ')}</span></footer>
 </body></html>`;
 }

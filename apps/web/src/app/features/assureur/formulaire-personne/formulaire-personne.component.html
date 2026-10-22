@@ -1,0 +1,82 @@
+<div class="bb-fp">
+  <div class="bb-fp__photo">
+    @if (apercu() ?? photoExistante(); as image) {
+      <img class="bb-fp__image" [src]="image" [alt]="'ASSUREUR.PERSONNE.PHOTO_ALT' | translate" width="120" height="150" />
+    } @else {
+      <div class="bb-fp__sans-photo" aria-hidden="true"><i class="pi pi-user"></i></div>
+    }
+    <label class="bb-fp__choisir">
+      <input type="file" accept="image/jpeg,image/png,image/webp" (change)="choisirPhoto($event)" />
+      <span><i class="pi pi-camera" aria-hidden="true"></i>
+        {{ ((apercu() ?? photoExistante()) ? 'ASSUREUR.PERSONNE.CHANGER_PHOTO' : 'ASSUREUR.PERSONNE.AJOUTER_PHOTO') | translate }}</span>
+    </label>
+    @if (erreurPhoto()) {
+      <p class="bb-fp__erreur" role="alert">{{ erreurPhoto() | translate }}</p>
+    } @else {
+      <p class="bb-fp__aide">{{ 'ASSUREUR.PERSONNE.PHOTO_AIDE' | translate }}</p>
+    }
+  </div>
+
+  <div class="bb-fp__grille">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.NOM' | translate }} *</mat-label>
+      <input matInput maxlength="80" autocomplete="off" [(ngModel)]="nom" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.PRENOMS' | translate }} *</mat-label>
+      <input matInput maxlength="120" autocomplete="off" [(ngModel)]="prenoms" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.SEXE' | translate }} *</mat-label>
+      <mat-select [(ngModel)]="sexe">
+        <mat-option value="F">{{ 'ASSUREUR.PERSONNE.SEXE_F' | translate }}</mat-option>
+        <mat-option value="M">{{ 'ASSUREUR.PERSONNE.SEXE_M' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.DATE_NAISSANCE' | translate }} *</mat-label>
+      <input matInput type="date" [max]="aujourdhui" [(ngModel)]="dateNaissance" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.LIEU_NAISSANCE' | translate }} *</mat-label>
+      <input matInput maxlength="120" [(ngModel)]="lieuNaissance" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.NATIONALITE' | translate }} *</mat-label>
+      <input matInput maxlength="60" [(ngModel)]="nationalite" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.TYPE_PIECE' | translate }} *</mat-label>
+      <mat-select [(ngModel)]="typePiece">
+        @for (t of typesPiece; track t) { <mat-option [value]="t">{{ 'HOPITAL.IDENTITES.PIECE_' + t | translate }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.NUMERO_PIECE' | translate }} *</mat-label>
+      <input matInput maxlength="40" autocomplete="off" [(ngModel)]="numeroPiece" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.DATE_DELIVRANCE' | translate }}</mat-label>
+      <input matInput type="date" [max]="aujourdhui" [(ngModel)]="dateDelivrance" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.DATE_EXPIRATION' | translate }}</mat-label>
+      <input matInput type="date" [min]="dateDelivrance()" [(ngModel)]="dateExpiration" />
+    </mat-form-field>
+    @if (!enEdition()) {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'ASSUREUR.PERSONNE.TELEPHONE' | translate }} *</mat-label>
+        <input matInput type="tel" inputmode="tel" maxlength="20" autocomplete="off" [(ngModel)]="telephone" />
+        <mat-hint>{{ 'ASSUREUR.PERSONNE.TELEPHONE_AIDE' | translate }}</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'ASSUREUR.PERSONNE.PREFECTURE' | translate }} *</mat-label>
+        <input matInput maxlength="80" [(ngModel)]="prefecture" />
+      </mat-form-field>
+    }
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-fp__large">
+      <mat-label>{{ 'ASSUREUR.PERSONNE.ADRESSE' | translate }}</mat-label>
+      <input matInput maxlength="200" [(ngModel)]="adresse" />
+    </mat-form-field>
+  </div>
+</div>

@@ -4,6 +4,7 @@ import {
   verifierStatutPaiementController,
   confirmerPaiementController,
   getHistoriquePaiementsController,
+  aReglerController,
   annulerPaiementController,
 } from '../controllers/paiement.controller';
 import { authenticate } from '../middlewares/auth.middleware';
@@ -17,6 +18,8 @@ router.use(authenticate);
 
 router.post('/', requireRole('PATIENT'), validateBody(initierPaiementSchema), initierPaiementController);
 router.get('/historique', requireRole('PATIENT'), getHistoriquePaiementsController);
+// Ce qui reste du, consultations non encore facturees comprises.
+router.get('/a-regler', requireRole('PATIENT'), aReglerController);
 router.get('/:id/statut', requireRole('PATIENT'), verifierStatutPaiementController);
 router.post('/:id/annuler', requireRole('PATIENT'), annulerPaiementController);
 router.post('/:id/confirmer', requireRole('ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'PHARMACIEN'), validateBody(confirmerPaiementSchema), confirmerPaiementController);

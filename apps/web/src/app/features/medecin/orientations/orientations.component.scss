@@ -1,0 +1,173 @@
+// features/medecin/orientations — meme grammaire que « Mes ordonnances ».
+
+// ✦ Refonte UI : accent de l'espace medecin (vert vif en sombre).
+:host {
+  display: block;
+  --ori-accent: var(--bb-primary);
+  --ori-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --ori-encart: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --ori-accent: var(--bb-bright);
+  --ori-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  // En sombre, `--bb-surface-1` vaut `--bb-surface-card` : le bandeau du
+  // motif disparaitrait dans la carte.
+  --ori-encart: color-mix(in srgb, #fff 5%, var(--bb-surface-card));
+}
+
+.bb-orient {
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 920px;
+  margin: 0 auto;
+
+  // ✦ Refonte UI : titres de section en display, trait d'accent
+  &__section {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 26px 0 12px;
+    &:first-of-type { margin-top: 0; }
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--ori-accent); flex-shrink: 0;
+    }
+  }
+
+  &__empty { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  &__empty-state {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--ori-accent); background: var(--ori-accent-soft);
+    }
+    p { margin: 0; font-weight: 600; }
+  }
+
+  &__card {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--ori-accent);
+    border-radius: var(--bb-radius-xl); padding: 1.2rem 1.35rem;
+    margin-bottom: 14px; box-shadow: var(--bb-shadow-sm);
+    transition: box-shadow var(--bb-transition);
+    &:hover { box-shadow: var(--bb-shadow-hover); }
+
+    // Un rendez-vous deja passe : le patient aurait du etre vu.
+    &--retard { border-color: var(--bb-danger-border); border-left-color: var(--bb-danger); }
+  }
+
+  &__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+
+  &__patient {
+    display: block; margin-bottom: 2px;
+    font-family: var(--bb-font-display); font-size: 16px; font-weight: 800;
+    color: var(--bb-text-primary);
+  }
+
+  &__meta { font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__motif {
+    margin: 0 0 12px; padding: 12px 14px;
+    border-radius: var(--bb-radius);
+    background: var(--ori-encart);
+    font-size: 13.5px; line-height: 1.55; color: var(--bb-text-primary);
+  }
+
+  &__actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 0 0 12px; }
+
+  &__lien {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 700;
+    color: var(--ori-accent); text-decoration: none;
+    &::after { content: '→'; transition: transform var(--bb-transition); }
+    &:hover::after { transform: translateX(3px); }
+  }
+
+  &__form {
+    margin: 4px 0 14px; padding: 16px;
+    border-radius: var(--bb-radius-lg);
+    background: var(--ori-encart);
+    animation: bb-ori-in 0.3s var(--bb-ease) both;
+  }
+
+  &__label {
+    display: block; margin-bottom: 6px;
+    font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
+  }
+
+  // ✦ Refonte UI : champs alignes sur les champs Material de l'application
+  &__champ {
+    width: 100%; box-sizing: border-box; margin-bottom: 12px; min-height: 44px;
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
+    color: var(--bb-text-primary);
+    font-family: inherit; font-size: 14px;
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { border-color: var(--bb-border-strong); }
+    &:focus { outline: none; border-color: var(--ori-accent); box-shadow: 0 0 0 4px var(--ori-accent-soft); }
+  }
+
+  // ✦ Refonte UI : boutons pilule de 40px, comme les boutons Material
+  &__btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 40px; padding: 0 18px; border-radius: var(--bb-radius-pill);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-card);
+    color: var(--bb-text-primary);
+    font-family: var(--bb-font-display); font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: border-color var(--bb-transition), color var(--bb-transition), background var(--bb-transition), transform var(--bb-transition);
+    &:hover:not(:disabled) { border-color: var(--ori-accent); color: var(--ori-accent); }
+    &:active:not(:disabled) { transform: scale(.98); }
+    &:disabled { opacity: .6; cursor: default; }
+
+    &--primaire {
+      background: var(--bb-primary); border-color: var(--bb-primary); color: #fff;
+      box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--bb-primary) 70%, transparent);
+      &:hover:not(:disabled) { color: #fff; border-color: var(--bb-mid); background: var(--bb-mid); }
+    }
+  }
+
+  &__pied {
+    margin: 0; padding-top: 10px; border-top: 1px solid var(--bb-border-light);
+    font-size: 12px; color: var(--bb-text-muted);
+  }
+
+  &__numero {
+    font-family: var(--bb-font-display); font-weight: 800;
+    letter-spacing: .4px; color: var(--bb-text-secondary);
+  }
+}
+
+// Le badge de date. `bb-badge` n'existe pas globalement : il est defini ici.
+.bb-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: var(--bb-radius-pill);
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  background: var(--bb-surface-2); color: var(--bb-text-secondary);
+
+  i { font-size: 12px; }
+
+  &--info   { background: var(--bb-info-bg);   color: var(--bb-info); }
+  &--danger { background: var(--bb-danger-bg); color: var(--bb-danger); }
+}
+
+@keyframes bb-ori-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-orient__form { animation: none; }
+}
+
+// ✦ Refonte UI : couleurs sombres codees en dur retirees — --bb-info et
+// --bb-danger sont redefinis en sombre (styles.scss).

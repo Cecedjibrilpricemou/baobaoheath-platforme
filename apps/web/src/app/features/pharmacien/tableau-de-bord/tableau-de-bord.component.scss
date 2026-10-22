@@ -1,0 +1,248 @@
+// features/pharmacien/tableau-de-bord — ce que l'officine a fait aujourd'hui.
+
+// ✦ Refonte UI : accent propre a l'espace pharmacien (meme convention que
+// stocks et ordonnances) : vert de marque en clair, vert vif en sombre, ou
+// --bb-primary tombe sous 4,5:1 sur les cartes.
+:host {
+  display: block;
+  --tdb-accent: var(--bb-primary);
+  --tdb-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+}
+
+:host-context([data-theme="dark"]) {
+  --tdb-accent: var(--bb-bright);
+  --tdb-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+}
+
+.bb-tdb {
+  // ✦ Refonte UI : la coquille porte deja la goutiere (plus de double marge)
+  max-width: 1080px;
+  margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; margin: 0; }
+  &__note { margin: -4px 0 14px; }
+
+  &__empty {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 46px 24px; text-align: center;
+    background: var(--bb-surface-card); border: 1px dashed var(--bb-border);
+    border-radius: var(--bb-radius-xl); color: var(--bb-text-secondary);
+    // ✦ Refonte UI : pastille d'icone, comme les etats vides du reste de l'app
+    i {
+      width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--bb-danger); background: var(--bb-danger-bg);
+    }
+
+    p { margin: 0; font-weight: 600; }
+  }
+
+  // ✦ Refonte UI : titres de section en display, avec un trait d'accent —
+  // les capitales grises se confondaient avec les libelles des compteurs.
+  &__section {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 34px 0 14px;
+
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--tdb-accent); flex-shrink: 0;
+    }
+
+    &--danger { color: var(--bb-danger); &::before { background: var(--bb-danger); } }
+    i { font-size: 15px; }
+  }
+
+  // ── Les chiffres ───────────────────────────────────────────────────
+  // ✦ Refonte UI : le chiffre d'affaires ouvre la rangee sur deux colonnes ;
+  // les quatre autres compteurs suivent a egalite.
+  &__stats {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    @media (max-width: 600px) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+
+  &__stat {
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-xl); padding: 1.15rem 1.25rem;
+    box-shadow: var(--bb-shadow-sm);
+    transition: transform var(--bb-transition-slow), box-shadow var(--bb-transition-slow);
+    &:hover { transform: translateY(-2px); box-shadow: var(--bb-shadow-hover); }
+
+    // Le chiffre du jour : surface teintee et halo, c'est la premiere lecture.
+    &--primaire {
+      grid-column: span 2;
+      background:
+        radial-gradient(120% 140% at 100% 0%, var(--tdb-accent-soft), transparent 60%),
+        var(--bb-surface-card);
+      border-color: color-mix(in srgb, var(--tdb-accent) 35%, var(--bb-border-light));
+      .bb-tdb__stat-valeur { font-size: 34px; color: var(--tdb-accent); }
+      @media (max-width: 600px) { .bb-tdb__stat-valeur { font-size: 28px; } }
+    }
+
+    // Une alerte se signale sans crier : bordure et pastille ambrees.
+    &--alerte {
+      border-color: var(--bb-warning-border);
+      background:
+        linear-gradient(180deg, var(--bb-warning-bg), transparent 70%),
+        var(--bb-surface-card);
+      .bb-tdb__stat-valeur { color: var(--bb-warning); }
+    }
+  }
+
+  &__stat-label {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--bb-text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  &__stat-valeur {
+    font-family: var(--bb-font-display); font-size: 28px; font-weight: 800;
+    line-height: 1.1; letter-spacing: -1px; color: var(--bb-text-primary);
+    @media (max-width: 600px) { font-size: 24px; }
+  }
+
+  &__stat-unite {
+    font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
+    color: var(--bb-text-muted);
+  }
+
+  // ── La jauge, partagee par les deux classements ────────────────────
+  &__jauge {
+    height: 10px; border-radius: 999px; overflow: hidden;
+    background: var(--bb-surface-2);
+  }
+
+  // ✦ Refonte UI : degrade de marque et remplissage anime a l'arrivee.
+  &__jauge-part {
+    height: 100%; border-radius: inherit;
+    background: linear-gradient(90deg, var(--bb-mid), var(--bb-bright));
+    transform-origin: left center;
+    animation: bb-tdb-jauge 0.7s var(--bb-ease) both;
+    &--top { background: linear-gradient(90deg, var(--bb-primary), color-mix(in srgb, var(--bb-bright) 70%, #fff)); }
+  }
+
+  // ✦ Refonte UI : chaque ligne des deux classements est une tuile.
+  &__mode,
+  &__produit {
+    display: grid; gap: 14px; align-items: center;
+    padding: 12px 16px; margin-bottom: 8px;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+    transition: border-color var(--bb-transition), transform var(--bb-transition);
+    &:hover { border-color: color-mix(in srgb, var(--tdb-accent) 40%, var(--bb-border)); transform: translateX(2px); }
+  }
+
+  // ── Encaissements ──────────────────────────────────────────────────
+  &__mode {
+    grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 2fr) auto;
+
+    @media (max-width: 760px) {
+      grid-template-columns: 1fr auto; row-gap: 8px;
+      .bb-tdb__jauge { grid-column: 1 / -1; grid-row: 2; }
+    }
+  }
+
+  &__mode-nom { font-weight: 700; color: var(--bb-text-primary); font-size: 14px; }
+  &__mode-nombre { font-size: 12.5px; color: var(--bb-text-muted); white-space: nowrap; }
+  &__mode-montant {
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 14.5px;
+    color: var(--bb-text-primary); white-space: nowrap; text-align: right;
+  }
+
+  // ── Produits les plus vendus ───────────────────────────────────────
+  &__produit {
+    grid-template-columns: minmax(160px, 1.6fr) minmax(100px, 2fr) auto auto;
+    counter-increment: bb-tdb-rang;
+
+    @media (max-width: 760px) {
+      grid-template-columns: 1fr auto auto; row-gap: 8px;
+      .bb-tdb__jauge { grid-column: 1 / -1; grid-row: 2; }
+    }
+  }
+
+  &__produit-tete {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;
+    // ✦ Refonte UI : le rang du produit, pour lire le classement d'un coup d'oeil
+    &::before {
+      content: counter(bb-tdb-rang);
+      width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--bb-font-display); font-size: 12px; font-weight: 800;
+      color: var(--tdb-accent); background: var(--tdb-accent-soft);
+    }
+  }
+
+  &__produit-nom { font-weight: 700; color: var(--bb-text-primary); font-size: 14px; }
+
+  &__produit-cat, &__rupture-cat {
+    font-size: 11.5px; font-weight: 600; color: var(--bb-text-secondary);
+    padding: 2px 9px; background: var(--bb-surface-2);
+    border-radius: 999px; white-space: nowrap;
+  }
+
+  &__produit-qte {
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 16px;
+    color: var(--bb-text-primary); white-space: nowrap; text-align: right;
+  }
+
+  &__produit-montant {
+    font-size: 13px; color: var(--bb-text-muted);
+    white-space: nowrap; text-align: right; min-width: 92px;
+  }
+
+  // ── Ruptures ───────────────────────────────────────────────────────
+  &__rupture {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--bb-surface-card); border: 1px solid var(--bb-danger-border);
+    border-left: 4px solid var(--bb-danger);
+    border-radius: var(--bb-radius-lg); padding: 0.8rem 1.1rem;
+    margin-bottom: 8px; box-shadow: var(--bb-shadow-sm);
+  }
+
+  &__rupture-nom { flex: 1; min-width: 160px; font-weight: 700; color: var(--bb-text-primary); font-size: 14px; }
+
+  &__rupture-qte {
+    font-family: var(--bb-font-display); font-weight: 800; font-size: 13.5px;
+    color: var(--bb-danger); white-space: nowrap;
+    padding: 3px 10px; border-radius: 999px; background: var(--bb-danger-bg);
+  }
+
+  &__actions { margin-top: 16px; }
+
+  // La barre d'export s'ecarte des titres qui la precedent.
+  app-export-liste { display: block; margin-bottom: 12px; }
+}
+
+// Les classements numerotent leurs lignes : le compteur repart a chaque bloc.
+.bb-tdb { counter-reset: bb-tdb-rang; }
+
+.bb-tdb__rapport { margin: 24px 0; }
+.bb-tdb__rapport-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bb-tdb__rapport-filtres { display: flex; gap: 6px; flex-wrap: wrap; }
+.bb-tdb__rapport-sous-titre { margin: 20px 0 10px; color: var(--bb-text-primary); font-family: var(--bb-font-display); }
+.bb-tdb__rapport-session {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 18px;
+  padding: 12px 14px; margin-bottom: 8px; color: var(--bb-text-secondary);
+  background: var(--bb-surface-card); border: 1px solid var(--bb-border-light); border-radius: var(--bb-radius-lg);
+}
+.bb-tdb__rapport-session strong { color: var(--bb-text-primary); }
+
+@keyframes bb-tdb-jauge {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-tdb__jauge-part { animation: none; }
+  .bb-tdb__stat, .bb-tdb__mode, .bb-tdb__produit { transition: none; &:hover { transform: none; } }
+}
+
+// ✦ Refonte UI : les couleurs codees en dur du mode sombre sont retirees :
+// --bb-danger, --bb-warning et --bb-success sont desormais redefinis en
+// sombre (styles.scss) avec un contraste AA.

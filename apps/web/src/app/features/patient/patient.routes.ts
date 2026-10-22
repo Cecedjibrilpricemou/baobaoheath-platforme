@@ -21,6 +21,16 @@ export const PATIENT_ROUTES: Routes = [
           import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
+        path: 'commandes',
+        loadComponent: () =>
+          import('./commandes/commandes.component').then(m => m.PatientCommandesComponent)
+      },
+      {
+        path: 'paiements',
+        loadComponent: () =>
+          import('./paiements/paiements.component').then(m => m.PatientPaiementsComponent)
+      },
+      {
         path: 'profil',
         loadComponent: () =>
           import('./profil/profil.component').then(m => m.ProfilComponent)
@@ -31,6 +41,11 @@ export const PATIENT_ROUTES: Routes = [
           import('./qr-code/qr-code.component').then(m => m.QrCodeComponent)
       },
       {
+        path: 'cartes-assurance',
+        loadComponent: () =>
+          import('./cartes-assurance/cartes-assurance.component').then(m => m.CartesAssuranceComponent)
+      },
+      {
         path: 'carnet-vaccinal',
         loadComponent: () =>
           import('./dossier/dossier').then(m => m.Dossier)
@@ -39,6 +54,11 @@ export const PATIENT_ROUTES: Routes = [
         path: 'parcours',
         loadComponent: () =>
           import('./parcours/parcours.component').then(m => m.ParcoursComponent)
+      },
+      {
+        path: 'rendez-vous',
+        loadComponent: () =>
+          import('./rendez-vous/rendez-vous.component').then(m => m.RendezVousComponent)
       },
       {
         path: 'ordonnances',

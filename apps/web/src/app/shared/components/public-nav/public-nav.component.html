@@ -1,0 +1,60 @@
+<!-- shared/components/public-nav/public-nav.component.html -->
+<nav class="pub-nav" [class.pub-nav--open]="menuOuvert()">
+  <a routerLink="/" class="pub-nav__logo" [attr.aria-label]="'LANDING.NAV_HOME' | translate">
+    <app-brand class="pub-nav__logo-name"></app-brand>
+  </a>
+
+  <div class="pub-nav__links">
+    <a routerLink="/" fragment="how" class="pub-nav__link" [class.pub-nav__link--active]="sectionActive() === 'how'">{{ 'LANDING.NAV_HOW' | translate }}</a>
+    <a routerLink="/" fragment="structures" class="pub-nav__link" [class.pub-nav__link--active]="sectionActive() === 'structures'">{{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
+    <a routerLink="/professionnels" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.NAV_PROS' | translate }}</a>
+    <a routerLink="/securite" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.NAV_SECURITY' | translate }}</a>
+    <a routerLink="/a-propos" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_ABOUT' | translate }}</a>
+    <a routerLink="/faq" routerLinkActive="pub-nav__link--active" class="pub-nav__link">{{ 'PUBLIC.LINK_FAQ' | translate }}</a>
+  </div>
+
+  <div class="pub-nav__actions">
+    <button class="pub-nav__icon-btn pub-nav__desktop-only" type="button" (click)="toggleTheme()"
+      [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
+      <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+    </button>
+    <button class="pub-nav__icon-btn pub-nav__lang pub-nav__desktop-only" type="button" (click)="toggleLang()">
+      {{ 'COMMON.LANG_TOGGLE' | translate }}
+    </button>
+    <a routerLink="/auth/login" class="pub-btn pub-btn--ghost pub-nav__login">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
+    <a routerLink="/auth/register" class="pub-btn pub-btn--primary pub-nav__register">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
+    <button class="pub-nav__burger" type="button" (click)="basculerMenu()"
+      [attr.aria-expanded]="menuOuvert()" aria-controls="pub-nav-menu"
+      [attr.aria-label]="(menuOuvert() ? 'PUBLIC.MENU_CLOSE' : 'PUBLIC.MENU_OPEN') | translate">
+      <i [class]="menuOuvert() ? 'pi pi-times' : 'pi pi-bars'" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- ── Menu mobile ─────────────────────────────────────────────── -->
+  @if (menuOuvert()) {
+    <div class="pub-nav__menu" id="pub-nav-menu">
+      <div class="pub-nav__menu-links">
+        <a routerLink="/" fragment="how" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-question-circle" aria-hidden="true"></i> {{ 'LANDING.NAV_HOW' | translate }}</a>
+        <a routerLink="/" fragment="structures" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-map-marker" aria-hidden="true"></i> {{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
+        <a routerLink="/professionnels" routerLinkActive="pub-nav__menu-link--active" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-id-card" aria-hidden="true"></i> {{ 'PUBLIC.LINK_PROS' | translate }}</a>
+        <a routerLink="/securite" routerLinkActive="pub-nav__menu-link--active" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
+        <a routerLink="/a-propos" routerLinkActive="pub-nav__menu-link--active" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-info-circle" aria-hidden="true"></i> {{ 'PUBLIC.LINK_ABOUT' | translate }}</a>
+        <a routerLink="/faq" routerLinkActive="pub-nav__menu-link--active" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-question-circle" aria-hidden="true"></i> {{ 'PUBLIC.LINK_FAQ' | translate }}</a>
+        <a routerLink="/" fragment="contact" class="pub-nav__menu-link" (click)="fermer()"><i class="pi pi-envelope" aria-hidden="true"></i> {{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
+      </div>
+      <div class="pub-nav__menu-tools">
+        <button class="pub-nav__icon-btn" type="button" (click)="toggleTheme()"
+          [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+        </button>
+        <button class="pub-nav__icon-btn pub-nav__lang" type="button" (click)="toggleLang()">
+          <i class="pi pi-globe" aria-hidden="true"></i> {{ 'COMMON.LANG_TOGGLE' | translate }}
+        </button>
+      </div>
+      <div class="pub-nav__menu-actions">
+        <a routerLink="/auth/login" class="pub-btn pub-btn--ghost pub-btn--lg" (click)="fermer()">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
+        <a routerLink="/auth/register" class="pub-btn pub-btn--primary pub-btn--lg" (click)="fermer()">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
+      </div>
+    </div>
+  }
+</nav>

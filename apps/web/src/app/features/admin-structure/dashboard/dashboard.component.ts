@@ -27,6 +27,9 @@ import type { StatsStructureView } from '@baobaoheath/shared-types';
   </div>
   <div class="bb-page-head__actions">
     <a matButton="filled" routerLink="/admin-structure/agents"><i class="pi pi-users" aria-hidden="true"></i> {{ 'ADMIN_STRUCTURE.DASHBOARD.MANAGE_LINK' | translate }}</a>
+    @if (estHospital()) {
+      <a matButton="outlined" routerLink="/admin-structure/pharmacies"><i class="pi pi-plus" aria-hidden="true"></i> {{ 'ADMIN_STRUCTURE.PHARMACIES.MANAGE_LINK' | translate }}</a>
+    }
   </div>
 </header>
 
@@ -48,6 +51,9 @@ import type { StatsStructureView } from '@baobaoheath/shared-types';
 export class AdminStructureDashboardComponent implements OnInit {
   private api = inject(ApiService);
   stats = signal<StatsStructureView | null>(null);
+  estHospital(): boolean {
+    return ['HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'].includes(this.stats()?.structure?.type ?? '');
+  }
   ngOnInit() {
     this.api.get<{ data?: StatsStructureView }>('/admin-structure/stats').subscribe({
       next: r => this.stats.set(r?.data ?? null),

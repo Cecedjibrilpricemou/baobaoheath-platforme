@@ -1,0 +1,171 @@
+// features/patient/rendez-vous — même grammaire que les autres écrans patient.
+
+// ✦ Refonte UI : accent de l'espace patient (vert vif en sombre) et encart
+// visible en sombre (--bb-surface-1 y vaut la couleur de la carte).
+:host {
+  display: block;
+  --rdv-accent: var(--bb-primary);
+  --rdv-accent-soft: color-mix(in srgb, var(--bb-bright) 14%, transparent);
+  --rdv-encart: var(--bb-surface-1);
+}
+
+:host-context([data-theme="dark"]) {
+  --rdv-accent: var(--bb-bright);
+  --rdv-accent-soft: color-mix(in srgb, var(--bb-bright) 18%, transparent);
+  --rdv-encart: color-mix(in srgb, #fff 5%, var(--bb-surface-card));
+}
+
+.bb-rdvp {
+  // ✦ Refonte UI : la coquille porte deja la goutiere
+  max-width: 800px;
+  margin: 0 auto;
+
+  &__muted { color: var(--bb-text-secondary); font-size: 13.5px; }
+
+  // ✦ Refonte UI : titres de section en display, trait d'accent
+  &__section {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--bb-font-display);
+    font-size: 16px; font-weight: 800; letter-spacing: -.2px;
+    color: var(--bb-text-primary);
+    margin: 28px 0 12px;
+    &::before {
+      content: ''; width: 4px; height: 18px; border-radius: 4px;
+      background: var(--rdv-accent); flex-shrink: 0;
+    }
+  }
+
+  // Invitation quand rien n'est en cours : c'est l'état le plus fréquent.
+  &__appel {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 38px 24px; text-align: center;
+    // ✦ Refonte UI : invitation teintee plutot qu'un simple pointille
+    background:
+      radial-gradient(80% 120% at 50% 0%, var(--rdv-accent-soft), transparent 70%),
+      var(--bb-surface-card);
+    border: 1px dashed color-mix(in srgb, var(--rdv-accent) 35%, var(--bb-border));
+    border-radius: var(--bb-radius-xl);
+    p { margin: 0; font-size: 14px; color: var(--bb-text-secondary); max-width: 46ch; line-height: 1.55; }
+  }
+
+  &__carte {
+    background: var(--bb-surface-card); border: 1px solid var(--bb-border-light);
+    border-left: 4px solid var(--rdv-accent);
+    border-radius: var(--bb-radius-xl); padding: 1.2rem 1.35rem;
+    margin-bottom: 14px; box-shadow: var(--bb-shadow-sm);
+
+    &--attente { border-left-color: var(--bb-warning); }
+    &--passee  { border-left-color: var(--bb-border); box-shadow: none; }
+  }
+
+  &__head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+
+  &__statut {
+    padding: 4px 11px; border-radius: var(--bb-radius-pill);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; white-space: nowrap;
+    background: var(--bb-surface-2); color: var(--bb-text-secondary);
+
+    &[data-statut='EN_ATTENTE'] { background: var(--bb-warning-bg); color: var(--bb-warning); }
+    &[data-statut='ACCEPTEE']   { background: var(--rdv-accent-soft); color: var(--rdv-accent); }
+    &[data-statut='REFUSEE']    { background: var(--bb-danger-bg);  color: var(--bb-danger); }
+  }
+
+  &__date { font-size: 12px; color: var(--bb-text-muted); }
+
+  &__motif {
+    margin: 0 0 10px; padding: 12px 14px;
+    border-radius: var(--bb-radius);
+    border-left: 3px solid var(--rdv-accent);
+    background: var(--rdv-encart); line-height: 1.55;
+    font-size: 13.5px; color: var(--bb-text-primary);
+    white-space: pre-wrap;
+  }
+
+  &__meta { margin: 0 0 8px; font-size: 12.5px; color: var(--bb-text-muted); }
+
+  &__attente {
+    margin: 0 0 12px;
+    font-size: 12.5px; color: var(--bb-text-secondary); line-height: 1.55;
+  }
+
+  &__refus, &__accepte {
+    display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap;
+    margin: 8px 0 0; padding: 10px 12px;
+    border-radius: var(--bb-radius);
+    font-size: 13px; line-height: 1.55;
+  }
+
+  &__refus {
+    background: var(--bb-danger-bg); border: 1px solid var(--bb-danger-border);
+    color: var(--bb-text-primary);
+    strong { color: var(--bb-danger); }
+  }
+
+  &__accepte {
+    background: var(--bb-success-bg); border: 1px solid var(--bb-success-border);
+    color: var(--bb-text-primary);
+    i { color: var(--rdv-accent); margin-top: 2px; }
+  }
+
+  &__label {
+    display: block;
+    font-size: 13px; font-weight: 700; color: var(--bb-text-primary);
+  }
+
+  // Pourquoi ce champ : le médecin lit ce texte pour décider.
+  &__aide {
+    margin: 4px 0 8px;
+    font-size: 12.5px; color: var(--bb-text-muted); line-height: 1.5;
+  }
+
+  &__select {
+    width: 100%; box-sizing: border-box; min-height: 44px; // ✦ Refonte UI : champs alignes sur Material margin-bottom: 14px;
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
+    color: var(--bb-text-primary);
+    font-family: inherit; font-size: 14px;
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { border-color: var(--bb-border-strong); }
+    &:focus { outline: none; border-color: var(--rdv-accent); box-shadow: 0 0 0 4px var(--rdv-accent-soft); }
+  }
+
+  &__textarea {
+    width: 100%; box-sizing: border-box; min-height: 44px; // ✦ Refonte UI : champs alignes sur Material
+    padding: 10px 12px; border-radius: var(--bb-radius);
+    border: 1px solid var(--bb-border); background: var(--bb-surface-0);
+    color: var(--bb-text-primary);
+    font-family: inherit; font-size: 14px; line-height: 1.55;
+    resize: vertical;
+    transition: border-color var(--bb-transition), box-shadow var(--bb-transition);
+    &:hover { border-color: var(--bb-border-strong); }
+    &:focus { outline: none; border-color: var(--rdv-accent); box-shadow: 0 0 0 4px var(--rdv-accent-soft); }
+    &::placeholder { color: var(--bb-text-muted); }
+  }
+
+  &__actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+}
+
+// ✦ Refonte UI : couleurs sombres codees en dur retirees — --bb-warning et
+// --bb-danger sont redefinis en sombre (styles.scss) ; l'encart du motif
+// passe par --rdv-encart.
+
+// Le bureau, visible avant de venir : un grand hôpital, on ne sait pas où aller.
+.rdv-bureau {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  padding: 2px 9px;
+  border-radius: var(--bb-radius-pill);
+  // ✦ Refonte UI : accent lisible en sombre
+  background: var(--rdv-accent-soft);
+  color: var(--rdv-accent);
+  font-size: 11.5px;
+  font-weight: 700;
+
+  i { font-size: 11px; }
+}

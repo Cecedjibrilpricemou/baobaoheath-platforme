@@ -5,6 +5,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { AgentStructureView, CreationAgentView, HorodatageApi } from '@baobaoheath/shared-types';
@@ -22,7 +23,7 @@ interface MotDePasseAffiche {
   selector: 'app-agents',
   standalone: true,
   imports: [
-    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe],
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './agents.component.html',
   styleUrl: './agents.component.scss'
 })
@@ -39,18 +40,82 @@ export class AgentsComponent implements OnInit {
 
   mdpAffiche = signal<MotDePasseAffiche | null>(null);
 
+  /**
+   * Affiche un message, et **annule celui d'avant**.
+   *
+   * Chaque annonce programmait son propre effacement sans toucher au
+   * precedent : deux gestes a moins de quatre secondes d'intervalle, et la
+   * minuterie du premier effacait la confirmation du second — l'agent voyait
+   * son message disparaitre aussitot et doutait d'avoir reussi.
+   */
+  private minuterie?: ReturnType<typeof setTimeout>;
+
+  private annoncer(message: string, type: 'succes' | 'erreur' = 'succes', duree = 4000) {
+    clearTimeout(this.minuterie);
+    if (type === 'succes') { this.successMsg.set(message); this.errorMsg.set(''); }
+    else { this.errorMsg.set(message); this.successMsg.set(''); }
+    this.minuterie = setTimeout(() => { this.successMsg.set(''); this.errorMsg.set(''); }, duree);
+  }
+
   newAgent = { telephone: '', email: '', prenom: '', nom: '', role: 'ASC' };
+
+  // ── Le bureau du medecin (addendum, point 2) ───────────────────────
+  //
+  // **Il ne se saisit pas a la creation du compte.** Un medecin demenage, un
+  // service est redecoupe : la valeur serait fausse en quelques mois, et un
+  // bureau faux est pire que pas de bureau — le patient y va.
+  //
+  // Facultatif : beaucoup d'hopitaux ne numerotent pas leurs bureaux, et
+  // l'agent d'accueil accompagne le patient a pied. Vider le champ efface.
+  bureauEnEdition = signal<string | null>(null);
+  bureauSaisi = '';
+
+  ouvrirBureau(agent: AgentStructureView) {
+    this.bureauEnEdition.set(agent.id);
+    this.bureauSaisi = agent.bureau ?? '';
+  }
+
+  annulerBureau() {
+    this.bureauEnEdition.set(null);
+    this.bureauSaisi = '';
+  }
+
+  enregistrerBureau(id: string) {
+    const saisi = this.bureauSaisi.trim();
+    this.api.put<{ success: boolean; message?: string }>(
+      `/admin-structure/agents/${id}/bureau`,
+      { bureau: saisi.length > 0 ? saisi : null },
+    ).subscribe({
+      next: (r) => {
+        this.annulerBureau();
+        this.annoncer(r?.message ?? this.i18n.t('ADMIN_STRUCTURE.AGENTS.BUREAU_OK'));
+        this.loadAgents();
+      },
+      error: (err) => {
+        this.annoncer(err?.error?.error ?? this.i18n.t('ADMIN_STRUCTURE.AGENTS.ERR_CREATE'), 'erreur');
+      },
+    });
+  }
 
   get rolesOptions() {
     return [
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_OPTION_ASC'), value: 'ASC' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'), value: 'MEDECIN' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'), value: 'PHARMACIEN' },
       { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL'), value: 'AGENT_ACCUEIL' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'), value: 'TECHNICIEN_LABO' },
-      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_BIOLOGISTE'), value: 'BIOLOGISTE' }
+      { label: this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'), value: 'TECHNICIEN_LABO' }
     ];
   }
+
+  /** Les colonnes du document imprime **et** du fichier : les memes.
+   * C'est ce qui empeche la feuille et le tableur de se contredire. */
+  readonly colonnes: ColonneExport<AgentStructureView>[] = [
+    { titre: 'EXPORT.COL.NOM', valeur: (a) => `${a.prenom} ${a.nom}` },
+    { titre: 'EXPORT.COL.ROLE', valeur: (a) => this.getRoleLabel(a.role) },
+    { titre: 'EXPORT.COL.TELEPHONE', valeur: (a) => a.telephone },
+    { titre: 'EXPORT.COL.COURRIEL', valeur: (a) => a.email },
+    { titre: 'EXPORT.COL.BUREAU', valeur: (a) => a.bureau },
+    { titre: 'EXPORT.COL.AJOUTE_LE', valeur: (a) => new Date(a.creeLe) },
+  ];
 
   ngOnInit() { this.loadAgents(); }
 
@@ -94,8 +159,7 @@ export class AgentsComponent implements OnInit {
             emailEnvoye: payload.email
           });
         } else {
-          this.successMsg.set(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
-          setTimeout(() => this.successMsg.set(''), 3000);
+          this.annoncer(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
         }
         this.loadAgents();
       },
@@ -105,13 +169,12 @@ export class AgentsComponent implements OnInit {
 
   fermerMdp() {
     this.mdpAffiche.set(null);
-    this.successMsg.set(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
-    setTimeout(() => this.successMsg.set(''), 3000);
+    this.annoncer(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_CREATED'));
   }
 
   desactiver(id: string) {
     this.api.put<{ success: boolean }>(`/admin-structure/agents/${id}/desactiver`, {}).subscribe({
-      next: () => { this.successMsg.set(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_DEACTIVATED')); this.loadAgents(); },
+      next: () => { this.annoncer(this.i18n.t('ADMIN_STRUCTURE.AGENTS.SUCCESS_DEACTIVATED')); this.loadAgents(); },
       error: () => { }
     });
   }
@@ -123,8 +186,7 @@ export class AgentsComponent implements OnInit {
       'MEDECIN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_MEDECIN'),
       'PHARMACIEN': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_PHARMACIEN'),
       'AGENT_ACCUEIL': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_AGENT_ACCUEIL'),
-      'TECHNICIEN_LABO': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO'),
-      'BIOLOGISTE': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_BIOLOGISTE')
+      'TECHNICIEN_LABO': this.i18n.t('ADMIN_STRUCTURE.AGENTS.ROLE_TECHNICIEN_LABO')
     };
     return map[role] ?? role;
   }

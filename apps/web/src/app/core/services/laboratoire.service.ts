@@ -1,5 +1,5 @@
 // core/services/laboratoire.service.ts
-// P2 — Laboratoire (EF-04) : appels /laboratoire/* (technicien, biologiste),
+// P2 — Laboratoire (EF-04) : appels /laboratoire/* (laborantin),
 // /resultats/* (prescripteurs) et /patients/me/resultats/*.
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -7,6 +7,7 @@ import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.model';
 import { environment } from '../../../environments/environment';
 import type {
+  ScanLaboratoireView,
   AlerteCritiqueView,
   DemandeAnalyseView,
   EnregistrerPrelevementDto,
@@ -22,6 +23,15 @@ export interface PageDemandes { items: DemandeAnalyseView[]; total: number; page
 
 @Injectable({ providedIn: 'root' })
 export class LaboratoireService {
+
+  /**
+   * Scan du QR patient au comptoir : ce qui reste a faire pour lui dans ce
+   * laboratoire. Le scan ouvre une fenetre, pas le dossier.
+   */
+  scanPatient(qrCode: string): Observable<ApiResponse<ScanLaboratoireView>> {
+    return this.api.get<ApiResponse<ScanLaboratoireView>>(`/laboratoire/scan/${encodeURIComponent(qrCode)}`);
+  }
+
   private api = inject(ApiService);
 
   tableauDeBord(): Observable<ApiResponse<TableauDeBordLaboView>> {

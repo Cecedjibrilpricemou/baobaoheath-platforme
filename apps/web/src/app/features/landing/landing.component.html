@@ -2,29 +2,7 @@
 <div class="landing">
 
   <!-- ── NAVBAR ──────────────────────────────────────────────────── -->
-  <nav class="lnav">
-    <a href="#top" class="lnav__logo">
-      <app-brand class="lnav__logo-name"></app-brand>
-    </a>
-
-    <div class="lnav__links">
-      <a href="#top" class="lnav__link lnav__link--active">{{ 'LANDING.NAV_HOME' | translate }}</a>
-      <a href="#how" class="lnav__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
-      <a href="#structures" class="lnav__link">{{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
-      <a href="#contact" class="lnav__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
-    </div>
-
-    <div class="lnav__actions">
-      <button class="lnav__icon-btn" type="button" (click)="toggleTheme()" [attr.aria-label]="(themeService.isDark() ? 'COMMON.ENABLE_LIGHT_MODE' : 'COMMON.ENABLE_DARK_MODE') | translate">
-        <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
-      </button>
-      <button class="lnav__icon-btn lnav__lang" type="button" (click)="toggleLang()">
-        {{ 'COMMON.LANG_TOGGLE' | translate }}
-      </button>
-      <a routerLink="/auth/login" class="btn-outline">{{ 'LANDING.NAV_LOGIN' | translate }}</a>
-      <a routerLink="/auth/register" class="btn-primary">{{ 'LANDING.NAV_REGISTER' | translate }}</a>
-    </div>
-  </nav>
+  <app-public-nav></app-public-nav>
 
   <!-- ── HERO ────────────────────────────────────────────────────── -->
   <section class="hero" id="top">
@@ -65,7 +43,11 @@
     </div>
   </section>
 
-  <!-- ── CHIFFRES ────────────────────────────────────────────────── -->
+  <!-- ── CHIFFRES ──────────────────────────────────────────────────
+       Masqué tant qu'il n'y a pas de chiffres : une bande de tirets donne
+       l'air cassé, et c'est ce que voyait un visiteur arrivant pendant une
+       coupure de l'API. -->
+  @if (chiffresDisponibles()) {
   <section class="stats-band" aria-label="Chiffres de la plateforme">
     @for (stat of stats(); track stat.labelKey) {
       <div class="stats-band__item">
@@ -77,6 +59,7 @@
       </div>
     }
   </section>
+  }
 
   <!-- ── COMMENT ÇA FONCTIONNE ───────────────────────────────────── -->
   <app-how-it-works></app-how-it-works>
@@ -166,6 +149,9 @@
         <a href="#how" class="lfooter__link">{{ 'LANDING.NAV_HOW' | translate }}</a>
         <a href="#structures" class="lfooter__link">{{ 'LANDING.NAV_STRUCTURES' | translate }}</a>
         <a href="#contact" class="lfooter__link">{{ 'LANDING.FOOTER_CONTACT' | translate }}</a>
+        <a routerLink="/professionnels" class="lfooter__link">{{ 'PUBLIC.LINK_PROS' | translate }}</a>
+        <a routerLink="/securite" class="lfooter__link">{{ 'PUBLIC.LINK_SECURITY' | translate }}</a>
+        <a routerLink="/a-propos" class="lfooter__link">{{ 'PUBLIC.LINK_ABOUT' | translate }}</a>
       </div>
 
       <div class="lfooter__col">
@@ -176,8 +162,8 @@
 
       <div class="lfooter__col">
         <div class="lfooter__col-title">{{ 'LANDING.FOOTER_LEGAL' | translate }}</div>
-        <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_PRIVACY' | translate }}</a>
-        <a href="#" class="lfooter__link">{{ 'LANDING.FOOTER_TERMS' | translate }}</a>
+        <a routerLink="/confidentialite" class="lfooter__link">{{ 'LANDING.FOOTER_PRIVACY' | translate }}</a>
+        <a routerLink="/conditions-utilisation" class="lfooter__link">{{ 'LANDING.FOOTER_TERMS' | translate }}</a>
       </div>
     </div>
 

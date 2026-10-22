@@ -9,6 +9,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { MedecinService } from '../../../core/services/medecin.service';
 import { ConsultationService, VitalsPayload } from '../../../core/services/consultation.service';
 import { OrdonnanceService } from '../../../core/services/ordonnance.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -19,6 +21,8 @@ import type {
   ConstantesVitalesView,
   HorodatageApi,
   DiagnosticDetailView,
+  SeveriteDiagnostic,
+  TypeDiagnostic,
   MedicamentView,
   NiveauInteraction,
   OrdonnanceView,
@@ -47,6 +51,21 @@ export class ConsultationDetailComponent implements OnInit {
   private router = inject(Router);
   private i18n   = inject(I18nService);
   private ordonnanceService = inject(OrdonnanceService);
+  private auth   = inject(AuthService);
+  private medecin = inject(MedecinService);
+
+  /**
+   * **Cet ecran sert deux roles.** L'ASC l'ouvre depuis sa tournee, le medecin
+   * depuis une visite de son hopital : meme acte, memes champs, meme API. Ce
+   * qui change tient en quatre points — la source du diagnostic, le retour en
+   * arriere, le referencement (reserve a l'ASC) et la facon de terminer.
+   */
+  readonly estMedecin = computed(() => this.auth.userRole() === 'MEDECIN');
+
+  /** Qui pose le diagnostic : c'est inscrit au dossier, pas cosmetique. */
+  private get sourceDiagnostic(): 'MEDECIN' | 'ASC' {
+    return this.estMedecin() ? 'MEDECIN' : 'ASC';
+  }
 
   /**
    * Le document est rendu par l'API : on l'ouvre dans un onglet et le
@@ -109,8 +128,9 @@ export class ConsultationDetailComponent implements OnInit {
   // ── Diagnostic ──────────────────────────────────────────
   diagnosticForm: {
     libelle: string; codeIcd11: string;
-    typeDiagnostic: 'PRINCIPAL' | 'DIFFERENTIEL' | 'SECONDAIRE';
-    severite: string; source: 'ASC';
+    typeDiagnostic: TypeDiagnostic;
+    // `''` tant que rien n'est choisi : la severite est facultative.
+    severite: SeveriteDiagnostic | ''; source: 'MEDECIN' | 'ASC';
   } = {
     libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC'
   };
@@ -122,10 +142,18 @@ export class ConsultationDetailComponent implements OnInit {
       { label: this.i18n.t('ASC.CONSULTATION_DETAIL.TYPE_DIFFERENTIEL'), value: 'DIFFERENTIEL' }
     ];
   }
-  get severites() {
+  /**
+   * **Deux de ces quatre valeurs etaient refusees par le serveur.** Le
+   * selecteur envoyait `LEGERE` et `MODEREE`, le schema n'accepte que
+   * `LEGER` et `MODERE` : choisir « Legere » ou « Moderee » faisait rejeter
+   * tout le diagnostic en 400, pour l'ASC comme pour le medecin. Seules
+   * « Severe » et « Critique » passaient. Le contrat est `DiagnosticDetailView`
+   * (shared-types), aligne sur le schema.
+   */
+  get severites(): { label: string; value: SeveriteDiagnostic }[] {
     return [
-      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_LEGERE'), value: 'LEGERE' },
-      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_MODEREE'), value: 'MODEREE' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_LEGERE'), value: 'LEGER' },
+      { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_MODEREE'), value: 'MODERE' },
       { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_SEVERE'), value: 'SEVERE' },
       { label: this.i18n.t('ASC.CONSULTATION_DETAIL.SEVERITE_CRITIQUE'), value: 'CRITIQUE' }
     ];
@@ -212,10 +240,15 @@ export class ConsultationDetailComponent implements OnInit {
   /** Affiche lorsqu'un catalogue (medicaments, structures) n'a pas pu etre charge. */
   erreurCatalogue = signal('');
 
+  /**
+   * Un prescripteur choisit par molecule : la DCI doit rester visible, meme
+   * quand le libelle porte deja le nom commercial. Elle avait disparu du
+   * libelle le 2026-10-01, et la liste ne se cherchait plus par molecule.
+   */
   readonly medicamentOptions = computed(() =>
     this.medicaments().map(m => ({
       value: m.id,
-      label: [m.dci, m.dosage, m.forme].filter(Boolean).join(' · '),
+      label: this.getMedicamentLabel(m) + (m.forme ? ` · ${m.forme}` : ''),
     }))
   );
 
@@ -334,7 +367,10 @@ export class ConsultationDetailComponent implements OnInit {
           const data = response.data;
           const c = this.consultation();
           if (c) this.consultation.set({ ...c, diagnostics: [...c.diagnostics, data as unknown as DiagnosticDetailView] });
-          this.diagnosticForm = { libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '', source: 'ASC' };
+          this.diagnosticForm = {
+            libelle: '', codeIcd11: '', typeDiagnostic: 'PRINCIPAL', severite: '',
+            source: this.sourceDiagnostic,
+          };
           this.isSavingDiagnostic.set(false);
           this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_DIAGNOSTIC'));
         }
@@ -406,12 +442,39 @@ export class ConsultationDetailComponent implements OnInit {
     });
   }
 
-  // ── Clôturer la consultation ─────────────────────────────
+  // ── Terminer la consultation ─────────────────────────────
+  //
+  // **Deux gestes differents pour deux roles.** `POST /consultations/:id/complete`
+  // est reserve a l'ASC : il termine son acte et l'envoie a un medecin pour
+  // signature. Le medecin, lui, signe directement — et sa consultation
+  // n'apparait dans aucune liste « a valider », qui ne retient que les
+  // consultations deja terminees. S'il ne pouvait pas signer ici, il ne
+  // pourrait signer nulle part et son ordonnance n'atteindrait jamais le
+  // comptoir : le scan du pharmacien ignore les consultations en cours.
   closeConsultation() {
     const id = this.consultation()?.id;
     if (!id) return;
     this.isClosing.set(true);
     this.showCloseConfirm.set(false);
+
+    if (this.estMedecin()) {
+      this.medecin.validerConsultation(id, {
+        idOrdonnances: (this.consultation()?.ordonnances ?? []).map((o) => o.id),
+      }).subscribe({
+        next: () => {
+          const c = this.consultation();
+          if (c) this.consultation.set({ ...c, statut: 'TERMINEE' });
+          this.isClosing.set(false);
+          this.showSuccess(this.i18n.t('ASC.CONSULTATION_DETAIL.SUCCESS_SIGNEE'));
+        },
+        error: (err) => {
+          this.isClosing.set(false);
+          this.showError(err?.error?.error ?? err?.error?.message ?? this.i18n.t('ASC.CONSULTATION_DETAIL.ERR_CLOSE'));
+        }
+      });
+      return;
+    }
+
     this.consultationService.closeConsultation(id).subscribe({
       next: () => {
         const c = this.consultation();
@@ -469,7 +532,9 @@ export class ConsultationDetailComponent implements OnInit {
   }
 
   getMedicamentLabel(m: MedicamentView): string {
-    return m.nomCommercial ? `${m.nomCommercial} (${m.dci}) — ${m.dosage}` : `${m.dci} ${m.dosage}`;
+    return m.dci && !m.libelle.toLowerCase().includes(m.dci.toLowerCase())
+      ? `${m.libelle} (${m.dci})`
+      : m.libelle;
   }
 
   getPatientNom(): string {
@@ -518,5 +583,7 @@ export class ConsultationDetailComponent implements OnInit {
     setTimeout(() => this.errorMessage.set(''), 4000);
   }
 
-  goBack() { this.router.navigate(['/asc/consultations']); }
+  goBack() {
+    this.router.navigate([this.estMedecin() ? '/medecin/consultations' : '/asc/consultations']);
+  }
 }
