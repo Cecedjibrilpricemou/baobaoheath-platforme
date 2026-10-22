@@ -94,22 +94,30 @@ export class AdminLayoutComponent {
    * qu'un menu plus court.
    */
   private readonly tousLesItems = [
-    { labelKey: 'ADMIN.NAV_ANALYTICS',  icon: 'pi-chart-bar', route: '/admin/analytics'  },
-    { labelKey: 'ADMIN.NAV_STRUCTURES', icon: 'pi-building',  route: '/admin/structures' },
-    { labelKey: 'ADMIN.NAV_EXPORT',     icon: 'pi-download',  route: '/admin/export'     },
-    { labelKey: 'ADMIN.NAV_COMPTES',    icon: 'pi-users',     route: '/admin/comptes'    },
-    { labelKey: 'ADMIN.NAV_ASSURANCE',  icon: 'pi-id-card',   route: '/admin/assurance',
+    { labelKey: 'ADMIN.NAV_ANALYTICS',  icon: 'pi-chart-bar', route: '/admin/analytics',
+      roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_STRUCTURES', icon: 'pi-building',  route: '/admin/structures',
       roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
-    { labelKey: 'ADMIN.NAV_RGPD',       icon: 'pi-file-edit', route: '/admin/demandes-rgpd' },
-    { labelKey: 'ADMIN.NAV_JOURNAL',    icon: 'pi-shield',    route: '/admin/journal'    },
-    { labelKey: 'ADMIN.NAV_BRIS',       icon: 'pi-unlock',    route: '/admin/bris-de-glace' },
-    { labelKey: 'ADMIN.NAV_SETTINGS',   icon: 'pi-cog',       route: '/admin/settings'   }
+    { labelKey: 'ADMIN.NAV_EXPORT',     icon: 'pi-download', route: '/admin/export',
+      roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_COMPTES',   icon: 'pi-users',     route: '/admin/comptes',
+      roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_ASSURANCE', icon: 'pi-id-card',  route: '/admin/assurance',
+      roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_RGPD',      icon: 'pi-file-edit', route: '/admin/demandes-rgpd',
+      roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_JOURNAL',   icon: 'pi-shield',    route: '/admin/journal',
+      roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_BRIS',      icon: 'pi-unlock',    route: '/admin/bris-de-glace',
+      roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_SETTINGS',  icon: 'pi-cog',       route: '/admin/settings',
+      roles: ['SUPER_ADMIN'] }
   ] satisfies { labelKey: string; icon: string; route: string; roles?: string[] }[];
 
   readonly navItems = computed(() => {
     const role = this.currentUser()?.role;
     return this.tousLesItems.filter(
-      (i) => !('roles' in i) || (role ? i.roles!.includes(role) : false)
+      (i) => role !== undefined && i.roles.includes(role)
     );
   });
 }

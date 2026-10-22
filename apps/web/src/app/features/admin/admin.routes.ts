@@ -11,26 +11,36 @@ export const ADMIN_ROUTES: Routes = [
       { path: '', redirectTo: 'analytics', pathMatch: 'full' },
       {
         path: 'analytics',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./analytics/analytics.component').then(m => m.AnalyticsComponent)
       },
       {
         path: 'structures',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./structures/structures.component').then(m => m.StructuresComponent)
       },
       {
         path: 'export',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./export/export.component').then(m => m.ExportComponent)
       },
       {
         path: 'demandes-rgpd',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./demandes-rgpd/demandes-rgpd.component').then(m => m.DemandesRgpdComponent)
       },
       {
         path: 'comptes',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./comptes/comptes.component').then(m => m.ComptesComponent)
       },
@@ -46,16 +56,22 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'journal',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./journal/journal.component').then(m => m.JournalComponent)
       },
       {
         path: 'bris-de-glace',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./bris-de-glace/bris-de-glace-revue.component').then(m => m.BrisDeGlaceRevueComponent)
       },
       {
         path: 'settings',
+        canActivate: [roleGuard],
+        data: { roles: ['SUPER_ADMIN'] },
         loadComponent: () =>
           import('./settings/settings.component').then(m => m.SettingsComponent)
       }
