@@ -29,7 +29,44 @@ const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * pas seulement qu'il gene.
  */
 const EXCEPTIONS = [
-  // Aucune exception en vigueur.
+  // ── Outils de developpement d'Angular 21 (22/10/2026) ──────────────
+  //
+  // @angular/build 21.2.27 et @angular/cli 21.2.27, dernieres versions 21,
+  // epinglent exactement vite 7.3.6 et @modelcontextprotocol/sdk 1.31.0.
+  // Les correctifs (vite 7.3.7, sdk 1.32) ne s'appliquent qu'en regenerant
+  // tout le package-lock (217 versions changees, dont 5 majeures) ou en
+  // passant a Angular 22 : c'est ce passage qui fermera ces avis.
+  //
+  // Aucun ne touche l'application livree : vite ne sert qu'au serveur de
+  // developpement (`ng serve`, builder @angular/build:dev-server) — le build
+  // de production passe par esbuild — et le sdk MCP qu'a la commande
+  // `ng mcp`. Ni l'un ni l'autre n'est importe par le code, ni present dans
+  // le bundle de production. Le risque est sur les postes de developpement :
+  // ne pas exposer `ng serve` hors de la machine (pas de --host 0.0.0.0 sur
+  // un reseau non sur).
+  ...[
+    'GHSA-698v-4r3x-3vcv', // launch-editor : % non echappe sous Windows
+    'GHSA-r825-w8mm-5pxw', // launch-editor : drapeau d'editeur mal interprete
+    'GHSA-587h-7wmj-h5pm', // launch-editor : verification d'existence contournable
+    'GHSA-9jrq-w75r-8gcw', // vite : script cross-origin via un middleware
+    'GHSA-rq7h-c2jc-7f22', // vite : fichiers hors server.fs.allow
+  ].map((ghsa) => ({
+    ghsa,
+    paquet: 'vite (via @angular/build)',
+    reexamen: '2026-11-30',
+    motif: 'Serveur de developpement uniquement ; corrige avec Angular 22.',
+  })),
+  ...[
+    'GHSA-22jm-h49p-29qw', // taches experimentales non liees a la session
+    'GHSA-6prh-2h8m-c8cw', // redirections cross-origin du client HTTP
+    'GHSA-46jr-4wx8-v453', // epuisement memoire a la validation
+    'GHSA-rvq5-wwqv-78pq', // jeton porteur d'un autre service accepte
+  ].map((ghsa) => ({
+    ghsa,
+    paquet: '@modelcontextprotocol/sdk (via @angular/cli)',
+    reexamen: '2026-11-30',
+    motif: 'Commande `ng mcp` uniquement, jamais lancee ; corrige avec Angular 22.',
+  })),
   //
   // Historique : du 13/09 au 17/10/2026, trois avis etaient toleres —
   // GHSA-ggr8-5vv4-36mx (deepmerge-ts, via @prisma/config) et
