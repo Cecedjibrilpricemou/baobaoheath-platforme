@@ -187,6 +187,8 @@ export interface CommandeView {
   id: string;
   /** Identifiant de la course active, pour les gestes patient/pharmacie en livraison. */
   idCourse?: string | null;
+  /** Etat de la course active, pour ne proposer que les gestes permis. */
+  statutCourse?: StatutCourse | null;
   statut: StatutCommande;
   /** Le quartier ou l'appel a ete lance. */
   quartierRecherche?: string | null;

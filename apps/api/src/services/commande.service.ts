@@ -50,6 +50,7 @@ export function versCommandeView(
   return {
     id: c.id,
     idCourse: c.courses?.[0]?.id ?? null,
+    statutCourse: c.courses?.[0]?.statut ?? null,
     statut: c.statut,
     quartierRecherche: c.quartierRecherche,
     modeRemise: c.modeRemise,
@@ -124,7 +125,7 @@ const COMMANDE_INCLUDE = {
   pharmacie: { select: { id: true, nom: true, prefecture: true, commune: true, quartier: true } },
   courses: {
     where: { statut: { notIn: STATUTS_COURSE_TERMINAUX } },
-    select: { id: true },
+    select: { id: true, statut: true },
     take: 1,
   },
   reponses: {
