@@ -2,7 +2,7 @@
 //
 // **Un seul endroit décide des passages autorisés**, donc un seul endroit à
 // verrouiller. Ce fichier parcourt les 121 paires d'états possibles et exige
-// que seules les 20 prévues passent : énumérer les passages permis prouve ce
+// que seules les 21 prévues passent : énumérer les passages permis prouve ce
 // qu'on a pensé à écrire, parcourir le produit cartésien prouve aussi ce
 // qu'on a oublié d'interdire.
 //
@@ -68,6 +68,7 @@ const PERMIS: ReadonlyArray<readonly [string, string]> = [
   ['EN_PREPARATION', 'ANNULEE'],
   ['PRETE_POUR_RETRAIT', 'CLOTUREE'],
   ['PRETE_POUR_RETRAIT', 'ANNULEE'],
+  ['PRETE_POUR_LIVRAISON', 'PRETE_POUR_RETRAIT'],
   ['PRETE_POUR_LIVRAISON', 'RETIREE'],
   ['PRETE_POUR_LIVRAISON', 'ANNULEE'],
   ['RETIREE', 'CLOTUREE'],
@@ -85,7 +86,7 @@ beforeEach(() => {
 });
 
 describe('la table des transitions', () => {
-  it('autorise les 20 passages prevus, et eux seuls', () => {
+  it('autorise les 21 passages prevus, et eux seuls', () => {
     const attendus = new Set(PERMIS.map(([de, vers]) => `${de}->${vers}`));
     const inattendus: string[] = [];
     const manquants: string[] = [];

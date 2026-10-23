@@ -1,0 +1,643 @@
+import {
+  ModeRemise,
+  Prisma,
+  Role,
+  StatutCommande,
+  StatutCourse,
+} from '../config/generated/client/client';
+import { prisma } from '../config/prisma';
+import type { JwtPayload } from '../types/auth.types';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
+import { estStructureOfficinale } from '../utils/officine.util';
+import { assertTransition as assertCommandeTransition } from './commande.transitions';
+import { prochainNumero } from './numero.service';
+
+export type CourseTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+interface OffreCourseInput {
+  prixGnf: number;
+  delaiMinutes: number;
+}
+
+export interface CourseServiceView {
+  id: string;
+  numero: string;
+  statut: StatutCourse;
+  quartier: string;
+  prefecture: string;
+  prixGnf: number | null;
+  delaiAnnonceMinutes: number | null;
+  creeeLe: string;
+  attribueeLe: string | null;
+  remiseLe: string | null;
+  livreeLe: string | null;
+  annuleeLe: string | null;
+  motifAnnulation: string | null;
+  pharmacie: { id: string; nom: string } | null;
+}
+
+export interface CourseLivreurServiceView {
+  id: string;
+  numero: string;
+  statut: StatutCourse;
+  quartier: string;
+  prefecture: string;
+  prixGnf: number | null;
+  delaiAnnonceMinutes: number | null;
+  creeeLe: string;
+  attribueeLe: string | null;
+  remiseLe: string | null;
+  livreeLe: string | null;
+  pharmacie: { id: string; nom: string } | null;
+  patient?: { prenom: string; nom: string; telephone: string };
+}
+
+export interface OffreCourseServiceView {
+  id: string;
+  prixGnf: number;
+  delaiMinutes: number;
+  creeeLe: string;
+}
+
+const TRANSITIONS: Readonly<Record<StatutCourse, readonly StatutCourse[]>> = {
+  APPEL_OFFRES: [StatutCourse.ATTRIBUEE, StatutCourse.SANS_MOTARD, StatutCourse.ANNULEE],
+  ATTRIBUEE: [StatutCourse.EN_COURS, StatutCourse.APPEL_OFFRES, StatutCourse.ANNULEE],
+  EN_COURS: [StatutCourse.LIVREE],
+  SANS_MOTARD: [StatutCourse.APPEL_OFFRES, StatutCourse.ANNULEE],
+  LIVREE: [],
+  ANNULEE: [],
+};
+
+const LIBELLES: Readonly<Record<StatutCourse, string>> = {
+  APPEL_OFFRES: "en appel d'offres",
+  ATTRIBUEE: 'attribuee',
+  EN_COURS: 'en cours',
+  LIVREE: 'livree',
+  SANS_MOTARD: 'sans motard',
+  ANNULEE: 'annulee',
+};
+
+export function transitionCoursePermise(de: StatutCourse, vers: StatutCourse): boolean {
+  return TRANSITIONS[de].includes(vers);
+}
+
+export function assertTransitionCourse(de: StatutCourse, vers: StatutCourse): void {
+  if (transitionCoursePermise(de, vers)) return;
+  throw new ConflictError(
+    TRANSITIONS[de].length === 0
+      ? `Cette course est ${LIBELLES[de]} : rien ne peut plus la faire changer.`
+      : `Une course ${LIBELLES[de]} ne peut pas passer a « ${LIBELLES[vers]} ».`,
+  );
+}
+
+const COURSE_VIEW_SELECT = {
+  id: true,
+  numero: true,
+  statut: true,
+  quartier: true,
+  prefecture: true,
+  prixGnf: true,
+  delaiAnnonceMinutes: true,
+  creeeLe: true,
+  attribueeLe: true,
+  remiseLe: true,
+  livreeLe: true,
+  annuleeLe: true,
+  motifAnnulation: true,
+  commande: {
+    select: {
+      pharmacie: { select: { id: true, nom: true } },
+    },
+  },
+} as const;
+
+type CourseViewPayload = Prisma.CourseGetPayload<{ select: typeof COURSE_VIEW_SELECT }>;
+
+function versCourseView(course: CourseViewPayload): CourseServiceView {
+  return {
+    id: course.id,
+    numero: course.numero,
+    statut: course.statut,
+    quartier: course.quartier,
+    prefecture: course.prefecture,
+    prixGnf: course.prixGnf,
+    delaiAnnonceMinutes: course.delaiAnnonceMinutes,
+    creeeLe: course.creeeLe.toISOString(),
+    attribueeLe: course.attribueeLe?.toISOString() ?? null,
+    remiseLe: course.remiseLe?.toISOString() ?? null,
+    livreeLe: course.livreeLe?.toISOString() ?? null,
+    annuleeLe: course.annuleeLe?.toISOString() ?? null,
+    motifAnnulation: course.motifAnnulation,
+    pharmacie: course.commande.pharmacie,
+  };
+}
+
+const COURSE_LIVREUR_OPEN_SELECT = {
+  id: true,
+  numero: true,
+  statut: true,
+  quartier: true,
+  prefecture: true,
+  prixGnf: true,
+  delaiAnnonceMinutes: true,
+  creeeLe: true,
+  attribueeLe: true,
+  remiseLe: true,
+  livreeLe: true,
+  commande: {
+    select: {
+      pharmacie: { select: { id: true, nom: true } },
+    },
+  },
+} as const;
+
+const COURSE_LIVREUR_ASSIGNED_SELECT = {
+  ...COURSE_LIVREUR_OPEN_SELECT,
+  idLivreur: true,
+  commande: {
+    select: {
+      pharmacie: { select: { id: true, nom: true } },
+      ordonnance: {
+        select: {
+          consultation: {
+            select: {
+              patient: {
+                select: {
+                  utilisateur: { select: { prenom: true, nom: true, telephone: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+type CourseLivreurAssignedPayload = Prisma.CourseGetPayload<{ select: typeof COURSE_LIVREUR_ASSIGNED_SELECT }>;
+
+function versCourseLivreurView(course: CourseLivreurAssignedPayload): CourseLivreurServiceView {
+  const patient = course.commande.ordonnance.consultation?.patient.utilisateur;
+  return {
+    id: course.id,
+    numero: course.numero,
+    statut: course.statut,
+    quartier: course.quartier,
+    prefecture: course.prefecture,
+    prixGnf: course.prixGnf,
+    delaiAnnonceMinutes: course.delaiAnnonceMinutes,
+    creeeLe: course.creeeLe.toISOString(),
+    attribueeLe: course.attribueeLe?.toISOString() ?? null,
+    remiseLe: course.remiseLe?.toISOString() ?? null,
+    livreeLe: course.livreeLe?.toISOString() ?? null,
+    pharmacie: course.commande.pharmacie,
+    ...(course.idLivreur && patient
+      ? { patient: { prenom: patient.prenom, nom: patient.nom, telephone: patient.telephone } }
+      : {}),
+  };
+}
+
+const COMMANDE_PATIENT_SELECT = {
+  id: true,
+  statut: true,
+  modeRemise: true,
+  idPharmacie: true,
+  quartierRecherche: true,
+  ordonnance: {
+    select: {
+      consultation: {
+        select: {
+          patient: {
+            select: {
+              idUtilisateur: true,
+              prefecture: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+type CommandePatientPayload = Prisma.CommandeGetPayload<{ select: typeof COMMANDE_PATIENT_SELECT }>;
+
+function exigerRole(user: JwtPayload, role: Role): void {
+  if (user.role !== role) throw new ForbiddenError('Ce geste ne correspond pas a votre role');
+}
+
+async function profilLivreur(userId: string, actifObligatoire: boolean) {
+  const profile = await prisma.livreurProfile.findUnique({
+    where: { idUtilisateur: userId },
+    select: {
+      id: true,
+      quartier: true,
+      prefecture: true,
+      estActif: true,
+      utilisateur: { select: { role: true } },
+    },
+  });
+  if (!profile || profile.utilisateur.role !== Role.LIVREUR) {
+    throw new ForbiddenError('Aucun profil livreur n est rattache a ce compte');
+  }
+  if (actifObligatoire && !profile.estActif) {
+    throw new ForbiddenError('Votre profil livreur est inactif');
+  }
+  return profile;
+}
+
+async function commandeDuPatient(
+  client: CourseTransactionClient,
+  user: JwtPayload,
+  idCommande: string,
+): Promise<CommandePatientPayload> {
+  const commande = await client.commande.findUnique({
+    where: { id: idCommande },
+    select: COMMANDE_PATIENT_SELECT,
+  });
+  if (!commande) throw new NotFoundError('Commande non trouvee');
+  if (commande.ordonnance.consultation?.patient.idUtilisateur !== user.userId) {
+    throw new ForbiddenError('Cette commande ne vous appartient pas');
+  }
+  return commande;
+}
+
+async function obtenirCourseView(
+  client: CourseTransactionClient,
+  idCourse: string,
+): Promise<CourseServiceView> {
+  const course = await client.course.findUnique({
+    where: { id: idCourse },
+    select: COURSE_VIEW_SELECT,
+  });
+  if (!course) throw new NotFoundError('Course non trouvee');
+  return versCourseView(course);
+}
+
+/**
+ * Cree la course dans la transaction qui rend la commande prete. La
+ * prefecture est lue depuis le profil patient au moment de l'ouverture, puis
+ * copiee dans la course : toute modification ulterieure du profil est sans
+ * effet sur sa zone.
+ */
+export async function ouvrirCourse(
+  idCommande: string,
+  tx: CourseTransactionClient,
+): Promise<{ id: string; statut: StatutCourse }> {
+  const commande = await tx.commande.findUnique({
+    where: { id: idCommande },
+    select: {
+      id: true,
+      statut: true,
+      modeRemise: true,
+      quartierRecherche: true,
+      ordonnance: {
+        select: {
+          consultation: {
+            select: { patient: { select: { prefecture: true } } },
+          },
+        },
+      },
+    },
+  });
+  if (!commande) throw new NotFoundError('Commande non trouvee');
+  if (commande.statut !== StatutCommande.PRETE_POUR_LIVRAISON || commande.modeRemise !== ModeRemise.LIVRAISON) {
+    throw new ConflictError('La commande doit etre prete pour livraison avant d ouvrir une course');
+  }
+
+  const existante = await tx.course.findFirst({
+    where: { idCommande, statut: { notIn: [StatutCourse.LIVREE, StatutCourse.ANNULEE] } },
+    select: { id: true, statut: true },
+  });
+  if (existante) return existante;
+
+  const quartier = commande.quartierRecherche?.trim();
+  const prefecture = commande.ordonnance.consultation?.patient.prefecture.trim();
+  if (!quartier || !prefecture) {
+    throw new ValidationError('Le quartier et la prefecture du patient sont requis pour ouvrir la course');
+  }
+
+  const course = await tx.course.create({
+    data: {
+      numero: await prochainNumero('LV', tx),
+      idCommande,
+      quartier,
+      prefecture,
+    },
+    select: { id: true, statut: true },
+  });
+  return course;
+}
+
+/** Courses ouvertes uniquement dans la zone declaree par le livreur actif. */
+export async function coursesOuvertesPour(user: JwtPayload): Promise<CourseLivreurServiceView[]> {
+  exigerRole(user, Role.LIVREUR);
+  const profile = await profilLivreur(user.userId, true);
+  const courses = await prisma.course.findMany({
+    where: {
+      statut: StatutCourse.APPEL_OFFRES,
+      quartier: profile.quartier,
+      prefecture: profile.prefecture,
+    },
+    select: COURSE_LIVREUR_OPEN_SELECT,
+    orderBy: { creeeLe: 'asc' },
+  });
+  return courses.map((course) => ({
+    id: course.id,
+    numero: course.numero,
+    statut: course.statut,
+    quartier: course.quartier,
+    prefecture: course.prefecture,
+    prixGnf: course.prixGnf,
+    delaiAnnonceMinutes: course.delaiAnnonceMinutes,
+    creeeLe: course.creeeLe.toISOString(),
+    attribueeLe: course.attribueeLe?.toISOString() ?? null,
+    remiseLe: course.remiseLe?.toISOString() ?? null,
+    livreeLe: course.livreeLe?.toISOString() ?? null,
+    pharmacie: course.commande.pharmacie,
+  }));
+}
+
+/** Historique du livreur ; les coordonnees du patient n'apparaissent qu'apres attribution. */
+export async function coursesDuLivreur(user: JwtPayload): Promise<CourseLivreurServiceView[]> {
+  exigerRole(user, Role.LIVREUR);
+  const profile = await profilLivreur(user.userId, false);
+  const courses = await prisma.course.findMany({
+    where: { idLivreur: profile.id },
+    select: COURSE_LIVREUR_ASSIGNED_SELECT,
+    orderBy: { creeeLe: 'desc' },
+  });
+  return courses.map(versCourseLivreurView);
+}
+
+/** Enregistre ou remplace l'unique offre du livreur pour cette course. */
+export async function proposer(
+  user: JwtPayload,
+  idCourse: string,
+  offre: OffreCourseInput,
+): Promise<OffreCourseServiceView> {
+  exigerRole(user, Role.LIVREUR);
+  const profile = await profilLivreur(user.userId, true);
+  if (!Number.isInteger(offre.prixGnf) || offre.prixGnf <= 0) {
+    throw new ValidationError('Le prix doit etre un entier positif');
+  }
+  if (!Number.isInteger(offre.delaiMinutes) || offre.delaiMinutes <= 0) {
+    throw new ValidationError('Le delai doit etre un entier positif');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // Lock the open row so an attribution cannot race past the status check.
+    const verrou = await tx.course.updateMany({
+      where: { id: idCourse, statut: StatutCourse.APPEL_OFFRES },
+      data: { statut: StatutCourse.APPEL_OFFRES },
+    });
+    if (verrou.count !== 1) {
+      const course = await tx.course.findUnique({ where: { id: idCourse }, select: { id: true } });
+      if (!course) throw new NotFoundError('Course non trouvee');
+      throw new ConflictError('Cette course n accepte plus de proposition');
+    }
+
+    const course = await tx.course.findUnique({
+      where: { id: idCourse },
+      select: { quartier: true, prefecture: true },
+    });
+    if (!course) throw new NotFoundError('Course non trouvee');
+    if (course.quartier !== profile.quartier || course.prefecture !== profile.prefecture) {
+      throw new ForbiddenError('Cette course est hors de votre zone');
+    }
+
+    const result = await tx.offreCourse.upsert({
+      where: { idCourse_idLivreur: { idCourse, idLivreur: profile.id } },
+      create: {
+        idCourse,
+        idLivreur: profile.id,
+        prixGnf: offre.prixGnf,
+        delaiMinutes: offre.delaiMinutes,
+      },
+      update: { prixGnf: offre.prixGnf, delaiMinutes: offre.delaiMinutes },
+      select: { id: true, prixGnf: true, delaiMinutes: true, creeeLe: true },
+    });
+    return {
+      id: result.id,
+      prixGnf: result.prixGnf,
+      delaiMinutes: result.delaiMinutes,
+      creeeLe: result.creeeLe.toISOString(),
+    };
+  });
+}
+
+/** Offres classees par prix puis delai, apres verification de propriete patient. */
+export async function offresDeMaCommande(
+  user: JwtPayload,
+  idCommande: string,
+): Promise<OffreCourseServiceView[]> {
+  exigerRole(user, Role.PATIENT);
+  const commande = await prisma.commande.findUnique({
+    where: { id: idCommande },
+    select: {
+      id: true,
+      ordonnance: {
+        select: {
+          consultation: { select: { patient: { select: { idUtilisateur: true } } } },
+        },
+      },
+    },
+  });
+  if (!commande) throw new NotFoundError('Commande non trouvee');
+  if (commande.ordonnance.consultation?.patient.idUtilisateur !== user.userId) {
+    throw new ForbiddenError('Cette commande ne vous appartient pas');
+  }
+  const course = await prisma.course.findFirst({
+    where: { idCommande, statut: StatutCourse.APPEL_OFFRES },
+    select: { id: true },
+    orderBy: { creeeLe: 'desc' },
+  });
+  if (!course) return [];
+
+  const offres = await prisma.offreCourse.findMany({
+    where: { idCourse: course.id },
+    select: { id: true, prixGnf: true, delaiMinutes: true, creeeLe: true },
+    orderBy: [{ prixGnf: 'asc' }, { delaiMinutes: 'asc' }],
+  });
+  return offres.map((offre) => ({
+    id: offre.id,
+    prixGnf: offre.prixGnf,
+    delaiMinutes: offre.delaiMinutes,
+    creeeLe: offre.creeeLe.toISOString(),
+  }));
+}
+
+/** Le patient choisit une offre ; le prix accepte est copie dans la course. */
+export async function choisirOffre(
+  user: JwtPayload,
+  idCommande: string,
+  idOffre: string,
+): Promise<CourseServiceView> {
+  exigerRole(user, Role.PATIENT);
+  return prisma.$transaction(async (tx) => {
+    await commandeDuPatient(tx, user, idCommande);
+    const offre = await tx.offreCourse.findFirst({
+      where: { id: idOffre, course: { idCommande } },
+      select: {
+        idCourse: true,
+        idLivreur: true,
+        prixGnf: true,
+        delaiMinutes: true,
+        course: { select: { statut: true } },
+      },
+    });
+    if (!offre) throw new NotFoundError('Offre non trouvee pour cette commande');
+    assertTransitionCourse(offre.course.statut, StatutCourse.ATTRIBUEE);
+
+    const maintenant = new Date();
+    const result = await tx.course.updateMany({
+      where: { id: offre.idCourse, statut: StatutCourse.APPEL_OFFRES },
+      data: {
+        statut: StatutCourse.ATTRIBUEE,
+        idLivreur: offre.idLivreur,
+        prixGnf: offre.prixGnf,
+        delaiAnnonceMinutes: offre.delaiMinutes,
+        attribueeLe: maintenant,
+      },
+    });
+    if (result.count !== 1) throw new ConflictError('Une autre attribution a deja eu lieu');
+    return obtenirCourseView(tx, offre.idCourse);
+  });
+}
+
+/** Le QR doit correspondre au motard attribue avant toute mutation. */
+export async function remettreAuMotard(
+  user: JwtPayload,
+  idCourse: string,
+  qrCodeScanne: string,
+): Promise<CourseServiceView> {
+  exigerRole(user, Role.PHARMACIEN);
+  return prisma.$transaction(async (tx) => {
+    const coursier = await tx.utilisateur.findUnique({
+      where: { id: user.userId },
+      select: { idStructure: true, structure: { select: { type: true, estPartenaire: true } } },
+    });
+    if (!coursier?.structure || !estStructureOfficinale(coursier.structure.type)) {
+      throw new ForbiddenError('Compte sans structure pharmaceutique');
+    }
+    if (!coursier.structure.estPartenaire) {
+      throw new ForbiddenError('Votre pharmacie n est pas partenaire de la plateforme');
+    }
+
+    const course = await tx.course.findUnique({
+      where: { id: idCourse },
+      select: {
+        id: true,
+        statut: true,
+        idLivreur: true,
+        livreur: { select: { qrCode: true } },
+        commande: { select: { id: true, idPharmacie: true } },
+      },
+    });
+    if (!course) throw new NotFoundError('Course non trouvee');
+    if (!coursier.idStructure || course.commande.idPharmacie !== coursier.idStructure) {
+      throw new ForbiddenError('Cette course ne concerne pas votre pharmacie');
+    }
+    if (!course.livreur || course.livreur.qrCode !== qrCodeScanne) {
+      throw new ValidationError('Le QR scanne ne correspond pas au motard attribue ; aucun changement n a ete effectue');
+    }
+    assertTransitionCourse(course.statut, StatutCourse.EN_COURS);
+
+    const maintenant = new Date();
+    const majCourse = await tx.course.updateMany({
+      where: { id: idCourse, statut: StatutCourse.ATTRIBUEE, idLivreur: course.idLivreur },
+      data: { statut: StatutCourse.EN_COURS, remiseLe: maintenant },
+    });
+    if (majCourse.count !== 1) throw new ConflictError('La course a change avant la remise');
+    const majCommande = await tx.commande.updateMany({
+      where: { id: course.commande.id, statut: StatutCommande.PRETE_POUR_LIVRAISON },
+      data: { statut: StatutCommande.RETIREE, remiseLe: maintenant },
+    });
+    if (majCommande.count !== 1) throw new ConflictError('La commande ne peut pas etre remise au motard dans son etat actuel');
+    return obtenirCourseView(tx, idCourse);
+  });
+}
+
+/** Seul le patient proprietaire peut confirmer la reception et clore le dossier. */
+export async function declarerRecu(user: JwtPayload, idCourse: string): Promise<CourseServiceView> {
+  exigerRole(user, Role.PATIENT);
+  return prisma.$transaction(async (tx) => {
+    const course = await tx.course.findUnique({
+      where: { id: idCourse },
+      select: { id: true, statut: true, idCommande: true },
+    });
+    if (!course) throw new NotFoundError('Course non trouvee');
+    await commandeDuPatient(tx, user, course.idCommande);
+    assertTransitionCourse(course.statut, StatutCourse.LIVREE);
+
+    const maintenant = new Date();
+    const majCourse = await tx.course.updateMany({
+      where: { id: idCourse, statut: StatutCourse.EN_COURS },
+      data: { statut: StatutCourse.LIVREE, livreeLe: maintenant },
+    });
+    if (majCourse.count !== 1) throw new ConflictError('La course a change avant la confirmation');
+    const majCommande = await tx.commande.updateMany({
+      where: { id: course.idCommande, statut: StatutCommande.RETIREE },
+      data: { statut: StatutCommande.CLOTUREE, clotureeLe: maintenant },
+    });
+    if (majCommande.count !== 1) throw new ConflictError('La commande ne peut pas etre cloturee dans son etat actuel');
+    return obtenirCourseView(tx, idCourse);
+  });
+}
+
+/** Le patient peut repasser au retrait tant que les produits ne sont pas partis. */
+export async function renoncerALaLivraison(
+  user: JwtPayload,
+  idCourse: string,
+  motif: string,
+): Promise<CourseServiceView> {
+  exigerRole(user, Role.PATIENT);
+  if (motif.trim().length < 5) throw new ValidationError('Le motif doit contenir au moins cinq caracteres');
+
+  return prisma.$transaction(async (tx) => {
+    const course = await tx.course.findUnique({
+      where: { id: idCourse },
+      select: { id: true, statut: true, idCommande: true },
+    });
+    if (!course) throw new NotFoundError('Course non trouvee');
+    const commande = await commandeDuPatient(tx, user, course.idCommande);
+    let statutFinal: StatutCourse;
+
+    if (course.statut === StatutCourse.SANS_MOTARD && commande.statut === StatutCommande.PRETE_POUR_RETRAIT) {
+      return obtenirCourseView(tx, idCourse);
+    }
+    if (course.statut === StatutCourse.APPEL_OFFRES) {
+      statutFinal = StatutCourse.SANS_MOTARD;
+    } else if (course.statut === StatutCourse.SANS_MOTARD) {
+      statutFinal = StatutCourse.SANS_MOTARD;
+    } else if (course.statut === StatutCourse.ATTRIBUEE) {
+      statutFinal = StatutCourse.ANNULEE;
+    } else {
+      throw new ConflictError('La livraison ne peut plus etre abandonnee apres le depart des produits');
+    }
+    if (course.statut !== statutFinal) assertTransitionCourse(course.statut, statutFinal);
+    if (commande.statut === StatutCommande.PRETE_POUR_LIVRAISON) {
+      assertCommandeTransition(commande.statut, StatutCommande.PRETE_POUR_RETRAIT);
+    } else {
+      throw new ConflictError('La commande ne peut pas repasser au retrait dans son etat actuel');
+    }
+
+    const maintenant = new Date();
+    const majCourse = await tx.course.updateMany({
+      where: { id: idCourse, statut: course.statut },
+      data: {
+        statut: statutFinal,
+        ...(statutFinal === StatutCourse.ANNULEE
+          ? { motifAnnulation: motif.trim(), annuleeLe: maintenant }
+          : {}),
+      },
+    });
+    if (majCourse.count !== 1) throw new ConflictError('La course a change avant votre renoncement');
+
+    const majCommande = await tx.commande.updateMany({
+      where: { id: course.idCommande, statut: StatutCommande.PRETE_POUR_LIVRAISON },
+      data: { statut: StatutCommande.PRETE_POUR_RETRAIT, modeRemise: ModeRemise.RETRAIT_PHARMACIE },
+    });
+    if (majCommande.count !== 1) throw new ConflictError('La commande ne peut pas repasser au retrait dans son etat actuel');
+    return obtenirCourseView(tx, idCourse);
+  });
+}
