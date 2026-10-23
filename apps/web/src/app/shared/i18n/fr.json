@@ -296,6 +296,7 @@
     "STRUCT_TYPE_CLINIQUE": "Clinique",
     "STRUCT_TYPE_PHARMACIE": "Pharmacie",
     "STRUCT_TYPE_LABORATOIRE": "Laboratoire",
+    "STRUCT_TYPE_ASSURANCE": "Assureur",
     "CTA_TITLE": "Prêt à rejoindre {{nom}} ?",
     "CTA_SUB": "Créez votre compte gratuitement et retrouvez votre dossier de santé partout en Guinée, même en faible débit.",
     "CTA_PRIMARY": "Créer un compte gratuit",
@@ -743,7 +744,23 @@
       "RENONCER_MOTIF": "Pourquoi ? (5 caractères minimum)",
       "RENONCE_OK": "Commande annulée.",
       "ATTENDRE_CHIFFRAGE": "La pharmacie n’a pas encore fixé le montant.",
-      "TERMINEES": "Commandes passées"
+      "TERMINEES": "Commandes passées",
+      "OFFRES_LIVRAISON": "Offres de livraison",
+      "PRIX_LIVRAISON": "Prix du transport",
+      "DELAI_LIVRAISON": "Délai annoncé",
+      "AUCUNE_OFFRE_LIVRAISON": "Aucun livreur n’a encore proposé de prix. Vous pouvez attendre ou aller chercher votre commande à la pharmacie.",
+      "ALLER_CHERCHER": "Aller chercher moi-même",
+      "ALLER_CHERCHER_TITRE": "Revenir au retrait en pharmacie",
+      "ALLER_CHERCHER_CONFIRMATION": "La course sera annulée ou fermée et la commande repassera au retrait. Indiquez un motif.",
+      "COURSE_CHOISIE": "Livreur choisi. La pharmacie a été prévenue.",
+      "CHOISIR_LIVREUR": "Choisir ce livreur",
+      "LIVREUR_CHOISI": "Votre livreur est choisi. La pharmacie le remettra après avoir vérifié son QR code.",
+      "JAI_RECU": "J’ai reçu mes produits",
+      "RECEPTION_TITRE": "Confirmer la réception",
+      "RECEPTION_IRREVERSIBLE": "Confirmez uniquement après avoir reçu tous vos produits. Cette déclaration clôt la commande et ne peut pas être annulée.",
+      "RECEPTION_CONFIRMER": "Confirmer la réception",
+      "RECEPTION_OK": "Réception confirmée. Votre commande est terminée.",
+      "RENONCER_LIVRAISON_OK": "La commande repasse au retrait en pharmacie."
     },
     "NAV_COMMANDES": "Mes commandes",
     "NAV_CARTES_ASSURANCE": "Cartes d'assurance",
@@ -1149,6 +1166,7 @@
       "URGENCE_URGENT": "Urgent",
       "URGENCE_URGENCE_VITALE": "Urgence vitale",
       "STATUT_ACCEPTE": "Référencement accepté",
+      "STATUT_EN_ATTENTE": "En attente de traitement",
       "STATUT_REFUSE": "Référencement refusé",
       "STATUT_COMPLETE": "Prise en charge terminée",
       "ACCEPTER": "Accepter le transfert",
@@ -1714,9 +1732,47 @@
       "ETAT_RECHERCHE_PHARMACIE": "Appel en cours dans le quartier",
       "ETAT_SANS_PHARMACIE": "Aucune officine ne l’avait",
       "ETAT_CLOTUREE": "Servie",
-      "ETAT_ANNULEE": "Annulée"
+      "ETAT_ANNULEE": "Annulée",
+      "COURSE_INTROUVABLE": "Aucune course active n’est rattachée à cette commande. Ne remettez pas les produits."
     },
     "NAV_COMMANDES": "Commandes"
+  },
+  "LIVREUR": {
+    "ROLE": "Livreur",
+    "NAV_COURSES": "Courses ouvertes",
+    "NAV_MES_COURSES": "Mes courses",
+    "ACTUALISER": "Actualiser",
+    "COURSES": {
+      "TITRE": "Courses ouvertes",
+      "SOUS_TITRE": "Proposez un prix et un délai pour les courses dans votre zone.",
+      "AUCUNE": "Aucune course ouverte",
+      "AUCUNE_AIDE": "Les nouvelles courses de votre quartier apparaîtront ici.",
+      "PHARMACIE": "Pharmacie de départ",
+      "DESTINATION": "Quartier de destination",
+      "PRIX": "Votre prix",
+      "DELAI": "Votre délai",
+      "MINUTES": "minutes",
+      "ENVOYER_OFFRE": "Envoyer mon offre",
+      "CORRIGER_OFFRE": "Mettre à jour mon offre",
+      "OFFRE_ENREGISTREE": "Votre offre est enregistrée. Vous pouvez encore la corriger tant que la course est ouverte."
+    },
+    "MES_COURSES": {
+      "TITRE": "Mes courses",
+      "SOUS_TITRE": "Retrouvez les courses qui vous ont été attribuées et votre QR code de livreur.",
+      "MON_QR": "Mon QR code de livreur",
+      "MON_QR_AIDE": "Présentez ce code au pharmacien avant de prendre les produits.",
+      "QR_ERREUR": "Le QR code n’a pas pu être généré. Actualisez la page ou présentez le code affiché.",
+      "AUCUNE": "Aucune course attribuée",
+      "AUCUNE_AIDE": "Les courses qui vous sont attribuées apparaîtront ici.",
+      "PRIX_ACCEPTE": "Prix accepté",
+      "DELAI_ANNONCE": "Délai annoncé"
+    },
+    "STATUT_APPEL_OFFRES": "Appel d’offres",
+    "STATUT_ATTRIBUEE": "Attribuée",
+    "STATUT_EN_COURS": "En cours de livraison",
+    "STATUT_LIVREE": "Livrée",
+    "STATUT_SANS_MOTARD": "Sans livreur",
+    "STATUT_ANNULEE": "Annulée"
   },
   "ADMIN": {
     "ROLE": "Administrateur",
@@ -1748,6 +1804,7 @@
       "ERR_EXPORT": "Erreur lors de l'export."
     },
     "STRUCTURES": {
+      "TYPE_ASSURANCE": "Assureur",
       "TITLE": "Structures de santé",
       "SUBTITLE": "Gérez toutes les structures de la plateforme",
       "NEW_BTN": "Nouvelle structure",
@@ -2110,6 +2167,7 @@
     "NAV_RGPD": "Demandes RGPD",
     "NAV_BRIS": "Accès d'urgence",
     "ASSURANCE": {
+      "STATUT_EXPIRE": "Expiré",
       "NAV_ASSURANCE": "Assurance",
       "TITRE": "Assurance et tiers payant",
       "SOUS_TITRE": "Les assureurs conventionnés, leurs règles de prise en charge, et les polices de leurs assurés.",
@@ -2332,6 +2390,12 @@
     "NAV_DASHBOARD": "Tableau de bord",
     "NAV_ADMISSION": "Admission",
     "NAV_EPISODES": "Épisodes de soins",
+    "DEMANDE_STATUT_TRANSMISE": "Transmise",
+    "DEMANDE_STATUT_RECUE": "Reçue",
+    "DEMANDE_STATUT_PRELEVEE": "Prélèvement effectué",
+    "DEMANDE_STATUT_EN_ANALYSE": "En analyse",
+    "DEMANDE_STATUT_VALIDEE": "Validée",
+    "DEMANDE_STATUT_ANNULEE": "Annulée",
     "DASH": {
       "TITLE": "Tableau de bord",
       "SUBTITLE": "Activité de votre établissement aujourd’hui",
