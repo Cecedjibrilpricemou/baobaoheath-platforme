@@ -1,5 +1,6 @@
 import { syncPushSchema, ussdSessionSchema, verifyLoginOtpSchema,
-  filtreJournalSchema,
+  choisirOffreCourseSchema, confirmerReceptionCourseSchema, filtreJournalSchema,
+  proposerOffreCourseSchema, remettreAuMotardSchema, renoncerLivraisonSchema,
 } from '../src/validators/api.schemas';
 
 describe('api.schemas', () => {
@@ -32,6 +33,32 @@ describe('api.schemas', () => {
     });
 
     expect(parsed.code).toBe('123456');
+  });
+});
+
+describe('schemas de livraison', () => {
+  it('exige un prix et un delai strictement positifs', () => {
+    expect(proposerOffreCourseSchema.parse({ prixGnf: 10_000, delaiMinutes: 20 })).toEqual({
+      prixGnf: 10_000,
+      delaiMinutes: 20,
+    });
+    expect(() => proposerOffreCourseSchema.parse({ prixGnf: 0, delaiMinutes: 20 })).toThrow();
+    expect(() => proposerOffreCourseSchema.parse({ prixGnf: 10_000, delaiMinutes: -1 })).toThrow();
+    expect(() => proposerOffreCourseSchema.parse({ prixGnf: 10_000, delaiMinutes: 20, produit: 'secret' })).toThrow();
+  });
+
+  it('valide les corps stricts de choix, remise et renoncement', () => {
+    expect(choisirOffreCourseSchema.parse({ idOffre: 'offre-1' }).idOffre).toBe('offre-1');
+    expect(remettreAuMotardSchema.parse({ qrCodeScanne: 'qr-1' }).qrCodeScanne).toBe('qr-1');
+    expect(renoncerLivraisonSchema.parse({ motif: 'Je viens chercher' }).motif).toBe('Je viens chercher');
+    expect(() => renoncerLivraisonSchema.parse({ motif: 'Non' })).toThrow();
+    expect(() => remettreAuMotardSchema.parse({ qrCodeScanne: 'qr-1', idLivreur: 'autre' })).toThrow();
+  });
+
+  it('accepte une confirmation de reception sans corps, mais refuse les champs inconnus', () => {
+    expect(confirmerReceptionCourseSchema.parse(undefined)).toBeUndefined();
+    expect(confirmerReceptionCourseSchema.parse({})).toEqual({});
+    expect(() => confirmerReceptionCourseSchema.parse({ idLivreur: 'livreur-1' })).toThrow();
   });
 });
 

@@ -424,6 +424,26 @@ export const annulerCommandeSchema = z.object({
   motif: z.string().trim().min(5).max(300),
 }).strict();
 
+// P8-a : seules les informations necessaires a une course sont acceptees.
+export const proposerOffreCourseSchema = z.object({
+  prixGnf: positiveInt,
+  delaiMinutes: positiveInt,
+}).strict();
+
+export const choisirOffreCourseSchema = z.object({
+  idOffre: id,
+}).strict();
+
+export const renoncerLivraisonSchema = z.object({
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+export const remettreAuMotardSchema = z.object({
+  qrCodeScanne: z.string().trim().min(1).max(128),
+}).strict();
+
+export const confirmerReceptionCourseSchema = z.object({}).strict().optional();
+
 /**
  * Payer le panier d'une commande.
  *
