@@ -344,6 +344,7 @@ model Utilisateur {
   actesDelivrance           ActeDelivrance[]         @relation("ActeDelivrancePharmacien")
   medecinProfile            MedecinProfile?
   pharmacienProfile         PharmacienProfile?
+  livreurProfile            LivreurProfile?
   sessions                  Session[]
   evenementsConnexion       EvenementConnexion[]
   authOtps                  AuthOtp[]
@@ -986,6 +987,24 @@ model PharmacienProfile {
   structure   StructureSante? @relation(fields: [idStructure], references: [id])
 
   @@map("profils_pharmacien")
+}
+
+model LivreurProfile {
+  id         String   @id @default(cuid())
+  qrCode     String   @unique @default(cuid())
+  quartier   String
+  prefecture String
+  estActif   Boolean  @default(true)
+  creeLe     DateTime @default(now())
+
+  idUtilisateur String      @unique
+  utilisateur   Utilisateur @relation(fields: [idUtilisateur], references: [id], onDelete: Restrict)
+
+  courses Course[]
+  offres  OffreCourse[]
+
+  @@index([prefecture, quartier, estActif])
+  @@map("profils_livreur")
 }
 
 // â”€â”€â”€ DOMAINE 3 â€” ACTES MEDICAUX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2173,6 +2192,15 @@ enum StatutCommande {
   ANNULEE
 }
 
+enum StatutCourse {
+  APPEL_OFFRES
+  ATTRIBUEE
+  EN_COURS
+  LIVREE
+  SANS_MOTARD
+  ANNULEE
+}
+
 /// Mode de remise, choisi par le patient (decision du 2026-09-26). La
 /// livraison n'est jamais imposee : beaucoup de patients habitent a cote d'une
 /// pharmacie et iront chercher eux-memes.
@@ -2223,10 +2251,55 @@ model Commande {
   lignes   LigneCommande[]
   facture  Facture?
   reponses ReponsePharmacie[]
+  courses  Course[]
 
   @@index([statut])
   @@index([idPharmacie])
   @@map("commandes")
+}
+
+model Course {
+  id                  String       @id @default(cuid())
+  numero              String       @unique
+  statut              StatutCourse @default(APPEL_OFFRES)
+  quartier            String
+  prefecture          String
+  prixGnf             Int?
+  delaiAnnonceMinutes Int?
+  creeeLe             DateTime     @default(now())
+  attribueeLe         DateTime?
+  remiseLe            DateTime?
+  livreeLe            DateTime?
+  annuleeLe           DateTime?
+  motifAnnulation     String?
+
+  idCommande String
+  commande   Commande @relation(fields: [idCommande], references: [id], onDelete: Restrict)
+
+  idLivreur String?
+  livreur   LivreurProfile? @relation(fields: [idLivreur], references: [id], onDelete: Restrict)
+
+  offres OffreCourse[]
+
+  @@index([prefecture, quartier, statut])
+  @@index([idLivreur, statut])
+  @@map("courses")
+}
+
+model OffreCourse {
+  id           String   @id @default(cuid())
+  prixGnf      Int
+  delaiMinutes Int
+  creeeLe      DateTime @default(now())
+
+  idCourse  String
+  course    Course         @relation(fields: [idCourse], references: [id], onDelete: Cascade)
+  idLivreur String
+  livreur   LivreurProfile @relation(fields: [idLivreur], references: [id], onDelete: Restrict)
+
+  @@unique([idCourse, idLivreur])
+  @@index([idLivreur])
+  @@map("offres_course")
 }
 
 /// Ce que chaque pharmacie sollicitee a repondu. On garde la trace meme des
