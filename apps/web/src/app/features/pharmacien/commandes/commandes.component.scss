@@ -1,0 +1,5 @@
+.bb-cmd__note--erreur {
+  color: var(--bb-danger, #991b1b);
+  border-inline-start: .25rem solid currentColor;
+  padding-inline-start: .75rem;
+}

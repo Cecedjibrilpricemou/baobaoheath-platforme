@@ -13,6 +13,13 @@
     </div>
   </header>
 
+  @if (erreurRemise(); as erreur) {
+    <p class="bb-cmd__note bb-cmd__note--erreur" role="alert">{{ erreur }}</p>
+  }
+  @if (scannerPour()) {
+    <app-qr-scanner (detecte)="qrDetecte($event)" (ferme)="fermerScanner()" />
+  }
+
   @if (chargement()) {
     <p class="bb-cmd__attente">{{ 'COMMON.LOADING' | translate }}</p>
   } @else {
@@ -208,10 +215,15 @@
                 }
                 @case ('PRETE_POUR_LIVRAISON') {
                   <button class="bb-cmd__btn" type="button"
-                          (click)="remettre(c)" [disabled]="enCours() === c.id">
+                          (click)="ouvrirScanner(c)" [disabled]="enCours() === c.id || !c.idCourse">
                     <i class="pi pi-send" aria-hidden="true"></i>
                     {{ 'PHARMACIEN.COMMANDES.REMETTRE_LIVREUR' | translate }}
                   </button>
+                  @if (!c.idCourse) {
+                    <p class="bb-cmd__note bb-cmd__note--erreur" role="alert">
+                      {{ 'PHARMACIEN.COMMANDES.COURSE_INTROUVABLE' | translate }}
+                    </p>
+                  }
                 }
                 @case ('RETIREE') {
                   <p class="bb-cmd__note">
