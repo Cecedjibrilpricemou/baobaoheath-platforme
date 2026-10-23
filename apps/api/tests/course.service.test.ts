@@ -9,9 +9,11 @@ import {
   remettreAuMotard,
   renoncerALaLivraison,
   transitionCoursePermise,
+  notifierLivreursCourse,
   type CourseTransactionClient,
 } from '../src/services/course.service';
 import { prochainNumero } from '../src/services/numero.service';
+import { notifierSansBloquer } from '../src/services/notification.service';
 import type { JwtPayload } from '../src/types/auth.types';
 import { ConflictError, ForbiddenError } from '../src/utils/app-error';
 import { Role, StatutCommande, StatutCourse } from '../src/config/generated/client/client';
@@ -26,9 +28,9 @@ jest.mock('../src/config/prisma', () => {
       findUnique: jest.fn(),
       updateMany: jest.fn(),
     },
-    livreurProfile: { findUnique: jest.fn() },
+    livreurProfile: { findUnique: jest.fn(), findMany: jest.fn() },
     offreCourse: { findFirst: jest.fn(), findMany: jest.fn(), upsert: jest.fn() },
-    utilisateur: { findUnique: jest.fn() },
+    utilisateur: { findUnique: jest.fn(), findMany: jest.fn() },
   };
   prisma['$transaction'] = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   return { prisma };
@@ -36,6 +38,9 @@ jest.mock('../src/config/prisma', () => {
 
 jest.mock('../src/services/numero.service', () => ({
   prochainNumero: jest.fn(),
+}));
+jest.mock('../src/services/notification.service', () => ({
+  notifierSansBloquer: jest.fn(),
 }));
 
 type M = jest.Mock;
@@ -45,9 +50,9 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     course: {
       create: M; findFirst: M; findMany: M; findUnique: M; updateMany: M;
     };
-    livreurProfile: { findUnique: M };
+    livreurProfile: { findUnique: M; findMany: M };
     offreCourse: { findFirst: M; findMany: M; upsert: M };
-    utilisateur: { findUnique: M };
+    utilisateur: { findUnique: M; findMany: M };
     $transaction: M;
   };
 };
@@ -89,6 +94,8 @@ beforeEach(() => {
   prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   prisma.livreurProfile.findUnique.mockResolvedValue(profil);
   prisma.course.updateMany.mockResolvedValue({ count: 1 });
+  prisma.livreurProfile.findMany.mockResolvedValue([]);
+  (notifierSansBloquer as jest.Mock).mockResolvedValue(undefined);
   numero.mockResolvedValue('LV-2026-000001');
 });
 
@@ -172,6 +179,31 @@ describe('ouverture et visibilité des courses', () => {
     })]);
   });
 
+  it('notifie uniquement les livreurs actifs de la zone a l ouverture', async () => {
+    prisma.course.findUnique.mockResolvedValue({
+      numero: 'LV-2026-000001',
+      quartier: profil.quartier,
+      prefecture: profil.prefecture,
+    });
+    prisma.livreurProfile.findMany.mockResolvedValue([{ utilisateur: { id: 'livreur-user' } }]);
+
+    await notifierLivreursCourse('course-1');
+
+    expect(prisma.livreurProfile.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        estActif: true,
+        quartier: profil.quartier,
+        prefecture: profil.prefecture,
+        utilisateur: { role: Role.LIVREUR, estActif: true },
+      }),
+    }));
+    expect(notifierSansBloquer).toHaveBeenCalledWith(expect.objectContaining({
+      idUtilisateur: 'livreur-user',
+      type: 'COURSE_OUVERTE',
+      metadonnees: expect.objectContaining({ idCourse: 'course-1' }),
+    }));
+  });
+
   it('ne donne aucune donnee de produit ou ordonnance dans la vue livreur attribuee', async () => {
     prisma.course.findMany.mockResolvedValue([{
       ...courseOuverte,
@@ -221,12 +253,21 @@ describe('offres de course', () => {
   });
 
   it('met a jour l offre unique du livreur au lieu de creer un doublon', async () => {
-    prisma.course.findUnique.mockResolvedValue({
+    const ouverte = {
       id: 'course-1',
       statut: StatutCourse.APPEL_OFFRES,
       quartier: profil.quartier,
       prefecture: profil.prefecture,
-    });
+    };
+    const notification = {
+      numero: 'LV-2026-000001',
+      commande: { ordonnance: { consultation: { patient: { idUtilisateur: patient.userId } } } },
+    };
+    prisma.course.findUnique
+      .mockResolvedValueOnce(ouverte)
+      .mockResolvedValueOnce(notification)
+      .mockResolvedValueOnce(ouverte)
+      .mockResolvedValueOnce(notification);
     prisma.offreCourse.upsert
       .mockResolvedValueOnce({
         id: 'offre-1', prixGnf: 10_000, delaiMinutes: 20, creeeLe: new Date('2026-10-23T10:00:00Z'),
@@ -246,6 +287,38 @@ describe('offres de course', () => {
     expect(updated).toMatchObject({ id: 'offre-1', prixGnf: 12_000, delaiMinutes: 15 });
   });
 
+  it('notifie le patient a l arrivee d une offre sans divulguer de produits', async () => {
+    prisma.course.findUnique
+      .mockResolvedValueOnce({
+        id: 'course-1',
+        statut: StatutCourse.APPEL_OFFRES,
+        quartier: profil.quartier,
+        prefecture: profil.prefecture,
+      })
+      .mockResolvedValueOnce({
+        numero: 'LV-2026-000001',
+        commande: {
+          ordonnance: { consultation: { patient: { idUtilisateur: patient.userId } } },
+        },
+      });
+    prisma.offreCourse.upsert.mockResolvedValue({
+      id: 'offre-1',
+      prixGnf: 10_000,
+      delaiMinutes: 20,
+      creeeLe: new Date('2026-10-23T10:00:00Z'),
+    });
+
+    await proposer(livreur, 'course-1', { prixGnf: 10_000, delaiMinutes: 20 });
+
+    expect(notifierSansBloquer).toHaveBeenCalledWith(expect.objectContaining({
+      idUtilisateur: patient.userId,
+      type: 'OFFRE_COURSE',
+      contenu: expect.stringContaining('10000 GNF'),
+    }));
+    expect(JSON.stringify((notifierSansBloquer as jest.Mock).mock.calls[0]?.[0]))
+      .not.toMatch(/produit|ordonnance|diagnostic/i);
+  });
+
   it('copie le prix choisi dans la course sans dependance ulterieure a l offre', async () => {
     prisma.commande.findUnique.mockResolvedValue({
       id: 'commande-1',
@@ -263,12 +336,20 @@ describe('offres de course', () => {
       course: { statut: StatutCourse.APPEL_OFFRES },
     });
     prisma.course.updateMany.mockResolvedValue({ count: 1 });
-    prisma.course.findUnique.mockResolvedValue({
-      ...courseView,
-      statut: StatutCourse.ATTRIBUEE,
-      prixGnf: 10_000,
-      delaiAnnonceMinutes: 20,
-    });
+    prisma.course.findUnique
+      .mockResolvedValueOnce({
+        ...courseView,
+        statut: StatutCourse.ATTRIBUEE,
+        prixGnf: 10_000,
+        delaiAnnonceMinutes: 20,
+      })
+      .mockResolvedValueOnce({
+        numero: 'LV-2026-000001',
+        prixGnf: 10_000,
+        delaiAnnonceMinutes: 20,
+        commande: { idPharmacie: 'pharmacie-1' },
+      });
+    prisma.utilisateur.findMany.mockResolvedValue([{ id: 'pharmacien-user' }]);
 
     const result = await choisirOffre(patient, 'commande-1', 'offre-1');
 
@@ -282,6 +363,10 @@ describe('offres de course', () => {
       }),
     }));
     expect(result.prixGnf).toBe(10_000);
+    expect(notifierSansBloquer).toHaveBeenCalledWith(expect.objectContaining({
+      idUtilisateur: 'pharmacien-user',
+      type: 'COURSE_ATTRIBUEE',
+    }));
     prisma.offreCourse.upsert.mockResolvedValue({
       id: 'offre-1', prixGnf: 99_000, delaiMinutes: 90, creeeLe: new Date(),
     });
@@ -291,6 +376,17 @@ describe('offres de course', () => {
       quartier: profil.quartier,
       prefecture: profil.prefecture,
     });
+    prisma.course.findUnique
+      .mockResolvedValueOnce({
+        id: 'course-1',
+        statut: StatutCourse.APPEL_OFFRES,
+        quartier: profil.quartier,
+        prefecture: profil.prefecture,
+      })
+      .mockResolvedValueOnce({
+        numero: 'LV-2026-000001',
+        commande: { ordonnance: { consultation: { patient: { idUtilisateur: patient.userId } } } },
+      });
     await proposer(livreur, 'course-1', { prixGnf: 99_000, delaiMinutes: 90 });
     expect(result.prixGnf).toBe(10_000);
   });

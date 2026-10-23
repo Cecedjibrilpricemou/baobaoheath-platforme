@@ -134,7 +134,10 @@ export type TypeNotification =
   | 'COMMANDE_REMISE'
   | 'COMMANDE_ANNULEE'
   | 'ORDONNANCE_SUBSTITUTION'
-  | 'ORDONNANCE_LIGNE_REFUSEE';
+  | 'ORDONNANCE_LIGNE_REFUSEE'
+  | 'COURSE_OUVERTE'
+  | 'OFFRE_COURSE'
+  | 'COURSE_ATTRIBUEE';
 
 /** Statut d'une commande pharmacie (EF-07). */
 // ═══════════════════════════════════════════════════════════════════
@@ -227,10 +230,8 @@ export interface CommandeView {
  * Le tronc commun va de l'appel au quartier jusqu'a la preparation, puis
  * deux sorties selon le mode de remise choisi par le patient.
  *
- * `PRETE_POUR_LIVRAISON` est le **point de jonction avec P8** : la course,
- * l'enchere des motards et le suivi commencent la. Les etats propres a la
- * livraison n'existent pas encore — un etat qu'aucun code ne pose ne se
- * verifie pas.
+ * `PRETE_POUR_LIVRAISON` est le point de jonction avec P8 : a cet etat, une
+ * course d'appel d'offres est ouverte dans la meme transaction.
  */
 export type StatutCommande =
   | 'RECHERCHE_PHARMACIE'
@@ -250,6 +251,84 @@ export type StatutCommande =
  * imposee : beaucoup de patients habitent a cote d'une pharmacie.
  */
 export type ModeRemise = 'RETRAIT_PHARMACIE' | 'LIVRAISON';
+
+/** Etats propres a l'appel d'offres et a la livraison d'une commande P8-a. */
+export type StatutCourse =
+  | 'APPEL_OFFRES'
+  | 'ATTRIBUEE'
+  | 'EN_COURS'
+  | 'LIVREE'
+  | 'SANS_MOTARD'
+  | 'ANNULEE';
+
+/** Vue explicite de la course remise au patient et aux professionnels autorises. */
+export interface CourseView {
+  id: string;
+  numero: string;
+  statut: StatutCourse;
+  quartier: string;
+  prefecture: string;
+  prixGnf: number | null;
+  delaiAnnonceMinutes: number | null;
+  creeeLe: HorodatageApi;
+  attribueeLe: HorodatageApi | null;
+  remiseLe: HorodatageApi | null;
+  livreeLe: HorodatageApi | null;
+  annuleeLe: HorodatageApi | null;
+  motifAnnulation: string | null;
+  pharmacie: { id: string; nom: string } | null;
+}
+
+/**
+ * Vue exclusivement destinee au livreur. Elle ne contient jamais de produit,
+ * d'ordonnance, de posologie ni de diagnostic : le livreur transporte un colis
+ * scelle et n'a pas a connaitre le soin. Le nom et le telephone du patient ne
+ * sont rendus qu'apres attribution, pour permettre la remise a domicile.
+ */
+export interface CourseLivreurView {
+  id: string;
+  numero: string;
+  statut: StatutCourse;
+  quartier: string;
+  prefecture: string;
+  prixGnf: number | null;
+  delaiAnnonceMinutes: number | null;
+  creeeLe: HorodatageApi;
+  attribueeLe: HorodatageApi | null;
+  remiseLe: HorodatageApi | null;
+  livreeLe: HorodatageApi | null;
+  pharmacie: { id: string; nom: string } | null;
+  patient?: { prenom: string; nom: string; telephone: string };
+}
+
+/** Offre d'un livreur, ordonnee par prix puis par delai pour le patient. */
+export interface OffreCourseView {
+  id: string;
+  prixGnf: number;
+  delaiMinutes: number;
+  creeeLe: HorodatageApi;
+}
+
+/** Prix et delai proposes par un livreur pour une course ouverte. */
+export interface ProposerOffreCourseDto {
+  prixGnf: number;
+  delaiMinutes: number;
+}
+
+/** Identifiant de l'offre retenue par le patient proprietaire de la commande. */
+export interface ChoisirOffreCourseDto {
+  idOffre: string;
+}
+
+/** Motif de la decision du patient de revenir au retrait en pharmacie. */
+export interface RenoncerALaLivraisonDto {
+  motif: string;
+}
+
+/** QR du livreur scanne par le pharmacien avant la remise du colis. */
+export interface RemettreAuMotardDto {
+  qrCodeScanne: string;
+}
 
 export type CanalNotification = 'SMS' | 'PUSH' | 'IN_APP';
 

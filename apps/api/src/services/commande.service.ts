@@ -28,6 +28,7 @@ import { prochainNumero } from './numero.service';
 import { notifierSansBloquer } from './notification.service';
 import { assertTransition, transitionPermise } from './commande.transitions';
 export { assertTransition, transitionPermise } from './commande.transitions';
+import { notifierLivreursCourse, ouvrirCourse } from './course.service';
 
 /**
  * Ce qu'une commande montre, et ou s'arrete le partage.
@@ -756,10 +757,17 @@ export async function marquerPrete(user: JwtPayload, idCommande: string): Promis
     : StatutCommande.PRETE_POUR_LIVRAISON;
   assertTransition(commande.statut, vers);
 
-  await prisma.commande.update({
-    where: { id: idCommande },
-    data: { statut: vers, preteLe: new Date() },
+  const course = await prisma.$transaction(async (tx) => {
+    const maj = await tx.commande.updateMany({
+      where: { id: idCommande, statut: commande.statut },
+      data: { statut: vers, preteLe: new Date() },
+    });
+    if (maj.count !== 1) throw new ConflictError('La commande a change avant sa mise a disposition');
+    return vers === StatutCommande.PRETE_POUR_LIVRAISON
+      ? ouvrirCourse(idCommande, tx)
+      : null;
   });
+  if (course) await notifierLivreursCourse(course.id);
   await notifierCommandePrete(idCommande, commande.modeRemise);
   return getCommande(idCommande, pharmacie.id);
 }

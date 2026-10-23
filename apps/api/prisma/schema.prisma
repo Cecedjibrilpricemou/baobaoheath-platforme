@@ -258,6 +258,9 @@ enum TypeNotification {
   COMMANDE_ANNULEE // P6 : avec son motif
   ORDONNANCE_SUBSTITUTION // P6-b : un produit a ete remplace, avec son motif
   ORDONNANCE_LIGNE_REFUSEE // P6-b : une officine n'a pas pu servir une ligne
+  COURSE_OUVERTE // P8-a : les livreurs actifs de la zone sont appeles
+  OFFRE_COURSE // P8-a : une offre nouvelle ou modifiee attend le choix du patient
+  COURSE_ATTRIBUEE // P8-a : l'officine sait qu'un livreur a ete choisi
 }
 
 enum UssdSessionStatus {

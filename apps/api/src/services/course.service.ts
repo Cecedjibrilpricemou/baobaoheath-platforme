@@ -5,59 +5,22 @@ import {
   StatutCommande,
   StatutCourse,
 } from '../config/generated/client/client';
+import type {
+  CourseLivreurView,
+  CourseView,
+  OffreCourseView,
+  ProposerOffreCourseDto,
+} from '@baobaoheath/shared-types';
+import { logger } from '../config/logger';
 import { prisma } from '../config/prisma';
 import type { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { estStructureOfficinale } from '../utils/officine.util';
 import { assertTransition as assertCommandeTransition } from './commande.transitions';
+import { notifierSansBloquer } from './notification.service';
 import { prochainNumero } from './numero.service';
 
 export type CourseTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
-interface OffreCourseInput {
-  prixGnf: number;
-  delaiMinutes: number;
-}
-
-export interface CourseServiceView {
-  id: string;
-  numero: string;
-  statut: StatutCourse;
-  quartier: string;
-  prefecture: string;
-  prixGnf: number | null;
-  delaiAnnonceMinutes: number | null;
-  creeeLe: string;
-  attribueeLe: string | null;
-  remiseLe: string | null;
-  livreeLe: string | null;
-  annuleeLe: string | null;
-  motifAnnulation: string | null;
-  pharmacie: { id: string; nom: string } | null;
-}
-
-export interface CourseLivreurServiceView {
-  id: string;
-  numero: string;
-  statut: StatutCourse;
-  quartier: string;
-  prefecture: string;
-  prixGnf: number | null;
-  delaiAnnonceMinutes: number | null;
-  creeeLe: string;
-  attribueeLe: string | null;
-  remiseLe: string | null;
-  livreeLe: string | null;
-  pharmacie: { id: string; nom: string } | null;
-  patient?: { prenom: string; nom: string; telephone: string };
-}
-
-export interface OffreCourseServiceView {
-  id: string;
-  prixGnf: number;
-  delaiMinutes: number;
-  creeeLe: string;
-}
 
 const TRANSITIONS: Readonly<Record<StatutCourse, readonly StatutCourse[]>> = {
   APPEL_OFFRES: [StatutCourse.ATTRIBUEE, StatutCourse.SANS_MOTARD, StatutCourse.ANNULEE],
@@ -113,7 +76,7 @@ const COURSE_VIEW_SELECT = {
 
 type CourseViewPayload = Prisma.CourseGetPayload<{ select: typeof COURSE_VIEW_SELECT }>;
 
-function versCourseView(course: CourseViewPayload): CourseServiceView {
+function versCourseView(course: CourseViewPayload): CourseView {
   return {
     id: course.id,
     numero: course.numero,
@@ -176,7 +139,7 @@ const COURSE_LIVREUR_ASSIGNED_SELECT = {
 
 type CourseLivreurAssignedPayload = Prisma.CourseGetPayload<{ select: typeof COURSE_LIVREUR_ASSIGNED_SELECT }>;
 
-function versCourseLivreurView(course: CourseLivreurAssignedPayload): CourseLivreurServiceView {
+function versCourseLivreurView(course: CourseLivreurAssignedPayload): CourseLivreurView {
   const patient = course.commande.ordonnance.consultation?.patient.utilisateur;
   return {
     id: course.id,
@@ -264,13 +227,123 @@ async function commandeDuPatient(
 async function obtenirCourseView(
   client: CourseTransactionClient,
   idCourse: string,
-): Promise<CourseServiceView> {
+): Promise<CourseView> {
   const course = await client.course.findUnique({
     where: { id: idCourse },
     select: COURSE_VIEW_SELECT,
   });
   if (!course) throw new NotFoundError('Course non trouvee');
   return versCourseView(course);
+}
+
+/** Notifie les destinataires sans faire echouer l'action metier. */
+export async function notifierLivreursCourse(idCourse: string): Promise<void> {
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: idCourse },
+      select: { numero: true, quartier: true, prefecture: true },
+    });
+    if (!course) throw new NotFoundError('Course non trouvee pour la notification');
+    const destinataires = await prisma.livreurProfile.findMany({
+      where: {
+        estActif: true,
+        quartier: course.quartier,
+        prefecture: course.prefecture,
+        utilisateur: { role: Role.LIVREUR, estActif: true },
+      },
+      select: { utilisateur: { select: { id: true } } },
+    });
+    await Promise.all(destinataires.map(({ utilisateur }) => notifierSansBloquer({
+      idUtilisateur: utilisateur.id,
+      type: 'COURSE_OUVERTE',
+      titre: 'Nouvelle course dans votre zone',
+      contenu: `La course ${course.numero} est ouverte dans le quartier ${course.quartier}.`,
+      lienAction: '/livreur/courses',
+      metadonnees: { idCourse, numero: course.numero, quartier: course.quartier },
+    })));
+  } catch (error: unknown) {
+    logger.warn('[COURSE] notification d ouverture impossible', {
+      idCourse,
+      erreur: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/** Notifie le patient proprietaire de l'arrivee ou de la mise a jour d'une offre. */
+async function notifierPatientNouvelleOffre(
+  idCourse: string,
+  offre: OffreCourseView,
+): Promise<void> {
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: idCourse },
+      select: {
+        numero: true,
+        commande: {
+          select: {
+            ordonnance: {
+              select: {
+                consultation: {
+                  select: { patient: { select: { idUtilisateur: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const idPatient = course?.commande.ordonnance.consultation?.patient.idUtilisateur;
+    if (!course || !idPatient) throw new NotFoundError('Patient de la course introuvable pour la notification');
+    await notifierSansBloquer({
+      idUtilisateur: idPatient,
+      type: 'OFFRE_COURSE',
+      titre: 'Nouvelle offre de livraison',
+      contenu: `Un livreur propose la course ${course.numero} pour ${offre.prixGnf} GNF en ${offre.delaiMinutes} minutes.`,
+      lienAction: '/patient/commandes',
+      metadonnees: { idCourse, numero: course.numero },
+    });
+  } catch (error: unknown) {
+    logger.warn('[COURSE] notification patient d offre impossible', {
+      idCourse,
+      erreur: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/** Notifie les pharmaciens de l'officine choisie, sans faire circuler de details medicaux. */
+async function notifierPharmacieCourseAttribuee(idCourse: string): Promise<void> {
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: idCourse },
+      select: {
+        numero: true,
+        prixGnf: true,
+        delaiAnnonceMinutes: true,
+        commande: { select: { idPharmacie: true } },
+      },
+    });
+    const idPharmacie = course?.commande.idPharmacie;
+    if (!course || !idPharmacie || course.prixGnf === null || course.delaiAnnonceMinutes === null) {
+      throw new ValidationError('Attribution incomplete pour notifier la pharmacie');
+    }
+    const destinataires = await prisma.utilisateur.findMany({
+      where: { idStructure: idPharmacie, role: Role.PHARMACIEN, estActif: true },
+      select: { id: true },
+    });
+    await Promise.all(destinataires.map(({ id }) => notifierSansBloquer({
+      idUtilisateur: id,
+      type: 'COURSE_ATTRIBUEE',
+      titre: 'Un livreur a ete choisi',
+      contenu: `Le livreur de la course ${course.numero} a ete choisi : ${course.prixGnf} GNF, ${course.delaiAnnonceMinutes} minutes annoncees.`,
+      lienAction: '/pharmacien/commandes',
+      metadonnees: { idCourse, numero: course.numero },
+    })));
+  } catch (error: unknown) {
+    logger.warn('[COURSE] notification pharmacie d attribution impossible', {
+      idCourse,
+      erreur: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 /**
@@ -329,7 +402,7 @@ export async function ouvrirCourse(
 }
 
 /** Courses ouvertes uniquement dans la zone declaree par le livreur actif. */
-export async function coursesOuvertesPour(user: JwtPayload): Promise<CourseLivreurServiceView[]> {
+export async function coursesOuvertesPour(user: JwtPayload): Promise<CourseLivreurView[]> {
   exigerRole(user, Role.LIVREUR);
   const profile = await profilLivreur(user.userId, true);
   const courses = await prisma.course.findMany({
@@ -358,7 +431,7 @@ export async function coursesOuvertesPour(user: JwtPayload): Promise<CourseLivre
 }
 
 /** Historique du livreur ; les coordonnees du patient n'apparaissent qu'apres attribution. */
-export async function coursesDuLivreur(user: JwtPayload): Promise<CourseLivreurServiceView[]> {
+export async function coursesDuLivreur(user: JwtPayload): Promise<CourseLivreurView[]> {
   exigerRole(user, Role.LIVREUR);
   const profile = await profilLivreur(user.userId, false);
   const courses = await prisma.course.findMany({
@@ -373,8 +446,8 @@ export async function coursesDuLivreur(user: JwtPayload): Promise<CourseLivreurS
 export async function proposer(
   user: JwtPayload,
   idCourse: string,
-  offre: OffreCourseInput,
-): Promise<OffreCourseServiceView> {
+  offre: ProposerOffreCourseDto,
+): Promise<OffreCourseView> {
   exigerRole(user, Role.LIVREUR);
   const profile = await profilLivreur(user.userId, true);
   if (!Number.isInteger(offre.prixGnf) || offre.prixGnf <= 0) {
@@ -384,7 +457,7 @@ export async function proposer(
     throw new ValidationError('Le delai doit etre un entier positif');
   }
 
-  return prisma.$transaction(async (tx) => {
+  const resultat = await prisma.$transaction(async (tx) => {
     // Lock the open row so an attribution cannot race past the status check.
     const verrou = await tx.course.updateMany({
       where: { id: idCourse, statut: StatutCourse.APPEL_OFFRES },
@@ -423,13 +496,15 @@ export async function proposer(
       creeeLe: result.creeeLe.toISOString(),
     };
   });
+  await notifierPatientNouvelleOffre(idCourse, resultat);
+  return resultat;
 }
 
 /** Offres classees par prix puis delai, apres verification de propriete patient. */
 export async function offresDeMaCommande(
   user: JwtPayload,
   idCommande: string,
-): Promise<OffreCourseServiceView[]> {
+): Promise<OffreCourseView[]> {
   exigerRole(user, Role.PATIENT);
   const commande = await prisma.commande.findUnique({
     where: { id: idCommande },
@@ -471,9 +546,9 @@ export async function choisirOffre(
   user: JwtPayload,
   idCommande: string,
   idOffre: string,
-): Promise<CourseServiceView> {
+): Promise<CourseView> {
   exigerRole(user, Role.PATIENT);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await commandeDuPatient(tx, user, idCommande);
     const offre = await tx.offreCourse.findFirst({
       where: { id: idOffre, course: { idCommande } },
@@ -502,6 +577,11 @@ export async function choisirOffre(
     if (result.count !== 1) throw new ConflictError('Une autre attribution a deja eu lieu');
     return obtenirCourseView(tx, offre.idCourse);
   });
+  await notifierPharmacieCourseAttribuee(
+    // The course's unique id is carried by the view returned by the transaction.
+    result.id,
+  );
+  return result;
 }
 
 /** Le QR doit correspondre au motard attribue avant toute mutation. */
@@ -509,7 +589,7 @@ export async function remettreAuMotard(
   user: JwtPayload,
   idCourse: string,
   qrCodeScanne: string,
-): Promise<CourseServiceView> {
+): Promise<CourseView> {
   exigerRole(user, Role.PHARMACIEN);
   return prisma.$transaction(async (tx) => {
     const coursier = await tx.utilisateur.findUnique({
@@ -558,7 +638,7 @@ export async function remettreAuMotard(
 }
 
 /** Seul le patient proprietaire peut confirmer la reception et clore le dossier. */
-export async function declarerRecu(user: JwtPayload, idCourse: string): Promise<CourseServiceView> {
+export async function declarerRecu(user: JwtPayload, idCourse: string): Promise<CourseView> {
   exigerRole(user, Role.PATIENT);
   return prisma.$transaction(async (tx) => {
     const course = await tx.course.findUnique({
@@ -589,7 +669,7 @@ export async function renoncerALaLivraison(
   user: JwtPayload,
   idCourse: string,
   motif: string,
-): Promise<CourseServiceView> {
+): Promise<CourseView> {
   exigerRole(user, Role.PATIENT);
   if (motif.trim().length < 5) throw new ValidationError('Le motif doit contenir au moins cinq caracteres');
 
