@@ -1,0 +1,72 @@
+<section class="bb-mes-courses">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-truck" aria-hidden="true"></i> {{ 'LIVREUR.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'LIVREUR.MES_COURSES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'LIVREUR.MES_COURSES.SOUS_TITRE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-livreur__button bb-livreur__button--secondary" type="button"
+              (click)="charger()" [disabled]="chargement()">
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        {{ 'LIVREUR.ACTUALISER' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-livreur__empty">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else {
+    <section class="bb-livreur__qr-card" aria-labelledby="livreur-qr-title">
+      <div>
+        <h2 id="livreur-qr-title">{{ 'LIVREUR.MES_COURSES.MON_QR' | translate }}</h2>
+        <p>{{ 'LIVREUR.MES_COURSES.MON_QR_AIDE' | translate }}</p>
+        @if (qrCode()) { <code>{{ qrCode() }}</code> }
+        @if (qrError()) {
+          <p class="bb-livreur__error" role="alert">{{ 'LIVREUR.MES_COURSES.QR_ERREUR' | translate }}</p>
+        }
+      </div>
+      @if (qrImage()) {
+        <img class="bb-livreur__qr-image" [src]="qrImage()" [alt]="'LIVREUR.MES_COURSES.MON_QR' | translate" />
+      }
+    </section>
+
+    @if (courses().length === 0) {
+      <section class="bb-livreur__empty">
+        <i class="pi pi-inbox" aria-hidden="true"></i>
+        <h2>{{ 'LIVREUR.MES_COURSES.AUCUNE' | translate }}</h2>
+        <p>{{ 'LIVREUR.MES_COURSES.AUCUNE_AIDE' | translate }}</p>
+      </section>
+    } @else {
+      <div class="bb-livreur__list">
+        @for (course of courses(); track course.id) {
+          <article class="bb-livreur__card">
+            <div class="bb-livreur__card-head">
+              <div>
+                <h2>{{ course.numero }}</h2>
+                <p class="bb-livreur__status">{{ libelleStatut(course.statut) }}</p>
+              </div>
+              <time [attr.datetime]="course.creeeLe">{{ course.creeeLe | date:'dd/MM/yyyy HH:mm' }}</time>
+            </div>
+            @if (course.prixGnf !== null && course.delaiAnnonceMinutes !== null) {
+              <div class="bb-livreur__terms">
+                <p><span>{{ 'LIVREUR.MES_COURSES.PRIX_ACCEPTE' | translate }}</span><strong>{{ course.prixGnf | number }} GNF</strong></p>
+                <p><span>{{ 'LIVREUR.MES_COURSES.DELAI_ANNONCE' | translate }}</span><strong>{{ course.delaiAnnonceMinutes }} {{ 'LIVREUR.COURSES.MINUTES' | translate }}</strong></p>
+              </div>
+            }
+            @if (course.patient; as patient) {
+              <address class="bb-livreur__patient">
+                <strong>{{ patient.prenom }} {{ patient.nom }}</strong>
+                <a [href]="'tel:' + patient.telephone">{{ patient.telephone }}</a>
+              </address>
+            }
+            @if (course.pharmacie) {
+              <p class="bb-livreur__meta">{{ 'LIVREUR.COURSES.PHARMACIE' | translate }} : <strong>{{ course.pharmacie.nom }}</strong></p>
+            }
+            <p class="bb-livreur__meta">{{ 'LIVREUR.COURSES.DESTINATION' | translate }} : <strong>{{ course.quartier }}</strong></p>
+          </article>
+        }
+      </div>
+    }
+  }
+</section>

@@ -17,6 +17,7 @@ import {
   Prisma,
   Role,
   StatutCommande,
+  StatutCourse,
   StatutOrdonnance,
 } from '../config/generated/client/client';
 import type { CommandeView } from '@baobaoheath/shared-types';
@@ -48,6 +49,7 @@ export function versCommandeView(
   const patient = c.ordonnance.consultation?.patient;
   return {
     id: c.id,
+    idCourse: c.courses?.[0]?.id ?? null,
     statut: c.statut,
     quartierRecherche: c.quartierRecherche,
     modeRemise: c.modeRemise,
@@ -105,6 +107,8 @@ export function versCommandeView(
 /** Qui voit tout : la surveillance de la plateforme, pas le soin. */
 const ROLES_ADMIN = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
+const STATUTS_COURSE_TERMINAUX: StatutCourse[] = [StatutCourse.LIVREE, StatutCourse.ANNULEE];
+
 const COMMANDE_INCLUDE = {
   ordonnance: {
     include: {
@@ -118,6 +122,11 @@ const COMMANDE_INCLUDE = {
   },
   lignes: { orderBy: { creeLe: 'asc' } },
   pharmacie: { select: { id: true, nom: true, prefecture: true, commune: true, quartier: true } },
+  courses: {
+    where: { statut: { notIn: STATUTS_COURSE_TERMINAUX } },
+    select: { id: true },
+    take: 1,
+  },
   reponses: {
     include: { structure: { select: { id: true, nom: true } } },
     orderBy: { repondueLe: 'asc' },

@@ -1,0 +1,35 @@
+.bb-course-page { display: grid; gap: 1.25rem; }
+.bb-course__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+.bb-course__card, .bb-course__empty {
+  padding: 1.25rem;
+  border: 1px solid var(--bb-border, #cbd5e1);
+  border-radius: 1rem;
+  background: var(--bb-surface, #fff);
+  color: var(--bb-text, #172033);
+}
+.bb-course__heading { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.bb-course__heading h2 { margin: 0 0 .75rem; font-size: 1.1rem; }
+.bb-course__meta, .bb-course__time { margin: .35rem 0; color: var(--bb-text-muted, #475569); }
+.bb-course__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .875rem; margin-top: 1.25rem; }
+.bb-course__form label { display: grid; gap: .4rem; font-weight: 600; }
+.bb-course__form input {
+  box-sizing: border-box; width: 100%; min-height: 2.75rem; padding: .65rem .75rem;
+  border: 1px solid var(--bb-border, #94a3b8); border-radius: .5rem;
+  background: var(--bb-input, #fff); color: var(--bb-text, #172033); font: inherit;
+}
+.bb-course__form input:focus-visible, .bb-course__button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.bb-course__button {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-height: 2.75rem; padding: .6rem 1rem; border: 0; border-radius: .55rem;
+  background: var(--bb-primary, #075985); color: #fff; font: inherit; font-weight: 700; cursor: pointer;
+}
+.bb-course__form .bb-course__button { grid-column: 1 / -1; }
+.bb-course__button:hover:not(:disabled) { filter: brightness(1.1); }
+.bb-course__button:disabled { opacity: .55; cursor: not-allowed; }
+.bb-course__button--secondary { background: var(--bb-surface, #fff); color: var(--bb-text, #172033); border: 1px solid var(--bb-border, #94a3b8); }
+.bb-course__success { color: var(--bb-success, #166534); font-weight: 600; }
+.bb-course__empty { text-align: center; padding: 2rem 1rem; }
+@media (max-width: 36rem) {
+  .bb-course__heading { display: grid; }
+  .bb-course__form { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,74 @@
+<section class="bb-course-page">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-bell" aria-hidden="true"></i> {{ 'LIVREUR.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'LIVREUR.COURSES.TITRE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'LIVREUR.COURSES.SOUS_TITRE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button class="bb-course__button bb-course__button--secondary" type="button"
+              (click)="charger()" [disabled]="chargement()">
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        {{ 'LIVREUR.ACTUALISER' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (chargement()) {
+    <p class="bb-course__empty">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (courses().length === 0) {
+    <section class="bb-course__empty">
+      <i class="pi pi-inbox" aria-hidden="true"></i>
+      <h2>{{ 'LIVREUR.COURSES.AUCUNE' | translate }}</h2>
+      <p>{{ 'LIVREUR.COURSES.AUCUNE_AIDE' | translate }}</p>
+    </section>
+  } @else {
+    <div class="bb-course__list">
+      @for (course of courses(); track course.id) {
+        <article class="bb-course__card">
+          <div class="bb-course__heading">
+            <div>
+              <h2>{{ course.numero }}</h2>
+              <p class="bb-course__meta">
+                {{ 'LIVREUR.COURSES.PHARMACIE' | translate }} :
+                <strong>{{ course.pharmacie?.nom ?? '—' }}</strong>
+              </p>
+              <p class="bb-course__meta">
+                {{ 'LIVREUR.COURSES.DESTINATION' | translate }} :
+                <strong>{{ course.quartier }}</strong>
+              </p>
+            </div>
+            <time class="bb-course__time" [attr.datetime]="course.creeeLe">
+              {{ course.creeeLe | date:'dd/MM/yyyy HH:mm' }}
+            </time>
+          </div>
+
+          <form class="bb-course__form" (submit)="$event.preventDefault(); proposer(course)">
+            <label>
+              <span>{{ 'LIVREUR.COURSES.PRIX' | translate }} (GNF)</span>
+              <input type="number" min="1" step="1" inputmode="numeric" required
+                     [value]="formulaire(course.id).prixGnf"
+                     (input)="modifier(course.id, 'prixGnf', $any($event.target).value)" />
+            </label>
+            <label>
+              <span>{{ 'LIVREUR.COURSES.DELAI' | translate }} ({{ 'LIVREUR.COURSES.MINUTES' | translate }})</span>
+              <input type="number" min="1" step="1" inputmode="numeric" required
+                     [value]="formulaire(course.id).delaiMinutes"
+                     (input)="modifier(course.id, 'delaiMinutes', $any($event.target).value)" />
+            </label>
+            <button class="bb-course__button" type="submit"
+                    [disabled]="!peutEnvoyer(course) || envoi() === course.id">
+              <i class="pi" [class.pi-spin]="envoi() === course.id"
+                 [class.pi-send]="envoi() !== course.id"
+                 [class.pi-spinner]="envoi() === course.id" aria-hidden="true"></i>
+              {{ (envoyees()[course.id] ? 'LIVREUR.COURSES.CORRIGER_OFFRE' : 'LIVREUR.COURSES.ENVOYER_OFFRE') | translate }}
+            </button>
+          </form>
+          @if (envoyees()[course.id]) {
+            <p class="bb-course__success" role="status">{{ 'LIVREUR.COURSES.OFFRE_ENREGISTREE' | translate }}</p>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -64,6 +64,7 @@ const pharmacien: JwtPayload = { userId: 'pharmacien-user', role: Role.PHARMACIE
 
 const profil = {
   id: 'profil-livreur',
+  qrCode: 'qr-livreur-test',
   quartier: 'Kipé',
   prefecture: 'Conakry',
   estActif: true,
@@ -221,10 +222,12 @@ describe('ouverture et visibilité des courses', () => {
       },
     }]);
 
-    const [result] = await coursesDuLivreur(livreur);
+    const result = await coursesDuLivreur(livreur);
+    const course = result.courses[0]!;
     const serialise = JSON.stringify(result);
 
-    expect(result.patient).toEqual({ prenom: 'Awa', nom: 'Diallo', telephone: '+224600000000' });
+    expect(result.qrCode).toBe('qr-livreur-test');
+    expect(course.patient).toEqual({ prenom: 'Awa', nom: 'Diallo', telephone: '+224600000000' });
     expect(serialise).not.toMatch(/produit|ordonnance|diagnostic|medicament|posologie|lignes/i);
   });
 });

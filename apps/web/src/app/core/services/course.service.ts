@@ -5,6 +5,7 @@ import type {
   ChoisirOffreCourseDto,
   CourseLivreurView,
   CourseView,
+  MesCoursesLivreurView,
   OffreCourseView,
   ProposerOffreCourseDto,
   RenoncerALaLivraisonDto,
@@ -20,8 +21,8 @@ export class CourseService {
     return this.api.get<ApiResponse<CourseLivreurView[]>>('/courses/ouvertes');
   }
 
-  mesCourses(): Observable<ApiResponse<CourseLivreurView[]>> {
-    return this.api.get<ApiResponse<CourseLivreurView[]>>('/courses/mes-courses');
+  mesCourses(): Observable<ApiResponse<MesCoursesLivreurView>> {
+    return this.api.get<ApiResponse<MesCoursesLivreurView>>('/courses/mes-courses');
   }
 
   proposer(idCourse: string, dto: ProposerOffreCourseDto): Observable<ApiResponse<OffreCourseView>> {

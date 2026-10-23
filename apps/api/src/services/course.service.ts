@@ -8,6 +8,7 @@ import {
 import type {
   CourseLivreurView,
   CourseView,
+  MesCoursesLivreurView,
   OffreCourseView,
   ProposerOffreCourseDto,
 } from '@baobaoheath/shared-types';
@@ -193,6 +194,7 @@ async function profilLivreur(userId: string, actifObligatoire: boolean) {
     where: { idUtilisateur: userId },
     select: {
       id: true,
+      qrCode: true,
       quartier: true,
       prefecture: true,
       estActif: true,
@@ -431,7 +433,7 @@ export async function coursesOuvertesPour(user: JwtPayload): Promise<CourseLivre
 }
 
 /** Historique du livreur ; les coordonnees du patient n'apparaissent qu'apres attribution. */
-export async function coursesDuLivreur(user: JwtPayload): Promise<CourseLivreurView[]> {
+export async function coursesDuLivreur(user: JwtPayload): Promise<MesCoursesLivreurView> {
   exigerRole(user, Role.LIVREUR);
   const profile = await profilLivreur(user.userId, false);
   const courses = await prisma.course.findMany({
@@ -439,7 +441,7 @@ export async function coursesDuLivreur(user: JwtPayload): Promise<CourseLivreurV
     select: COURSE_LIVREUR_ASSIGNED_SELECT,
     orderBy: { creeeLe: 'desc' },
   });
-  return courses.map(versCourseLivreurView);
+  return { qrCode: profile.qrCode, courses: courses.map(versCourseLivreurView) };
 }
 
 /** Enregistre ou remplace l'unique offre du livreur pour cette course. */

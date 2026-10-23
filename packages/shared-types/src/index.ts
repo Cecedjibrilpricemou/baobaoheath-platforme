@@ -185,6 +185,8 @@ export interface ReponsePharmacieView {
 
 export interface CommandeView {
   id: string;
+  /** Identifiant de la course active, pour les gestes patient/pharmacie en livraison. */
+  idCourse?: string | null;
   statut: StatutCommande;
   /** Le quartier ou l'appel a ete lance. */
   quartierRecherche?: string | null;
@@ -299,6 +301,12 @@ export interface CourseLivreurView {
   livreeLe: HorodatageApi | null;
   pharmacie: { id: string; nom: string } | null;
   patient?: { prenom: string; nom: string; telephone: string };
+}
+
+/** Courses attribuees au livreur et QR de son profil, y compris sans course active. */
+export interface MesCoursesLivreurView {
+  qrCode: string;
+  courses: CourseLivreurView[];
 }
 
 /** Offre d'un livreur, ordonnee par prix puis par delai pour le patient. */
