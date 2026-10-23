@@ -298,16 +298,11 @@ describe('la remise', () => {
     expect(maj.data.clotureeLe).toBeInstanceOf(Date);
   });
 
-  // Pour une livraison, c'est le motard qui emporte : le patient cloturera a
-  // la reception, en P8.
-  it('une livraison est remise au motard, et reste ouverte', async () => {
+  it('refuse la remise au comptoir pour une commande en livraison et indique le scan QR', async () => {
     officineTient('PRETE_POUR_LIVRAISON', 'LIVRAISON');
-    await confirmerRemise(qui('u-ph', 'PHARMACIEN'), 'c1');
-    const maj = prisma.commande.update.mock.calls[0]?.[0] as {
-      data: { statut: string; clotureeLe?: Date };
-    };
-    expect(maj.data.statut).toBe('RETIREE');
-    expect(maj.data.clotureeLe).toBeUndefined();
+    await expect(confirmerRemise(qui('u-ph', 'PHARMACIEN'), 'c1'))
+      .rejects.toThrow('Cette commande part en livraison : scannez le QR du motard.');
+    expect(prisma.commande.update).not.toHaveBeenCalled();
   });
 });
 

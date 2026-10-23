@@ -781,6 +781,9 @@ export async function marquerPrete(user: JwtPayload, idCommande: string): Promis
  */
 export async function confirmerRemise(user: JwtPayload, idCommande: string): Promise<CommandeView> {
   const { commande, pharmacie } = await commandeDeMonOfficine(user, idCommande);
+  if (commande.modeRemise === ModeRemise.LIVRAISON) {
+    throw new ValidationError('Cette commande part en livraison : scannez le QR du motard.');
+  }
   const maintenant = new Date();
 
   if (commande.statut === StatutCommande.PRETE_POUR_RETRAIT) {
