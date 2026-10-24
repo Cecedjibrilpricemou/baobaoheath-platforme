@@ -201,7 +201,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const data: AssureurView[] = ['PHARMACIEN', 'ADMIN_STRUCTURE'].includes(req.user!.role)
       ? await assurance.conventionsDeLaStructure(req.user!)
-      : await assurance.listerAssureurs();
+      : await assurance.listerAssureursAdmin();
     res.json({ success: true, data });
   }
 );

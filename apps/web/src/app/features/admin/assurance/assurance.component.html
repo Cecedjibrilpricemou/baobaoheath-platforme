@@ -7,6 +7,29 @@
     </div>
   </header>
 
+  @if (motDePasseAgent(); as resultat) {
+    <aside class="bb-assu__agent-password" role="status" aria-live="polite">
+      <div>
+        <h2>{{ 'ADMIN.ASSURANCE.AGENT_PASSWORD_TITLE' | translate: { assureur: resultat.assureurNom } }}</h2>
+        <p>{{ 'ADMIN.ASSURANCE.AGENT_PASSWORD_WARNING' | translate }}</p>
+        <p class="bb-assu__agent-password-identity">
+          {{ resultat.resultat.agent.prenom }} {{ resultat.resultat.agent.nom }}
+          · {{ resultat.resultat.agent.telephone }}
+        </p>
+        <code>{{ resultat.resultat.motDePasseTemporaire }}</code>
+      </div>
+      <div class="bb-assu__actions">
+        <button class="bb-assu__btn bb-assu__btn--plat" type="button" (click)="copierMotDePasseAgent()">
+          <i class="pi pi-copy" aria-hidden="true"></i>
+          {{ 'ADMIN.ASSURANCE.AGENT_PASSWORD_COPY' | translate }}
+        </button>
+        <button class="bb-assu__btn" type="button" (click)="fermerMotDePasseAgent()">
+          {{ 'ADMIN.ASSURANCE.AGENT_PASSWORD_DISMISS' | translate }}
+        </button>
+      </div>
+    </aside>
+  }
+
   <!-- ══ Qui assure ════════════════════════════════════════════════════ -->
   <section class="bb-assu__sec">
     <div class="bb-assu__sec-head">
@@ -98,6 +121,55 @@
                   {{ 'ADMIN.ASSURANCE.REGLES' | translate }} ({{ a.regles.length }})
                 </button>
               </div>
+            </div>
+
+            <div class="bb-assu__agent">
+              @if (a.agentExistant) {
+                <p class="bb-assu__agent-existant" role="status">
+                  {{ 'ADMIN.ASSURANCE.AGENT_EXISTS' | translate }}
+                </p>
+              } @else if (formAgentAssureur() === a.id) {
+                <form class="bb-assu__form bb-assu__form--agent" (ngSubmit)="creerAgentAssureur(a.id)">
+                  <h3 class="bb-assu__sous-titre">{{ 'ADMIN.ASSURANCE.AGENT_FORM_TITLE' | translate }}</h3>
+                  <div class="bb-assu__grille">
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ 'ADMIN.ASSURANCE.AGENT_FIRST_NAME' | translate }}</mat-label>
+                      <input matInput required [(ngModel)]="nouvelAgentAssureur.prenom" name="agentPrenom" autocomplete="given-name" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ 'ADMIN.ASSURANCE.AGENT_LAST_NAME' | translate }}</mat-label>
+                      <input matInput required [(ngModel)]="nouvelAgentAssureur.nom" name="agentNom" autocomplete="family-name" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ 'ADMIN.ASSURANCE.AGENT_PHONE' | translate }}</mat-label>
+                      <input matInput required type="tel" inputmode="tel" [(ngModel)]="nouvelAgentAssureur.telephone" name="agentTelephone" autocomplete="tel" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ 'ADMIN.ASSURANCE.AGENT_EMAIL' | translate }}</mat-label>
+                      <input matInput required type="email" [(ngModel)]="nouvelAgentAssureur.email" name="agentEmail" autocomplete="email" />
+                      <mat-hint>{{ 'ADMIN.ASSURANCE.AGENT_EMAIL_HINT' | translate }}</mat-hint>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ 'ADMIN.ASSURANCE.AGENT_PREFECTURE' | translate }}</mat-label>
+                      <input matInput required [(ngModel)]="nouvelAgentAssureur.prefecture" name="agentPrefecture" autocomplete="address-level1" />
+                    </mat-form-field>
+                  </div>
+                  <div class="bb-assu__actions">
+                    <button class="bb-assu__btn bb-assu__btn--plat" type="button"
+                            (click)="formAgentAssureur.set(null)" [disabled]="enregistre()">
+                      {{ 'ADMIN.ASSURANCE.ANNULER' | translate }}
+                    </button>
+                    <button class="bb-assu__btn" type="submit" [disabled]="!peutCreerAgentAssureur()">
+                      {{ 'ADMIN.ASSURANCE.AGENT_CREATE' | translate }}
+                    </button>
+                  </div>
+                </form>
+              } @else {
+                <button class="bb-assu__btn bb-assu__btn--plat" type="button" (click)="ouvrirFormAgentAssureur(a.id)">
+                  <i class="pi pi-user-plus" aria-hidden="true"></i>
+                  {{ 'ADMIN.ASSURANCE.AGENT_CREATE_ACCOUNT' | translate }}
+                </button>
+              }
             </div>
 
             @if (reglesOuvertes() === a.id) {

@@ -350,7 +350,7 @@ export interface LoginDto {
 
 export interface RegisterDto {
   telephone: string;
-  email?: string;
+  email: string;
   motDePasse: string;
   prenom: string;
   nom: string;
@@ -2694,6 +2694,8 @@ export interface AssureurView extends AssureurResumeView {
   modeEchange: ModeEchangeAssureur;
   nombreContrats: number;
   regles: RegleCouvertureView[];
+  /** Renseigne par la liste d'administration pour eviter les comptes agents en double. */
+  agentExistant?: boolean;
   /** Vrai quand la convention provient de l'hopital parent de la pharmacie. */
   conventionHeritee?: boolean;
 }

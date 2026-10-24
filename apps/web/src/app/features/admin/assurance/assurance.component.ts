@@ -22,6 +22,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ToastrService } from 'ngx-toastr';
 import type {
+  AgentAssureurCreeView,
   AssureurView,
   CategorieProduit,
   ContratAssuranceView,
@@ -62,6 +63,10 @@ export class AssuranceComponent implements OnInit {
   reglesOuvertes = signal<string | null>(null);
   /** L'assureur auquel on ajoute une regle. */
   formRegle = signal<string | null>(null);
+  /** L'assureur auquel l'administration ajoute son compte agent. */
+  readonly formAgentAssureur = signal<string | null>(null);
+  /** Le mot de passe n'est conserve que jusqu'a sa fermeture. */
+  readonly motDePasseAgent = signal<{ assureurNom: string; resultat: AgentAssureurCreeView } | null>(null);
 
   nouvelAssureur = {
     nom: '', code: '', telephone: '', email: '',
@@ -75,6 +80,8 @@ export class AssuranceComponent implements OnInit {
     plafondLigneGnf: 0,
     dateEffet: this.aujourdhui(),
   };
+
+  nouvelAgentAssureur = { prenom: '', nom: '', telephone: '', email: '', prefecture: '' };
 
   // ── Les polices ────────────────────────────────────────────────────
   recherche = '';
@@ -142,6 +149,72 @@ export class AssuranceComponent implements OnInit {
   basculerRegles(id: string): void {
     this.reglesOuvertes.update((v) => (v === id ? null : id));
     this.formRegle.set(null);
+  }
+
+  ouvrirFormAgentAssureur(id: string): void {
+    const assureur = this.assureurs().find((item) => item.id === id);
+    if (!assureur || assureur.agentExistant) return;
+    this.nouvelAgentAssureur = { prenom: '', nom: '', telephone: '', email: '', prefecture: '' };
+    this.formAgentAssureur.set(id);
+  }
+
+  peutCreerAgentAssureur(): boolean {
+    const a = this.nouvelAgentAssureur;
+    return !this.enregistre()
+      && !!a.prenom.trim()
+      && !!a.nom.trim()
+      && !!a.telephone.trim()
+      && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email.trim())
+      && !!a.prefecture.trim();
+  }
+
+  creerAgentAssureur(idAssureur: string): void {
+    if (!this.peutCreerAgentAssureur()) return;
+    this.enregistre.set(true);
+    const formulaire = this.nouvelAgentAssureur;
+    const assureur = this.assureurs().find((item) => item.id === idAssureur);
+    if (!assureur || assureur.agentExistant) {
+      this.enregistre.set(false);
+      return;
+    }
+    this.admin.creerAgentAssureur(idAssureur, {
+      prenom: formulaire.prenom.trim(),
+      nom: formulaire.nom.trim(),
+      telephone: formulaire.telephone.trim(),
+      email: formulaire.email.trim(),
+      prefecture: formulaire.prefecture.trim(),
+    }).subscribe({
+      next: (response) => {
+        this.enregistre.set(false);
+        if (!response.data) {
+          this.toastr.error(this.i18n.t('COMMON.ERROR_GENERIC'));
+          return;
+        }
+        this.motDePasseAgent.set({ assureurNom: assureur.nom, resultat: response.data });
+        this.formAgentAssureur.set(null);
+        this.nouvelAgentAssureur = { prenom: '', nom: '', telephone: '', email: '', prefecture: '' };
+        this.chargerAssureurs();
+      },
+      error: (err) => this.echec(err),
+    });
+  }
+
+  copierMotDePasseAgent(): void {
+    const motDePasse = this.motDePasseAgent()?.resultat.motDePasseTemporaire;
+    if (!motDePasse) return;
+    const pressePapiers = navigator.clipboard;
+    if (!pressePapiers) {
+      this.toastr.error(this.i18n.t('ADMIN.ASSURANCE.AGENT_PASSWORD_COPY_ERROR'));
+      return;
+    }
+    pressePapiers.writeText(motDePasse).then(
+      () => this.toastr.success(this.i18n.t('ADMIN.ASSURANCE.AGENT_PASSWORD_COPIED')),
+      () => this.toastr.error(this.i18n.t('ADMIN.ASSURANCE.AGENT_PASSWORD_COPY_ERROR')),
+    );
+  }
+
+  fermerMotDePasseAgent(): void {
+    this.motDePasseAgent.set(null);
   }
 
   ouvrirFormRegle(id: string): void {
