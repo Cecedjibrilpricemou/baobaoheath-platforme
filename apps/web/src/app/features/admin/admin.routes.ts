@@ -45,6 +45,13 @@ export const ADMIN_ROUTES: Routes = [
           import('./comptes/comptes.component').then(m => m.ComptesComponent)
       },
       {
+        path: 'livreurs',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+        loadComponent: () =>
+          import('./livreurs/livreurs.component').then(m => m.LivreursComponent)
+      },
+      {
         // L'espace /admin accueille aussi l'admin regional et l'admin de
         // structure ; l'API d'assurance ne repond qu'a l'administration
         // nationale. Cacher l'entree de menu ne suffit pas : l'URL se tape.

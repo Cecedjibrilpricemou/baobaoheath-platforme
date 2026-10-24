@@ -102,6 +102,8 @@ export class AdminLayoutComponent {
       roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
     { labelKey: 'ADMIN.NAV_COMPTES',   icon: 'pi-users',     route: '/admin/comptes',
       roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
+    { labelKey: 'ADMIN.NAV_LIVREURS',  icon: 'pi-truck',     route: '/admin/livreurs',
+      roles: ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },
     { labelKey: 'ADMIN.NAV_ASSURANCE', icon: 'pi-id-card',  route: '/admin/assurance',
       roles: ['ADMIN_NATIONAL', 'SUPER_ADMIN'] },
     { labelKey: 'ADMIN.NAV_RGPD',      icon: 'pi-file-edit', route: '/admin/demandes-rgpd',
