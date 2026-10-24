@@ -1,4 +1,6 @@
 import { prisma } from '../config/prisma';
+import { JwtPayload } from '../types/auth.types';
+import { assertCanAccessPatient } from './access-control.service';
 import type { CandidatDoublonView, TraitConcordant } from '@baobaoheath/shared-types';
 
 /**
@@ -381,7 +383,16 @@ export async function chercher(
  * quelque chose de faux sur un dossier qu'on n'a pas trouve. La route en fait
  * un 404. Trouve en appelant la vraie API avec un identifiant invente.
  */
-export async function pourPatient(idPatient: string): Promise<CandidatDoublonView[] | null> {
+/** Les doublons possibles d'un patient **de sa structure**. */
+export async function pourPatient(
+  user: JwtPayload,
+  idPatient: string,
+): Promise<CandidatDoublonView[] | null> {
+  // Sans ce controle, la liste des doublons d'un patient de n'importe quel
+  // etablissement etait lisible : elle porte nom, telephone et date de
+  // naissance de chaque candidat.
+  await assertCanAccessPatient(user, idPatient);
+
   const p = await prisma.patientProfile.findUnique({
     where: { id: idPatient },
     select: {
