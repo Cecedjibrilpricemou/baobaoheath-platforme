@@ -2614,6 +2614,8 @@
       "CONFIRM_REPLACE": "Je remplace la pièce enregistrée",
       "CONFIRM_TITLE": "Vérifier l'identité de {{nom}}",
       "EMPTY": "Aucun patient ne correspond à ces critères.",
+      "SEARCH_EMPTY": "Aucun patient ne correspond à votre recherche.",
+      "EMPTY_SCOPE": "Cette liste contient uniquement les patients de cet établissement. Elle se remplira au premier enregistrement effectué au guichet.",
       "ENGAGEMENT": "En validant, vous déclarez avoir vu la pièce indiquée. Votre nom et la date seront enregistrés, et cette vérification ouvrira le tiers payant pour ce patient.",
       "ERR_CHARGEMENT": "La liste n'a pas pu être chargée.",
       "ERR_VERIFICATION": "La vérification n'a pas pu être enregistrée.",

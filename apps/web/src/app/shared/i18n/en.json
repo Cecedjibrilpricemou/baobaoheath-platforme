@@ -2614,6 +2614,8 @@
       "CONFIRM_REPLACE": "I am replacing the recorded document",
       "CONFIRM_TITLE": "Verify {{nom}}'s identity",
       "EMPTY": "No patient matches these filters.",
+      "SEARCH_EMPTY": "No patient matches your search.",
+      "EMPTY_SCOPE": "This list contains only patients from this facility. It will fill up when the first patient is registered at the front desk.",
       "ENGAGEMENT": "By confirming, you state that you have seen the document indicated. Your name and the date are recorded, and this verification opens third-party payment for this patient.",
       "ERR_CHARGEMENT": "The list could not be loaded.",
       "ERR_VERIFICATION": "The verification could not be saved.",

@@ -69,7 +69,12 @@
   } @else if (patients().length === 0) {
     <div class="bb-empty">
       <mat-icon fontSet="pi" fontIcon="pi-inbox" aria-hidden="true"></mat-icon>
-      <p>{{ 'HOPITAL.IDENTITES.EMPTY' | translate }}</p>
+      @if (q().trim()) {
+        <p>{{ 'HOPITAL.IDENTITES.SEARCH_EMPTY' | translate }}</p>
+      } @else {
+        <p>{{ 'HOPITAL.IDENTITES.EMPTY' | translate }}</p>
+        <p>{{ 'HOPITAL.IDENTITES.EMPTY_SCOPE' | translate }}</p>
+      }
     </div>
   } @else {
     <div class="identites-table-wrap">
