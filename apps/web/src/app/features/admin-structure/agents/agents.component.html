@@ -87,7 +87,8 @@
         <div class="bb-agents__field">
           <label for="agent-email">{{ 'ADMIN_STRUCTURE.AGENTS.EMAIL_LABEL' | translate }}</label>
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-            <input matInput id="agent-email" [(ngModel)]="newAgent.email" type="email" [placeholder]="'ADMIN_STRUCTURE.AGENTS.EMAIL_PH' | translate" />
+            <input matInput id="agent-email" [(ngModel)]="newAgent.email" type="email" required [placeholder]="'ADMIN_STRUCTURE.AGENTS.EMAIL_PH' | translate" />
+            <mat-hint>{{ 'ADMIN_STRUCTURE.AGENTS.EMAIL_LOGIN_HINT' | translate }}</mat-hint>
           </mat-form-field>
         </div>
         <div class="bb-agents__field">

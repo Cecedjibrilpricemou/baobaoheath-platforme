@@ -167,7 +167,12 @@ export async function login(dto: LoginDto, contexte: ContexteConnexion = {}): Pr
     throw new UnauthorizedError('Identifiants invalides');
   }
 
-  if (utilisateur.role === Role.PATIENT) {
+  // Les livreurs de Conakry n'ont pas toujours d'adresse professionnelle :
+  // leur telephone + mot de passe suffit, comme pour les patients. Le mot de
+  // passe temporaire doit etre change a la premiere connexion, leur compte
+  // peut etre desactive par l'administration et la limitation des tentatives
+  // reste active. Cette exception n'ajoute pas de second facteur.
+  if (utilisateur.role === Role.PATIENT || utilisateur.role === Role.LIVREUR) {
     return createSessionTokens(utilisateur, contexte);
   }
 

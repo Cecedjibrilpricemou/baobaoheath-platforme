@@ -3052,7 +3052,7 @@ export interface CreerAgentAssureurDto {
   prenom: string;
   nom: string;
   telephone: string;
-  email?: string;
+  email: string;
   /** Siege de la compagnie, si sa structure reste a creer. */
   prefecture?: string;
 }

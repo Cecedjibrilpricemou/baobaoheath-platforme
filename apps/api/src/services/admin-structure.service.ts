@@ -358,6 +358,10 @@ export async function creerAgent(adminId: string, dto: {
     /** Facultatif, et seulement pour un medecin. */
     bureau?: string;
 }) {
+    if (!dto.email?.trim()) {
+        throw new ValidationError('Une adresse email professionnelle est obligatoire pour se connecter');
+    }
+
     const admin = await prisma.utilisateur.findUnique({
         where: { id: adminId },
         include: { structure: true }

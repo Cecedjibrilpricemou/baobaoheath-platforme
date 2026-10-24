@@ -12,11 +12,12 @@ import {
   regleEnVigueur,
   repartir,
   verifierEligibilite,
+  creerAgentAssureur,
   type LigneAChiffrer,
   type ReglePourCalcul,
 } from '../src/services/assurance.service';
 import { JwtPayload } from '../src/types/auth.types';
-import { ForbiddenError, NotFoundError } from '../src/utils/app-error';
+import { ForbiddenError, NotFoundError, ValidationError } from '../src/utils/app-error';
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
@@ -149,6 +150,7 @@ describe('verifierEligibilite', () => {
     prisma.structureSante.findUnique.mockResolvedValue({
       id: 'struct-P', type: 'PHARMACIE', idStructureParente: null,
     });
+
     prisma.structureAssureur.findFirst.mockResolvedValue({ id: 'convention-1' });
     prisma.patientProfile.findUnique.mockResolvedValue({
       id: 'p-1', utilisateur: { prenom: 'Maomou', nom: 'Conde' },
@@ -156,6 +158,16 @@ describe('verifierEligibilite', () => {
     prisma.controleEligibilite.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
       Promise.resolve({ ...data, id: 'ce-1', creeLe: LE_2_OCTOBRE })
     );
+  });
+
+  describe('creerAgentAssureur', () => {
+    it('refuse un professionnel sans email avant de créer un compte', async () => {
+      await expect(creerAgentAssureur(
+        { userId: 'admin-1', role: 'SUPER_ADMIN' } as JwtPayload,
+        'assureur-1',
+        { prenom: 'Mamadou', nom: 'Bah', telephone: '+224620000003' },
+      )).rejects.toBeInstanceOf(ValidationError);
+    });
   });
 
   it('refuse un compte sans structure', async () => {

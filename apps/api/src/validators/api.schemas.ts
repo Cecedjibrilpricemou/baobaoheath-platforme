@@ -232,7 +232,7 @@ export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECI
 
 export const createAgentStructureSchema = z.object({
   telephone: phone,
-  email: optionalEmail,
+  email: z.string().trim().email(),
   motDePasse: z.string().min(6).max(128).optional(),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
@@ -264,7 +264,7 @@ export const creerAgentAssureurSchema = z.object({
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
   telephone: phone,
-  email: optionalEmail,
+  email: z.string().trim().email(),
   prefecture: z.string().trim().max(80).optional(),
 }).strict();
 

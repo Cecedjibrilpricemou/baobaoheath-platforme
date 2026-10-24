@@ -2202,6 +2202,10 @@ export async function creerAgentAssureur(
   idAssureur: string,
   dto: { prenom: string; nom: string; telephone: string; email?: string; prefecture?: string },
 ): Promise<AgentAssureurCreeView> {
+  if (!dto.email?.trim()) {
+    throw new ValidationError('Une adresse email professionnelle est obligatoire pour se connecter');
+  }
+
   const assureur = await prisma.assureur.findUnique({
     where: { id: idAssureur },
     select: { id: true, nom: true, code: true, idStructure: true },
