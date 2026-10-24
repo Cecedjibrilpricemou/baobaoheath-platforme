@@ -77,8 +77,10 @@ export async function rechercher(filtres: {
   const page = Math.max(1, filtres.page ?? 1);
   const limit = Math.min(filtres.limit ?? 25, 100);
 
-  const where: Record<string, unknown> = {};
-  if (filtres.role) where['role'] = filtres.role;
+  // Cet ecran administre les professionnels, pas les dossiers des patients :
+  // exclure PATIENT cote serveur, meme si le client demande explicitement ce role.
+  const where: Record<string, unknown> = { role: { not: Role.PATIENT } };
+  if (filtres.role) where['AND'] = [{ role: filtres.role }];
   if (filtres.actifs !== undefined) where['estActif'] = filtres.actifs;
   if (filtres.q) {
     const q = filtres.q.trim();
