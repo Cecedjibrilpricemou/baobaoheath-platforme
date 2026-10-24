@@ -1166,6 +1166,18 @@ export const filtreComptesSchema = z.object({
   limit: positiveInt.max(100).optional(),
 }).strict();
 
+export const creerLivreurSchema = z.object({
+  prenom: z.string().trim().min(1).max(100),
+  nom: z.string().trim().min(1).max(100),
+  telephone: z.string().trim().min(6).max(30),
+  quartier: z.string().trim().min(1).max(120),
+  prefecture: z.string().trim().min(1).max(120),
+}).strict();
+
+export const activiteLivreurSchema = z.object({
+  estActif: z.boolean(),
+}).strict();
+
 export const filtreJournalSchema = z.object({
   du: z.string().trim().min(1).optional(),
   au: z.string().trim().min(1).optional(),

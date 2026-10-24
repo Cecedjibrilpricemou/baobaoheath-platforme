@@ -208,6 +208,17 @@ describe('toute route de l API est gardée, ou inscrite avec sa raison', () => {
     }
   });
 
+  it('reserve le recrutement des livreurs aux administrations regionales et nationales', () => {
+    const attendues: Record<string, string[]> = {
+      'compte POST /livreurs': ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
+      'compte GET /livreurs': ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
+      'compte PATCH /livreurs/:id/activite': ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
+    };
+    for (const [clef, roles] of Object.entries(attendues)) {
+      expect(routes.find((route) => route.clef === clef)?.roles).toEqual(roles);
+    }
+  });
+
   // **Une entrée périmée rouvre la porte en silence.** Si une route est
   // renommée, son inscription reste et ne protège plus rien ; la route
   // nouvelle, elle, n'est inscrite nulle part — mais une liste jamais relue

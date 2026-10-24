@@ -1534,6 +1534,32 @@ export interface CreationAgentView {
   motDePasseTemporaire?: string;
 }
 
+/** POST /comptes/livreurs. La piece QR reste privee de l'administration. */
+export interface CreerLivreurDto {
+  prenom: string;
+  nom: string;
+  telephone: string;
+  quartier: string;
+  prefecture: string;
+}
+
+/** GET /comptes/livreurs. Ne contient ni QR ni mot de passe. */
+export interface LivreurAdminView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone: string;
+  quartier: string;
+  prefecture: string;
+  estActif: boolean;
+  creeLe: HorodatageApi;
+}
+
+export interface CreationLivreurView {
+  livreur: LivreurAdminView;
+  motDePasseTemporaire: string;
+}
+
 /**
  * GET /admin-structure/stats.
  * `structure` provient d'un findUnique : le type garde la nullabilite.

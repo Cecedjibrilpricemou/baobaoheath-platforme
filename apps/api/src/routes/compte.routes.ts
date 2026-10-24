@@ -3,10 +3,17 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as comptes from '../services/compte.service';
+import * as livreurs from '../services/livreur-recrutement.service';
 import {
-  filtreComptesSchema, suspendreCompteSchema, verifierOrdreSchema,
+  activiteLivreurSchema, creerLivreurSchema, filtreComptesSchema, suspendreCompteSchema, verifierOrdreSchema,
 } from '../validators/api.schemas';
-import type { CompteView, Role, SuspensionView } from '@baobaoheath/shared-types';
+import type {
+  CompteView,
+  CreationLivreurView,
+  LivreurAdminView,
+  Role,
+  SuspensionView,
+} from '@baobaoheath/shared-types';
 
 /**
  * Suspension et reactivation des comptes (EF-12-01).
@@ -23,6 +30,28 @@ import type { CompteView, Role, SuspensionView } from '@baobaoheath/shared-types
 const router = Router();
 
 router.use(authenticate);
+
+const rolesRecrutement = requireRole('ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN');
+
+router.post('/livreurs', rolesRecrutement, validateBody(creerLivreurSchema), async (req: AuthRequest, res: Response) => {
+  const data: CreationLivreurView = await livreurs.creerLivreur(req.user!, req.body);
+  res.status(201).json({ success: true, data });
+});
+
+router.get('/livreurs', rolesRecrutement, async (req: AuthRequest, res: Response) => {
+  const data: LivreurAdminView[] = await livreurs.listerLivreurs(req.user!);
+  res.json({ success: true, data });
+});
+
+router.patch('/livreurs/:id/activite', rolesRecrutement, validateBody(activiteLivreurSchema), async (req: AuthRequest, res: Response) => {
+  const data: LivreurAdminView = await livreurs.definirActiviteLivreur(
+    req.user!,
+    req.params['id'] as string,
+    req.body.estActif as boolean,
+  );
+  res.json({ success: true, data });
+});
+
 router.use(requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN'));
 
 /** La liste des comptes, pour trouver celui qu'on cherche. */
