@@ -50,15 +50,17 @@
     dd { margin: 0; font-weight: 700; color: var(--bb-text-primary); overflow-wrap: anywhere; }
   }
   &__mono { font-family: var(--bb-font-mono); }
+  // ✦ Refonte UI : la photo utilise un rayon du systeme de design.
   &__photo {
     flex: none; width: 96px; height: 120px; object-fit: cover;
-    border-radius: var(--bb-radius-md); border: 1px solid var(--bb-border); background: var(--bb-surface-2);
+    border-radius: var(--bb-radius); border: 1px solid var(--bb-border); background: var(--bb-surface-2);
   }
 
   // Fond blanc force : un QR sur fond sombre se lit mal.
+  // ✦ Refonte UI : le QR reste sur fond clair pour le scan, via un token.
   &__qr {
     flex: none; width: 160px; height: 160px; padding: 6px;
-    background: #fff; border-radius: var(--bb-radius-md);
+    background: var(--bb-text-inverse); border-radius: var(--bb-radius);
   }
 
   &__garanties { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px; }
@@ -71,5 +73,15 @@
 
   &__mention { margin: 0; padding: 0 18px; font-size: 12.5px; color: var(--bb-text-secondary); }
 
-  &__actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px; }
+  // ✦ Refonte UI : actions atteignables au clavier et utilisables au toucher.
+  &__actions {
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px;
+    > :where(button, a) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  }
+
+  // ✦ Refonte UI : commandes de la carte accessibles au clavier et tactiles.
+  &__actions :where(button, a):focus-visible {
+    outline: none;
+    box-shadow: var(--bb-focus-ring);
+  }
 }

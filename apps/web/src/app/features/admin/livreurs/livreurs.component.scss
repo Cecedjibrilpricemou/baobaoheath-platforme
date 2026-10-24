@@ -9,6 +9,7 @@
 
 .livreurs {
   &__success,
+  // ✦ Refonte UI : message d'erreur lisible sur les deux surfaces de thème.
   &__error {
     display: flex;
     align-items: flex-start;
@@ -28,7 +29,8 @@
   }
 
   &__error {
-    background: color-mix(in srgb, var(--bb-danger) 10%, transparent);
+    background: var(--bb-danger-bg);
+    border: 1px solid var(--bb-danger-border);
     color: var(--bb-danger);
   }
 
@@ -73,7 +75,8 @@
     }
 
     form { display: grid; gap: 0.25rem; }
-    form > button { justify-self: start; min-height: 42px; }
+    // ✦ Refonte UI : le bouton principal atteint la cible tactile minimale.
+    form > button { justify-self: start; min-height: 44px; }
   }
 
   &__hint {
@@ -155,16 +158,18 @@
 
   &__phone { margin-top: 0.15rem; color: var(--bb-text-muted); }
 
+  // ✦ Refonte UI : états avec fonds sémantiques assurant le contraste du texte.
   &__status {
     display: inline-block;
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--bb-danger) 12%, transparent);
+    background: var(--bb-danger-bg);
+    border: 1px solid var(--bb-danger-border);
     color: var(--bb-danger);
     font-size: 0.72rem;
     font-weight: 700;
 
-    &--active { background: var(--bb-success-bg); color: var(--liv-accent); }
+    &--active { background: var(--bb-success-bg); border-color: var(--bb-success-border); color: var(--bb-success); }
   }
 }
 
@@ -187,4 +192,16 @@
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .livreurs__form-card form > button { width: 100%; }
 }
+
+// ✦ Refonte UI : focus clavier explicite et cible tactile uniforme.
+.livreurs :where(button, a):focus-visible {
+  outline: none;
+  box-shadow: var(--bb-focus-ring);
+}
+
+// ✦ Refonte UI : actions tactiles accessibles sans modifier leur comportement.
+.livreurs button { min-width: 44px; min-height: 44px; }
+.livreurs a { display: inline-flex; align-items: center; min-height: 44px; }
