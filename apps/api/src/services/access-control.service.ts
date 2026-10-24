@@ -122,7 +122,18 @@ async function relationDeSoin(user: JwtPayload, utilisateur: Profils): Promise<P
   }
 
   if (user.role === 'AGENT_ACCUEIL' && idStructure) {
-    return { OR: parEpisode };
+    return {
+      OR: [
+        ...parEpisode,
+        // **Le patient qu'il vient d'enregistrer, avant tout episode.**
+        // `creerPatientAuComptoir` pose `idStructurePreferee` sur la structure
+        // de l'agent : c'est le rattachement cree au guichet. Sans cette
+        // branche, la verification d'identite -- qui se fait justement a
+        // l'inscription, avant qu'un episode existe -- ne trouverait pas le
+        // dossier qu'on vient d'ouvrir devant soi.
+        { idStructurePreferee: idStructure },
+      ],
+    };
   }
 
   // Le laboratoire ne voit que les patients dont une demande lui est adressee (EF-04).
