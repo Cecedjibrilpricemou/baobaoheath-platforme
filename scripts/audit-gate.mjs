@@ -67,6 +67,30 @@ const EXCEPTIONS = [
     reexamen: '2026-11-30',
     motif: 'Commande `ng mcp` uniquement, jamais lancee ; corrige avec Angular 22.',
   })),
+  // ── undici, embarque par @angular/build (24/10/2026) ───────────────
+  //
+  // `@angular/build@21.2.27` epingle undici a **7.29.1 exactement**, pas en
+  // plage : aucune montee n'est possible sans changer @angular/build, et la
+  // serie 8 demanderait Angular 22. C'est le meme verrou que vite ci-dessus.
+  //
+  // Rien n'atteint l'application livree : undici sert au telechargement des
+  // polices et au serveur de developpement, jamais au code execute. Les trois
+  // avis visent un client HTTP qui recoit des reponses hostiles -- ce n'est
+  // pas le role qu'il joue ici.
+  //
+  // **Les deux autres avis du meme jour ont ete corriges, eux** :
+  // body-parser 2.3.0 -> 2.4.0 et multer 2.4.0 -> 2.5.0 tournent en
+  // production, et multer garde l'envoi des photos d'assures.
+  ...[
+    'GHSA-4qv8-2p9j-2685', // memoire non bornee dans le parseur EventSource
+    'GHSA-f72v-6w45-q472', // integrite de sous-ressource contournable
+    'GHSA-xjj6-f33q-929c', // erreur non geree sur un exces de content-encodings
+  ].map((ghsa) => ({
+    ghsa,
+    paquet: 'undici (via @angular/build)',
+    reexamen: '2026-11-30',
+    motif: 'Outillage de construction uniquement, epingle a 7.29.1 ; corrige avec Angular 22.',
+  })),
   //
   // Historique : du 13/09 au 17/10/2026, trois avis etaient toleres —
   // GHSA-ggr8-5vv4-36mx (deepmerge-ts, via @prisma/config) et
