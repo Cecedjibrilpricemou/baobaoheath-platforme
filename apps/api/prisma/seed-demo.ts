@@ -67,6 +67,7 @@ export const DEMO = {
   // dotation — et aucune ne pouvait etre ouverte : le role existait, le
   // compte non.
   asc: { telephone: '620100011', email: 'asc.donka@demo.test', prenom: 'Mamadou', nom: 'Diallo' },
+  livreur: { telephone: '620100016', email: 'livreur.donka@demo.test', prenom: 'Ibrahima', nom: 'Keita' },
 
   // Le patient se connecte avec son telephone, sans OTP.
   patient: {
@@ -255,10 +256,21 @@ async function main() {
     update: { idStructure: hopital.id },
     create: { idUtilisateur: agentSante.id, numeroCertification: 'ASC-DEMO-0001', idStructure: hopital.id },
   });
+  const compteLivreur = await upsertUtilisateur(DEMO.livreur, Role.LIVREUR, motDePasseHash, null);
+  await prisma.livreurProfile.upsert({
+    where: { idUtilisateur: compteLivreur.id },
+    update: { quartier: QUARTIER, prefecture: PREFECTURE, estActif: true },
+    create: {
+      idUtilisateur: compteLivreur.id,
+      quartier: QUARTIER,
+      prefecture: PREFECTURE,
+    },
+  });
 
   console.log('2. Professionnels : accueil, Dr David, deux laborantins, pharmacien, agent de sante,');
   console.log(`   admin de structure, admin national (${DEMO.adminNational.telephone})`);
   console.log(`   et l agent de l assureur (${DEMO.agentAssureur.telephone})`);
+  console.log(`   et le livreur de Donka (${DEMO.livreur.telephone})`);
 
   // ── 3. Le patient ───────────────────────────────────────────────
   const utilisateurPatient = await upsertUtilisateur(DEMO.patient, Role.PATIENT, motDePasseHash, null);
