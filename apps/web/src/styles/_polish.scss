@@ -26,8 +26,20 @@ p { text-wrap: pretty; }
   border-radius: var(--bb-radius-sm);
 }
 
+// Les champs natifs ne passent pas par l'indicateur de focus de Material.
+:where(input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(.mat-mdc-input-element), select, textarea):focus-visible {
+  outline: 2px solid var(--bb-primary);
+  outline-offset: 2px;
+}
+
 // Les boutons Material gerent leur propre indicateur : on harmonise sa couleur.
 .mat-mdc-button-base:focus-visible { box-shadow: var(--bb-focus-ring); }
+
+// Une action indisponible reste identifiable sans rendre son libelle illisible.
+:where(button, [role='button']):disabled,
+:where(button, [role='button'])[aria-disabled='true'] {
+  cursor: not-allowed;
+}
 
 // ── BOUTONS MATERIAL ───────────────────────────────────────────────
 .mat-mdc-button-base:not(.mat-mdc-icon-button) {
@@ -105,6 +117,34 @@ a:not([class]) {
 }
 
 .mat-mdc-form-field-error { font-size: 12px; }
+
+// ── CHAMPS NATIFS ──────────────────────────────────────────────────
+// Harmonisation des champs qui ne sont pas rendus par Angular Material.
+:where(input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(.mat-mdc-input-element), select, textarea) {
+  font: inherit;
+  color: var(--bb-text-primary);
+  accent-color: var(--bb-primary);
+  transition: border-color var(--bb-transition), box-shadow var(--bb-transition), background-color var(--bb-transition);
+
+  &::placeholder { color: var(--bb-text-muted); opacity: 1; }
+}
+
+:where(input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(.mat-mdc-input-element), select, textarea):disabled {
+  color: var(--bb-text-muted);
+  background-color: var(--bb-surface-2);
+  cursor: not-allowed;
+}
+
+:where(input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(.mat-mdc-input-element), select, textarea):is([aria-invalid='true'], .ng-invalid.ng-touched) {
+  border-color: var(--bb-danger);
+}
+
+@media (max-width: 600px) {
+  // Évite le zoom automatique des navigateurs mobiles à la saisie.
+  :where(input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(.mat-mdc-input-element), textarea) {
+    font-size: max(16px, 1em);
+  }
+}
 
 // ── CARTES ─────────────────────────────────────────────────────────
 // Transition partagee ; seules les cartes cliquables se soulevent.
