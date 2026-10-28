@@ -153,10 +153,34 @@ async function relationDeSoin(user: JwtPayload, utilisateur: Profils): Promise<P
   }
 
   if (user.role === 'PHARMACIEN' && idStructure) {
+    // **`idStructure` etait teste puis jamais utilise.** Le filtre ne retenait
+    // que « une ordonnance en attente, quelque part » : tout pharmacien du
+    // pays atteignait tout patient en attente de delivrance, sans qu'aucun
+    // lien ne les relie.
+    //
+    // Le lien reel est la commande : soit elle lui est attribuee, soit l'appel
+    // de P6 l'a diffusee a son quartier -- c'est la maille de cet appel, et
+    // c'est a ce titre qu'il peut la prendre. Un patient d'une autre ville,
+    // qu'aucune commande ne lui adresse, sort du perimetre.
+    const officine = await prisma.structureSante.findUnique({
+      where: { id: idStructure },
+      select: { quartier: true },
+    });
+
+    const parCommande: Prisma.CommandeWhereInput[] = [
+      { idPharmacie: idStructure },
+      ...(officine?.quartier ? [{ quartierRecherche: officine.quartier }] : []),
+    ];
+
     return {
       consultations: {
         some: {
-          ordonnances: { some: { statut: 'EN_ATTENTE' } },
+          ordonnances: {
+            some: {
+              statut: 'EN_ATTENTE',
+              commande: { is: { OR: parCommande } },
+            },
+          },
         },
       },
     };

@@ -16,6 +16,7 @@ jest.mock('../src/config/prisma', () => ({
     patientProfile: { findFirst: jest.fn() },
     ascProfile:     { findUnique: jest.fn() },
     medecinProfile: { findUnique: jest.fn() },
+    structureSante: { findUnique: jest.fn() },
   },
 }));
 
@@ -25,6 +26,7 @@ const { prisma } = jest.requireMock('../src/config/prisma') as {
     patientProfile: { findFirst:  jest.Mock },
     ascProfile:     { findUnique: jest.Mock },
     medecinProfile: { findUnique: jest.Mock },
+    structureSante: { findUnique: jest.Mock },
   }
 };
 
@@ -277,5 +279,56 @@ describe('buildPatientWhereForUser — cross-structure isolation', () => {
       expect(where).toEqual({});
     }
     expect(prisma.utilisateur.findUnique).not.toHaveBeenCalled();
+  });
+});
+
+// ── Le perimetre patient du pharmacien ───────────────────────────────────────
+//
+// **`idStructure` etait teste dans la condition puis jamais utilise dans le
+// filtre.** Le resultat ne retenait que « une ordonnance en attente, quelque
+// part » : tout pharmacien du pays atteignait tout patient en attente de
+// delivrance, sans qu'aucun lien ne les relie.
+//
+// Le lien reel est la commande : soit elle lui est attribuee, soit l'appel aux
+// pharmacies (P6) l'a diffusee a son quartier -- c'est la maille de cet appel,
+// et c'est a ce titre qu'il peut la prendre.
+describe('buildPatientWhereForUser — PHARMACIEN', () => {
+  function officineDe(idStructure: string | null, quartier: string | null) {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      role: 'PHARMACIEN', idStructure,
+      patientProfile: null, ascProfile: null, medecinProfile: null,
+      pharmacienProfile: { idStructure },
+    });
+    prisma.structureSante.findUnique.mockResolvedValue(quartier ? { quartier } : null);
+  }
+
+  it('retient les commandes attribuees a son officine', async () => {
+    officineDe('officine-1', 'Donka');
+    const where = await buildPatientWhereForUser(makeUser('PHARMACIEN'));
+    expect(JSON.stringify(where)).toContain('officine-1');
+  });
+
+  it('retient aussi celles diffusees a son quartier', async () => {
+    officineDe('officine-1', 'Donka');
+    const where = await buildPatientWhereForUser(makeUser('PHARMACIEN'));
+    expect(JSON.stringify(where)).toContain('Donka');
+  });
+
+  // **C'est le defaut corrige.** Sans lien de commande, le filtre laissait
+  // passer tout patient du pays en attente de delivrance.
+  it('ne retient plus une ordonnance en attente sans lien de commande', async () => {
+    officineDe('officine-1', 'Donka');
+    const where = await buildPatientWhereForUser(makeUser('PHARMACIEN'));
+    expect(JSON.stringify(where)).toContain('commande');
+  });
+
+  // Une officine sans quartier renseigne garde ses propres commandes, et
+  // seulement elles : on ne lui ouvre pas le pays faute de donnee.
+  it('se limite a ses commandes quand son quartier est inconnu', async () => {
+    officineDe('officine-1', null);
+    const where = await buildPatientWhereForUser(makeUser('PHARMACIEN'));
+    const json = JSON.stringify(where);
+    expect(json).toContain('officine-1');
+    expect(json).toContain('commande');
   });
 });

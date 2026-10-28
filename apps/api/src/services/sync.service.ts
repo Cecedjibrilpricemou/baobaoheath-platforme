@@ -154,10 +154,55 @@ async function processMutation(user: JwtPayload, idMutation: string, mutation: S
   }
 }
 
-async function applyMutation(user: JwtPayload, mutation: SyncMutationInput): Promise<string | undefined> {
+/**
+ * Ce que chaque role peut ecrire hors ligne, et rien d'autre.
+ *
+ * **Le canal de synchronisation etait generique.** Tout role admis sur la
+ * route pouvait pousser n'importe quel type : un pharmacien, present ici pour
+ * remonter son stock, pouvait creer une consultation, des constantes vitales
+ * ou une vaccination. Le perimetre patient le bornait a ceux ayant une
+ * ordonnance en attente -- c'est-a-dire, avant correction, a tout le pays.
+ *
+ * Une ecriture au dossier medical par un metier qui n'en a pas le role n'est
+ * pas une question de perimetre : c'est une question de droit. La table ci-
+ * dessous le dit une fois, pour tous les types a venir.
+ */
+const ENTITES_PAR_ROLE: Readonly<Record<string, readonly string[]>> = {
+  ASC: ['PatientProfile', 'Consultation', 'ConstantesVitales', 'Vaccination'],
+  ASC_SUPERVISOR: ['PatientProfile', 'Consultation', 'ConstantesVitales', 'Vaccination'],
+  MEDECIN: ['PatientProfile', 'Consultation', 'ConstantesVitales', 'Vaccination'],
+  // L'officine remonte son stock, et c'est tout ce qu'elle a a remonter.
+  PHARMACIEN: ['Stock'],
+  // L'administrateur de structure ne soigne pas : il n'ecrit pas de dossier.
+  ADMIN_STRUCTURE: ['Stock'],
+  // Le patient hors ligne ne modifie que sa propre fiche, et le perimetre
+  // patient la borne deja a la sienne.
+  PATIENT: ['PatientProfile'],
+};
+
+export function assertEntiteAutorisee(user: JwtPayload, entityType: string): void {
+  const permis = ENTITES_PAR_ROLE[user.role] ?? [];
+  if (!permis.includes(entityType)) {
+    throw new ForbiddenError(
+      `Votre role ne peut pas synchroniser des donnees de type ${entityType}`,
+    );
+  }
+}
+
+/**
+ * Exportee pour que le test puisse verifier que le garde est **branche**, et
+ * pas seulement qu'il est juste. Un test qui n'appelle que le garde laisse
+ * retirer son appel sans rien signaler.
+ */
+export async function applyMutation(user: JwtPayload, mutation: SyncMutationInput): Promise<string | undefined> {
   if (mutation.operation === SyncOperation.DELETE) {
     throw new ForbiddenError('Suppression offline non autorisee sur les donnees medicales');
   }
+
+  // **Avant toute lecture du contenu.** Un refus de droit ne doit pas dependre
+  // de la validite du payload : sinon le message d'erreur renseigne sur ce
+  // qu'on aurait pu ecrire.
+  assertEntiteAutorisee(user, mutation.entityType);
 
   switch (mutation.entityType) {
     case 'PatientProfile':
