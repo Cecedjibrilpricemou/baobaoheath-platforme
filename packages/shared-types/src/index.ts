@@ -350,7 +350,13 @@ export interface LoginDto {
 
 export interface RegisterDto {
   telephone: string;
-  email: string;
+  /**
+   * Facultatif : l'inscription publique cree un compte PATIENT, qui se
+   * connecte par telephone. L'email professionnel n'est exige que pour les
+   * comptes crees par une structure ou une compagnie (createAgentStructure,
+   * creerAgentAssureur), et `registerSchema` le laisse facultatif.
+   */
+  email?: string;
   motDePasse: string;
   prenom: string;
   nom: string;
