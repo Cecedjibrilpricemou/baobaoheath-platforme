@@ -42,7 +42,7 @@ type Couche = {
  */
 const FICHIERS = [
   'admin-structure', 'analytics', 'asc', 'assurance', 'auth', 'bris-de-glace',
-  'commande', 'compte', 'consentement', 'consultation', 'fhir', 'hopital',
+  'commande', 'compte', 'consentement', 'consultation', 'course', 'fhir', 'hopital',
   'identite', 'journal', 'laboratoire', 'medecin', 'medicament', 'notification',
   'ordonnance', 'paiement', 'parametres', 'patient', 'pharmacien', 'privacy',
   'referentiel', 'resultats', 'rgpd', 'stats', 'sync', 'triage', 'upload',
@@ -190,6 +190,33 @@ describe('toute route de l API est gardée, ou inscrite avec sa raison', () => {
       .filter((r) => r.auth && r.roles.length === 0 && !TOUS_ROLES_CONNECTES[r.clef])
       .map((r) => r.clef);
     expect(sansRole).toEqual([]);
+  });
+
+  it('reserve chaque route de course au role attendu', () => {
+    const attendues: Record<string, string> = {
+      'course GET /ouvertes': 'LIVREUR',
+      'course POST /:id/offres': 'LIVREUR',
+      'course GET /mes-courses': 'LIVREUR',
+      'course GET /commande/:idCommande/offres': 'PATIENT',
+      'course POST /commande/:idCommande/choisir': 'PATIENT',
+      'course POST /:id/recu': 'PATIENT',
+      'course POST /:id/renoncer': 'PATIENT',
+      'course POST /:id/remettre': 'PHARMACIEN',
+    };
+    for (const [clef, role] of Object.entries(attendues)) {
+      expect(routes.find((route) => route.clef === clef)?.roles).toEqual([role]);
+    }
+  });
+
+  it('reserve le recrutement des livreurs aux administrations regionales et nationales', () => {
+    const attendues: Record<string, string[]> = {
+      'compte POST /livreurs': ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
+      'compte GET /livreurs': ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
+      'compte PATCH /livreurs/:id/activite': ['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'],
+    };
+    for (const [clef, roles] of Object.entries(attendues)) {
+      expect(routes.find((route) => route.clef === clef)?.roles).toEqual(roles);
+    }
   });
 
   // **Une entrée périmée rouvre la porte en silence.** Si une route est

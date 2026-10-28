@@ -142,9 +142,21 @@ describe('creerPharmacieAvecPharmacien', () => {
 
     await expect(creerAgent('admin-h-1', {
       telephone: '+224620000002',
+      email: 'mamadou@example.com',
       prenom: 'Mamadou',
       nom: 'Bah',
       role: 'PHARMACIEN',
     })).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it('refuse un agent professionnel sans email avant toute création', async () => {
+    await expect(creerAgent('admin-h-1', {
+      telephone: '+224620000003',
+      prenom: 'Mamadou',
+      nom: 'Bah',
+      role: 'MEDECIN',
+    })).rejects.toThrow(/adresse email professionnelle est obligatoire/i);
+    expect(prisma.utilisateur.findUnique).not.toHaveBeenCalled();
+    expect(prisma.utilisateur.create).not.toHaveBeenCalled();
   });
 });

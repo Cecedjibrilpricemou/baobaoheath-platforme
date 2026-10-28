@@ -1,4 +1,6 @@
 import { prisma } from '../config/prisma';
+import { JwtPayload } from '../types/auth.types';
+import { assertCanAccessPatient } from './access-control.service';
 import { Prisma } from '../config/generated/client/client';
 import type { FusionView, LigneFusionView, MotifRefusFusion } from '@baobaoheath/shared-types';
 
@@ -132,11 +134,17 @@ const SELECTION = {
  * dossier medical coupe en deux, ce qui est precisement ce qu'on repare.
  */
 export async function fusionner(
-  auteur: { userId: string },
+  auteur: JwtPayload,
   idPrincipal: string,
   idAbsorbe: string,
   motif: string
 ): Promise<{ fusion: FusionView } | { refus: MotifRefusFusion }> {
+  // **Les deux dossiers, pas seulement celui qui survit.** Fusionner est
+  // destructif : sans ce controle, l'administrateur d'une clinique pouvait
+  // absorber le dossier d'un patient d'un autre hopital dans l'un des siens.
+  await assertCanAccessPatient(auteur, idPrincipal);
+  await assertCanAccessPatient(auteur, idAbsorbe);
+
   const [principal, absorbe] = await Promise.all([
     prisma.patientProfile.findUnique({ where: { id: idPrincipal }, select: SELECTION }),
     prisma.patientProfile.findUnique({ where: { id: idAbsorbe }, select: SELECTION }),
@@ -249,7 +257,7 @@ export async function fusionner(
  * lui reste donc — c'est le comportement voulu.
  */
 export async function annuler(
-  auteur: { userId: string },
+  auteur: JwtPayload,
   idFusion: string,
   motifAnnulation: string
 ): Promise<{ fusion: FusionView } | { refus: MotifRefusFusion }> {
@@ -261,6 +269,10 @@ export async function annuler(
     },
   });
   if (!f) return { refus: 'FUSION_INTROUVABLE' };
+
+  // Defaire une fusion est aussi destructif que la faire : on ne defait que
+  // celles qui portent sur un dossier de sa propre structure.
+  await assertCanAccessPatient(auteur, f.idPrincipal);
   if (f.statut === 'ANNULEE') return { refus: 'DEJA_ANNULEE' };
   if (motifAnnulation.trim().length < MOTIF_MIN) return { refus: 'MOTIF_TROP_COURT' };
 
@@ -354,7 +366,9 @@ async function detail(idFusion: string): Promise<FusionView> {
 }
 
 /** L'historique des fusions d'un dossier, annulations comprises. */
-export async function pourPatient(idPatient: string): Promise<FusionView[]> {
+/** L'historique des fusions d'un patient **de sa structure**. */
+export async function pourPatient(user: JwtPayload, idPatient: string): Promise<FusionView[]> {
+  await assertCanAccessPatient(user, idPatient);
   const fs = await prisma.fusionDossier.findMany({
     where: { OR: [{ idPrincipal: idPatient }, { idAbsorbe: idPatient }] },
     select: SELECTION_VUE,

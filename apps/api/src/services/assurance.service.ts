@@ -983,6 +983,19 @@ const ASSUREUR_INCLUDE = {
   _count: { select: { contrats: true } },
 } satisfies Prisma.AssureurInclude;
 
+const ASSUREUR_ADMIN_INCLUDE = {
+  ...ASSUREUR_INCLUDE,
+  structure: {
+    select: {
+      utilisateurs: {
+        where: { role: 'ASSUREUR' },
+        take: 1,
+        select: { id: true },
+      },
+    },
+  },
+} satisfies Prisma.AssureurInclude;
+
 function versAssureurView(a: AssureurAvecInclude): AssureurView {
   return {
     id: a.id, nom: a.nom, code: a.code,
@@ -1036,6 +1049,18 @@ export async function listerAssureurs(): Promise<AssureurView[]> {
     orderBy: { nom: 'asc' },
   });
   return assureurs.map(versAssureurView);
+}
+
+/** Liste d'administration avec indicateur pour eviter de creer un second agent. */
+export async function listerAssureursAdmin(): Promise<AssureurView[]> {
+  const assureurs = await prisma.assureur.findMany({
+    include: ASSUREUR_ADMIN_INCLUDE,
+    orderBy: { nom: 'asc' },
+  });
+  return assureurs.map((assureur) => ({
+    ...versAssureurView(assureur),
+    agentExistant: (assureur.structure?.utilisateurs.length ?? 0) > 0,
+  }));
 }
 
 /** Assureurs utilisables dans la structure : ceux de l'hopital parent sont herites. */
@@ -2202,6 +2227,10 @@ export async function creerAgentAssureur(
   idAssureur: string,
   dto: { prenom: string; nom: string; telephone: string; email?: string; prefecture?: string },
 ): Promise<AgentAssureurCreeView> {
+  if (!dto.email?.trim()) {
+    throw new ValidationError('Une adresse email professionnelle est obligatoire pour se connecter');
+  }
+
   const assureur = await prisma.assureur.findUnique({
     where: { id: idAssureur },
     select: { id: true, nom: true, code: true, idStructure: true },
@@ -2236,6 +2265,14 @@ export async function creerAgentAssureur(
       });
       idStructure = s.id;
       await tx.assureur.update({ where: { id: assureur.id }, data: { idStructure } });
+    }
+
+    const agentExistant = await tx.utilisateur.findFirst({
+      where: { idStructure, role: 'ASSUREUR' },
+      select: { id: true },
+    });
+    if (agentExistant) {
+      throw new ConflictError('Cette compagnie a déjà un compte agent');
     }
 
     return tx.utilisateur.create({

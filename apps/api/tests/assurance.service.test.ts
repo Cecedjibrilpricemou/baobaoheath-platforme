@@ -12,35 +12,42 @@ import {
   regleEnVigueur,
   repartir,
   verifierEligibilite,
+  creerAgentAssureur,
+  listerAssureursAdmin,
   type LigneAChiffrer,
   type ReglePourCalcul,
 } from '../src/services/assurance.service';
 import { JwtPayload } from '../src/types/auth.types';
-import { ForbiddenError, NotFoundError } from '../src/utils/app-error';
+import { ForbiddenError, NotFoundError, ValidationError } from '../src/utils/app-error';
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
-    utilisateur: { findUnique: jest.fn() },
-    structureSante: { findUnique: jest.fn() },
+    utilisateur: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },
+    structureSante: { findUnique: jest.fn(), create: jest.fn() },
     structureAssureur: { findFirst: jest.fn() },
+    assureur: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     patientProfile: { findUnique: jest.fn() },
     contratAssurance: { findFirst: jest.fn() },
     controleEligibilite: { create: jest.fn(), findMany: jest.fn() },
     venteComptoir: { aggregate: jest.fn() },
+    $transaction: jest.fn(),
   },
 }));
 jest.mock('../src/config/redis', () => ({ getRedis: () => null }));
+jest.mock('../src/utils/password.utils', () => ({ hashPassword: jest.fn().mockResolvedValue('hashed') }));
 
 type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
-    utilisateur: { findUnique: M };
-    structureSante: { findUnique: M };
+    utilisateur: { findUnique: M; findFirst: M; create: M };
+    structureSante: { findUnique: M; create: M };
     structureAssureur: { findFirst: M };
+    assureur: { findUnique: M; findMany: M; update: M };
     patientProfile: { findUnique: M };
     contratAssurance: { findFirst: M };
     controleEligibilite: { create: M; findMany: M };
     venteComptoir: { aggregate: M };
+    $transaction: M;
   };
 };
 
@@ -149,6 +156,7 @@ describe('verifierEligibilite', () => {
     prisma.structureSante.findUnique.mockResolvedValue({
       id: 'struct-P', type: 'PHARMACIE', idStructureParente: null,
     });
+
     prisma.structureAssureur.findFirst.mockResolvedValue({ id: 'convention-1' });
     prisma.patientProfile.findUnique.mockResolvedValue({
       id: 'p-1', utilisateur: { prenom: 'Maomou', nom: 'Conde' },
@@ -238,6 +246,57 @@ describe('verifierEligibilite', () => {
     const r = await verifierEligibilite(pharmacien, 'p-1', LE_2_OCTOBRE);
     expect(r.eligible).toBe(false);
     expect(r.tauxBasePourcent).toBeNull();
+  });
+});
+
+describe('creerAgentAssureur', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+  });
+
+  it('refuse un professionnel sans email avant de créer un compte', async () => {
+    await expect(creerAgentAssureur(
+      { userId: 'admin-1', role: 'SUPER_ADMIN' } as JwtPayload,
+      'assureur-1',
+      { prenom: 'Mamadou', nom: 'Bah', telephone: '+224620000003' },
+    )).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('refuse de créer un deuxième agent pour une compagnie', async () => {
+    prisma.assureur.findUnique.mockResolvedValue({
+      id: 'assureur-1', nom: 'Sante GN', code: 'SGN', idStructure: 'structure-assureur-1',
+    });
+    prisma.utilisateur.findUnique.mockResolvedValue(null);
+    prisma.utilisateur.findFirst.mockResolvedValue({ id: 'agent-existant' });
+
+    await expect(creerAgentAssureur(
+      { userId: 'admin-1', role: 'SUPER_ADMIN' } as JwtPayload,
+      'assureur-1',
+      {
+        prenom: 'Mamadou', nom: 'Bah', telephone: '+224620000003',
+        email: 'mamadou@example.com',
+      },
+    )).rejects.toThrow(/compte agent/i);
+    expect(prisma.utilisateur.create).not.toHaveBeenCalled();
+  });
+
+  it('signale dans la liste d administration si une compagnie a déjà son agent', async () => {
+    prisma.assureur.findMany.mockResolvedValue([
+      {
+        id: 'assureur-1', nom: 'Sante GN', code: 'SGN', telephone: null, email: null,
+        estActif: true, modeEchange: 'MANUEL', regles: [], _count: { contrats: 0 },
+        structure: { utilisateurs: [{ id: 'agent-1' }] },
+      },
+      {
+        id: 'assureur-2', nom: 'Mutuelle GN', code: 'MGN', telephone: null, email: null,
+        estActif: true, modeEchange: 'MANUEL', regles: [], _count: { contrats: 0 },
+        structure: null,
+      },
+    ]);
+
+    const result = await listerAssureursAdmin();
+    expect(result.map((a) => a.agentExistant)).toEqual([true, false]);
   });
 });
 

@@ -7,14 +7,15 @@
   gap: 0.75rem;
 }
 
+// ✦ Refonte UI : carte de liste ancrée aux surfaces et bordures du thème.
 .bb-agents__item {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid var(--bb-border, #dce3eb);
-  border-radius: 10px;
-  background: var(--bb-surface, #fff);
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
 }
 
 .bb-agents__info {
@@ -30,3 +31,13 @@
 .bb-assurances__note {
   margin-top: 1rem;
 }
+
+// ✦ Refonte UI : anneau de focus et cible tactile conformes aux tokens communs.
+.bb-agents :where(button, a, input, select):focus-visible {
+  outline: none;
+  box-shadow: var(--bb-focus-ring);
+}
+
+.bb-agents button,
+.bb-agents input,
+.bb-agents select { min-height: 44px; }

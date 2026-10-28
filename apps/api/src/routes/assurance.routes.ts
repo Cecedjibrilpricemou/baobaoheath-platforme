@@ -166,9 +166,21 @@ router.post(
   }
 );
 
+/**
+ * Les contrats d'un patient, pour l'administration des polices.
+ *
+ * **Le garde etait bien plus large que l'usage.** La route s'ouvrait au
+ * pharmacien, a l'accueil et a l'administrateur de structure, et le service ne
+ * recevait meme pas l'appelant : n'importe lequel d'entre eux lisait, par
+ * identifiant, la couverture de n'importe quel patient.
+ *
+ * Son seul appelant est l'ecran `/admin/assurance`, reserve au national. Au
+ * comptoir, le tiers payant passe par le jeton de la carte presentee, pas par
+ * un identifiant de patient : la pharmacie n'a rien a chercher ici.
+ */
 router.get(
   '/patients/:id/contrats',
-  requireRole('PHARMACIEN', 'AGENT_ACCUEIL', 'ADMIN_STRUCTURE', 'ADMIN_NATIONAL', 'SUPER_ADMIN'),
+  requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN'),
   async (req: AuthRequest, res: Response) => {
     const data: ContratAssuranceView[] = await assurance.contratsDuPatient(req.params['id'] as string);
     res.json({ success: true, data });
@@ -201,7 +213,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const data: AssureurView[] = ['PHARMACIEN', 'ADMIN_STRUCTURE'].includes(req.user!.role)
       ? await assurance.conventionsDeLaStructure(req.user!)
-      : await assurance.listerAssureurs();
+      : await assurance.listerAssureursAdmin();
     res.json({ success: true, data });
   }
 );

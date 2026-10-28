@@ -64,7 +64,7 @@ router.use(requireRole('AGENT_ACCUEIL', 'ADMIN_STRUCTURE'));
  * Declaree avant `/:id/...` pour rester lisible.
  */
 router.get('/:id/doublons', async (req: AuthRequest, res: Response) => {
-  const data = await doublon.pourPatient(req.params['id'] as string);
+  const data = await doublon.pourPatient(req.user!, req.params['id'] as string);
   // Un dossier introuvable n'a pas « aucun doublon » : il n'existe pas. Rendre
   // une liste vide ferait lire a l'agent une affirmation fausse.
   if (data === null) {
@@ -141,14 +141,14 @@ router.post(
 
 /** L'historique des fusions d'un dossier, annulations comprises. */
 router.get('/:id/fusions', async (req: AuthRequest, res: Response) => {
-  const data = await fusion.pourPatient(req.params['id'] as string);
+  const data = await fusion.pourPatient(req.user!, req.params['id'] as string);
   res.json({ success: true, data });
 });
 
 /** Les patients et leur identite. Les provisoires d'abord : c'est le travail. */
 router.get('/', validateQuery(filtreIdentitesSchema), async (req: AuthRequest, res: Response) => {
   const q = req.query as { q?: string; niveau?: NiveauIdentite };
-  const data: IdentitePatientView[] = await identite.rechercher(q);
+  const data: IdentitePatientView[] = await identite.rechercher(req.user!, q);
   res.json({ success: true, data });
 });
 
@@ -176,7 +176,7 @@ router.post('/:id/verifier', validateBody(verifierIdentiteSchema), async (req: A
  * de doublons, qui n'attend pas une verification pour etre utile.
  */
 router.post('/:id/traits', validateBody(noterTraitsSchema), async (req: AuthRequest, res: Response) => {
-  const data = await identite.noterTraits(req.params['id'] as string, req.body);
+  const data = await identite.noterTraits(req.user!, req.params['id'] as string, req.body);
   res.json({ success: true, data, message: 'Traits distinctifs enregistres.' });
 });
 

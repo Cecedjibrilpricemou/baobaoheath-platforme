@@ -94,6 +94,13 @@ export const routes: Routes = [
       import('./features/assureur/assureur.routes').then(m => m.ASSUREUR_ROUTES)
   },
   {
+    path: 'livreur',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['LIVREUR'] },
+    loadChildren: () =>
+      import('./features/livreur/livreur.routes').then(m => m.LIVREUR_ROUTES)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMIN_STRUCTURE', 'ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN'] },

@@ -17,6 +17,7 @@ import {
   Prisma,
   Role,
   StatutCommande,
+  StatutCourse,
   StatutOrdonnance,
 } from '../config/generated/client/client';
 import type { CommandeView } from '@baobaoheath/shared-types';
@@ -26,6 +27,9 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { estStructureOfficinale, filtreStructuresOfficinales } from '../utils/officine.util';
 import { prochainNumero } from './numero.service';
 import { notifierSansBloquer } from './notification.service';
+import { assertTransition, transitionPermise } from './commande.transitions';
+export { assertTransition, transitionPermise } from './commande.transitions';
+import { notifierLivreursCourse, ouvrirCourse } from './course.service';
 
 /**
  * Ce qu'une commande montre, et ou s'arrete le partage.
@@ -45,6 +49,8 @@ export function versCommandeView(
   const patient = c.ordonnance.consultation?.patient;
   return {
     id: c.id,
+    idCourse: c.courses?.[0]?.id ?? null,
+    statutCourse: c.courses?.[0]?.statut ?? null,
     statut: c.statut,
     quartierRecherche: c.quartierRecherche,
     modeRemise: c.modeRemise,
@@ -102,6 +108,8 @@ export function versCommandeView(
 /** Qui voit tout : la surveillance de la plateforme, pas le soin. */
 const ROLES_ADMIN = new Set(['ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN']);
 
+const STATUTS_COURSE_TERMINAUX: StatutCourse[] = [StatutCourse.LIVREE, StatutCourse.ANNULEE];
+
 const COMMANDE_INCLUDE = {
   ordonnance: {
     include: {
@@ -115,6 +123,11 @@ const COMMANDE_INCLUDE = {
   },
   lignes: { orderBy: { creeLe: 'asc' } },
   pharmacie: { select: { id: true, nom: true, prefecture: true, commune: true, quartier: true } },
+  courses: {
+    where: { statut: { notIn: STATUTS_COURSE_TERMINAUX } },
+    select: { id: true, statut: true },
+    take: 1,
+  },
   reponses: {
     include: { structure: { select: { id: true, nom: true } } },
     orderBy: { repondueLe: 'asc' },
@@ -597,92 +610,6 @@ export async function commandeDeLOrdonnance(idOrdonnance: string) {
 
 
 // ════════════════════════════════════════════════════════════════════════
-// La machine à états
-// ════════════════════════════════════════════════════════════════════════
-//
-// **Un seul endroit décide des passages autorisés.** Avant, chaque fonction
-// vérifiait son état de départ à sa façon — `statut !== PRISE_EN_CHARGE` ici,
-// un `updateMany` conditionnel là. Deux écritures du même règlement, qui
-// divergent dès qu'on en ajoute une troisième.
-
-/**
- * Les passages autorisés, et eux seuls.
- *
- * Quelques choix qui ne se devinent pas :
- *
- *   - **`RETIREE` ne sert que la livraison.** Pour un retrait, le patient est
- *     au comptoir : la remise *est* la fin, donc `PRETE_POUR_RETRAIT` mène
- *     directement à `CLOTUREE`. Faire passer un retrait par deux états pour
- *     un seul geste n'aurait décrit personne. Pour une livraison, `RETIREE`
- *     dit « remis au motard », et c'est le patient qui clôturera — en P8.
- *
- *   - **Une commande payée peut encore être annulée.** L'officine avait
- *     déclaré tout détenir puis découvre une rupture : sans sortie, la
- *     commande resterait bloquée pour toujours. Le remboursement, lui, se
- *     fait de la main à la main au comptoir — comme le transport se règle au
- *     motard, hors facture plateforme (décision du 2026-09-26). La
- *     plateforme enregistre l'annulation et son motif ; elle ne prétend pas
- *     rembourser.
- *
- *   - **Rien ne sort de `RETIREE` vers une annulation** : les produits sont
- *     partis (EF-07-11, pas de retour).
- *
- *   - **Une rétractation ne va pas au-delà de la prise en charge.** Une
- *     officine qui a déjà chiffré ne rend pas la commande au quartier ; elle
- *     l'annule, avec son motif.
- */
-const TRANSITIONS: Readonly<Record<StatutCommande, readonly StatutCommande[]>> = {
-  RECHERCHE_PHARMACIE: ['PRISE_EN_CHARGE', 'SANS_PHARMACIE', 'ANNULEE'],
-  // Le retour à la recherche est la rétractation : l'officine n'avait pas tout.
-  PRISE_EN_CHARGE: ['A_PAYER', 'RECHERCHE_PHARMACIE', 'ANNULEE'],
-  A_PAYER: ['PAYEE', 'ANNULEE'],
-  PAYEE: ['EN_PREPARATION', 'ANNULEE'],
-  EN_PREPARATION: ['PRETE_POUR_RETRAIT', 'PRETE_POUR_LIVRAISON', 'ANNULEE'],
-  PRETE_POUR_RETRAIT: ['CLOTUREE', 'ANNULEE'],
-  PRETE_POUR_LIVRAISON: ['RETIREE', 'ANNULEE'],
-  RETIREE: ['CLOTUREE'],
-  CLOTUREE: [],
-  // Une pharmacie devient partenaire, ou le patient relance : l'appel repart.
-  SANS_PHARMACIE: ['RECHERCHE_PHARMACIE', 'ANNULEE'],
-  ANNULEE: [],
-};
-
-/** Pour que les refus se lisent, y compris par le patient. */
-const LIBELLES: Readonly<Record<StatutCommande, string>> = {
-  RECHERCHE_PHARMACIE: 'en recherche de pharmacie',
-  PRISE_EN_CHARGE: 'prise en charge',
-  A_PAYER: 'en attente de paiement',
-  PAYEE: 'payee',
-  EN_PREPARATION: 'en preparation',
-  PRETE_POUR_RETRAIT: 'prete pour retrait',
-  PRETE_POUR_LIVRAISON: 'prete pour livraison',
-  RETIREE: 'remise',
-  CLOTUREE: 'cloturee',
-  SANS_PHARMACIE: 'sans pharmacie',
-  ANNULEE: 'annulee',
-};
-
-export function transitionPermise(de: StatutCommande, vers: StatutCommande): boolean {
-  return TRANSITIONS[de].includes(vers);
-}
-
-/**
- * Refuser un passage impossible, en le nommant.
- *
- * `ConflictError` et non `ValidationError` : la requête est bien formée,
- * c'est l'état de la commande qui a changé entre-temps. C'est un 409, et
- * l'écran doit dire « quelqu'un est passé avant vous », pas « votre saisie
- * est invalide ».
- */
-export function assertTransition(de: StatutCommande, vers: StatutCommande): void {
-  if (transitionPermise(de, vers)) return;
-  throw new ConflictError(
-    TRANSITIONS[de].length === 0
-      ? `Cette commande est ${LIBELLES[de]} : rien ne peut plus la faire changer.`
-      : `Une commande ${LIBELLES[de]} ne peut pas passer a « ${LIBELLES[vers]} ».`,
-  );
-}
-
 /** La commande d'une officine, ou un refus net. */
 async function commandeDeMonOfficine(user: JwtPayload, idCommande: string) {
   const pharmacie = await pharmacieDuPharmacien(user.userId);
@@ -840,10 +767,17 @@ export async function marquerPrete(user: JwtPayload, idCommande: string): Promis
     : StatutCommande.PRETE_POUR_LIVRAISON;
   assertTransition(commande.statut, vers);
 
-  await prisma.commande.update({
-    where: { id: idCommande },
-    data: { statut: vers, preteLe: new Date() },
+  const course = await prisma.$transaction(async (tx) => {
+    const maj = await tx.commande.updateMany({
+      where: { id: idCommande, statut: commande.statut },
+      data: { statut: vers, preteLe: new Date() },
+    });
+    if (maj.count !== 1) throw new ConflictError('La commande a change avant sa mise a disposition');
+    return vers === StatutCommande.PRETE_POUR_LIVRAISON
+      ? ouvrirCourse(idCommande, tx)
+      : null;
   });
+  if (course) await notifierLivreursCourse(course.id);
   await notifierCommandePrete(idCommande, commande.modeRemise);
   return getCommande(idCommande, pharmacie.id);
 }
@@ -857,6 +791,9 @@ export async function marquerPrete(user: JwtPayload, idCommande: string): Promis
  */
 export async function confirmerRemise(user: JwtPayload, idCommande: string): Promise<CommandeView> {
   const { commande, pharmacie } = await commandeDeMonOfficine(user, idCommande);
+  if (commande.modeRemise === ModeRemise.LIVRAISON) {
+    throw new ValidationError('Cette commande part en livraison : scannez le QR du motard.');
+  }
   const maintenant = new Date();
 
   if (commande.statut === StatutCommande.PRETE_POUR_RETRAIT) {

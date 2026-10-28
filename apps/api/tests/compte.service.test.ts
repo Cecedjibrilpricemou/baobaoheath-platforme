@@ -32,12 +32,29 @@ const { deconnecterUtilisateur } = jest.requireMock('../src/realtime/socket.serv
 };
 
 import {
-  motifDeRefus, reactiver, ROLES_A_ORDRE, suspendre, verifierOrdre,
+  motifDeRefus, rechercher, reactiver, ROLES_A_ORDRE, suspendre, verifierOrdre,
 } from '../src/services/compte.service';
 
 const ADMIN = { userId: 'admin-1', role: 'SUPER_ADMIN' as const };
 const NATIONAL = { userId: 'nat-1', role: 'ADMIN_NATIONAL' as const };
 const MOTIF = 'Acces repetes a des dossiers hors de son service';
+
+describe('rechercher', () => {
+  it('exclut toujours les patients, y compris si le filtre les demande', async () => {
+    prisma.utilisateur.findMany.mockResolvedValue([]);
+    prisma.utilisateur.count.mockResolvedValue(0);
+
+    await rechercher({ role: 'PATIENT' });
+
+    const [liste] = prisma.utilisateur.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    const [compte] = prisma.utilisateur.count.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(liste.where).toEqual({
+      role: { not: 'PATIENT' },
+      AND: [{ role: 'PATIENT' }],
+    });
+    expect(compte.where).toEqual(liste.where);
+  });
+});
 
 const CIBLE = { id: 'u-1', role: 'MEDECIN' as const, estActif: true, prenom: 'David', nom: 'Camara' };
 

@@ -96,6 +96,55 @@
           }
         }
 
+        @if (c.statut === 'PRETE_POUR_LIVRAISON') {
+          @if (c.statutCourse === 'APPEL_OFFRES' && c.idCourse) {
+            <section class="bb-cmd__course" aria-label="Offres de livraison">
+              <h3>{{ 'PATIENT.COMMANDES.OFFRES_LIVRAISON' | translate }}</h3>
+              @if (chargementOffres()[c.idCourse]) {
+                <p class="bb-cmd__note">{{ 'COMMON.LOADING' | translate }}</p>
+              } @else if (offresPour(c).length > 0) {
+                @for (offre of offresPour(c); track offre.id) {
+                  <article class="bb-cmd__offre">
+                    <div class="bb-cmd__offre-terme">
+                      <span>{{ 'PATIENT.COMMANDES.PRIX_LIVRAISON' | translate }}</span>
+                      <strong>{{ montant(offre.prixGnf) }} GNF</strong>
+                    </div>
+                    <div class="bb-cmd__offre-terme">
+                      <span>{{ 'PATIENT.COMMANDES.DELAI_LIVRAISON' | translate }}</span>
+                      <strong>{{ offre.delaiMinutes }} {{ 'LIVREUR.COURSES.MINUTES' | translate }}</strong>
+                    </div>
+                    <button class="bb-cmd__btn" type="button"
+                            (click)="choisirLivreur(c, offre)" [disabled]="enCours() === c.id">
+                      {{ 'PATIENT.COMMANDES.CHOISIR_LIVREUR' | translate }}
+                    </button>
+                  </article>
+                }
+              } @else {
+                <p class="bb-cmd__note">{{ 'PATIENT.COMMANDES.AUCUNE_OFFRE_LIVRAISON' | translate }}</p>
+                <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                        (click)="demanderRenoncementLivraison(c)" [disabled]="enCours() === c.id">
+                  {{ 'PATIENT.COMMANDES.ALLER_CHERCHER' | translate }}
+                </button>
+              }
+            </section>
+          } @else if (c.statutCourse === 'ATTRIBUEE') {
+            <p class="bb-cmd__note">
+              <i class="pi pi-truck" aria-hidden="true"></i>
+              {{ 'PATIENT.COMMANDES.LIVREUR_CHOISI' | translate }}
+            </p>
+          }
+        }
+
+        @if (c.statutCourse === 'EN_COURS' && c.idCourse) {
+          <div class="bb-cmd__actions">
+            <button class="bb-cmd__btn" type="button"
+                    (click)="demanderConfirmationReception(c)" [disabled]="enCours() === c.id">
+              <i class="pi pi-check-circle" aria-hidden="true"></i>
+              {{ 'PATIENT.COMMANDES.JAI_RECU' | translate }}
+            </button>
+          </div>
+        }
+
         <!-- Renoncer reste possible tant que rien n'est parti. Le
              remboursement, s'il y a lieu, se fait a la pharmacie. -->
         @if (!['RETIREE', 'CLOTUREE'].includes(c.statut)) {
@@ -267,6 +316,50 @@
         <button class="bb-cmd__btn bb-cmd__btn--danger" type="button"
                 (click)="confirmerRenoncement()" [disabled]="!peutRenoncer()">
           {{ 'PATIENT.COMMANDES.RENONCER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (renonceLivraison(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PATIENT.COMMANDES.ALLER_CHERCHER_TITRE' | translate }}</h2>
+      <p class="bb-cmd__modale-texte">{{ 'PATIENT.COMMANDES.ALLER_CHERCHER_CONFIRMATION' | translate }}</p>
+      <label class="bb-cmd__label" for="cmd-renoncer-livraison">
+        {{ 'PATIENT.COMMANDES.RENONCER_MOTIF' | translate }}
+      </label>
+      <textarea id="cmd-renoncer-livraison" class="bb-cmd__motif" rows="3"
+                [value]="motifRenoncementLivraison()"
+                (input)="motifRenoncementLivraison.set($any($event.target).value)"></textarea>
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="fermerRenoncementLivraison()" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn" type="button" (click)="confirmerRenoncementLivraison()"
+                [disabled]="!peutRenoncerLivraison()">
+          {{ 'PATIENT.COMMANDES.ALLER_CHERCHER' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (receptionAConfirmer(); as c) {
+  <div class="bb-cmd__voile" role="dialog" aria-modal="true">
+    <section class="bb-cmd__modale">
+      <h2 class="bb-cmd__modale-titre">{{ 'PATIENT.COMMANDES.RECEPTION_TITRE' | translate }}</h2>
+      <p class="bb-cmd__modale-texte">{{ 'PATIENT.COMMANDES.RECEPTION_IRREVERSIBLE' | translate }}</p>
+      <div class="bb-cmd__actions">
+        <button class="bb-cmd__btn bb-cmd__btn--plat" type="button"
+                (click)="receptionAConfirmer.set(null)" [disabled]="!!enCours()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="bb-cmd__btn" type="button" (click)="confirmerReception()"
+                [disabled]="enCours() === c.id">
+          {{ 'PATIENT.COMMANDES.RECEPTION_CONFIRMER' | translate }}
         </button>
       </div>
     </section>

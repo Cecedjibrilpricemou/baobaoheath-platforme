@@ -125,9 +125,9 @@ Cas 2 - utilisateur non-patient: `ASC`, `MEDECIN`, `PHARMACIEN`, `ADMIN_STRUCTUR
 
 Important:
 
-- Les patients peuvent se connecter normalement.
-- Tous les autres utilisateurs doivent se connecter avec leur email professionnel et leur mot de passe.
-- Si un utilisateur non-patient tente de se connecter avec un telephone, le backend renvoie une erreur.
+- Les patients et les livreurs peuvent se connecter avec leur téléphone et leur mot de passe, sans OTP.
+- Les autres utilisateurs doivent se connecter avec leur email professionnel et leur mot de passe.
+- Si un professionnel autre qu'un livreur tente de se connecter avec un téléphone, le backend renvoie une erreur.
 - Les tokens ne sont envoyes aux utilisateurs non-patients qu'apres verification OTP.
 
 A stocker cote frontend:

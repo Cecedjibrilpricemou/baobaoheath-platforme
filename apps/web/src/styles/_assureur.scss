@@ -211,21 +211,26 @@
   }
 
   // ── Boutons et formulaires ────────────────────────────────────
-  // ✦ Refonte UI : boutons pilule de 40px, comme les boutons Material
+  // Boutons pilule de 44px : confortables au toucher et alignés sur Material.
   &__btn {
-    display: inline-flex; align-items: center; gap: 8px; min-height: 40px;
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
     padding: 9px 18px; border-radius: var(--bb-radius-pill);
     background: var(--bb-primary); color: #fff; border: none;
     font-family: var(--bb-font-display); font-size: 12.5px; font-weight: 700;
     cursor: pointer; transition: all var(--bb-transition);
     &:hover:not(:disabled) { background: var(--bb-mid); transform: translateY(-1px); }
-    &:disabled { opacity: .5; cursor: not-allowed; }
+    &:active:not(:disabled) { transform: scale(.98); }
+    &:disabled {
+      background: var(--bb-surface-2); color: var(--bb-text-muted);
+      border: 1px solid var(--bb-border); box-shadow: none; cursor: not-allowed;
+    }
     i { font-size: 11px; }
 
     &--plat {
       background: transparent; color: var(--bb-text-primary);
       border: 1px solid var(--bb-border);
       &:hover:not(:disabled) { background: var(--bb-surface-2); transform: none; }
+      &:disabled { background: var(--bb-surface-2); color: var(--bb-text-muted); }
     }
   }
 
@@ -304,6 +309,8 @@
     &__chiffre { padding: 14px; }
     &__regle-cat { min-width: 0; }
     &__note--fin { margin-left: 0; }
+    &__actions { > * { flex: 1 1 auto; justify-content: center; } }
+    &__modale { padding: 18px; }
   }
 }
 

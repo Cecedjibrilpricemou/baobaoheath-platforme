@@ -211,3 +211,14 @@ Ma recommandation : la première. Une substitution qui se décide toute seule fa
 - L'**offre du motard porte un délai en plus du prix** : c'est sur les deux que le patient choisit.
 - La **substitution réutilise `analyserPrescription`** : un produit de remplacement doit passer le même contrôle d'allergies et d'interactions qu'une prescription.
 - Une **migration géographique** est nécessaire avant tout le reste : quartier et commune, sur le patient comme sur la structure.
+
+## Mise en œuvre P8-a — API (2026-10-23)
+
+Le modèle des courses, les offres, les transitions, les routes API et les notifications sont implémentés côté API. Le suivi cartographique, la relance automatique après 30 minutes, le paiement du transport et le frontend restent hors de ce lot.
+
+Deux précisions retenues pour cette mise en œuvre :
+
+- Si le QR scanné à la pharmacie ne correspond pas au livreur attribué, la requête est refusée sans changer aucun état. Cette décision du 2026-10-23 remplace, pour P8-a, la relance automatique décrite à la section « Vérification du motard à la pharmacie ».
+- `Commande` ne conservant pas de préfecture de destination, l'ouverture de la course lit celle du profil patient à cet instant puis la copie dans `Course`. Une modification ultérieure du profil ne déplace donc pas une course déjà ouverte.
+
+La vue du livreur est un contrat distinct : aucun produit, ordonnance, posologie ou diagnostic n'y est rendu. Le nom et le téléphone du patient n'apparaissent qu'après l'attribution, pour permettre la livraison.

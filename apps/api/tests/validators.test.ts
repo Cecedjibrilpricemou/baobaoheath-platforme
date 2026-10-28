@@ -1,5 +1,7 @@
 import { syncPushSchema, ussdSessionSchema, verifyLoginOtpSchema,
-  filtreJournalSchema,
+  choisirOffreCourseSchema, confirmerReceptionCourseSchema, filtreJournalSchema,
+  proposerOffreCourseSchema, remettreAuMotardSchema, renoncerLivraisonSchema,
+  createAgentStructureSchema, creerAgentAssureurSchema, creerLivreurSchema,
 } from '../src/validators/api.schemas';
 
 describe('api.schemas', () => {
@@ -32,6 +34,52 @@ describe('api.schemas', () => {
     });
 
     expect(parsed.code).toBe('123456');
+  });
+
+  it('exige un email professionnel pour les agents de structure et d assureur', () => {
+    expect(() => createAgentStructureSchema.parse({
+      telephone: '+224620000001', prenom: 'Awa', nom: 'Bah', role: 'MEDECIN',
+    })).toThrow();
+    expect(() => creerAgentAssureurSchema.parse({
+      prenom: 'Awa', nom: 'Bah', telephone: '+224620000001',
+    })).toThrow();
+    expect(createAgentStructureSchema.parse({
+      telephone: '+224620000001', email: 'awa@example.com',
+      prenom: 'Awa', nom: 'Bah', role: 'MEDECIN',
+    }).email).toBe('awa@example.com');
+  });
+
+  it('laisse le schema livreur sans email', () => {
+    expect(creerLivreurSchema.parse({
+      prenom: 'Awa', nom: 'Bah', telephone: '+224620000001',
+      quartier: 'Donka', prefecture: 'Conakry',
+    })).not.toHaveProperty('email');
+  });
+});
+
+describe('schemas de livraison', () => {
+  it('exige un prix et un delai strictement positifs', () => {
+    expect(proposerOffreCourseSchema.parse({ prixGnf: 10_000, delaiMinutes: 20 })).toEqual({
+      prixGnf: 10_000,
+      delaiMinutes: 20,
+    });
+    expect(() => proposerOffreCourseSchema.parse({ prixGnf: 0, delaiMinutes: 20 })).toThrow();
+    expect(() => proposerOffreCourseSchema.parse({ prixGnf: 10_000, delaiMinutes: -1 })).toThrow();
+    expect(() => proposerOffreCourseSchema.parse({ prixGnf: 10_000, delaiMinutes: 20, produit: 'secret' })).toThrow();
+  });
+
+  it('valide les corps stricts de choix, remise et renoncement', () => {
+    expect(choisirOffreCourseSchema.parse({ idOffre: 'offre-1' }).idOffre).toBe('offre-1');
+    expect(remettreAuMotardSchema.parse({ qrCodeScanne: 'qr-1' }).qrCodeScanne).toBe('qr-1');
+    expect(renoncerLivraisonSchema.parse({ motif: 'Je viens chercher' }).motif).toBe('Je viens chercher');
+    expect(() => renoncerLivraisonSchema.parse({ motif: 'Non' })).toThrow();
+    expect(() => remettreAuMotardSchema.parse({ qrCodeScanne: 'qr-1', idLivreur: 'autre' })).toThrow();
+  });
+
+  it('accepte une confirmation de reception sans corps, mais refuse les champs inconnus', () => {
+    expect(confirmerReceptionCourseSchema.parse(undefined)).toBeUndefined();
+    expect(confirmerReceptionCourseSchema.parse({})).toEqual({});
+    expect(() => confirmerReceptionCourseSchema.parse({ idLivreur: 'livreur-1' })).toThrow();
   });
 });
 

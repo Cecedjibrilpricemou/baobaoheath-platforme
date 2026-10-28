@@ -1,0 +1,164 @@
+// ✦ Refonte UI : les courses ouvertes reprennent les surfaces, les couleurs
+// semantiques et les indicateurs de clavier du systeme commun.
+:host {
+  display: block;
+  --livreur-accent: var(--bb-primary);
+  --livreur-accent-contrast: var(--bb-text-inverse);
+}
+
+:host-context([data-theme="dark"]) {
+  --livreur-accent: var(--bb-bright);
+  --livreur-accent-contrast: var(--bb-deep);
+}
+
+.bb-course-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.bb-course__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.bb-course__card,
+.bb-course__empty {
+  padding: 1.25rem;
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
+  color: var(--bb-text-primary);
+  box-shadow: var(--bb-shadow-sm);
+}
+
+.bb-course__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-family: var(--bb-font-display);
+    font-size: 1.1rem;
+    color: var(--bb-text-primary);
+    overflow-wrap: anywhere;
+  }
+}
+
+.bb-course__meta,
+.bb-course__time {
+  margin: 0.35rem 0;
+  color: var(--bb-text-secondary);
+}
+
+.bb-course__time { text-align: right; }
+
+.bb-course__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  margin-top: 1.25rem;
+
+  label {
+    display: grid;
+    align-content: start;
+    gap: 0.4rem;
+    color: var(--bb-text-primary);
+    font-weight: 600;
+  }
+
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--bb-border-strong);
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-0);
+    color: var(--bb-text-primary);
+    font: inherit;
+  }
+
+  .bb-course__button { grid-column: 1 / -1; }
+}
+
+.bb-course__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--bb-radius-sm);
+  background: var(--livreur-accent);
+  color: var(--livreur-accent-contrast);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  &:hover:not(:disabled) {
+    background: var(--bb-mid);
+    color: var(--bb-text-inverse);
+  }
+
+  &:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+  }
+
+  &--secondary {
+    border-color: var(--bb-border-strong);
+    background: var(--bb-surface-card);
+    color: var(--bb-text-primary);
+
+    &:hover:not(:disabled) {
+      border-color: var(--livreur-accent);
+      background: var(--bb-surface-1);
+      color: var(--bb-text-primary);
+    }
+  }
+}
+
+.bb-course__success {
+  color: var(--bb-success);
+  font-weight: 600;
+}
+
+.bb-course__empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--bb-text-secondary);
+
+  h2 { color: var(--bb-text-primary); }
+}
+
+// ✦ Refonte UI : anneau de focus commun, sans indicateur de couleur externe.
+.bb-course__form input:focus-visible,
+.bb-course__button:focus-visible {
+  outline: none;
+  box-shadow: var(--bb-focus-ring);
+}
+
+@media (max-width: 36rem) {
+  .bb-course__heading {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .bb-course__time { text-align: left; }
+
+  .bb-course__form { grid-template-columns: 1fr; }
+
+  .bb-course__form .bb-course__button { width: 100%; }
+}
+
+// ✦ Refonte UI : les micro-interactions respectent le choix de mouvement.
+@media (prefers-reduced-motion: no-preference) {
+  .bb-course__button {
+    transition: background-color var(--bb-transition), color var(--bb-transition), border-color var(--bb-transition), transform var(--bb-transition);
+    &:active:not(:disabled) { transform: scale(0.98); }
+  }
+}

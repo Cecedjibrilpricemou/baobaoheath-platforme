@@ -3,10 +3,21 @@ import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as comptes from '../services/compte.service';
+import * as livreurs from '../services/livreur-recrutement.service';
+import * as administrateurs from '../services/administrateur-recrutement.service';
 import {
-  filtreComptesSchema, suspendreCompteSchema, verifierOrdreSchema,
+  activiteLivreurSchema, creerAdministrateurSchema, creerLivreurSchema, filtreComptesSchema,
+  suspendreCompteSchema, verifierOrdreSchema,
 } from '../validators/api.schemas';
-import type { CompteView, Role, SuspensionView } from '@baobaoheath/shared-types';
+import type {
+  AdministrateurView,
+  CompteView,
+  CreationAdministrateurView,
+  CreationLivreurView,
+  LivreurAdminView,
+  Role,
+  SuspensionView,
+} from '@baobaoheath/shared-types';
 
 /**
  * Suspension et reactivation des comptes (EF-12-01).
@@ -23,6 +34,45 @@ import type { CompteView, Role, SuspensionView } from '@baobaoheath/shared-types
 const router = Router();
 
 router.use(authenticate);
+
+const rolesRecrutement = requireRole('ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN');
+
+/**
+ * L'encadrement de la plateforme, recrute par le super administrateur seul.
+ *
+ * Un administrateur national qui pourrait en nommer d'autres se donnerait des
+ * pairs sans que personne l'ait decide. Et c'est l'encadrement qui recrute les
+ * livreurs : sans cette porte, un unique compte portait toute la chaine.
+ */
+router.post('/administrateurs', requireRole('SUPER_ADMIN'), validateBody(creerAdministrateurSchema), async (req: AuthRequest, res: Response) => {
+  const data: CreationAdministrateurView = await administrateurs.creerAdministrateur(req.user!, req.body);
+  res.status(201).json({ success: true, data });
+});
+
+router.get('/administrateurs', requireRole('SUPER_ADMIN'), async (req: AuthRequest, res: Response) => {
+  const data: AdministrateurView[] = await administrateurs.listerAdministrateurs(req.user!);
+  res.json({ success: true, data });
+});
+
+router.post('/livreurs', rolesRecrutement, validateBody(creerLivreurSchema), async (req: AuthRequest, res: Response) => {
+  const data: CreationLivreurView = await livreurs.creerLivreur(req.user!, req.body);
+  res.status(201).json({ success: true, data });
+});
+
+router.get('/livreurs', rolesRecrutement, async (req: AuthRequest, res: Response) => {
+  const data: LivreurAdminView[] = await livreurs.listerLivreurs(req.user!);
+  res.json({ success: true, data });
+});
+
+router.patch('/livreurs/:id/activite', rolesRecrutement, validateBody(activiteLivreurSchema), async (req: AuthRequest, res: Response) => {
+  const data: LivreurAdminView = await livreurs.definirActiviteLivreur(
+    req.user!,
+    req.params['id'] as string,
+    req.body.estActif as boolean,
+  );
+  res.json({ success: true, data });
+});
+
 router.use(requireRole('ADMIN_NATIONAL', 'SUPER_ADMIN'));
 
 /** La liste des comptes, pour trouver celui qu'on cherche. */

@@ -2,7 +2,7 @@
 //
 // **Un seul endroit décide des passages autorisés**, donc un seul endroit à
 // verrouiller. Ce fichier parcourt les 121 paires d'états possibles et exige
-// que seules les 20 prévues passent : énumérer les passages permis prouve ce
+// que seules les 21 prévues passent : énumérer les passages permis prouve ce
 // qu'on a pensé à écrire, parcourir le produit cartésien prouve aussi ce
 // qu'on a oublié d'interdire.
 //
@@ -23,7 +23,7 @@ import { ConflictError, ForbiddenError, ValidationError } from '../src/utils/app
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
-    commande: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn(), update: jest.fn() },
+    commande: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     utilisateur: { findUnique: jest.fn(), findMany: jest.fn() },
     stock: { findMany: jest.fn() },
     ligneCommande: { deleteMany: jest.fn(), createMany: jest.fn() },
@@ -33,11 +33,19 @@ jest.mock('../src/config/prisma', () => ({
 jest.mock('../src/config/redis', () => ({ getRedis: () => null }));
 jest.mock('../src/services/numero.service', () => ({ prochainNumero: jest.fn() }));
 jest.mock('../src/services/notification.service', () => ({ notifierSansBloquer: jest.fn() }));
+jest.mock('../src/services/course.service', () => ({
+  ouvrirCourse: jest.fn(),
+  notifierLivreursCourse: jest.fn(),
+}));
+const { ouvrirCourse, notifierLivreursCourse } = jest.requireMock('../src/services/course.service') as {
+  ouvrirCourse: M;
+  notifierLivreursCourse: M;
+};
 
 type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
   prisma: {
-    commande: { findUnique: M; findUniqueOrThrow: M; update: M };
+    commande: { findUnique: M; findUniqueOrThrow: M; update: M; updateMany: M };
     utilisateur: { findUnique: M; findMany: M };
     stock: { findMany: M };
     ligneCommande: { deleteMany: M; createMany: M };
@@ -68,6 +76,7 @@ const PERMIS: ReadonlyArray<readonly [string, string]> = [
   ['EN_PREPARATION', 'ANNULEE'],
   ['PRETE_POUR_RETRAIT', 'CLOTUREE'],
   ['PRETE_POUR_RETRAIT', 'ANNULEE'],
+  ['PRETE_POUR_LIVRAISON', 'PRETE_POUR_RETRAIT'],
   ['PRETE_POUR_LIVRAISON', 'RETIREE'],
   ['PRETE_POUR_LIVRAISON', 'ANNULEE'],
   ['RETIREE', 'CLOTUREE'],
@@ -79,13 +88,17 @@ const qui = (userId: string, role: string) => ({ userId, role, sessionId: 's' })
 
 beforeEach(() => {
   jest.clearAllMocks();
-  prisma.$transaction.mockResolvedValue([]);
+  prisma.$transaction.mockImplementation((
+    operations: ((tx: unknown) => Promise<unknown>) | unknown[],
+  ) => Array.isArray(operations) ? Promise.all(operations) : operations(prisma));
   prisma.commande.update.mockResolvedValue({});
+  prisma.commande.updateMany.mockResolvedValue({ count: 1 });
   prisma.utilisateur.findMany.mockResolvedValue([]);
+  ouvrirCourse.mockResolvedValue({ id: 'course-1', statut: 'APPEL_OFFRES' });
 });
 
 describe('la table des transitions', () => {
-  it('autorise les 20 passages prevus, et eux seuls', () => {
+  it('autorise les 21 passages prevus, et eux seuls', () => {
     const attendus = new Set(PERMIS.map(([de, vers]) => `${de}->${vers}`));
     const inattendus: string[] = [];
     const manquants: string[] = [];
@@ -248,7 +261,7 @@ describe('le sachet est pret', () => {
   it('refuse tant que le patient n a pas choisi retrait ou livraison', async () => {
     officineTient('EN_PREPARATION', null);
     await expect(marquerPrete(qui('u-ph', 'PHARMACIEN'), 'c1')).rejects.toThrow(ValidationError);
-    expect(prisma.commande.update).not.toHaveBeenCalled();
+    expect(prisma.commande.updateMany).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -257,9 +270,16 @@ describe('le sachet est pret', () => {
   ])('mode %s mene a %s', async (mode, attendu) => {
     officineTient('EN_PREPARATION', mode);
     await marquerPrete(qui('u-ph', 'PHARMACIEN'), 'c1');
-    const maj = prisma.commande.update.mock.calls[0]?.[0] as { data: { statut: string; preteLe: Date } };
+    const maj = prisma.commande.updateMany.mock.calls[0]?.[0] as { data: { statut: string; preteLe: Date } };
     expect(maj.data.statut).toBe(attendu);
     expect(maj.data.preteLe).toBeInstanceOf(Date);
+    if (mode === 'LIVRAISON') {
+      expect(ouvrirCourse).toHaveBeenCalledWith('c1', prisma);
+      expect(notifierLivreursCourse).toHaveBeenCalledWith('course-1');
+    } else {
+      expect(ouvrirCourse).not.toHaveBeenCalled();
+      expect(notifierLivreursCourse).not.toHaveBeenCalled();
+    }
   });
 });
 
@@ -278,16 +298,11 @@ describe('la remise', () => {
     expect(maj.data.clotureeLe).toBeInstanceOf(Date);
   });
 
-  // Pour une livraison, c'est le motard qui emporte : le patient cloturera a
-  // la reception, en P8.
-  it('une livraison est remise au motard, et reste ouverte', async () => {
+  it('refuse la remise au comptoir pour une commande en livraison et indique le scan QR', async () => {
     officineTient('PRETE_POUR_LIVRAISON', 'LIVRAISON');
-    await confirmerRemise(qui('u-ph', 'PHARMACIEN'), 'c1');
-    const maj = prisma.commande.update.mock.calls[0]?.[0] as {
-      data: { statut: string; clotureeLe?: Date };
-    };
-    expect(maj.data.statut).toBe('RETIREE');
-    expect(maj.data.clotureeLe).toBeUndefined();
+    await expect(confirmerRemise(qui('u-ph', 'PHARMACIEN'), 'c1'))
+      .rejects.toThrow('Cette commande part en livraison : scannez le QR du motard.');
+    expect(prisma.commande.update).not.toHaveBeenCalled();
   });
 });
 

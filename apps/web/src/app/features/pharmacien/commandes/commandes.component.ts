@@ -15,19 +15,23 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import type { CommandeView } from '@baobaoheath/shared-types';
+import { CourseService } from '../../../core/services/course.service';
 import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
+import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-scanner.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-pharmacien-commandes',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, ExportListeComponent],
+  imports: [CommonModule, TranslatePipe, ExportListeComponent, QrScannerComponent],
   templateUrl: './commandes.component.html',
+  styleUrl: './commandes.component.scss',
 })
 export class PharmacienCommandesComponent implements OnInit {
   private pharma = inject(PharmacienService);
+  private coursesService = inject(CourseService);
   private toastr = inject(ToastrService);
   private i18n = inject(I18nService);
 
@@ -80,6 +84,8 @@ export class PharmacienCommandesComponent implements OnInit {
   /** Celle qu'on s'apprete a annuler : on demande un motif. */
   confirmeAnnulation = signal<CommandeView | null>(null);
   motifAnnulation = signal('');
+  readonly scannerPour = signal<CommandeView | null>(null);
+  readonly erreurRemise = signal<string | null>(null);
 
   /** Celle qu'on encaisse au comptoir, et le numero du recu. */
   encaisse = signal<CommandeView | null>(null);
@@ -161,6 +167,37 @@ export class PharmacienCommandesComponent implements OnInit {
 
   remettre(c: CommandeView): void {
     this.avancer(c, this.pharma.remettreCommande, 'PHARMACIEN.COMMANDES.REMISE_OK');
+  }
+
+  ouvrirScanner(c: CommandeView): void {
+    this.erreurRemise.set(null);
+    this.scannerPour.set(c);
+  }
+
+  fermerScanner(): void {
+    this.scannerPour.set(null);
+  }
+
+  qrDetecte(qrCodeScanne: string): void {
+    const commande = this.scannerPour();
+    if (!commande?.idCourse || this.enCours()) return;
+    this.erreurRemise.set(null);
+    this.enCours.set(commande.id);
+    this.coursesService.remettreAuMotard(commande.idCourse, { qrCodeScanne }).subscribe({
+      next: () => {
+        this.enCours.set(null);
+        this.scannerPour.set(null);
+        this.toastr.success(this.i18n.t('PHARMACIEN.COMMANDES.REMISE_OK'));
+        this.charger();
+      },
+      error: (error: unknown) => {
+        this.enCours.set(null);
+        const response = error as { error?: { error?: string; message?: string } };
+        this.erreurRemise.set(
+          response?.error?.error ?? response?.error?.message ?? this.i18n.t('COMMON.ERROR_GENERIC'),
+        );
+      },
+    });
   }
 
   // ── Encaisser au comptoir ───────────────────────────────────────────

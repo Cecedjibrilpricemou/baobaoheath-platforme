@@ -1,0 +1,51 @@
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import type {
+  ApiResponse,
+  ChoisirOffreCourseDto,
+  CourseLivreurView,
+  CourseView,
+  MesCoursesLivreurView,
+  OffreCourseView,
+  ProposerOffreCourseDto,
+  RenoncerALaLivraisonDto,
+  RemettreAuMotardDto,
+} from '@baobaoheath/shared-types';
+import { ApiService } from './api.service';
+
+@Injectable({ providedIn: 'root' })
+export class CourseService {
+  private readonly api = inject(ApiService);
+
+  coursesOuvertes(): Observable<ApiResponse<CourseLivreurView[]>> {
+    return this.api.get<ApiResponse<CourseLivreurView[]>>('/courses/ouvertes');
+  }
+
+  mesCourses(): Observable<ApiResponse<MesCoursesLivreurView>> {
+    return this.api.get<ApiResponse<MesCoursesLivreurView>>('/courses/mes-courses');
+  }
+
+  proposer(idCourse: string, dto: ProposerOffreCourseDto): Observable<ApiResponse<OffreCourseView>> {
+    return this.api.post<ApiResponse<OffreCourseView>>(`/courses/${idCourse}/offres`, dto);
+  }
+
+  offresCommande(idCommande: string): Observable<ApiResponse<OffreCourseView[]>> {
+    return this.api.get<ApiResponse<OffreCourseView[]>>(`/courses/commande/${idCommande}/offres`);
+  }
+
+  choisirOffre(idCommande: string, dto: ChoisirOffreCourseDto): Observable<ApiResponse<CourseView>> {
+    return this.api.post<ApiResponse<CourseView>>(`/courses/commande/${idCommande}/choisir`, dto);
+  }
+
+  declarerRecu(idCourse: string): Observable<ApiResponse<CourseView>> {
+    return this.api.post<ApiResponse<CourseView>>(`/courses/${idCourse}/recu`, {});
+  }
+
+  renoncer(idCourse: string, dto: RenoncerALaLivraisonDto): Observable<ApiResponse<CourseView>> {
+    return this.api.post<ApiResponse<CourseView>>(`/courses/${idCourse}/renoncer`, dto);
+  }
+
+  remettreAuMotard(idCourse: string, dto: RemettreAuMotardDto): Observable<ApiResponse<CourseView>> {
+    return this.api.post<ApiResponse<CourseView>>(`/courses/${idCourse}/remettre`, dto);
+  }
+}

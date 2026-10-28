@@ -9,19 +9,38 @@
 // est bien plus dangereux que de laisser un doublon.
 
 jest.mock('../src/config/prisma', () => ({
-  prisma: { patientProfile: { findMany: jest.fn(), findUnique: jest.fn() } },
+  prisma: {
+    patientProfile: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn() },
+    utilisateur: { findUnique: jest.fn() },
+  },
 }));
 jest.mock('../src/config/redis', () => ({ getRedis: () => null }));
 
 type M = jest.Mock;
 const { prisma } = jest.requireMock('../src/config/prisma') as {
-  prisma: { patientProfile: { findMany: M; findUnique: M } };
+  prisma: {
+    patientProfile: { findMany: M; findUnique: M; findFirst: M };
+    utilisateur: { findUnique: M };
+  };
 };
 
 import {
   chercher, comparer, distance, estDateParDefaut, memeMotEcritAutrement,
   normaliser, normaliserTelephone, pourPatient, SEUIL_A_VERIFIER, SEUIL_PROBABLE,
 } from '../src/services/doublon.service';
+
+// L'appelant autorise : depuis le 2026-10-24, ces lectures passent par
+// `assertCanAccessPatient`. Le refus hors perimetre est couvert par
+// `identite-cloisonnement.test.ts`.
+const AGENT = { userId: 'u-acc', role: 'AGENT_ACCUEIL', sessionId: 's' } as never;
+
+function dansSonPerimetre(): void {
+  prisma.utilisateur.findUnique.mockResolvedValue({
+    role: 'AGENT_ACCUEIL', idStructure: 'hop-1',
+    patientProfile: null, ascProfile: null, medecinProfile: null, pharmacienProfile: null,
+  });
+  prisma.patientProfile.findFirst.mockResolvedValue({ id: 'p1' });
+}
 
 const BASE = {
   prenom: 'Mamadou',
@@ -366,7 +385,8 @@ describe('pourPatient', () => {
   // 200 et une liste vide.
   it('distingue un dossier inconnu d un dossier sans doublon', async () => {
     prisma.patientProfile.findUnique.mockResolvedValue(null);
-    expect(await pourPatient('inconnu')).toBeNull();
+    dansSonPerimetre();
+    expect(await pourPatient(AGENT, 'inconnu')).toBeNull();
   });
 
   it('rend une liste vide pour un dossier bien réel et sans doublon', async () => {
@@ -376,7 +396,8 @@ describe('pourPatient', () => {
       utilisateur: { prenom: BASE.prenom, nom: BASE.nom, telephone: BASE.telephone },
     });
     prisma.patientProfile.findMany.mockResolvedValue([]);
-    expect(await pourPatient('p1')).toEqual([]);
+    dansSonPerimetre();
+    expect(await pourPatient(AGENT, 'p1')).toEqual([]);
   });
 
   it('s exclut lui-même de ses propres doublons', async () => {
@@ -384,7 +405,8 @@ describe('pourPatient', () => {
       id: 'p1', dateNaissance: BASE.dateNaissance, lieuNaissance: BASE.lieuNaissance,
       nomMere: BASE.nomMere, utilisateur: { prenom: BASE.prenom, nom: BASE.nom, telephone: BASE.telephone },
     });
-    await pourPatient('p1');
+    dansSonPerimetre();
+    await pourPatient(AGENT, 'p1');
     const [args] = prisma.patientProfile.findMany.mock.calls[0] as [{ where: { id: unknown } }];
     expect(args.where.id).toEqual({ not: 'p1' });
   });

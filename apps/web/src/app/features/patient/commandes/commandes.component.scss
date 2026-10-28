@@ -1,0 +1,14 @@
+.bb-cmd__course { display: grid; gap: .75rem; margin-top: 1rem; }
+.bb-cmd__course h3 { margin: 0; font-size: 1rem; }
+.bb-cmd__offre {
+  display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: .75rem;
+  padding: .85rem; border: 1px solid var(--bb-border, #cbd5e1); border-radius: .65rem;
+  background: var(--bb-surface, #fff); color: var(--bb-text, #172033);
+}
+.bb-cmd__offre-terme { display: grid; gap: .25rem; }
+.bb-cmd__offre-terme span { color: var(--bb-text-muted, #475569); font-size: .875rem; }
+.bb-cmd__offre-terme strong { font-size: 1rem; }
+@media (max-width: 42rem) {
+  .bb-cmd__offre { grid-template-columns: 1fr 1fr; }
+  .bb-cmd__offre .bb-cmd__btn { grid-column: 1 / -1; }
+}

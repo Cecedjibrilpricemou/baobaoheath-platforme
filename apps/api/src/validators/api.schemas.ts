@@ -232,7 +232,7 @@ export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECI
 
 export const createAgentStructureSchema = z.object({
   telephone: phone,
-  email: optionalEmail,
+  email: z.string().trim().email(),
   motDePasse: z.string().min(6).max(128).optional(),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
@@ -264,7 +264,7 @@ export const creerAgentAssureurSchema = z.object({
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
   telephone: phone,
-  email: optionalEmail,
+  email: z.string().trim().email(),
   prefecture: z.string().trim().max(80).optional(),
 }).strict();
 
@@ -423,6 +423,26 @@ export const annulerCommandeSchema = z.object({
   // et la base l'exige aussi.
   motif: z.string().trim().min(5).max(300),
 }).strict();
+
+// P8-a : seules les informations necessaires a une course sont acceptees.
+export const proposerOffreCourseSchema = z.object({
+  prixGnf: positiveInt,
+  delaiMinutes: positiveInt,
+}).strict();
+
+export const choisirOffreCourseSchema = z.object({
+  idOffre: id,
+}).strict();
+
+export const renoncerLivraisonSchema = z.object({
+  motif: z.string().trim().min(5).max(300),
+}).strict();
+
+export const remettreAuMotardSchema = z.object({
+  qrCodeScanne: z.string().trim().min(1).max(128),
+}).strict();
+
+export const confirmerReceptionCourseSchema = z.object({}).strict().optional();
 
 /**
  * Payer le panier d'une commande.
@@ -1144,6 +1164,37 @@ export const filtreComptesSchema = z.object({
   actifs: booleenDeRequete,
   page: positiveInt.optional(),
   limit: positiveInt.max(100).optional(),
+}).strict();
+
+/**
+ * Le super administrateur recrute l'encadrement de la plateforme.
+ *
+ * **L'email est exige** : tout compte qui n'est ni PATIENT ni LIVREUR se
+ * connecte par son email professionnel, puis par un code. Sans adresse, le
+ * compte serait cree et ne pourrait jamais servir.
+ *
+ * Aucune prefecture : `Utilisateur` n'en porte pas, et `ADMIN_REGIONAL` passe
+ * aujourd'hui le controle d'acces sans filtre geographique. La demander
+ * afficherait un cloisonnement qui n'existe pas encore.
+ */
+export const creerAdministrateurSchema = z.object({
+  prenom: z.string().trim().min(1).max(80),
+  nom: z.string().trim().min(1).max(80),
+  telephone: phone,
+  email: z.string().trim().email().max(160),
+  role: z.enum(['ADMIN_REGIONAL', 'ADMIN_NATIONAL']),
+}).strict();
+
+export const creerLivreurSchema = z.object({
+  prenom: z.string().trim().min(1).max(100),
+  nom: z.string().trim().min(1).max(100),
+  telephone: z.string().trim().min(6).max(30),
+  quartier: z.string().trim().min(1).max(120),
+  prefecture: z.string().trim().min(1).max(120),
+}).strict();
+
+export const activiteLivreurSchema = z.object({
+  estActif: z.boolean(),
 }).strict();
 
 export const filtreJournalSchema = z.object({

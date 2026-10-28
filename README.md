@@ -74,6 +74,10 @@ cd ../.. && npm run dev                           # API (3000) + web (4200)
 
 ⚠️ Ne faites pas tourner l'API à la fois dans Docker et via `npm run dev` : les deux écoutent sur le port 3000.
 
+### Démonstration sur un autre poste du réseau local
+
+`npm run web:lan` et `npm run dev:lan` démarrent Angular avec `--host 0.0.0.0` : le serveur de développement est joignable depuis les autres appareils du réseau. `dev:lan` démarre aussi l'API locale. Utilisez ces commandes uniquement sur un réseau de confiance, jamais sur un Wi-Fi public ou un réseau partagé non maîtrisé, puis arrêtez le serveur après la démonstration. Le serveur Angular est un serveur de développement, pas un serveur de production.
+
 ### Tout en Docker
 
 ```bash
@@ -139,9 +143,9 @@ En local, le Chrome installé est utilisé ; en CI, le Chromium de Playwright. C
 
 ## Intégration continue
 
-`.github/workflows/ci.yml` — cinq travaux sur chaque poussée : *API Build & Test*, *API Security Audit*, *Web Build*, *Web Security Audit*, *E2E Parcours*. Le travail *Deploy* est ignoré (aucun secret ni environnement `production` configuré).
+`.github/workflows/ci.yml` — cinq travaux sur chaque poussée : *API Build & Test*, *Dependencies Security Audit*, *Web Build*, *Semgrep Code Scan* et *E2E Parcours*. Semgrep rapporte les résultats sans bloquer la CI pendant la période initiale d'examen.
 
-L'audit passe par **`scripts/audit-gate.mjs`**, pas par `npm audit` brut : même exigence — tout avis *high* ou *critical* fait échouer la CI — mais avec des **exceptions nommées par identifiant GHSA, justifiées et datées**. Quatre sont actives ; chacune dit pourquoi elle ne nous expose pas.
+L'audit passe par **`scripts/audit-gate.mjs`**, pas par `npm audit` brut : tout avis *high* ou *critical* non accepté fait échouer la CI, avec des **exceptions nommées par identifiant GHSA, justifiées et datées**. La CI échoue aussi si une exception dépasse sa date de réexamen.
 
 ## Internationalisation
 
@@ -153,6 +157,8 @@ Service i18n maison (`shared/services/i18n.service.ts`), dictionnaires `shared/i
 |---|---|
 | `npm run dev` | API + web en parallèle, avec rechargement |
 | `npm run api` / `npm run web` | un côté seulement |
+| `npm run web:lan` | Web de développement accessible aux autres appareils du réseau — réseau de confiance uniquement |
+| `npm run dev:lan` | API + web de développement accessibles sur le réseau — réseau de confiance uniquement |
 | `npm run build:api` / `npm run build:web` | build de production |
 | `npm run format` | Prettier |
 | `npm run backup:db` / `npm run restore:db` | sauvegarde / restauration |

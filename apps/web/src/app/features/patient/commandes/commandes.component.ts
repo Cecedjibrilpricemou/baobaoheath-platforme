@@ -13,7 +13,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
-import type { CommandeView, ModePaiement, ModeRemise } from '@baobaoheath/shared-types';
+import type { CommandeView, ModePaiement, ModeRemise, OffreCourseView } from '@baobaoheath/shared-types';
+import { CourseService } from '../../../core/services/course.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -24,9 +25,11 @@ import { I18nService } from '../../../shared/services/i18n.service';
   standalone: true,
   imports: [CommonModule, TranslatePipe, ExportListeComponent],
   templateUrl: './commandes.component.html',
+  styleUrl: './commandes.component.scss',
 })
 export class PatientCommandesComponent implements OnInit {
   private patient = inject(PatientService);
+  private coursesService = inject(CourseService);
   private toastr = inject(ToastrService);
   private i18n = inject(I18nService);
 
@@ -43,6 +46,11 @@ export class PatientCommandesComponent implements OnInit {
   ];
   chargement = signal(true);
   enCours = signal<string | null>(null);
+  readonly offresCourse = signal<Record<string, OffreCourseView[]>>({});
+  readonly chargementOffres = signal<Record<string, boolean>>({});
+  readonly renonceLivraison = signal<CommandeView | null>(null);
+  readonly motifRenoncementLivraison = signal('');
+  readonly receptionAConfirmer = signal<CommandeView | null>(null);
 
   /**
    * Celles qu'une pharmacie a prises et qui avancent.
@@ -82,6 +90,98 @@ export class PatientCommandesComponent implements OnInit {
   /** Le libelle de l'etat : le patient doit savoir ce qu'on attend de lui. */
   libelleEtat(statut: string): string {
     return this.i18n.t(`PATIENT.COMMANDES.ETAT_${statut}`);
+  }
+
+  chargerOffres(c: CommandeView): void {
+    if (!c.idCourse) return;
+    this.chargementOffres.update((items) => ({ ...items, [c.idCourse!]: true }));
+    this.coursesService.offresCommande(c.id).subscribe({
+      next: (response) => {
+        this.offresCourse.update((items) => ({ ...items, [c.idCourse!]: response.data ?? [] }));
+        this.chargementOffres.update((items) => ({ ...items, [c.idCourse!]: false }));
+      },
+      error: (error: unknown) => {
+        this.chargementOffres.update((items) => ({ ...items, [c.idCourse!]: false }));
+        const e = error as { error?: { error?: string } };
+        this.toastr.error(e?.error?.error ?? this.i18n.t('COMMON.ERROR_GENERIC'));
+      },
+    });
+  }
+
+  offresPour(c: CommandeView): OffreCourseView[] {
+    return c.idCourse ? this.offresCourse()[c.idCourse] ?? [] : [];
+  }
+
+  choisirLivreur(c: CommandeView, offre: OffreCourseView): void {
+    if (!c.idCourse || this.enCours()) return;
+    this.enCours.set(c.id);
+    this.coursesService.choisirOffre(c.id, { idOffre: offre.id }).subscribe({
+      next: () => {
+        this.enCours.set(null);
+        this.toastr.success(this.i18n.t('PATIENT.COMMANDES.COURSE_CHOISIE'));
+        this.charger();
+      },
+      error: (error: unknown) => {
+        this.enCours.set(null);
+        const e = error as { error?: { error?: string } };
+        this.toastr.error(e?.error?.error ?? this.i18n.t('COMMON.ERROR_GENERIC'));
+      },
+    });
+  }
+
+  demanderRenoncementLivraison(c: CommandeView): void {
+    this.motifRenoncementLivraison.set('');
+    this.renonceLivraison.set(c);
+  }
+
+  fermerRenoncementLivraison(): void {
+    this.renonceLivraison.set(null);
+  }
+
+  peutRenoncerLivraison(): boolean {
+    return !this.enCours() && this.motifRenoncementLivraison().trim().length >= 5;
+  }
+
+  confirmerRenoncementLivraison(): void {
+    const c = this.renonceLivraison();
+    if (!c?.idCourse || !this.peutRenoncerLivraison()) return;
+    this.enCours.set(c.id);
+    this.coursesService.renoncer(c.idCourse, { motif: this.motifRenoncementLivraison().trim() }).subscribe({
+      next: () => {
+        this.enCours.set(null);
+        this.renonceLivraison.set(null);
+        this.toastr.success(this.i18n.t('PATIENT.COMMANDES.RENONCER_LIVRAISON_OK'));
+        this.charger();
+      },
+      error: (error: unknown) => {
+        this.enCours.set(null);
+        const e = error as { error?: { error?: string } };
+        this.toastr.error(e?.error?.error ?? this.i18n.t('COMMON.ERROR_GENERIC'));
+      },
+    });
+  }
+
+  demanderConfirmationReception(c: CommandeView): void {
+    this.receptionAConfirmer.set(c);
+  }
+
+  confirmerReception(): void {
+    const c = this.receptionAConfirmer();
+    if (!c?.idCourse || this.enCours()) return;
+    this.enCours.set(c.id);
+    this.coursesService.declarerRecu(c.idCourse).subscribe({
+      next: () => {
+        this.enCours.set(null);
+        this.receptionAConfirmer.set(null);
+        this.toastr.success(this.i18n.t('PATIENT.COMMANDES.RECEPTION_OK'));
+        this.charger();
+      },
+      error: (error: unknown) => {
+        this.enCours.set(null);
+        const e = error as { error?: { error?: string } };
+        this.toastr.error(e?.error?.error ?? this.i18n.t('COMMON.ERROR_GENERIC'));
+      },
+    });
   }
 
   montant(gnf: number | null | undefined): string {
@@ -194,8 +294,11 @@ export class PatientCommandesComponent implements OnInit {
     this.chargement.set(true);
     this.patient.mesCommandes().subscribe({
       next: (r) => {
-        this.commandes.set(r.data ?? []);
+        const data = r.data ?? [];
+        this.commandes.set(data);
         this.chargement.set(false);
+        data.filter((c) => c.statut === 'PRETE_POUR_LIVRAISON' && c.statutCourse === 'APPEL_OFFRES')
+          .forEach((c) => this.chargerOffres(c));
       },
       error: () => {
         this.chargement.set(false);

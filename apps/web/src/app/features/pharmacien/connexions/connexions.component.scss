@@ -57,18 +57,19 @@
     td small { margin-top: 3px; color: var(--bb-text-secondary); }
   }
 
+  // ✦ Refonte UI : états de connexion sur des fonds sémantiques contrastés.
   &__event {
     display: inline-block;
     padding: 4px 9px;
     color: var(--bb-success);
-    background: color-mix(in srgb, var(--bb-success) 12%, transparent);
+    background: var(--bb-success-bg);
     border-radius: var(--bb-radius-pill);
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
     &--failure {
       color: var(--bb-danger);
-      background: color-mix(in srgb, var(--bb-danger) 12%, transparent);
+      background: var(--bb-danger-bg);
     }
   }
 
@@ -79,6 +80,7 @@
     white-space: nowrap;
   }
 
+  // ✦ Refonte UI : cibles tactiles minimales pour la pagination.
   &__pager {
     display: flex;
     justify-content: flex-end;
@@ -88,13 +90,21 @@
     color: var(--bb-text-secondary);
     font-size: 13px;
     button {
+      min-width: 44px;
+      min-height: 44px;
       padding: 8px 12px;
       color: var(--bb-text-primary);
       background: var(--bb-surface-card);
       border: 1px solid var(--bb-border-light);
-      border-radius: var(--bb-radius-md);
+      border-radius: var(--bb-radius);
       cursor: pointer;
       &:disabled { opacity: .45; cursor: default; }
+    }
+
+    // ✦ Refonte UI : focus clavier commun au contrôle de pagination.
+    .bb-connexions button:focus-visible {
+      outline: none;
+      box-shadow: var(--bb-focus-ring);
     }
   }
 

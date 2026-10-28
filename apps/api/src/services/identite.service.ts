@@ -2,6 +2,7 @@ import { NiveauIdentite, TypePieceIdentite } from '../config/generated/client/cl
 import { prisma } from '../config/prisma';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { JwtPayload } from '../types/auth.types';
+import { assertCanAccessPatient, buildPatientWhereForUser } from './access-control.service';
 import type { IdentitePatientView, VerifierIdentiteDto } from '@baobaoheath/shared-types';
 
 /**
@@ -90,7 +91,22 @@ const SELECTION = {
   verifiePar: { select: { prenom: true, nom: true } },
 };
 
+/**
+ * Les patients de **sa** structure, et leur identite.
+ *
+ * **Cette liste n'etait filtree par rien.** Le service recevait les criteres de
+ * recherche sans l'utilisateur, donc sans moyen de savoir pour qui il
+ * repondait : une clinique nouvellement creee ouvrait l'ecran « Identites » et
+ * voyait **tous les patients du pays**, avec leur nom, leur telephone et leur
+ * code QR. Defaut signale par l'utilisateur le 2026-10-24.
+ *
+ * `buildPatientWhereForUser` porte deja la bonne regle, et depuis le debut :
+ * l'accueil voit les patients ayant un episode ouvert chez lui, l'administrateur
+ * de structure y ajoute ceux qui l'ont pour etablissement prefere et ceux qui
+ * lui sont adresses. Ce domaine ne l'appelait simplement jamais.
+ */
 export async function rechercher(
+  user: JwtPayload,
   filtres: { q?: string; niveau?: NiveauIdentite }
 ): Promise<IdentitePatientView[]> {
   const where: Record<string, unknown> = {};
@@ -121,8 +137,14 @@ export async function rechercher(
     ];
   }
 
+  // **Le perimetre est cumule avec les criteres, jamais fusionne a plat.**
+  // `where` porte deja une cle `OR` pour le terme de recherche, et le filtre
+  // d'acces en porte une autre : les melanger a plat en ecraserait une, et un
+  // `OR` entre les deux rouvrirait la fuite par la porte d'a cote.
+  const perimetre = await buildPatientWhereForUser(user);
+
   const lignes = await prisma.patientProfile.findMany({
-    where,
+    where: { AND: [perimetre, where] },
     select: SELECTION,
     // Les provisoires d'abord : ce sont eux qu'un agent a a traiter.
     orderBy: [{ niveauIdentite: 'asc' }, { utilisateur: { nom: 'asc' } }],
@@ -148,6 +170,10 @@ export async function verifier(
   if (lieu.length < LIEU_MIN) {
     throw new ValidationError('Le lieu de naissance est exige : il figure sur la piece que vous avez en main');
   }
+
+  // L'utilisateur ne servait que la trace d'audit : n'importe quel agent
+  // pouvait declarer avoir vu la piece d'un patient d'un autre etablissement.
+  await assertCanAccessPatient(user, idPatient);
 
   const patient = await prisma.patientProfile.findUnique({
     where: { id: idPatient },
@@ -191,9 +217,15 @@ export async function verifier(
  * verification pour etre utile.
  */
 export async function noterTraits(
+  user: JwtPayload,
   idPatient: string,
   traits: { lieuNaissance?: string; nomMere?: string }
 ): Promise<IdentitePatientView> {
+  // **Une ecriture sur le dossier, sans aucun controle.** La fonction ne
+  // recevait pas l'utilisateur : tout agent d'accueil pouvait reecrire le lieu
+  // de naissance et le nom de la mere de n'importe quel patient du pays.
+  await assertCanAccessPatient(user, idPatient);
+
   const lieu = traits.lieuNaissance?.trim();
   const mere = traits.nomMere?.trim();
   if (!lieu && !mere) throw new ValidationError('Aucun trait a enregistrer');

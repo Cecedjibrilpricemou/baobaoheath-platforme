@@ -2,12 +2,13 @@
   display: block;
 }
 
+// ✦ Refonte UI : formulaire raccordé aux tokens de surface et de rayon.
 .bb-agents__form {
   margin: 1rem 0 1.5rem;
   padding: 1.5rem;
-  border: 1px solid var(--bb-border, #dce3eb);
-  border-radius: 12px;
-  background: var(--bb-surface, #fff);
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
 }
 
 .bb-agents__form-title {
@@ -36,14 +37,15 @@
   gap: 0.75rem;
 }
 
+// ✦ Refonte UI : cartes de liste raccordées aux tokens du thème.
 .bb-agents__item {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid var(--bb-border, #dce3eb);
-  border-radius: 10px;
-  background: var(--bb-surface, #fff);
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
 }
 
 .bb-agents__info {
@@ -60,4 +62,14 @@
   .bb-agents__form-grid {
     grid-template-columns: 1fr;
   }
+
+  // ✦ Refonte UI : anneau de focus et cible tactile conformes aux tokens communs.
+  .bb-agents :where(button, a, input, select):focus-visible {
+    outline: none;
+    box-shadow: var(--bb-focus-ring);
+  }
+
+  .bb-agents button,
+  .bb-agents input,
+  .bb-agents select { min-height: 44px; }
 }

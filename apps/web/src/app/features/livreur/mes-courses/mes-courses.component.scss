@@ -1,0 +1,165 @@
+// ✦ Refonte UI : surfaces et textes s'adaptent aux tokens communs dans les deux thèmes.
+:host {
+  display: block;
+  --livreur-accent: var(--bb-primary);
+  --livreur-accent-contrast: var(--bb-text-inverse);
+}
+
+:host-context([data-theme="dark"]) {
+  --livreur-accent: var(--bb-bright);
+  --livreur-accent-contrast: var(--bb-deep);
+}
+
+.bb-mes-courses { display: grid; gap: 1.25rem; }
+.bb-livreur__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.bb-livreur__card,
+.bb-livreur__qr-card,
+.bb-livreur__empty {
+  padding: 1.25rem;
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
+  color: var(--bb-text-primary);
+  box-shadow: var(--bb-shadow-sm);
+}
+
+.bb-livreur__qr-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+
+  h2 { margin: 0 0 0.5rem; font-size: 1.1rem; color: var(--bb-text-primary); }
+  p { color: var(--bb-text-secondary); }
+  code { overflow-wrap: anywhere; color: var(--bb-text-primary); }
+}
+
+.bb-livreur__meta,
+.bb-livreur__card-head time { color: var(--bb-text-secondary); }
+
+.bb-livreur__qr-image {
+  display: block;
+  width: min(12rem, 40vw);
+  height: auto;
+  border: 0.75rem solid var(--bb-text-inverse);
+  border-radius: var(--bb-radius-sm);
+  background: var(--bb-text-inverse);
+}
+
+.bb-livreur__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h2 { margin: 0 0 0.5rem; color: var(--bb-text-primary); font-size: 1.1rem; }
+}
+
+.bb-livreur__status {
+  display: inline-block;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--bb-success-border);
+  border-radius: var(--bb-radius-pill);
+  background: var(--bb-success-bg);
+  color: var(--bb-success);
+  font-weight: 700;
+}
+
+.bb-livreur__terms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+
+  p {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.75rem;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-1);
+    color: var(--bb-text-primary);
+  }
+}
+
+.bb-livreur__patient {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.75rem 0;
+  font-style: normal;
+
+  a { color: var(--bb-info); font-weight: 700; }
+}
+
+.bb-livreur__empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--bb-text-secondary);
+}
+
+.bb-livreur__error { color: var(--bb-danger); }
+
+.bb-livreur__button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--bb-radius-sm);
+  background: var(--livreur-accent);
+  color: var(--livreur-accent-contrast);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--bb-mid);
+    color: var(--bb-text-inverse);
+  }
+
+  &:disabled { opacity: 0.58; cursor: not-allowed; }
+
+  &--secondary {
+    border-color: var(--bb-border-strong);
+    background: var(--bb-surface-card);
+    color: var(--bb-text-primary);
+
+    &:hover:not(:disabled) {
+      border-color: var(--livreur-accent);
+      background: var(--bb-surface-1);
+      color: var(--bb-text-primary);
+    }
+  }
+}
+
+// ✦ Refonte UI : focus commun sur les actions et liens, et mouvement seulement si autorise.
+.bb-livreur__button:focus-visible,
+.bb-livreur__patient a:focus-visible {
+  outline: none;
+  box-shadow: var(--bb-focus-ring);
+}
+
+@media (max-width: 36rem) {
+  .bb-livreur__qr-card,
+  .bb-livreur__card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bb-livreur__terms { grid-template-columns: 1fr; }
+  .bb-livreur__qr-image { width: min(14rem, 80vw); }
+  .bb-livreur__button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bb-livreur__button {
+    transition: background-color var(--bb-transition), color var(--bb-transition), border-color var(--bb-transition), transform var(--bb-transition);
+    &:active:not(:disabled) { transform: scale(0.98); }
+  }
+}

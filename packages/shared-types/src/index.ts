@@ -134,7 +134,10 @@ export type TypeNotification =
   | 'COMMANDE_REMISE'
   | 'COMMANDE_ANNULEE'
   | 'ORDONNANCE_SUBSTITUTION'
-  | 'ORDONNANCE_LIGNE_REFUSEE';
+  | 'ORDONNANCE_LIGNE_REFUSEE'
+  | 'COURSE_OUVERTE'
+  | 'OFFRE_COURSE'
+  | 'COURSE_ATTRIBUEE';
 
 /** Statut d'une commande pharmacie (EF-07). */
 // ═══════════════════════════════════════════════════════════════════
@@ -182,6 +185,10 @@ export interface ReponsePharmacieView {
 
 export interface CommandeView {
   id: string;
+  /** Identifiant de la course active, pour les gestes patient/pharmacie en livraison. */
+  idCourse?: string | null;
+  /** Etat de la course active, pour ne proposer que les gestes permis. */
+  statutCourse?: StatutCourse | null;
   statut: StatutCommande;
   /** Le quartier ou l'appel a ete lance. */
   quartierRecherche?: string | null;
@@ -227,10 +234,8 @@ export interface CommandeView {
  * Le tronc commun va de l'appel au quartier jusqu'a la preparation, puis
  * deux sorties selon le mode de remise choisi par le patient.
  *
- * `PRETE_POUR_LIVRAISON` est le **point de jonction avec P8** : la course,
- * l'enchere des motards et le suivi commencent la. Les etats propres a la
- * livraison n'existent pas encore — un etat qu'aucun code ne pose ne se
- * verifie pas.
+ * `PRETE_POUR_LIVRAISON` est le point de jonction avec P8 : a cet etat, une
+ * course d'appel d'offres est ouverte dans la meme transaction.
  */
 export type StatutCommande =
   | 'RECHERCHE_PHARMACIE'
@@ -251,6 +256,90 @@ export type StatutCommande =
  */
 export type ModeRemise = 'RETRAIT_PHARMACIE' | 'LIVRAISON';
 
+/** Etats propres a l'appel d'offres et a la livraison d'une commande P8-a. */
+export type StatutCourse =
+  | 'APPEL_OFFRES'
+  | 'ATTRIBUEE'
+  | 'EN_COURS'
+  | 'LIVREE'
+  | 'SANS_MOTARD'
+  | 'ANNULEE';
+
+/** Vue explicite de la course remise au patient et aux professionnels autorises. */
+export interface CourseView {
+  id: string;
+  numero: string;
+  statut: StatutCourse;
+  quartier: string;
+  prefecture: string;
+  prixGnf: number | null;
+  delaiAnnonceMinutes: number | null;
+  creeeLe: HorodatageApi;
+  attribueeLe: HorodatageApi | null;
+  remiseLe: HorodatageApi | null;
+  livreeLe: HorodatageApi | null;
+  annuleeLe: HorodatageApi | null;
+  motifAnnulation: string | null;
+  pharmacie: { id: string; nom: string } | null;
+}
+
+/**
+ * Vue exclusivement destinee au livreur. Elle ne contient jamais de produit,
+ * d'ordonnance, de posologie ni de diagnostic : le livreur transporte un colis
+ * scelle et n'a pas a connaitre le soin. Le nom et le telephone du patient ne
+ * sont rendus qu'apres attribution, pour permettre la remise a domicile.
+ */
+export interface CourseLivreurView {
+  id: string;
+  numero: string;
+  statut: StatutCourse;
+  quartier: string;
+  prefecture: string;
+  prixGnf: number | null;
+  delaiAnnonceMinutes: number | null;
+  creeeLe: HorodatageApi;
+  attribueeLe: HorodatageApi | null;
+  remiseLe: HorodatageApi | null;
+  livreeLe: HorodatageApi | null;
+  pharmacie: { id: string; nom: string } | null;
+  patient?: { prenom: string; nom: string; telephone: string };
+}
+
+/** Courses attribuees au livreur et QR de son profil, y compris sans course active. */
+export interface MesCoursesLivreurView {
+  qrCode: string;
+  courses: CourseLivreurView[];
+}
+
+/** Offre d'un livreur, ordonnee par prix puis par delai pour le patient. */
+export interface OffreCourseView {
+  id: string;
+  prixGnf: number;
+  delaiMinutes: number;
+  creeeLe: HorodatageApi;
+}
+
+/** Prix et delai proposes par un livreur pour une course ouverte. */
+export interface ProposerOffreCourseDto {
+  prixGnf: number;
+  delaiMinutes: number;
+}
+
+/** Identifiant de l'offre retenue par le patient proprietaire de la commande. */
+export interface ChoisirOffreCourseDto {
+  idOffre: string;
+}
+
+/** Motif de la decision du patient de revenir au retrait en pharmacie. */
+export interface RenoncerALaLivraisonDto {
+  motif: string;
+}
+
+/** QR du livreur scanne par le pharmacien avant la remise du colis. */
+export interface RemettreAuMotardDto {
+  qrCodeScanne: string;
+}
+
 export type CanalNotification = 'SMS' | 'PUSH' | 'IN_APP';
 
 // ─── Auth DTOs ─────────────────────────────────────────────────────────────────
@@ -261,6 +350,12 @@ export interface LoginDto {
 
 export interface RegisterDto {
   telephone: string;
+  /**
+   * Facultatif : l'inscription publique cree un compte PATIENT, qui se
+   * connecte par telephone. L'email professionnel n'est exige que pour les
+   * comptes crees par une structure ou une compagnie (createAgentStructure,
+   * creerAgentAssureur), et `registerSchema` le laisse facultatif.
+   */
   email?: string;
   motDePasse: string;
   prenom: string;
@@ -1445,6 +1540,74 @@ export interface CreationAgentView {
   motDePasseTemporaire?: string;
 }
 
+/** POST /comptes/livreurs. La piece QR reste privee de l'administration. */
+/**
+ * POST /comptes/administrateurs — le super administrateur recrute l'encadrement.
+ *
+ * **Ces deux roles n'etaient creables par personne.** Ils figuraient dans
+ * l'enumeration et dans les gardes de routes, mais aucun schema ne les
+ * acceptait : le seul moyen d'en obtenir un etait le seed ou une insertion
+ * SQL. En pratique, un unique super administrateur portait toute la
+ * plateforme.
+ *
+ * **Aucune region n'est demandee, et ce n'est pas un oubli.** `Utilisateur`
+ * ne porte aucun champ geographique, et `ADMIN_REGIONAL` figure dans les roles
+ * que le controle d'acces laisse passer sans filtre : son perimetre est
+ * aujourd'hui celui du national. Demander une prefecture ici afficherait un
+ * cloisonnement qui n'existe pas. Le jour ou il sera pose, le champ viendra
+ * avec lui.
+ */
+export interface CreerAdministrateurDto {
+  prenom: string;
+  nom: string;
+  telephone: string;
+  /** Son identifiant de connexion : tout non-patient se connecte par email. */
+  email: string;
+  role: 'ADMIN_REGIONAL' | 'ADMIN_NATIONAL';
+}
+
+/** GET /comptes/administrateurs. Sans mot de passe. */
+export interface AdministrateurView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone: string;
+  email: string;
+  role: 'ADMIN_REGIONAL' | 'ADMIN_NATIONAL';
+  estActif: boolean;
+  creeLe: HorodatageApi;
+}
+
+export interface CreationAdministrateurView {
+  administrateur: AdministrateurView;
+  motDePasseTemporaire: string;
+}
+
+export interface CreerLivreurDto {
+  prenom: string;
+  nom: string;
+  telephone: string;
+  quartier: string;
+  prefecture: string;
+}
+
+/** GET /comptes/livreurs. Ne contient ni QR ni mot de passe. */
+export interface LivreurAdminView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone: string;
+  quartier: string;
+  prefecture: string;
+  estActif: boolean;
+  creeLe: HorodatageApi;
+}
+
+export interface CreationLivreurView {
+  livreur: LivreurAdminView;
+  motDePasseTemporaire: string;
+}
+
 /**
  * GET /admin-structure/stats.
  * `structure` provient d'un findUnique : le type garde la nullabilite.
@@ -2361,8 +2524,13 @@ export interface VenteComptoirView {
    * abouti. Sans elle, « paye en Orange Money » n'est qu'une case cochee.
    */
   referenceTransaction?: string | null;
-  /** Session de caisse associee, absente sur les ventes historiques. */
-  idSessionCaisse?: string | null;
+  /**
+   * La session de caisse de cette vente. **Toujours presente** : la colonne
+   * est `NOT NULL` depuis la migration du 22/10/2026, et le service refuse
+   * une vente sans session ouverte. Les deux ventes d'essai anterieures aux
+   * sessions ont ete supprimees plutot que rattachees a une session inventee.
+   */
+  idSessionCaisse: string;
 
   lignes: LigneVenteView[];
 }
@@ -2574,6 +2742,8 @@ export interface AssureurView extends AssureurResumeView {
   modeEchange: ModeEchangeAssureur;
   nombreContrats: number;
   regles: RegleCouvertureView[];
+  /** Renseigne par la liste d'administration pour eviter les comptes agents en double. */
+  agentExistant?: boolean;
   /** Vrai quand la convention provient de l'hopital parent de la pharmacie. */
   conventionHeritee?: boolean;
 }
@@ -2932,7 +3102,7 @@ export interface CreerAgentAssureurDto {
   prenom: string;
   nom: string;
   telephone: string;
-  email?: string;
+  email: string;
   /** Siege de la compagnie, si sa structure reste a creer. */
   prefecture?: string;
 }

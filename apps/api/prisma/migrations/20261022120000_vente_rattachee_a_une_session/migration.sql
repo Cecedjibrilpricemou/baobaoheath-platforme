@@ -1,0 +1,17 @@
+-- Toute vente au comptoir appartient a une session de caisse.
+--
+-- `vente.service` l'exige deja : il refuse une vente sans session ouverte, et
+-- verrouille la session dans la transaction pour qu'aucune vente ne se glisse
+-- apres le comptage. Cette contrainte rend la regle structurelle, comme le
+-- reste du registre de caisse.
+--
+-- **Les deux ventes d'essai anterieures aux sessions ont ete supprimees, pas
+-- rattachees a une session de reprise.** Une session de caisse nomme un
+-- responsable et porte un fond d'ouverture : en fabriquer une ferait dire au
+-- registre qu'un agent a ouvert et cloture une caisse qu'il n'a jamais
+-- ouverte. Sur une table d'argent, une ligne fausse est pire qu'une colonne
+-- nullable.
+--
+-- Si une base portait encore de telles ventes, cette migration echouerait --
+-- et c'est voulu : il faut alors decider de leur sort, pas les masquer.
+ALTER TABLE "ventes_comptoir" ALTER COLUMN "idSessionCaisse" SET NOT NULL;

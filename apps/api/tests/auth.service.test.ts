@@ -93,6 +93,40 @@ describe('login', () => {
     expect(result).toHaveProperty('refreshToken');
   });
 
+  it('LIVREUR gets tokens with phone and password directly without OTP', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      id: 'livreur-1',
+      role: 'LIVREUR',
+      email: null,
+      estActif: true,
+      motDePasseHash: '$hashed',
+    });
+    verifyPassword.mockResolvedValue(true);
+    prisma.session.create.mockResolvedValue({});
+    prisma.utilisateur.update.mockResolvedValue({});
+
+    const result = await login({ identifiant: '620000001', motDePasse: 'secret' });
+
+    expect(result).toHaveProperty('accessToken');
+    expect(result).toHaveProperty('refreshToken');
+    expect(prisma.authOtp.create).not.toHaveBeenCalled();
+  });
+
+  it('LIVREUR with a wrong password is still refused', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      id: 'livreur-1',
+      role: 'LIVREUR',
+      email: null,
+      estActif: true,
+      motDePasseHash: '$hashed',
+    });
+    verifyPassword.mockResolvedValue(false);
+
+    await expect(login({ identifiant: '620000001', motDePasse: 'wrong' }))
+      .rejects.toBeInstanceOf(UnauthorizedError);
+    expect(prisma.session.create).not.toHaveBeenCalled();
+  });
+
   it('non-PATIENT staff gets OTP challenge', async () => {
     prisma.utilisateur.findUnique.mockResolvedValue({
       id: 'doc-1',
@@ -171,6 +205,21 @@ describe('login', () => {
     await expect(
       login({ identifiant: '620000001', motDePasse: 'secret' })
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('MEDECIN still cannot login with a phone number', async () => {
+    prisma.utilisateur.findUnique.mockResolvedValue({
+      id: 'medecin-1',
+      role: 'MEDECIN',
+      email: 'medecin@baobaoheath.gn',
+      estActif: true,
+      motDePasseHash: '$hashed',
+    });
+    verifyPassword.mockResolvedValue(true);
+
+    await expect(login({ identifiant: '620000001', motDePasse: 'secret' }))
+      .rejects.toBeInstanceOf(ValidationError);
+    expect(prisma.authOtp.create).not.toHaveBeenCalled();
   });
 });
 

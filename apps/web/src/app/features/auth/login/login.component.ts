@@ -265,6 +265,7 @@ export class LoginComponent implements OnDestroy {
       AGENT_ACCUEIL:    '/hopital/tableau-de-bord',
       TECHNICIEN_LABO:  '/laboratoire/tableau-de-bord',
       ASSUREUR:        '/assureur/tableau-de-bord',
+      LIVREUR:         '/livreur/courses',
       ADMIN_STRUCTURE:  '/admin-structure/dashboard',
       ADMIN_REGIONAL:   '/admin/analytics',
       ADMIN_NATIONAL:   '/admin/analytics',
