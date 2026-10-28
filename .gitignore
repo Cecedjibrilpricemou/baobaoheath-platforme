@@ -30,4 +30,18 @@ apps/web/test-results
 apps/web/playwright-report
 apps/web/blob-report
 # Identifiants : jamais dans l'historique d'un depot public.
+#
+# `docs/COMPTES-TEST.md` y a ete pousse le 21 octobre avec l'adresse et le mot
+# de passe du super administrateur. Retire le 24, il reste lisible dans
+# l'historique : un depot public ne se reprend pas.
+#
+# Les notes de travail finissent a la racine, et un seul `git add -A` suffit.
+# Ces motifs les arretent avant. Si un de vos fichiers legitimes s'y trouve
+# pris, renommez-le plutot que de retirer la regle.
 docs/COMPTES-TEST.md
+/COMPTES*.md
+/MOTS-DE-PASSE*.md
+/*identifiants*.md
+/*Pricemou1234*
+secrets.md
+credentials.md
