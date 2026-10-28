@@ -20,13 +20,21 @@ Si le front affiche « identifiants incorrects » alors que le mot de passe est 
 
 ### Les comptes dont vous aurez besoin
 
-| Rôle | Identifiant | Mot de passe | Ce qu'il sert à tester |
-|---|---|---|---|
-| **SUPER_ADMIN** | `cecedjibrilpricemou1er@gmail.com` | `baobao1234` | Journal d'audit, comptes, demandes RGPD, anomalies |
-| **AGENT_ACCUEIL** | `accueil.donka@demo.test` | `Pricemou1234` | Vérification d'identité, doublons |
-| **ADMIN_STRUCTURE** | `admin.donka@demo.test` | `Pricemou1234` | **Fusion de dossiers** et son annulation |
-| **MEDECIN** | `david.medecin@demo.test` | `Pricemou1234` | Provoquer une anomalie, être suspendu, **ouvrir un dossier en urgence** |
-| **PATIENT** | `620100010` *(téléphone)* | `Pricemou1234` | Journal des accès, demandes RGPD |
+> **Les mots de passe ne figurent pas ici, et c'est voulu.** Ce dépôt est
+> public : une table d'identifiants dans un fichier suivi par git y reste
+> lisible même après suppression. Les vôtres sont hors du dépôt, avec les
+> autres fichiers d'accès.
+
+| Rôle | Identifiant | Ce qu'il sert à tester |
+|---|---|---|
+| **SUPER_ADMIN** | *voir le fichier d'accès hors dépôt* | Journal d'audit, comptes, demandes RGPD, anomalies |
+| **AGENT_ACCUEIL** | `accueil.donka@demo.test` | Vérification d'identité, doublons |
+| **ADMIN_STRUCTURE** | `admin.donka@demo.test` | **Fusion de dossiers** et son annulation |
+| **MEDECIN** | `david.medecin@demo.test` | Provoquer une anomalie, être suspendu, **ouvrir un dossier en urgence** |
+| **PATIENT** | `620100010` *(téléphone)* | Journal des accès, demandes RGPD |
+
+Les comptes en `@demo.test` sont créés par `npm run prisma:seed:demo` et
+partagent le mot de passe que ce script affiche à la fin de son exécution.
 
 > Les comptes à adresse e-mail passent par un code à usage unique affiché à l'écran en développement. La patiente, elle, entre directement.
 

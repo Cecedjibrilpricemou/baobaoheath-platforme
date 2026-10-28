@@ -14,7 +14,10 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { hashPassword } from '../src/utils/password.utils.js';
 
-const MOT_DE_PASSE = 'baobao1234';
+// **Le mot de passe ne vit plus dans ce fichier.** Il y etait en clair, dans
+// un depot public. Le defaut ne vaut que pour une base de developpement ;
+// passez `RESET_DEMO_PASSWORD` pour en imposer un autre.
+const MOT_DE_PASSE = process.env.RESET_DEMO_PASSWORD ?? 'DevSeed@2026';
 
 /**
  * Comptes vises, par e-mail ou par telephone : les patients se connectent avec

@@ -12,11 +12,20 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Seed BaoBaoHealth — compte SUPER_ADMIN uniquement...');
 
-  const motDePasseHash = await hashPassword('baobao1234');
+  // **Ni l'adresse ni le mot de passe ne vivent dans ce fichier.** Ils y
+  // etaient en clair : une adresse Gmail personnelle et son mot de passe,
+  // dans un depot public. Les retirer d'un fichier de documentation le 24
+  // octobre n'avait rien regle -- le meme couple etait ici, suivi par git.
+  //
+  // Les defauts ne valent que pour une base de developpement : l'adresse est
+  // en `@demo.test`, donc inexistante, et le mot de passe qui l'accompagne ne
+  // vaut rien ailleurs. Pour un compte reel, passez les deux variables.
+  const email = process.env.SEED_SUPER_ADMIN_EMAIL ?? 'super.admin@demo.test';
+  const motDePasse = process.env.SEED_SUPER_ADMIN_PASSWORD ?? 'DevSeed@2026';
+  const motDePasseHash = await hashPassword(motDePasse);
 
   // Idempotent sur le telephone ET l'e-mail : le compte peut avoir change de
   // numero depuis l'application sans que le seed echoue.
-  const email = 'cecedjibrilpricemou1er@gmail.com';
   const existant = await prisma.utilisateur.findFirst({ where: { OR: [{ telephone: '600000001' }, { email }] }, select: { id: true } });
   if (!existant) {
     await prisma.utilisateur.create({
