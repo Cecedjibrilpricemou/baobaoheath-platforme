@@ -4,11 +4,15 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as comptes from '../services/compte.service';
 import * as livreurs from '../services/livreur-recrutement.service';
+import * as administrateurs from '../services/administrateur-recrutement.service';
 import {
-  activiteLivreurSchema, creerLivreurSchema, filtreComptesSchema, suspendreCompteSchema, verifierOrdreSchema,
+  activiteLivreurSchema, creerAdministrateurSchema, creerLivreurSchema, filtreComptesSchema,
+  suspendreCompteSchema, verifierOrdreSchema,
 } from '../validators/api.schemas';
 import type {
+  AdministrateurView,
   CompteView,
+  CreationAdministrateurView,
   CreationLivreurView,
   LivreurAdminView,
   Role,
@@ -32,6 +36,23 @@ const router = Router();
 router.use(authenticate);
 
 const rolesRecrutement = requireRole('ADMIN_REGIONAL', 'ADMIN_NATIONAL', 'SUPER_ADMIN');
+
+/**
+ * L'encadrement de la plateforme, recrute par le super administrateur seul.
+ *
+ * Un administrateur national qui pourrait en nommer d'autres se donnerait des
+ * pairs sans que personne l'ait decide. Et c'est l'encadrement qui recrute les
+ * livreurs : sans cette porte, un unique compte portait toute la chaine.
+ */
+router.post('/administrateurs', requireRole('SUPER_ADMIN'), validateBody(creerAdministrateurSchema), async (req: AuthRequest, res: Response) => {
+  const data: CreationAdministrateurView = await administrateurs.creerAdministrateur(req.user!, req.body);
+  res.status(201).json({ success: true, data });
+});
+
+router.get('/administrateurs', requireRole('SUPER_ADMIN'), async (req: AuthRequest, res: Response) => {
+  const data: AdministrateurView[] = await administrateurs.listerAdministrateurs(req.user!);
+  res.json({ success: true, data });
+});
 
 router.post('/livreurs', rolesRecrutement, validateBody(creerLivreurSchema), async (req: AuthRequest, res: Response) => {
   const data: CreationLivreurView = await livreurs.creerLivreur(req.user!, req.body);

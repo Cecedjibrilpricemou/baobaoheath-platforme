@@ -1,0 +1,125 @@
+<section class="bb-admins">
+  <header class="bb-page-head">
+    <div class="bb-page-head__text">
+      <span class="bb-page-head__tag"><i class="pi pi-shield" aria-hidden="true"></i> {{ 'ADMIN.ROLE' | translate }}</span>
+      <h1 class="bb-page-head__title">{{ 'ADMIN.ADMINISTRATEURS.TITLE' | translate }}</h1>
+      <p class="bb-page-head__sub">{{ 'ADMIN.ADMINISTRATEURS.SUBTITLE' | translate }}</p>
+    </div>
+    <div class="bb-page-head__actions">
+      <button mat-stroked-button type="button" (click)="charger()" [disabled]="chargement()">
+        <mat-icon fontSet="pi" fontIcon="pi-refresh" aria-hidden="true"></mat-icon>
+        {{ 'ADMIN.ADMINISTRATEURS.REFRESH' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (succes()) {
+    <div class="admins__success" role="status">
+      <mat-icon fontSet="pi" fontIcon="pi-check-circle" aria-hidden="true"></mat-icon>
+      <span>{{ succes() }}</span>
+    </div>
+  }
+  @if (erreur()) {
+    <div class="admins__error" role="alert">
+      <mat-icon fontSet="pi" fontIcon="pi-exclamation-triangle" aria-hidden="true"></mat-icon>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  <!-- Le mot de passe ne s'affiche qu'une fois : on le copie, ou on le perd. -->
+  @if (creation(); as resultat) {
+    <mat-card class="admins__password" role="status">
+      <div>
+        <h2>{{ 'ADMIN.ADMINISTRATEURS.PASSWORD_TITLE' | translate }}</h2>
+        <p>{{ 'ADMIN.ADMINISTRATEURS.PASSWORD_WARNING' | translate }}</p>
+        <code>{{ resultat.motDePasseTemporaire }}</code>
+      </div>
+      <div class="admins__password-actions">
+        <button mat-flat-button type="button" (click)="copierMotDePasse()">
+          <mat-icon fontSet="pi" fontIcon="pi-copy" aria-hidden="true"></mat-icon>
+          {{ 'ADMIN.ADMINISTRATEURS.PASSWORD_COPY' | translate }}
+        </button>
+        <button mat-stroked-button type="button" (click)="ignorerMotDePasse()">
+          {{ 'ADMIN.ADMINISTRATEURS.PASSWORD_DISMISS' | translate }}
+        </button>
+      </div>
+    </mat-card>
+  }
+
+  <mat-card class="admins__form-card">
+    <h2>{{ 'ADMIN.ADMINISTRATEURS.CREATE_TITLE' | translate }}</h2>
+    <p class="admins__hint">{{ 'ADMIN.ADMINISTRATEURS.CREATE_HELP' | translate }}</p>
+    <p class="admins__hint admins__hint--alert">{{ 'ADMIN.ADMINISTRATEURS.SCOPE_WARNING' | translate }}</p>
+    <form (ngSubmit)="creer()">
+      <div class="admins__form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'ADMIN.ADMINISTRATEURS.FIRST_NAME' | translate }}</mat-label>
+          <input matInput required [ngModel]="formulaire().prenom"
+                 (ngModelChange)="modifier('prenom', $event)" name="prenom" autocomplete="given-name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'ADMIN.ADMINISTRATEURS.LAST_NAME' | translate }}</mat-label>
+          <input matInput required [ngModel]="formulaire().nom"
+                 (ngModelChange)="modifier('nom', $event)" name="nom" autocomplete="family-name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'ADMIN.ADMINISTRATEURS.PHONE' | translate }}</mat-label>
+          <input matInput required type="tel" inputmode="tel" [ngModel]="formulaire().telephone"
+                 (ngModelChange)="modifier('telephone', $event)" name="telephone" autocomplete="tel" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'ADMIN.ADMINISTRATEURS.EMAIL' | translate }}</mat-label>
+          <input matInput required type="email" inputmode="email" [ngModel]="formulaire().email"
+                 (ngModelChange)="modifier('email', $event)" name="email" autocomplete="email" />
+          <mat-hint>{{ 'ADMIN.ADMINISTRATEURS.EMAIL_HINT' | translate }}</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'ADMIN.ADMINISTRATEURS.ROLE' | translate }}</mat-label>
+          <mat-select required [ngModel]="formulaire().role"
+                      (ngModelChange)="modifier('role', $event)" name="role">
+            @for (role of roles; track role) {
+              <mat-option [value]="role">{{ libelleRole(role) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <button mat-flat-button type="submit" [disabled]="!peutCreer()">
+        @if (creationEnCours()) {
+          <mat-spinner diameter="18" aria-hidden="true"></mat-spinner>
+        } @else {
+          <mat-icon fontSet="pi" fontIcon="pi-user-plus" aria-hidden="true"></mat-icon>
+        }
+        {{ 'ADMIN.ADMINISTRATEURS.CREATE_SUBMIT' | translate }}
+      </button>
+    </form>
+  </mat-card>
+
+  <mat-card class="admins__list-card">
+    <h2>{{ 'ADMIN.ADMINISTRATEURS.LIST_TITLE' | translate }}</h2>
+
+    @if (chargement()) {
+      <div class="admins__loading" role="status">
+        <mat-spinner diameter="28" aria-hidden="true"></mat-spinner>
+        <span>{{ 'COMMON.LOADING' | translate }}</span>
+      </div>
+    } @else if (administrateurs().length === 0) {
+      <p class="admins__empty">{{ 'ADMIN.ADMINISTRATEURS.EMPTY' | translate }}</p>
+    } @else {
+      <ul class="admins__list">
+        @for (a of administrateurs(); track a.id) {
+          <li class="admins__item" [class.admins__item--inactif]="!a.estActif">
+            <div class="admins__identity">
+              <span class="admins__name">{{ a.prenom }} {{ a.nom }}</span>
+              <span class="admins__contact">{{ a.email }} · {{ a.telephone }}</span>
+            </div>
+            <span class="admins__role">{{ libelleRole(a.role) }}</span>
+            <span class="admins__state">
+              {{ (a.estActif ? 'ADMIN.ADMINISTRATEURS.ACTIF' : 'ADMIN.ADMINISTRATEURS.INACTIF') | translate }}
+            </span>
+          </li>
+        }
+      </ul>
+      <p class="admins__hint">{{ 'ADMIN.ADMINISTRATEURS.SUSPEND_HELP' | translate }}</p>
+    }
+  </mat-card>
+</section>

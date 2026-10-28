@@ -1166,6 +1166,25 @@ export const filtreComptesSchema = z.object({
   limit: positiveInt.max(100).optional(),
 }).strict();
 
+/**
+ * Le super administrateur recrute l'encadrement de la plateforme.
+ *
+ * **L'email est exige** : tout compte qui n'est ni PATIENT ni LIVREUR se
+ * connecte par son email professionnel, puis par un code. Sans adresse, le
+ * compte serait cree et ne pourrait jamais servir.
+ *
+ * Aucune prefecture : `Utilisateur` n'en porte pas, et `ADMIN_REGIONAL` passe
+ * aujourd'hui le controle d'acces sans filtre geographique. La demander
+ * afficherait un cloisonnement qui n'existe pas encore.
+ */
+export const creerAdministrateurSchema = z.object({
+  prenom: z.string().trim().min(1).max(80),
+  nom: z.string().trim().min(1).max(80),
+  telephone: phone,
+  email: z.string().trim().email().max(160),
+  role: z.enum(['ADMIN_REGIONAL', 'ADMIN_NATIONAL']),
+}).strict();
+
 export const creerLivreurSchema = z.object({
   prenom: z.string().trim().min(1).max(100),
   nom: z.string().trim().min(1).max(100),

@@ -1,0 +1,220 @@
+// ✦ Refonte UI : l'ecran reprend les surfaces, les couleurs semantiques et les
+// indicateurs de clavier du systeme commun. Aucune couleur en dur : les tokens
+// se redefinissent seuls en mode sombre.
+:host {
+  display: block;
+  --admins-accent: var(--bb-primary);
+}
+
+:host-context([data-theme="dark"]) {
+  --admins-accent: var(--bb-bright);
+}
+
+.bb-admins {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admins__success,
+.admins__error {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--bb-radius-md);
+  border: 1px solid transparent;
+  font-weight: 500;
+}
+
+.admins__success {
+  background: var(--bb-success-bg);
+  border-color: var(--bb-success-border);
+  color: var(--bb-success);
+}
+
+.admins__error {
+  background: var(--bb-danger-bg);
+  border-color: var(--bb-danger-border);
+  color: var(--bb-danger);
+}
+
+// Le mot de passe temporaire : montre une fois, et il doit se voir.
+.admins__password {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--bb-warning-border);
+  background: var(--bb-warning-bg);
+  color: var(--bb-text-primary);
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0 0 0.6rem;
+    max-width: 52ch;
+    color: var(--bb-text-secondary);
+    text-wrap: pretty;
+  }
+
+  code {
+    display: inline-block;
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--bb-radius-sm);
+    background: var(--bb-surface-0);
+    border: 1px solid var(--bb-border-strong);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    user-select: all;
+  }
+}
+
+.admins__password-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admins__form-card,
+.admins__list-card {
+  padding: 1.25rem;
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-lg);
+  background: var(--bb-surface-card);
+  box-shadow: var(--bb-shadow-sm);
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+}
+
+.admins__hint {
+  margin: 0 0 0.75rem;
+  max-width: 68ch;
+  color: var(--bb-text-secondary);
+  line-height: var(--bb-line-height);
+  text-wrap: pretty;
+}
+
+// Le perimetre « regional » n'en est pas un aujourd'hui : l'ecran le dit.
+.admins__hint--alert {
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid var(--bb-warning);
+  border-radius: var(--bb-radius-sm);
+  background: color-mix(in srgb, var(--bb-warning) 10%, transparent);
+  color: var(--bb-text-primary);
+}
+
+.admins__form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.admins__list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admins__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-md);
+  background: var(--bb-surface-1);
+}
+
+.admins__item--inactif {
+  background: var(--bb-surface-2);
+  color: var(--bb-text-muted);
+}
+
+.admins__identity {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.admins__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admins__contact {
+  font-size: 0.875rem;
+  color: var(--bb-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.admins__role {
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--bb-radius-pill);
+  background: color-mix(in srgb, var(--admins-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--admins-accent) 32%, transparent);
+  color: var(--bb-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admins__state {
+  font-size: 0.875rem;
+  color: var(--bb-text-secondary);
+  white-space: nowrap;
+}
+
+.admins__loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 0;
+  color: var(--bb-text-secondary);
+}
+
+.admins__empty {
+  margin: 0.75rem 0 0;
+  max-width: 60ch;
+  color: var(--bb-text-secondary);
+  text-wrap: pretty;
+}
+
+:where(button, [tabindex]):focus-visible {
+  outline: var(--bb-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .admins__item {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .admins__password {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admins__password-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}

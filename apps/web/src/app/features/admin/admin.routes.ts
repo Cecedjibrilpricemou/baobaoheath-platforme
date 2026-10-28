@@ -44,6 +44,16 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () =>
           import('./comptes/comptes.component').then(m => m.ComptesComponent)
       },
+      // Recruter l'encadrement n'appartient qu'au super administrateur : un
+      // administrateur national qui nommerait ses pairs se donnerait des
+      // collegues sans que personne l'ait decide.
+      {
+        path: 'administrateurs',
+        canActivate: [roleGuard],
+        data: { roles: ['SUPER_ADMIN'] },
+        loadComponent: () =>
+          import('./administrateurs/administrateurs.component').then(m => m.AdministrateursComponent)
+      },
       {
         path: 'livreurs',
         canActivate: [roleGuard],

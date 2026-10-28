@@ -1541,6 +1541,48 @@ export interface CreationAgentView {
 }
 
 /** POST /comptes/livreurs. La piece QR reste privee de l'administration. */
+/**
+ * POST /comptes/administrateurs — le super administrateur recrute l'encadrement.
+ *
+ * **Ces deux roles n'etaient creables par personne.** Ils figuraient dans
+ * l'enumeration et dans les gardes de routes, mais aucun schema ne les
+ * acceptait : le seul moyen d'en obtenir un etait le seed ou une insertion
+ * SQL. En pratique, un unique super administrateur portait toute la
+ * plateforme.
+ *
+ * **Aucune region n'est demandee, et ce n'est pas un oubli.** `Utilisateur`
+ * ne porte aucun champ geographique, et `ADMIN_REGIONAL` figure dans les roles
+ * que le controle d'acces laisse passer sans filtre : son perimetre est
+ * aujourd'hui celui du national. Demander une prefecture ici afficherait un
+ * cloisonnement qui n'existe pas. Le jour ou il sera pose, le champ viendra
+ * avec lui.
+ */
+export interface CreerAdministrateurDto {
+  prenom: string;
+  nom: string;
+  telephone: string;
+  /** Son identifiant de connexion : tout non-patient se connecte par email. */
+  email: string;
+  role: 'ADMIN_REGIONAL' | 'ADMIN_NATIONAL';
+}
+
+/** GET /comptes/administrateurs. Sans mot de passe. */
+export interface AdministrateurView {
+  id: string;
+  prenom: string;
+  nom: string;
+  telephone: string;
+  email: string;
+  role: 'ADMIN_REGIONAL' | 'ADMIN_NATIONAL';
+  estActif: boolean;
+  creeLe: HorodatageApi;
+}
+
+export interface CreationAdministrateurView {
+  administrateur: AdministrateurView;
+  motDePasseTemporaire: string;
+}
+
 export interface CreerLivreurDto {
   prenom: string;
   nom: string;
