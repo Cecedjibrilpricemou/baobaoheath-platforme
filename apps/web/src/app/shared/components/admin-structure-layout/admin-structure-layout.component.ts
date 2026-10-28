@@ -105,6 +105,7 @@ export class AdminStructureLayoutComponent {
       items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_PHARMACIES', icon: 'pi-building', route: '/admin-structure/pharmacies' });
       items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_ASSURANCES', icon: 'pi-shield', route: '/admin-structure/assurances' });
     }
+    items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_CONSEILLEES', icon: 'pi-sitemap', route: '/admin-structure/conseillees' });
     items.push({ labelKey: 'ADMIN_STRUCTURE.NAV_IDENTITES', icon: 'pi-id-card', route: '/admin-structure/identites' });
     return items;
   }

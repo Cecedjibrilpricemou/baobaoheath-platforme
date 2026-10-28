@@ -25,6 +25,7 @@ import type {
   OrientationDto,
   PatientRechercheView,
   PersonneRefView,
+  ChoixLaboratoiresView,
   StructureRefView,
   TableauDeBordHopitalView,
   UpdateEpisodeDto,
@@ -120,8 +121,17 @@ export class HopitalService {
     return this.api.get<ApiResponse<ExamenView[]>>('/hopital/examens');
   }
 
-  listerLaboratoires(): Observable<ApiResponse<StructureRefView[]>> {
-    return this.api.get<ApiResponse<StructureRefView[]>>('/hopital/laboratoires');
+  /**
+   * Les laboratoires proposes au medecin, groupes et couverture chiffree.
+   *
+   * `idsExamens` peut etre vide : la liste se rend alors sans couverture, ce
+   * qui est le cas a l'ouverture de l'ecran, avant toute selection.
+   */
+  choixLaboratoires(idsExamens: string[], toutLePays = false): Observable<ApiResponse<ChoixLaboratoiresView>> {
+    const params: Record<string, string | string[]> = {};
+    if (idsExamens.length > 0) params['examens'] = idsExamens;
+    if (toutLePays) params['toutLePays'] = 'true';
+    return this.api.get<ApiResponse<ChoixLaboratoiresView>>('/hopital/laboratoires', params);
   }
 
   listerMedecins(): Observable<ApiResponse<MedecinRefView[]>> {

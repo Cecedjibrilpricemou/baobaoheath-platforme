@@ -8,6 +8,7 @@
 // structure l'acces au dossier du patient (access-control.service).
 import { Prisma, Role, StatutEpisode, Urgence } from '../config/generated/client/client';
 import { prisma } from '../config/prisma';
+import { TYPES_RECEVEURS } from './plateau-technique.service';
 import { messagePatientInformation } from './message-sortant.service';
 import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
@@ -79,7 +80,17 @@ type EpisodeRow = Prisma.EpisodeSoinsGetPayload<{ include: typeof EPISODE_INCLUD
 
 // Types de structures pouvant recevoir une demande d'analyse : laboratoires
 // et etablissements disposant d'un plateau technique.
-const TYPES_LABO = ['LABORATOIRE', 'CHU', 'HOPITAL_REG', 'HOPITAL_PREF'] as const;
+/**
+ * Qui peut recevoir une demande d'analyse.
+ *
+ * **La liste vit desormais dans `plateau-technique.service`**, parce que le
+ * meme ensemble sert a trois endroits : la liste proposee au medecin, la
+ * verification a la creation de la demande, et la declaration d'un plateau
+ * technique. Trois copies auraient diverge -- `CLINIQUE` manquait deja ici et
+ * nulle part ailleurs, ce qui rendait impossible d'adresser un patient a une
+ * clinique conseillee.
+ */
+const TYPES_LABO = TYPES_RECEVEURS;
 
 // ── Mappeurs ─────────────────────────────────────────────────────────
 export function versDemandeView(d: DemandeRow): DemandeAnalyseView {
@@ -531,6 +542,11 @@ export async function listerExamens(q?: string, categorie?: string): Promise<Exa
   });
 }
 
+/**
+ * La liste plate, conservee pour les appelants qui n'ont pas besoin de la
+ * couverture. L'ecran de prescription, lui, passe par
+ * `plateau-technique.service#laboratoiresPour`, qui groupe et chiffre.
+ */
 export async function listerLaboratoires(): Promise<StructureRefView[]> {
   return prisma.structureSante.findMany({
     where: { estActive: true, type: { in: [...TYPES_LABO] } },

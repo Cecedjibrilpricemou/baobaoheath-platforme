@@ -16,13 +16,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
-import type { DemandeAnalyseView, EpisodeSoinsView, ExamenView, StructureRefView, Urgence } from '@baobaoheath/shared-types';
+import type { DemandeAnalyseView, EpisodeSoinsView, ExamenView, Urgence } from '@baobaoheath/shared-types';
 
 import { HopitalService } from '../../../core/services/hopital.service';
 import { LaboratoireService } from '../../../core/services/laboratoire.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ChoixLaboratoireComponent, ChoixLaboratoire } from '../../../shared/components/choix-laboratoire/choix-laboratoire.component';
 import { statutDemandeClasse, statutEpisodeClasse, urgenceClasse } from '../../hopital/hopital.utils';
 import { interpretationClasse, referenceLisible } from '../../laboratoire/laboratoire.utils';
 
@@ -32,7 +33,7 @@ import { interpretationClasse, referenceLisible } from '../../laboratoire/labora
   imports: [
     RouterLink, DatePipe, FormsModule,
     MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatDialogModule,
-    TranslatePipe,
+    ChoixLaboratoireComponent, TranslatePipe,
   ],
   templateUrl: './dossier.component.html',
   styleUrl: './dossier.component.scss',
@@ -63,12 +64,17 @@ export class DossierComponent implements OnInit {
     return s === 'CLOS' || s === 'ANNULE';
   });
 
-  laboratoires = signal<StructureRefView[]>([]);
-  examens      = signal<ExamenView[]>([]);
+  examens = signal<ExamenView[]>([]);
 
-  demande = { idLaboratoire: '', urgence: 'ROUTINE' as Urgence, indicationClinique: '', consignesPatient: '' };
+  demande = { urgence: 'ROUTINE' as Urgence, indicationClinique: '', consignesPatient: '' };
   filtreExamens = signal('');
   selection = signal<Map<string, string>>(new Map());
+
+  /** Le laboratoire retenu, avec ce qu'il ne sait pas faire. */
+  laboChoisi = signal<ChoixLaboratoire | null>(null);
+
+  /** Ce que la couverture regarde : les examens coches, et eux seuls. */
+  readonly examensIds = computed(() => [...this.selection().keys()]);
   readonly urgences: Urgence[] = ['ROUTINE', 'URGENT', 'URGENCE_VITALE'];
 
   /** Les examens groupés par catégorie : 33 lignes à plat seraient illisibles. */
@@ -86,12 +92,6 @@ export class DossierComponent implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
     this.charger(id);
-    this.hopital.listerLaboratoires().subscribe({
-      next: (r) => {
-        this.laboratoires.set(r.data ?? []);
-        if (r.data?.[0]) this.demande.idLaboratoire = r.data[0].id;
-      },
-    });
     this.hopital.listerExamens().subscribe({ next: (r) => this.examens.set(r.data ?? []) });
   }
 
@@ -149,12 +149,36 @@ export class DossierComponent implements OnInit {
   }
   examenChoisi(id: string) { return this.selection().has(id); }
 
+  // **On ne bloque pas, on fait dire qu'on a vu.** Un laboratoire a couverture
+  // partielle reste un choix defendable -- le medecin peut savoir ce que le
+  // plateau declare ignore, ou vouloir ce laboratoire pour le reste. Mais les
+  // examens qui ne seront pas realises sont **nommes** : « etes-vous sur ? » ne
+  // dit rien, et c'est le patient qui paierait le deplacement.
   creerDemande() {
+    const labo = this.laboChoisi();
+    if (!this.episode() || this.isSaving() || !labo || this.selection().size === 0) return;
+    if (labo.nonCouverts.length === 0) { this.envoyer(labo.id); return; }
+
+    const data: ConfirmDialogData = {
+      titre: this.i18n.t('LABO.CHOIX.PARTIEL_TITRE'),
+      texte: this.i18n.t('LABO.CHOIX.PARTIEL_TEXTE', {
+        labo: labo.nom,
+        examens: labo.nonCouverts.map((e) => e.libelle).join(', '),
+      }),
+      confirmer: this.i18n.t('LABO.CHOIX.PARTIEL_OK'),
+      annuler: this.i18n.t('COMMON.CANCEL'),
+      icone: 'pi-exclamation-triangle',
+    };
+    this.dialog.open(ConfirmDialogComponent, { data, width: '440px', autoFocus: false })
+      .afterClosed().subscribe((ok) => { if (ok) this.envoyer(labo.id); });
+  }
+
+  private envoyer(idLaboratoire: string) {
     const ep = this.episode();
-    if (!ep || this.isSaving() || !this.demande.idLaboratoire || this.selection().size === 0) return;
+    if (!ep) return;
     this.isSaving.set(true);
     this.hopital.creerDemandeAnalyse(ep.id, {
-      idLaboratoire: this.demande.idLaboratoire,
+      idLaboratoire,
       urgence: this.demande.urgence,
       indicationClinique: this.demande.indicationClinique.trim() || undefined,
       consignesPatient: this.demande.consignesPatient.trim() || undefined,
@@ -169,6 +193,7 @@ export class DossierComponent implements OnInit {
           this.i18n.t('COMMON.SUCCESS')
         );
         this.selection.set(new Map());
+        this.laboChoisi.set(null);
         this.demande.indicationClinique = '';
         this.demande.consignesPatient = '';
         this.demande.urgence = 'ROUTINE';

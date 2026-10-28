@@ -241,8 +241,10 @@ export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
  * « Pharmacie Pricemou » et « Pricemou & Frere Assurances » comme lieux de
  * consultation. On ne prend pas rendez-vous chez un pharmacien.
  *
- * Le pendant de `TYPES_LABO` dans `hopital.service` : qui peut recevoir une
- * demande d'analyse se dit de la meme facon.
+ * A ne pas confondre avec `TYPES_RECEVEURS` de `plateau-technique.service`,
+ * qui dit qui recoit une **demande d'analyse** : une pharmacie ne recoit ni
+ * l'un ni l'autre, mais un laboratoire independant recoit des analyses sans
+ * recevoir de consultation.
  */
 const TYPES_DE_SOIN = ['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'] as const;
 

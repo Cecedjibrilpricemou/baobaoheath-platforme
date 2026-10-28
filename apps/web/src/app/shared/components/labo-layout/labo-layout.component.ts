@@ -87,5 +87,6 @@ export class LaboLayoutComponent {
   navItems = [
     { labelKey: 'LABO.NAV_DASHBOARD', icon: 'pi-th-large', route: '/laboratoire/tableau-de-bord' },
     { labelKey: 'LABO.NAV_DEMANDES',  icon: 'pi-list',     route: '/laboratoire/demandes' },
+    { labelKey: 'LABO.NAV_PLATEAU',   icon: 'pi-sliders-h', route: '/laboratoire/plateau-technique' },
   ];
 }

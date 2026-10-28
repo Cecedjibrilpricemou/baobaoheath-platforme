@@ -100,18 +100,7 @@
   @if (panneau() === 'analyse' && !estAccueil()) {
     <section class="bb-hop-panel">
       <h2 class="bb-hop-card__title"><i class="pi pi-filter" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_TITLE' | translate }}</h2>
-      @if (laboratoires().length === 0) {
-        <div class="bb-banner bb-banner--offline" role="alert"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i><div class="bb-banner__text"><span class="bb-banner__title">{{ 'HOPITAL.DETAIL.DA_NO_LABO' | translate }}</span></div></div>
-      }
       <div class="bb-hop-panel__grid">
-        <div class="form-field-wrap">
-          <label class="form-label" for="da-labo">{{ 'HOPITAL.DETAIL.DA_LABO' | translate }} *</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
-            <mat-select id="da-labo" [(ngModel)]="demande.idLaboratoire">
-              @for (l of laboratoires(); track l.id) { <mat-option [value]="l.id">{{ l.nom }} · {{ l.prefecture }}</mat-option> }
-            </mat-select>
-          </mat-form-field>
-        </div>
         <div class="form-field-wrap">
           <label class="form-label" for="da-urgence">{{ 'HOPITAL.DETAIL.DA_URGENCE' | translate }}</label>
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
@@ -154,6 +143,9 @@
           </div>
         </div>
         <div class="form-field-wrap bb-hop-panel__full">
+          <app-choix-laboratoire [examens]="examensIds()" (choisi)="laboChoisi.set($event)" />
+        </div>
+        <div class="form-field-wrap bb-hop-panel__full">
           <label class="form-label" for="da-consignes">{{ 'HOPITAL.DETAIL.DA_CONSIGNES' | translate }}</label>
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
             <textarea matInput id="da-consignes" rows="2" maxlength="1000" [(ngModel)]="demande.consignesPatient"></textarea>
@@ -163,7 +155,7 @@
       </div>
       <div class="bb-hop-panel__footer">
         <button matButton type="button" (click)="ouvrir('aucun')" [disabled]="isSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button matButton="filled" type="button" (click)="creerDemande()" [disabled]="isSaving() || !demande.idLaboratoire || selection().size === 0">
+        <button matButton="filled" type="button" (click)="creerDemande()" [disabled]="isSaving() || !laboChoisi() || selection().size === 0">
           <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-send'" aria-hidden="true"></i> {{ 'HOPITAL.DETAIL.DA_SUBMIT' | translate }}
         </button>
       </div>

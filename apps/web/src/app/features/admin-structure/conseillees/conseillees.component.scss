@@ -1,0 +1,41 @@
+// ✦ Refonte UI : le carnet d'adresses, une ligne par partenaire conseillé.
+.bb-conseil {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__muted { margin: 0; padding: 10px 2px; color: var(--bb-text-muted); font-size: 0.85rem; }
+
+  &__ajout {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+
+    .bb-field-full { flex: 1 1 260px; }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px;
+    border-top: 1px solid var(--bb-border-light);
+
+    &:hover { background: var(--bb-surface-1); }
+  }
+
+  &__nom {
+    flex: 1 1 180px;
+    min-width: 0;
+    font: 600 0.92rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+  }
+
+  &__lieu { font-size: 0.82rem; color: var(--bb-text-secondary); }
+  &__date { font: 400 0.78rem var(--bb-font-mono); color: var(--bb-text-muted); }
+}
+
+:host-context([data-theme='dark']) .bb-conseil__row:hover { background: var(--bb-surface-2); }

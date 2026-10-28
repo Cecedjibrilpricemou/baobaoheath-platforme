@@ -2429,7 +2429,22 @@
       "CONSULTATIONS": "Consultations",
       "PATIENTS_LINKED": "Patients rattachés"
     },
-    "NAV_IDENTITES": "Identités et doublons"
+    "NAV_IDENTITES": "Identités et doublons",
+    "NAV_CONSEILLEES": "Laboratoires conseillés",
+    "CONSEILLEES": {
+      "TITLE": "Laboratoires conseillés",
+      "SUB": "Les laboratoires et cliniques proposés en priorité aux médecins de l'établissement.",
+      "PAS_CONTRAT_TITRE": "Ce n'est pas un contrat",
+      "PAS_CONTRAT_TEXTE": "Le laboratoire conseillé n'a rien à accepter : vos médecins peuvent déjà adresser une demande à n'importe quel laboratoire de la plateforme. Cette liste les met en tête de leur choix, elle n'engage aucun tarif.",
+      "CHOISIR": "Choisir un laboratoire ou une clinique",
+      "AJOUTER": "Conseiller",
+      "AJOUTE": "Laboratoire ajouté aux conseillés.",
+      "RETIRER": "Retirer",
+      "RETIRER_CONFIRM": "Retirer {{nom}} des conseillés ? Les demandes déjà envoyées ne changent pas, et vos médecins pourront toujours le choisir — il ne sera simplement plus en tête de liste.",
+      "RETIRE": "Laboratoire retiré des conseillés.",
+      "VIDE": "Aucun laboratoire conseillé pour le moment.",
+      "AUCUN_CANDIDAT": "Tous les laboratoires disponibles sont déjà conseillés."
+    }
   },
   "ROLE": {
     "PATIENT": "Patient",
@@ -2609,7 +2624,6 @@
       "ORIENT_SUBMIT": "Enregistrer l’orientation",
       "ORIENT_SUCCESS": "Orientation enregistrée.",
       "DA_TITLE": "Nouvelle demande d’analyse",
-      "DA_LABO": "Laboratoire destinataire",
       "DA_URGENCE": "Urgence",
       "DA_INDICATION": "Indication clinique (optionnel)",
       "DA_INDICATION_PH": "Ex : suspicion de paludisme",
@@ -2622,7 +2636,6 @@
       "DA_CONSIGNES_HINT": "Les consignes « à jeun », « échantillon d’urine » et « QR Code » sont ajoutées automatiquement selon les examens.",
       "DA_SUBMIT": "Transmettre au laboratoire",
       "DA_SUCCESS": "Demande {{numero}} transmise. Le patient a été informé.",
-      "DA_NO_LABO": "Aucun laboratoire actif : demandez au super-administrateur d’en créer un.",
       "DEMANDE_ANNULEE": "Demande annulée.",
       "EPISODE_CLOS": "Épisode clôturé.",
       "EPISODE_ANNULE": "Épisode annulé.",
@@ -2897,7 +2910,42 @@
     "SCAN_AUCUNE": "Aucune analyse en attente pour ce patient dans votre laboratoire.",
     "SCAN_A_JEUN": "à jeun",
     "SCAN_FERMER": "Fermer",
-    "SCAN_ERREUR": "QR code inconnu, ou patient sans analyse ici."
+    "SCAN_ERREUR": "QR code inconnu, ou patient sans analyse ici.",
+    "CHOIX": {
+      "LABEL": "Laboratoire destinataire",
+      "TOUT_LE_PAYS": "Chercher dans tout le pays",
+      "MA_PREFECTURE": "Revenir à ma préfecture",
+      "PORTEE": "Laboratoires de {{prefecture}}",
+      "AUCUN": "Aucun laboratoire ne correspond. Élargissez à tout le pays.",
+      "GROUPE": {
+        "INTERNE": "Chez nous",
+        "CONSEILLE": "Partenaires déclarés par l'établissement",
+        "AUTRE": "Autres laboratoires de la plateforme"
+      },
+      "COUVERTURE": "{{couverts}} sur {{demandes}}",
+      "ICI": "sur place",
+      "NON_DECLARE": "plateau non déclaré",
+      "NON_DECLARE_AIDE": "Ce laboratoire n'a pas encore déclaré ses examens : il est réputé tous les réaliser.",
+      "MANQUENT": "ne réalise pas :",
+      "PARTIEL_TITRE": "Ce laboratoire ne fait pas tout",
+      "PARTIEL_TEXTE": "{{labo}} ne réalise pas : {{examens}}. La demande partira quand même, mais ces examens devront être prescrits ailleurs. Envoyer ?",
+      "PARTIEL_OK": "Envoyer quand même"
+    },
+    "NAV_PLATEAU": "Plateau technique",
+    "PLATEAU": {
+      "TITLE": "Plateau technique",
+      "SUB": "{{nom}} — {{realises}} examens réalisés sur {{total}} du référentiel",
+      "NON_DECLARE_TITRE": "Rien n'est encore déclaré",
+      "NON_DECLARE_TEXTE": "Tant que ce laboratoire n'a rien déclaré, il est réputé réaliser tous les examens. Le premier enregistrement restreint la liste à ce qui est coché ici — il n'ajoute rien.",
+      "CHERCHER": "Chercher un examen, un code LOINC, une catégorie…",
+      "TOUT": "Tout cocher",
+      "RIEN": "Tout décocher",
+      "DELAI": "Délai (h)",
+      "PRIX": "Prix (GNF)",
+      "PRIX_REF": "tarif national : {{prix}} GNF",
+      "ENREGISTRE": "Plateau technique enregistré.",
+      "AUCUN": "Aucun examen ne correspond à cette recherche."
+    }
   },
   "CATALOGUE": {
     "CATEGORIE": {

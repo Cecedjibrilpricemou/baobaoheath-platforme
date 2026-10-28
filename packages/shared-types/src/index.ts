@@ -1583,6 +1583,111 @@ export interface CreationAdministrateurView {
   motDePasseTemporaire: string;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// EF-04 — Le plateau technique des laboratoires
+//
+// **Le renvoi vers un laboratoire se faisait a l'aveugle.** La liste proposee
+// au medecin rendait tous les laboratoires actifs du pays, sans filtre sur ce
+// qu'ils savent faire ni sur la geographie : le laboratoire recevait la
+// demande et decouvrait qu'il ne faisait pas l'examen. Le patient, lui,
+// s'etait deplace.
+// ═══════════════════════════════════════════════════════════════════
+
+/** D'ou vient ce laboratoire dans la liste du medecin. L'ordre est le parcours. */
+export type OrigineLaboratoire = 'INTERNE' | 'CONSEILLE' | 'AUTRE';
+
+/** Un examen que le laboratoire choisi ne realise pas. */
+export interface ExamenNonCouvertView {
+  id: string;
+  libelle: string;
+  codeLoinc: string;
+}
+
+/**
+ * Un laboratoire, tel que l'ecran de prescription le montre.
+ *
+ * `couverts` / `demandes` sont le compte exact, pas un booleen : le medecin
+ * doit voir « 3 sur 5 » et lesquels manquent **avant** de choisir, pas
+ * decouvrir le probleme une fois le patient parti.
+ */
+export interface LaboratoireChoixView {
+  id: string;
+  nom: string;
+  type: string;
+  prefecture: string;
+  origine: OrigineLaboratoire;
+  /** Nombre d'examens demandes que ce laboratoire realise. */
+  couverts: number;
+  /** Nombre d'examens demandes. Zero quand aucun n'est encore coche. */
+  demandes: number;
+  /** Nommes, pour que la confirmation puisse les dire. */
+  nonCouverts: ExamenNonCouvertView[];
+  /**
+   * Aucun examen declare : le laboratoire est repute tout savoir faire. Sans
+   * cette regle, toutes les structures existantes disparaitraient des listes
+   * le jour du deploiement.
+   */
+  plateauNonDeclare: boolean;
+}
+
+/** GET /hopital/laboratoires. Les trois groupes, dans l'ordre du parcours. */
+export interface ChoixLaboratoiresView {
+  interne: LaboratoireChoixView[];
+  conseilles: LaboratoireChoixView[];
+  autres: LaboratoireChoixView[];
+  /** La prefecture sur laquelle `autres` est filtre, sauf elargissement. */
+  prefecture: string | null;
+  /** Vrai quand l'appelant a demande tout le pays. */
+  toutLePays: boolean;
+}
+
+/** Une ligne du plateau technique, vue par le laboratoire qui la declare. */
+export interface LignePlateauView {
+  idExamen: string;
+  codeLoinc: string;
+  libelle: string;
+  categorie: string;
+  realise: boolean;
+  delaiHeures: number | null;
+  /** Renseigne seulement s'il differe du prix du referentiel national. */
+  prixGnf: number | null;
+  prixReferenceGnf: number | null;
+}
+
+/** GET /laboratoire/plateau-technique. */
+export interface PlateauTechniqueView {
+  idStructure: string;
+  nom: string;
+  /** Rien de declare : tout est repute realisable. L'ecran doit le dire. */
+  nonDeclare: boolean;
+  lignes: LignePlateauView[];
+}
+
+/** PUT /laboratoire/plateau-technique — la declaration complete, en un geste. */
+export interface DeclarerPlateauDto {
+  examens: {
+    idExamen: string;
+    realise: boolean;
+    delaiHeures?: number | null;
+    prixGnf?: number | null;
+  }[];
+}
+
+/** Une structure conseillee par l'etablissement. */
+export interface StructureConseilleeView {
+  id: string;
+  idStructureConseillee: string;
+  nom: string;
+  type: string;
+  prefecture: string;
+  declareLe: HorodatageApi;
+}
+
+/** POST /admin-structure/conseillees. */
+export interface ConseillerStructureDto {
+  idStructureConseillee: string;
+}
+
 export interface CreerLivreurDto {
   prenom: string;
   nom: string;

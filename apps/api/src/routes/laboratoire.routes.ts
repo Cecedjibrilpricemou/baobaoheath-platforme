@@ -5,15 +5,17 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
+import * as plateau from '../services/plateau-technique.service';
 import * as labo from '../services/laboratoire.service';
 import {
+  declarerPlateauSchema,
   enregistrerPrelevementSchema,
   fileLaboQuerySchema,
   planifierPrelevementSchema,
   saisirResultatsSchema,
   validerResultatsSchema,
 } from '../validators/api.schemas';
-import type { DemandeAnalyseView, ScanLaboratoireView, TableauDeBordLaboView } from '@baobaoheath/shared-types';
+import type { DemandeAnalyseView, PlateauTechniqueView, ScanLaboratoireView, TableauDeBordLaboView } from '@baobaoheath/shared-types';
 
 const router = Router();
 
@@ -23,6 +25,30 @@ router.use(requireRole('TECHNICIEN_LABO', 'ADMIN_STRUCTURE'));
 // ── Scan du QR patient au comptoir ───────────────────────────────────
 // Même geste que côté pharmacie, fenêtre différente : le laborantin voit ce
 // qui reste à faire pour ce patient dans SON laboratoire, et rien d'autre.
+/**
+ * Le plateau technique : ce que ce laboratoire realise.
+ *
+ * **Tant que rien n'est declare, tout est repute realisable.** Sans cette
+ * regle, toutes les structures existantes disparaitraient des listes des
+ * medecins le jour du deploiement. L'ecran doit le dire, sinon le premier qui
+ * coche un seul examen croira avoir ajoute alors qu'il aura restreint.
+ */
+router.get('/plateau-technique', async (req: AuthRequest, res: Response) => {
+  const data: PlateauTechniqueView = await plateau.plateauDeMaStructure(req.user!);
+  res.json({ success: true, data });
+});
+
+/**
+ * La declaration complete, en un geste : on remplace l'ensemble plutot que de
+ * modifier ligne a ligne. Un plateau technique se lit comme un tout, et une
+ * declaration partielle laisserait des lignes dont personne ne saurait si
+ * elles valent encore.
+ */
+router.put('/plateau-technique', validateBody(declarerPlateauSchema), async (req: AuthRequest, res: Response) => {
+  const data: PlateauTechniqueView = await plateau.declarerPlateau(req.user!, req.body);
+  res.json({ success: true, data });
+});
+
 router.get('/scan/:qrCode', async (req: AuthRequest, res: Response) => {
   const data: ScanLaboratoireView = await labo.scanPatient(req.user!, req.params['qrCode'] as string);
   res.json({ success: true, data });

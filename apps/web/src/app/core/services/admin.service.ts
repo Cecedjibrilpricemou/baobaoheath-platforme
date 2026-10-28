@@ -22,7 +22,9 @@ import type {
   IdentitePlateformeView,
   ParametresSystemeView,
   StructureAdminView,
+  StructureConseilleeView,
   StructurePubliqueView,
+  StructureRefView,
   UpdateParametresSystemeDto,
 } from '@baobaoheath/shared-types';
 import { ApiResponse, PaginatedData } from '../models/api.model';
@@ -79,6 +81,29 @@ export class AdminService {
 
   getPublicStructures(): Observable<ApiResponse<StructurePubliqueView[]>> {
     return this.api.get<ApiResponse<StructurePubliqueView[]>>('/admin-structure/structures/publiques');
+  }
+
+  // ── Le carnet d'adresses de l'etablissement ───────────────────────
+  //
+  // **Ce n'est pas un contrat.** Le conseille n'a rien a accepter : la
+  // plateforme autorise deja d'adresser une demande a n'importe quel
+  // laboratoire. La declaration met en tete de liste chez les medecins de
+  // l'etablissement, elle ne donne aucun droit.
+  conseillees(): Observable<ApiResponse<StructureConseilleeView[]>> {
+    return this.api.get<ApiResponse<StructureConseilleeView[]>>('/admin-structure/conseillees');
+  }
+
+  /** Soi-meme et les deja-conseillees en sont retires, cote serveur. */
+  candidatsConseil(): Observable<ApiResponse<StructureRefView[]>> {
+    return this.api.get<ApiResponse<StructureRefView[]>>('/admin-structure/conseillees/candidats');
+  }
+
+  conseiller(idStructureConseillee: string): Observable<ApiResponse<StructureConseilleeView>> {
+    return this.api.post<ApiResponse<StructureConseilleeView>>('/admin-structure/conseillees', { idStructureConseillee });
+  }
+
+  retirerConseil(id: string): Observable<ApiResponse<void>> {
+    return this.api.delete<ApiResponse<void>>(`/admin-structure/conseillees/${id}`);
   }
 
   // Parametres globaux (SUPER_ADMIN)

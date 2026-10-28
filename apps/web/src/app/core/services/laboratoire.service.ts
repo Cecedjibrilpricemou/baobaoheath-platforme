@@ -13,7 +13,9 @@ import type {
   EnregistrerPrelevementDto,
   EvolutionResultatView,
   ExamenSuiviView,
+  DeclarerPlateauDto,
   PlanifierPrelevementDto,
+  PlateauTechniqueView,
   SaisirResultatsDto,
   TableauDeBordLaboView,
   ValiderResultatsDto,
@@ -23,6 +25,22 @@ export interface PageDemandes { items: DemandeAnalyseView[]; total: number; page
 
 @Injectable({ providedIn: 'root' })
 export class LaboratoireService {
+
+  /**
+   * Le plateau technique : ce que ce laboratoire realise.
+   *
+   * Tant que rien n'est declare, tout est repute realisable -- `nonDeclare` le
+   * dit, et l'ecran doit l'afficher : le premier qui coche un seul examen
+   * croirait avoir ajoute alors qu'il aurait restreint.
+   */
+  plateauTechnique(): Observable<ApiResponse<PlateauTechniqueView>> {
+    return this.api.get<ApiResponse<PlateauTechniqueView>>('/laboratoire/plateau-technique');
+  }
+
+  /** La declaration complete, en un geste : on remplace l'ensemble. */
+  declarerPlateau(dto: DeclarerPlateauDto): Observable<ApiResponse<PlateauTechniqueView>> {
+    return this.api.put<ApiResponse<PlateauTechniqueView>>('/laboratoire/plateau-technique', dto);
+  }
 
   /**
    * Scan du QR patient au comptoir : ce qui reste a faire pour lui dans ce

@@ -750,6 +750,31 @@ export const createDemandeAnalyseSchema = z.object({
   examens: z.array(z.object({ idExamen: id, commentaire: texteLibre(300).optional() }).strict()).min(1).max(40),
 }).strict();
 
+/**
+ * Les laboratoires proposes au medecin, avec la couverture des examens coches.
+ *
+ * `examens` est facultatif : a l'ouverture de l'ecran, rien n'est encore coche
+ * et la liste se rend sans couverture.
+ */
+export const choixLaboratoiresQuerySchema = z.object({
+  examens: z.union([z.string(), z.array(z.string())]).optional(),
+  toutLePays: z.coerce.boolean().optional(),
+}).strict();
+
+/** La declaration complete du plateau technique, en un geste. */
+export const declarerPlateauSchema = z.object({
+  examens: z.array(z.object({
+    idExamen: id,
+    realise: z.boolean(),
+    delaiHeures: z.coerce.number().int().positive().max(2160).nullish(),
+    prixGnf: z.coerce.number().int().positive().max(10_000_000).nullish(),
+  }).strict()).max(500),
+}).strict();
+
+export const conseillerStructureSchema = z.object({
+  idStructureConseillee: id,
+}).strict();
+
 export const annulerDemandeSchema = z.object({
   motif: z.string().trim().min(3).max(300),
 }).strict();

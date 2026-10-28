@@ -6,6 +6,8 @@ import { validateBody } from '../middlewares/validate.middleware';
 import { uploadLogo } from '../middlewares/upload.middleware';
 import { uploadLogoController } from '../controllers/upload.controller';
 import { ValidationError } from '../utils/app-error';
+import * as plateau from '../services/plateau-technique.service';
+import type { StructureConseilleeView, StructureRefView } from '@baobaoheath/shared-types';
 import * as service from '../services/admin-structure.service';
 import * as parametresService from '../services/parametres.service';
 import type {
@@ -19,6 +21,7 @@ import type {
   StructurePubliqueView,
 } from '@baobaoheath/shared-types';
 import {
+  conseillerStructureSchema,
   createAgentStructureSchema,
   definirBureauSchema,
   createPharmacieSchema,
@@ -58,6 +61,35 @@ router.get('/pharmacies', requireRole('ADMIN_STRUCTURE'), async (req: AuthReques
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
   }
+});
+
+/**
+ * Le carnet d'adresses de l'etablissement : les laboratoires et cliniques
+ * qu'il conseille a ses medecins.
+ *
+ * **Ce n'est pas un contrat.** Celui qui est conseille n'a rien a accepter :
+ * la plateforme autorise deja d'adresser une demande a n'importe quel
+ * laboratoire. La declaration ne donne aucun droit, elle met en tete de liste.
+ */
+router.get('/conseillees', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  const data: StructureConseilleeView[] = await plateau.conseillees(req.user!);
+  res.json({ success: true, data });
+});
+
+/** Ou l'admin choisit : soi-meme et les deja-conseillees en sont retires. */
+router.get('/conseillees/candidats', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  const data: StructureRefView[] = await plateau.laboratoiresCandidats(req.user!);
+  res.json({ success: true, data });
+});
+
+router.post('/conseillees', requireRole('ADMIN_STRUCTURE'), validateBody(conseillerStructureSchema), async (req: AuthRequest, res: Response) => {
+  const data: StructureConseilleeView = await plateau.conseiller(req.user!, req.body.idStructureConseillee);
+  res.status(201).json({ success: true, data });
+});
+
+router.delete('/conseillees/:id', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  await plateau.retirerConseil(req.user!, req.params['id'] as string);
+  res.json({ success: true });
 });
 
 router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentStructureSchema), async (req: AuthRequest, res: Response) => {

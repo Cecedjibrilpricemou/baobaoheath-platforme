@@ -388,6 +388,8 @@ model Utilisateur {
   ussdSessions              UssdSession[]
   notifications             Notification[]
 
+  conseilsDeclares      StructureConseillee[]    @relation("ConseilsDeclares")
+
   @@map("utilisateurs")
 }
 
@@ -775,6 +777,9 @@ model StructureSante {
   referencementsCible   Referencement[]     @relation("StructureCible")
   episodes              EpisodeSoins[]
   demandesAnalyseRecues DemandeAnalyse[]    @relation("Laboratoire")
+  plateauTechnique      PlateauTechnique[]
+  conseille             StructureConseillee[] @relation("StructureQuiConseille")
+  conseilleePar         StructureConseillee[] @relation("StructureConseillee")
 
   @@index([idStructureParente])
   @@map("structures")
@@ -1993,10 +1998,71 @@ model Examen {
   critiqueMin Float?
   critiqueMax Float?
 
-  lignes LigneDemandeAnalyse[]
+  lignes           LigneDemandeAnalyse[]
+  plateauTechnique PlateauTechnique[]
 
   @@index([categorie, actif])
   @@map("examens")
+}
+
+/// Ce qu'un laboratoire sait reellement faire (EF-04).
+///
+/// **Sans cette table, le renvoi se faisait a l'aveugle.** La liste proposee
+/// au medecin rendait tous les laboratoires actifs du pays, sans filtre sur
+/// leur plateau ni sur la geographie : le laboratoire recevait la demande et
+/// decouvrait qu'il ne faisait pas l'examen. Le patient, lui, s'etait deplace.
+///
+/// **Un laboratoire qui n'a rien declare est repute tout savoir faire.** Sans
+/// cette regle, toutes les structures existantes disparaitraient des listes le
+/// jour du deploiement et le parcours s'arreterait net. Elle s'efface d'elle-
+/// meme : des qu'un laboratoire declare un seul examen, sa declaration fait foi.
+model PlateauTechnique {
+  id String @id @default(cuid())
+
+  idStructure String
+  structure   StructureSante @relation(fields: [idStructure], references: [id], onDelete: Cascade)
+  idExamen    String
+  examen      Examen         @relation(fields: [idExamen], references: [id], onDelete: Cascade)
+
+  /// Delai de rendu annonce, en heures. Null : celui du referentiel.
+  delaiHeures Int?
+  /// Renseigne seulement s'il differe du prix du referentiel national.
+  prixGnf     Int?
+  actif       Boolean @default(true)
+
+  declareLe DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@unique([idStructure, idExamen])
+  @@index([idStructure, actif])
+  @@index([idExamen, actif])
+  @@map("plateaux_techniques")
+}
+
+/// Le carnet d'adresses d'un etablissement : les laboratoires et cliniques
+/// qu'il conseille a ses medecins.
+///
+/// **Ce n'est pas un contrat.** L'etablissement qui conseille le declare seul ;
+/// celui qui est conseille n'a rien a accepter. La plateforme autorise deja
+/// d'adresser une demande a n'importe quel laboratoire : cette declaration ne
+/// donne aucun droit, elle exprime une recommandation interne. Le jour ou des
+/// conventions tarifaires seront necessaires, ce sera un autre objet -- comme
+/// `StructureAssureur` l'est pour les officines.
+model StructureConseillee {
+  id String @id @default(cuid())
+
+  idStructure           String
+  structure             StructureSante @relation("StructureQuiConseille", fields: [idStructure], references: [id], onDelete: Cascade)
+  idStructureConseillee String
+  structureConseillee   StructureSante @relation("StructureConseillee", fields: [idStructureConseillee], references: [id], onDelete: Cascade)
+
+  declareLe   DateTime @default(now())
+  declarePar  String
+  auteur      Utilisateur @relation("ConseilsDeclares", fields: [declarePar], references: [id], onDelete: Restrict)
+
+  @@unique([idStructure, idStructureConseillee])
+  @@index([idStructure])
+  @@map("structures_conseillees")
 }
 
 model DemandeAnalyse {

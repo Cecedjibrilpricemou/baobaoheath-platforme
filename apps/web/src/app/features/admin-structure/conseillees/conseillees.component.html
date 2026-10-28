@@ -1,0 +1,55 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-sitemap" aria-hidden="true"></i> {{ 'ADMIN_STRUCTURE.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'ADMIN_STRUCTURE.CONSEILLEES.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'ADMIN_STRUCTURE.CONSEILLEES.SUB' | translate }}</p>
+  </div>
+</header>
+
+<!-- Ce n'est pas un contrat : on le dit, sinon l'admin croit engager l'autre. -->
+<div class="bb-banner bb-banner--info" role="status">
+  <i class="pi pi-info-circle" aria-hidden="true"></i>
+  <div class="bb-banner__text">
+    <span class="bb-banner__title">{{ 'ADMIN_STRUCTURE.CONSEILLEES.PAS_CONTRAT_TITRE' | translate }}</span>
+    <span>{{ 'ADMIN_STRUCTURE.CONSEILLEES.PAS_CONTRAT_TEXTE' | translate }}</span>
+  </div>
+</div>
+
+<section class="bb-card bb-conseil">
+  <div class="bb-conseil__ajout">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+      <mat-select [ngModel]="choix()" (ngModelChange)="choix.set($event)"
+                  [placeholder]="'ADMIN_STRUCTURE.CONSEILLEES.CHOISIR' | translate">
+        @for (s of candidats(); track s.id) {
+          <mat-option [value]="s.id">{{ s.nom }} · {{ s.prefecture }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <button matButton="filled" type="button" [disabled]="!choix() || isSaving()" (click)="ajouter()">
+      <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-plus'" aria-hidden="true"></i>
+      {{ 'ADMIN_STRUCTURE.CONSEILLEES.AJOUTER' | translate }}
+    </button>
+  </div>
+
+  @if (candidats().length === 0 && !isLoading()) {
+    <p class="bb-conseil__muted">{{ 'ADMIN_STRUCTURE.CONSEILLEES.AUCUN_CANDIDAT' | translate }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="bb-conseil__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (liste().length === 0) {
+    <p class="bb-conseil__muted">{{ 'ADMIN_STRUCTURE.CONSEILLEES.VIDE' | translate }}</p>
+  } @else {
+    @for (c of liste(); track c.id) {
+      <div class="bb-conseil__row">
+        <span class="bb-conseil__nom">{{ c.nom }}</span>
+        <span class="bb-badge bb-badge--neutral">{{ 'LANDING.STRUCT_TYPE_' + c.type | translate }}</span>
+        <span class="bb-conseil__lieu">{{ c.prefecture }}</span>
+        <span class="bb-conseil__date">{{ c.declareLe | date: 'dd/MM/yyyy' }}</span>
+        <button matButton type="button" (click)="retirer(c)">
+          <i class="pi pi-times" aria-hidden="true"></i> {{ 'ADMIN_STRUCTURE.CONSEILLEES.RETIRER' | translate }}
+        </button>
+      </div>
+    }
+  }
+</section>

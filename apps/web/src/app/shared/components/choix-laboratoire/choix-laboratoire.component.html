@@ -1,0 +1,75 @@
+<!-- La couverture se rapporte aux examens coches : ce bloc vient apres eux. -->
+<div class="bb-labo-choix">
+  <div class="bb-labo-choix__head">
+    <label class="form-label">{{ 'LABO.CHOIX.LABEL' | translate }} *</label>
+    <button type="button" class="bb-labo-choix__pays" (click)="basculerPays()">
+      <i class="pi" [class.pi-globe]="!toutLePays()" [class.pi-map-marker]="toutLePays()" aria-hidden="true"></i>
+      {{ (toutLePays() ? 'LABO.CHOIX.MA_PREFECTURE' : 'LABO.CHOIX.TOUT_LE_PAYS') | translate }}
+    </button>
+  </div>
+
+  @if (!toutLePays() && donnees()?.prefecture; as prefecture) {
+    <p class="bb-labo-choix__portee">
+      {{ 'LABO.CHOIX.PORTEE' | translate: { prefecture: prefecture } }}
+    </p>
+  }
+
+  @if (erreur()) {
+    <div class="bb-banner bb-banner--offline" role="alert">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <div class="bb-banner__text"><span class="bb-banner__title">{{ erreur() | translate }}</span></div>
+    </div>
+  } @else if (chargement() && !donnees()) {
+    <p class="bb-labo-choix__muted">{{ 'COMMON.LOADING' | translate }}</p>
+  } @else if (groupes().length === 0) {
+    <div class="bb-banner bb-banner--offline" role="alert">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <div class="bb-banner__text"><span class="bb-banner__title">{{ 'LABO.CHOIX.AUCUN' | translate }}</span></div>
+    </div>
+  }
+
+  @for (g of groupes(); track g.cle) {
+    <div class="bb-labo-choix__groupe" [class.bb-labo-choix__groupe--interne]="g.cle === 'INTERNE'">
+      <div class="bb-labo-choix__titre">{{ 'LABO.CHOIX.GROUPE.' + g.cle | translate }}</div>
+
+      @for (l of g.items; track l.id) {
+        <label class="bb-labo-choix__row"
+               [class.bb-labo-choix__row--on]="idChoisi() === l.id"
+               [class.bb-labo-choix__row--partiel]="!complet(l)">
+          <input type="radio" name="bb-labo-choix" [value]="l.id"
+                 [checked]="idChoisi() === l.id" (change)="choisir(l.id)" />
+
+          <span class="bb-labo-choix__nom">
+            {{ l.nom }}
+            @if (l.prefecture && g.cle !== 'INTERNE') { <small>· {{ l.prefecture }}</small> }
+          </span>
+
+          <!-- Le compte exact, jamais un booleen : « 3 sur 5 » se lit, « partiel » non. -->
+          @if (couverture(l)) {
+            <span class="bb-labo-choix__couv"
+                  [class.bb-labo-choix__couv--complet]="complet(l)">
+              {{ 'LABO.CHOIX.COUVERTURE' | translate: { couverts: l.couverts, demandes: l.demandes } }}
+            </span>
+          }
+
+          @if (g.cle === 'INTERNE') {
+            <span class="bb-labo-choix__ici">{{ 'LABO.CHOIX.ICI' | translate }}</span>
+          }
+
+          <!-- Rien de declare : repute tout savoir faire. L'ecran le dit, il ne le cache pas. -->
+          @if (l.plateauNonDeclare) {
+            <span class="bb-labo-choix__flag" [title]="'LABO.CHOIX.NON_DECLARE_AIDE' | translate">
+              {{ 'LABO.CHOIX.NON_DECLARE' | translate }}
+            </span>
+          }
+
+          @if (l.nonCouverts.length > 0) {
+            <span class="bb-labo-choix__manquent">
+              {{ 'LABO.CHOIX.MANQUENT' | translate }} {{ manquants(l) }}
+            </span>
+          }
+        </label>
+      }
+    </div>
+  }
+</div>

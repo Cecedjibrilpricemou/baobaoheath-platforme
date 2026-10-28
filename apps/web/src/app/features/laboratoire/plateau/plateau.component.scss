@@ -1,0 +1,116 @@
+// ✦ Refonte UI : la declaration du plateau, lue comme une liste de cases.
+.bb-plateau {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__muted { margin: 0; color: var(--bb-text-muted); font-size: 0.85rem; }
+
+  &__barre {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  &__search {
+    flex: 1 1 220px;
+    padding: 8px 12px;
+    font: 400 0.88rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius);
+
+    &:focus-visible { outline: var(--bb-focus-ring); outline-offset: 1px; }
+  }
+
+  &__tout { display: flex; gap: 6px; flex: none; }
+
+  &__cat {
+    margin-top: 12px;
+    padding: 6px 4px;
+    font: 700 0.72rem var(--bb-font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bb-text-secondary);
+    border-bottom: 1px solid var(--bb-border-light);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    border-radius: var(--bb-radius);
+    transition: background var(--bb-transition);
+
+    &:hover { background: var(--bb-surface-1); }
+
+    // Realise : la ligne est tenue, le reste s'efface sans disparaitre.
+    &--on { background: color-mix(in srgb, var(--bb-success) 7%, transparent); }
+  }
+
+  &__libelle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 260px;
+    min-width: 0;
+    cursor: pointer;
+
+    input { accent-color: var(--bb-primary); flex: none; }
+  }
+
+  &__lib {
+    flex: 1 1 auto;
+    min-width: 0;
+    font: 500 0.88rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+  }
+
+  &__code {
+    flex: none;
+    font: 400 0.72rem var(--bb-font-mono);
+    color: var(--bb-text-muted);
+  }
+
+  &__champs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__champ {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: 500 0.74rem var(--bb-font-body);
+    color: var(--bb-text-secondary);
+
+    input {
+      width: 92px;
+      padding: 5px 8px;
+      font: 400 0.82rem var(--bb-font-mono);
+      color: var(--bb-text-primary);
+      background: var(--bb-surface-0);
+      border: 1px solid var(--bb-border);
+      border-radius: var(--bb-radius-sm);
+
+      &:focus-visible { outline: var(--bb-focus-ring); outline-offset: 1px; }
+    }
+  }
+
+  // Le prix du referentiel national s'applique tant qu'on n'en declare pas
+  // d'autre : on le montre pour que le champ vide ne passe pas pour gratuit.
+  &__ref { font-size: 0.74rem; color: var(--bb-text-muted); }
+}
+
+:host-context([data-theme='dark']) .bb-plateau {
+  &__row:hover { background: var(--bb-surface-2); }
+  &__row--on { background: color-mix(in srgb, var(--bb-success) 13%, transparent); }
+  &__champ input { background: var(--bb-surface-1); }
+}

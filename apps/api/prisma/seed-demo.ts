@@ -221,7 +221,7 @@ async function main() {
   console.log('1. Structures : Hopital Donka et sa pharmacie, Laboratoire Cece, Pharmacie Pricemou (independante)');
 
   // ── 2. Les professionnels ───────────────────────────────────────
-  await upsertUtilisateur(DEMO.adminHopital, Role.ADMIN_STRUCTURE, motDePasseHash, hopital.id);
+  const adminHopital = await upsertUtilisateur(DEMO.adminHopital, Role.ADMIN_STRUCTURE, motDePasseHash, hopital.id);
   await upsertUtilisateur(DEMO.adminNational, Role.ADMIN_NATIONAL, motDePasseHash, null);
   await upsertUtilisateur(DEMO.accueil, Role.AGENT_ACCUEIL, motDePasseHash, hopital.id);
   const medecin = await upsertUtilisateur(DEMO.medecin, Role.MEDECIN, motDePasseHash, hopital.id);
@@ -603,6 +603,9 @@ async function main() {
   await seedExamens(prisma);
   console.log('6. Examens de laboratoire (codes LOINC)');
 
+  // ── 7. Plateaux techniques et partenaires conseilles ────────────
+  await seedPlateauxTechniques(hopital.id, laboratoire.id, adminHopital.id);
+
   await verifierInvariantDesLots();
 
   console.log('   Convention : Pharmacie Pricemou seulement. L hopital n en a aucune : sa pharmacie');
@@ -611,6 +614,79 @@ async function main() {
   console.log(`\nMot de passe de tous les comptes : ${MOT_DE_PASSE}`);
   console.log(`Quartier commun : ${QUARTIER} (${COMMUNE}, ${PREFECTURE})`);
   console.log('\nParcours a derouler : voir docs/PARCOURS-DEMO.md');
+}
+
+/**
+ * Qui sait faire quoi, et qui l'hopital conseille.
+ *
+ * **Sans cela la demonstration ne montre rien.** Tant qu'aucune structure ne
+ * declare son plateau, toutes sont reputees tout realiser : les trois groupes
+ * du medecin s'affichent, mais chaque laboratoire annonce « 5 sur 5 » et le
+ * mecanisme reste invisible. Il faut au moins un trou pour le voir.
+ *
+ * Les trois cas que le medecin doit rencontrer :
+ *   - Hopital Donka, « chez nous » : pas de serologie, pas de culture. Celui
+ *     qui prescrit une serologie VIH voit son propre laboratoire la refuser.
+ *   - Laboratoire Cece, conseille par Donka : les serologies, pas les cultures.
+ *   - Clinique de Kindia, hors prefecture et non conseillee : tout, mais elle
+ *     n'apparait qu'apres « Chercher dans tout le pays ».
+ */
+async function seedPlateauxTechniques(idHopital: string, idLabo: string, idAdmin: string) {
+  const examens = await prisma.examen.findMany({ select: { id: true, categorie: true } });
+  if (examens.length === 0) throw new Error('Refus : referentiel d examens vide, le plateau serait vide.');
+
+  // La clinique vit ailleurs : c'est ce qui rend l'elargissement visible.
+  const nomClinique = 'Clinique de Kindia';
+  const existante = await prisma.structureSante.findFirst({ where: { nom: nomClinique } });
+  const donneesClinique = {
+    type: TypeStructure.CLINIQUE,
+    prefecture: 'Kindia',
+    commune: 'Kindia Centre',
+    quartier: 'Bamban',
+    telephone: '+224620000500',
+    estActive: true,
+    estPartenaire: false,
+  };
+  const clinique = existante
+    ? await prisma.structureSante.update({ where: { id: existante.id }, data: donneesClinique })
+    : await prisma.structureSante.create({ data: { nom: nomClinique, ...donneesClinique } });
+
+  /** Une declaration complete : toute categorie absente est declaree non realisee. */
+  async function declarer(idStructure: string, categoriesRealisees: readonly string[], delaiHeures: number) {
+    for (const e of examens) {
+      const realise = categoriesRealisees.includes(e.categorie);
+      await prisma.plateauTechnique.upsert({
+        where: { idStructure_idExamen: { idStructure, idExamen: e.id } },
+        // `actif: false` plutot qu'une absence de ligne : une ligne absente
+        // vaudrait « non declare », donc « tout realisable ».
+        update: { actif: realise, delaiHeures: realise ? delaiHeures : null },
+        create: { idStructure, idExamen: e.id, actif: realise, delaiHeures: realise ? delaiHeures : null },
+      });
+    }
+  }
+
+  const SANS_SEROLOGIE_NI_CULTURE = ['HEMATOLOGIE', 'BIOCHIMIE', 'PARASITOLOGIE', 'URINE'] as const;
+  const SANS_CULTURE = ['HEMATOLOGIE', 'BIOCHIMIE', 'PARASITOLOGIE', 'URINE', 'SEROLOGIE'] as const;
+  const TOUT = ['HEMATOLOGIE', 'BIOCHIMIE', 'PARASITOLOGIE', 'URINE', 'SEROLOGIE', 'MICROBIOLOGIE'] as const;
+
+  await declarer(idHopital, SANS_SEROLOGIE_NI_CULTURE, 24);
+  await declarer(idLabo, SANS_CULTURE, 48);
+  await declarer(clinique.id, TOUT, 72);
+
+  // Donka conseille le Laboratoire Cece : ce n'est pas un contrat, Cece n'a
+  // rien accepte. Cela le place en « Partenaires declares » chez ses medecins.
+  await prisma.structureConseillee.upsert({
+    where: {
+      idStructure_idStructureConseillee: { idStructure: idHopital, idStructureConseillee: idLabo },
+    },
+    update: { declarePar: idAdmin },
+    create: { idStructure: idHopital, idStructureConseillee: idLabo, declarePar: idAdmin },
+  });
+
+  const realises = await prisma.plateauTechnique.count({ where: { actif: true } });
+  console.log(`7. Plateaux techniques : ${realises} lignes realisees sur 3 structures`);
+  console.log('   Donka ne fait ni serologie ni culture ; Cece fait les serologies ;');
+  console.log(`   ${nomClinique} fait tout mais vit hors prefecture (visible apres elargissement).`);
 }
 
 /**

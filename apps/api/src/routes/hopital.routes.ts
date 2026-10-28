@@ -7,8 +7,10 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody, validateQuery } from '../middlewares/validate.middleware';
 import * as hopital from '../services/hopital.service';
 import * as demandeRdv from '../services/demande-rendez-vous.service';
+import * as plateau from '../services/plateau-technique.service';
 import {
   annulerDemandeSchema,
+  choixLaboratoiresQuerySchema,
   createDemandeAnalyseSchema,
   ouvrirConsultationSchema,
   createEpisodeSchema,
@@ -19,6 +21,7 @@ import {
   creerPatientComptoirSchema,
 } from '../validators/api.schemas';
 import type {
+  ChoixLaboratoiresView,
   DemandeRendezVousView,
   PresenceDuJourView,
   DemandeAnalyseView,
@@ -117,8 +120,20 @@ router.get('/examens', async (req: AuthRequest, res: Response) => {
   res.json({ success: true, data });
 });
 
-router.get('/laboratoires', async (_req: AuthRequest, res: Response) => {
-  const data: StructureRefView[] = await hopital.listerLaboratoires();
+/**
+ * Les laboratoires proposes, groupes et couverture chiffree.
+ *
+ * **Remplace la liste plate**, qui rendait tous les laboratoires actifs du
+ * pays sans dire lesquels savaient faire les examens coches : le laboratoire
+ * recevait la demande et decouvrait qu'il ne la realisait pas. Le patient,
+ * lui, s'etait deplace.
+ */
+router.get('/laboratoires', validateQuery(choixLaboratoiresQuerySchema), async (req: AuthRequest, res: Response) => {
+  const q = req.query as { examens?: string | string[]; toutLePays?: boolean };
+  const examens = q.examens === undefined ? [] : Array.isArray(q.examens) ? q.examens : [q.examens];
+  const data: ChoixLaboratoiresView = await plateau.laboratoiresPour(
+    req.user!, examens, q.toutLePays === true,
+  );
   res.json({ success: true, data });
 });
 

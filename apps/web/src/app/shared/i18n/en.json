@@ -2429,7 +2429,22 @@
       "CONSULTATIONS": "Consultations",
       "PATIENTS_LINKED": "Linked patients"
     },
-    "NAV_IDENTITES": "Identities and duplicates"
+    "NAV_IDENTITES": "Identities and duplicates",
+    "NAV_CONSEILLEES": "Advised laboratories",
+    "CONSEILLEES": {
+      "TITLE": "Advised laboratories",
+      "SUB": "The laboratories and clinics offered first to the facility's doctors.",
+      "PAS_CONTRAT_TITRE": "This is not a contract",
+      "PAS_CONTRAT_TEXTE": "The advised laboratory has nothing to accept: your doctors may already send a request to any laboratory on the platform. This list puts them at the top of the choice, it commits no tariff.",
+      "CHOISIR": "Pick a laboratory or clinic",
+      "AJOUTER": "Advise",
+      "AJOUTE": "Laboratory added to the advised list.",
+      "RETIRER": "Remove",
+      "RETIRER_CONFIRM": "Remove {{nom}} from the advised list? Requests already sent do not change, and your doctors can still pick it — it simply will not be at the top any more.",
+      "RETIRE": "Laboratory removed from the advised list.",
+      "VIDE": "No advised laboratory yet.",
+      "AUCUN_CANDIDAT": "Every available laboratory is already advised."
+    }
   },
   "ROLE": {
     "PATIENT": "Patient",
@@ -2609,7 +2624,6 @@
       "ORIENT_SUBMIT": "Save referral",
       "ORIENT_SUCCESS": "Referral saved.",
       "DA_TITLE": "New analysis request",
-      "DA_LABO": "Destination laboratory",
       "DA_URGENCE": "Urgency",
       "DA_INDICATION": "Clinical indication (optional)",
       "DA_INDICATION_PH": "E.g. suspected malaria",
@@ -2622,7 +2636,6 @@
       "DA_CONSIGNES_HINT": "“Fasting”, “urine sample” and “QR Code” instructions are added automatically based on the tests.",
       "DA_SUBMIT": "Send to the laboratory",
       "DA_SUCCESS": "Request {{numero}} sent. The patient has been notified.",
-      "DA_NO_LABO": "No active laboratory: ask the super-administrator to create one.",
       "DEMANDE_ANNULEE": "Request cancelled.",
       "EPISODE_CLOS": "Episode closed.",
       "EPISODE_ANNULE": "Episode cancelled.",
@@ -2897,7 +2910,42 @@
     "SCAN_AUCUNE": "No pending test for this patient in your laboratory.",
     "SCAN_A_JEUN": "fasting",
     "SCAN_FERMER": "Close",
-    "SCAN_ERREUR": "Unknown QR code, or no test for this patient here."
+    "SCAN_ERREUR": "Unknown QR code, or no test for this patient here.",
+    "CHOIX": {
+      "LABEL": "Destination laboratory",
+      "TOUT_LE_PAYS": "Search the whole country",
+      "MA_PREFECTURE": "Back to my prefecture",
+      "PORTEE": "Laboratories in {{prefecture}}",
+      "AUCUN": "No matching laboratory. Widen the search to the whole country.",
+      "GROUPE": {
+        "INTERNE": "Here",
+        "CONSEILLE": "Partners declared by the facility",
+        "AUTRE": "Other laboratories on the platform"
+      },
+      "COUVERTURE": "{{couverts}} of {{demandes}}",
+      "ICI": "on site",
+      "NON_DECLARE": "test menu not declared",
+      "NON_DECLARE_AIDE": "This laboratory has not declared its tests yet: it is assumed to perform all of them.",
+      "MANQUENT": "does not perform:",
+      "PARTIEL_TITRE": "This laboratory does not do everything",
+      "PARTIEL_TEXTE": "{{labo}} does not perform: {{examens}}. The request will still be sent, but those tests will have to be ordered elsewhere. Send?",
+      "PARTIEL_OK": "Send anyway"
+    },
+    "NAV_PLATEAU": "Test menu",
+    "PLATEAU": {
+      "TITLE": "Test menu",
+      "SUB": "{{nom}} — {{realises}} of {{total}} reference tests performed",
+      "NON_DECLARE_TITRE": "Nothing declared yet",
+      "NON_DECLARE_TEXTE": "As long as this laboratory has declared nothing, it is assumed to perform every test. The first save narrows the list to what is ticked here — it adds nothing.",
+      "CHERCHER": "Search a test, a LOINC code, a category…",
+      "TOUT": "Tick all",
+      "RIEN": "Untick all",
+      "DELAI": "Turnaround (h)",
+      "PRIX": "Price (GNF)",
+      "PRIX_REF": "national tariff: {{prix}} GNF",
+      "ENREGISTRE": "Test menu saved.",
+      "AUCUN": "No test matches this search."
+    }
   },
   "CATALOGUE": {
     "CATEGORIE": {

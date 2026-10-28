@@ -28,6 +28,13 @@ export const ADMIN_STRUCTURE_ROUTES: Routes = [
         loadComponent: () =>
           import('./assurances/assurances.component').then(m => m.AssurancesComponent)
       },
+      // Le carnet d'adresses : les laboratoires conseilles aux medecins de
+      // l'etablissement. Ce n'est pas un contrat, seulement un ordre de liste.
+      {
+        path: 'conseillees',
+        loadComponent: () =>
+          import('./conseillees/conseillees.component').then(m => m.ConseilleesComponent)
+      },
       // L'ecran des identites, partage avec l'accueil (EF-01-04/05/06).
       //
       // **C'est ici que vit la fusion de dossiers**, reservee a ce role : un

@@ -1,0 +1,151 @@
+// ✦ Refonte UI : le choix du laboratoire, lu comme une liste de decision.
+//
+// « Chez nous » est visuellement distinct parce que c'est le cas courant : le
+// medecin d'un hopital qui a son propre laboratoire n'a rien a chercher.
+.bb-labo-choix {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  // Elargir a tout le pays est un geste, pas un reglage cache.
+  &__pays {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font: 600 0.78rem var(--bb-font-body);
+    color: var(--bb-primary);
+    background: color-mix(in srgb, var(--bb-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bb-primary) 26%, transparent);
+    border-radius: var(--bb-radius-pill);
+    cursor: pointer;
+    transition: background var(--bb-transition), border-color var(--bb-transition);
+
+    &:hover { background: color-mix(in srgb, var(--bb-primary) 15%, transparent); }
+    &:focus-visible { outline: var(--bb-focus-ring); outline-offset: 2px; }
+  }
+
+  &__portee,
+  &__muted {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border-light);
+    border-radius: var(--bb-radius-lg);
+
+    // Le laboratoire de la maison : encadre, en tete, sans ambiguite.
+    &--interne {
+      background: color-mix(in srgb, var(--bb-success) 7%, var(--bb-surface-0));
+      border-color: color-mix(in srgb, var(--bb-success) 32%, transparent);
+    }
+  }
+
+  &__titre {
+    font: 700 0.72rem var(--bb-font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bb-text-secondary);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 9px 10px;
+    background: var(--bb-surface-0);
+    border: 1px solid transparent;
+    border-radius: var(--bb-radius);
+    cursor: pointer;
+    transition: background var(--bb-transition), border-color var(--bb-transition);
+
+    &:hover { background: color-mix(in srgb, var(--bb-primary) 6%, var(--bb-surface-0)); }
+
+    &--on {
+      border-color: var(--bb-primary);
+      background: color-mix(in srgb, var(--bb-primary) 10%, var(--bb-surface-0));
+    }
+
+    // Couverture partielle : signalee, jamais bloquee. Le medecin decide.
+    &--partiel { border-left: 3px solid var(--bb-warning); }
+
+    input { accent-color: var(--bb-primary); flex: none; }
+  }
+
+  &__nom {
+    flex: 1 1 auto;
+    min-width: 0;
+    font: 600 0.9rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+
+    small { font-weight: 400; color: var(--bb-text-muted); }
+  }
+
+  &__couv {
+    flex: none;
+    padding: 2px 9px;
+    font: 700 0.74rem var(--bb-font-mono);
+    color: var(--bb-warning);
+    background: var(--bb-warning-bg);
+    border: 1px solid var(--bb-warning-border);
+    border-radius: var(--bb-radius-pill);
+
+    &--complet {
+      color: var(--bb-success);
+      background: var(--bb-success-bg);
+      border-color: var(--bb-success-border);
+    }
+  }
+
+  &__ici,
+  &__flag {
+    flex: none;
+    padding: 2px 9px;
+    font: 600 0.7rem var(--bb-font-body);
+    border-radius: var(--bb-radius-pill);
+  }
+
+  &__ici {
+    color: var(--bb-success);
+    background: var(--bb-success-bg);
+    border: 1px solid var(--bb-success-border);
+  }
+
+  &__flag {
+    color: var(--bb-info);
+    background: var(--bb-info-bg);
+    border: 1px solid var(--bb-info-border);
+    cursor: help;
+  }
+
+  // Les examens manquants sont nommes sur la ligne, pas renvoyes a un survol.
+  &__manquent {
+    flex: 1 1 100%;
+    font-size: 0.78rem;
+    color: var(--bb-warning);
+  }
+}
+
+:host-context([data-theme='dark']) .bb-labo-choix {
+  &__groupe { background: var(--bb-surface-2); }
+  &__groupe--interne {
+    background: color-mix(in srgb, var(--bb-success) 12%, var(--bb-surface-2));
+  }
+  &__row { background: var(--bb-surface-1); }
+}

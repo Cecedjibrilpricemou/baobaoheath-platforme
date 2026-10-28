@@ -9,6 +9,7 @@ export const LABORATOIRE_ROUTES: Routes = [
     children: [
       { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
       { path: 'tableau-de-bord', loadComponent: () => import('./tableau-de-bord/tableau-de-bord.component').then(m => m.LaboTableauDeBordComponent) },
+      { path: 'plateau-technique', loadComponent: () => import('./plateau/plateau.component').then(m => m.LaboPlateauComponent) },
       { path: 'demandes', loadComponent: () => import('./demandes/demandes.component').then(m => m.LaboDemandesComponent) },
       { path: 'demandes/:id', loadComponent: () => import('./demande-detail/demande-detail.component').then(m => m.LaboDemandeDetailComponent) },
     ]

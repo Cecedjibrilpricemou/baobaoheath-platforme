@@ -1,0 +1,80 @@
+<header class="bb-page-head">
+  <div class="bb-page-head__text">
+    <span class="bb-page-head__tag"><i class="pi pi-microchip" aria-hidden="true"></i> {{ 'LABO.ROLE' | translate }}</span>
+    <h1 class="bb-page-head__title">{{ 'LABO.PLATEAU.TITLE' | translate }}</h1>
+    <p class="bb-page-head__sub">{{ 'LABO.PLATEAU.SUB' | translate: { nom: nom(), realises: nbRealises(), total: lignes().length } }}</p>
+  </div>
+  <div class="bb-page-head__actions">
+    <button matButton="filled" type="button" [disabled]="isSaving() || isLoading()" (click)="enregistrer()">
+      <i [class]="isSaving() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
+      {{ (isSaving() ? 'COMMON.LOADING' : 'COMMON.SAVE') | translate }}
+    </button>
+  </div>
+</header>
+
+<!-- **Le piege de cet ecran.** Rien de declare = tout repute realisable : le
+     premier enregistrement restreint, il n'ajoute pas. On le dit avant. -->
+@if (nonDeclare() && !isLoading()) {
+  <div class="bb-banner bb-banner--info" role="status">
+    <i class="pi pi-info-circle" aria-hidden="true"></i>
+    <div class="bb-banner__text">
+      <span class="bb-banner__title">{{ 'LABO.PLATEAU.NON_DECLARE_TITRE' | translate }}</span>
+      <span>{{ 'LABO.PLATEAU.NON_DECLARE_TEXTE' | translate }}</span>
+    </div>
+  </div>
+}
+
+@if (isLoading()) {
+  <p class="bb-plateau__muted">{{ 'COMMON.LOADING' | translate }}</p>
+} @else {
+  <section class="bb-card bb-plateau">
+    <div class="bb-plateau__barre">
+      <input class="bb-plateau__search" type="search"
+             [placeholder]="'LABO.PLATEAU.CHERCHER' | translate"
+             [ngModel]="filtre()" (ngModelChange)="filtre.set($event)" />
+      <div class="bb-plateau__tout">
+        <button matButton type="button" (click)="toutCocher(true)">{{ 'LABO.PLATEAU.TOUT' | translate }}</button>
+        <button matButton type="button" (click)="toutCocher(false)">{{ 'LABO.PLATEAU.RIEN' | translate }}</button>
+      </div>
+    </div>
+
+    @for (g of groupes(); track g.categorie) {
+      <div class="bb-plateau__cat">{{ g.categorie }}</div>
+      @for (l of g.items; track l.idExamen) {
+        <div class="bb-plateau__row" [class.bb-plateau__row--on]="l.realise">
+          <label class="bb-plateau__libelle">
+            <input type="checkbox" [checked]="l.realise" (change)="basculer(l)" />
+            <span class="bb-plateau__lib">{{ l.libelle }}</span>
+            <span class="bb-plateau__code">{{ l.codeLoinc }}</span>
+          </label>
+
+          <!-- Delai et prix n'ont de sens que pour un examen realise. -->
+          @if (l.realise) {
+            <div class="bb-plateau__champs">
+              <label class="bb-plateau__champ">
+                <span>{{ 'LABO.PLATEAU.DELAI' | translate }}</span>
+                <input type="number" min="1" step="1" inputmode="numeric"
+                       [value]="l.delaiHeures ?? ''"
+                       (input)="changerDelai(l, $any($event.target).value)" />
+              </label>
+              <label class="bb-plateau__champ">
+                <span>{{ 'LABO.PLATEAU.PRIX' | translate }}</span>
+                <input type="number" min="1" step="1000" inputmode="numeric"
+                       [placeholder]="l.prixReferenceGnf ?? ''"
+                       [value]="l.prixGnf ?? ''"
+                       (input)="changerPrix(l, $any($event.target).value)" />
+              </label>
+              @if (l.prixReferenceGnf !== null && l.prixGnf === null) {
+                <span class="bb-plateau__ref">{{ 'LABO.PLATEAU.PRIX_REF' | translate: { prix: l.prixReferenceGnf } }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @if (groupes().length === 0) {
+      <p class="bb-plateau__muted">{{ 'LABO.PLATEAU.AUCUN' | translate }}</p>
+    }
+  </section>
+}

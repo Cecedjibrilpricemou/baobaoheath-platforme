@@ -12,11 +12,21 @@ export class ApiService {
     private readonly baseUrl = environment.apiUrl;
     private http = inject(HttpClient);
 
-    get<T>(endpoint: string, params?: Record<string, string>): Observable<T> {
+    /**
+     * `params` accepte un tableau : chaque valeur devient une occurrence du
+     * meme parametre (`?examens=a&examens=b`). C'est ce qu'attend la liste des
+     * laboratoires, qui chiffre la couverture des examens coches.
+     */
+    get<T>(endpoint: string, params?: Record<string, string | string[]>): Observable<T> {
         let httpParams = new HttpParams();
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
-                httpParams = httpParams.set(key, value);
+                if (Array.isArray(value)) {
+                    // `append`, pas `set` : `set` ecraserait la valeur precedente.
+                    value.forEach((v) => { httpParams = httpParams.append(key, v); });
+                } else {
+                    httpParams = httpParams.set(key, value);
+                }
             });
         }
         return this.http.get<T>(`${this.baseUrl}${endpoint}`, { params: httpParams, withCredentials: true });
