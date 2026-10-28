@@ -85,6 +85,24 @@ const EXCEPTIONS = [
     'GHSA-4qv8-2p9j-2685', // memoire non bornee dans le parseur EventSource
     'GHSA-f72v-6w45-q472', // integrite de sous-ressource contournable
     'GHSA-xjj6-f33q-929c', // erreur non geree sur un exces de content-encodings
+    // Cinq avis de plus le 28/10/2026. L'un d'eux, GHSA-2m5v-pch6-74hx, n'est
+    // pas un deni de service : c'est un contournement de la validation du
+    // certificat TLS. Le raisonnement tient, mais il faut le dire en toutes
+    // lettres -- verifie ce jour : aucune ressource distante dans
+    // styles.scss ni index.html, polices servies depuis assets/fonts, et
+    // angular.json porte "fonts": { "inline": false }, donc la construction
+    // ne fait aucun appel sortant par undici. Ce qui reste expose est
+    // `ng serve` sur un poste de developpement, sur un reseau ou quelqu'un
+    // peut s'interposer -- meme perimetre que l'avertissement du README sur
+    // start:lan.
+    //
+    // @angular/build@21.2.28, la derniere 21.x, epingle toujours undici a
+    // 7.29.1 exactement : aucune montee n'existe dans Angular 21.
+    'GHSA-4w7w-5xrc-9h26', // empoisonnement de cache via redirection cross-origin
+    'GHSA-2m5v-pch6-74hx', // validation du certificat TLS contournee dans Agent
+    'GHSA-qrxm-fqhp-jwvm', // deni de service par renegociation TLS 1.2
+    'GHSA-9fm3-97px-rjf6', // client WebSocket : PONG automatiques non bornes
+    'GHSA-55wc-3pg8-jfw6', // exception non geree dans l intercepteur de decompression
   ].map((ghsa) => ({
     ghsa,
     paquet: 'undici (via @angular/build)',
