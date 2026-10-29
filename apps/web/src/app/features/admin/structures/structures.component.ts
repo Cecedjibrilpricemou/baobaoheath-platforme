@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastrService } from 'ngx-toastr';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
+import { DossierAgrementComponent } from '../../../shared/components/dossier-agrement/dossier-agrement.component';
 import { PiecesAgrementComponent } from '../../../shared/components/pieces-agrement/pieces-agrement.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
@@ -28,7 +29,7 @@ interface MotDePasseAffiche {
   standalone: true,
   imports: [
     MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe,
-    ExportListeComponent, PiecesAgrementComponent],
+    ExportListeComponent, PiecesAgrementComponent, DossierAgrementComponent],
   templateUrl: './structures.component.html',
   styleUrl: './structures.component.scss'
 })
@@ -45,6 +46,19 @@ export class StructuresComponent implements OnInit {
   confirmDesactiver = signal<StructureAdminView | null>(null); // modal confirmation
 
   mdpAffiche = signal<MotDePasseAffiche | null>(null);
+
+  /**
+   * La structure dont le dossier est ouvert.
+   *
+   * Un seul a la fois : charger le dossier de quarante structures d'un coup
+   * ferait quarante requetes pour un ecran qu'on ne regarde qu'une ligne a la
+   * fois. C'est aussi ce qui permet de garder la liste lisible.
+   */
+  dossierOuvert = signal<string | null>(null);
+
+  basculerDossier(id: string) {
+    this.dossierOuvert.update((v) => (v === id ? null : id));
+  }
 
   newStructure = {
     nom: '', type: 'CENTRE', prefecture: '', adresse: '',

@@ -17,9 +17,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import type { TypePieceAgrement } from '@baobaoheath/shared-types';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-
-/** 5 Mo, comme le serveur : un agrément scanné à plat dépasse souvent 2 Mo. */
-const TAILLE_MAX = 5 * 1024 * 1024;
+import { refusLocal, tailleLisible } from './piece-agrement.util';
 
 /**
  * Ce que chaque type doit produire. **Copie assumée de la table du serveur**,
@@ -90,10 +88,7 @@ export class PiecesAgrementComponent {
   }
 
   tailleDe(piece: TypePieceAgrement): string {
-    const octets = this.choisies()[piece]?.size ?? 0;
-    return octets >= 1024 * 1024
-      ? `${(octets / (1024 * 1024)).toFixed(1)} Mo`
-      : `${Math.max(1, Math.round(octets / 1024))} Ko`;
+    return tailleLisible(this.choisies()[piece]?.size ?? 0);
   }
 
   refusDe(piece: TypePieceAgrement): string | null {
@@ -110,18 +105,12 @@ export class PiecesAgrementComponent {
       return;
     }
 
-    // Deux refus avant l'envoi, pour ne pas faire monter 20 Mo inutilement.
-    // Le serveur, lui, lit les octets de tête : c'est lui qui fait foi.
-    if (fichier.size > TAILLE_MAX) {
+    // Refus avant l'envoi, pour ne pas faire monter 20 Mo inutilement. Le
+    // serveur, lui, lit les octets de tête : c'est lui qui fait foi.
+    const refuse = refusLocal(fichier);
+    if (refuse) {
       champ.value = '';
-      this.refus.update((r) => ({ ...r, [piece]: 'AGREMENT.PIECE.TROP_GROS' }));
-      this.retirer(piece);
-      return;
-    }
-    const nomPdf = fichier.name.toLowerCase().endsWith('.pdf');
-    if (fichier.type !== 'application/pdf' && !nomPdf) {
-      champ.value = '';
-      this.refus.update((r) => ({ ...r, [piece]: 'AGREMENT.PIECE.PAS_UN_PDF' }));
+      this.refus.update((r) => ({ ...r, [piece]: refuse }));
       this.retirer(piece);
       return;
     }

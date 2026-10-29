@@ -1,0 +1,208 @@
+// ✦ Refonte UI : le dossier réglementaire après création, une ligne par pièce.
+.bb-dossier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &__muted {
+    margin: 0;
+    padding: 8px 2px;
+    color: var(--bb-text-muted);
+    font-size: 0.85rem;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__titre {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 700 0.88rem var(--bb-font-display);
+    color: var(--bb-text-primary);
+  }
+
+  // L'état est la première chose à lire : complet, incomplet, ou sans objet.
+  &__etat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    padding: 3px 11px;
+    font: 700 0.76rem var(--bb-font-body);
+    border-radius: var(--bb-radius-pill);
+
+    &--ok {
+      color: var(--bb-success);
+      background: var(--bb-success-bg);
+      border: 1px solid var(--bb-success-border);
+    }
+
+    &--manque {
+      color: var(--bb-warning);
+      background: var(--bb-warning-bg);
+      border: 1px solid var(--bb-warning-border);
+    }
+
+    &--neutre {
+      color: var(--bb-text-secondary);
+      background: var(--bb-surface-2);
+      border: 1px solid var(--bb-border);
+    }
+  }
+
+  &__ids {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 8px 16px;
+    margin: 0;
+    padding: 10px 12px;
+    background: var(--bb-surface-1);
+    border-radius: var(--bb-radius);
+
+    dt {
+      font: 600 0.7rem var(--bb-font-body);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--bb-text-muted);
+    }
+
+    dd {
+      margin: 1px 0 0;
+      font: 500 0.84rem var(--bb-font-mono);
+      color: var(--bb-text-primary);
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__ligne {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: var(--bb-surface-0);
+    border: 1px solid var(--bb-border-light);
+    border-left: 3px solid var(--bb-success);
+    border-radius: var(--bb-radius);
+
+    // Signalée, pas cachée : une pièce absente doit se voir dans la liste.
+    &--manque { border-left-color: var(--bb-warning); }
+  }
+
+  &__texte {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+
+  &__nom {
+    font: 600 0.86rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+  }
+
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font: 500 0.75rem var(--bb-font-mono);
+    color: var(--bb-text-secondary);
+  }
+
+  &__absente {
+    font-size: 0.75rem;
+    color: var(--bb-warning);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    flex-wrap: wrap;
+  }
+
+  // Le champ `file` natif est illisible et ne se style pas : le label porte
+  // l'apparence, l'input reste accessible au clavier.
+  &__bouton {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    font: 600 0.78rem var(--bb-font-body);
+    color: var(--bb-primary);
+    background: color-mix(in srgb, var(--bb-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bb-primary) 26%, transparent);
+    border-radius: var(--bb-radius-pill);
+    cursor: pointer;
+    transition: background var(--bb-transition), opacity var(--bb-transition);
+
+    &:hover { background: color-mix(in srgb, var(--bb-primary) 15%, transparent); }
+    &:focus-within { outline: var(--bb-focus-ring); outline-offset: 2px; }
+
+    // `opacity: 0`, pas `display: none` : un input caché ne reçoit plus le
+    // focus clavier et le bouton deviendrait inatteignable au Tab.
+    input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    &--occupe { opacity: 0.6; pointer-events: none; }
+  }
+
+  &__complementaires {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--bb-border);
+  }
+
+  &__sous-titre {
+    font: 700 0.72rem var(--bb-font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bb-text-secondary);
+  }
+
+  &__ajout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__libelle {
+    flex: 1 1 220px;
+    padding: 7px 11px;
+    font: 400 0.84rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+    background: var(--bb-surface-card);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius);
+
+    &:focus-visible { outline: var(--bb-focus-ring); outline-offset: 1px; }
+  }
+
+  &__aide {
+    font-size: 0.74rem;
+    color: var(--bb-text-muted);
+  }
+}
+
+:host-context([data-theme='dark']) .bb-dossier {
+  &__ids { background: var(--bb-surface-2); }
+  &__ligne { background: var(--bb-surface-1); }
+}

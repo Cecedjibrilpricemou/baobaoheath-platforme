@@ -286,8 +286,27 @@
                 {{ 'ADMIN.STRUCTURES.REACTIVATE_BTN' | translate }}
               </button>
             }
+            <!-- Le dossier reglementaire : completer un dossier ancien, et
+                 **remplacer un agrement renouvele**. Les structures entrees
+                 avant cette regle n'ont aucune piece, et la migration ne
+                 pouvait pas les inventer. -->
+            <button
+              class="bb-struct__dossier-btn"
+              (click)="basculerDossier(s.id)"
+              [attr.aria-expanded]="dossierOuvert() === s.id"
+              [attr.title]="'AGREMENT.DOSSIER.TITRE' | translate"
+            >
+              <i [class]="dossierOuvert() === s.id ? 'pi pi-chevron-up' : 'pi pi-folder-open'"></i>
+              {{ 'AGREMENT.DOSSIER.TITRE' | translate }}
+            </button>
           </div>
         </div>
+
+        @if (dossierOuvert() === s.id) {
+          <div class="bb-struct__dossier">
+            <app-dossier-agrement [idStructure]="s.id" />
+          </div>
+        }
       }
     </div>
   }

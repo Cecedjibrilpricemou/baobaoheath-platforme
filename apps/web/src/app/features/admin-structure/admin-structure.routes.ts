@@ -28,6 +28,13 @@ export const ADMIN_STRUCTURE_ROUTES: Routes = [
         loadComponent: () =>
           import('./assurances/assurances.component').then(m => m.AssurancesComponent)
       },
+      // Le dossier reglementaire de son propre etablissement : completer un
+      // dossier ancien, et **remplacer un agrement renouvele**.
+      {
+        path: 'dossier',
+        loadComponent: () =>
+          import('./dossier/dossier.component').then(m => m.AdminStructureDossierComponent)
+      },
       // Le carnet d'adresses : les laboratoires conseilles aux medecins de
       // l'etablissement. Ce n'est pas un contrat, seulement un ordre de liste.
       {

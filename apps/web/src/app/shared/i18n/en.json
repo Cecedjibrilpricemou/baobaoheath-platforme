@@ -2447,7 +2447,8 @@
       "RETIRE": "Laboratory removed from the advised list.",
       "VIDE": "No advised laboratory yet.",
       "AUCUN_CANDIDAT": "Every available laboratory is already advised."
-    }
+    },
+    "NAV_DOSSIER": "Regulatory file"
   },
   "ROLE": {
     "PATIENT": "Patient",
@@ -3739,7 +3740,25 @@
       "AGREMENT_ASSURANCE": "Central Bank licence",
       "AGREMENT_ASSURANCE_AIDE": "The licence decision issued by the BCRG for the lines of business carried.",
       "AUTRE": "Additional document",
-      "AUTRE_AIDE": "Any other document the relevant directorate asks for."
+      "AUTRE_AIDE": "Any other document the relevant directorate asks for.",
+      "VIDE": "This file is empty."
+    },
+    "DOSSIER": {
+      "TITRE": "Regulatory file",
+      "COMPLET": "File complete",
+      "INCOMPLET": "{{nombre}} document(s) missing",
+      "NON_EXIGE": "No document required",
+      "RIEN_A_FOURNIR": "This facility has no private licence to produce.",
+      "ABSENTE": "Not attached yet",
+      "DEPOSE_LE": "attached on",
+      "VOIR": "View",
+      "DEPOSEE": "Document saved.",
+      "COMPLEMENTAIRES": "Additional documents",
+      "AJOUTER": "Add",
+      "LIBELLE_PH": "Document name (e.g. architectural plan)",
+      "LIBELLE_REQUIS": "Name the document before attaching it: without a label it would be unreadable in the list.",
+      "AJOUT_AIDE": "For any document the relevant directorate asks for that is not listed above.",
+      "SANS_STRUCTURE": "Your account is not attached to any facility: there is no file to keep."
     }
   }
 }

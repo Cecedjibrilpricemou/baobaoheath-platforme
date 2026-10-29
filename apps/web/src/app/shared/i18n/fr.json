@@ -2447,7 +2447,8 @@
       "RETIRE": "Laboratoire retiré des conseillés.",
       "VIDE": "Aucun laboratoire conseillé pour le moment.",
       "AUCUN_CANDIDAT": "Tous les laboratoires disponibles sont déjà conseillés."
-    }
+    },
+    "NAV_DOSSIER": "Dossier réglementaire"
   },
   "ROLE": {
     "PATIENT": "Patient",
@@ -3739,7 +3740,25 @@
       "AGREMENT_ASSURANCE": "Agrément de la Banque Centrale",
       "AGREMENT_ASSURANCE_AIDE": "La décision d'agrément délivrée par la BCRG pour les branches exercées.",
       "AUTRE": "Pièce complémentaire",
-      "AUTRE_AIDE": "Tout autre document réclamé par la direction compétente."
+      "AUTRE_AIDE": "Tout autre document réclamé par la direction compétente.",
+      "VIDE": "Ce fichier est vide."
+    },
+    "DOSSIER": {
+      "TITRE": "Dossier réglementaire",
+      "COMPLET": "Dossier complet",
+      "INCOMPLET": "{{nombre}} pièce(s) manquante(s)",
+      "NON_EXIGE": "Aucune pièce exigée",
+      "RIEN_A_FOURNIR": "Cette structure n'a aucun agrément privé à produire.",
+      "ABSENTE": "Pas encore déposée",
+      "DEPOSE_LE": "déposée le",
+      "VOIR": "Voir",
+      "DEPOSEE": "Pièce enregistrée.",
+      "COMPLEMENTAIRES": "Pièces complémentaires",
+      "AJOUTER": "Ajouter",
+      "LIBELLE_PH": "Nom de la pièce (ex. plan architectural)",
+      "LIBELLE_REQUIS": "Nommez la pièce avant de la joindre : sans libellé, elle serait illisible dans la liste.",
+      "AJOUT_AIDE": "Pour tout document réclamé par la direction compétente et qui ne figure pas ci-dessus.",
+      "SANS_STRUCTURE": "Votre compte n'est rattaché à aucune structure : il n'y a pas de dossier à tenir."
     }
   }
 }

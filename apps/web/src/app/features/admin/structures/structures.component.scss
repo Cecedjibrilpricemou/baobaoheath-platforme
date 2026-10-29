@@ -176,6 +176,39 @@
     border-color: var(--bb-success-border); color: var(--str-accent); background: var(--bb-success-bg);
     &:hover:not(:disabled) { background: var(--bb-primary); border-color: var(--bb-primary); color: #fff; }
   }
+  // ✦ Refonte UI : l'accès au dossier réglementaire depuis la liste.
+  //
+  // Le dossier se déplie sous sa ligne plutôt que dans une modale : on garde
+  // la structure concernée sous les yeux pendant qu'on dépose ses pièces.
+  &__dossier-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    font: 600 0.78rem var(--bb-font-body);
+    color: var(--bb-text-secondary);
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-pill);
+    cursor: pointer;
+    transition: background var(--bb-transition), color var(--bb-transition);
+
+    &:hover {
+      color: var(--bb-primary);
+      background: color-mix(in srgb, var(--bb-primary) 10%, var(--bb-surface-1));
+    }
+
+    &:focus-visible { outline: var(--bb-focus-ring); outline-offset: 2px; }
+  }
+
+  &__dossier {
+    padding: 14px;
+    margin: -4px 0 10px;
+    background: var(--bb-surface-1);
+    border: 1px solid var(--bb-border-light);
+    border-top: none;
+    border-radius: 0 0 var(--bb-radius-lg) var(--bb-radius-lg);
+  }
 }
 
 @keyframes bb-str-drop {

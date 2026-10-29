@@ -1,0 +1,133 @@
+@if (chargement() && !dossier()) {
+  <p class="bb-dossier__muted">{{ 'COMMON.LOADING' | translate }}</p>
+} @else if (dossier(); as d) {
+  <div class="bb-dossier">
+    <div class="bb-dossier__head">
+      <span class="bb-dossier__titre">
+        <i class="pi pi-folder-open" aria-hidden="true"></i>
+        {{ 'AGREMENT.DOSSIER.TITRE' | translate }}
+      </span>
+
+      <!-- Une structure publique est complète sans rien déposer, et c'est
+           juste : elle n'a pas d'agrément privé à produire. -->
+      @if (!d.exigeDesPieces) {
+        <span class="bb-dossier__etat bb-dossier__etat--neutre">
+          {{ 'AGREMENT.DOSSIER.NON_EXIGE' | translate }}
+        </span>
+      } @else if (d.complet) {
+        <span class="bb-dossier__etat bb-dossier__etat--ok">
+          <i class="pi pi-check-circle" aria-hidden="true"></i>
+          {{ 'AGREMENT.DOSSIER.COMPLET' | translate }}
+        </span>
+      } @else {
+        <span class="bb-dossier__etat bb-dossier__etat--manque">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+          {{ 'AGREMENT.DOSSIER.INCOMPLET' | translate: { nombre: d.manquantes.length } }}
+        </span>
+      }
+    </div>
+
+    <!-- Les identifiants en lecture : ils se corrigent par la fiche de la
+         structure, pas d'ici. Les montrer évite d'aller les chercher ailleurs
+         pour vérifier qu'ils correspondent aux pièces. -->
+    @if (d.exigeDesPieces) {
+      <dl class="bb-dossier__ids">
+        <div><dt>{{ 'AGREMENT.RCCM_LABEL' | translate }}</dt><dd>{{ d.rccm ?? '—' }}</dd></div>
+        <div>
+          <dt>{{ 'AGREMENT.CREATION_LABEL' | translate }}</dt>
+          <dd>{{ d.numeroAgrementCreation ?? '—' }}</dd>
+        </div>
+        @if (d.numeroAgrementExploitation) {
+          <div>
+            <dt>{{ 'AGREMENT.EXPLOITATION_LABEL' | translate }}</dt>
+            <dd>{{ d.numeroAgrementExploitation }}</dd>
+          </div>
+        }
+        <div><dt>{{ 'AGREMENT.LIEU_LABEL' | translate }}</dt><dd>{{ d.lieuAutorise ?? '—' }}</dd></div>
+      </dl>
+    }
+
+    @if (lignes().length === 0 && autres().length === 0) {
+      <p class="bb-dossier__muted">{{ 'AGREMENT.DOSSIER.RIEN_A_FOURNIR' | translate }}</p>
+    }
+
+    @for (type of lignes(); track type) {
+      <div class="bb-dossier__ligne" [class.bb-dossier__ligne--manque]="estManquante(type)">
+        <div class="bb-dossier__texte">
+          <span class="bb-dossier__nom">{{ 'AGREMENT.PIECE.' + type | translate }}</span>
+
+          @if (pieceDe(type); as p) {
+            <small class="bb-dossier__meta">
+              <i class="pi pi-file-pdf" aria-hidden="true"></i>
+              {{ taille(p.taille) }} · {{ 'AGREMENT.DOSSIER.DEPOSE_LE' | translate }}
+              {{ p.deposeLe | date: 'dd/MM/yyyy' }}
+            </small>
+          } @else {
+            <small class="bb-dossier__absente">{{ 'AGREMENT.DOSSIER.ABSENTE' | translate }}</small>
+          }
+        </div>
+
+        <div class="bb-dossier__actions">
+          @if (pieceDe(type); as p) {
+            <button matButton type="button" (click)="voir(p)">
+              <i class="pi pi-eye" aria-hidden="true"></i> {{ 'AGREMENT.DOSSIER.VOIR' | translate }}
+            </button>
+          }
+          <!-- Remplacer est le geste du renouvellement : l'ancienne pièce
+               part, la nouvelle prend sa place, dans la même transaction. -->
+          <label class="bb-dossier__bouton" [class.bb-dossier__bouton--occupe]="envoi() === type">
+            <i class="pi" [class.pi-upload]="envoi() !== type"
+               [class.pi-spinner]="envoi() === type"
+               [class.pi-spin]="envoi() === type" aria-hidden="true"></i>
+            {{ (pieceDe(type) ? 'AGREMENT.PIECE.REMPLACER' : 'AGREMENT.PIECE.CHOISIR') | translate }}
+            <input type="file" accept="application/pdf,.pdf"
+                   [disabled]="envoi() !== null"
+                   (change)="deposer(type, $event)" />
+          </label>
+        </div>
+      </div>
+    }
+
+    <!-- Les pièces complémentaires : plusieurs sont possibles, chacune porte
+         son libellé. C'est la soupape, le jour où une direction réclame le
+         plan architectural ou la liste des équipements. -->
+    <div class="bb-dossier__complementaires">
+      <span class="bb-dossier__sous-titre">{{ 'AGREMENT.DOSSIER.COMPLEMENTAIRES' | translate }}</span>
+
+      @for (p of autres(); track p.id) {
+        <div class="bb-dossier__ligne">
+          <div class="bb-dossier__texte">
+            <span class="bb-dossier__nom">{{ p.libelle }}</span>
+            <small class="bb-dossier__meta">
+              <i class="pi pi-file-pdf" aria-hidden="true"></i>
+              {{ taille(p.taille) }} · {{ 'AGREMENT.DOSSIER.DEPOSE_LE' | translate }}
+              {{ p.deposeLe | date: 'dd/MM/yyyy' }}
+            </small>
+          </div>
+          <div class="bb-dossier__actions">
+            <button matButton type="button" (click)="voir(p)">
+              <i class="pi pi-eye" aria-hidden="true"></i> {{ 'AGREMENT.DOSSIER.VOIR' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="bb-dossier__ajout">
+        <input class="bb-dossier__libelle" type="text" maxlength="120"
+               [placeholder]="'AGREMENT.DOSSIER.LIBELLE_PH' | translate"
+               [ngModel]="libelleAutre()" (ngModelChange)="libelleAutre.set($event)" />
+        <label class="bb-dossier__bouton"
+               [class.bb-dossier__bouton--occupe]="envoi() === 'AUTRE'">
+          <i class="pi" [class.pi-plus]="envoi() !== 'AUTRE'"
+             [class.pi-spinner]="envoi() === 'AUTRE'"
+             [class.pi-spin]="envoi() === 'AUTRE'" aria-hidden="true"></i>
+          {{ 'AGREMENT.DOSSIER.AJOUTER' | translate }}
+          <input type="file" accept="application/pdf,.pdf"
+                 [disabled]="envoi() !== null || !libelleAutre().trim()"
+                 (change)="deposer('AUTRE', $event)" />
+        </label>
+      </div>
+      <small class="bb-dossier__aide">{{ 'AGREMENT.DOSSIER.AJOUT_AIDE' | translate }}</small>
+    </div>
+  </div>
+}
