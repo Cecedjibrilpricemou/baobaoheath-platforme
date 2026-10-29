@@ -288,10 +288,34 @@ export const definirBureauSchema = z.object({
   bureau: z.string().trim().min(1).max(120).nullable(),
 }).strict();
 
+
+/**
+ * Les identifiants reglementaires d'une structure.
+ *
+ * Tous optionnels **ici**, volontairement : une structure publique n'a rien a
+ * produire, et l'exigence d'une structure privee depend de son type. C'est
+ * `validerIdentifiants` dans `piece-agrement.service` qui tranche, une seule
+ * fois pour les trois portes de creation.
+ *
+ * Le RCCM n'est pas contraint par une expression reguliere : deux formes
+ * circulent en Guinee et aucun texte officiel n'en fixe le format.
+ */
+export const identifiantsReglementaires = {
+  rccm: z.string().trim().max(40).optional(),
+  numeroAgrementCreation: z.string().trim().max(120).optional(),
+  numeroAgrementExploitation: z.string().trim().max(120).optional(),
+  lieuAutorise: z.string().trim().max(200).optional(),
+} as const;
+
 export const createStructureSchema = z.object({
   nom: z.string().trim().min(2).max(160),
-  type: z.enum(['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE', 'LABORATOIRE']),
+  // `ASSURANCE` y figure desormais : c'est la structure de l'assureur qui
+  // porte son agrement de la Banque Centrale, et aucune route ne savait la
+  // creer — elle n'existait que par la semence. `PHARMACIE` reste absente :
+  // elle a sa propre porte, qui cree aussi son pharmacien titulaire.
+  type: z.enum(['POSTE', 'CENTRE', 'HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE', 'LABORATOIRE', 'ASSURANCE']),
   prefecture: z.string().trim().min(1).max(80),
+  ...identifiantsReglementaires,
   adresse: z.string().trim().max(200).optional(),
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
@@ -308,6 +332,7 @@ export const createPharmacieSchema = z.object({
   nom: z.string().trim().min(2).max(160),
   idStructureParente: id.optional(),
   prefecture: z.string().trim().min(1).max(80),
+  ...identifiantsReglementaires,
   adresse: z.string().trim().max(200).optional(),
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
@@ -775,6 +800,16 @@ export const conseillerStructureSchema = z.object({
   idStructureConseillee: id,
 }).strict();
 
+/**
+ * Le depot de pieces sur une structure deja creee.
+ *
+ * Les fichiers eux-memes passent par multer, pas par zod : seuls les libelles
+ * des pieces `AUTRE` arrivent en corps. La cle est le type de piece.
+ */
+export const deposerPiecesSchema = z.object({
+  libelles: z.record(z.string().trim().min(1).max(120), z.string().trim().min(1).max(120)).optional(),
+}).strict();
+
 export const annulerDemandeSchema = z.object({
   motif: z.string().trim().min(3).max(300),
 }).strict();
@@ -857,6 +892,7 @@ export const creerAssureurSchema = z.object({
   email: z.string().trim().email().max(120).optional(),
   modeEchange: z.enum(['MANUEL', 'PORTAIL', 'API']).optional(),
   idStructure: id.optional(),
+  ...identifiantsReglementaires,
 }).strict();
 
 // `exclu` et `tauxPourcent` ensemble seraient contradictoires ; le service le

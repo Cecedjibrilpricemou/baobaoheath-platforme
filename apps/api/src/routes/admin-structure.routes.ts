@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac.middleware';
+import { corpsJsonMultipart, recevoirPiecesAgrement } from '../middlewares/upload.middleware';
+import * as piecesAgrement from '../services/piece-agrement.service';
 import { validateBody } from '../middlewares/validate.middleware';
 import { uploadLogo } from '../middlewares/upload.middleware';
 import { uploadLogoController } from '../controllers/upload.controller';
@@ -144,6 +146,43 @@ router.get('/stats', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, re
   }
 });
 
+// ── Le dossier reglementaire d'une structure ───────────────────────
+//
+// **Les pieces ne sont pas publiques.** Un agrement porte le nom du
+// responsable, parfois son numero de diplome et l'adresse exacte du local. Le
+// fichier vit dans `stockage-prive/`, jamais sous `uploads/` qui est servi
+// sans authentification, et chaque lecture est journalisee.
+
+/** L'etat du dossier : ce qui est depose, ce qui manque. */
+router.get('/structures/:id/dossier', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL', 'ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  const data = await piecesAgrement.dossierDe(req.params['id'] as string);
+  res.json({ success: true, data });
+});
+
+/**
+ * Deposer ou remplacer des pieces apres la creation.
+ *
+ * Deux usages : completer le dossier d'une structure anterieure a cette regle,
+ * et **remplacer un agrement renouvele** — le ministere prevoit un
+ * renouvellement periodique. Le perimetre est verifie dans le service : un
+ * administrateur de structure ne depose que pour la sienne.
+ */
+router.post('/structures/:id/pieces', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL', 'ADMIN_STRUCTURE'), recevoirPiecesAgrement, async (req: AuthRequest, res: Response) => {
+  const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
+  const libelles = (req.body ?? {}) as Record<string, string | undefined>;
+  const data = await piecesAgrement.deposerPieces(req.user!, req.params['id'] as string, fichiers, libelles);
+  res.status(201).json({ success: true, data });
+});
+
+/** Le contenu d'une piece. Jamais une URL devinable : une route gardee. */
+router.get('/pieces/:id', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL', 'ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  const { contenu } = await piecesAgrement.lirePiece(req.user!, req.params['id'] as string);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Cache-Control', 'no-store, private');
+  res.setHeader('Content-Disposition', 'inline');
+  res.send(contenu);
+});
+
 router.get('/structures', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL'), async (_req: AuthRequest, res: Response) => {
   try {
     const data: StructureAdminView[] = await service.getStructures();
@@ -153,18 +192,35 @@ router.get('/structures', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL'), async (_
   }
 });
 
-router.post('/structures', requireRole('SUPER_ADMIN'), validateBody(createStructureSchema), async (req: AuthRequest, res: Response) => {
+/**
+ * Creer une structure, avec son dossier reglementaire si elle en doit un.
+ *
+ * L'ordre des middlewares n'est pas indifferent : `multer` d'abord, car lui
+ * seul sait lire un corps `multipart/form-data` ; puis `corpsJsonMultipart`,
+ * qui remet a sa place l'objet envoye dans le champ `donnees` — un corps
+ * multipart ne porte que des chaines plates, donc pas d'objet `admin`
+ * imbrique ; puis seulement la validation du schema.
+ *
+ * Une structure publique continue de poster du JSON ordinaire : elle n'a
+ * aucune piece a fournir, et les deux middlewares la laissent passer.
+ */
+router.post('/structures', requireRole('SUPER_ADMIN'), recevoirPiecesAgrement, corpsJsonMultipart, validateBody(createStructureSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data: CreationStructureView = await service.creerStructureAvecAdmin(req.body);
+    // Seules les pieces exigees a la creation : elles ont un type connu et
+    // n'ont pas besoin de libelle. Une piece libre se depose ensuite, par
+    // `POST /structures/:id/pieces`, ou le libelle arrive avec le fichier.
+    const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
+    const data: CreationStructureView = await service.creerStructureAvecAdmin(req.body, fichiers);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
   }
 });
 
-router.post('/pharmacies', requireRole('SUPER_ADMIN', 'ADMIN_STRUCTURE'), validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
+router.post('/pharmacies', requireRole('SUPER_ADMIN', 'ADMIN_STRUCTURE'), recevoirPiecesAgrement, corpsJsonMultipart, validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.user!, req.body);
+    const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
+    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.user!, req.body, fichiers);
     res.status(201).json({ success: true, data });
   } catch (e: unknown) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });

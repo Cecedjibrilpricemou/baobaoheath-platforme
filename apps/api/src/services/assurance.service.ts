@@ -24,6 +24,7 @@ import { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { logger } from '../config/logger';
 import { estStructureHospitaliere, estStructureOfficinale } from '../utils/officine.util';
+import { dossierDe } from './piece-agrement.service';
 import type {
   AgentAssureurCreeView,
   AssureView,
@@ -1010,23 +1011,51 @@ function versAssureurView(a: AssureurAvecInclude): AssureurView {
   };
 }
 
+/**
+ * Creer un assureur.
+ *
+ * **Il ne peut pas exister sans sa structure.** C'est elle qui porte l'agrement
+ * de la Banque Centrale, le RCCM et le siege autorise : l'enregistrement
+ * `Assureur` ne porte que la configuration metier — le code imprime sur la
+ * carte, le mode d'echange. Creer un assureur sans structure revenait a
+ * l'inscrire sans aucune preuve qu'il est agree.
+ *
+ * L'agrement vient de la **Banque Centrale**, pas du ministere de la Sante :
+ * autre autorite, autre reference (forme `D/2009/CAM/LOA/07`), et pas d'arrete
+ * d'exploitation distinct. La structure se cree donc par la porte generique,
+ * qui exige cette piece ; ici on verifie seulement qu'elle a bien ete produite.
+ */
 export async function creerAssureur(dto: CreerAssureurDto): Promise<AssureurView> {
   const code = dto.code.trim().toUpperCase();
   const existant = await prisma.assureur.findUnique({ where: { code } });
   if (existant) throw new ConflictError(`Un assureur porte deja le code ${code}`);
 
-  // Un assureur peut avoir des agents sur la plateforme. Dans ce cas sa
-  // structure doit etre de type ASSURANCE, sinon ses agents heriteraient des
+  if (!dto.idStructure) {
+    throw new ValidationError(
+      "Un assureur doit etre rattache a sa structure de type ASSURANCE : c'est elle qui porte son agrement."
+    );
+  }
+
+  // La structure doit etre de type ASSURANCE, sinon ses agents heriteraient des
   // droits d'un hopital ou d'une pharmacie.
-  if (dto.idStructure) {
-    const s = await prisma.structureSante.findUnique({
-      where: { id: dto.idStructure },
-      select: { type: true },
-    });
-    if (!s) throw new NotFoundError('Structure non trouvee');
-    if (s.type !== TypeStructure.ASSURANCE) {
-      throw new ValidationError('La structure rattachee doit etre de type ASSURANCE');
-    }
+  const s = await prisma.structureSante.findUnique({
+    where: { id: dto.idStructure },
+    select: { type: true },
+  });
+  if (!s) throw new NotFoundError('Structure non trouvee');
+  if (s.type !== TypeStructure.ASSURANCE) {
+    throw new ValidationError('La structure rattachee doit etre de type ASSURANCE');
+  }
+
+  // **La ceinture qui rend le blocage reel.** La porte de creation exige
+  // l'agrement, mais une structure anterieure a cette regle — ou issue de la
+  // semence — n'en a pas. Sans ce controle, il suffirait de rattacher
+  // l'assureur a l'une d'elles pour contourner l'exigence.
+  const dossier = await dossierDe(dto.idStructure);
+  if (!dossier.complet) {
+    throw new ValidationError(
+      `Le dossier de ${dossier.nom} est incomplet : il manque ${dossier.manquantes.join(', ')}.`
+    );
   }
 
   const cree = await prisma.assureur.create({

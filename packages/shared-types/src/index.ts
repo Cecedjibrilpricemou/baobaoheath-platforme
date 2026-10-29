@@ -1484,6 +1484,80 @@ export interface CompteCreeView {
  * `motDePasseTemporaire` n'est present que si l'API a genere le mot de passe,
  * c'est-a-dire quand l'appelant n'en a pas fourni.
  */
+// ─── Le dossier reglementaire d'une structure privee ──────────────────────────
+//
+// **La creation n'exigeait aucune preuve.** Une pharmacie sans agrement, une
+// clinique sans autorisation d'exploitation entraient sur la plateforme comme
+// les autres. Depuis le 2026-10-28, les quatre types prives ne se creent plus
+// sans leur dossier : il bloque.
+
+/**
+ * Les pieces retenues.
+ *
+ * On ne garde que ce que les controles exigent reellement (campagne du
+ * 27 juillet 2026) : aucun arrete d'application ne publie de liste
+ * exhaustive, et inventer les autres aurait pose des obstacles que
+ * l'administration elle-meme ne pose pas. `AUTRE` est la soupape — le jour ou
+ * une direction exige le plan architectural, la piece se depose sans
+ * migration.
+ */
+export type TypePieceAgrement =
+  | 'AGREMENT_CREATION'
+  | 'AGREMENT_EXPLOITATION'
+  | 'DIPLOME_RESPONSABLE'
+  | 'INSCRIPTION_ORDRE'
+  /** L'assureur releve de la Banque Centrale, pas du ministere de la Sante. */
+  | 'AGREMENT_ASSURANCE'
+  | 'AUTRE';
+
+/** Une piece deposee. Le contenu ne passe jamais par le JSON : voir `GET /pieces/:id`. */
+export interface PieceAgrementView {
+  id: string;
+  type: TypePieceAgrement;
+  /** En octets, pour l'afficher sans toucher au disque. */
+  taille: number;
+  /** Renseigne pour `AUTRE`, qui ne dit rien de lui-meme. */
+  libelle: string | null;
+  deposeLe: HorodatageApi;
+}
+
+/** GET /admin-structure/structures/:id/dossier */
+export interface DossierAgrementView {
+  idStructure: string;
+  nom: string;
+  type: string;
+  rccm: string | null;
+  numeroAgrementCreation: string | null;
+  numeroAgrementExploitation: string | null;
+  lieuAutorise: string | null;
+  /** Faux pour une structure publique : elle n'a rien a produire. */
+  exigeDesPieces: boolean;
+  /** Vrai aussi quand rien n'est exige — une structure publique est complete. */
+  complet: boolean;
+  manquantes: TypePieceAgrement[];
+  pieces: PieceAgrementView[];
+}
+
+/**
+ * Les identifiants reglementaires, a la creation.
+ *
+ * Tous optionnels dans le type : l'exigence depend du type de structure, et
+ * c'est le serveur qui tranche. Une structure publique n'en fournit aucun.
+ *
+ * Le RCCM identifie l'entite juridique ; il **n'autorise aucune activite
+ * sanitaire**. Deux formes circulent en Guinee et aucun texte officiel n'en
+ * fixe le format : le serveur normalise plutot que de refuser.
+ */
+export interface IdentifiantsReglementairesDto {
+  rccm?: string;
+  /** Pour un assureur, la reference de la decision de la Banque Centrale. */
+  numeroAgrementCreation?: string;
+  /** Sans objet pour un assureur : pas d'arrete d'exploitation distinct. */
+  numeroAgrementExploitation?: string;
+  /** Le lieu que l'agrement autorise. Il peut differer de l'adresse. */
+  lieuAutorise?: string;
+}
+
 export interface CreationStructureView {
   structure: StructureAdminView;
   admin: CompteCreeView;

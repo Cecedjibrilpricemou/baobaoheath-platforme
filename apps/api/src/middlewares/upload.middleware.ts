@@ -1,4 +1,6 @@
 import multer from 'multer';
+import { Request, Response, NextFunction } from 'express';
+import { ValidationError } from '../utils/app-error';
 import path from 'path';
 import fs from 'fs';
 
@@ -59,3 +61,92 @@ export const uploadPhotoAssure = multer({
     cb(null, true);
   },
 }).single('photo');
+
+// ── Les pieces d'agrement des structures privees ─────────────────────
+//
+// **Le filtre de multer ne suffit pas pour un PDF.** `file.mimetype` vient de
+// l'en-tete `Content-Type` envoye par le client : un fichier renomme passe.
+// Pour les images ci-dessus le risque reste faible, `sharp` echouant sur un
+// non-image ; un PDF, lui, est stocke tel quel et rien ne dementirait
+// l'en-tete. Le filtre ci-dessous est donc un refus precoce, pas la
+// verification : celle-ci lit les octets de tete (`estPdf`).
+export const TYPE_PDF = 'application/pdf';
+
+/** 5 Mo : un agrement scanne a plat depasse facilement 2 Mo. */
+export const TAILLE_MAX_PIECE = 5 * 1024 * 1024;
+
+/** Quatre pieces exigees, plus quelques `AUTRE` : dix bornent le dossier. */
+export const NOMBRE_MAX_PIECES = 10;
+
+// `.any()` et non `.fields([...])` : les quatre pieces nommees arrivent sous
+// leur propre nom, mais `AUTRE` peut etre depose plusieurs fois. Les noms de
+// champ sont valides contre l'enum cote service, jamais acceptes tels quels.
+export const uploadPiecesAgrement = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: TAILLE_MAX_PIECE, files: NOMBRE_MAX_PIECES },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== TYPE_PDF) {
+      cb(new Error('Les pièces justificatives doivent être des fichiers PDF.'));
+      return;
+    }
+    cb(null, true);
+  },
+}).any();
+
+/** `%PDF-` : les cinq octets qui ouvrent tout PDF, quelle que soit sa version. */
+const SIGNATURE_PDF = Buffer.from('%PDF-', 'latin1');
+
+/**
+ * Ce qui fait foi. `Content-Type` est declaratif, les octets ne le sont pas.
+ *
+ * Renvoie `true` seulement si le contenu commence par la signature PDF. Un
+ * HTML, un exécutable ou une image renommes en `.pdf` echouent ici, et
+ * echouent **avant** d'etre ecrits sur le disque.
+ */
+export function estPdf(contenu: Buffer): boolean {
+  return contenu.length > SIGNATURE_PDF.length && contenu.subarray(0, SIGNATURE_PDF.length).equals(SIGNATURE_PDF);
+}
+
+/**
+ * Recoit les pieces et traduit les refus de multer en erreurs lisibles.
+ *
+ * Multer rend `LIMIT_FILE_SIZE` et `LIMIT_FILE_COUNT` sans dire de quoi il
+ * parle : laisses tels quels, ils remontent en 500.
+ */
+export function recevoirPiecesAgrement(req: Request, res: Response, next: NextFunction) {
+  uploadPiecesAgrement(req, res, (err: unknown) => {
+    if (!err) { next(); return; }
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        next(new ValidationError('Pièce trop volumineuse (5 Mo maximum par fichier).'));
+        return;
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        next(new ValidationError(`Trop de pièces (${NOMBRE_MAX_PIECES} maximum).`));
+        return;
+      }
+    }
+    next(new ValidationError(err instanceof Error ? err.message : 'Échec du téléversement.'));
+  });
+}
+
+/**
+ * En multipart, les champs texte sont des chaines plates : impossible d'y
+ * porter un objet imbrique comme `admin`. Le client envoie donc un seul champ
+ * `donnees` contenant du JSON, et ce middleware le remet a sa place.
+ *
+ * **Tolerant par necessite.** Une structure publique n'a aucune piece a
+ * fournir et continue de poster du JSON ordinaire : dans ce cas `donnees` est
+ * absent et `req.body` est laisse tel quel. Exiger le multipart partout aurait
+ * casse la creation des postes et centres de sante sans rien y gagner.
+ */
+export function corpsJsonMultipart(req: Request, _res: Response, next: NextFunction) {
+  const brut = (req.body as Record<string, unknown> | undefined)?.['donnees'];
+  if (typeof brut !== 'string') { next(); return; }
+  try {
+    req.body = JSON.parse(brut);
+    next();
+  } catch {
+    next(new ValidationError('Le champ « donnees » ne contient pas du JSON valide.'));
+  }
+}

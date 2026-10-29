@@ -8,6 +8,11 @@ import { logger } from '../config/logger';
 import type { JwtPayload } from '../types/auth.types';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { estStructureHospitaliere } from '../utils/officine.util';
+import {
+    ecrireFichiers, exigeDesPieces, SOUS_AUTORISATION_DU_PARENT, supprimerFichiers,
+    validerIdentifiants, validerPieces,
+    type FichierRecu, type IdentifiantsRecus,
+} from './piece-agrement.service';
 
 const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Role.AGENT_ACCUEIL, Role.TECHNICIEN_LABO];
 
@@ -30,13 +35,32 @@ export function genererMotDePasseTemp(): string {
 }
 
 // ── SUPER_ADMIN : créer structure + admin en une transaction ──────
+/**
+ * Creer une structure, avec son dossier reglementaire s'il en faut un.
+ *
+ * **Le dossier bloque.** Une clinique ou un laboratoire prive n'entre pas sans
+ * ses quatre pieces et ses identifiants : c'est la decision du 2026-10-28. Les
+ * structures publiques, elles, n'ont rien a produire et la creation reste un
+ * POST JSON ordinaire — exiger un agrement prive d'un CHU serait un obstacle
+ * invente.
+ *
+ * L'ordre des ecritures n'est pas indifferent : les fichiers partent sur le
+ * disque **avant** la transaction. Un echec d'ecriture ne laisse alors aucune
+ * structure a demi creee, et un echec de transaction ne laisse que des
+ * fichiers orphelins, qu'on supprime.
+ */
 export async function creerStructureAvecAdmin(dto: {
     nom: string; type: string; prefecture: string;
     adresse?: string; latitude?: number; longitude?: number; telephone?: string;
     admin: { prenom: string; nom: string; telephone: string; email?: string; };
-}) {
+} & IdentifiantsRecus, pieces: readonly FichierRecu[] = [], libelles: Readonly<Record<string, string | undefined>> = {}) {
     const typeValid = Object.values(TypeStructure).includes(dto.type as TypeStructure);
     if (!typeValid) throw new ValidationError(`Type invalide : ${dto.type}`);
+
+    // Refuser avant toute ecriture, et avant de consommer un numero de
+    // telephone : un dossier incomplet ne doit rien laisser derriere lui.
+    const identifiants = validerIdentifiants(dto.type, dto);
+    const validees = validerPieces(dto.type, pieces, libelles);
 
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.admin.telephone } });
     if (existingTel) throw new ConflictError('Ce numéro de téléphone est déjà utilisé');
@@ -49,15 +73,26 @@ export async function creerStructureAvecAdmin(dto: {
     const motDePasseTemp = genererMotDePasseTemp();
     const motDePasseHash = await hashPassword(motDePasseTemp);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const fichiersEcrits = await ecrireFichiers(validees);
+
+    let result;
+    try {
+    result = await prisma.$transaction(async (tx) => {
         const structure = await tx.structureSante.create({
             data: {
                 nom: dto.nom, type: dto.type as TypeStructure,
                 prefecture: dto.prefecture, adresse: dto.adresse,
                 latitude: dto.latitude, longitude: dto.longitude,
-                telephone: dto.telephone, estActive: true
+                telephone: dto.telephone, estActive: true,
+                ...identifiants,
             }
         });
+
+        if (fichiersEcrits.length > 0) {
+            await tx.pieceAgrement.createMany({
+                data: fichiersEcrits.map((p) => ({ ...p, idStructure: structure.id })),
+            });
+        }
 
         const admin = await tx.utilisateur.create({
             data: {
@@ -74,6 +109,17 @@ export async function creerStructureAvecAdmin(dto: {
 
         return { structure, admin };
     });
+    } catch (e) {
+        // La structure n'existe pas : ses fichiers ne doivent pas survivre.
+        await supprimerFichiers(fichiersEcrits.map((p) => p.fichier));
+        throw e;
+    }
+
+    if (exigeDesPieces(dto.type)) {
+        logger.info('[AGREMENT] structure privee creee avec son dossier', {
+            idStructure: result.structure.id, type: dto.type, pieces: fichiersEcrits.length,
+        });
+    }
 
     // ── Envoi email si adresse disponible ────────────────────────────
     if (dto.admin.email) {
@@ -105,12 +151,20 @@ export async function creerStructureAvecAdmin(dto: {
     };
 }
 
+/**
+ * Creer une pharmacie, avec son dossier reglementaire si c'est une officine.
+ *
+ * **Seule l'officine independante produit un dossier.** Une pharmacie
+ * hospitaliere n'a pas d'agrement propre : elle opere sous celui de son
+ * hopital. Exiger ses quatre pieces bloquerait un hopital qui ouvre sa
+ * pharmacie interne, pour une autorisation qui n'existe pas.
+ */
 export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
     nom: string; prefecture: string;
     idStructureParente?: string;
     adresse?: string; latitude?: number; longitude?: number; telephone?: string;
     pharmacien: { prenom: string; nom: string; telephone: string; email?: string; motDePasse?: string; };
-}) {
+} & IdentifiantsRecus, pieces: readonly FichierRecu[] = [], libelles: Readonly<Record<string, string | undefined>> = {}) {
     let idStructureParente: string | null = dto.idStructureParente ?? null;
 
     if (auteur.role === Role.ADMIN_STRUCTURE) {
@@ -140,6 +194,12 @@ export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
         throw new ForbiddenError('Vous ne pouvez pas creer une pharmacie');
     }
 
+    // Apres la resolution du parent : c'est lui qui dit si un dossier est du.
+    // Avant toute ecriture : un dossier incomplet ne laisse rien derriere lui.
+    const typeDossier = idStructureParente ? SOUS_AUTORISATION_DU_PARENT : TypeStructure.PHARMACIE;
+    const identifiants = validerIdentifiants(typeDossier, dto);
+    const validees = validerPieces(typeDossier, pieces, libelles);
+
     const existingTel = await prisma.utilisateur.findUnique({ where: { telephone: dto.pharmacien.telephone } });
     if (existingTel) throw new ConflictError('Ce numero de telephone est deja utilise');
 
@@ -152,7 +212,11 @@ export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
     const motDePasseHash = await hashPassword(motDePasseTemp);
     const isTemporaire = !dto.pharmacien.motDePasse;
 
-    const result = await prisma.$transaction(async (tx) => {
+    const fichiersEcrits = await ecrireFichiers(validees);
+
+    let result;
+    try {
+    result = await prisma.$transaction(async (tx) => {
         const structure = await tx.structureSante.create({
             data: {
                 nom: dto.nom,
@@ -163,9 +227,16 @@ export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
                 latitude: dto.latitude,
                 longitude: dto.longitude,
                 telephone: dto.telephone,
-                estActive: true
+                estActive: true,
+                ...identifiants,
             }
         });
+
+        if (fichiersEcrits.length > 0) {
+            await tx.pieceAgrement.createMany({
+                data: fichiersEcrits.map((p) => ({ ...p, idStructure: structure.id })),
+            });
+        }
 
         const pharmacien = await tx.utilisateur.create({
             data: {
@@ -191,6 +262,10 @@ export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
 
         return { structure, pharmacien };
     });
+    } catch (e) {
+        await supprimerFichiers(fichiersEcrits.map((p) => p.fichier));
+        throw e;
+    }
 
     if (dto.pharmacien.email && isTemporaire) {
         try {
