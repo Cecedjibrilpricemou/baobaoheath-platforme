@@ -1804,7 +1804,7 @@
       "ERR_EXPORT": "Erreur lors de l'export."
     },
     "STRUCTURES": {
-      "TYPE_ASSURANCE": "Assureur",
+      "TYPE_ASSURANCE": "Compagnie d'assurance",
       "TITLE": "Structures de santé",
       "SUBTITLE": "Gérez toutes les structures de la plateforme",
       "NEW_BTN": "Nouvelle structure",
@@ -2294,7 +2294,10 @@
       "ANNULER": "Annuler",
       "ASSUREUR_CREE": "Assureur {{nom}} déclaré.",
       "REGLE_AJOUTEE": "Règle de couverture ajoutée.",
-      "POLICE_CREEE": "Police {{numero}} enregistrée."
+      "POLICE_CREEE": "Police {{numero}} enregistrée.",
+      "STRUCTURE": "Structure de la compagnie",
+      "STRUCTURE_AIDE": "C'est elle qui porte l'agrément de la Banque Centrale et le RCCM.",
+      "STRUCTURE_AUCUNE": "Aucune structure de type « Compagnie d'assurance » n'existe encore. Créez-la d'abord dans Structures, avec son agrément."
     },
     "NAV_ASSURANCE": "Assurance",
     "ADMINISTRATEURS": {
@@ -3695,6 +3698,48 @@
       },
       "PANEL_TITLE": "Prêt à rejoindre le mouvement ?",
       "PANEL_TEXT": "Créez votre dossier patient en deux minutes, ou faites entrer votre structure sur la plateforme."
+    }
+  },
+  "AGREMENT": {
+    "SECTION_TITRE": "Dossier réglementaire",
+    "SECTION_NOTE": "Obligatoire pour une structure privée. La création est refusée tant que le dossier est incomplet.",
+    "RCCM_LABEL": "Numéro RCCM",
+    "RCCM_PH": "GN.TCC.2026.A.14724",
+    "RCCM_HINT": "L'immatriculation au registre du commerce (APIP). Elle identifie la société ; elle n'autorise aucune activité sanitaire.",
+    "LIEU_LABEL": "Lieu autorisé par l'agrément",
+    "LIEU_PH": "Quartier, commune, préfecture tels qu'ils figurent sur l'arrêté",
+    "LIEU_HINT": "Tel qu'il figure sur l'agrément. S'il diffère de l'adresse réelle, c'est précisément cet écart qu'un contrôle sanctionne.",
+    "CREATION_LABEL": "Numéro de l'agrément de création",
+    "CREATION_PH": "ARR/2026/MSHP/0123",
+    "EXPLOITATION_LABEL": "Numéro de l'agrément d'exploitation",
+    "EXPLOITATION_PH": "ARR/2026/MSHP/0456",
+    "EXPLOITATION_HINT": "Distinct de l'agrément de création : les deux sont exigés lors des contrôles.",
+    "BCRG_LABEL": "Référence de l'agrément de la Banque Centrale",
+    "BCRG_PH": "D/2026/CAM/LOA/07",
+    "BCRG_HINT": "L'assurance relève de la Banque Centrale, pas du ministère de la Santé : une seule référence, pas d'arrêté d'exploitation distinct.",
+    "ERR_IDENTIFIANTS": "Renseignez le RCCM, le lieu autorisé et les numéros d'agrément avant de créer.",
+    "ERR_PIECES": "Joignez toutes les pièces exigées avant de créer.",
+    "PIECE": {
+      "TITRE": "Pièces à joindre",
+      "AIDE": "Chaque pièce doit être un PDF de 5 Mo au maximum. Les documents restent privés : seuls l'administration et la structure elle-même peuvent les consulter.",
+      "COMPTE": "{{deposees}}/{{total}} jointes",
+      "CHOISIR": "Joindre",
+      "REMPLACER": "Remplacer",
+      "RETIRER": "Retirer cette pièce",
+      "TROP_GROS": "Fichier trop volumineux : 5 Mo au maximum.",
+      "PAS_UN_PDF": "Ce fichier n'est pas un PDF.",
+      "AGREMENT_CREATION": "Agrément de création",
+      "AGREMENT_CREATION_AIDE": "L'arrêté autorisant la création de l'établissement.",
+      "AGREMENT_EXPLOITATION": "Agrément d'exploitation",
+      "AGREMENT_EXPLOITATION_AIDE": "L'arrêté autorisant l'exploitation. Distinct de celui de création.",
+      "DIPLOME_RESPONSABLE": "Diplôme du responsable",
+      "DIPLOME_RESPONSABLE_AIDE": "Légalisé. Pharmacien, médecin ou biologiste selon le type d'établissement.",
+      "INSCRIPTION_ORDRE": "Inscription à l'ordre",
+      "INSCRIPTION_ORDRE_AIDE": "L'attestation d'inscription à l'ordre professionnel compétent.",
+      "AGREMENT_ASSURANCE": "Agrément de la Banque Centrale",
+      "AGREMENT_ASSURANCE_AIDE": "La décision d'agrément délivrée par la BCRG pour les branches exercées.",
+      "AUTRE": "Pièce complémentaire",
+      "AUTRE_AIDE": "Tout autre document réclamé par la direction compétente."
     }
   }
 }

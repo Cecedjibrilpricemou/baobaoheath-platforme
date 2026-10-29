@@ -68,6 +68,11 @@ const FAMILLES: { prefixe: string; valeurs: readonly string[] }[] = [
   // rendre : le badge de l'ecran des conseillees construit sa cle a partir du
   // type renvoye par l'API, donc TYPES_RECEVEURS doit etre couvert en entier.
   { prefixe: 'LABO.CHOIX.GROUPE.', valeurs: ['INTERNE', 'CONSEILLE', 'AUTRE'] },
+  // Le gabarit des pieces d'agrement construit `AGREMENT.PIECE.<TYPE>` **et**
+  // `AGREMENT.PIECE.<TYPE>_AIDE` a l'execution : un suffixe oublie s'afficherait
+  // en clair a l'ecran, au milieu d'un formulaire bloquant.
+  { prefixe: 'AGREMENT.PIECE.', valeurs: ['AGREMENT_CREATION', 'AGREMENT_EXPLOITATION', 'DIPLOME_RESPONSABLE', 'INSCRIPTION_ORDRE', 'AGREMENT_ASSURANCE', 'AUTRE'] },
+  { prefixe: 'AGREMENT.PIECE.', valeurs: ['AGREMENT_CREATION_AIDE', 'AGREMENT_EXPLOITATION_AIDE', 'DIPLOME_RESPONSABLE_AIDE', 'INSCRIPTION_ORDRE_AIDE', 'AGREMENT_ASSURANCE_AIDE', 'AUTRE_AIDE'] },
 ];
 
 const cheminsLangues = Object.fromEntries(

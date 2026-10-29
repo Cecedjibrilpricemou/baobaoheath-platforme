@@ -69,6 +69,22 @@
             <input matInput [(ngModel)]="nouvelAssureur.email" name="email" type="email" autocomplete="off" />
           </mat-form-field>
 
+          <!-- La structure porte l'agrement de la Banque Centrale : sans
+               elle, rien ne prouve que la compagnie est agreee. -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.ASSURANCE.STRUCTURE' | translate }} *</mat-label>
+            <mat-select [(ngModel)]="nouvelAssureur.idStructure" name="structure">
+              @for (s of structuresAssurance(); track s.id) {
+                <mat-option [value]="s.id">{{ s.nom }} · {{ s.prefecture }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>
+              {{ (structuresAssurance().length === 0
+                    ? 'ADMIN.ASSURANCE.STRUCTURE_AUCUNE'
+                    : 'ADMIN.ASSURANCE.STRUCTURE_AIDE') | translate }}
+            </mat-hint>
+          </mat-form-field>
+
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>{{ 'ADMIN.ASSURANCE.MODE_ECHANGE' | translate }}</mat-label>
             <mat-select [(ngModel)]="nouvelAssureur.modeEchange" name="mode">

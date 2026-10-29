@@ -138,6 +138,71 @@
   />
 </mat-form-field></div>
       </div>
+
+      <!-- Le dossier reglementaire. **Il bloque** : une pharmacie
+           independante, une clinique, un laboratoire prive ou un assureur ne
+           se creent pas sans lui. Une structure publique n'a rien a produire
+           et ne voit donc rien de ce bloc. -->
+      @if (exigeUnDossier()) {
+        <h4 class="bb-struct__section-label">{{ 'AGREMENT.SECTION_TITRE' | translate }}</h4>
+        <p class="bb-struct__section-note">{{ 'AGREMENT.SECTION_NOTE' | translate }}</p>
+
+        <div class="bb-struct__form-grid">
+          <div class="bb-struct__field">
+            <label for="struct-rccm">{{ 'AGREMENT.RCCM_LABEL' | translate }} *</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="struct-rccm" maxlength="40"
+                     [(ngModel)]="newStructure.rccm"
+                     [placeholder]="'AGREMENT.RCCM_PH' | translate" />
+            </mat-form-field>
+            <small class="form-hint">{{ 'AGREMENT.RCCM_HINT' | translate }}</small>
+          </div>
+
+          <div class="bb-struct__field">
+            <label for="struct-lieu">{{ 'AGREMENT.LIEU_LABEL' | translate }} *</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="struct-lieu" maxlength="200"
+                     [(ngModel)]="newStructure.lieuAutorise"
+                     [placeholder]="'AGREMENT.LIEU_PH' | translate" />
+            </mat-form-field>
+            <small class="form-hint">{{ 'AGREMENT.LIEU_HINT' | translate }}</small>
+          </div>
+
+          <div class="bb-struct__field">
+            <label for="struct-agr-creation">
+              {{ (estAssureur() ? 'AGREMENT.BCRG_LABEL' : 'AGREMENT.CREATION_LABEL') | translate }} *
+            </label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+              <input matInput id="struct-agr-creation" maxlength="120"
+                     [(ngModel)]="newStructure.numeroAgrementCreation"
+                     [placeholder]="(estAssureur() ? 'AGREMENT.BCRG_PH' : 'AGREMENT.CREATION_PH') | translate" />
+            </mat-form-field>
+            @if (estAssureur()) {
+              <small class="form-hint">{{ 'AGREMENT.BCRG_HINT' | translate }}</small>
+            }
+          </div>
+
+          <!-- La Banque Centrale ne delivre pas d'arrete d'exploitation
+               distinct : le champ n'a pas lieu d'exister pour un assureur. -->
+          @if (!estAssureur()) {
+            <div class="bb-struct__field">
+              <label for="struct-agr-exploitation">{{ 'AGREMENT.EXPLOITATION_LABEL' | translate }} *</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bb-field-full">
+                <input matInput id="struct-agr-exploitation" maxlength="120"
+                       [(ngModel)]="newStructure.numeroAgrementExploitation"
+                       [placeholder]="'AGREMENT.EXPLOITATION_PH' | translate" />
+              </mat-form-field>
+              <small class="form-hint">{{ 'AGREMENT.EXPLOITATION_HINT' | translate }}</small>
+            </div>
+          }
+        </div>
+
+        <app-pieces-agrement
+          [type]="newStructure.type"
+          (pieces)="pieces.set($event)"
+          (complet)="piecesCompletes.set($event)" />
+      }
+
       <h4 class="bb-struct__section-label">{{ 'ADMIN.STRUCTURES.RESPONSABLE_SECTION_TITLE' | translate }}</h4>
       <p class="bb-struct__section-note">{{ 'ADMIN.STRUCTURES.RESPONSABLE_SECTION_NOTE' | translate }}</p>
       <div class="bb-struct__form-grid">
@@ -172,7 +237,7 @@
       </div>
       <div class="bb-struct__form-actions">
         <button class="bb-struct__cancel-btn" (click)="showForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button class="bb-struct__save-btn" (click)="creerStructure()" [disabled]="isSaving()">
+        <button class="bb-struct__save-btn" (click)="creerStructure()" [disabled]="!peutEnvoyer()">
           <i class="pi pi-building"></i> {{ (isSaving() ? 'ADMIN.STRUCTURES.CREATING' : 'ADMIN.STRUCTURES.CREATE_BTN') | translate }}
         </button>
       </div>

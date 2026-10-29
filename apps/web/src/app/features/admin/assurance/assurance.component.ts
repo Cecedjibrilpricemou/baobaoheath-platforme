@@ -28,6 +28,7 @@ import type {
   ContratAssuranceView,
   ModeEchangeAssureur,
   PatientContratRechercheView,
+  StructureAdminView,
 } from '@baobaoheath/shared-types';
 import { AdminService } from '../../../core/services/admin.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
@@ -69,9 +70,24 @@ export class AssuranceComponent implements OnInit {
   readonly motDePasseAgent = signal<{ assureurNom: string; resultat: AgentAssureurCreeView } | null>(null);
 
   nouvelAssureur = {
-    nom: '', code: '', telephone: '', email: '',
+    nom: '', code: '', telephone: '', email: '', idStructure: '',
     modeEchange: 'MANUEL' as ModeEchangeAssureur,
   };
+
+  /**
+   * Les structures de type ASSURANCE disponibles.
+   *
+   * **Un assureur ne peut plus exister sans sa structure** : c'est elle qui
+   * porte son agrement de la Banque Centrale, son RCCM et son siege autorise.
+   * L'enregistrement `Assureur` ne porte que la configuration metier — le code
+   * imprime sur la carte, le mode d'echange.
+   *
+   * La structure se cree depuis l'administration des structures, ou son
+   * agrement est exige. Si son dossier est incomplet, le serveur refuse le
+   * rattachement et **nomme ce qui manque** : on laisse parler ce message
+   * plutot que de recalculer la completude ici.
+   */
+  structuresAssurance = signal<StructureAdminView[]>([]);
 
   nouvelleRegle = {
     categorie: 'MEDICAMENT' as CategorieProduit,
@@ -101,6 +117,20 @@ export class AssuranceComponent implements OnInit {
 
   ngOnInit(): void {
     this.chargerAssureurs();
+    this.chargerStructuresAssurance();
+  }
+
+  private chargerStructuresAssurance(): void {
+    this.admin.getStructures(1, 200).subscribe({
+      next: (r) => {
+        const page = r.data as unknown as { items?: StructureAdminView[] } | StructureAdminView[] | undefined;
+        const liste = Array.isArray(page) ? page : page?.items ?? [];
+        this.structuresAssurance.set(liste.filter((s) => s.type === 'ASSURANCE' && s.estActive));
+      },
+      // Silencieux : l'ecran reste utilisable pour tout le reste, et le champ
+      // vide dit lui-meme qu'aucune structure n'est disponible.
+      error: () => this.structuresAssurance.set([]),
+    });
   }
 
   // ── Assureurs ──────────────────────────────────────────────────────
@@ -121,7 +151,9 @@ export class AssuranceComponent implements OnInit {
   peutCreerAssureur(): boolean {
     return !this.enregistre()
       && this.nouvelAssureur.nom.trim().length > 1
-      && this.nouvelAssureur.code.trim().length > 1;
+      && this.nouvelAssureur.code.trim().length > 1
+      // Sans structure, le serveur refuse : autant ne pas laisser cliquer.
+      && this.nouvelAssureur.idStructure.length > 0;
   }
 
   creerAssureur(): void {
@@ -132,6 +164,7 @@ export class AssuranceComponent implements OnInit {
       nom: a.nom.trim(),
       code: a.code.trim().toUpperCase(),
       modeEchange: a.modeEchange,
+      idStructure: a.idStructure,
       ...(a.telephone.trim() ? { telephone: a.telephone.trim() } : {}),
       ...(a.email.trim() ? { email: a.email.trim() } : {}),
     }).subscribe({
@@ -139,7 +172,7 @@ export class AssuranceComponent implements OnInit {
         this.enregistre.set(false);
         this.formAssureur.set(false);
         this.toastr.success(this.i18n.t('ADMIN.ASSURANCE.ASSUREUR_CREE', { nom: r.data?.nom ?? '' }));
-        this.nouvelAssureur = { nom: '', code: '', telephone: '', email: '', modeEchange: 'MANUEL' };
+        this.nouvelAssureur = { nom: '', code: '', telephone: '', email: '', idStructure: '', modeEchange: 'MANUEL' };
         this.chargerAssureurs();
       },
       error: (err) => this.echec(err),

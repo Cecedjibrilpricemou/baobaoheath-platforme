@@ -1,5 +1,5 @@
 // features/admin/structures/structures.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -8,9 +8,10 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastrService } from 'ngx-toastr';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
+import { PiecesAgrementComponent } from '../../../shared/components/pieces-agrement/pieces-agrement.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
-import type { CreationPharmacieView, CreationStructureView, StructureAdminView } from '@baobaoheath/shared-types';
+import type { CreationPharmacieView, CreationStructureView, StructureAdminView, TypePieceAgrement } from '@baobaoheath/shared-types';
 
 // Contenu de la modale de confirmation : assemble cote client a partir de la
 // reponse de creation, il n'a pas d'equivalent dans une reponse d'API.
@@ -26,7 +27,8 @@ interface MotDePasseAffiche {
   selector: 'app-structures',
   standalone: true,
   imports: [
-    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
+    MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe,
+    ExportListeComponent, PiecesAgrementComponent],
   templateUrl: './structures.component.html',
   styleUrl: './structures.component.scss'
 })
@@ -47,8 +49,38 @@ export class StructuresComponent implements OnInit {
   newStructure = {
     nom: '', type: 'CENTRE', prefecture: '', adresse: '',
     latitude: null as number | null, longitude: null as number | null, telephone: '',
+    rccm: '', numeroAgrementCreation: '', numeroAgrementExploitation: '', lieuAutorise: '',
     admin: { prenom: '', nom: '', telephone: '', email: '' }
   };
+
+  /**
+   * Le dossier reglementaire des structures privees.
+   *
+   * **Il bloque** (decision du 2026-10-28) : une pharmacie independante, une
+   * clinique, un laboratoire prive ou un assureur ne se creent pas sans leurs
+   * pieces. Le serveur refuse de toute facon ; l'ecran l'annonce avant, pour
+   * ne pas faire saisir un formulaire entier qui sera rejete.
+   */
+  pieces = signal<Partial<Record<TypePieceAgrement, File>>>({});
+  piecesCompletes = signal(false);
+
+  /** Les types qui doivent produire un dossier. Le public n'en produit aucun. */
+  private static readonly TYPES_PRIVES = ['PHARMACIE', 'CLINIQUE', 'LABORATOIRE', 'ASSURANCE'];
+
+  readonly exigeUnDossier = computed(() =>
+    StructuresComponent.TYPES_PRIVES.includes(this.newStructure.type));
+
+  /** L'assureur releve de la Banque Centrale : une seule reference, pas deux. */
+  readonly estAssureur = computed(() => this.newStructure.type === 'ASSURANCE');
+
+  /**
+   * Le formulaire est-il envoyable ?
+   *
+   * Lu par le gabarit pour desactiver le bouton : un envoi parti sans ses
+   * pieces reviendrait en 400, apres le temps de montee des fichiers.
+   */
+  readonly peutEnvoyer = computed(() =>
+    !this.isSaving() && (!this.exigeUnDossier() || this.piecesCompletes()));
 
   get typeOptions() {
     return [
@@ -59,7 +91,11 @@ export class StructuresComponent implements OnInit {
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CHU'),          value: 'CHU'          },
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_CLINIQUE'),     value: 'CLINIQUE'     },
       { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_LABORATOIRE'),  value: 'LABORATOIRE'  },
-      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_PHARMACIE'),    value: 'PHARMACIE'    }
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_PHARMACIE'),    value: 'PHARMACIE'    },
+      // **Aucune route ne savait creer cette structure** : elle n'existait que
+      // par la semence. Or c'est elle qui porte l'agrement de l'assureur, donc
+      // sans elle aucun assureur ne peut etre inscrit.
+      { label: this.i18n.t('ADMIN.STRUCTURES.TYPE_ASSURANCE'),    value: 'ASSURANCE'    }
     ];
   }
 
@@ -101,6 +137,22 @@ export class StructuresComponent implements OnInit {
     if (!this.newStructure.admin.prenom || !this.newStructure.admin.nom || !this.newStructure.admin.telephone || !this.newStructure.admin.email) {
       this.toastr.error(this.i18n.t('ADMIN.STRUCTURES.ERR_VALIDATION_ADMIN'), validationTitle); return;
     }
+    // Les identifiants reglementaires, pour les seuls types prives. Le
+    // serveur les exige aussi : ce controle evite une montee de fichiers pour
+    // rien, il ne la remplace pas.
+    if (this.exigeUnDossier()) {
+      const manquants = !this.newStructure.rccm.trim()
+        || !this.newStructure.lieuAutorise.trim()
+        || !this.newStructure.numeroAgrementCreation.trim()
+        || (!this.estAssureur() && !this.newStructure.numeroAgrementExploitation.trim());
+      if (manquants) {
+        this.toastr.error(this.i18n.t('AGREMENT.ERR_IDENTIFIANTS'), validationTitle); return;
+      }
+      if (!this.piecesCompletes()) {
+        this.toastr.error(this.i18n.t('AGREMENT.ERR_PIECES'), validationTitle); return;
+      }
+    }
+
     this.isSaving.set(true);
 
     const nomStructureCree = this.newStructure.nom;
@@ -116,6 +168,7 @@ export class StructuresComponent implements OnInit {
         telephone: this.newStructure.telephone || undefined,
         latitude: this.newStructure.latitude || undefined,
         longitude: this.newStructure.longitude || undefined,
+        ...this.identifiants(),
         pharmacien: {
           prenom: this.newStructure.admin.prenom,
           nom: this.newStructure.admin.nom,
@@ -123,7 +176,7 @@ export class StructuresComponent implements OnInit {
           email: this.newStructure.admin.email || undefined
         }
       };
-      request$ = this.adminService.createPharmacie(payload);
+      request$ = this.adminService.createPharmacie(payload, this.pieces());
     } else {
       const payload = {
         nom: this.newStructure.nom,
@@ -133,6 +186,7 @@ export class StructuresComponent implements OnInit {
         telephone: this.newStructure.telephone || undefined,
         latitude: this.newStructure.latitude || undefined,
         longitude: this.newStructure.longitude || undefined,
+        ...this.identifiants(),
         admin: {
           prenom: this.newStructure.admin.prenom,
           nom: this.newStructure.admin.nom,
@@ -140,7 +194,7 @@ export class StructuresComponent implements OnInit {
           email: this.newStructure.admin.email || undefined
         }
       };
-      request$ = this.adminService.createStructure(payload);
+      request$ = this.adminService.createStructure(payload, this.pieces());
     }
 
     request$.subscribe({
@@ -151,8 +205,13 @@ export class StructuresComponent implements OnInit {
         this.newStructure = {
           nom: '', type: 'CENTRE', prefecture: '', adresse: '',
           latitude: null, longitude: null, telephone: '',
+          rccm: '', numeroAgrementCreation: '', numeroAgrementExploitation: '', lieuAutorise: '',
           admin: { prenom: '', nom: '', telephone: '', email: '' }
         };
+        // Les fichiers retenus doivent partir avec le formulaire : les garder
+        // ferait joindre l'agrement d'une clinique a la structure suivante.
+        this.pieces.set({});
+        this.piecesCompletes.set(false);
 
         const adminData = data?.admin ?? data?.pharmacien;
         // Les deux endpoints renvoient la structure sous la meme cle.
@@ -229,4 +288,24 @@ export class StructuresComponent implements OnInit {
     return this.typeOptions.find(t => t.value === type)?.label ?? type;
   }
 
+
+  /**
+   * Les identifiants reglementaires a envoyer.
+   *
+   * Vides pour une structure publique : elle n'a rien a produire, et envoyer
+   * des chaines vides ferait croire a une saisie.
+   */
+  private identifiants(): Record<string, string | undefined> {
+    if (!this.exigeUnDossier()) return {};
+    return {
+      rccm: this.newStructure.rccm.trim() || undefined,
+      numeroAgrementCreation: this.newStructure.numeroAgrementCreation.trim() || undefined,
+      // Sans objet chez la Banque Centrale : pas d'arrete d'exploitation
+      // distinct, contrairement au ministere de la Sante.
+      numeroAgrementExploitation: this.estAssureur()
+        ? undefined
+        : this.newStructure.numeroAgrementExploitation.trim() || undefined,
+      lieuAutorise: this.newStructure.lieuAutorise.trim() || undefined,
+    };
+  }
 }

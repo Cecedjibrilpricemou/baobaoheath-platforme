@@ -1,0 +1,163 @@
+// ✦ Refonte UI : le dossier réglementaire, une ligne par pièce exigée.
+.bb-pieces {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: var(--bb-surface-1);
+  border: 1px solid var(--bb-border-light);
+  border-radius: var(--bb-radius-lg);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__titre {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 700 0.84rem var(--bb-font-display);
+    color: var(--bb-text-primary);
+  }
+
+  // Le compte est la seule information qui dit où on en est : il passe au vert
+  // quand le dossier est complet, pas avant.
+  &__compte {
+    flex: none;
+    padding: 2px 10px;
+    font: 700 0.74rem var(--bb-font-mono);
+    color: var(--bb-warning);
+    background: var(--bb-warning-bg);
+    border: 1px solid var(--bb-warning-border);
+    border-radius: var(--bb-radius-pill);
+
+    &--ok {
+      color: var(--bb-success);
+      background: var(--bb-success-bg);
+      border-color: var(--bb-success-border);
+    }
+  }
+
+  &__aide {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__ligne {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: var(--bb-surface-0);
+    border: 1px solid var(--bb-border-light);
+    border-left: 3px solid var(--bb-warning);
+    border-radius: var(--bb-radius);
+    transition: border-color var(--bb-transition);
+
+    &--ok { border-left-color: var(--bb-success); }
+  }
+
+  &__texte {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+
+  &__nom {
+    font: 600 0.86rem var(--bb-font-body);
+    color: var(--bb-text-primary);
+  }
+
+  &__detail {
+    font-size: 0.74rem;
+    color: var(--bb-text-muted);
+  }
+
+  &__fichier {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    font: 500 0.76rem var(--bb-font-mono);
+    color: var(--bb-success);
+    overflow-wrap: anywhere;
+  }
+
+  &__refus {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    font-size: 0.76rem;
+    color: var(--bb-danger);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+  }
+
+  // Le champ `file` natif est illisible et ne se style pas : le label porte
+  // l'apparence, l'input reste accessible mais hors écran visuel.
+  &__bouton {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    font: 600 0.78rem var(--bb-font-body);
+    color: var(--bb-primary);
+    background: color-mix(in srgb, var(--bb-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bb-primary) 26%, transparent);
+    border-radius: var(--bb-radius-pill);
+    cursor: pointer;
+    transition: background var(--bb-transition);
+
+    &:hover { background: color-mix(in srgb, var(--bb-primary) 15%, transparent); }
+
+    // `opacity: 0` et non `display: none` : un input caché ne reçoit plus le
+    // focus clavier, et le bouton deviendrait inatteignable au Tab.
+    input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    &:focus-within { outline: var(--bb-focus-ring); outline-offset: 2px; }
+  }
+
+  &__retirer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    color: var(--bb-danger);
+    background: transparent;
+    border: 1px solid var(--bb-danger-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background var(--bb-transition);
+
+    &:hover { background: var(--bb-danger-bg); }
+    &:focus-visible { outline: var(--bb-focus-ring); outline-offset: 2px; }
+  }
+}
+
+:host-context([data-theme='dark']) .bb-pieces {
+  background: var(--bb-surface-2);
+
+  &__ligne { background: var(--bb-surface-1); }
+}

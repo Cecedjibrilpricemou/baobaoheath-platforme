@@ -1314,7 +1314,7 @@
       "ERR_EXPORT": "Error while exporting."
     },
     "STRUCTURES": {
-      "TYPE_ASSURANCE": "Insurer",
+      "TYPE_ASSURANCE": "Insurance company",
       "TITLE": "Health Facilities",
       "SUBTITLE": "Manage all facilities on the platform",
       "NEW_BTN": "New facility",
@@ -1804,7 +1804,10 @@
       "ANNULER": "Cancel",
       "ASSUREUR_CREE": "Insurer {{nom}} declared.",
       "REGLE_AJOUTEE": "Coverage rule added.",
-      "POLICE_CREEE": "Policy {{numero}} recorded."
+      "POLICE_CREEE": "Policy {{numero}} recorded.",
+      "STRUCTURE": "The company's facility",
+      "STRUCTURE_AIDE": "It is the one carrying the Central Bank licence and the RCCM.",
+      "STRUCTURE_AUCUNE": "No facility of type “Insurance company” exists yet. Create it first under Facilities, with its licence."
     },
     "NAV_ASSURANCE": "Insurance",
     "ADMINISTRATEURS": {
@@ -3695,6 +3698,48 @@
       },
       "PANEL_TITLE": "Ready to join?",
       "PANEL_TEXT": "Create your patient record in two minutes, or bring your facility onto the platform."
+    }
+  },
+  "AGREMENT": {
+    "SECTION_TITRE": "Regulatory file",
+    "SECTION_NOTE": "Required for a private facility. Creation is refused while the file is incomplete.",
+    "RCCM_LABEL": "RCCM number",
+    "RCCM_PH": "GN.TCC.2026.A.14724",
+    "RCCM_HINT": "The trade register entry (APIP). It identifies the company; it authorises no health activity.",
+    "LIEU_LABEL": "Location authorised by the licence",
+    "LIEU_PH": "Neighbourhood, commune, prefecture as written on the order",
+    "LIEU_HINT": "As written on the licence. A gap with the real address is exactly what an inspection penalises.",
+    "CREATION_LABEL": "Creation licence number",
+    "CREATION_PH": "ARR/2026/MSHP/0123",
+    "EXPLOITATION_LABEL": "Operating licence number",
+    "EXPLOITATION_PH": "ARR/2026/MSHP/0456",
+    "EXPLOITATION_HINT": "Separate from the creation licence: inspections ask for both.",
+    "BCRG_LABEL": "Central Bank licence reference",
+    "BCRG_PH": "D/2026/CAM/LOA/07",
+    "BCRG_HINT": "Insurance is supervised by the Central Bank, not the Ministry of Health: one reference, no separate operating order.",
+    "ERR_IDENTIFIANTS": "Fill in the RCCM, the authorised location and the licence numbers before creating.",
+    "ERR_PIECES": "Attach every required document before creating.",
+    "PIECE": {
+      "TITRE": "Documents to attach",
+      "AIDE": "Each document must be a PDF of at most 5 MB. Files stay private: only the administration and the facility itself can open them.",
+      "COMPTE": "{{deposees}}/{{total}} attached",
+      "CHOISIR": "Attach",
+      "REMPLACER": "Replace",
+      "RETIRER": "Remove this document",
+      "TROP_GROS": "File too large: 5 MB maximum.",
+      "PAS_UN_PDF": "This file is not a PDF.",
+      "AGREMENT_CREATION": "Creation licence",
+      "AGREMENT_CREATION_AIDE": "The order authorising the facility's creation.",
+      "AGREMENT_EXPLOITATION": "Operating licence",
+      "AGREMENT_EXPLOITATION_AIDE": "The order authorising operation. Separate from the creation one.",
+      "DIPLOME_RESPONSABLE": "Head practitioner's diploma",
+      "DIPLOME_RESPONSABLE_AIDE": "Certified. Pharmacist, doctor or biologist depending on the facility type.",
+      "INSCRIPTION_ORDRE": "Professional order registration",
+      "INSCRIPTION_ORDRE_AIDE": "The certificate of registration with the relevant professional order.",
+      "AGREMENT_ASSURANCE": "Central Bank licence",
+      "AGREMENT_ASSURANCE_AIDE": "The licence decision issued by the BCRG for the lines of business carried.",
+      "AUTRE": "Additional document",
+      "AUTRE_AIDE": "Any other document the relevant directorate asks for."
     }
   }
 }

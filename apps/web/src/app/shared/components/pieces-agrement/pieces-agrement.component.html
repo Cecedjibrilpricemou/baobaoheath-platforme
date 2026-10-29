@@ -1,0 +1,58 @@
+<!-- Rien à demander : structure publique, ou pharmacie sous l'autorisation de
+     son hôpital. On ne montre pas un bloc vide, on ne montre rien. -->
+@if (exigeDesPieces()) {
+  <div class="bb-pieces">
+    <div class="bb-pieces__head">
+      <span class="bb-pieces__titre">
+        <i class="pi pi-paperclip" aria-hidden="true"></i>
+        {{ 'AGREMENT.PIECE.TITRE' | translate }}
+      </span>
+      <span class="bb-pieces__compte"
+            [class.bb-pieces__compte--ok]="manquantes().length === 0">
+        {{ 'AGREMENT.PIECE.COMPTE' | translate: {
+             deposees: requises().length - manquantes().length, total: requises().length
+           } }}
+      </span>
+    </div>
+
+    <p class="bb-pieces__aide">{{ 'AGREMENT.PIECE.AIDE' | translate }}</p>
+
+    @for (p of requises(); track p) {
+      <div class="bb-pieces__ligne" [class.bb-pieces__ligne--ok]="nomDe(p)">
+        <div class="bb-pieces__texte">
+          <span class="bb-pieces__nom">{{ 'AGREMENT.PIECE.' + p | translate }} *</span>
+          <small class="bb-pieces__detail">{{ 'AGREMENT.PIECE.' + p + '_AIDE' | translate }}</small>
+
+          @if (nomDe(p)) {
+            <small class="bb-pieces__fichier">
+              <i class="pi pi-file-pdf" aria-hidden="true"></i>
+              {{ nomDe(p) }} · {{ tailleDe(p) }}
+            </small>
+          }
+          <!-- Refusé avant l'envoi : sur un réseau lent, découvrir le problème
+               après dix minutes de téléversement se paie en temps perdu. -->
+          @if (refusDe(p)) {
+            <small class="bb-pieces__refus" role="alert">
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+              {{ refusDe(p)! | translate }}
+            </small>
+          }
+        </div>
+
+        <div class="bb-pieces__actions">
+          <label class="bb-pieces__bouton">
+            <i class="pi" [class.pi-upload]="!nomDe(p)" [class.pi-refresh]="nomDe(p)" aria-hidden="true"></i>
+            {{ (nomDe(p) ? 'AGREMENT.PIECE.REMPLACER' : 'AGREMENT.PIECE.CHOISIR') | translate }}
+            <input type="file" accept="application/pdf,.pdf" (change)="choisir(p, $event)" />
+          </label>
+          @if (nomDe(p)) {
+            <button type="button" class="bb-pieces__retirer" (click)="retirer(p)"
+                    [attr.aria-label]="'AGREMENT.PIECE.RETIRER' | translate">
+              <i class="pi pi-times" aria-hidden="true"></i>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

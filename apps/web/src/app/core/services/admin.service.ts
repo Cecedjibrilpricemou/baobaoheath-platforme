@@ -21,10 +21,12 @@ import type {
   PatientContratRechercheView,
   IdentitePlateformeView,
   ParametresSystemeView,
+  DossierAgrementView,
   StructureAdminView,
   StructureConseilleeView,
   StructurePubliqueView,
   StructureRefView,
+  TypePieceAgrement,
   UpdateParametresSystemeDto,
 } from '@baobaoheath/shared-types';
 import { ApiResponse, PaginatedData } from '../models/api.model';
@@ -55,12 +57,89 @@ export class AdminService {
     });
   }
 
-  createStructure(payload: Record<string, unknown>): Observable<ApiResponse<CreationStructureView>> {
-    return this.api.post<ApiResponse<CreationStructureView>>('/admin-structure/structures', payload);
+  /**
+   * Creer une structure, avec son dossier reglementaire si elle en doit un.
+   *
+   * **Deux corps possibles, et c'est voulu.** Sans piece, on poste du JSON
+   * ordinaire : une structure publique n'a rien a produire, et l'exiger aurait
+   * casse la creation des postes et centres de sante. Avec des pieces, le
+   * corps devient `multipart/form-data` — et comme un corps multipart ne porte
+   * que des chaines plates, l'objet (avec son `admin` imbrique) voyage dans un
+   * champ `donnees` au format JSON, que le serveur remet a sa place.
+   */
+  createStructure(
+    payload: Record<string, unknown>,
+    pieces: Partial<Record<TypePieceAgrement, File>> = {},
+  ): Observable<ApiResponse<CreationStructureView>> {
+    const corps = this.corpsAvecPieces(payload, pieces);
+    return this.api.post<ApiResponse<CreationStructureView>>('/admin-structure/structures', corps);
   }
 
-  createPharmacie(payload: Record<string, unknown>): Observable<ApiResponse<unknown>> {
-    return this.api.post<ApiResponse<unknown>>('/admin-structure/pharmacies', payload);
+  createPharmacie(
+    payload: Record<string, unknown>,
+    pieces: Partial<Record<TypePieceAgrement, File>> = {},
+  ): Observable<ApiResponse<unknown>> {
+    const corps = this.corpsAvecPieces(payload, pieces);
+    return this.api.post<ApiResponse<unknown>>('/admin-structure/pharmacies', corps);
+  }
+
+  /**
+   * Le corps a envoyer : JSON tant qu'il n'y a pas de piece, multipart sinon.
+   *
+   * Angular laisse le navigateur poser `Content-Type` et sa frontiere des que
+   * le corps est un `FormData` : il ne faut surtout pas le fixer a la main.
+   */
+  private corpsAvecPieces(
+    payload: Record<string, unknown>,
+    pieces: Partial<Record<TypePieceAgrement, File>>,
+  ): unknown {
+    const entrees = Object.entries(pieces).filter(([, f]) => f instanceof File) as [string, File][];
+    if (entrees.length === 0) return payload;
+
+    const corps = new FormData();
+    corps.append('donnees', JSON.stringify(payload));
+    // Le nom du champ est le type de piece : c'est ainsi que le serveur le
+    // reconnait, et il le valide contre son enum avant de s'en servir.
+    for (const [type, fichier] of entrees) corps.append(type, fichier, fichier.name);
+    return corps;
+  }
+
+  /** L'etat du dossier : ce qui est depose, ce qui manque. */
+  dossierStructure(id: string): Observable<ApiResponse<DossierAgrementView>> {
+    return this.api.get<ApiResponse<DossierAgrementView>>(`/admin-structure/structures/${id}/dossier`);
+  }
+
+  /**
+   * Deposer ou remplacer des pieces sur une structure deja creee.
+   *
+   * Deux usages : completer le dossier d'une structure anterieure a la regle,
+   * et **remplacer un agrement renouvele**.
+   */
+  deposerPieces(
+    id: string,
+    pieces: Partial<Record<TypePieceAgrement, File>>,
+    libelles: Partial<Record<TypePieceAgrement, string>> = {},
+  ): Observable<ApiResponse<DossierAgrementView>> {
+    const corps = new FormData();
+    for (const [type, fichier] of Object.entries(pieces)) {
+      if (fichier instanceof File) corps.append(type, fichier, fichier.name);
+    }
+    for (const [type, libelle] of Object.entries(libelles)) {
+      if (libelle) corps.append(type, libelle);
+    }
+    return this.api.post<ApiResponse<DossierAgrementView>>(`/admin-structure/structures/${id}/pieces`, corps);
+  }
+
+  /**
+   * Le contenu d'une piece.
+   *
+   * Par `getBlob` et non par un simple lien : le fichier vit dans le stockage
+   * prive, derriere une route authentifiee. Une URL posee dans un `href`
+   * n'emporterait pas forcement le cookie, l'API ne partageant pas toujours
+   * l'origine du front.
+   */
+  piece(id: string): Observable<Blob> {
+    return this.api.getBlob(`/admin-structure/pieces/${id}`);
   }
 
   getPharmaciesHospitalieres(): Observable<ApiResponse<StructureAdminView[]>> {
