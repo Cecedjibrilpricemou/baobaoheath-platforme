@@ -71,7 +71,7 @@
     "ERR_NAME_REQUIRED": "Prénom et nom sont obligatoires.",
     "SUCCESS_UPDATED": "Profil mis à jour avec succès !",
     "ERR_UPDATE": "Erreur lors de la mise à jour.",
-    "ERR_PWD_SHORT": "Le mot de passe doit contenir au moins 6 caractères.",
+    "ERR_PWD_SHORT": "Le mot de passe doit contenir au moins {{min}} caractères.",
     "ERR_PWD_MATCH": "Les mots de passe ne correspondent pas.",
     "ERR_OLD_PWD_REQUIRED": "L'ancien mot de passe est obligatoire.",
     "SUCCESS_PWD_CHANGED": "Mot de passe changé avec succès !",

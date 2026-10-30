@@ -233,7 +233,7 @@ export const roleAgentStructureSchema = z.enum(['ASC', 'ASC_SUPERVISOR', 'MEDECI
 export const createAgentStructureSchema = z.object({
   telephone: phone,
   email: z.string().trim().email(),
-  motDePasse: z.string().min(6).max(128).optional(),
+  motDePasse: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères.').max(128).optional(),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
   role: roleAgentStructureSchema,
@@ -342,7 +342,7 @@ export const createPharmacieSchema = z.object({
     nom: z.string().trim().min(1).max(80),
     telephone: phone,
     email: optionalEmail,
-    motDePasse: z.string().min(6).max(128).optional(),
+    motDePasse: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères.').max(128).optional(),
   }).strict(),
 }).strict();
 
@@ -355,7 +355,7 @@ export const updateStructureSchema = createStructureSchema
 export const createAgentPharmacieSchema = z.object({
   telephone: phone,
   email: optionalEmail,
-  motDePasse: z.string().min(6).max(128).optional(),
+  motDePasse: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères.').max(128).optional(),
   prenom: z.string().trim().min(1).max(80),
   nom: z.string().trim().min(1).max(80),
 }).strict();
