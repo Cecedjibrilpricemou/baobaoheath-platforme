@@ -106,13 +106,15 @@ Sans Gmail valide, et **en `development` uniquement**, le code OTP est renvoyé 
 
 ## Comptes
 
-Les mots de passe **ne sont pas dans le dépôt**, volontairement. Le jeu de démonstration « Pricemou » (7 comptes, un par métier, mot de passe commun) se recrée sans rien casser :
+Aucun mot de passe n'est écrit dans le dépôt, qui est public. Le jeu de démonstration « Pricemou » (12 comptes, un par métier, dont un agent de santé communautaire et un livreur, et un mot de passe commun) se recrée sans rien casser. Son mot de passe se choisit **hors du dépôt** et se passe à l'appel — 12 caractères minimum, le script refuse de démarrer sans lui :
 
 ```bash
-cd apps/api && npm run prisma:seed:demo
+cd apps/api && SEED_DEMO_PASSWORD=... npm run prisma:seed:demo
 ```
 
-Il ne crée **aucun compte `ASC`** : cet espace n'est donc pas démontrable en l'état.
+La variable peut aussi vivre dans `apps/api/.env`, qui n'est pas suivi par git. Ne la mettez jamais dans `.env.example`.
+
+> Un ancien mot de passe de démonstration et celui du super administrateur restent lisibles dans l'**historique** git. Les retirer des fichiers ne les retire pas de l'historique : ils doivent être considérés comme publics et changés partout où ils ont servi.
 
 ## Tests
 
