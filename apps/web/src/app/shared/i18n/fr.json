@@ -304,7 +304,7 @@
     "TRUST_SECURE": "Données chiffrées et sécurisées",
     "TRUST_MOBILE": "Accessible sur mobile",
     "TRUST_OFFLINE": "Fonctionne en faible débit",
-    "TRUST_MADE": "Made for Guinea 🇬🇳",
+    "TRUST_MADE": "Conçu pour la Guinée",
     "CONTACT_TITLE_A": "Nous",
     "CONTACT_TITLE_B": "contacter",
     "CONTACT_SUB": "Vous avez des questions sur {{nom}} ou vous souhaitez intégrer notre plateforme dans votre structure ? Notre équipe est à votre disposition.",
@@ -332,7 +332,7 @@
   },
   "PATIENT": {
     "ROLE": "Patient",
-    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DASHBOARD": "Tableau de bord",
     "NAV_PROFILE": "Mon Profil",
     "NAV_PROFIL": "Mon Profil",
     "NAV_QR": "QR Code",
@@ -353,7 +353,7 @@
       "NO_VACCINE": "Aucune vaccination",
       "NO_VACCINE_SUB": "Vos vaccinations sont enregistrées par votre agent de santé lors des consultations.",
       "REMINDER": "Rappel",
-      "EXPORTING": "Export...",
+      "EXPORTING": "Export en cours...",
       "DEFAULT_MOTIF": "Consultation générale",
       "WITH_AGENT": "avec {{nom}}"
     },
@@ -380,13 +380,13 @@
       "ANTECEDENTS": "Antécédents médicaux",
       "ANTECEDENTS_PH": "Antécédents médicaux importants...",
       "SAVING": "Sauvegarde...",
-      "EXPORTING": "Export...",
+      "EXPORTING": "Export en cours...",
       "SUCCESS_SAVE": "Profil mis à jour avec succès !",
       "ERR_LOAD": "Impossible de charger votre profil.",
       "ERR_SAVE": "Erreur lors de la sauvegarde.",
       "LOADING": "Chargement du profil...",
       "QUICK_QR": "Mon QR Code",
-      "QUICK_DASHBOARD": "Dashboard",
+      "QUICK_DASHBOARD": "Tableau de bord",
       "QUICK_QR_SUB": "Partager mon dossier en un scan",
       "QUICK_DASHBOARD_SUB": "Aperçu de ma santé",
       "STRUCTURE_TITLE": "Ma structure de santé préférée",
@@ -451,11 +451,11 @@
         "CREATE_BY_ME": "Vous avez ajouté une information dans {{objet}}",
         "DELETE": "Une information a été supprimée de {{objet}}",
         "DELETE_BY_ME": "Vous avez supprimé une information de {{objet}}",
-        "READ": "{{objet}} a été consulté",
+        "READ": "Consultation de votre dossier : {{objet}}",
         "READ_BY_ME": "Vous avez consulté {{objet}}",
         "SCAN": "Votre code a été scanné au comptoir",
         "SCAN_BY_ME": "Vous avez présenté votre code au comptoir",
-        "UPDATE": "{{objet}} a été modifié",
+        "UPDATE": "Modification de votre dossier : {{objet}}",
         "UPDATE_BY_ME": "Vous avez modifié {{objet}}"
       },
       "ACCESS_OBJECT": {
@@ -1101,7 +1101,7 @@
   },
   "MEDECIN": {
     "ROLE": "Médecin",
-    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DASHBOARD": "Tableau de bord",
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_MESSAGERIE": "Messagerie",
     "DASHBOARD": {
@@ -1399,7 +1399,7 @@
       "EMPTY_TITLE": "Aucun médicament trouvé",
       "EMPTY_SUB": "Cliquez sur « Réapprovisionner » pour ajouter de nouveaux stocks.",
       "STOCK_LEVEL": "Niveau de stock",
-      "ALERT_THRESHOLD": "Seuil d'alerte : {{value}} {{unit}}",
+      "ALERT_THRESHOLD": "Seuil d'alerte : {{value}}",
       "EXPIRY_LABEL": "Exp: {{date}}",
       "NO_EXPIRY": "Sans péremption",
       "NIVEAU_CRITIQUE": "Critique",
@@ -1776,7 +1776,7 @@
   },
   "ADMIN": {
     "ROLE": "Administrateur",
-    "NAV_ANALYTICS": "Analytics",
+    "NAV_ANALYTICS": "Statistiques",
     "NAV_EXPORT": "Export DHIS2",
     "NAV_STRUCTURES": "Structures",
     "NAV_SETTINGS": "Paramètres",
@@ -1967,9 +1967,9 @@
     },
     "ANALYTICS": {
       "SUBTITLE": "Tableau de bord épidémiologique — {{nom}} Guinée 🇬🇳",
-      "EXPORT": "Export",
+      "EXPORT": "Exporter",
       "TAB_OVERVIEW": "Vue d'ensemble",
-      "TAB_HEATMAP": "Heatmap",
+      "TAB_HEATMAP": "Carte de densité",
       "TAB_ALERTES": "Alertes",
       "TAB_TENDANCES": "Tendances",
       "TAB_VACCINS": "Vaccinations",
@@ -2019,10 +2019,10 @@
       "ACTION_LABEL": {
         "CREATE": "Information ajoutée dans {{objet}}",
         "DELETE": "Information supprimée de {{objet}}",
-        "READ": "{{objet}} consulté",
+        "READ": "Lecture : {{objet}}",
         "REFUSE": "Tentative refusée sur {{objet}}",
         "SCAN": "Code patient scanné au comptoir",
-        "UPDATE": "{{objet}} modifié"
+        "UPDATE": "Modification : {{objet}}"
       },
       "ACTION_OBJECT": {
         "ACCOUNTS": "Comptes",
@@ -2334,7 +2334,7 @@
   },
   "ADMIN_STRUCTURE": {
     "ROLE": "Admin Structure",
-    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DASHBOARD": "Tableau de bord",
     "NAV_AGENTS": "Mes Agents",
     "NAV_PHARMACIES": "Pharmacies",
     "NAV_ASSURANCES": "Assurances",
@@ -3759,6 +3759,41 @@
       "LIBELLE_REQUIS": "Nommez la pièce avant de la joindre : sans libellé, elle serait illisible dans la liste.",
       "AJOUT_AIDE": "Pour tout document réclamé par la direction compétente et qui ne figure pas ci-dessus.",
       "SANS_STRUCTURE": "Votre compte n'est rattaché à aucune structure : il n'y a pas de dossier à tenir."
+    }
+  },
+  "UNITE": {
+    "REGLE": "fr",
+    "BOITE": {
+      "UN": "boîte",
+      "PLUSIEURS": "boîtes"
+    },
+    "UNITE": {
+      "UN": "unité",
+      "PLUSIEURS": "unités"
+    },
+    "COMPRIME": {
+      "UN": "comprimé",
+      "PLUSIEURS": "comprimés"
+    },
+    "FLACON": {
+      "UN": "flacon",
+      "PLUSIEURS": "flacons"
+    },
+    "SACHET": {
+      "UN": "sachet",
+      "PLUSIEURS": "sachets"
+    },
+    "AMPOULE": {
+      "UN": "ampoule",
+      "PLUSIEURS": "ampoules"
+    },
+    "TUBE": {
+      "UN": "tube",
+      "PLUSIEURS": "tubes"
+    },
+    "PLAQUETTE": {
+      "UN": "plaquette",
+      "PLUSIEURS": "plaquettes"
     }
   }
 }

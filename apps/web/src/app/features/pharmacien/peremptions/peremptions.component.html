@@ -56,7 +56,7 @@
               } @else {
                 {{ 'PHARMACIEN.PEREMPTIONS.SANS_LOT' | translate }}
               }
-              · {{ l.quantite }} {{ l.unite }}
+              · {{ l.quantite | quantiteUnite: l.unite }}
             </span>
           </div>
           <div class="bb-per__droite">
@@ -81,7 +81,7 @@
               } @else {
                 {{ 'PHARMACIEN.PEREMPTIONS.SANS_LOT' | translate }}
               }
-              · {{ l.quantite }} {{ l.unite }}
+              · {{ l.quantite | quantiteUnite: l.unite }}
             </span>
           </div>
           <div class="bb-per__droite">
