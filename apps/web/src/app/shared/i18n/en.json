@@ -3237,6 +3237,7 @@
     "IMPRIMER": "Print",
     "CSV": "Excel (CSV)",
     "LIGNES": "{{n}} row(s)",
+    "LIGNES_SUR": "{{n}} row(s) on this page, out of {{total}}",
     "EDITE_LE": "Issued on {{date}}",
     "EDITE_PAR": "by {{nom}}",
     "COL": {
