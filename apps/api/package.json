@@ -17,11 +17,9 @@
     "prisma:backfill-encryption": "tsx prisma/backfill-encryption.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "@baobaoheath/shared-types": "*",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
-    "@scalar/express-api-reference": "^0.9.9",
     "@sentry/node": "^10.61.0",
     "@types/multer": "^2.2.0",
     "bcryptjs": "^3.0.3",
@@ -40,7 +38,6 @@
     "sharp": "^0.35.4",
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "zod": "^4.3.6"
   },
@@ -55,7 +52,6 @@
     "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.11.11",
     "@types/swagger-ui-express": "^4.1.8",
-    "@types/uuid": "^10.0.0",
     "jest": "^30.5.2",
     "prisma": "^7.5.0",
     "ts-jest": "^29.4.15",
