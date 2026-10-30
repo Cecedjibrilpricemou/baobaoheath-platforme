@@ -22,6 +22,20 @@
   margin: 0 auto;
 }
 
+// Rappel permanent : le moteur applique des regles simples, pas un diagnostic.
+.triage-avertissement {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--bb-border, currentColor);
+  font-size: 0.85rem;
+  color: var(--bb-text-muted, inherit);
+
+  i { margin-top: 2px; }
+}
+
 // ── ÉTAPES ────────────────────────────────────────────────────────
 .wizard-steps {
   display: flex;
