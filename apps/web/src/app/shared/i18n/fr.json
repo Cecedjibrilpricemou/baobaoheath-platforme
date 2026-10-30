@@ -338,7 +338,7 @@
     "NAV_QR": "QR Code",
     "NAV_QR_CODE": "Mon QR Code",
     "DASHBOARD": {
-      "GREETING": "Bonjour 👋",
+      "GREETING": "Bonjour",
       "SUBTITLE": "Votre espace santé personnel",
       "BTN_QR": "Mon QR Code",
       "BTN_PROFILE": "Mon Profil",
