@@ -1,3 +1,10 @@
+# KÈNÈYA — configuration de DÉVELOPPEMENT uniquement.
+#
+# Mot de passe Postgres connu, Postgres et Redis publies, NODE_ENV=development
+# et code OTP renvoye a l'ecran : tout ce qu'il faut pour travailler en local,
+# et tout ce qu'il ne faut pas sur un serveur. Pour la production :
+# docker/docker-compose.prod.yml.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -35,6 +42,9 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
+      # Opt-in explicite depuis fix/docker-prod : sans cette ligne, le code OTP
+      # n'est plus affiche et, sans Gmail configure, aucun professionnel n'entre.
+      EMAIL_OTP_DEV_FALLBACK: 'true'
       PORT: 3000
       DATABASE_URL: postgresql://baobao_user:baobao_password@postgres:5432/baobaoheath_db
       REDIS_URL: redis://redis:6379
