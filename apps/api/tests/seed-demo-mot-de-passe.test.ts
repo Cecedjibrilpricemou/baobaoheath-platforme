@@ -7,7 +7,11 @@
 // defaut ne ferait que deplacer le mot de passe connu d'une ligne.
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { LONGUEUR_MIN_MOT_DE_PASSE_DEMO, lireMotDePasseDemo } from '../prisma/mot-de-passe-demo';
+import {
+  LONGUEUR_MIN_MOT_DE_PASSE_DEMO,
+  lireMotDePasseDemo,
+  lireMotDePasseSuperAdmin,
+} from '../prisma/mot-de-passe-demo';
 
 describe('lireMotDePasseDemo', () => {
   it('refuse de semer sans SEED_DEMO_PASSWORD', () => {
@@ -42,5 +46,32 @@ describe('prisma/seed-demo.ts', () => {
 
   it("n'affiche jamais le mot de passe dans la console", () => {
     expect(source).not.toMatch(/console\.\w+\([^)]*\$\{MOT_DE_PASSE\}/);
+  });
+});
+
+// Le super administrateur (prisma/seed.ts) avait le meme defaut : une valeur
+// de repli ecrite dans le fichier. Toute base creee sans la variable avait
+// donc un super administrateur au mot de passe public.
+describe('lireMotDePasseSuperAdmin', () => {
+  it('refuse de semer sans SEED_SUPER_ADMIN_PASSWORD', () => {
+    expect(() => lireMotDePasseSuperAdmin({})).toThrow(/SEED_SUPER_ADMIN_PASSWORD/);
+  });
+
+  it('refuse un mot de passe trop court', () => {
+    const court = 'x'.repeat(LONGUEUR_MIN_MOT_DE_PASSE_DEMO - 1);
+    expect(() => lireMotDePasseSuperAdmin({ SEED_SUPER_ADMIN_PASSWORD: court })).toThrow(/caracteres/);
+  });
+
+  it('rend la valeur fournie', () => {
+    expect(lireMotDePasseSuperAdmin({ SEED_SUPER_ADMIN_PASSWORD: 'phrase-de-passe-admin' })).toBe('phrase-de-passe-admin');
+  });
+});
+
+describe('prisma/seed.ts', () => {
+  const source = readFileSync(join(__dirname, '..', 'prisma', 'seed.ts'), 'utf8');
+
+  it("n'a plus de mot de passe de repli ecrit en dur", () => {
+    expect(source).not.toMatch(/SEED_SUPER_ADMIN_PASSWORD\s*\?\?/);
+    expect(source).toMatch(/hashPassword\(lireMotDePasseSuperAdmin\(\)\)/);
   });
 });

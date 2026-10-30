@@ -66,7 +66,9 @@ Workspaces npm à la racine. **Il n'y a qu'un seul `package-lock.json`, à la ra
 npm ci                                            # installe les trois workspaces
 cd docker && docker compose up -d postgres        # conteneur baobao_db, port 5433
 cd ../apps/api && npx prisma migrate deploy && npx prisma generate
-npm run prisma:seed && npm run prisma:seed:demo   # jeu « Pricemou », idempotent
+# mots de passe choisis hors du dépôt, 12 caractères minimum (voir « Comptes »)
+SEED_SUPER_ADMIN_PASSWORD=... npm run prisma:seed
+SEED_DEMO_PASSWORD=... npm run prisma:seed:demo   # jeu « Pricemou », idempotent
 cd ../.. && npm run dev                           # API (3000) + web (4200)
 ```
 
