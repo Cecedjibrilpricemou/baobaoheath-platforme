@@ -71,7 +71,7 @@
     "ERR_NAME_REQUIRED": "First name and last name are required.",
     "SUCCESS_UPDATED": "Profile updated successfully!",
     "ERR_UPDATE": "Error while updating.",
-    "ERR_PWD_SHORT": "Password must be at least 6 characters.",
+    "ERR_PWD_SHORT": "Password must be at least {{min}} characters.",
     "ERR_PWD_MATCH": "Passwords do not match.",
     "ERR_OLD_PWD_REQUIRED": "The old password is required.",
     "SUCCESS_PWD_CHANGED": "Password changed successfully!",

@@ -1,7 +1,8 @@
 // src/services/admin-structure.service.ts
-import { randomBytes } from 'crypto';
+import { randomInt } from 'crypto';
 import { prisma } from '../config/prisma';
 import { hashPassword } from '../utils/password.utils';
+import { assertMotDePasseConforme } from '../utils/politique-mot-de-passe';
 import { Role, TypeStructure } from '../config/generated/client/client';
 import { envoyerEmailAdminStructure, envoyerEmailAgent } from './email.service';
 import { logger } from '../config/logger';
@@ -24,14 +25,22 @@ const ROLES_AUTORISES: Role[] = [Role.ASC, Role.ASC_SUPERVISOR, Role.MEDECIN, Ro
  * voix haute dans un hall bruyant, celui-ci se lit sur un ecran ou dans un
  * courriel. Sans O/0 ni I/l malgre tout : ils se confondent a l'ecrit aussi.
  */
+//
+// **Seize caracteres aleatoires, en quatre groupes** (« Kq7m-Xw3P-… »),
+// soit environ 92 bits. L'ancienne forme — un prefixe fixe et public suivi de
+// cinq caracteres — n'en avait que 29 : un mot de passe temporaire reste
+// valable tant que l'agent ne l'a pas change, et il ouvre un compte
+// professionnel. `randomInt` tire sans biais, la ou `octet % 55` favorisait
+// les premiers caracteres de l'alphabet.
 export function genererMotDePasseTemp(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-    const bytes = randomBytes(5);
-    let pwd = 'BaoBao@';
-    for (let i = 0; i < 5; i++) {
-        pwd += chars[bytes[i] % chars.length];
+    const groupes: string[] = [];
+    for (let g = 0; g < 4; g++) {
+        let groupe = '';
+        for (let i = 0; i < 4; i++) groupe += chars[randomInt(chars.length)];
+        groupes.push(groupe);
     }
-    return pwd;
+    return groupes.join('-');
 }
 
 // ── SUPER_ADMIN : créer structure + admin en une transaction ──────
@@ -208,6 +217,7 @@ export async function creerPharmacieAvecPharmacien(auteur: JwtPayload, dto: {
         if (existingEmail) throw new ConflictError('Cette adresse email est deja utilisee');
     }
 
+    if (dto.pharmacien.motDePasse) assertMotDePasseConforme(dto.pharmacien.motDePasse, Role.PHARMACIEN);
     const motDePasseTemp = dto.pharmacien.motDePasse || genererMotDePasseTemp();
     const motDePasseHash = await hashPassword(motDePasseTemp);
     const isTemporaire = !dto.pharmacien.motDePasse;
@@ -463,6 +473,7 @@ export async function creerAgent(adminId: string, dto: {
         if (existingEmail) throw new ConflictError('Cette adresse email est déjà utilisée');
     }
 
+    if (dto.motDePasse) assertMotDePasseConforme(dto.motDePasse, dto.role);
     const motDePasseTemp = dto.motDePasse || genererMotDePasseTemp();
     const motDePasseHash = await hashPassword(motDePasseTemp);
     const isTemporaire = !dto.motDePasse;
