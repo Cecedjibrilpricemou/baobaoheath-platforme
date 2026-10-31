@@ -1791,6 +1791,14 @@ export interface CreationLivreurView {
  * GET /admin-structure/stats.
  * `structure` provient d'un findUnique : le type garde la nullabilite.
  */
+/** `GET /admin-structure/ma-structure` : ce que le menu doit savoir. */
+export interface MaStructureView {
+  id: string;
+  nom: string;
+  type: TypeStructure;
+  hospitaliere: boolean;
+}
+
 export interface StatsStructureView {
   structure: StructureAdminView | null;
   totalAgents: number;

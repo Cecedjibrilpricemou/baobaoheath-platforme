@@ -4,9 +4,10 @@
 // Idempotent : chaque entree est identifiee par une cle stable (telephone,
 // nom de structure, QR) et le script peut etre rejoue sans rien casser.
 //
-// Reserve aux bases de developpement : les comptes ont un mot de passe connu.
+// Reserve aux bases de developpement. Le mot de passe commun des comptes n'est
+// pas dans ce fichier : il est lu dans SEED_DEMO_PASSWORD (12 caracteres min.).
 //
-// Usage : npx tsx prisma/seed-demo.ts
+// Usage : SEED_DEMO_PASSWORD=... npx tsx prisma/seed-demo.ts
 import 'dotenv/config';
 import { PrismaClient, Role, TypeStructure } from '../src/config/generated/client/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -16,8 +17,10 @@ import { hashPassword } from '../src/utils/password.utils.js';
 import { lancerRecherchePharmacie } from '../src/services/commande.service.js';
 import { prochainNumero } from '../src/services/numero.service.js';
 import { seedExamens } from './seed-examens.js';
+import { lireMotDePasseDemo } from './mot-de-passe-demo.js';
 
-const MOT_DE_PASSE = 'Pricemou1234';
+// Choisi hors du depot et passe par SEED_DEMO_PASSWORD : voir mot-de-passe-demo.ts.
+const MOT_DE_PASSE = lireMotDePasseDemo();
 
 /**
  * Tout se joue dans le meme quartier : c'est la maille de l'appel aux
@@ -611,7 +614,8 @@ async function main() {
   console.log('   Convention : Pharmacie Pricemou seulement. L hopital n en a aucune : sa pharmacie');
   console.log('   refuse donc le tiers payant tant que l admin de l hopital n a pas declare l assureur.');
 
-  console.log(`\nMot de passe de tous les comptes : ${MOT_DE_PASSE}`);
+  // Jamais affiche : les sorties de console finissent dans des journaux et des captures.
+  console.log('\nMot de passe de tous les comptes : celui de SEED_DEMO_PASSWORD');
   console.log(`Quartier commun : ${QUARTIER} (${COMMUNE}, ${PREFECTURE})`);
   console.log('\nParcours a derouler : voir docs/PARCOURS-DEMO.md');
 }

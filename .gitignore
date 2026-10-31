@@ -4,6 +4,8 @@ node_modules/
 .env.development
 .env.staging
 .env.production
+# Secrets de docker/docker-compose.prod.yml. Seul le gabarit .env.prod.example est suivi.
+.env.prod
 dist/
 build/
 .angular/
@@ -42,6 +44,5 @@ docs/COMPTES-TEST.md
 /COMPTES*.md
 /MOTS-DE-PASSE*.md
 /*identifiants*.md
-/*Pricemou1234*
 secrets.md
 credentials.md

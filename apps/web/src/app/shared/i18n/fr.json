@@ -71,7 +71,7 @@
     "ERR_NAME_REQUIRED": "Prénom et nom sont obligatoires.",
     "SUCCESS_UPDATED": "Profil mis à jour avec succès !",
     "ERR_UPDATE": "Erreur lors de la mise à jour.",
-    "ERR_PWD_SHORT": "Le mot de passe doit contenir au moins 6 caractères.",
+    "ERR_PWD_SHORT": "Le mot de passe doit contenir au moins {{min}} caractères.",
     "ERR_PWD_MATCH": "Les mots de passe ne correspondent pas.",
     "ERR_OLD_PWD_REQUIRED": "L'ancien mot de passe est obligatoire.",
     "SUCCESS_PWD_CHANGED": "Mot de passe changé avec succès !",
@@ -304,7 +304,7 @@
     "TRUST_SECURE": "Données chiffrées et sécurisées",
     "TRUST_MOBILE": "Accessible sur mobile",
     "TRUST_OFFLINE": "Fonctionne en faible débit",
-    "TRUST_MADE": "Made for Guinea 🇬🇳",
+    "TRUST_MADE": "Conçu pour la Guinée",
     "CONTACT_TITLE_A": "Nous",
     "CONTACT_TITLE_B": "contacter",
     "CONTACT_SUB": "Vous avez des questions sur {{nom}} ou vous souhaitez intégrer notre plateforme dans votre structure ? Notre équipe est à votre disposition.",
@@ -332,13 +332,13 @@
   },
   "PATIENT": {
     "ROLE": "Patient",
-    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DASHBOARD": "Tableau de bord",
     "NAV_PROFILE": "Mon Profil",
     "NAV_PROFIL": "Mon Profil",
     "NAV_QR": "QR Code",
     "NAV_QR_CODE": "Mon QR Code",
     "DASHBOARD": {
-      "GREETING": "Bonjour 👋",
+      "GREETING": "Bonjour",
       "SUBTITLE": "Votre espace santé personnel",
       "BTN_QR": "Mon QR Code",
       "BTN_PROFILE": "Mon Profil",
@@ -353,7 +353,7 @@
       "NO_VACCINE": "Aucune vaccination",
       "NO_VACCINE_SUB": "Vos vaccinations sont enregistrées par votre agent de santé lors des consultations.",
       "REMINDER": "Rappel",
-      "EXPORTING": "Export...",
+      "EXPORTING": "Export en cours...",
       "DEFAULT_MOTIF": "Consultation générale",
       "WITH_AGENT": "avec {{nom}}"
     },
@@ -380,13 +380,13 @@
       "ANTECEDENTS": "Antécédents médicaux",
       "ANTECEDENTS_PH": "Antécédents médicaux importants...",
       "SAVING": "Sauvegarde...",
-      "EXPORTING": "Export...",
+      "EXPORTING": "Export en cours...",
       "SUCCESS_SAVE": "Profil mis à jour avec succès !",
       "ERR_LOAD": "Impossible de charger votre profil.",
       "ERR_SAVE": "Erreur lors de la sauvegarde.",
       "LOADING": "Chargement du profil...",
       "QUICK_QR": "Mon QR Code",
-      "QUICK_DASHBOARD": "Dashboard",
+      "QUICK_DASHBOARD": "Tableau de bord",
       "QUICK_QR_SUB": "Partager mon dossier en un scan",
       "QUICK_DASHBOARD_SUB": "Aperçu de ma santé",
       "STRUCTURE_TITLE": "Ma structure de santé préférée",
@@ -394,6 +394,17 @@
       "STRUCTURE_SELECT_LABEL": "Choisir ou changer ma structure",
       "STRUCTURE_SELECT_PLACEHOLDER": "— Aucune structure (accès libre) —",
       "STRUCTURE_HINT": "En zone rurale sans structure, vous serez rattaché automatiquement selon votre zone géographique.",
+      "PIN_TITLE": "Code PIN pour l’accès par USSD",
+      "PIN_INTRO": "Ce code à 4 chiffres vous sera demandé pour consulter votre dossier depuis un téléphone sans internet. Ne le communiquez à personne.",
+      "PIN_LABEL": "Nouveau code PIN",
+      "PIN_CONFIRM_LABEL": "Confirmez le code PIN",
+      "PIN_PASSWORD_LABEL": "Mot de passe de votre compte",
+      "PIN_SAVE": "Enregistrer le code",
+      "PIN_HINT": "Évitez les chiffres répétés (1111) et les suites (1234). Après cinq erreurs, l’accès est bloqué pendant 30 minutes.",
+      "PIN_SUCCESS": "Code PIN enregistré.",
+      "PIN_ERR_FORMAT": "Le code PIN doit contenir exactement 4 chiffres.",
+      "PIN_ERR_MISMATCH": "Les deux codes ne sont pas identiques.",
+      "PIN_ERR_PASSWORD": "Saisissez le mot de passe de votre compte.",
       "STRUCTURE_SAVING": "Enregistrement...",
       "STRUCTURE_SAVE": "Enregistrer",
       "STRUCTURE_UPDATED": "Structure préférée mise à jour !",
@@ -436,7 +447,7 @@
       "BIRTH_DATE": "Date de naissance",
       "BLOOD_TYPE": "Groupe sanguin",
       "SECURITY_TITLE": "QR Code sécurisé",
-      "SECURITY_TEXT": "Ce code est personnel et chiffré. Ne le partagez qu'avec des professionnels de santé autorisés.",
+      "SECURITY_TEXT": "Ce code identifie votre dossier. Montrez-le uniquement à des professionnels de santé : il permet de le retrouver.",
       "NOT_AVAILABLE": "QR Code non disponible",
       "LOADING": "Chargement...",
       "IMG_ALT": "QR Code d'identification patient à présenter en pharmacie ou structure de santé",
@@ -451,11 +462,11 @@
         "CREATE_BY_ME": "Vous avez ajouté une information dans {{objet}}",
         "DELETE": "Une information a été supprimée de {{objet}}",
         "DELETE_BY_ME": "Vous avez supprimé une information de {{objet}}",
-        "READ": "{{objet}} a été consulté",
+        "READ": "Consultation de votre dossier : {{objet}}",
         "READ_BY_ME": "Vous avez consulté {{objet}}",
         "SCAN": "Votre code a été scanné au comptoir",
         "SCAN_BY_ME": "Vous avez présenté votre code au comptoir",
-        "UPDATE": "{{objet}} a été modifié",
+        "UPDATE": "Modification de votre dossier : {{objet}}",
         "UPDATE_BY_ME": "Vous avez modifié {{objet}}"
       },
       "ACCESS_OBJECT": {
@@ -546,6 +557,7 @@
       "TEXT_ACCEPTE": "Le texte que vous avez accepté",
       "TEXT_EN_VIGUEUR": "Le texte en vigueur aujourd’hui",
       "TEXT_AUCUN": "Aucun texte n'est publié pour cet usage. Tant qu'il n'y en a pas, votre accord ne peut pas être enregistré : on ne consent pas à un texte qui n'existe pas.",
+      "TEXT_AUCUN_TOUS": "Aucun texte de consentement n'est encore publié. Tant qu'il n'y en a pas, aucun accord ne peut être enregistré : on ne consent pas à un texte qui n'existe pas. Retirer un accord reste toujours possible.",
       "ETAT_JAMAIS_RECUEILLI": "Accord présumé, jamais recueilli",
       "ETAT_JAMAIS_RECUEILLI_DIT": "Cet accord a été enregistré sans que personne ne vous montre de texte — à la création de votre dossier, ou avant que la plateforme ne conserve ce qui vous est présenté. Ce n'est pas un consentement. Lisez le texte ci-dessous et confirmez, ou retirez.",
       "ETAT_TEXTE_PLUS_RECENT": "Le texte a changé depuis votre accord",
@@ -805,7 +817,7 @@
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_STOCKS": "Stocks",
     "NAV_PLANNING": "Planning",
-    "NAV_TRIAGE": "Triage IA",
+    "NAV_TRIAGE": "Aide au triage",
     "NAV_SYNC": "Synchronisation",
     "CONSULTATIONS": {
       "TITLE": "Mes Consultations",
@@ -1040,12 +1052,13 @@
       "MINUTES_AGO": "il y a {{m}} min"
     },
     "TRIAGE": {
-      "TITLE": "Triage Intelligent IA",
+      "TITLE": "Aide au triage",
       "SUBTITLE": "Évaluez rapidement l'état du patient pour prendre la bonne décision.",
+      "AVERTISSEMENT": "Aide à la décision fondée sur des règles simples, à valider cliniquement. Elle ne remplace pas l'avis d'un soignant.",
       "STEPS_ARIA": "Étapes du triage",
       "STEP1_LABEL": "Patient",
       "STEP2_LABEL": "Symptômes",
-      "STEP3_LABEL": "Analyse IA",
+      "STEP3_LABEL": "Analyse",
       "STEP1_TITLE": "Identification du Patient",
       "STEP1_SUB": "Recherchez le patient par son code QR ou son numéro de téléphone.",
       "SEARCH_PLACEHOLDER": "Numéro de téléphone ou ID...",
@@ -1057,11 +1070,11 @@
       "TEMP_LABEL": "Température (°C) : {{value}}",
       "TENSION_LABEL": "Tension artérielle",
       "TENSION_PLACEHOLDER": "Ex: 12/8",
-      "LAUNCH_ANALYSIS": "Lancer l'Analyse IA",
-      "ANALYZING_TITLE": "BaoBao IA analyse les données...",
+      "LAUNCH_ANALYSIS": "Lancer l'analyse",
+      "ANALYZING_TITLE": "Analyse des signes en cours...",
       "ANALYZING_SUB": "Comparaison avec les directives OMS en cours... {{percent}}%",
       "GRAVITY_TITLE": "Gravité Évaluée",
-      "RECOMMENDATIONS_TITLE": "Recommandations de l'IA",
+      "RECOMMENDATIONS_TITLE": "Pistes d'orientation",
       "CREATE_CONSULTATION": "Créer la consultation",
       "SYMPTOM_FIEVRE": "Fièvre",
       "SYMPTOM_FRISSONS": "Frissons",
@@ -1096,12 +1109,12 @@
       "FALLBACK_REC_3_1": "Prescrire du paracétamol.",
       "FALLBACK_REC_3_2": "Repos et bonne hydratation.",
       "PATIENT_DETAILS": "Sexe: {{sexe}} | Région: {{region}}",
-      "MOTIF_PREFIX": "Triage IA:"
+      "MOTIF_PREFIX": "Aide au triage :"
     }
   },
   "MEDECIN": {
     "ROLE": "Médecin",
-    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DASHBOARD": "Tableau de bord",
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_MESSAGERIE": "Messagerie",
     "DASHBOARD": {
@@ -1399,7 +1412,7 @@
       "EMPTY_TITLE": "Aucun médicament trouvé",
       "EMPTY_SUB": "Cliquez sur « Réapprovisionner » pour ajouter de nouveaux stocks.",
       "STOCK_LEVEL": "Niveau de stock",
-      "ALERT_THRESHOLD": "Seuil d'alerte : {{value}} {{unit}}",
+      "ALERT_THRESHOLD": "Seuil d'alerte : {{value}}",
       "EXPIRY_LABEL": "Exp: {{date}}",
       "NO_EXPIRY": "Sans péremption",
       "NIVEAU_CRITIQUE": "Critique",
@@ -1547,6 +1560,7 @@
       "TITLE": "Caisse",
       "SUB": "Vente au comptoir. Le client n'a pas besoin de dossier.",
       "PANIER": "Panier",
+      "PANIER_FERME": "La caisse est fermée : ouvrez une session ci-dessus pour enregistrer une vente.",
       "PRODUIT": "Produit",
       "QUANTITE": "Qté",
       "PRIX_UNITAIRE": "Prix unitaire",
@@ -1776,7 +1790,7 @@
   },
   "ADMIN": {
     "ROLE": "Administrateur",
-    "NAV_ANALYTICS": "Analytics",
+    "NAV_ANALYTICS": "Statistiques",
     "NAV_EXPORT": "Export DHIS2",
     "NAV_STRUCTURES": "Structures",
     "NAV_SETTINGS": "Paramètres",
@@ -1870,7 +1884,7 @@
       "SUBTITLE": "Configurez les règles globales, la sécurité et le comportement du système.",
       "SAVE": "Sauvegarder",
       "TAB_SECURITY": "Sécurité & Accès",
-      "TAB_ALERTS": "Alertes & IA",
+      "TAB_ALERTS": "Alertes & triage",
       "TAB_SYNC": "Hors-ligne & USSD",
       "BILLING_TITLE": "Facturation & Finances",
       "BILLING_DESC": "Moyens de paiements acceptés et paramètres financiers.",
@@ -1893,8 +1907,8 @@
       "PALUDISME_LABEL": "Seuil d'Alerte Paludisme (cas / préfecture / 30 jours) : {{value}}",
       "EBOLA_LABEL": "Seuil d'Alerte Fièvres Hémorragiques (Ebola, Marburg) : {{value}}",
       "EBOLA_WARNING": "Toute détection déclenche une urgence nationale immédiate.",
-      "AI_TITLE": "Intelligence Artificielle",
-      "AI_ENABLE_TITLE": "Activer l'assistant IA de Triage",
+      "AI_TITLE": "Aide au triage",
+      "AI_ENABLE_TITLE": "Activer l'aide au triage",
       "AI_ENABLE_SUB": "Autorise l'appel à l'assistant de triage depuis l'espace ASC. Désactivé, l'évaluation est refusée par le serveur.",
       "OFFLINE_TITLE": "Hors-ligne (PWA) & USSD",
       "OFFLINE_DESC": "Paramètres de connectivité pour les zones isolées.",
@@ -1967,9 +1981,9 @@
     },
     "ANALYTICS": {
       "SUBTITLE": "Tableau de bord épidémiologique — {{nom}} Guinée 🇬🇳",
-      "EXPORT": "Export",
+      "EXPORT": "Exporter",
       "TAB_OVERVIEW": "Vue d'ensemble",
-      "TAB_HEATMAP": "Heatmap",
+      "TAB_HEATMAP": "Carte de densité",
       "TAB_ALERTES": "Alertes",
       "TAB_TENDANCES": "Tendances",
       "TAB_VACCINS": "Vaccinations",
@@ -2019,10 +2033,10 @@
       "ACTION_LABEL": {
         "CREATE": "Information ajoutée dans {{objet}}",
         "DELETE": "Information supprimée de {{objet}}",
-        "READ": "{{objet}} consulté",
+        "READ": "Lecture : {{objet}}",
         "REFUSE": "Tentative refusée sur {{objet}}",
         "SCAN": "Code patient scanné au comptoir",
-        "UPDATE": "{{objet}} modifié"
+        "UPDATE": "Modification : {{objet}}"
       },
       "ACTION_OBJECT": {
         "ACCOUNTS": "Comptes",
@@ -2334,7 +2348,7 @@
   },
   "ADMIN_STRUCTURE": {
     "ROLE": "Admin Structure",
-    "NAV_DASHBOARD": "Dashboard",
+    "NAV_DASHBOARD": "Tableau de bord",
     "NAV_AGENTS": "Mes Agents",
     "NAV_PHARMACIES": "Pharmacies",
     "NAV_ASSURANCES": "Assurances",
@@ -3237,6 +3251,7 @@
     "IMPRIMER": "Imprimer",
     "CSV": "Excel (CSV)",
     "LIGNES": "{{n}} ligne(s)",
+    "LIGNES_SUR": "{{n}} ligne(s) de cette page, sur {{total}}",
     "EDITE_LE": "Édité le {{date}}",
     "EDITE_PAR": "par {{nom}}",
     "COL": {
@@ -3759,6 +3774,41 @@
       "LIBELLE_REQUIS": "Nommez la pièce avant de la joindre : sans libellé, elle serait illisible dans la liste.",
       "AJOUT_AIDE": "Pour tout document réclamé par la direction compétente et qui ne figure pas ci-dessus.",
       "SANS_STRUCTURE": "Votre compte n'est rattaché à aucune structure : il n'y a pas de dossier à tenir."
+    }
+  },
+  "UNITE": {
+    "REGLE": "fr",
+    "BOITE": {
+      "UN": "boîte",
+      "PLUSIEURS": "boîtes"
+    },
+    "UNITE": {
+      "UN": "unité",
+      "PLUSIEURS": "unités"
+    },
+    "COMPRIME": {
+      "UN": "comprimé",
+      "PLUSIEURS": "comprimés"
+    },
+    "FLACON": {
+      "UN": "flacon",
+      "PLUSIEURS": "flacons"
+    },
+    "SACHET": {
+      "UN": "sachet",
+      "PLUSIEURS": "sachets"
+    },
+    "AMPOULE": {
+      "UN": "ampoule",
+      "PLUSIEURS": "ampoules"
+    },
+    "TUBE": {
+      "UN": "tube",
+      "PLUSIEURS": "tubes"
+    },
+    "PLAQUETTE": {
+      "UN": "plaquette",
+      "PLUSIEURS": "plaquettes"
     }
   }
 }

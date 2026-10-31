@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/app-error';
 import { logger } from '../config/logger';
 import { captureError } from '../config/sentry';
+import { Prisma } from '../config/generated/client/client';
 
 /**
  * Middleware global de gestion des erreurs.
@@ -26,6 +27,15 @@ export function globalErrorHandler(
       success: false,
       error: err.message,
     });
+    return;
+  }
+
+  // Violation d'unicite (P2002) : deux requetes simultanees ont depasse le
+  // controle de doublon du service. C'est un conflit, pas une panne — 409,
+  // avec un message neutre : le detail nomme la table et la contrainte.
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    logger.warn(`${req.method} ${req.originalUrl} -> 409 contrainte d'unicite`, { cible: err.meta?.['target'] });
+    res.status(409).json({ success: false, error: 'Cette valeur est deja utilisee.' });
     return;
   }
 

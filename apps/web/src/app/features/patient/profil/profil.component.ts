@@ -229,6 +229,36 @@ export class ProfilComponent implements OnInit {
     return known.includes(type) ? this.i18n.t(`PATIENT.PROFILE.STRUCTURE_TYPE_${type}`) : type;
   }
 
+  // ── Code PIN USSD ─────────────────────────────────────────────
+  // Il ouvre le dossier depuis un telephone sans internet. Les controles
+  // ci-dessous evitent un aller-retour inutile ; c'est le serveur qui decide
+  // (PIN trivial refuse, mot de passe verifie).
+  pinForm = { pin: '', confirmation: '', motDePasse: '' };
+  isSavingPin = signal(false);
+
+  enregistrerPin() {
+    const { pin, confirmation, motDePasse } = this.pinForm;
+    this.errorMessage.set('');
+    if (!/^\d{4}$/.test(pin)) { this.errorMessage.set(this.i18n.t('PATIENT.PROFILE.PIN_ERR_FORMAT')); return; }
+    if (pin !== confirmation) { this.errorMessage.set(this.i18n.t('PATIENT.PROFILE.PIN_ERR_MISMATCH')); return; }
+    if (!motDePasse) { this.errorMessage.set(this.i18n.t('PATIENT.PROFILE.PIN_ERR_PASSWORD')); return; }
+
+    this.isSavingPin.set(true);
+    this.patientService.definirPinUssd(pin, motDePasse).subscribe({
+      next: () => {
+        this.isSavingPin.set(false);
+        this.pinForm = { pin: '', confirmation: '', motDePasse: '' };
+        this.showSuccess(this.i18n.t('PATIENT.PROFILE.PIN_SUCCESS'));
+      },
+      error: (err) => {
+        this.isSavingPin.set(false);
+        // Le mot de passe est efface dans tous les cas : il ne reste pas en memoire.
+        this.pinForm.motDePasse = '';
+        this.errorMessage.set(err?.error?.error ?? err?.error?.message ?? this.i18n.t('PATIENT.PROFILE.ERR_UPDATE'));
+      },
+    });
+  }
+
   private showSuccess(msg: string) {
     this.successMessage.set(msg);
     setTimeout(() => this.successMessage.set(''), 3000);

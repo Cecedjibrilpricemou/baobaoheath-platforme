@@ -76,7 +76,8 @@ const PUBLIQUES: Record<string, string> = {
     "annuaire des établissements, pour choisir où prendre rendez-vous ; déclarée **avant** le router.use(authenticate) du fichier",
 
   // ── Deux entrées machine, authentifiées autrement qu'au cookie.
-  'ussd POST /session': 'passerelle USSD de l’opérateur ; pas de navigateur, donc pas de cookie',
+  'ussd POST /session':
+    'passerelle USSD de l’opérateur ; signature HMAC horodatée vérifiée par authentifierPasserelleUssd, puis PIN du patient',
   'webhook-chapchap POST /chapchap':
     'rappel de la passerelle de paiement ; authentifié par signature HMAC-SHA256 vérifiée avant toute lecture du corps',
 };
