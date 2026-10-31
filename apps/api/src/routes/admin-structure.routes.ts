@@ -35,34 +35,22 @@ import {
 const router = Router();
 
 router.get('/structures/publiques', async (_req: Request, res: Response) => {
-  try {
-    // Annotation = contrat : un champ retire du select casse ici, au lieu
-    // de devenir undefined dans une liste deroulante.
-    const data: StructurePubliqueView[] = await service.getStructuresPubliques();
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  // Annotation = contrat : un champ retire du select casse ici, au lieu
+  // de devenir undefined dans une liste deroulante.
+  const data: StructurePubliqueView[] = await service.getStructuresPubliques();
+  res.json({ success: true, data });
 });
 
 router.use(authenticate);
 
 router.get('/agents', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
-  try {
-    const data: AgentStructureView[] = await service.getAgentsStructure(req.user!.userId);
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: AgentStructureView[] = await service.getAgentsStructure(req.user!.userId);
+  res.json({ success: true, data });
 });
 
 router.get('/pharmacies', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
-  try {
-    const data: StructureAdminView[] = await service.getPharmaciesStructure(req.user!.userId);
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: StructureAdminView[] = await service.getPharmaciesStructure(req.user!.userId);
+  res.json({ success: true, data });
 });
 
 /**
@@ -95,12 +83,8 @@ router.delete('/conseillees/:id', requireRole('ADMIN_STRUCTURE'), async (req: Au
 });
 
 router.post('/agents', requireRole('ADMIN_STRUCTURE'), validateBody(createAgentStructureSchema), async (req: AuthRequest, res: Response) => {
-  try {
-    const data: CreationAgentView = await service.creerAgent(req.user!.userId, req.body);
-    res.status(201).json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: CreationAgentView = await service.creerAgent(req.user!.userId, req.body);
+  res.status(201).json({ success: true, data });
 });
 
 /**
@@ -129,12 +113,8 @@ router.put('/agents/:id/bureau', requireRole('ADMIN_STRUCTURE'), validateBody(de
 });
 
 router.put('/agents/:id/desactiver', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
-  try {
-    await service.desactiverAgent(req.user!.userId, String(req.params.id));
-    res.json({ success: true, message: 'Agent desactive' });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  await service.desactiverAgent(req.user!.userId, String(req.params.id));
+  res.json({ success: true, message: 'Agent desactive' });
 });
 
 /** Ce que le menu doit savoir de la structure : son type, sans statistiques. */
@@ -144,12 +124,8 @@ router.get('/ma-structure', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequ
 });
 
 router.get('/stats', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
-  try {
-    const data: StatsStructureView = await service.getStatsStructure(req.user!.userId);
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: StatsStructureView = await service.getStatsStructure(req.user!.userId);
+  res.json({ success: true, data });
 });
 
 // ── Le dossier reglementaire d'une structure ───────────────────────
@@ -190,12 +166,8 @@ router.get('/pieces/:id', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL', 'ADMIN_ST
 });
 
 router.get('/structures', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL'), async (_req: AuthRequest, res: Response) => {
-  try {
-    const data: StructureAdminView[] = await service.getStructures();
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: StructureAdminView[] = await service.getStructures();
+  res.json({ success: true, data });
 });
 
 /**
@@ -211,63 +183,39 @@ router.get('/structures', requireRole('SUPER_ADMIN', 'ADMIN_NATIONAL'), async (_
  * aucune piece a fournir, et les deux middlewares la laissent passer.
  */
 router.post('/structures', requireRole('SUPER_ADMIN'), recevoirPiecesAgrement, corpsJsonMultipart, validateBody(createStructureSchema), async (req: AuthRequest, res: Response) => {
-  try {
-    // Seules les pieces exigees a la creation : elles ont un type connu et
-    // n'ont pas besoin de libelle. Une piece libre se depose ensuite, par
-    // `POST /structures/:id/pieces`, ou le libelle arrive avec le fichier.
-    const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
-    const data: CreationStructureView = await service.creerStructureAvecAdmin(req.body, fichiers);
-    res.status(201).json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  // Seules les pieces exigees a la creation : elles ont un type connu et
+  // n'ont pas besoin de libelle. Une piece libre se depose ensuite, par
+  // `POST /structures/:id/pieces`, ou le libelle arrive avec le fichier.
+  const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
+  const data: CreationStructureView = await service.creerStructureAvecAdmin(req.body, fichiers);
+  res.status(201).json({ success: true, data });
 });
 
 router.post('/pharmacies', requireRole('SUPER_ADMIN', 'ADMIN_STRUCTURE'), recevoirPiecesAgrement, corpsJsonMultipart, validateBody(createPharmacieSchema), async (req: AuthRequest, res: Response) => {
-  try {
-    const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
-    const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.user!, req.body, fichiers);
-    res.status(201).json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const fichiers = (req.files ?? []) as piecesAgrement.FichierRecu[];
+  const data: CreationPharmacieView = await service.creerPharmacieAvecPharmacien(req.user!, req.body, fichiers);
+  res.status(201).json({ success: true, data });
 });
 
 router.put('/structures/:id', requireRole('SUPER_ADMIN'), validateBody(updateStructureSchema), async (req: AuthRequest, res: Response) => {
-  try {
-    const data: StructureAdminView = await service.modifierStructure(String(req.params.id), req.body);
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: StructureAdminView = await service.modifierStructure(String(req.params.id), req.body);
+  res.json({ success: true, data });
 });
 
 router.delete('/structures/:id', requireRole('SUPER_ADMIN'), async (req: AuthRequest, res: Response) => {
-  try {
-    await service.supprimerStructure(String(req.params.id));
-    res.json({ success: true, message: 'Structure desactivee' });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  await service.supprimerStructure(String(req.params.id));
+  res.json({ success: true, message: 'Structure desactivee' });
 });
 
 // ── Parametres globaux de la plateforme (page Parametres du super-admin) ──
 router.get('/parametres', requireRole('SUPER_ADMIN'), async (_req: AuthRequest, res: Response) => {
-  try {
-    const data: ParametresSystemeView = await parametresService.getParametres();
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(500).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: ParametresSystemeView = await parametresService.getParametres();
+  res.json({ success: true, data });
 });
 
 router.put('/parametres', requireRole('SUPER_ADMIN'), validateBody(updateParametresSystemeSchema), async (req: AuthRequest, res: Response) => {
-  try {
-    const data: ParametresSystemeView = await parametresService.modifierParametres(req.user!.userId, req.body);
-    res.json({ success: true, data });
-  } catch (e: unknown) {
-    res.status(400).json({ success: false, error: e instanceof Error ? e.message : String(e) });
-  }
+  const data: ParametresSystemeView = await parametresService.modifierParametres(req.user!.userId, req.body);
+  res.json({ success: true, data });
 });
 
 // Logo de la plateforme (champ multipart "logo") : redimensionne, enregistre
