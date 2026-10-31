@@ -22,6 +22,12 @@
           <p>{{ 'COMMON.LOADING' | translate }}</p>
         </div>
       } @else {
+        @if (aucunTexte()) {
+          <p class="consent-aucun-texte" role="note">
+            <mat-icon fontSet="pi" fontIcon="pi-info-circle" aria-hidden="true"></mat-icon>
+            <span>{{ 'PATIENT.CONSENTS.TEXT_AUCUN_TOUS' | translate }}</span>
+          </p>
+        }
         <ul class="consent-list" role="list">
           @for (item of scopes(); track item.scope) {
             <li class="consent-row" [class.consent-row--on]="item.actif">
@@ -107,7 +113,7 @@
                       <p class="consent-texte__corps">{{ texte.corps }}</p>
                     </div>
                   }
-                } @else {
+                } @else if (!aucunTexte()) {
                   <span class="consent-row__meta consent-row__meta--manque">
                     {{ 'PATIENT.CONSENTS.TEXT_AUCUN' | translate }}
                   </span>
@@ -116,7 +122,7 @@
               <mat-slide-toggle
                 [attr.aria-labelledby]="'consent-' + item.scope"
                 [checked]="item.actif"
-                [disabled]="item.saving"
+                [disabled]="item.saving || (!item.actif && !texteAMontrer(item))"
                 (change)="basculer(item, $event.checked)"
               ></mat-slide-toggle>
             </li>

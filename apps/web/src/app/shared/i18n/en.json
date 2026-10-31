@@ -546,6 +546,7 @@
       "TEXT_ACCEPTE": "The text you agreed to",
       "TEXT_EN_VIGUEUR": "The text in force today",
       "TEXT_AUCUN": "No text is published for this use. Until there is one, your consent cannot be recorded: you do not consent to a text that does not exist.",
+      "TEXT_AUCUN_TOUS": "No consent text has been published yet. Until one is, no agreement can be recorded: you cannot consent to a text that does not exist. Withdrawing an agreement is always possible.",
       "ETAT_JAMAIS_RECUEILLI": "Presumed consent, never collected",
       "ETAT_JAMAIS_RECUEILLI_DIT": "This consent was recorded without anyone showing you a text — when your record was created, or before the platform kept what is shown to you. That is not consent. Read the text below and confirm, or withdraw.",
       "ETAT_TEXTE_PLUS_RECENT": "The text changed after you agreed",
