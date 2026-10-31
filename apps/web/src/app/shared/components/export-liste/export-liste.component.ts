@@ -22,6 +22,19 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { I18nService } from '../../services/i18n.service';
 
+/**
+ * Le nombre de lignes emportées. Sur une liste paginée, l'export ne prend que
+ * la page affichée : quand le serveur annonce un total plus grand, on le dit,
+ * sinon « 50 lignes » à côté de « 100 résultats » laisse croire à une erreur.
+ */
+export function libelleCompteExport(
+  t: (cle: string, p?: Record<string, string | number>) => string,
+  n: number,
+  total: number | null | undefined,
+): string {
+  return total != null && total > n ? t('EXPORT.LIGNES_SUR', { n, total }) : t('EXPORT.LIGNES', { n });
+}
+
 /** Une colonne du document : son titre, et comment la lire sur une ligne. */
 export interface ColonneExport<T> {
   /**
@@ -63,6 +76,8 @@ export class ExportListeComponent<T> {
   lignes = input.required<readonly T[]>();
   /** Le nom du fichier, sans extension. À défaut, le titre suffit. */
   nomFichier = input<string>('');
+  /** Le total annoncé par le serveur, quand la liste est paginée. */
+  total = input<number | null>(null);
 
   /** Le titre, dans la langue choisie. */
   titreTraduit(): string {
@@ -133,6 +148,6 @@ export class ExportListeComponent<T> {
 
   /** « 14 lignes », pour qu'on sache ce qu'on emporte avant de l'emporter. */
   libelleCompte(): string {
-    return this.i18n.t('EXPORT.LIGNES', { n: this.lignes().length });
+    return libelleCompteExport((cle, p) => this.i18n.t(cle, p), this.lignes().length, this.total());
   }
 }

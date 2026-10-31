@@ -3240,6 +3240,7 @@
     "IMPRIMER": "Imprimer",
     "CSV": "Excel (CSV)",
     "LIGNES": "{{n}} ligne(s)",
+    "LIGNES_SUR": "{{n}} ligne(s) de cette page, sur {{total}}",
     "EDITE_LE": "Édité le {{date}}",
     "EDITE_PAR": "par {{nom}}",
     "COL": {
