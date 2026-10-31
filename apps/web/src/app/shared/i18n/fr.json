@@ -1548,6 +1548,7 @@
       "TITLE": "Caisse",
       "SUB": "Vente au comptoir. Le client n'a pas besoin de dossier.",
       "PANIER": "Panier",
+      "PANIER_FERME": "La caisse est fermée : ouvrez une session ci-dessus pour enregistrer une vente.",
       "PRODUIT": "Produit",
       "QUANTITE": "Qté",
       "PRIX_UNITAIRE": "Prix unitaire",
