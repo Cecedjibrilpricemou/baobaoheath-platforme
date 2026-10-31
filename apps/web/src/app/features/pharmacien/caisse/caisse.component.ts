@@ -36,6 +36,7 @@ import { QrScannerComponent } from '../../../shared/components/qr-scanner/qr-sca
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { QuantiteUnitePipe } from '../../../shared/pipes/quantite-unite.pipe';
 
 /** Une ligne du panier en cours de saisie. */
 type LignePanier = {
@@ -46,7 +47,7 @@ type LignePanier = {
 @Component({
   selector: 'app-pharmacien-caisse',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, CategorieProduitPipe, TranslatePipe, ExportListeComponent, QrScannerComponent],
+  imports: [QuantiteUnitePipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, CategorieProduitPipe, TranslatePipe, ExportListeComponent, QrScannerComponent],
   templateUrl: './caisse.component.html',
   styleUrl: './caisse.component.scss',
 })

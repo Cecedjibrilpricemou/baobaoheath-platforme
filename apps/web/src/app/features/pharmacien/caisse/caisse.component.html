@@ -79,7 +79,7 @@
           <select [id]="'c-med-' + $index" class="bb-caisse__champ" [(ngModel)]="l.idMedicament">
             <option value="">—</option>
             @for (s of stocks(); track s.medicament.id) {
-              <option [value]="s.medicament.id">{{ libelleProduit(s) }} — {{ s.quantite }} {{ s.unite }}</option>
+              <option [value]="s.medicament.id">{{ libelleProduit(s) }} — {{ s.quantite | quantiteUnite: s.unite }}</option>
             }
           </select>
         </div>

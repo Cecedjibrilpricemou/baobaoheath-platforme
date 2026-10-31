@@ -21,11 +21,12 @@ import type {
   MouvementStockView,
   StockPharmacieView,
 } from '@baobaoheath/shared-types';
+import { QuantiteUnitePipe } from '../../../shared/pipes/quantite-unite.pipe';
 
 @Component({
   selector: 'app-pharmacien-stocks',
   standalone: true,
-  imports: [
+  imports: [QuantiteUnitePipe, 
     CategorieProduitPipe, SeveriteVariantePipe,
     MatFormFieldModule, MatInputModule, MatSelectModule,CommonModule, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './stocks.component.html',

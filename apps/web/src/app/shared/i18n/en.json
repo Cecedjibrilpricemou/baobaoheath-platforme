@@ -304,7 +304,7 @@
     "TRUST_SECURE": "Encrypted and secure data",
     "TRUST_MOBILE": "Works on mobile",
     "TRUST_OFFLINE": "Works on low bandwidth",
-    "TRUST_MADE": "Made for Guinea 🇬🇳",
+    "TRUST_MADE": "Made for Guinea",
     "CONTACT_TITLE_A": "Contact",
     "CONTACT_TITLE_B": "us",
     "CONTACT_SUB": "Have questions about {{nom}}, or want to bring the platform to your facility? Our team is here to help.",
@@ -1959,7 +1959,7 @@
       "EMPTY_TITLE": "No medication found",
       "EMPTY_SUB": "Click \"Restock\" to add new stock.",
       "STOCK_LEVEL": "Stock level",
-      "ALERT_THRESHOLD": "Alert threshold: {{value}} {{unit}}",
+      "ALERT_THRESHOLD": "Alert threshold: {{value}}",
       "EXPIRY_LABEL": "Exp: {{date}}",
       "NO_EXPIRY": "No expiry",
       "NIVEAU_CRITIQUE": "Critical",
@@ -3763,6 +3763,41 @@
       "LIBELLE_REQUIS": "Name the document before attaching it: without a label it would be unreadable in the list.",
       "AJOUT_AIDE": "For any document the relevant directorate asks for that is not listed above.",
       "SANS_STRUCTURE": "Your account is not attached to any facility: there is no file to keep."
+    }
+  },
+  "UNITE": {
+    "REGLE": "en",
+    "BOITE": {
+      "UN": "box",
+      "PLUSIEURS": "boxes"
+    },
+    "UNITE": {
+      "UN": "unit",
+      "PLUSIEURS": "units"
+    },
+    "COMPRIME": {
+      "UN": "tablet",
+      "PLUSIEURS": "tablets"
+    },
+    "FLACON": {
+      "UN": "bottle",
+      "PLUSIEURS": "bottles"
+    },
+    "SACHET": {
+      "UN": "sachet",
+      "PLUSIEURS": "sachets"
+    },
+    "AMPOULE": {
+      "UN": "ampoule",
+      "PLUSIEURS": "ampoules"
+    },
+    "TUBE": {
+      "UN": "tube",
+      "PLUSIEURS": "tubes"
+    },
+    "PLAQUETTE": {
+      "UN": "blister pack",
+      "PLUSIEURS": "blister packs"
     }
   }
 }
