@@ -550,6 +550,23 @@ export async function desactiverAgent(adminId: string, agentId: string) {
 }
 
 // ── ADMIN_STRUCTURE : stats de sa structure ──────────────────────
+/**
+ * La structure de l'administrateur, et si elle est hospitaliere.
+ *
+ * C'est tout ce dont le menu a besoin. Il le lisait dans `getStatsStructure`,
+ * qui compte agents, consultations et patients : quand ce calcul echouait, les
+ * entrees Pharmacies et Assurances disparaissaient. Une seule ligne lue ici.
+ */
+export async function maStructure(adminId: string) {
+    const admin = await prisma.utilisateur.findUnique({
+        where: { id: adminId },
+        select: { idStructure: true, structure: { select: { id: true, nom: true, type: true } } },
+    });
+    if (!admin?.idStructure || !admin.structure) throw new ForbiddenError('Aucune structure assignée');
+    const { id, nom, type } = admin.structure;
+    return { id, nom, type, hospitaliere: estStructureHospitaliere(type) };
+}
+
 export async function getStatsStructure(adminId: string) {
     const admin = await prisma.utilisateur.findUnique({
         where: { id: adminId }, include: { structure: true }
