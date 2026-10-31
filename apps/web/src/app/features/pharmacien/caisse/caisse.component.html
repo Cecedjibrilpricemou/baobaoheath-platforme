@@ -62,6 +62,13 @@
 
   <!-- ── Le panier ─────────────────────────────────────────────────── -->
   <section class="bb-caisse__carte">
+    <!-- Le panier est verrouille sans session ouverte : on le dit, sinon
+         l'ecran parait simplement bloque. -->
+    @if (!caisseOuverte()) {
+      <p class="bb-caisse__panier-ferme" role="status">
+        <i class="pi pi-lock" aria-hidden="true"></i> {{ 'PHARMACIEN.CAISSE.PANIER_FERME' | translate }}
+      </p>
+    }
     <fieldset class="bb-caisse__fieldset" [disabled]="!caisseOuverte()">
     <h2 class="bb-caisse__section">{{ 'PHARMACIEN.CAISSE.PANIER' | translate }}</h2>
 
