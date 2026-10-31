@@ -7,13 +7,11 @@
 
 > ### ⚠️ À lire avant de cloner
 >
-> **`main` est 24 commits en retard sur `develop`.** Son dernier commit date du **2026-09-26** (socle API de la commande pharmacie). Les six blocs de l'addendum, les lots de stock, le référentiel de catégories et tous les correctifs de sécurité **ne sont que sur `develop`**.
+> **`main` est la branche de référence.** L'ancienne branche `develop` y est entièrement fusionnée (mise à jour du 2026-10-30) : les six blocs de l'addendum, les lots de stock, le référentiel de catégories et les correctifs de sécurité sont tous sur `main`.
 >
 > ```bash
-> git clone <url> && cd baobaoheath-platforme && git checkout develop
+> git clone <url> && cd baobaoheath-platforme
 > ```
->
-> Travaillez sur `develop`. La promotion vers `main` se fait en *fast-forward* quand la CI est verte, et elle n'a pas été faite depuis le 26/09.
 
 ---
 
@@ -29,7 +27,7 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 | API | Node 24, Express, TypeScript, Prisma 7 / PostgreSQL 16 — **26 fichiers de routes, 35 services, 26 groupes d'endpoints** |
 | Web | Angular 21 **standalone + signals + zoneless**, Angular Material 21, i18n maison FR/EN — **50 écrans dans 10 espaces** |
 | Modèle | **49 modèles Prisma, 27 enums, 28 migrations, 12 rôles** |
-| Branches | `develop` (travail) → CI verte → `main` (fast-forward). **`main` est en retard, voir l'encadré ci-dessus.** |
+| Branches | `develop` (travail) → CI verte → `main` (fast-forward). Voir l'encadré ci-dessus : `develop` est aujourd'hui fusionnée dans `main`. |
 | Tests | **568 API** (Jest, 30 suites), **21 web** (Vitest), **5 parcours e2e** (Playwright, vraie base) |
 | Avancement | Feuille de route : **42 cases faites, 5 partielles, 48 restantes sur 95**. Addendum : **les 8 blocs livrés**, avec des reliquats nommés bloc par bloc. |
 | Référence contractuelle | *Cahier des charges Kènèya v2.0* du 13/09/2026 (`EF-01…EF-13`, `ENF-01…06`), **complété par l'addendum du 2026-09-28** |
@@ -402,7 +400,7 @@ Et un corollaire sur les mesures : `cmd | tail` renvoie le code de sortie de `ta
 
 ### Les blocs du cahier des charges
 
-« Livré » veut dire **API et front, vérifiés dans un navigateur**. Tout ce qui suit est sur `develop` ; `main` s'arrête au 26/09.
+« Livré » veut dire **API et front, vérifiés dans un navigateur**. Tout ce qui suit est sur `main`.
 
 | Bloc | Objet | État |
 |---|---|---|

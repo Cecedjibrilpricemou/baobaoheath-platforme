@@ -8,10 +8,10 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 >
 > C'est le dossier de reprise : architecture, modèle, pièges d'environnement, état d'avancement recompté, et par où commencer. Ce README n'en est que la porte d'entrée.
 >
-> ⚠️ **Travaillez sur `develop`.** La branche `main` s'arrête au 2026-09-26 et ne contient aucun des six blocs livrés depuis.
+> La branche de référence est **`main`** : l'ancienne branche `develop` y est entièrement fusionnée et n'est plus utilisée.
 >
 > ```bash
-> git clone <url> && cd baobaoheath-platforme && git checkout develop
+> git clone <url> && cd baobaoheath-platforme
 > ```
 
 ## Documents de référence, dans cet ordre
@@ -32,7 +32,7 @@ La promesse du cahier des charges tient en une phrase : **le patient ne se dépl
 - **Base** — PostgreSQL, chiffrement applicatif des données sensibles.
 - **Conteneurs** — `docker/docker-compose.yml` : `postgres`, `redis`, `api`, `web`.
 
-> **Redis est dans le `docker-compose` mais n'est pas configuré** (`REDIS_URL` absent). La limitation de débit est donc **en mémoire** : elle ne tient pas à plusieurs instances, et redémarrer l'API remet ses compteurs à zéro. À traiter avant la mise en service.
+> **Redis est facultatif mais recommandé.** Quand `REDIS_URL` est défini (c'est le cas dans les fichiers `docker-compose`), la limitation de débit et le cache s'appuient sur Redis. Sans `REDIS_URL` (développement local via `npm run dev`), la limitation de débit reste **en mémoire** : elle ne tient pas à plusieurs instances et redémarrer l'API remet ses compteurs à zéro. En production, définissez toujours `REDIS_URL`.
 
 ## Structure
 
@@ -56,7 +56,7 @@ Workspaces npm à la racine. **Il n'y a qu'un seul `package-lock.json`, à la ra
 - Les comptes **`PATIENT`** s'inscrivent librement et se connectent **sans OTP**, au téléphone ou à l'e-mail — certains patients n'ont aucune adresse.
 - Tous les autres rôles sont créés par un administrateur et passent par un **code OTP** envoyé par e-mail.
 - Le rôle `BIOLOGISTE` a été **supprimé** le 2026-09-30 : c'est le laborantin (`TECHNICIEN_LABO`) qui valide les comptes rendus.
-- `LIVREUR` existe dans le modèle **sans aucune route ni écran** : un tel compte atterrit sur `/unauthorized`.
+- `LIVREUR` dispose de son espace (`/livreur` : courses disponibles et courses en cours). Les comptes livreurs sont créés par un administrateur.
 
 ## Démarrage
 
@@ -122,8 +122,8 @@ La variable peut aussi vivre dans `apps/api/.env`, qui n'est pas suivi par git. 
 ## Tests
 
 ```bash
-npm test --workspace=apps/api              # 400 tests, 26 suites (Jest, Prisma mocké)
-npm test --workspace=apps/web              # 21 tests (Vitest)
+npm test --workspace=apps/api              # près de 1 900 tests, 75 suites (Jest, Prisma mocké)
+npm test --workspace=apps/web              # environ 90 tests (Vitest)
 npm run build:web                          # seul le build vérifie les templates Angular
 ```
 
