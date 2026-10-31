@@ -12,11 +12,12 @@ import { PharmacienService } from '../../../core/services/pharmacien.service';
 import { ColonneExport, ExportListeComponent } from '../../../shared/components/export-liste/export-liste.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { QuantiteUnitePipe } from '../../../shared/pipes/quantite-unite.pipe';
 
 @Component({
   selector: 'app-pharmacien-peremptions',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslatePipe, ExportListeComponent],
+  imports: [QuantiteUnitePipe, DatePipe, FormsModule, TranslatePipe, ExportListeComponent],
   templateUrl: './peremptions.component.html',
   styleUrl: './peremptions.component.scss',
 })

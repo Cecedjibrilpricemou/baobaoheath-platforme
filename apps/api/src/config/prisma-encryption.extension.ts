@@ -48,7 +48,10 @@ function encryptArgs(args: unknown, map: FieldMap): void {
   if (record.update) encryptDataObject(record.update, map);
 }
 
-export function withFieldEncryption<T extends PrismaClient>(client: T) {
+// Le client peut porter des omissions globales (`OMISSIONS_GLOBALES`, config/prisma.ts) :
+// la contrainte doit accepter n'importe quelle configuration d'omission.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withFieldEncryption<T extends PrismaClient<never, any>>(client: T) {
   return client.$extends({
     name: 'field-encryption',
     query: {

@@ -13,11 +13,12 @@ import { ColonneExport, ExportListeComponent } from '../../../shared/components/
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../shared/services/i18n.service';
 import type { CreateStockDto, HorodatageApi, MedicamentView, StockAscView } from '@baobaoheath/shared-types';
+import { QuantiteUnitePipe, formaterQuantite } from '../../../shared/pipes/quantite-unite.pipe';
 
 @Component({
   selector: 'app-stocks',
   standalone: true,
-  imports: [
+  imports: [QuantiteUnitePipe, 
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     TranslatePipe,
@@ -203,7 +204,7 @@ export class StocksComponent implements OnInit {
     this.isSaving.set(true); this.errorMessage.set('');
     const stock = this.stocks().find(s => s.id === stockId);
     const libelle = stock
-      ? `${stock.medicament.libelle} — ${this.editQuantite()} ${stock.unite}`
+      ? `${stock.medicament.libelle} — ${formaterQuantite((cle) => this.i18n.t(cle), this.editQuantite(), stock.unite)}`
       : undefined;
 
     const nouvelleQuantite = this.editQuantite();

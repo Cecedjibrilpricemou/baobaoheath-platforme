@@ -22,25 +22,6 @@ jobs:
       run:
         working-directory: apps/api
 
-    services:
-      postgres:
-        # Le miroir public d'AWS plutot que Docker Hub : ce dernier limite les
-        # telechargements anonymes par adresse IP, et les coureurs GitHub la
-        # partagent. Le 2026-10-09 la CI a echoue deux fois de suite sur
-        # « toomanyrequests » sans qu'aucun test n'ait pu demarrer. Meme image,
-        # meme version, sans quota.
-        image: public.ecr.aws/docker/library/postgres:16-alpine
-        env:
-          POSTGRES_USER: baobaoheath
-          POSTGRES_PASSWORD: baobaoheath
-          POSTGRES_DB: baobaoheath_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
       DATABASE_URL: postgresql://baobaoheath:baobaoheath@localhost:5432/baobaoheath_test
       JWT_SECRET: ci-test-secret-at-least-32-chars-long
@@ -56,6 +37,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      # Postgres demarre ici plutot qu'en conteneur de service : voir
+      # .github/scripts/demarrer-postgres.sh (nouvelles tentatives, registres
+      # de secours).
+      - name: Start Postgres
+        working-directory: .
+        run: bash .github/scripts/demarrer-postgres.sh baobaoheath_test 5432
 
       - uses: actions/setup-node@v5
         with:
@@ -159,25 +147,6 @@ jobs:
     needs: [api-build-test, web-build]
     timeout-minutes: 25
 
-    services:
-      postgres:
-        # Le miroir public d'AWS plutot que Docker Hub : ce dernier limite les
-        # telechargements anonymes par adresse IP, et les coureurs GitHub la
-        # partagent. Le 2026-10-09 la CI a echoue deux fois de suite sur
-        # « toomanyrequests » sans qu'aucun test n'ait pu demarrer. Meme image,
-        # meme version, sans quota.
-        image: public.ecr.aws/docker/library/postgres:16-alpine
-        env:
-          POSTGRES_USER: baobaoheath
-          POSTGRES_PASSWORD: baobaoheath
-          POSTGRES_DB: baobaoheath_e2e
-        ports: ['55433:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
       CI: 'true'
       E2E_DATABASE_URL: postgresql://baobaoheath:baobaoheath@localhost:55433/baobaoheath_e2e
@@ -186,6 +155,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      # Postgres demarre ici plutot qu'en conteneur de service : voir
+      # .github/scripts/demarrer-postgres.sh (nouvelles tentatives, registres
+      # de secours).
+      - name: Start Postgres
+        working-directory: .
+        run: bash .github/scripts/demarrer-postgres.sh baobaoheath_e2e 55433
 
       - uses: actions/setup-node@v5
         with:

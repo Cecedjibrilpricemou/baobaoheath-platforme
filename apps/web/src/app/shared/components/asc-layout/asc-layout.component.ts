@@ -25,7 +25,7 @@ import { BrandComponent } from '../brand/brand.component';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/asc/consultations':   'ASC.NAV_CONSULTATIONS',
-  '/asc/triage':          'Triage IA',
+  '/asc/triage':          'ASC.NAV_TRIAGE',
   '/asc/stocks':          'ASC.NAV_STOCKS',
   '/asc/planning':        'ASC.NAV_PLANNING',
   '/asc/sync':            'Synchronisation',

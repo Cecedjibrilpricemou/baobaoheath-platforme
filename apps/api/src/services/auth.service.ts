@@ -6,6 +6,7 @@ import { ForgotPasswordDto, LoginDto, LoginResult, RegisterDto, ResetPasswordDto
 import { generateTokenPair } from '../utils/jwt.utils';
 import { hashPassword, verifyPassword } from '../utils/password.utils';
 import { peutRenvoyerOtpEnClair } from '../utils/otp-developpement';
+import { assertMotDePasseConforme } from '../utils/politique-mot-de-passe';
 import { envoyerEmailResetMotDePasse, envoyerOtpConnexion } from './email.service';
 import { initialiserConsentementsParDefaut } from './privacy.service';
 import {
@@ -427,9 +428,7 @@ export async function changerMotDePasse(userId: string, dto: {
     if (!valid) throw new UnauthorizedError('Ancien mot de passe incorrect');
   }
 
-  if (dto.nouveauMotDePasse.length < 6) {
-    throw new ValidationError('Le mot de passe doit contenir au moins 6 caracteres');
-  }
+  assertMotDePasseConforme(dto.nouveauMotDePasse, utilisateur.role);
 
   const motDePasseHash = await hashPassword(dto.nouveauMotDePasse);
   await prisma.utilisateur.update({
@@ -494,9 +493,13 @@ export async function reinitialiserMotDePasse(dto: ResetPasswordDto): Promise<vo
     throw new ValidationError('Lien de réinitialisation expiré. Veuillez en faire un nouveau.');
   }
 
-  if (dto.nouveauMotDePasse.length < 6) {
-    throw new ValidationError('Le mot de passe doit contenir au moins 6 caractères');
-  }
+  // La regle depend du compte : le lien ne dit pas a qui il appartient.
+  const titulaire = await prisma.utilisateur.findUnique({
+    where: { id: resetRecord.idUtilisateur },
+    select: { role: true },
+  });
+  if (!titulaire) throw new ValidationError('Lien de réinitialisation invalide ou déjà utilisé');
+  assertMotDePasseConforme(dto.nouveauMotDePasse, titulaire.role);
 
   const motDePasseHash = await hashPassword(dto.nouveauMotDePasse);
 

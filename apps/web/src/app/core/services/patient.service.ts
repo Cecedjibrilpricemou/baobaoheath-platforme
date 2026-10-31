@@ -56,6 +56,11 @@ export class PatientService {
     return this.api.put<ApiResponse<Patient>>('/patients/me', payload);
   }
 
+  /** Le code PIN qui ouvre le dossier par USSD ; le mot de passe du compte est exige. */
+  definirPinUssd(pin: string, motDePasse: string): Observable<ApiResponse<void>> {
+    return this.api.put<ApiResponse<void>>('/patients/me/pin-ussd', { pin, motDePasse });
+  }
+
   setStructurePreferee(idStructure: string | null): Observable<ApiResponse<Patient>> {
     return this.api.put<ApiResponse<Patient>>('/patients/me/structure', { idStructure });
   }
