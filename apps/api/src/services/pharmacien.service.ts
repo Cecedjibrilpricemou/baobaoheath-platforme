@@ -6,6 +6,7 @@ import { enregistrerMouvementStock } from './mouvement-stock.service';
 import { Role, StatutOrdonnance, TypeActeDelivrance, TypeStructure } from '../config/generated/client/client';
 import { notifierSansBloquer } from './notification.service';
 import { hashPassword } from '../utils/password.utils';
+import { assertMotDePasseConforme } from '../utils/politique-mot-de-passe';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/app-error';
 import { estStructureOfficinale, filtreStructuresOfficinales } from '../utils/officine.util';
 import { getValeursParametres } from './parametres.service';
@@ -1057,6 +1058,7 @@ export async function creerAgentPharmacie(pharmacienId: string, dto: CreateAgent
     if (existingEmail) throw new ConflictError('Cette adresse email est deja utilisee');
   }
 
+  if (dto.motDePasse) assertMotDePasseConforme(dto.motDePasse, 'PHARMACIEN');
   const motDePasseTemp = dto.motDePasse || genererMotDePasseTemp();
   const motDePasseHash = await hashPassword(motDePasseTemp);
   const isTemporaire = !dto.motDePasse;

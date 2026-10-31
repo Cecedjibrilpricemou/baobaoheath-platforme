@@ -267,6 +267,14 @@ export class ConsentementsComponent implements OnInit {
    * vigueur. **Jamais l'inverse** — lui presenter le texte d'aujourd'hui comme
    * s'il l'avait accepte serait lui faire dire ce qu'il n'a pas dit.
    */
+  /**
+   * Aucun texte publie pour aucun usage (base neuve, demonstration).
+   * On le dit une fois en tete plutot que quatre fois sous chaque ligne.
+   */
+  readonly aucunTexte = computed(() =>
+    !this.isLoading() && this.scopes().every((s) => !this.texteAMontrer(s)),
+  );
+
   texteAMontrer(item: ScopeItem): TexteConsentementView | null {
     return item.texteAccepte ?? item.texteEnVigueur;
   }

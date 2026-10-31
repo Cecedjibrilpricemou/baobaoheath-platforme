@@ -71,7 +71,7 @@
     "ERR_NAME_REQUIRED": "First name and last name are required.",
     "SUCCESS_UPDATED": "Profile updated successfully!",
     "ERR_UPDATE": "Error while updating.",
-    "ERR_PWD_SHORT": "Password must be at least 6 characters.",
+    "ERR_PWD_SHORT": "Password must be at least {{min}} characters.",
     "ERR_PWD_MATCH": "Passwords do not match.",
     "ERR_OLD_PWD_REQUIRED": "The old password is required.",
     "SUCCESS_PWD_CHANGED": "Password changed successfully!",
@@ -304,7 +304,7 @@
     "TRUST_SECURE": "Encrypted and secure data",
     "TRUST_MOBILE": "Works on mobile",
     "TRUST_OFFLINE": "Works on low bandwidth",
-    "TRUST_MADE": "Made for Guinea 🇬🇳",
+    "TRUST_MADE": "Made for Guinea",
     "CONTACT_TITLE_A": "Contact",
     "CONTACT_TITLE_B": "us",
     "CONTACT_SUB": "Have questions about {{nom}}, or want to bring the platform to your facility? Our team is here to help.",
@@ -338,7 +338,7 @@
     "NAV_QR": "QR Code",
     "NAV_QR_CODE": "My QR Code",
     "DASHBOARD": {
-      "GREETING": "Hello 👋",
+      "GREETING": "Hello",
       "SUBTITLE": "Your personal health dashboard",
       "BTN_QR": "My QR Code",
       "BTN_PROFILE": "My Profile",
@@ -447,7 +447,7 @@
       "BIRTH_DATE": "Date of birth",
       "BLOOD_TYPE": "Blood type",
       "SECURITY_TITLE": "Secure QR Code",
-      "SECURITY_TEXT": "This code is personal and encrypted. Only share with authorised {{nom}} healthcare professionals.",
+      "SECURITY_TEXT": "This code identifies your record. Only show it to authorised {{nom}} healthcare professionals: it lets them look up your record.",
       "NOT_AVAILABLE": "QR Code not available",
       "LOADING": "Loading...",
       "IMG_ALT": "Patient identification QR Code to present at a pharmacy or health facility",
@@ -557,6 +557,7 @@
       "TEXT_ACCEPTE": "The text you agreed to",
       "TEXT_EN_VIGUEUR": "The text in force today",
       "TEXT_AUCUN": "No text is published for this use. Until there is one, your consent cannot be recorded: you do not consent to a text that does not exist.",
+      "TEXT_AUCUN_TOUS": "No consent text has been published yet. Until one is, no agreement can be recorded: you cannot consent to a text that does not exist. Withdrawing an agreement is always possible.",
       "ETAT_JAMAIS_RECUEILLI": "Presumed consent, never collected",
       "ETAT_JAMAIS_RECUEILLI_DIT": "This consent was recorded without anyone showing you a text — when your record was created, or before the platform kept what is shown to you. That is not consent. Read the text below and confirm, or withdraw.",
       "ETAT_TEXTE_PLUS_RECENT": "The text changed after you agreed",
@@ -816,7 +817,7 @@
     "NAV_CONSULTATIONS": "Consultations",
     "NAV_STOCKS": "Stock",
     "NAV_PLANNING": "Schedule",
-    "NAV_TRIAGE": "AI Triage",
+    "NAV_TRIAGE": "Triage support",
     "NAV_SYNC": "Synchronisation",
     "CONSULTATIONS": {
       "TITLE": "My Consultations",
@@ -1051,12 +1052,13 @@
       "MINUTES_AGO": "{{m}} min ago"
     },
     "TRIAGE": {
-      "TITLE": "AI Smart Triage",
+      "TITLE": "Triage support",
       "SUBTITLE": "Quickly assess the patient's condition to make the right decision.",
+      "AVERTISSEMENT": "Decision support based on simple rules, to be clinically validated. It does not replace a health worker's judgement.",
       "STEPS_ARIA": "Triage steps",
       "STEP1_LABEL": "Patient",
       "STEP2_LABEL": "Symptoms",
-      "STEP3_LABEL": "AI Analysis",
+      "STEP3_LABEL": "Analysis",
       "STEP1_TITLE": "Patient Identification",
       "STEP1_SUB": "Search for the patient by their QR code or phone number.",
       "SEARCH_PLACEHOLDER": "Phone number or ID...",
@@ -1068,11 +1070,11 @@
       "TEMP_LABEL": "Temperature (°C): {{value}}",
       "TENSION_LABEL": "Blood pressure",
       "TENSION_PLACEHOLDER": "E.g.: 12/8",
-      "LAUNCH_ANALYSIS": "Launch AI Analysis",
-      "ANALYZING_TITLE": "BaoBao AI is analyzing the data...",
+      "LAUNCH_ANALYSIS": "Run analysis",
+      "ANALYZING_TITLE": "Analysing the signs...",
       "ANALYZING_SUB": "Comparing against WHO guidelines... {{percent}}%",
       "GRAVITY_TITLE": "Assessed Severity",
-      "RECOMMENDATIONS_TITLE": "AI Recommendations",
+      "RECOMMENDATIONS_TITLE": "Suggested next steps",
       "CREATE_CONSULTATION": "Create consultation",
       "SYMPTOM_FIEVRE": "Fever",
       "SYMPTOM_FRISSONS": "Chills",
@@ -1107,7 +1109,7 @@
       "FALLBACK_REC_3_1": "Prescribe paracetamol.",
       "FALLBACK_REC_3_2": "Rest and stay well hydrated.",
       "PATIENT_DETAILS": "Gender: {{sexe}} | Region: {{region}}",
-      "MOTIF_PREFIX": "AI Triage:"
+      "MOTIF_PREFIX": "Triage support:"
     }
   },
   "MEDECIN": {
@@ -1391,7 +1393,7 @@
       "SUBTITLE": "Configure global rules, security and system behavior.",
       "SAVE": "Save",
       "TAB_SECURITY": "Security & Access",
-      "TAB_ALERTS": "Alerts & AI",
+      "TAB_ALERTS": "Alerts & triage",
       "TAB_SYNC": "Offline & USSD",
       "BILLING_TITLE": "Billing & Finance",
       "BILLING_DESC": "Accepted payment methods and financial settings.",
@@ -1414,8 +1416,8 @@
       "PALUDISME_LABEL": "Malaria alert threshold (cases / prefecture / 30 days): {{value}}",
       "EBOLA_LABEL": "Haemorrhagic fever alert threshold (Ebola, Marburg): {{value}}",
       "EBOLA_WARNING": "Any detection triggers an immediate national emergency.",
-      "AI_TITLE": "Artificial Intelligence",
-      "AI_ENABLE_TITLE": "Enable AI Triage Assistant",
+      "AI_TITLE": "Triage support",
+      "AI_ENABLE_TITLE": "Enable triage support",
       "AI_ENABLE_SUB": "Allows the CHW space to call the triage assistant. When disabled, the server rejects the evaluation.",
       "OFFLINE_TITLE": "Offline (PWA) & USSD",
       "OFFLINE_DESC": "Connectivity settings for isolated areas.",
@@ -1968,7 +1970,7 @@
       "EMPTY_TITLE": "No medication found",
       "EMPTY_SUB": "Click \"Restock\" to add new stock.",
       "STOCK_LEVEL": "Stock level",
-      "ALERT_THRESHOLD": "Alert threshold: {{value}} {{unit}}",
+      "ALERT_THRESHOLD": "Alert threshold: {{value}}",
       "EXPIRY_LABEL": "Exp: {{date}}",
       "NO_EXPIRY": "No expiry",
       "NIVEAU_CRITIQUE": "Critical",
@@ -2116,6 +2118,7 @@
       "TITLE": "Till",
       "SUB": "Over-the-counter sale. The customer needs no record.",
       "PANIER": "Basket",
+      "PANIER_FERME": "The till is closed: open a session above to record a sale.",
       "PRODUIT": "Product",
       "QUANTITE": "Qty",
       "PRIX_UNITAIRE": "Unit price",
@@ -3248,6 +3251,7 @@
     "IMPRIMER": "Print",
     "CSV": "Excel (CSV)",
     "LIGNES": "{{n}} row(s)",
+    "LIGNES_SUR": "{{n}} row(s) on this page, out of {{total}}",
     "EDITE_LE": "Issued on {{date}}",
     "EDITE_PAR": "by {{nom}}",
     "COL": {
@@ -3770,6 +3774,41 @@
       "LIBELLE_REQUIS": "Name the document before attaching it: without a label it would be unreadable in the list.",
       "AJOUT_AIDE": "For any document the relevant directorate asks for that is not listed above.",
       "SANS_STRUCTURE": "Your account is not attached to any facility: there is no file to keep."
+    }
+  },
+  "UNITE": {
+    "REGLE": "en",
+    "BOITE": {
+      "UN": "box",
+      "PLUSIEURS": "boxes"
+    },
+    "UNITE": {
+      "UN": "unit",
+      "PLUSIEURS": "units"
+    },
+    "COMPRIME": {
+      "UN": "tablet",
+      "PLUSIEURS": "tablets"
+    },
+    "FLACON": {
+      "UN": "bottle",
+      "PLUSIEURS": "bottles"
+    },
+    "SACHET": {
+      "UN": "sachet",
+      "PLUSIEURS": "sachets"
+    },
+    "AMPOULE": {
+      "UN": "ampoule",
+      "PLUSIEURS": "ampoules"
+    },
+    "TUBE": {
+      "UN": "tube",
+      "PLUSIEURS": "tubes"
+    },
+    "PLAQUETTE": {
+      "UN": "blister pack",
+      "PLUSIEURS": "blister packs"
     }
   }
 }
