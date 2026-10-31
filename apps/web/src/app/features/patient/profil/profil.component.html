@@ -253,6 +253,44 @@
         </div>
       </div>
 
+      <!-- ── CODE PIN USSD ─────────────────────────────────── -->
+      <div class="profil-card profil-card--full">
+        <div class="profil-card__header">
+          <div class="profil-card__header-icon profil-card__header-icon--green">
+            <i class="pi pi-lock"></i>
+          </div>
+          <h3 class="profil-card__title">{{ 'PATIENT.PROFILE.PIN_TITLE' | translate }}</h3>
+        </div>
+
+        <p class="structure-select__hint">{{ 'PATIENT.PROFILE.PIN_INTRO' | translate }}</p>
+
+        <form class="pin-ussd" (ngSubmit)="enregistrerPin()" autocomplete="off">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'PATIENT.PROFILE.PIN_LABEL' | translate }}</mat-label>
+            <input matInput id="pin-ussd" name="pin" type="password" inputmode="numeric" maxlength="4"
+              autocomplete="new-password" [(ngModel)]="pinForm.pin" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'PATIENT.PROFILE.PIN_CONFIRM_LABEL' | translate }}</mat-label>
+            <input matInput id="pin-ussd-confirmation" name="pinConfirmation" type="password" inputmode="numeric"
+              maxlength="4" autocomplete="new-password" [(ngModel)]="pinForm.confirmation" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'PATIENT.PROFILE.PIN_PASSWORD_LABEL' | translate }}</mat-label>
+            <input matInput id="pin-ussd-mot-de-passe" name="motDePasse" type="password"
+              autocomplete="current-password" [(ngModel)]="pinForm.motDePasse" />
+          </mat-form-field>
+          <button class="structure-select__btn" type="submit" [disabled]="isSavingPin()">
+            <i [class]="isSavingPin() ? 'pi pi-spinner pi-spin' : 'pi pi-check'" aria-hidden="true"></i>
+            {{ 'PATIENT.PROFILE.PIN_SAVE' | translate }}
+          </button>
+        </form>
+        <small class="structure-select__hint">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          {{ 'PATIENT.PROFILE.PIN_HINT' | translate }}
+        </small>
+      </div>
+
     </div>
 
     <!-- Actions rapides -->

@@ -1,0 +1,102 @@
+# KÈNÈYA — configuration de PRODUCTION.
+#
+#   docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d --build
+#
+# `docker/docker-compose.yml` reste le fichier de **developpement** : mot de
+# passe Postgres connu, ports ouverts, NODE_ENV=development. Il ne doit jamais
+# servir sur un serveur expose.
+#
+# Ce fichier-ci :
+# - n'ecrit aucun secret : chacun est une variable **obligatoire** (`${X:?}`),
+#   et `docker compose` refuse de demarrer si l'une manque ;
+# - ne publie pas Redis, et lui impose un mot de passe ;
+# - ne publie Postgres que sur 127.0.0.1 du serveur : joignable par tunnel SSH
+#   pour les migrations (voir le job Deploy de la CI), jamais depuis Internet ;
+# - lance l'API en NODE_ENV=production : cookies `Secure`, OTP jamais renvoye
+#   dans la reponse, messages d'erreur internes masques.
+#
+# Les secrets vivent dans docker/.env.prod, **hors du depot** (voir
+# docker/.env.prod.example pour la liste).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-keneya}
+      POSTGRES_USER: ${POSTGRES_USER:-keneya}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obligatoire}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT_LOCAL:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Pas de `ports` : seul le reseau interne de compose y accede.
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD:?REDIS_PASSWORD obligatoire}']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$${REDIS_PASSWORD}" --no-auth-warning ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD obligatoire}
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-keneya}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obligatoire}@postgres:5432/${POSTGRES_DB:-keneya}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD obligatoire}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET obligatoire}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET obligatoire}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      DB_ENCRYPTION_KEY: ${DB_ENCRYPTION_KEY:?DB_ENCRYPTION_KEY obligatoire}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?ALLOWED_ORIGINS obligatoire (https://...)}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL obligatoire (https://...)}
+      # Sans e-mail, aucun professionnel ne recoit son code OTP : obligatoire.
+      GMAIL_USER: ${GMAIL_USER:?GMAIL_USER obligatoire}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:?GMAIL_APP_PASSWORD obligatoire}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      USSD_HMAC_KEY: ${USSD_HMAC_KEY:-}
+      USSD_ALLOWED_IPS: ${USSD_ALLOWED_IPS:-}
+      CHAPCHAP_API_KEY: ${CHAPCHAP_API_KEY:-}
+      CHAPCHAP_HMAC_KEY: ${CHAPCHAP_HMAC_KEY:-}
+      CHAPCHAP_CALLBACK_URL: ${CHAPCHAP_CALLBACK_URL:-}
+    # Pas de `ports` : l'API n'est joignable que par le proxy nginx du service web.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    # Le seul point d'entree. Mettre un terminal TLS (reverse proxy, equilibreur)
+    # devant : les cookies `Secure` de la production exigent HTTPS.
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:

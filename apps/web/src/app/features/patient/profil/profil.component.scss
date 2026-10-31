@@ -603,3 +603,14 @@
     transition: transform var(--bb-transition), color var(--bb-transition);
   }
 }
+
+// ── Code PIN USSD ──────────────────────────────────────────────
+// Trois champs et un bouton sur une ligne en bureau, empiles en mobile.
+// Aucune couleur propre : tout vient des tokens et du theme Material.
+.pin-ussd {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 8px;
+}

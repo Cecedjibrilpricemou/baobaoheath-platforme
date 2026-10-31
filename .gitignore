@@ -4,6 +4,8 @@ node_modules/
 .env.development
 .env.staging
 .env.production
+# Secrets de docker/docker-compose.prod.yml. Seul le gabarit .env.prod.example est suivi.
+.env.prod
 dist/
 build/
 .angular/

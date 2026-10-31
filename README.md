@@ -69,6 +69,7 @@ cd ../apps/api && npx prisma migrate deploy && npx prisma generate
 # mots de passe choisis hors du dépôt, 12 caractères minimum (voir « Comptes »)
 SEED_SUPER_ADMIN_PASSWORD=... npm run prisma:seed
 SEED_DEMO_PASSWORD=... npm run prisma:seed:demo   # jeu « Pricemou », idempotent
+npm run prisma:seed:consentements                 # textes de consentement v1 (sans eux, aucun accord n'est enregistrable)
 cd ../.. && npm run dev                           # API (3000) + web (4200)
 ```
 

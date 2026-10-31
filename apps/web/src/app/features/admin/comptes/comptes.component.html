@@ -12,6 +12,7 @@
     [sousTitre]="(role() ? ('EXPORT.SOUS.COMPTES_FILTRE_ROLE' | translate: { role: role(), etat: etat(), affiches: comptes().length, total: total() }) : ('EXPORT.SOUS.COMPTES_FILTRE' | translate: { etat: etat(), affiches: comptes().length, total: total() }))"
     [colonnes]="colonnes"
     [lignes]="comptes()"
+    [total]="total()"
     [nomFichier]="'comptes'" />
 
 

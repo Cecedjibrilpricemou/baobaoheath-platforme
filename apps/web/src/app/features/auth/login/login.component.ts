@@ -18,6 +18,27 @@ import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { AuthShellComponent } from '../../../shared/components/auth-shell/auth-shell.component';
 import { ToastrService } from 'ngx-toastr';
 
+
+/** Le message a afficher pour un echec de connexion ou de verification OTP. */
+export function messageErreurConnexion(
+  t: (cle: string) => string,
+  err: unknown,
+  cleParDefaut: string,
+): string {
+  const e = err as { status?: number; error?: { error?: string; message?: string } };
+  // status 0 : la requete n'a jamais atteint le serveur (arrete, CORS, reseau).
+  // 502/503/504 : le relais (nginx en production, proxy de developpement) est
+  // joignable mais pas l'API ; il repond par une page HTML, sans corps JSON.
+  if (e?.status === 0 || e?.status === 502 || e?.status === 503 || e?.status === 504) {
+    return t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE');
+  }
+  // 429 : le limiteur de connexions repond en texte brut, sans corps JSON.
+  // Sans ce cas, on retombait sur « identifiants incorrects » alors que le
+  // mot de passe etait juste : c'est arrive le 2026-10-21.
+  if (e?.status === 429) return t('AUTH.LOGIN.ERR_TROP_DE_TENTATIVES');
+  return e?.error?.error ?? e?.error?.message ?? t(cleParDefaut);
+}
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -115,14 +136,7 @@ export class LoginComponent implements OnDestroy {
    * message par defaut. Le message envoyait chercher l'erreur du mauvais cote.
    */
   private messageErreur(err: unknown, cleParDefaut: string): string {
-    const e = err as { status?: number; error?: { error?: string; message?: string } };
-    // status 0 : la requete n'a jamais atteint le serveur (arrete, CORS, reseau).
-    if (e?.status === 0) return this.i18nService.t('AUTH.LOGIN.ERR_SERVEUR_INJOIGNABLE');
-    // 429 : le limiteur de connexions repond en texte brut, sans corps JSON.
-    // Sans ce cas, on retombait sur « identifiants incorrects » alors que le
-    // mot de passe etait juste : c'est arrive le 2026-10-21.
-    if (e?.status === 429) return this.i18nService.t('AUTH.LOGIN.ERR_TROP_DE_TENTATIVES');
-    return e?.error?.error ?? e?.error?.message ?? this.i18nService.t(cleParDefaut);
+    return messageErreurConnexion((cle) => this.i18nService.t(cle), err, cleParDefaut);
   }
 
   verifyOtp() {
