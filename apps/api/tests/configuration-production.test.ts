@@ -41,7 +41,9 @@ describe('auth.service', () => {
 
 describe('docker/docker-compose.prod.yml', () => {
   const chemin = join(__dirname, '..', '..', '..', 'docker', 'docker-compose.prod.yml');
-  const compose = readFileSync(chemin, 'utf8');
+  // Sous Windows, git peut extraire le fichier en CRLF : sans cette
+  // normalisation, `service()` ne trouvait plus aucun bloc.
+  const compose = readFileSync(chemin, 'utf8').replace(/\r\n/g, '\n');
 
   /** Le bloc d'un service : de son nom au service suivant (meme indentation). */
   function service(nom: string): string {
