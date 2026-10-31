@@ -451,6 +451,13 @@
 
 .consent-row__meta--manque { color: var(--bb-warning); line-height: 1.5; }
 
+.consent-aucun-texte {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 0 0 0.75rem; padding: 0.6rem 0.8rem;
+  border: 1px solid var(--bb-border); border-radius: 10px;
+  color: var(--bb-text-secondary); line-height: 1.5;
+}
+
 .consent-texte {
   margin-top: 0.5rem;
   padding: 0.75rem 0.9rem;
