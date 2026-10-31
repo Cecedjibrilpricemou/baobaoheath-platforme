@@ -19,7 +19,7 @@ import type {
   CreationStructureView,
   ParametresSystemeView,
   StructureAdminView,
-  StatsStructureView,
+  MaStructureView, StatsStructureView,
   StructurePubliqueView,
 } from '@baobaoheath/shared-types';
 import {
@@ -115,6 +115,12 @@ router.put('/agents/:id/bureau', requireRole('ADMIN_STRUCTURE'), validateBody(de
 router.put('/agents/:id/desactiver', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
   await service.desactiverAgent(req.user!.userId, String(req.params.id));
   res.json({ success: true, message: 'Agent desactive' });
+});
+
+/** Ce que le menu doit savoir de la structure : son type, sans statistiques. */
+router.get('/ma-structure', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {
+  const data: MaStructureView = await service.maStructure(req.user!.userId);
+  res.json({ success: true, data });
 });
 
 router.get('/stats', requireRole('ADMIN_STRUCTURE'), async (req: AuthRequest, res: Response) => {

@@ -67,6 +67,7 @@ npm ci                                            # installe les trois workspace
 cd docker && docker compose up -d postgres        # conteneur baobao_db, port 5433
 cd ../apps/api && npx prisma migrate deploy && npx prisma generate
 npm run prisma:seed && npm run prisma:seed:demo   # jeu « Pricemou », idempotent
+npm run prisma:seed:consentements                 # textes de consentement v1 (sans eux, aucun accord n'est enregistrable)
 cd ../.. && npm run dev                           # API (3000) + web (4200)
 ```
 

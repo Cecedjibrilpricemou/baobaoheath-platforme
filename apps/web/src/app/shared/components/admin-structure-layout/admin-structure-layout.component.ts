@@ -54,12 +54,10 @@ export class AdminStructureLayoutComponent {
     // PrimeIcons est déjà embarqué localement : on l'expose comme font set
     // Material plutôt que d'ajouter Material Symbols (plusieurs Mo).
     iconRegistry.registerFontClassAlias('pi', 'pi');
-    this.api.get<{ data?: { structure?: { type?: string } | null } }>('/admin-structure/stats').subscribe({
-      next: response => {
-        this.pharmaciesNavEnabled.set(
-          ['HOPITAL_PREF', 'HOPITAL_REG', 'CHU', 'CLINIQUE'].includes(response.data?.structure?.type ?? ''),
-        );
-      },
+    // Le menu lit la structure seule, pas les statistiques : un calcul de
+    // compteurs en echec ne doit pas retirer des entrees du menu.
+    this.api.get<{ data?: { hospitaliere?: boolean } }>('/admin-structure/ma-structure').subscribe({
+      next: response => this.pharmaciesNavEnabled.set(response.data?.hospitaliere === true),
       error: () => this.pharmaciesNavError.set(true),
     });
   }

@@ -7,7 +7,6 @@ import { ValidationError } from '../utils/app-error';
 import { AVATARS_DIR, AVATARS_PUBLIC_PATH, LOGOS_DIR, LOGOS_PUBLIC_PATH } from '../middlewares/upload.middleware';
 import { modifierLogo } from '../services/parametres.service';
 import type { IdentitePlateformeView } from '@baobaoheath/shared-types';
-import fs from 'fs/promises';
 
 // Les avatars sont affichés au maximum à ~72px (hero profil patient) : on
 // stocke en 256px pour rester net sur écrans haute densité sans imposer le
@@ -38,8 +37,28 @@ export async function uploadAvatarController(req: AuthRequest, res: Response): P
 
 // Le logo s'affiche dans la barre de navigation (~32px de haut) et dans les
 // e-mails : 512px de large suffisent. On garde les proportions et la
-// transparence (PNG) ; un SVG est conserve tel quel.
+// transparence (PNG).
 const LARGEUR_LOGO_PX = 512;
+
+/**
+ * Ce qu'un SVG ne doit pas contenir pour etre seulement *rendu*.
+ *
+ * **Un SVG est un document, pas une image** : il peut porter du script, des
+ * gestionnaires d'evenements, du HTML (`foreignObject`), des entites XML qui
+ * lisent un fichier local, ou des references vers d'autres ressources. Le SVG
+ * est de toute facon converti en PNG ci-dessous — ce qui supprime tout code —,
+ * mais on ne confie pas un document hostile a la bibliotheque de rendu.
+ */
+const SVG_INTERDIT = [
+  /<script\b/i,
+  /\son[a-z]+\s*=/i,
+  /<foreignObject\b/i,
+  /<!ENTITY\b|<!DOCTYPE\b/i,
+  /<(?:iframe|embed|object)\b/i,
+  // Toute reference qui n'est pas une ancre interne (#id) ni une image en data:.
+  /\b(?:xlink:)?href\s*=\s*["'](?!#|data:image\/)/i,
+  /javascript:/i,
+];
 
 export async function uploadLogoController(req: AuthRequest, res: Response): Promise<void> {
   if (!req.file) {
@@ -47,18 +66,23 @@ export async function uploadLogoController(req: AuthRequest, res: Response): Pro
   }
 
   const estSvg = req.file.mimetype === 'image/svg+xml';
-  const filename = `logo-${Date.now()}-${randomUUID().slice(0, 8)}.${estSvg ? 'svg' : 'png'}`;
+  if (estSvg) {
+    const texte = req.file.buffer.toString('utf8');
+    if (SVG_INTERDIT.some((motif) => motif.test(texte))) {
+      throw new ValidationError('Ce SVG contient du script, des liens ou des entités : enregistrez-le en PNG, ou exportez un SVG simple.');
+    }
+  }
+
+  // **Toujours un PNG, y compris pour un SVG** : une image matricielle ne peut
+  // plus porter de code, et /uploads est servi sur l'origine de l'API.
+  const filename = `logo-${Date.now()}-${randomUUID().slice(0, 8)}.png`;
 
   try {
-    if (estSvg) {
-      await fs.writeFile(path.join(LOGOS_DIR, filename), req.file.buffer);
-    } else {
-      await sharp(req.file.buffer)
-        .rotate()
-        .resize({ width: LARGEUR_LOGO_PX, height: LARGEUR_LOGO_PX, fit: 'inside', withoutEnlargement: true })
-        .png({ compressionLevel: 9 })
-        .toFile(path.join(LOGOS_DIR, filename));
-    }
+    await sharp(req.file.buffer, estSvg ? { density: 300 } : {})
+      .rotate()
+      .resize({ width: LARGEUR_LOGO_PX, height: LARGEUR_LOGO_PX, fit: 'inside', withoutEnlargement: !estSvg })
+      .png({ compressionLevel: 9 })
+      .toFile(path.join(LOGOS_DIR, filename));
   } catch {
     throw new ValidationError('Image illisible ou corrompue.');
   }
