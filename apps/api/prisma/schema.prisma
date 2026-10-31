@@ -899,6 +899,20 @@ enum TypePieceIdentite {
 model PatientProfile {
   id                 String   @id @default(cuid())
   qrCode             String   @unique @default(cuid())
+
+  // ── Code PIN de la passerelle USSD ─────────────────────────────────────
+  //
+  // Un numero de telephone ne prouve rien : il se devine, il se partage, il
+  // change de main. Sans PIN, la passerelle rendait le dossier a quiconque
+  // connaissait le numero. Le PIN est choisi par le patient depuis son espace,
+  // stocke hache (bcrypt), jamais en clair, et bloque apres cinq echecs.
+  /// Hache bcrypt du PIN. Null tant que le patient n'en a pas choisi : l'USSD reste alors ferme.
+  pinUssdHash         String?
+  /// Echecs consecutifs. Remis a zero par un succes ou par un nouveau PIN.
+  pinUssdEchecs       Int       @default(0)
+  /// Fin du blocage apres cinq echecs.
+  pinUssdBloqueJusqua DateTime?
+
   dateNaissance      DateTime
   sexe               String
   groupeSanguin      String?

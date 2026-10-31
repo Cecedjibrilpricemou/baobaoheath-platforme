@@ -89,8 +89,11 @@ export class ProfilModalComponent implements OnInit {
 
   // ── Changer le mot de passe ─────────────────────────────────────
   savePassword() {
-    if (this.passwordForm.nouveauMotDePasse.length < 6) {
-      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PWD_SHORT')); return;
+    // Meme regle que l'API (utils/politique-mot-de-passe.ts) : 6 pour un
+    // patient, 12 pour tout autre compte. Le serveur reste celui qui decide.
+    const min = this.currentUser()?.role === 'PATIENT' ? 6 : 12;
+    if (this.passwordForm.nouveauMotDePasse.length < min) {
+      this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PWD_SHORT', { min })); return;
     }
     if (this.passwordForm.nouveauMotDePasse !== this.passwordForm.confirmation) {
       this.errorMsg.set(this.i18n.t('PROFIL_MODAL.ERR_PWD_MATCH')); return;
