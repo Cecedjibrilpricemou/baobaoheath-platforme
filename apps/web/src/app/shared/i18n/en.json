@@ -2106,6 +2106,7 @@
       "TITLE": "Till",
       "SUB": "Over-the-counter sale. The customer needs no record.",
       "PANIER": "Basket",
+      "PANIER_FERME": "The till is closed: open a session above to record a sale.",
       "PRODUIT": "Product",
       "QUANTITE": "Qty",
       "PRIX_UNITAIRE": "Unit price",
