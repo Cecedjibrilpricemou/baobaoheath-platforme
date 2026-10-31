@@ -14,7 +14,7 @@ Le script est **idempotent** : il peut être rejoué sans rien casser.
 
 ## Les comptes
 
-**Mot de passe de tous les comptes : `Pricemou1234`**
+**Mot de passe de tous les comptes : celui que vous avez passé dans `SEED_DEMO_PASSWORD`** au lancement du script. Il n'est écrit nulle part dans le dépôt, volontairement.
 
 | Rôle | Nom | Identifiant | Structure |
 |---|---|---|---|

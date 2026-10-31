@@ -60,7 +60,7 @@ partagent le mot de passe que ce script affiche à la fin de son exécution.
 
 ## 1. Le journal des accès, côté patient (EF-02-08)
 
-**Connectez-vous en patiente** (`620100010` / `Pricemou1234`) → **Mes consentements**.
+**Connectez-vous en patiente** (`620100010` / mot de passe de `SEED_DEMO_PASSWORD`) → **Mes consentements**.
 
 Descendez jusqu'à **« Qui a accédé à mon dossier »**.
 
@@ -336,7 +336,7 @@ humain, pièce en main, qui doit trancher.
 
 ## 11. Le consentement versionné (EF-02-01/03/07)
 
-**Connectez-vous en patiente** (`620100010` / `Pricemou1234`) →
+**Connectez-vous en patiente** (`620100010` / mot de passe de `SEED_DEMO_PASSWORD`) →
 **Mes consentements**.
 
 ### Ce que le versionnage rend visible
