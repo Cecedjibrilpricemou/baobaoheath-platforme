@@ -3,7 +3,7 @@ import { Role, TypeEvenementConnexion } from '../config/generated/client/client'
 import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { ForgotPasswordDto, LoginDto, LoginResult, RegisterDto, ResetPasswordDto, TokenPair, VerifyLoginOtpDto } from '../types/auth.types';
-import { generateTokenPair } from '../utils/jwt.utils';
+import { generateTokenPair, verifyRefreshToken } from '../utils/jwt.utils';
 import { hashPassword, verifyPassword } from '../utils/password.utils';
 import { peutRenvoyerOtpEnClair } from '../utils/otp-developpement';
 import { assertMotDePasseConforme } from '../utils/politique-mot-de-passe';
@@ -359,6 +359,10 @@ export async function logout(
 }
 
 export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
+  // Signature et type d'abord : la recherche en base seule ne prouvait pas
+  // que le jeton soumis etait un jeton de rafraichissement.
+  verifyRefreshToken(refreshToken);
+
   const session = await prisma.session.findUnique({
     where: { refreshToken },
     include: { utilisateur: true },

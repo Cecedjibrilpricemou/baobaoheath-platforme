@@ -14,6 +14,9 @@ const envSchema = z.object({
 
   // ─── JWT ─────────────────────────────────────────────
   JWT_SECRET: z.string().min(16, 'JWT_SECRET doit contenir au moins 16 caracteres'),
+  // Distinct de JWT_SECRET : signe avec le meme secret, un jeton de
+  // rafraichissement passait pour un jeton d'acces.
+  JWT_REFRESH_SECRET: z.string().min(16, 'JWT_REFRESH_SECRET doit contenir au moins 16 caracteres'),
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
@@ -64,6 +67,9 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((val) => val !== 'false'),
+}).refine((e) => e.JWT_REFRESH_SECRET !== e.JWT_SECRET, {
+  path: ['JWT_REFRESH_SECRET'],
+  message: 'JWT_REFRESH_SECRET doit etre different de JWT_SECRET',
 });
 
 function validateEnv() {
