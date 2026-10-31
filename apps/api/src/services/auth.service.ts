@@ -5,6 +5,7 @@ import { env } from '../config/env';
 import { ForgotPasswordDto, LoginDto, LoginResult, RegisterDto, ResetPasswordDto, TokenPair, VerifyLoginOtpDto } from '../types/auth.types';
 import { generateTokenPair } from '../utils/jwt.utils';
 import { hashPassword, verifyPassword } from '../utils/password.utils';
+import { peutRenvoyerOtpEnClair } from '../utils/otp-developpement';
 import { assertMotDePasseConforme } from '../utils/politique-mot-de-passe';
 import { envoyerEmailResetMotDePasse, envoyerOtpConnexion } from './email.service';
 import { initialiserConsentementsParDefaut } from './privacy.service';
@@ -52,7 +53,7 @@ async function enregistrerEvenementConnexion(
 }
 
 function canUseDevOtpFallback(): boolean {
-  return process.env.NODE_ENV !== 'production' && process.env.EMAIL_OTP_DEV_FALLBACK !== 'false';
+  return peutRenvoyerOtpEnClair();
 }
 
 async function createSessionTokens(

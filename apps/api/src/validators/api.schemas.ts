@@ -605,6 +605,12 @@ export const ussdSessionSchema = z.object({
   text: z.string().max(500).optional().default(''),
 }).strict();
 
+/** Le patient choisit son code PIN USSD ; son mot de passe est exige. */
+export const definirPinUssdSchema = z.object({
+  pin: z.string().regex(/^\d{4}$/, 'Le code PIN doit contenir 4 chiffres'),
+  motDePasse: z.string().min(1).max(128),
+}).strict();
+
 export const createVaccinationSchema = z.object({
   idPatient: id,
   vaccinNom: z.string().trim().min(2).max(120),

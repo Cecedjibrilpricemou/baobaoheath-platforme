@@ -23,9 +23,11 @@ import { requireRole } from '../middlewares/rbac.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import {
   createPatientSchema,
+  definirPinUssdSchema,
   updatePatientSchema,
   updateStructurePrefereeSchema,
 } from '../validators/api.schemas';
+import * as ussd from '../services/ussd.service';
 
 const router = Router();
 
@@ -35,6 +37,13 @@ router.get('/me', authenticate, requireRole('PATIENT'), getMyProfileController);
 router.put('/me', authenticate, requireRole('PATIENT'), validateBody(updatePatientSchema), updateMyProfileController);
 router.put('/me/structure', authenticate, requireRole('PATIENT'), validateBody(updateStructurePrefereeSchema), updateStructurePrefereeController);
 router.get('/me/export', authenticate, requireRole('PATIENT'), exportDossierController);
+
+// Le code PIN qui ouvre le dossier par USSD. Le mot de passe du compte est
+// exige : une session laissee ouverte ne doit pas suffire a le poser.
+router.put('/me/pin-ussd', authenticate, requireRole('PATIENT'), validateBody(definirPinUssdSchema), async (req: AuthRequest, res: Response) => {
+  await ussd.definirPinUssd(req.user!.userId, req.body);
+  res.json({ success: true, message: 'Code PIN enregistre' });
+});
 
 // ── Prise de rendez-vous a distance (addendum du 2026-09-28, point 6) ─
 // Le patient demande depuis chez lui ; un medecin repond en fixant l'heure.
